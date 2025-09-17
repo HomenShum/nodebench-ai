@@ -1,17 +1,17 @@
 # Collaborative Text Editor with Notion-like Features
 
-https://www.youtube.com/watch?v=XRYUUDNh4GQ
-  
+[![Watch the demo](https://img.youtube.com/vi/XRYUUDNh4GQ/hqdefault.jpg)](https://www.youtube.com/watch?v=XRYUUDNh4GQ)
+
 This is a project built with [Chef](https://chef.convex.dev) using [Convex](https://convex.dev) as its backend.
-  
+
 This project is connected to the Convex deployment named [`formal-shepherd-851`](https://dashboard.convex.dev/d/formal-shepherd-851).
-  
+
 ## Project structure
-  
+
 The frontend code is in the `app` directory and is built with [Vite](https://vitejs.dev/).
-  
+
 The backend code is in the `convex` directory.
-  
+
 `npm run dev` will start the frontend and backend servers.
 
 ## App authentication
