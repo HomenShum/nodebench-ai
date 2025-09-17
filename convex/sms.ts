@@ -4,11 +4,29 @@ import { action, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // ------------------------------------------------------------------
-// Twilio component client
+// Twilio component client (mocked if credentials are missing)
 // ------------------------------------------------------------------
-export const twilio = new Twilio(components.twilio, {
-  defaultFrom: process.env.TWILIO_PHONE_NUMBER!,
-});
+const hasTwilioCreds = Boolean(
+  process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_PHONE_NUMBER,
+);
+
+type TwilioLike = {
+  sendMessage: (
+    ctx: any,
+    args: { to: string; body: string },
+  ) => Promise<{ sid?: string; status?: string }>;
+};
+
+export const twilio: TwilioLike = hasTwilioCreds
+  ? new Twilio(components.twilio, { defaultFrom: process.env.TWILIO_PHONE_NUMBER! })
+  : {
+      async sendMessage(_ctx, _args) {
+        // Mocked response for builds/tests without Twilio credentials
+        return { sid: "mock_sid", status: "mocked" };
+      },
+    };
 
 // ------------------------------------------------------------------
 // Internal mutation to log an SMS

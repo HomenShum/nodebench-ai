@@ -14,7 +14,17 @@ app.use(presence);
 app.use(agent);
 app.use(workpool);
 app.use(rag);
-app.use(twilio);
+
+// Only register Twilio when credentials are present. In CI / mock builds, skip it.
+const hasTwilioCreds = Boolean(
+  process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_PHONE_NUMBER,
+);
+if (hasTwilioCreds) {
+  app.use(twilio);
+}
+
 app.use(polar);
 app.use(ossStats);
 
