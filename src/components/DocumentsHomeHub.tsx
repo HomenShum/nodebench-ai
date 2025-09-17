@@ -928,7 +928,7 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, onRunC
     e.stopPropagation();
     onDelete?.(doc._id);
   };
-  
+
   // Subtle styling for calendar documents to improve visual hierarchy
   const isCalendarDoc = (
     (!doc.documentType || doc.documentType === "text") &&
@@ -999,7 +999,7 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, onRunC
             className="h-4 w-4 rounded border-[var(--border-color)] text-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)]/50 bg-white"
           />
         </div>
-        
+
         {/* Decorative background watermark */}
         {isCalendarDoc ? (
           <Calendar className="document-card__bg document-row__bg h-14 w-14 text-amber-400 rotate-12" />
@@ -1024,22 +1024,22 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, onRunC
               </div>
               {/* Week selector removed from DocumentCard; lives under Today's Agenda header */}
             </div>
-            
+
             {/* Action Buttons */}
             <div className="flex items-center gap-1 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
               {/* Pin/Favorite Button */}
               <button
                 onClick={handlePinClick}
                 className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
-                  doc.isFavorite 
-                    ? "bg-yellow-500 text-yellow-100 shadow-sm" 
+                  doc.isFavorite
+                    ? "bg-yellow-500 text-yellow-100 shadow-sm"
                     : "bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)]"
                 }`}
                 title={doc.isFavorite ? "Unpin document" : "Pin document"}
               >
                 <Star className={`h-3.5 w-3.5 ${doc.isFavorite ? "fill-current" : ""}`} />
               </button>
-              
+
               {/* Delete Button */}
               <button
                 onClick={handleDeleteClick}
@@ -1238,6 +1238,42 @@ export function DocumentsHomeHub({
   onClearTaskSelection,
 }: DocumentsHomeHubProps) {
   const documents = useQuery(api.documents.getSidebarWithPreviews);
+  // Ensure onboarding seed on first visit to DocumentsHomeHub
+  const ensureSeedOnLogin = useMutation(api.onboarding.ensureSeedOnLogin);
+  const didEnsureOnHubRef = useRef(false);
+
+  useEffect(() => {
+    if (didEnsureOnHubRef.current) return;
+    let cancelled = false;
+
+    const run = async () => {
+      didEnsureOnHubRef.current = true;
+      const maxRetries = 3;
+      for (let attempt = 0; attempt < maxRetries && !cancelled; attempt++) {
+        try {
+          const res = await ensureSeedOnLogin({});
+          if (res?.seeded) {
+            toast.success(`Onboarding ready: docs +${res.createdDocuments}, tasks +${res.createdTasks}`);
+          }
+          break; // success or already seeded
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          const isAuthRace = msg.toLowerCase().includes("not authenticated");
+          if (isAuthRace && attempt < maxRetries - 1) {
+            await new Promise((r) => setTimeout(r, 700));
+            continue; // retry after a short delay
+          }
+          break;
+        }
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [ensureSeedOnLogin]);
+
   const isDocsLoading = documents === undefined;
   const documentsNorm: Array<DocumentCardData> = useMemo(
     () => (documents ?? []).map(normalizeDocument),
@@ -1380,7 +1416,7 @@ export function DocumentsHomeHub({
   const tasksThisWeek = useMemo(() => weekAgendaRaw?.tasks ?? [], [weekAgendaRaw]);
   const eventsThisWeek = useMemo(() => weekAgendaRaw?.events ?? [], [weekAgendaRaw]);
   const holidaysThisWeek = useMemo(() => weekAgendaRaw?.holidays ?? [], [weekAgendaRaw]);
-  
+
   const archiveDocument = useMutation(api.documents.archive);
   const toggleFavorite = useMutation(api.documents.toggleFavorite);
   const seedOnboarding = useMutation(api.onboarding.seedOnboardingContent);
@@ -1870,15 +1906,10 @@ export function DocumentsHomeHub({
     };
     const onDropWin = (e: DragEvent) => {
       // If files were dropped anywhere on the window, prevent default navigation
-      // and forward them to the same upload handler used by react-dropzone.
+      // and let embedded dropzones handle the drop (avoid stopping propagation or manual forwarding).
       if (e && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         e.preventDefault();
-        e.stopPropagation();
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) {
-          lastWindowDropAtRef.current = Date.now();
-          onDrop(files as File[]);
-        }
+        // Do not call stopPropagation(); allow React Dropzone roots to receive the drop event.
       }
       fileDragCounterRef.current = 0;
       setIsFileDragActive(false);
@@ -1919,7 +1950,7 @@ export function DocumentsHomeHub({
     | { kind: "createBoth"; anchor: HTMLElement | null; dateMs: number; defaultKind?: "task" | "event"; defaultTitle?: string; defaultAllDay?: boolean; documentIdForAssociation?: Id<"documents"> | null }
     | null
   >(null);
-  
+
   // Agenda overlay state (separate from KanbanView’s state): track active task while dragging
   const [activeAgenda, setActiveAgenda] = useState<{ type: 'task' | 'event'; id: string } | null>(null);
 
@@ -2050,7 +2081,7 @@ export function DocumentsHomeHub({
   const saveOrderForSegmented = useMutation(
     api.userPreferences.setDocOrderForSegmented,
   );
-  
+
   // Type guard for planner mode values (weekly supported; calendar deprecated here)
   const isPlannerMode = (v: string): v is "list" | "kanban" | "weekly" =>
     v === "list" || v === "kanban" || v === "weekly";
@@ -2066,7 +2097,7 @@ export function DocumentsHomeHub({
     if (!u || typeof u !== 'object') return false;
     return Object.prototype.hasOwnProperty.call(u as Record<string, unknown>, '_id');
   };
-  
+
   // Initialize mode from server preferences
   useEffect(() => {
     if (!prefs) return;
@@ -2255,8 +2286,8 @@ export function DocumentsHomeHub({
     window.addEventListener("keydown", onGlobalKey);
     return () => window.removeEventListener("keydown", onGlobalKey);
   }, []);
-  
-  
+
+
   // Task selection is now lifted to MainLayout via props
   // Sidebar: recent documents for quick access
   const recentDocuments = useQuery(
@@ -2299,18 +2330,18 @@ export function DocumentsHomeHub({
     setFocusedDateMs(dateMs);
     setInlineCreate({ dateMs: dayStart.getTime(), defaultKind: "task" });
   };
-  
-  
+
+
   const handleDeleteDocument = useCallback((documentId: Id<"documents">) => {
     archiveDocument({ id: documentId }).catch(console.error);
   }, [archiveDocument]);
 
-  
+
 
   const handleToggleFavorite = useCallback((documentId: Id<"documents">) => {
     toggleFavorite({ id: documentId }).catch(console.error);
   }, [toggleFavorite]);
-  
+
   const handleCompileAaplModel = async () => {
     if (isCompiling) return;
     setIsCompiling(true);
@@ -2832,21 +2863,21 @@ export function DocumentsHomeHub({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [showNewTaskModal, isSubmittingTask, handleSubmitNewTask]);
-  
+
   const allDocuments = useMemo(
     () => documentsNorm.filter(doc => !doc.isArchived),
     [documentsNorm]
   );
-  
+
   // Group documents by type
   const groupedDocuments = {
-    calendar: allDocuments.filter(doc => 
+    calendar: allDocuments.filter(doc =>
       doc.title.toLowerCase().includes('calendar') || doc.title.toLowerCase().includes('schedule')
     ),
     files: allDocuments.filter(doc => doc.documentType === "file"),
-    text: allDocuments.filter(doc => 
-      (!doc.documentType || doc.documentType === "text") && 
-      !doc.title.toLowerCase().includes('calendar') && 
+    text: allDocuments.filter(doc =>
+      (!doc.documentType || doc.documentType === "text") &&
+      !doc.title.toLowerCase().includes('calendar') &&
       !doc.title.toLowerCase().includes('schedule')
     ),
     favorites: allDocuments.filter(doc => doc.isFavorite)
@@ -2875,7 +2906,7 @@ export function DocumentsHomeHub({
     if (filter === "favorites") return groupedDocuments.favorites;
     return [];
   };
-  
+
   const filteredDocuments = getFilteredDocuments();
 
   // Local drag-and-drop ordering for Documents grid (per filter)
@@ -2935,7 +2966,7 @@ export function DocumentsHomeHub({
     return m;
   }, [orderedDocuments]);
 
-  
+
 
 
   // Note: segmented grids now use dnd-kit via DocumentsGridSortable with onReorder; no pangea DnD here
@@ -2987,8 +3018,8 @@ export function DocumentsHomeHub({
   // Initialize the most frequent document (first calendar document as default)
   useEffect(() => {
     if (documents && !selectedFrequentDoc) {
-      const calendarDoc = documents.find(doc => 
-        !doc.isArchived && 
+      const calendarDoc = documents.find(doc =>
+        !doc.isArchived &&
         (doc.title.toLowerCase().includes('calendar') || doc.title.toLowerCase().includes('schedule'))
       );
       if (calendarDoc) {
@@ -7541,7 +7572,7 @@ export function DocumentsHomeHub({
                   {/* Grid Mode Card */}
                   {onGridModeToggle && (
                     <div className="group relative">
-                      <div 
+                      <div
                         onClick={onGridModeToggle}
                         className="bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] p-6 h-52 flex flex-col items-center justify-center transition-all duration-200 hover:shadow-lg hover:bg-[var(--bg-hover)] cursor-pointer backdrop-blur-sm"
                       >
@@ -7614,7 +7645,7 @@ export function DocumentsHomeHub({
                       No documents found
                     </h3>
                     <p className="text-[var(--text-secondary)] mb-4">
-                      {filter === "all" 
+                      {filter === "all"
                         ? "Create your first document to get started"
                         : `No ${filter} documents found. Try a different filter or create a new document.`
                       }

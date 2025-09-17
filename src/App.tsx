@@ -17,18 +17,6 @@ function App() {
   const ensureSeedOnLogin = useMutation(api.onboarding.ensureSeedOnLogin);
   const didEnsureRef = useRef(false);
 
-  useEffect(() => {
-    if (user && !didEnsureRef.current) {
-      didEnsureRef.current = true;
-      void ensureSeedOnLogin({})
-        .then((res) => {
-          if (res?.seeded) {
-            toast.success(`Onboarding ready: docs +${res.createdDocuments}, tasks +${res.createdTasks}`);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [user, ensureSeedOnLogin]);
 
   // Show welcome page for new users (no documents) or when explicitly requested
   useEffect(() => {
