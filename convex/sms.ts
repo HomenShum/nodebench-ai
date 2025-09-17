@@ -20,7 +20,8 @@ type TwilioLike = {
 };
 
 export const twilio: TwilioLike = hasTwilioCreds
-  ? new Twilio(components.twilio, { defaultFrom: process.env.TWILIO_PHONE_NUMBER! })
+  // Cast to any so TS doesn't require the component to be present when disabled in convex.config.ts
+  ? new Twilio((components as any).twilio, { defaultFrom: process.env.TWILIO_PHONE_NUMBER! })
   : {
       async sendMessage(_ctx, _args) {
         // Mocked response for builds/tests without Twilio credentials
