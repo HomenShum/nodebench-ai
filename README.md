@@ -1,4 +1,6 @@
 # Collaborative Text Editor with Notion-like Features
+
+https://www.youtube.com/watch?v=XRYUUDNh4GQ
   
 This is a project built with [Chef](https://chef.convex.dev) using [Convex](https://convex.dev) as its backend.
   
