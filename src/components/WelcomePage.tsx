@@ -2,12 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { useAction, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import ReactMarkdown from 'react-markdown';
-import { 
-  Bot, 
-  Send, 
-  Loader2, 
-  FileText, 
-  Plus, 
+import {
+  Bot,
+  Send,
+  Loader2,
+  FileText,
+  Plus,
   BookOpen,
   ArrowRight,
   CheckCircle,
@@ -64,7 +64,7 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const createDocument = useMutation(api.documents.create);
   const generateAIResponse = useAction(api.ai.generateResponse);
 
@@ -120,7 +120,7 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
 
   const completeStep = (stepId: string) => {
     setOnboardingSteps(prev => {
-      const updatedSteps = prev.map(step => 
+      const updatedSteps = prev.map(step =>
         step.id === stepId ? { ...step, completed: true } : step
       );
       const currentIndex = updatedSteps.findIndex(step => step.id === stepId);
@@ -173,7 +173,7 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
             : m
         )
       );
-      
+
       for (const action of response.actions) {
         if (action.type === 'createDocument' && action.title) {
           const newDocId = await createDocument({
@@ -201,23 +201,23 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
           }
         }
       }
-        
-      if (messageContent.toLowerCase().includes('ai features') || 
+
+      if (messageContent.toLowerCase().includes('ai features') ||
           messageContent.toLowerCase().includes('what can you do')) {
         completeStep('ai-features');
-      } else if (messageContent.toLowerCase().includes('organization') || 
+      } else if (messageContent.toLowerCase().includes('organization') ||
                   messageContent.toLowerCase().includes('organize')) {
         completeStep('organize-workspace');
-      } else if (messageContent.toLowerCase().includes('collaboration') || 
+      } else if (messageContent.toLowerCase().includes('collaboration') ||
                   messageContent.toLowerCase().includes('sharing')) {
         completeStep('collaboration');
       }
     } catch (error) {
       console.error('Error generating AI response:', error);
-      const errorMessage = error instanceof Error ? 
+      const errorMessage = error instanceof Error ?
         `Sorry, I encountered an error: ${error.message}. Please try again.` :
         'Sorry, I encountered an unexpected error. Please try again.';
-      
+
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantMessageId
@@ -255,7 +255,7 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
             Welcome to Your AI Workspace
           </h1>
           <p className="text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-4">
-            Let's get you started with your intelligent document management system. 
+            Let's get you started with your intelligent document management system.
             I'm here to guide you every step of the way!
           </p>
           <button
@@ -273,10 +273,22 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
             <span className="text-sm text-[var(--text-secondary)]">{completedSteps} of {onboardingSteps.length} completed</span>
           </div>
           <div className="w-full bg-[var(--bg-tertiary)] rounded-full h-2">
-            <div 
+            <div
               className="bg-[var(--accent-primary)] h-2 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             ></div>
+          </div>
+        </div>
+
+        <div className="mb-8 rounded-lg overflow-hidden border border-[var(--border-color)] bg-[var(--bg-primary)]">
+          <div className="w-full aspect-video">
+            <iframe
+              className="w-full h-full"
+              src="https://www.youtube.com/embed/XRYUUDNh4GQ"
+              title="NodeBench AI Demo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
           </div>
         </div>
 
@@ -320,7 +332,7 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
                     </div>
                   </div>
                 ))}
-                
+
                 {completedSteps === onboardingSteps.length && (
                   <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-2 text-green-800 mb-2">
