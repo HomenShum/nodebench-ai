@@ -245,22 +245,22 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
   const progressPercentage = (completedSteps / onboardingSteps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
             <Bot className="h-8 w-8 text-blue-600" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">
             Welcome to Your AI Workspace
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-4">
+          <p className="text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-4">
             Let's get you started with your intelligent document management system. 
             I'm here to guide you every step of the way!
           </p>
           <button
             onClick={onGetStarted}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-lg transition-all duration-200 border border-gray-200"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] hover:shadow-sm rounded-lg transition-all duration-200 border border-[var(--border-color)]"
           >
             Skip tutorial and go to workspace
             <ArrowRight className="h-4 w-4" />
@@ -269,12 +269,12 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
 
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Onboarding Progress</span>
-            <span className="text-sm text-gray-500">{completedSteps} of {onboardingSteps.length} completed</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">Onboarding Progress</span>
+            <span className="text-sm text-[var(--text-secondary)]">{completedSteps} of {onboardingSteps.length} completed</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-[var(--bg-tertiary)] rounded-full h-2">
             <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
+              className="bg-[var(--accent-primary)] h-2 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
@@ -282,9 +282,9 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-blue-600" />
+            <div className="bg-[var(--bg-primary)] rounded-xl shadow-sm border border-[var(--border-color)] p-6">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-[var(--accent-primary)]" />
                 Getting Started Guide
               </h2>
               <div className="space-y-4">
@@ -293,24 +293,24 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
                     key={step.id}
                     className={`p-4 rounded-lg border transition-all cursor-pointer ${
                       step.completed
-                        ? 'bg-green-50 border-green-200'
+                        ? 'bg-[var(--accent-primary-bg)] border-[var(--border-color)]'
                         : index === currentStep
                         ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30 ring-2 ring-[var(--accent-primary)]/20'
-                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                        : 'bg-[var(--bg-secondary)] border-[var(--border-color)] hover:bg-[var(--bg-hover)]'
                     }`}
                     onClick={() => step.action && !step.completed && void handleQuickAction(step.action)}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                         step.completed
-                          ? 'bg-green-100 text-green-600'
-                          : 'bg-gray-200 text-gray-600'
+                          ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]'
+                          : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
                       }`}>
                         {step.completed ? <CheckCircle className="h-5 w-5" /> : step.icon}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-800">{step.title}</h4>
-                        <p className="text-xs text-gray-600 mt-1">{step.description}</p>
+                        <h4 className="font-semibold text-[var(--text-primary)]">{step.title}</h4>
+                        <p className="text-xs text-[var(--text-secondary)] mt-1">{step.description}</p>
                         {step.action && !step.completed && (
                           <div className="mt-2 text-xs text-blue-600 font-semibold flex items-center gap-1">
                             Try it <ArrowRight className="h-3 w-3" />
@@ -344,13 +344,13 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
 
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
-              <div className="p-4 border-b border-gray-200 flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="p-4 border-b border-[var(--border-color)] flex items-center gap-3">
+                <div className="w-10 h-10 bg-[var(--accent-primary)]/15 rounded-full flex items-center justify-center">
                   <Bot className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">AI Onboarding Assistant</h3>
-                  <p className="text-sm text-gray-500">Ask me anything about getting started!</p>
+                  <h3 className="font-medium text-[var(--text-primary)]">AI Onboarding Assistant</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">Ask me anything about getting started!</p>
                 </div>
               </div>
 
@@ -360,7 +360,7 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
                     case 'user':
                       return (
                         <div key={message.id} className="flex justify-end">
-                          <div className="bg-blue-600 text-white rounded-lg px-4 py-2 max-w-lg">
+                          <div className="bg-[var(--accent-primary)] text-white rounded-lg px-4 py-2 max-w-lg">
                             <ReactMarkdown>{message.content}</ReactMarkdown>
                           </div>
                         </div>
@@ -369,10 +369,10 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
                       return (
                         <div key={message.id} className="flex justify-start">
                           <div className="flex items-start gap-2.5">
-                            <div className="bg-gray-200 text-gray-800 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
                               <Bot className="h-5 w-5" />
                             </div>
-                            <div className="bg-white border border-gray-100 rounded-lg px-4 py-2 max-w-lg">
+                            <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg px-4 py-2 max-w-lg">
                               <ReactMarkdown
                                 components={{
                                   p: ({ node: _node, ...props }) => <p {...props} className="mb-2 last:mb-0" />,
@@ -410,8 +410,8 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
                     case 'tool_code_output': {
                       const { toolName, output } = message.data || {};
                       return (
-                        <div key={message.id} className="my-4 p-3 bg-gray-50 border rounded-lg">
-                          <div className="font-semibold text-xs text-gray-500 flex items-center gap-2 mb-1">
+                        <div key={message.id} className="my-4 p-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg">
+                          <div className="font-semibold text-xs text-[var(--text-secondary)] flex items-center gap-2 mb-1">
                             <Terminal className="h-3 w-3" />
                             <span>Tool Output: {toolName || 'Unknown Tool'}</span>
                           </div>
@@ -430,25 +430,25 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
                 <div className="flex flex-wrap gap-2 mb-3">
                   <button
                     onClick={() => void handleQuickAction("How do I create my first document?")}
-                    className="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors"
+                    className="text-xs bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] px-3 py-1 rounded-full hover:bg-[var(--bg-hover)] transition-colors"
                   >
                     Create Document
                   </button>
                   <button
                     onClick={() => void handleQuickAction("What AI features are available?")}
-                    className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full hover:bg-purple-100 transition-colors"
+                    className="text-xs bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] px-3 py-1 rounded-full hover:bg-[var(--bg-hover)] transition-colors"
                   >
                     AI Features
                   </button>
                   <button
                     onClick={() => void handleQuickAction("How does collaboration work?")}
-                    className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full hover:bg-green-100 transition-colors"
+                    className="text-xs bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] px-3 py-1 rounded-full hover:bg-[var(--bg-hover)] transition-colors"
                   >
                     Collaboration
                   </button>
                   <button
                     onClick={() => void handleQuickAction("Show me organization tips")}
-                    className="text-xs bg-orange-50 text-orange-700 px-3 py-1 rounded-full hover:bg-orange-100 transition-colors"
+                    className="text-xs bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] px-3 py-1 rounded-full hover:bg-[var(--bg-hover)] transition-colors"
                   >
                     Organization
                   </button>
@@ -461,13 +461,13 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask me anything about getting started..."
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-[var(--border-color)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent"
                     disabled={isLoading}
                   />
                   <button
                     onClick={() => void handleSendMessage()}
                     disabled={!input.trim() || isLoading}
-                    className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Send className="h-4 w-4" />
                   </button>

@@ -201,3 +201,60 @@ export const seedOnboardingContent = mutation({
     };
   },
 });
+
+
+export const ensureSeedOnLogin = mutation({
+  args: {},
+  returns: v.object({
+    seeded: v.boolean(),
+    createdDocuments: v.number(),
+    createdTasks: v.number(),
+  }),
+  handler: async (ctx) => {
+    const rawUserId = await getAuthUserId(ctx);
+    if (!rawUserId) throw new Error("Not authenticated");
+    const userId = rawUserId as Id<"users">;
+
+    // Check if we've already seeded onboarding for this user
+    const existingPrefs = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    if (existingPrefs && (existingPrefs as any).onboardingSeededAt) {
+      return { seeded: false, createdDocuments: 0, createdTasks: 0 } as const;
+    }
+
+    // Seed onboarding content
+    const result: {
+      createdDocuments: number;
+      existingDocuments: number;
+      createdTasks: number;
+      existingTasks: number;
+      documentIds: Id<"documents">[];
+      taskIds: Id<"tasks">[];
+    } = await ctx.runMutation(api.onboarding.seedOnboardingContent, {});
+
+    // Mark as seeded in user preferences
+    const now = Date.now();
+    if (existingPrefs) {
+      await ctx.db.patch(existingPrefs._id, {
+        onboardingSeededAt: now,
+        updatedAt: now,
+      });
+    } else {
+      await ctx.db.insert("userPreferences", {
+        userId,
+        onboardingSeededAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    return {
+      seeded: true,
+      createdDocuments: (result as any).createdDocuments ?? 0,
+      createdTasks: (result as any).createdTasks ?? 0,
+    } as const;
+  },
+});

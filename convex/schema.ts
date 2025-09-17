@@ -436,6 +436,8 @@ const userPreferences = defineTable({
   // Persisted ordering for Today's Agenda (list) and Upcoming lists
   agendaListOrder: v.optional(v.array(v.string())),
   upcomingListOrder: v.optional(v.array(v.string())),
+  // Onboarding status
+  onboardingSeededAt: v.optional(v.number()),
   // Future: more UI preferences can be added here
   createdAt: v.number(),
   updatedAt: v.number(),
