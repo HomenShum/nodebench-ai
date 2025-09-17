@@ -1,0 +1,409 @@
+/* Minimal BlockNote Editor Styles */
+
+/* Basic theme support */
+.bn-editor {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode overrides for BlockNote components */
+.dark .bn-editor {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark .bn-block {
+  color: var(--text-primary) !important;
+}
+
+.dark .bn-block-content {
+  background: transparent !important;
+}
+
+/* BlockNote menu and toolbar theming */
+.dark .bn-menu,
+.dark .bn-toolbar {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.dark .bn-menu-item,
+.dark .bn-toolbar-button {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+}
+
+.dark .bn-menu-item:hover,
+.dark .bn-toolbar-button:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dark .bn-menu-item.selected,
+.dark .bn-toolbar-button.selected {
+  background: var(--accent-primary-bg) !important;
+  color: var(--accent-primary) !important;
+}
+
+/* BlockNote side menu theming */
+.dark .bn-side-menu {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark .bn-side-menu-button {
+  color: var(--text-secondary) !important;
+}
+
+.dark .bn-side-menu-button:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+/* BlockNote table theming */
+.dark .bn-table {
+  border-color: var(--border-color) !important;
+}
+
+.dark .bn-table-cell {
+  border-color: var(--border-color) !important;
+  background: transparent !important;
+}
+
+/* BlockNote placeholder text */
+.dark .bn-editor [data-placeholder]:before {
+  color: var(--text-muted) !important;
+}
+
+/* AI context styling */
+.bn-block.ai-context-selected {
+  background-color: var(--accent-primary-bg) !important;
+  border-left: 3px solid var(--accent-primary) !important;
+  border-radius: 4px !important;
+  padding-left: 8px !important;
+}
+
+.flow-connection {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+  stroke: var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.flow-connection.active {
+  stroke: var(--accent-blue);
+  opacity: 1;
+  animation: dash 2s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+.agent-popover {
+  position: absolute;
+  width: 320px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  padding: 16px;
+  z-index: 1000;
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+  transition: all 0.15s ease;
+}
+
+.agent-popover.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.popover-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.popover-header .node-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.popover-section {
+  margin-bottom: 12px;
+}
+
+.popover-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.popover-content {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.popover-code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: rgba(82, 156, 202, 0.1);
+  color: var(--accent-blue);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.popover-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.popover-list li {
+  padding: 2px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.popover-list li::before {
+  content: '→';
+  margin-right: 8px;
+  color: var(--accent-blue);
+}
+  
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    .bn-block:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .bn-block[data-selected="true"],
+    .bn-block.ai-context-selected {
+      background: linear-gradient(
+        to right,
+        rgba(99, 102, 241, 0.15) 0%,
+        rgba(168, 85, 247, 0.1) 100%
+      );
+      box-shadow: 
+        0 0 0 1px rgba(99, 102, 241, 0.2),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .bn-block-content::before {
+      color: #6b7280;
+    }
+    
+    .bn-block[data-selected="true"] .bn-block-content::before {
+      color: #818cf8;
+    }
+  }
+
+  /* Inline proposal gutter line indicator (Option B: attribute + CSS) */
+  /* When a block's outer wrapper has data-proposal-line, show a small number in the left gutter. */
+  .bn-block-outer[data-proposal-line] > .bn-block > .bn-block-content {
+    position: relative;
+  }
+  .bn-block-outer[data-proposal-line] > .bn-block > .bn-block-content::before {
+    content: attr(data-proposal-line);
+    position: absolute;
+    left: -28px;
+    top: 0.2em;
+    font-size: 10px;
+    line-height: 1;
+    color: var(--text-muted);
+    opacity: 0.8;
+    background: transparent;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  /* Slightly stronger in dark theme for readability */
+  .dark .bn-block-outer[data-proposal-line] > .bn-block > .bn-block-content::before {
+    color: #a1a1aa; /* zinc-400 */
+    opacity: 0.9;
+  }
+
+  /* Emphasize on hover/selection subtly */
+  .bn-block-outer[data-proposal-line]:hover > .bn-block > .bn-block-content::before,
+  .bn-block-outer[data-proposal-line] > .bn-block[data-selected="true"] > .bn-block-content::before {
+    color: var(--accent-primary);
+    opacity: 1;
+  }
+
+  /* Mention token styling */
+  .mention {
+    display: inline-block;
+    background: var(--accent-primary-bg);
+    color: var(--accent-primary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 6px;
+    padding: 0 6px;
+    margin: 0 2px;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+  .dark .mention {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.35);
+  }
+
+  /* Mention suggestions popup */
+  .mention-suggestions {
+    z-index: 1000;
+    min-width: 240px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+  }
+
+  .mention-suggestions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .mention-suggestion-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .mention-suggestion-item:hover,
+  .mention-suggestion-item.active {
+    background: var(--bg-hover);
+    color: var(--accent-primary);
+  }
+
+  /* Tag suggestion enriched row */
+  .tag-suggestion-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .tag-kind-icon {
+    font-size: 14px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+  }
+
+  .tag-suggestion-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0; /* enable truncate */
+    flex: 1;
+  }
+
+  .tag-suggestion-label {
+    color: var(--text-primary);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .badge-new {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 9999px;
+    background: var(--bg-hover);
+    color: var(--accent-primary);
+    border: 1px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .tag-kind-pill {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 9999px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background: transparent;
+    white-space: nowrap;
+  }
+
+  /* Optional subtle variations per kind (kept within theme tokens) */
+  .tag-kind-pill.kind-keyword { opacity: 0.95; }
+  .tag-kind-pill.kind-entity { opacity: 0.95; }
+  .tag-kind-pill.kind-topic { opacity: 0.95; }
+  .tag-kind-pill.kind-community { opacity: 0.95; }
+  .tag-kind-pill.kind-relationship { opacity: 0.95; }
+
+  /* Target block highlight for AI proposal replace */
+  .nb-target-block {
+    outline: 2px dashed var(--accent-primary);
+    outline-offset: 4px;
+    border-radius: 6px;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12) inset, 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: outline-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+  .dark .nb-target-block {
+    outline-color: rgba(99, 102, 241, 0.85);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.18) inset, 0 1px 2px rgba(0,0,0,0.24);
+  }
+  .nb-target-block:hover {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) inset, 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Diff line coloring */
+  .nb-diff-add {
+    background: rgba(16, 185, 129, 0.12); /* emerald-500 @ 12% */
+    color: var(--text-primary);
+    border-left: 3px solid rgba(16, 185, 129, 0.5);
+    border-radius: 4px;
+    padding-left: 6px;
+  }
+  .nb-diff-del {
+    background: rgba(239, 68, 68, 0.12); /* red-500 @ 12% */
+    color: var(--text-primary);
+    border-left: 3px solid rgba(239, 68, 68, 0.5);
+    border-radius: 4px;
+    padding-left: 6px;
+  }
+  .dark .nb-diff-add { background: rgba(16, 185, 129, 0.18); border-left-color: rgba(16, 185, 129, 0.6); }
+  .dark .nb-diff-del { background: rgba(239, 68, 68, 0.18); border-left-color: rgba(239, 68, 68, 0.6); }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .bn-editor {
+      padding-left: 24px;
+    }
+    
+    .bn-block-content::before {
+      left: -20px;
+    }
+    
+    .bn-block.ai-context-selected::before {
+      right: 4px;
+      font-size: 9px;
+      padding: 1px 4px;
+    }
+    
+    .bn-block-outer[data-proposal-line] > .bn-block > .bn-block-content::before {
+      left: -20px;
+      font-size: 9px;
+    }
+  }

@@ -1,0 +1,111 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`reorderTaskPillsForTightRows > handles missing type/when gracefully 1`] = `
+[
+  {
+    "icon": "",
+    "kind": "details",
+    "label": "Low",
+  },
+  {
+    "icon": "",
+    "kind": "project",
+    "label": "Gamma",
+  },
+  {
+    "icon": "",
+    "kind": "updated",
+    "label": "Updated 2h ago",
+  },
+]
+`;
+
+exports[`reorderTaskPillsForTightRows > keeps ideal order when already sorted 1`] = `
+[
+  {
+    "icon": "",
+    "kind": "type",
+    "label": "Task",
+  },
+  {
+    "icon": "",
+    "kind": "when",
+    "label": "Due today",
+  },
+  {
+    "icon": "",
+    "kind": "details",
+    "label": "P1",
+  },
+  {
+    "icon": "",
+    "kind": "project",
+    "label": "Alpha",
+  },
+  {
+    "icon": "",
+    "kind": "link",
+    "label": "example.com",
+  },
+  {
+    "icon": "",
+    "kind": "updated",
+    "label": "Updated 1d ago",
+  },
+]
+`;
+
+exports[`reorderTaskPillsForTightRows > moves details before project when needed 1`] = `
+[
+  {
+    "icon": "",
+    "kind": "type",
+    "label": "Task",
+  },
+  {
+    "icon": "",
+    "kind": "when",
+    "label": "Due tomorrow",
+  },
+  {
+    "icon": "",
+    "kind": "details",
+    "label": "High",
+  },
+  {
+    "icon": "",
+    "kind": "project",
+    "label": "Beta",
+  },
+  {
+    "icon": "",
+    "kind": "link",
+    "label": "example.org",
+  },
+]
+`;
+
+exports[`reorderTaskPillsForTightRows > respects max truncation 1`] = `
+[
+  {
+    "icon": "",
+    "kind": "type",
+    "label": "Task",
+  },
+  {
+    "icon": "",
+    "kind": "when",
+    "label": "Due next week",
+  },
+  {
+    "icon": "",
+    "kind": "details",
+    "label": "P2",
+  },
+  {
+    "icon": "",
+    "kind": "project",
+    "label": "Delta",
+  },
+]
+`;

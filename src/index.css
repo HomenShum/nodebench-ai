@@ -1,0 +1,836 @@
+@import "@blocknote/core/fonts/inter.css";
+@import "@blocknote/mantine/style.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Dark Theme Minimal Palette */
+  --color-light: #ffffff;
+  --color-dark: #171717;
+
+  /* Base styling tokens */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Default light mode colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f4;
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --text-muted: #80868b;
+  --accent-primary: #1a73e8;
+  --accent-secondary: #8430ce;
+  --bg-hover: rgba(0,0,0,0.04);
+  --border-color: #dadce0;
+
+  /* Unified folder tokens */
+  --folder-bg: var(--bg-secondary);
+  --folder-bg-hover: var(--bg-hover);
+  --folder-text: var(--text-primary);
+  --folder-icon: var(--text-secondary);
+  --folder-border: var(--border-color);
+
+  /* Fix for Tailwind focus ring offset to prevent white halo */
+  --background: var(--bg-primary);
+}
+
+/* ---------- Global Layout Styles Start ---------- */
+
+/* Ensure the entire height chain is properly set */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Your root app container */
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Main app container */
+.app-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Document grid specific styles */
+.document-grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fix for react-grid-layout to fill container */
+.react-grid-layout {
+  position: relative !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Ensure grid items stretch properly */
+.react-grid-item {
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Fix for any potential CSS conflicts */
+.layout {
+  min-height: 100%;
+}
+
+/* ---------- Global Layout Styles End ---------- */
+
+/* ---------- New Tree View Styles Start ---------- */
+
+/* Main container for the file tree section */
+.content-section {
+  @apply border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] overflow-hidden flex flex-col;
+}
+.section-header {
+  @apply flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] flex-shrink-0;
+}
+
+/* Remove ALL existing tree styles and use only these */
+.tree-item {
+  /* Just a container, no styling - empty ruleset is intentional */
+}
+
+.tree-item-self {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.tree-item-self:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.tree-item-self.selected {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: rgb(59, 130, 246);
+}
+
+.tree-item-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.tree-item-title {
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-item-children {
+  /* Just a container, no styling - empty ruleset is intentional */
+}
+
+/* Tree item children container */
+.tree-item-children {
+  /* Clean container with no additional styling for minimal design */
+  position: relative;
+}
+
+/* Uniform styling - no backgrounds or borders */
+.tree-item-self {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+}
+
+.tree-item-self:hover {
+  /* Just subtle opacity change, no background */
+  opacity: 0.85;
+}
+
+.tree-item-self.selected {
+  /* Only text color changes for selected */
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+/* Selective styling for sidebar elements only */
+.left-panel button:not(.btn) {
+  background: transparent;
+  border: none;
+}
+
+/* Remove backgrounds from sidebar tree and group elements */
+.tree-item-children,
+.tree-item,
+.context-group,
+.message-item {
+  background: transparent;
+  border: none;
+}
+
+/* Ensure consistent text colors for proper light/dark mode switching */
+.left-panel {
+  color: var(--text-primary);
+}
+
+.left-panel .text-sm,
+.left-panel .text-xs,
+.left-panel span:not([class*="text-"]) {
+  color: inherit;
+}
+
+/* Freeze transitions during drag for smoother DnD */
+.dnd-dragging .document-item,
+.dnd-dragging .document-item * {
+  transition: none !important;
+}
+
+/* Also freeze DocumentCard transitions/hover effects during drag */
+.dnd-dragging .document-card--hybrid,
+.dnd-dragging .document-card--hybrid * {
+  transition: none !important;
+}
+.dnd-dragging .document-card--hybrid:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.left-panel .text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.left-panel .text-primary {
+  color: var(--text-primary) !important;
+}
+.section-icon {
+  @apply h-5 w-5 text-[var(--text-secondary)];
+}
+
+.btn.icon-only.small {
+  @apply p-1 rounded-md transition-colors text-[var(--text-secondary)]
+         hover:text-[var(--accent-primary)] hover:bg-[var(--bg-hover)];
+}
+
+/* The container for the scrollable tree */
+.file-tree-container {
+  @apply overflow-y-auto flex-1 py-1;
+}
+
+/* Tree item structure */
+.tree-item {
+  @apply relative;
+}
+
+.tree-item-self {
+  @apply flex items-center gap-1.5 w-full pr-2 py-1 text-sm text-[var(--text-secondary)]
+         cursor-pointer whitespace-nowrap;
+}
+.tree-item-self:hover {
+  @apply bg-[var(--bg-hover)];
+}
+.tree-item-self.selected {
+  @apply bg-[var(--accent-primary-bg)] text-[var(--text-primary)] font-medium;
+}
+.tree-item-icon {
+  @apply h-4 w-4 flex-shrink-0 text-current;
+}
+.tree-item-title {
+  @apply truncate;
+}
+.tree-item-children {
+  @apply relative;
+}
+
+/* ---------- New Tree View Styles End ---------- */
+
+
+/* Dark Mode Variables */
+.dark {
+  --bg-primary: #1F1F1F;
+  --bg-secondary: #1a1a1a;
+  /* Darker tertiary for improved contrast of elevated surfaces (e.g., command bars) */
+  --bg-tertiary: #181818;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-active: #333333;
+  --border-color: #2a2a2a;
+  --border-color-light: #333333;
+  --text-primary: #ffffff;
+  --text-secondary: #b8b8b8;
+  --text-muted: #808080;
+  --accent-primary: #4A90E2;
+  --accent-primary-hover: #5AA0F2;
+  --accent-primary-bg: rgba(74, 144, 226, 0.12);
+  --accent-secondary: #343434;
+  --accent-blue: #529cca;
+  --accent-green: #4dab9a;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+  /* Ensure proper background override */
+  --background: var(--bg-primary);
+}
+
+.accent-text {
+  @apply text-slate-600;
+}
+
+body {
+  font-family:
+    "Inter Variable",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    "Noto Sans",
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji";
+  color: var(--text-primary);
+  background: var(--bg-primary);
+}
+
+/* Scrollbar Theming for Light/Dark Mode */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) var(--bg-secondary);
+}
+
+/* Webkit Scrollbar Styling */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Dark mode specific overrides for common UI patterns */
+.dark {
+  /* Override any hardcoded background colors */
+  color-scheme: dark;
+}
+
+/* Fix for inputs and form elements in dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* Fix for buttons in dark mode */
+.dark button:not([class*="bg-"]):not([class*="border-"]) {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.dark button:not([class*="bg-"]):not([class*="border-"]):hover {
+  background-color: var(--bg-hover);
+}
+
+/* ---------- Global Subtle Hover for Buttons ---------- */
+/* Apply only when a real <button> doesn't explicitly set Tailwind bg- or border- */
+button:not([class*="bg-"]):not([class*="border-"]) {
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:not([class*="bg-"]):not([class*="border-"]):hover {
+  background-color: var(--bg-hover);
+}
+
+/* Also apply to buttons that do have bg/border but no explicit hover utilities.
+   This respects any existing hover:bg- or hover:text- classes and won't override them. */
+button:not([class*="hover:bg-"]):hover {
+  background-color: var(--bg-hover);
+}
+
+button:not([class*="hover:text-"]):hover,
+[role="button"]:not([class*="hover:text-"]):hover {
+  color: var(--text-primary);
+}
+
+/* Fix for modal and overlay backgrounds */
+.dark .modal-overlay,
+.dark [role="dialog"] {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark .modal-content {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Ensure proper hover states for interactive elements */
+.dark .hover\:bg-gray-50:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+.dark .hover\:bg-white:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+/* Fix for text colors that might be hardcoded */
+.dark .text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+.dark .text-gray-700 {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-gray-800 {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+/* Fix for background colors that might be hardcoded */
+.dark .bg-white {
+  background-color: var(--bg-primary) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+/* Fix for border colors */
+.dark .border-gray-200 {
+  border-color: var(--border-color) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: var(--border-color-light) !important;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--bg-secondary);
+}
+
+/* only use this to update the style of the auth input fields. use a different class for all other input fields */
+.auth-input-field {
+  @apply w-full px-4 py-3 rounded-container bg-white border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow shadow-sm hover:shadow;
+}
+
+/* only use this to update the style of the auth buttons. use the button class for all other buttons */
+.auth-button {
+  @apply w-full px-4 py-3 rounded bg-primary text-white font-semibold hover:bg-primary-hover transition-colors shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Custom styles for BlockNote editor */
+.bn-container {
+  @apply bg-white;
+}
+
+.bn-editor {
+  @apply text-gray-900;
+}
+
+.bn-editor p {
+  @apply text-gray-900 leading-relaxed;
+}
+
+.bn-editor h1 {
+  @apply text-gray-900 font-bold;
+}
+
+.bn-editor h2 {
+  @apply text-gray-900 font-bold;
+}
+
+.bn-editor h3 {
+  @apply text-gray-900 font-bold;
+}
+
+/* AI generation indicator */
+.ai-generating-indicator {
+  @apply fixed top-4 right-4 z-50 bg-blue-100 text-blue-800 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top duration-300;
+}
+
+.ai-generating-indicator .spinner {
+  @apply animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent;
+}
+
+/* Presence facepile styles */
+.presence-facepile {
+  @apply flex -space-x-2;
+}
+
+.presence-avatar {
+  @apply w-8 h-8 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-xs font-medium text-gray-700;
+}
+
+/* AI Chat Panel animations */
+@keyframes slide-in-from-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-to-left {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  animation: slide-in-from-left 0.3s ease-out;
+}
+
+.animate-out {
+  animation: slide-out-to-left 0.3s ease-in;
+}
+
+.slide-in-from-top {
+  animation: slide-in-from-top 0.3s ease-out;
+}
+
+.slide-in-from-bottom {
+  animation: slide-in-from-bottom 0.3s ease-out;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* React Flow Controls - Light Theme */
+.react-flow__controls {
+  @apply bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md shadow-md;
+}
+
+.react-flow__controls-button {
+  @apply bg-[var(--bg-primary)] text-[var(--text-primary)] border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--bg-hover)];
+}
+
+.react-flow__controls-button svg {
+  @apply fill-current;
+}
+
+/* React Flow Controls - Dark Theme */
+.dark .react-flow__controls {
+  @apply bg-[var(--bg-secondary)] border border-[var(--border-color)];
+}
+
+.dark .react-flow__controls-button {
+  @apply bg-[var(--bg-secondary)] text-[var(--text-primary)] border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--bg-hover)];
+}
+
+/* React Flow MiniMap - Light Theme */
+.react-flow__minimap {
+  @apply bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md shadow-md;
+}
+
+.react-flow__minimap-mask {
+  @apply fill-[var(--bg-secondary)] opacity-50;
+}
+
+/* React Flow MiniMap - Dark Theme */
+.dark .react-flow__minimap {
+  @apply bg-[var(--bg-secondary)] border border-[var(--border-color)];
+}
+
+.dark .react-flow__minimap-mask {
+  @apply fill-[var(--bg-primary)] opacity-50;
+}
+
+/* React Flow Background - Light Theme */
+.react-flow__background pattern circle {
+  @apply fill-[var(--text-muted)];
+}
+
+/* React Flow Background - Dark Theme */
+.dark .react-flow__background pattern circle {
+  @apply fill-[var(--text-muted)];
+}
+
+/* ---------- Hybrid Document Card Styles ---------- */
+/* Container: rich card styling, hover elevation, rounded corners */
+.document-card--hybrid {
+  @apply bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] p-6 h-52 flex flex-col
+         transition-all duration-200 cursor-pointer relative overflow-hidden backdrop-blur-sm
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]
+         hover:ring-2 hover:shadow-md hover:bg-[var(--bg-hover)] hover:scale-[1.02];
+  /* Performance hints */
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: layout paint;
+  /* Narrow transition scope for performance: override transition-all */
+  transition-property: transform, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+/* Large decorative background icon */
+.document-card__bg {
+  @apply absolute -top-4 -right-4 pointer-events-none opacity-10;
+}
+
+/* List row specific watermark positioning (slightly more visible and inside bounds) */
+.document-row__bg {
+  @apply top-0 right-0 opacity-20;
+}
+
+/* Pills container (inside a parent with border-t/pt-2) */
+.document-card__pills {
+  @apply flex flex-wrap gap-1.5;
+}
+
+/* Base pill */
+.pill {
+  @apply inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border;
+}
+
+/* Type pill gets color from React via extra classes; keep base behavior here */
+.pill--type {
+  /* Color classes applied from component theme e.g. theme.label */
+}
+
+/* Time pill defaults (light) and dark-mode overrides */
+.pill--time {
+  @apply bg-gray-100 text-gray-600 border-gray-200;
+}
+.dark .pill--time {
+  @apply bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)];
+}
+
+/* Project pill */
+.pill--project {
+  @apply bg-gray-100 text-gray-700 border-gray-200;
+}
+.dark .pill--project {
+  @apply bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)];
+}
+
+/* Link pill - accent foreground; keep subtle bg in light */
+.pill--link {
+  @apply bg-blue-50 text-blue-700 border-blue-200;
+}
+.pill--link a {
+  @apply text-inherit;
+}
+.dark .pill--link {
+  @apply bg-[var(--bg-primary)] text-[var(--accent-primary)] border-[var(--border-color)];
+}
+
+/* Updated pill */
+.pill--updated {
+  @apply bg-gray-100 text-gray-600 border-gray-200;
+}
+.dark .pill--updated {
+  @apply bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)];
+}
+
+/* Details pill */
+.pill--details {
+  @apply bg-gray-100 text-gray-700 border-gray-200;
+}
+.dark .pill--details {
+  @apply bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)];
+}
+
+/* ---------- Sidebar Unified Styles ---------- */
+/* Minimal, clean row items and section headers for the left sidebar */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* 8px */
+  height: 32px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.sidebar-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* 8px */
+  height: 28px;
+  padding: 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ---------- Proposal Diff Styling (intraline marks & code panes) ---------- */
+mark.nb-add {
+  background: rgba(16, 185, 129, 0.22); /* green-500 @ ~22% */
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+mark.nb-del {
+  background: rgba(239, 68, 68, 0.22); /* red-500 @ ~22% */
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+  text-decoration: line-through;
+}
+
+.nb-moved {
+  background: rgba(168, 85, 247, 0.18); /* purple-500-ish */
+}
+
+.nb-code-pane pre,
+.nb-code-pane code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.nb-code-pane pre {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+}
+
+/* Compact list rows in overlay */
+.nb-diff-row {
+  display: block;
+  padding: 2px 6px;
+  border-left-width: 2px;
+  border-left-style: solid;
+}
+.nb-diff-row.add {
+  border-left-color: rgba(16,185,129,0.6);
+}
+.nb-diff-row.del {
+  border-left-color: rgba(239,68,68,0.6);
+}
+.nb-diff-row.moved {
+  border-left-color: rgba(168,85,247,0.6);
+}
+
+
+/* ---------- AI proposal change highlighting ---------- */
+:root {
+  --color-red-700: #b91c1c;   /* tailwind red-700 */
+  --color-red-100: #fee2e2;  /* tailwind red-100 */
+  --color-green-700: #15803d; /* tailwind green-700 */
+  --color-green-100: #dcfce7; /* tailwind green-100 */
+}
+
+.ai-changes--old {
+  color: var(--color-red-700);
+  background-color: var(--color-red-100);
+}
+.ai-changes--old * {
+  background-color: var(--color-red-100);
+}
+
+.ai-changes--new {
+  color: var(--color-green-700);
+  background-color: var(--color-green-100);
+}
