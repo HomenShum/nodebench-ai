@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import UnifiedEditor from './UnifiedEditor';
+import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import {
   FileText,
   Image as ImageIcon,
@@ -13,7 +14,8 @@ import {
   Eye,
   Loader2,
   AlertCircle,
-  Table
+  Table,
+  Sparkles
 } from 'lucide-react';
 
 interface FileViewerProps {
@@ -28,9 +30,44 @@ interface CSVData {
 
 export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = "" }) => {
   const fileDocument = useQuery(api.fileDocuments.getFileDocument, { documentId });
+  const analyzeWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [csvData, setCsvData] = useState<CSVData | null>(null);
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvError, setCsvError] = useState<string | null>(null);
+
+  const handleAnalyzeToNotes = async () => {
+    try {
+      if (!fileDocument?.file?._id) return;
+      setIsAnalyzing(true);
+      const res: any = await analyzeWithGenAI({
+        fileId: fileDocument.file._id,
+        analysisPrompt: `Analyze this file ("${fileDocument.file.fileName}"). Provide a concise summary with key points and recommended next steps. Output Markdown only.`,
+        analysisType: fileDocument.document.fileType || "document",
+      });
+      const analysisText: string = (res && res.analysis) ? res.analysis : (fileDocument.file.analysis || "");
+      const md = `### AI Analysis for ${fileDocument.file.fileName}\n\n${analysisText}`;
+      try {
+        window.dispatchEvent(new CustomEvent('nodebench:applyActions', {
+          detail: { actions: [{ type: 'createNode', markdown: md }] },
+        }));
+      } catch {}
+
+      // Ask header to auto-generate tags for this document
+      try {
+        window.dispatchEvent(new CustomEvent('nodebench:generateTags', {
+          detail: { documentId },
+        }));
+      } catch { /* noop */ }
+
+
+    } catch (e) {
+      console.warn('[FileViewer] Analyze to notes failed', e);
+      alert('Failed to analyze file with Gemini. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Load CSV data when file is a CSV
   useEffect(() => {
@@ -289,7 +326,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
   };
 
   return (
-    <div className={`w-full h-full bg-[var(--bg-primary)] ${className}`}>
+    <div className={`w-full h-full bg-[var(--bg-primary)] flex flex-col ${className}`}>
       {/* File Header */}
       <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
         <div className="flex items-center gap-3">
@@ -311,6 +348,14 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => void handleAnalyzeToNotes()}
+            disabled={isAnalyzing}
+            className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-60"
+            title="Analyze with Gemini and add to Quick notes"
+          >
+            {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          </button>
           {storageUrl && (
             <>
               <button
@@ -333,31 +378,29 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
         </div>
       </div>
 
-      {/* File Content */}
-      <div className="p-4 flex-1 overflow-auto">
-        {renderFileContent()}
+
+      {/* Split: File Content | Quick Notes */}
+      <div className="flex-1 overflow-hidden">
+        <PanelGroup direction="horizontal">
+          <Panel defaultSize={65} minSize={35}>
+            <div className="p-4 h-full overflow-auto">
+              {renderFileContent()}
+            </div>
+          </Panel>
+          <PanelResizeHandle className="w-1 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] transition-colors cursor-col-resize" />
+          <Panel defaultSize={35} minSize={20}>
+            <div className="h-full border-l border-[var(--border-color)] p-4 overflow-auto">
+              <h4 className="text-sm font-medium text-[var(--text-primary)] mb-2">Quick notes</h4>
+              <div className="min-h-[240px]">
+                <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+              </div>
+            </div>
+          </Panel>
+        </PanelGroup>
       </div>
 
-      {/* Quick Notes Editor */}
-      <div className="border-t border-[var(--border-color)] p-4">
-        <h4 className="text-sm font-medium text-[var(--text-primary)] mb-2">Quick notes</h4>
-        <div className="min-h-[240px]">
-          <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
-        </div>
-      </div>
 
 
-      {/* Analysis Section (if available) */}
-      {file.analysis && (
-        <div className="border-t border-[var(--border-color)] p-4">
-          <h4 className="text-sm font-medium text-[var(--text-primary)] mb-2">
-            AI Analysis
-          </h4>
-          <div className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">
-            {file.analysis}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -1,19 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Doc } from "../../convex/_generated/dataModel";
 import { PresenceIndicator } from "./PresenceIndicator";
-import { 
-  MoreHorizontal, 
-  Star, 
-  Share, 
-  Archive, 
+import {
+  MoreHorizontal,
+  Star,
+  Share,
+  Archive,
   Trash2,
   Globe,
   Lock,
   Image as ImageIcon,
   Smile,
-  Tag,
   Sparkles,
   Loader2
 } from "lucide-react";
@@ -25,7 +24,7 @@ interface DocumentHeaderProps {
 // Component to display who last edited the document
 function LastEditorDisplay({ userId }: { userId: string }) {
   const user = useQuery(api.documents.getUserById, { userId: userId as any });
-  
+
   if (!user) {
     return (
       <span className="text-[10px] text-[var(--text-muted)] opacity-60 italic">
@@ -33,7 +32,7 @@ function LastEditorDisplay({ userId }: { userId: string }) {
       </span>
     );
   }
-  
+
   return (
     <span className="text-[10px] text-[var(--text-muted)] opacity-60 italic" title={`User ID: ${userId}`}>
       by {user.name || 'Unknown'} ({userId.slice(-8)})
@@ -45,7 +44,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [title, setTitle] = useState(document.title);
-  
+
   const updateDocument = useMutation(api.documents.update);
   const archiveDocument = useMutation(api.documents.archive);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
@@ -58,6 +57,45 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
   const generateTags = useAction((api as any).tags_actions.generateForDocument);
   const [isGenerating, setIsGenerating] = useState(false);
   const canGenerateTags = isOwner;
+
+  const addTagsToDocument = useMutation((api as any).tags.addTagsToDocument);
+  const removeTagFromDocument = useMutation((api as any).tags.removeTagFromDocument);
+  const updateTagKind = useMutation((api as any).tags.updateTagKind);
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const KINDS: Array<string> = ["keyword", "entity", "topic", "community", "relationship"];
+  const kindPillClass = (k?: string) => {
+    switch ((k || "").toLowerCase()) {
+      case "keyword": return "bg-amber-50 text-amber-800 border-amber-200";
+      case "entity": return "bg-violet-50 text-violet-800 border-violet-200";
+      case "topic": return "bg-sky-50 text-sky-800 border-sky-200";
+      case "community": return "bg-emerald-50 text-emerald-800 border-emerald-200";
+      case "relationship": return "bg-rose-50 text-rose-800 border-rose-200";
+      default: return "bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]";
+    }
+  };
+  const kindStripClass = (k?: string) => {
+    switch ((k || "").toLowerCase()) {
+      case "keyword": return "bg-amber-400";
+      case "entity": return "bg-violet-400";
+      case "topic": return "bg-sky-400";
+      case "community": return "bg-emerald-400";
+      case "relationship": return "bg-rose-400";
+      default: return "bg-[var(--border-color)]";
+    }
+  };
+  const handleCycleKind = async (t: { _id: string; kind?: string }) => {
+    const idx = KINDS.indexOf((t.kind || "").toLowerCase());
+    const next = KINDS[(idx + 1 + KINDS.length) % KINDS.length];
+    try {
+      await updateTagKind({ documentId: document._id, tagId: t._id as any, kind: next });
+    } catch (err) {
+      console.warn('[DocumentHeader] update kind failed', err);
+    }
+  };
+
 
   const handleTitleSubmit = async () => {
     if (title.trim() !== document.title) {
@@ -111,7 +149,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
             body: file,
           });
           const { storageId } = await result.json();
-          
+
           await updateDocument({
             id: document._id,
             coverImage: storageId,
@@ -151,7 +189,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
     }
   };
 
-  const handleGenerateTags = async () => {
+  const handleGenerateTags = useCallback(async () => {
     if (!canGenerateTags) {
       alert("You don't have permission to generate tags for this document.");
       return;
@@ -166,7 +204,21 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [canGenerateTags, document._id, generateTags]);
+
+  // Listen for auto-generate requests (from FileViewer after analysis)
+  useEffect(() => {
+    const handler = (e: any) => {
+      try {
+        const id = e?.detail?.documentId;
+        if (String(id) === String(document._id)) {
+          void handleGenerateTags();
+        }
+      } catch { /* noop */ }
+    };
+    window.addEventListener('nodebench:generateTags', handler as any);
+    return () => window.removeEventListener('nodebench:generateTags', handler as any);
+  }, [document._id, handleGenerateTags]);
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to permanently delete this document? This action cannot be undone.")) {
@@ -202,7 +254,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               </>
             )}
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
             {/* Inspect Tab toggle (header tab) */}
@@ -296,13 +348,13 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
             )}
           </div>
         </div>
-        
+
         {/* Title and Icon */}
         <div className="flex items-center gap-3">
           {document.icon && (
             <span className="text-4xl">{document.icon}</span>
           )}
-          
+
           {isEditing ? (
             <input
               type="text"
@@ -322,7 +374,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
             </h1>
           )}
         </div>
-        
+
         {/* Tags Row */}
         <div className="mt-2 px-2 flex items-center justify-between">
           <div className="flex flex-wrap gap-1 items-center min-h-[24px]">
@@ -330,19 +382,115 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading tags...
               </span>
-            ) : tags && tags.length > 0 ? (
-              tags.map((t: { _id: string; name: string; kind?: string; importance?: number }) => (
-                <span
-                  key={t._id}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] text-xs"
-                  title={t.kind ? `${t.name} · ${t.kind}${typeof t.importance === 'number' ? ` · ${t.importance.toFixed(2)}` : ''}` : (typeof t.importance === 'number' ? `${t.name} · ${t.importance.toFixed(2)}` : t.name)}
-                >
-                  <Tag className="h-3 w-3" />
-                  <span className="truncate max-w-[140px]">{t.name}</span>
-                </span>
-              ))
             ) : (
-              <span className="text-xs text-[var(--text-muted)]">No tags yet</span>
+              <>
+                {tags && tags.length > 0 ? (
+                  tags.map((t: { _id: string; name: string; kind?: string; importance?: number }) => (
+                    <span
+                      key={t._id}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${kindPillClass(t.kind)}`}
+                      title={t.kind ? `${t.name} · ${t.kind}${typeof t.importance === 'number' ? ` · ${t.importance.toFixed(2)}` : ''}` : (typeof t.importance === 'number' ? `${t.name} · ${t.importance.toFixed(2)}` : t.name)}
+                    >
+                      {/* Left kind strip (click to cycle kind) */}
+                      <button
+                        onClick={() => void handleCycleKind(t)}
+                        className={`${kindStripClass(t.kind)} w-1.5 h-3 rounded-sm`}
+                        title={`Kind: ${t.kind ?? 'unknown'} (click to change)`}
+                        aria-label={`Change kind for ${t.name}`}
+                      />
+
+                      {/* Name with inline rename */}
+                      {editingTagId === (t._id as any) ? (
+                        <input
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ',') {
+                              e.preventDefault();
+                              const name = editingValue.trim();
+                              setEditingTagId(null);
+                              if (!name || name === t.name) return;
+                              void addTagsToDocument({ documentId: document._id, tags: [{ name }] })
+                                .then(() => removeTagFromDocument({ documentId: document._id, tagId: t._id as any }))
+                                .catch((err) => console.warn('[DocumentHeader] rename failed', err));
+                            }
+                          }}
+                          onBlur={() => {
+                            const name = editingValue.trim();
+                            setEditingTagId(null);
+                            if (!name || name === t.name) return;
+                            void addTagsToDocument({ documentId: document._id, tags: [{ name }] })
+                              .then(() => removeTagFromDocument({ documentId: document._id, tagId: t._id as any }))
+                              .catch((err) => console.warn('[DocumentHeader] rename failed', err));
+                          }}
+                          className="bg-transparent outline-none min-w-[60px] max-w-[160px] text-[var(--text-primary)]"
+                          autoFocus
+                        />
+                      ) : (
+                        <button
+                          onClick={() => { setEditingTagId(t._id as any); setEditingValue(t.name); }}
+                          className="truncate max-w-[140px] text-left"
+                          title={`Rename ${t.name}`}
+                        >
+                          {t.name}
+                        </button>
+                      )}
+
+                      {/* Remove */}
+                      <button
+                        onClick={() => void removeTagFromDocument({ documentId: document._id, tagId: t._id as any })}
+                        className="ml-1 px-1 rounded hover:bg-red-100 text-[10px] text-red-600"
+                        title={`Remove ${t.name}`}
+                        aria-label={`Remove ${t.name}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-[var(--text-muted)]">No tags yet</span>
+                )}
+
+                {/* Ghost add pill */}
+                {adding ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-xs text-[var(--text-secondary)]">
+                    <input
+                      value={editingValue}
+                      onChange={(e) => setEditingValue(e.target.value)}
+                      placeholder="Add tag…"
+                      className="bg-transparent outline-none h-5 min-w-[80px]"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          const name = editingValue.trim();
+                          setAdding(false);
+                          setEditingValue("");
+                          if (!name) return;
+                          void addTagsToDocument({ documentId: document._id, tags: [{ name }] })
+                            .catch((err) => console.warn('[DocumentHeader] add tag failed', err));
+                        }
+                      }}
+                      onBlur={() => {
+                        const name = editingValue.trim();
+                        setAdding(false);
+                        setEditingValue("");
+                        if (!name) return;
+                        void addTagsToDocument({ documentId: document._id, tags: [{ name }] })
+                          .catch((err) => console.warn('[DocumentHeader] add tag failed', err));
+                      }}
+                    />
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => { setAdding(true); setEditingValue(""); }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    title="Add tag"
+                  >
+                    + Add tag
+                  </button>
+                )}
+              </>
             )}
           </div>
           <div className="flex items-center">
@@ -391,7 +539,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               </div>
             )}
           </div>
-          
+
           {/* Date Information (Right side) */}
           <div className="flex flex-col items-end gap-0.5">
             {(() => {
@@ -399,7 +547,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               const lastEditedBy = (document as any).lastEditedBy;
               const isRecent = Date.now() - lastModified < 24 * 60 * 60 * 1000; // Within 24 hours
               const showBothDates = lastModified !== document._creationTime;
-              
+
               return showBothDates ? (
                 <>
                   <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">

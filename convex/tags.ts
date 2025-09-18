@@ -272,6 +272,88 @@ export const addTagsToDocument = mutation({
   },
 });
 
+// Remove a tag reference from a document and return updated tags
+export const removeTagFromDocument = mutation({
+  args: {
+    documentId: v.id("documents"),
+    tagId: v.id("tags"),
+  },
+  returns: v.array(TagDocValidator),
+  handler: async (ctx, { documentId, tagId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const doc = await ctx.db.get(documentId);
+    if (!doc) throw new Error("Document not found");
+    if (doc.createdBy !== userId) throw new Error("Unauthorized");
+
+    // Find the tagRef for this document/tag pair and delete it if present
+    const ref = await ctx.db
+      .query("tagRefs")
+      .withIndex("by_target", (q) => q.eq("targetId", String(documentId)).eq("targetType", "documents"))
+      .filter((q) => q.eq(q.field("tagId"), tagId))
+      .first();
+    if (ref) {
+      await ctx.db.delete(ref._id);
+    }
+
+    // Return updated tag list
+    const updated = await ctx.db
+      .query("tagRefs")
+      .withIndex("by_target", (q) => q.eq("targetId", String(documentId)).eq("targetType", "documents"))
+      .collect();
+    const out: Array<{ _id: Id<"tags">; name: string; kind?: string; importance?: number }> = [];
+    for (const r of updated) {
+      const tag = await ctx.db.get(r.tagId);
+      if (tag)
+        out.push({
+          _id: tag._id,
+          name: tag.name,
+          kind: canonicalizeKind(tag.kind, tag.name) || tag.kind,
+          importance: tag.importance,
+        });
+    }
+    return out;
+  },
+});
+
+// Update a tag's kind (canonicalized) and return updated tags for the document
+export const updateTagKind = mutation({
+  args: { documentId: v.id("documents"), tagId: v.id("tags"), kind: v.optional(v.string()) },
+  returns: v.array(TagDocValidator),
+  handler: async (ctx, { documentId, tagId, kind }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const doc = await ctx.db.get(documentId);
+    if (!doc) throw new Error("Document not found");
+    if (doc.createdBy !== userId) throw new Error("Unauthorized");
+
+    const tag = await ctx.db.get(tagId);
+    if (!tag) throw new Error("Tag not found");
+
+    const canonical = canonicalizeKind(kind, tag.name) || kind;
+    await ctx.db.patch(tagId, { kind: canonical as any });
+
+    // Return updated tag list for this document
+    const updated = await ctx.db
+      .query("tagRefs")
+      .withIndex("by_target", (q) => q.eq("targetId", String(documentId)).eq("targetType", "documents"))
+      .collect();
+    const out: Array<{ _id: Id<"tags">; name: string; kind?: string; importance?: number }> = [];
+    for (const r of updated) {
+      const t = await ctx.db.get(r.tagId);
+      if (t)
+        out.push({
+          _id: t._id,
+          name: t.name,
+          kind: canonicalizeKind(t.kind, t.name) || t.kind,
+          importance: t.importance,
+        });
+    }
+    return out;
+  },
+});
+
 // Internal helper to assemble plain text from a document's content
 export const getDocumentText = internalQuery({
   args: { documentId: v.id("documents"), maxChars: v.optional(v.number()) },

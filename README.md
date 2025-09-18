@@ -28,3 +28,12 @@ Check out the [Convex docs](https://docs.convex.dev/) for more information on ho
 ## HTTP API
 
 User-defined http routes are defined in the `convex/router.ts` file. We split these routes into a separate file from `convex/http.ts` to allow us to prevent the LLM from modifying the authentication routes.
+
+
+## Changelog (preview)
+
+- 2025-09-17 — Analyze with Gemini → Quick notes; header tags (AI-generated, colored by kind, inline rename, ghost add pill); new backend tag mutations. See full details and screenshots in the [CHANGELOG](./CHANGELOG.md).
+
+Optional thumbnail preview:
+
+![AI analysis → Quick note + AI-tagged header](./updated_screenshot/091725_ai_file_analysis_quick_note_ai_tagged.png)
