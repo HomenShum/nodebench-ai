@@ -44,7 +44,7 @@ export const generateForDocument = action({
 
     // AI-based tag generation only (no heuristic fallback)
     const OpenAI = (await import("openai")).default;
-    const apiKey = process.env.CONVEX_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("Missing CONVEX_OPENAI_API_KEY/OPENAI_API_KEY");
     const client = new OpenAI({ apiKey });
 
