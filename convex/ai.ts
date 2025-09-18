@@ -8,6 +8,9 @@ import { Id } from "./_generated/dataModel";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
+import { agentToolsOpenAI } from "./agents/agentTools";
+
+
 // =================================================================
 // 1. ZOD SCHEMA DEFINITIONS FOR GUARANTEED TOOL ARGUMENTS
 // =================================================================
@@ -146,7 +149,7 @@ export const generateResponse = action({
     - If the question is broad, break it into logical parts before answering.
     - Adopt the appropriate professional tone for the user's request (teacher, coach, engineer, doctor, etc.).
     - Avoid vagueness; state assumptions and push your reasoning to be maximally helpful.`;
-    
+
     const messages: any[] = [];
     if (extractedUiSummary) {
       messages.push({
@@ -157,15 +160,7 @@ export const generateResponse = action({
     messages.push({ role: "system", content: systemMessage });
     messages.push({ role: "user", content: cleanedUserMessage });
 
-    const tools = [
-      { type: "function" as const, function: { name: "createDocument", description: "Creates a new document from scratch.", parameters: zodToJsonSchema(CreateDocumentSchema) } },
-      { type: "function" as const, function: { name: "createNode", description: "Adds a new content block *after* the user's current cursor.", parameters: zodToJsonSchema(CreateNodeSchema) } },
-      { type: "function" as const, function: { name: "updateNode", description: "Modifies the *currently selected* content block.", parameters: zodToJsonSchema(UpdateNodeSchema) } },
-      { type: "function" as const, function: { name: "archiveNode", description: "Deletes the *currently selected* content block.", parameters: zodToJsonSchema(IdSchema("The ID is optional; defaults to the selected block.")) } },
-      { type: "function" as const, function: { name: "findDocuments", description: "Searches for documents by title.", parameters: zodToJsonSchema(QuerySchema) } },
-      { type: "function" as const, function: { name: "updateDocument", description: "Updates the title of the current document.", parameters: zodToJsonSchema(UpdateDocumentSchema) } },
-      { type: "function" as const, function: { name: "archiveDocument", description: "Moves the current document to the trash.", parameters: zodToJsonSchema(IdSchema("The ID is optional; defaults to the current document.")) } },
-    ];
+    const tools = agentToolsOpenAI as any;
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const response = await openai.chat.completions.create({ model: modelVariant, messages, tools, tool_choice: "auto" });
@@ -193,7 +188,15 @@ export const generateResponse = action({
     try {
       functionArgs = typeof rawArgs === "string" ? JSON.parse(rawArgs) : (rawArgs ?? {});
     } catch {
+
       functionArgs = {};
+    }
+
+    let dispatchResult: any;
+    try {
+      dispatchResult = await ctx.runAction(api.aiAgents.executeOpenAITool, { name: functionName, params: functionArgs });
+    } catch (e) {
+      return { message: `Tool execution failed: ${String((e as Error)?.message || e)}`, actions: [] };
     }
 
     switch (functionName) {
@@ -204,6 +207,7 @@ export const generateResponse = action({
       case "createNode": {
         if (!selectedDocumentId) return { message: "Please open a document before adding content.", actions: [] };
         const { markdown, parentId } = CreateNodeSchema.parse(functionArgs);
+
         return { message: "Adding new content...", actions: [{ type: 'createNode', documentId: selectedDocumentId, markdown, parentId: (parentId as Id<"nodes"> | null) || null, select: true }] };
       }
       case "updateNode": {

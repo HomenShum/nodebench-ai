@@ -898,8 +898,7 @@ interface DocumentCardProps {
   onSelect: (documentId: Id<"documents">) => void;
   onDelete?: (documentId: Id<"documents">) => void;
   onToggleFavorite?: (documentId: Id<"documents">) => void;
-  onRunCsvWorkflow?: (doc: DocumentCardData) => void;
-  csvRunning?: boolean;
+
   hybrid?: boolean;
   isDragging?: boolean;
   onOpenMiniEditor?: (documentId: Id<"documents">, anchorEl: HTMLElement) => void;
@@ -916,7 +915,7 @@ interface DocumentCardProps {
 
 //
 
-export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, onRunCsvWorkflow, csvRunning, hybrid = true, isDragging = false, onOpenMiniEditor, openOnSingleClick = false, isSelected = false, onToggleSelect, onCardMouseClick, onAnalyzeFile, analyzeRunning }: DocumentCardProps & { onAnalyzeFile?: (doc: DocumentCardData) => void; analyzeRunning?: boolean; }) {
+export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, hybrid = true, isDragging = false, onOpenMiniEditor, openOnSingleClick = false, isSelected = false, onToggleSelect, onCardMouseClick, onAnalyzeFile, analyzeRunning }: DocumentCardProps & { onAnalyzeFile?: (doc: DocumentCardData) => void; analyzeRunning?: boolean; }) {
   const clickTimerRef = useRef<number | null>(null);
   const clickDelay = 250; // ms to distinguish single vs double click
   const handlePinClick = (e: React.MouseEvent) => {
@@ -1049,28 +1048,8 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, onRunC
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
 
-              {/* CSV AI Workflow Button (only for CSV files) */}
-              {doc.documentType === "file" && doc.fileType?.toLowerCase() === "csv" && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRunCsvWorkflow?.(doc); }}
-                  disabled={!!csvRunning}
-                  className="w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)] disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={csvRunning ? "Running CSV AI Workflow…" : "Run CSV AI Workflow"}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                </button>
-              )}
-              {/* Analyze Button (files of any type) */}
-              {doc.documentType === "file" && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onAnalyzeFile?.(doc); }}
-                  disabled={!!analyzeRunning}
-                  className="w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)] disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={analyzeRunning ? "Analyzing…" : "Analyze file"}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                </button>
-              )}
+
+
             </div>
           </div>
 
@@ -1090,16 +1069,7 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, onRunC
                 />
               );
             })()}
-            {doc.documentType === "file" && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onAnalyzeFile?.(doc); }}
-                disabled={!!analyzeRunning}
-                className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-                title={analyzeRunning ? "Analyzing…" : "Analyze file"}
-              >
-                Analyze
-              </button>
-            )}
+
           </div>
         </div>
       </div>
@@ -1422,14 +1392,14 @@ export function DocumentsHomeHub({
   const seedOnboarding = useMutation(api.onboarding.seedOnboardingContent);
   // These are Convex actions, not mutations
   const compileAaplModel = useAction(api.aiAgents.compileAaplModel);
-  const runCsvWorkflow = useAction(api.aiAgents.csvLeadWorkflow);
+
   const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
   const createDocumentWithContent = useMutation(api.documents.createWithContent);
   const [selectedFrequentDoc, setSelectedFrequentDoc] = useState<Id<"documents"> | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [docViewMode, setDocViewMode] = useState<"cards" | "list" | "segmented">("cards");
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
-  const [csvRunningDocId, setCsvRunningDocId] = useState<Id<"documents"> | null>(null);
+
   const [analyzeRunningDocId, setAnalyzeRunningDocId] = useState<Id<"documents"> | null>(null);
   const [isSeedingOnboarding, setIsSeedingOnboarding] = useState<boolean>(false);
   const [mode, setMode] = useState<"list" | "kanban" | "weekly">("list");
@@ -2376,33 +2346,6 @@ export function DocumentsHomeHub({
       setIsSeedingOnboarding(false);
     }
   };
-
-  const handleRunCsvWorkflow = useCallback(async (doc: DocumentCardData) => {
-    if (csvRunningDocId) return;
-    if (!(doc.documentType === "file" && doc.fileType?.toLowerCase() === "csv")) {
-      console.error("CSV AI Workflow is only available for CSV files.");
-      return;
-    }
-    if (!doc.fileId) {
-      console.error("CSV AI Workflow requires a fileId on the document.");
-      return;
-    }
-    setCsvRunningDocId(doc._id);
-    try {
-      await runCsvWorkflow({ fileId: doc.fileId });
-      // Switch to Files filter so new outputs are visible immediately
-      setFilter("files");
-    } catch (err) {
-      console.error("CSV AI Workflow failed", err);
-    } finally {
-      setCsvRunningDocId(null);
-    }
-  }, [csvRunningDocId, runCsvWorkflow]);
-
-  // Void wrapper to satisfy lint rule (no Promise-returning handlers)
-  const runCsvWorkflowVoid = useCallback((doc: DocumentCardData): void => {
-    void handleRunCsvWorkflow(doc);
-  }, [handleRunCsvWorkflow]);
 
   // Build EditorJS data from analysis result for createWithContentString
   const buildEditorJsDataFromAnalysis = useCallback((args: { title: string; analysis: string; structuredData?: any; analysisType?: string; }): any => {
@@ -6245,8 +6188,7 @@ export function DocumentsHomeHub({
                         onSelect={handleSelectDocument}
                         onDelete={handleDeleteDocument}
                         onToggleFavorite={handleToggleFavorite}
-                        onRunCsvWorkflow={runCsvWorkflowVoid}
-                        csvRunning={csvRunningDocId === doc._id}
+
                         onOpenMiniEditor={openMiniEditor}
                         hybrid={true}
                         isDragging={isDragging}
@@ -6296,8 +6238,7 @@ export function DocumentsHomeHub({
                               onSelect={handleSelectDocument}
                               onDelete={handleDeleteDocument}
                               onToggleFavorite={handleToggleFavorite}
-                              onRunCsvWorkflow={runCsvWorkflowVoid}
-                              csvRunning={csvRunningDocId === doc._id}
+
                               onOpenMiniEditor={openMiniEditor}
                               hybrid={true}
                               isDragging={isDragging}
@@ -6347,8 +6288,7 @@ export function DocumentsHomeHub({
                               onSelect={handleSelectDocument}
                               onDelete={handleDeleteDocument}
                               onToggleFavorite={handleToggleFavorite}
-                              onRunCsvWorkflow={runCsvWorkflowVoid}
-                              csvRunning={csvRunningDocId === doc._id}
+
                               onOpenMiniEditor={openMiniEditor}
                               hybrid={true}
                               isDragging={isDragging}
@@ -6398,8 +6338,7 @@ export function DocumentsHomeHub({
                               onSelect={handleSelectDocument}
                               onDelete={handleDeleteDocument}
                               onToggleFavorite={handleToggleFavorite}
-                              onRunCsvWorkflow={runCsvWorkflowVoid}
-                              csvRunning={csvRunningDocId === doc._id}
+
                               onOpenMiniEditor={openMiniEditor}
                               hybrid={true}
                               isDragging={isDragging}
@@ -6449,8 +6388,7 @@ export function DocumentsHomeHub({
                               onSelect={handleSelectDocument}
                               onDelete={handleDeleteDocument}
                               onToggleFavorite={handleToggleFavorite}
-                              onRunCsvWorkflow={runCsvWorkflowVoid}
-                              csvRunning={csvRunningDocId === doc._id}
+
                               onOpenMiniEditor={openMiniEditor}
                               hybrid={true}
                               isDragging={isDragging}
@@ -7299,8 +7237,7 @@ export function DocumentsHomeHub({
                           onSelect={handleSelectDocument}
                           onDelete={handleDeleteDocument}
                           onToggleFavorite={handleToggleFavorite}
-                          onRunCsvWorkflow={runCsvWorkflowVoid}
-                          csvRunning={csvRunningDocId === doc._id}
+
                           onAnalyzeFile={runAnalyzeVoid}
                           analyzeRunning={analyzeRunningDocId === doc._id}
                         />
@@ -7326,8 +7263,8 @@ export function DocumentsHomeHub({
                           onSelect={handleSelectDocument}
                           onDelete={handleDeleteDocument}
                           onToggleFavorite={handleToggleFavorite}
-                          onRunCsvWorkflow={runCsvWorkflowVoid}
-                          csvRunning={csvRunningDocId === doc._id}
+
+
                           onAnalyzeFile={runAnalyzeVoid}
                           analyzeRunning={analyzeRunningDocId === doc._id}
                         />
@@ -7353,8 +7290,7 @@ export function DocumentsHomeHub({
                           onSelect={handleSelectDocument}
                           onDelete={handleDeleteDocument}
                           onToggleFavorite={handleToggleFavorite}
-                          onRunCsvWorkflow={runCsvWorkflowVoid}
-                          csvRunning={csvRunningDocId === doc._id}
+
                           onAnalyzeFile={runAnalyzeVoid}
                           analyzeRunning={analyzeRunningDocId === doc._id}
                         />
@@ -7629,8 +7565,7 @@ export function DocumentsHomeHub({
                       onSelect={handleSelectDocument}
                       onDelete={handleDeleteDocument}
                       onToggleFavorite={handleToggleFavorite}
-                      onRunCsvWorkflow={runCsvWorkflowVoid}
-                      csvRunning={csvRunningDocId === doc._id}
+
                       onOpenMiniEditor={openMiniEditor}
                     />
                   ))}

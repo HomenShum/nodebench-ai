@@ -10,6 +10,22 @@
 
 import type * as account from "../account.js";
 import type * as agentEditor from "../agentEditor.js";
+import type * as agents_agentDispatcher from "../agents/agentDispatcher.js";
+import type * as agents_agentTools from "../agents/agentTools.js";
+import type * as agents_index from "../agents/index.js";
+import type * as agents_lib_agentContext from "../agents/lib/agentContext.js";
+import type * as agents_lib_agentThinking from "../agents/lib/agentThinking.js";
+import type * as agents_lib_csvWorkflow from "../agents/lib/csvWorkflow.js";
+import type * as agents_lib_docEdit from "../agents/lib/docEdit.js";
+import type * as agents_lib_docOps from "../agents/lib/docOps.js";
+import type * as agents_lib_generation from "../agents/lib/generation.js";
+import type * as agents_lib_intent from "../agents/lib/intent.js";
+import type * as agents_lib_openaiUtils from "../agents/lib/openaiUtils.js";
+import type * as agents_lib_planning from "../agents/lib/planning.js";
+import type * as agents_lib_planningExec from "../agents/lib/planningExec.js";
+import type * as agents_lib_planningGen from "../agents/lib/planningGen.js";
+import type * as agents_lib_ragOps from "../agents/lib/ragOps.js";
+import type * as agents_lib_types from "../agents/lib/types.js";
 import type * as ai from "../ai.js";
 import type * as aiAgents from "../aiAgents.js";
 import type * as apiKeys from "../apiKeys.js";
@@ -86,6 +102,22 @@ import type {
 declare const fullApi: ApiFromModules<{
   account: typeof account;
   agentEditor: typeof agentEditor;
+  "agents/agentDispatcher": typeof agents_agentDispatcher;
+  "agents/agentTools": typeof agents_agentTools;
+  "agents/index": typeof agents_index;
+  "agents/lib/agentContext": typeof agents_lib_agentContext;
+  "agents/lib/agentThinking": typeof agents_lib_agentThinking;
+  "agents/lib/csvWorkflow": typeof agents_lib_csvWorkflow;
+  "agents/lib/docEdit": typeof agents_lib_docEdit;
+  "agents/lib/docOps": typeof agents_lib_docOps;
+  "agents/lib/generation": typeof agents_lib_generation;
+  "agents/lib/intent": typeof agents_lib_intent;
+  "agents/lib/openaiUtils": typeof agents_lib_openaiUtils;
+  "agents/lib/planning": typeof agents_lib_planning;
+  "agents/lib/planningExec": typeof agents_lib_planningExec;
+  "agents/lib/planningGen": typeof agents_lib_planningGen;
+  "agents/lib/ragOps": typeof agents_lib_ragOps;
+  "agents/lib/types": typeof agents_lib_types;
   ai: typeof ai;
   aiAgents: typeof aiAgents;
   apiKeys: typeof apiKeys;

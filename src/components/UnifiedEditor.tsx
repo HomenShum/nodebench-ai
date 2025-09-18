@@ -7,7 +7,7 @@ import StarterKit from "@tiptap/starter-kit";
 
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
-import { useConvex, useQuery, useMutation } from "convex/react";
+
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useBlockNoteSync } from "@convex-dev/prosemirror-sync/blocknote";
@@ -34,6 +34,8 @@ export interface UnifiedEditorProps {
   isFullscreen?: boolean;
   // If false, editor renders in view-only mode (no edits, no slash menu)
   editable?: boolean;
+  // If true, automatically initialize an empty document when none exists (skips the "Create document" button)
+  autoCreateIfEmpty?: boolean;
 }
 
 /**
@@ -44,8 +46,8 @@ export interface UnifiedEditorProps {
  *   - quickNote: minimal single-note feel (no slash menu, compact paddings)
  *   - full: full-featured document editor
  */
-export default function UnifiedEditor({ documentId, mode = "full", isGridMode, isFullscreen, editable = true }: UnifiedEditorProps) {
-  const convex = useConvex();
+export default function UnifiedEditor({ documentId, mode = "full", isGridMode, isFullscreen, editable = true, autoCreateIfEmpty = false }: UnifiedEditorProps) {
+
 
   // Explicit Convex refs required by the sync hook
   const pmRefs = useMemo(() => ({
@@ -96,7 +98,21 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   };
 
   const [pendingProposal, setPendingProposal] = useState<null | { message: string; actions: AIToolAction[]; anchorBlockId: string | null }>(null);
+  const attemptedAutoCreateRef = useRef(false);
+
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Ensure file/doc notes exist without requiring a manual click
+  useEffect(() => {
+    if (autoCreateIfEmpty && !sync.editor && !attemptedAutoCreateRef.current) {
+      attemptedAutoCreateRef.current = true;
+      try {
+        void sync.create?.({ type: "doc", content: [] } as any);
+      } catch (e) {
+        console.warn("[UnifiedEditor] autoCreateIfEmpty failed", e);
+      }
+    }
+  }, [autoCreateIfEmpty, sync]);
 
   // Helper: get current or last block as a reasonable default target
   const getCurrentOrLastBlock = useCallback((): any | null => {
@@ -705,68 +721,12 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     return targets;
   }, [pendingProposal, sync.editor, diffLines, getBlockText]);
 
-  const undoStackRef = useRef<Array<{ timestamp: number; forward: any[]; inverse: any[]; note?: string }>>([]);
-  const suppressHistoryRef = useRef(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [undoTick, setUndoTick] = useState(0);
-
-  // Server-persisted checkpoints (Convex)
-  // Always call the hook; pass "skip" when not editable to avoid public (unauthenticated) access
-  const serverCheckpoints = useQuery(
-    api.documentVersions.listForDocument as any,
-    (editable ? ({ documentId } as any) : ("skip" as any))
-  );
-  const createCheckpointMutation = useMutation(api.documentVersions.create as any);
-  const restoreCheckpointMutation = useMutation(api.documentVersions.restore as any);
-
-  const handleCreateCheckpoint = useCallback(async () => {
-    try {
-      await createCheckpointMutation({ documentId } as any);
-      try {
-        window.dispatchEvent(new CustomEvent('nodebench:appliedActions', { detail: { actions: [{ type: 'checkpoint', documentId }], when: Date.now() } }));
-      } catch { /* ignore */ }
-    } catch (e) {
-      console.warn('[UnifiedEditor] create checkpoint failed', e);
-    }
-  }, [createCheckpointMutation, documentId]);
-
-  const handleRestoreCheckpoint = useCallback(async (snapshotId: Id<'documentSnapshots'>, version: number) => {
-    try {
-      await restoreCheckpointMutation({ snapshotId } as any);
-      try {
-        window.dispatchEvent(new CustomEvent('nodebench:appliedActions', { detail: { actions: [{ type: 'restoreCheckpoint', documentId, version, snapshotId }], when: Date.now() } }));
-      } catch { /* ignore */ }
-    } catch (e) {
-      console.warn('[UnifiedEditor] restore checkpoint failed', e);
-    }
-  }, [restoreCheckpointMutation, documentId]);
 
 
-  useEffect(() => {
-    const handler = (evt: any) => {
-      if (suppressHistoryRef.current) return;
-      const actions: any[] = evt?.detail?.actions ?? [];
-      if (!Array.isArray(actions) || actions.length === 0) return;
-      const inverses: any[] = [];
-      try {
-        for (const act of actions) {
-          if (act?.type === 'updateNode' && act?.nodeId) {
-            const blk = findBlockByNodeId(String(act.nodeId));
-            if (!blk) continue;
-            const current = getBlockText(blk);
-            inverses.push({ type: 'updateNode', nodeId: act.nodeId, markdown: current });
-          }
-        }
-      } catch { /* ignore */ }
-      undoStackRef.current.push({ timestamp: Date.now(), forward: actions, inverse: inverses });
-      setUndoTick((x) => x + 1);
-      try {
-        window.dispatchEvent(new CustomEvent('nodebench:appliedActions', { detail: { actions, when: Date.now() } }));
-      } catch { /* ignore */ }
-    };
-    window.addEventListener('nodebench:applyActions', handler as any);
-    return () => window.removeEventListener('nodebench:applyActions', handler as any);
-  }, [findBlockByNodeId, getBlockText]);
+
+
+
+
 
   const [positionTick, setPositionTick] = useState(0);
   void positionTick;
@@ -784,21 +744,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   }, []);
 
   // Revert to a previous local checkpoint by applying inverse actions
-  const revertToCheckpoint = useCallback((index: number) => {
-    const entries = undoStackRef.current;
-    if (entries.length === 0 || index < 0 || index >= entries.length) return;
-    const inverses = entries.slice(index + 1).flatMap((e) => e.inverse);
-    if (inverses.length === 0) return;
-    suppressHistoryRef.current = true;
-    try {
-      window.dispatchEvent(new CustomEvent('nodebench:applyActions', { detail: { actions: inverses } }));
-      undoStackRef.current = entries.slice(0, index + 1);
-    } catch { /* ignore */ }
-    finally {
-      suppressHistoryRef.current = false;
-      setUndoTick((x) => x + 1);
-    }
-  }, []);
+
 
   const ProposalInlineDecorations = () => {
     const { selections, toggleLine, setBlockDefaults } = useProposal();
@@ -1054,6 +1000,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-2 text-sm text-[var(--text-secondary)]">
+
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-primary)]" />
           Loading editor…
         </div>
@@ -1062,11 +1009,21 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   }
 
   if (!sync.editor) {
+    if (autoCreateIfEmpty) {
+      return (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--accent-primary)]" />
+            Preparing notes…
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <button
           className="px-3 py-1.5 text-sm rounded bg-[var(--accent-primary)] text-white"
-          onClick={() => { void sync.create({ type: "doc", content: [] } as any); }}
+          onClick={() => { void sync.create?.({ type: "doc", content: [] } as any); }}
         >
           Create document
         </button>
@@ -1116,75 +1073,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         <ProposalBar targets={proposalTargets as any} onDismiss={() => setPendingProposal(null)} />
       )}
       {editable && pendingProposal && <ProposalInlineDecorations />}
-      {/* Lightweight checkpoint controls (editors only) */}
-      {editable && (
-        <div className="flex items-center gap-2 mb-2">
-          <button
-            className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
-            onClick={() => setShowHistory((s) => !s)}
-          >
-            Checkpoints
-          </button>
-          <button
-            className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
-            onClick={() => void handleCreateCheckpoint()}
-            title="Save a server checkpoint"
-          >
-            Save checkpoint
-          </button>
-        </div>
-      )}
-      {editable && showHistory && (
-            <div className="p-2 w-[260px] max-h-[220px] overflow-auto rounded border border-[var(--border-color)] bg-[var(--bg-primary)] shadow">
-              <div className="text-xs font-semibold mb-1">Checkpoints</div>
-              <ul className="space-y-1">
-                {undoStackRef.current.map((entry, idx) => (
-                  <li key={idx} className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-[var(--text-secondary)] truncate">
-                      {new Date(entry.timestamp).toLocaleTimeString()}
-                    </span>
-                    <button
-                      className="px-1.5 py-0.5 text-[11px] rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
-                      onClick={() => revertToCheckpoint(idx)}
-                      title="Revert the document to this checkpoint by applying inverse changes"
-                    >
-                      Revert
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-2 pt-2 border-t border-[var(--border-color)]">
-                <div className="text-xs font-semibold mb-1">Server checkpoints</div>
-                {serverCheckpoints === undefined ? (
-                  <div className="text-[11px] text-[var(--text-tertiary)]">Loading...</div>
-                ) : (
-                  <ul className="space-y-1">
-                    {Array.isArray(serverCheckpoints) && serverCheckpoints.slice(0, 20).map((cp: any) => (
-                      <li key={cp._id} className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-[var(--text-secondary)] truncate">
-                          v{cp.version} - {new Date(cp.createdAt).toLocaleTimeString()}
-                        </span>
-                        <button
-                          className="px-1.5 py-0.5 text-[11px] rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
-                          onClick={() => void handleRestoreCheckpoint(cp._id, cp.version)}
-                          title="Restore document to this checkpoint"
-                        >
-                          Restore
-                        </button>
-                      </li>
-                    ))}
-          {showInspector && (
-            <InspectorPanel editorRef={sync.editor} />
-          )}
 
-                    {Array.isArray(serverCheckpoints) && serverCheckpoints.length === 0 && (
-                      <li className="text-[11px] text-[var(--text-tertiary)]">No checkpoints yet</li>
-                    )}
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
           <BlockNoteView
             editor={sync.editor}
             theme={document?.documentElement?.classList?.contains?.("dark") ? "dark" : "light"}

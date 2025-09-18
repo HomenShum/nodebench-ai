@@ -1120,6 +1120,20 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
     return { docsSel, filesSel, docsTotal, filesTotal };
   }, [selectedContextDocumentIds, selectedContextFileIds, availableDocuments, availableFiles]);
 
+
+  // Active document title for hints/chips
+  const activeDocTitle = useMemo(() => {
+    try {
+      const t = (focused as any)?.title;
+      if (t) return String(t);
+      if (selectedDocumentId && Array.isArray(availableDocuments)) {
+        const d = (availableDocuments as any[]).find((dd: any) => String(dd._id) === String(selectedDocumentId));
+        if (d?.title) return String(d.title);
+      }
+    } catch {}
+    return undefined;
+  }, [focused, selectedDocumentId, availableDocuments]);
+
   // Context-aware quick actions
   const handleSummarizeSelectedDocs = useCallback(() => {
     const titles = (availableDocuments ?? [])
@@ -3709,24 +3723,48 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
         <div className={`${activeTab === 'chat' ? '' : 'hidden'} space-y-2`}>
           {/* Minimal input */}
           {isMinimal && (
-            <AIChatPanelInput
-              input={input}
-              onChangeInput={setInput}
-              onKeyPress={handleKeyPress}
-              placeholder={getPlaceholderText(selectedModel, selectedDocumentId)}
-              isLoading={isLoading}
-              onSend={() => void handleSendMessage()}
-              onFilesDrop={(files) => {
-                const { validFiles, invalidFiles } = filterFilesByModel(files, selectedModel);
-                if (invalidFiles.length > 0) {
-                  console.warn(`${selectedModel.toUpperCase()} doesn't support:`, invalidFiles.map(f => f.name));
-                }
-                if (validFiles.length > 0) {
-                  const fileNames = validFiles.map(f => f.name).join(', ');
-                  setInput(prev => prev + (prev ? ' ' : '') + `[File: ${fileNames}]`);
-                }
-              }}
-            />
+            <>
+              <div className="p-2 border border-[var(--border-color)] bg-[var(--bg-secondary)]/30 rounded">
+                <div className="text-[11px] text-[var(--text-secondary)]">
+                  Hint: {activeDocTitle ? `You can ask to summarize or edit “${activeDocTitle}”.` : 'Try quick prompts below.'} Click a chip to fill the box, then edit before sending.
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {activeDocTitle ? (
+                    <>
+                      <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Summarize this doc')}>Summarize</button>
+                      <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Create an outline with key points')}>Outline</button>
+                      <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Rewrite the selected text for clarity')}>Rewrite selection</button>
+                      <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Find action items in this doc')}>Action items</button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Find documents about ')}>Find docs…</button>
+                      <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Create a new document about ')}>New doc…</button>
+                      <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Plan tasks for ')}>Plan tasks…</button>
+                      <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Search web for ')}>Search web…</button>
+                    </>
+                  )}
+                </div>
+              </div>
+              <AIChatPanelInput
+                input={input}
+                onChangeInput={setInput}
+                onKeyPress={handleKeyPress}
+                placeholder={getPlaceholderText(selectedModel, selectedDocumentId)}
+                isLoading={isLoading}
+                onSend={() => void handleSendMessage()}
+                onFilesDrop={(files) => {
+                  const { validFiles, invalidFiles } = filterFilesByModel(files, selectedModel);
+                  if (invalidFiles.length > 0) {
+                    console.warn(`${selectedModel.toUpperCase()} doesn't support:`, invalidFiles.map(f => f.name));
+                  }
+                  if (validFiles.length > 0) {
+                    const fileNames = validFiles.map(f => f.name).join(', ');
+                    setInput(prev => prev + (prev ? ' ' : '') + `[File: ${fileNames}]`);
+                  }
+                }}
+              />
+            </>
           )}
 
           {!isMinimal && pmOpsPreview && pmOpsPreview.length > 0 && (
@@ -3766,6 +3804,33 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
                       </button>
                     </>
                   )}
+
+          {/* Hints and quick prompts (Full mode) */}
+          {!isMinimal && (
+            <div className="p-2 border border-[var(--border-color)] bg-[var(--bg-secondary)]/30 rounded">
+              <div className="text-[11px] text-[var(--text-secondary)]">
+                Hint: {activeDocTitle ? `You can ask to summarize or edit ${activeDocTitle}.` : 'Try quick prompts below.'} Click a chip to fill the box, then edit before sending.
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {activeDocTitle ? (
+                  <>
+                    <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Summarize this doc')}>Summarize</button>
+                    <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Create an outline with key points')}>Outline</button>
+                    <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Rewrite the selected text for clarity')}>Rewrite selection</button>
+                    <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Find action items in this doc')}>Action items</button>
+                  </>
+                ) : (
+                  <>
+                    <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Find documents about ')}>Find docs</button>
+                    <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Create a new document about ')}>New doc</button>
+                    <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Plan tasks for ')}>Plan tasks</button>
+                    <button className="px-2 py-0.5 text-[11px] border rounded hover:bg-[var(--bg-hover)]" onClick={() => handleQuickAction('Search web for ')}>Search web</button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
                   <button className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]" onClick={applyPmOpsPreview}>Apply</button>
                   <button className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]" onClick={discardPmOpsPreview}>Discard</button>
                 </div>
