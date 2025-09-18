@@ -834,3 +834,11 @@ mark.nb-del {
   color: var(--color-green-700);
   background-color: var(--color-green-100);
 }
+
+
+/* Placeholder styling for contenteditable chat input */
+.editable-input[contenteditable="true"]:empty:before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}

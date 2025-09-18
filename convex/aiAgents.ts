@@ -2271,11 +2271,11 @@ export const appendRunEvent = internalMutation({
   },
   returns: v.object({ seq: v.number() }),
   handler: async (ctx, { runId, kind, message, data }) => {
-    const run = await ctx.db.get(runId);
-    if (!run) throw new Error("Run not found");
-    const seq = (run.nextSeq || 1);
-    await ctx.db.insert("agentRunEvents", { runId, seq, kind, message, data, createdAt: Date.now() });
-    await ctx.db.patch(runId, { nextSeq: seq + 1, updatedAt: Date.now() });
+    // Avoid reading or patching the agentRuns document to prevent write conflicts under high concurrency.
+    // Use a time-based monotonic sequence for ordering within a run.
+    const now = Date.now();
+    const seq = now;
+    await ctx.db.insert("agentRunEvents", { runId, seq, kind, message, data, createdAt: now });
     return { seq };
   },
 });
@@ -2420,27 +2420,29 @@ export const openaiStreamWithTools = internalAction({
       stream: true,
     });
 
-    stream.on("tool_calls.function.arguments.delta", async (ev: any) => {
-      try {
-        await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-          runId,
-          kind: "tool.args.delta",
-          data: { index: ev?.index, name: ev?.name, delta: ev?.delta },
-        });
-      } catch {}
+    const pending: Promise<any>[] = [];
+
+    stream.on("tool_calls.function.arguments.delta", (ev: any) => {
+      const p = ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
+        runId,
+        kind: "tool.args.delta",
+        data: { index: ev?.index, name: ev?.name, delta: ev?.delta },
+      }).catch(() => {});
+      pending.push(p);
     });
 
-    stream.on("tool_calls.function.arguments.done", async (ev: any) => {
-      try {
-        await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-          runId,
-          kind: "tool.args.done",
-          data: { index: ev?.index, name: ev?.name, arguments: ev?.arguments },
-        });
-      } catch {}
+    stream.on("tool_calls.function.arguments.done", (ev: any) => {
+      const p = ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
+        runId,
+        kind: "tool.args.done",
+        data: { index: ev?.index, name: ev?.name, arguments: ev?.arguments },
+      }).catch(() => {});
+      pending.push(p);
     });
 
     const final = await stream.finalChatCompletion();
+    // Ensure all streaming event writes complete before returning to avoid dangling promises.
+    await Promise.all(pending);
     return final;
   },
 });

@@ -8,7 +8,7 @@ This project is connected to the Convex deployment named [`formal-shepherd-851`]
 
 ## Project structure
 
-The frontend code is in the `app` directory and is built with [Vite](https://vitejs.dev/).
+The frontend code is in the `src` directory and is built with [Vite](https://vitejs.dev/) and React.
 
 The backend code is in the `convex` directory.
 
@@ -32,6 +32,7 @@ User-defined http routes are defined in the `convex/router.ts` file. We split th
 
 ## Changelog (preview)
 
+- 2025-09-18 — Chat input now supports multi-line entry and preserves list/nested list structure on paste; Convex agent fixes: remove write conflicts on appendRunEvent, await streaming event writes, fix propose_pm_ops schema (array items), and require kind in streamed plan steps. No new dependencies added.
 - 2025-09-17 — Analyze with Gemini → Quick notes; header tags (AI-generated, colored by kind, inline rename, ghost add pill); new backend tag mutations. See full details and screenshots in the [CHANGELOG](./CHANGELOG.md).
 
 Optional thumbnail preview:
