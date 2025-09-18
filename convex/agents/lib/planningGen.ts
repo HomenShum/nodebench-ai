@@ -57,6 +57,7 @@ export async function tryGenerateStructuredPlan(ctx: any, agentState: AgentState
                     label: { type: "string" },
                     args: { type: "object" },
                   },
+                  required: ["kind"],
                 },
               },
             },
@@ -137,8 +138,8 @@ export async function tryGeneratePmOpsWithStructuredOutputs(ctx: any, agentState
               type: "array",
               items: {
                 anyOf: [
-                  { type: "object", properties: { type: { const: "insert" }, at: { type: "integer", minimum: 0 }, content: { type: "array" } }, required: ["type", "at", "content"], additionalProperties: true },
-                  { type: "object", properties: { type: { const: "replace" }, from: { type: "integer", minimum: 0 }, to: { type: "integer", minimum: 0 }, content: { type: "array" } }, required: ["type", "from", "to", "content"], additionalProperties: true },
+                  { type: "object", properties: { type: { const: "insert" }, at: { type: "integer", minimum: 0 }, content: { type: "array", items: {} } }, required: ["type", "at", "content"], additionalProperties: true },
+                  { type: "object", properties: { type: { const: "replace" }, from: { type: "integer", minimum: 0 }, to: { type: "integer", minimum: 0 }, content: { type: "array", items: {} } }, required: ["type", "from", "to", "content"], additionalProperties: true },
                   { type: "object", properties: { type: { const: "delete" }, from: { type: "integer", minimum: 0 }, to: { type: "integer", minimum: 0 } }, required: ["type", "from", "to"], additionalProperties: true },
                   { type: "object", properties: { type: { const: "setAttrs" }, pos: { type: "integer", minimum: 0 }, attrs: { type: "object" } }, required: ["type", "pos", "attrs"], additionalProperties: true },
                 ],
