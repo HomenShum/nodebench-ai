@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
-import { 
-  FileText, 
-  Image as ImageIcon, 
-  FileVideo, 
-  FileAudio, 
-  File, 
+import UnifiedEditor from './UnifiedEditor';
+import {
+  FileText,
+  Image as ImageIcon,
+  FileVideo,
+  FileAudio,
+  File,
   Download,
   Eye,
   Loader2,
@@ -36,7 +37,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
     if (fileDocument?.file && fileDocument.document.fileType === 'csv' && fileDocument.storageUrl) {
       setCsvLoading(true);
       setCsvError(null);
-      
+
       fetch(fileDocument.storageUrl)
         .then(response => response.text())
         .then(csvText => {
@@ -45,12 +46,12 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
             if (lines.length === 0) {
               throw new Error('Empty CSV file');
             }
-            
+
             const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-            const rows = lines.slice(1).map(line => 
+            const rows = lines.slice(1).map(line =>
               line.split(',').map(cell => cell.trim().replace(/"/g, ''))
             );
-            
+
             setCsvData({ headers, rows });
           } catch (error) {
             setCsvError(error instanceof Error ? error.message : 'Failed to parse CSV');
@@ -156,7 +157,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
             <thead>
               <tr className="bg-[var(--bg-secondary)]">
                 {csvData.headers.map((header, index) => (
-                  <th 
+                  <th
                     key={index}
                     className="border border-[var(--border-color)] p-2 text-left text-sm font-medium text-[var(--text-primary)]"
                   >
@@ -169,7 +170,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
               {csvData.rows.slice(0, 100).map((row, rowIndex) => (
                 <tr key={rowIndex} className="hover:bg-[var(--bg-hover)]">
                   {row.map((cell, cellIndex) => (
-                    <td 
+                    <td
                       key={cellIndex}
                       className="border border-[var(--border-color)] p-2 text-sm text-[var(--text-secondary)]"
                     >
@@ -192,11 +193,11 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
 
   const renderImageContent = () => {
     if (!storageUrl) return renderGenericContent();
-    
+
     return (
       <div className="flex justify-center">
-        <img 
-          src={storageUrl} 
+        <img
+          src={storageUrl}
           alt={file.fileName}
           className="max-w-full max-h-96 object-contain rounded-lg border border-[var(--border-color)]"
         />
@@ -206,7 +207,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
 
   const renderPDFContent = () => {
     if (!storageUrl) return renderGenericContent();
-    
+
     return (
       <div className="w-full h-96">
         <iframe
@@ -220,7 +221,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
 
   const renderTextContent = () => {
     if (!storageUrl) return renderGenericContent();
-    
+
     return (
       <div className="w-full">
         <iframe
@@ -234,11 +235,11 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
 
   const renderVideoContent = () => {
     if (!storageUrl) return renderGenericContent();
-    
+
     return (
       <div className="flex justify-center">
-        <video 
-          controls 
+        <video
+          controls
           className="max-w-full max-h-96 rounded-lg border border-[var(--border-color)]"
         >
           <source src={storageUrl} type={document.mimeType} />
@@ -250,11 +251,11 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
 
   const renderAudioContent = () => {
     if (!storageUrl) return renderGenericContent();
-    
+
     return (
       <div className="flex justify-center">
-        <audio 
-          controls 
+        <audio
+          controls
           className="w-full max-w-md"
         >
           <source src={storageUrl} type={document.mimeType} />
@@ -273,7 +274,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
             Preview not available for this file type
           </p>
           {storageUrl && (
-            <a 
+            <a
               href={storageUrl}
               download={file.fileName}
               className="inline-flex items-center gap-2 text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary)]/80 transition-colors"
@@ -308,7 +309,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {storageUrl && (
             <>
@@ -336,6 +337,15 @@ export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = 
       <div className="p-4 flex-1 overflow-auto">
         {renderFileContent()}
       </div>
+
+      {/* Quick Notes Editor */}
+      <div className="border-t border-[var(--border-color)] p-4">
+        <h4 className="text-sm font-medium text-[var(--text-primary)] mb-2">Quick notes</h4>
+        <div className="min-h-[240px]">
+          <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+        </div>
+      </div>
+
 
       {/* Analysis Section (if available) */}
       {file.analysis && (

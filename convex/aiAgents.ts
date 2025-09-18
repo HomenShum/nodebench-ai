@@ -21,35 +21,45 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { openai } from "@ai-sdk/openai";
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
-import { zodResponseFormat } from "openai/helpers/zod";
-import { RAG } from "@convex-dev/rag";
+
+import { agentToolsOpenAI } from "./agents/agentTools";
+import { getThreadSummaryDocId, firstSidebarDocId, resolveDocumentIdByTitle, resolveDocumentId, storeTextAsFile, findTopDocumentsByTitle } from "./agents/lib/docOps";
+import { scoreLeads, generateMessages } from "./agents/lib/csvWorkflow";
 import { createBlockJson, detectNodeType, extractPlainText, parseMarkdownToBlocks } from "./lib/markdown";
-import { api as generatedApi } from "./_generated/api";
 
-/* ========================================================================== *
- *                                RAG SETUP
- * ========================================================================== */
+import { ragSearch, ragAdd } from "./agents/lib/ragOps";
 
-const rag = new RAG(components.rag, {
-  textEmbeddingModel: openai.embedding("text-embedding-3-small"),
-  embeddingDimension: 1536,
-});
+import { getOpenAI, safeChatCompletion, GPT5_NANO, GPT5_MINI } from "./agents/lib/openaiUtils";
+import { addThinkingStep, addToolCall, addAdaptation } from "./agents/lib/agentThinking";
+
+import { gatherContext, performWebSearch } from "./agents/lib/agentContext";
+
+import { generateKnowledgeResponse, enhanceResponse } from "./agents/lib/generation";
+
+import { createDocumentFromMessage, workWithDocument } from "./agents/lib/docEdit";
+
+
+
+
+
+import { analyzeUserIntent, planToolUsage } from "./agents/lib/intent";
+import { runPlannedStep, executeStructuredPlan } from "./agents/lib/planningExec";
+import { tryGenerateStructuredPlan, tryGeneratePmOpsWithStructuredOutputs } from "./agents/lib/planningGen";
+
+
+import type { AgentState, AgentResponse } from "./agents/lib/types";
 
 /* ========================================================================== *
  *                               TYPE ALIASES
  * ========================================================================== */
 
-type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 /* ========================================================================== *
  *                             RUNTIME CONSTANTS
  * ========================================================================== */
 
-const GPT5_NANO = "gpt-5-nano";
-const GPT5_MINI = "gpt-5-mini";
 const TEXT_EMBED_MODEL = "text-embedding-3-small";
 
-const isGpt5MiniOrNano = (model: string) => model === GPT5_NANO || model === GPT5_MINI;
 
 /* ========================================================================== *
  *                              LOGGING HELPERS
@@ -72,142 +82,8 @@ async function ensureUserId(ctx: any): Promise<Id<"users">> {
   return uid as Id<"users">;
 }
 
-async function getThreadSummaryDocId(ctx: any, threadId?: string): Promise<Id<"documents"> | undefined> {
-  if (!threadId) return undefined;
-  try {
-    const thread = await ctx.runQuery(internal.aiAgents.getThreadMetadata, { threadId });
-    const summary: string | undefined = (thread as any)?.summary;
-    const match = summary?.match(/document:\s*([a-zA-Z0-9_-]+)/i);
-    return (match && match[1]) ? (match[1] as Id<"documents">) : undefined;
-  } catch (err) {
-    log.debug("[getThreadSummaryDocId] parse error", err);
-    return undefined;
-  }
-}
 
-async function firstSidebarDocId(ctx: any): Promise<Id<"documents"> | undefined> {
-  const docs = await ctx.runQuery(api.documents.getSidebar);
-  return docs[0]?._id;
-}
 
-async function resolveDocumentIdByTitle(ctx: any, title: string): Promise<Id<"documents"> | undefined> {
-  // Normalize strings (lowercase, unify dashes, collapse whitespace, strip common punctuation noise)
-  const norm = (s: string) =>
-    String(s || "")
-      .normalize("NFKD")
-      .toLowerCase()
-      .replace(/[\u2012-\u2015\u2212\uFE58\uFE63\uFF0D]/g, "-") // fancy dashes -> '-'
-      .replace(/[\u00A0\s]+/g, " ") // collapse whitespace
-      .replace(/[“”"'`]+/g, "") // quotes
-      .trim();
-
-  // Extract and normalize date variants from the query (e.g., 9/1/2025 → 09/01/2025, 2025-09-01)
-  const genDateVariants = (raw: string): string[] => {
-    const out = new Set<string>();
-    const add = (x: string) => out.add(norm(x));
-    const m = raw.match(/\b(\d{1,2})[\/\-.\s](\d{1,2})[\/\-.\s](\d{2,4})\b/);
-    if (!m) return Array.from(out);
-    let mm = parseInt(m[1], 10);
-    let dd = parseInt(m[2], 10);
-    let yy = m[3].length === 2 ? parseInt(m[3], 10) + 2000 : parseInt(m[3], 10);
-    const mm2 = String(mm).padStart(2, "0");
-    const dd2 = String(dd).padStart(2, "0");
-    const yyyy = String(yy);
-    const yy2 = String(yy % 100).padStart(2, "0");
-    const bases = [
-      `${mm}/${dd}/${yyyy}`,
-      `${mm2}/${dd2}/${yyyy}`,
-      `${mm}/${dd}/${yy2}`,
-      `${mm2}-${dd2}-${yyyy}`,
-      `${yyyy}-${mm2}-${dd2}`,
-    ];
-    for (const b of bases) add(b);
-    // Common "Note <date>" prefix variants
-    for (const b of bases) {
-      add(`note ${b}`);
-      add(`notes ${b}`);
-      add(`daily note ${b}`);
-    }
-    return Array.from(out);
-  };
-
-  const qNorm = norm(title);
-  const qDateVariants = genDateVariants(title);
-
-  // Compute a simple score for how closely a document title matches the query
-  const scoreTitle = (docTitle: string): number => {
-    const d = norm(docTitle);
-    if (!d) return 0;
-    if (d === qNorm) return 100; // exact normalized match
-    if (qDateVariants.includes(d)) return 98; // exact date-variant match
-    // includes checks (prefer tighter length proximity)
-    let s = 0;
-    if (d.includes(qNorm)) s = Math.max(s, 85 - Math.min(20, Math.abs(d.length - qNorm.length)));
-    for (const v of qDateVariants) {
-      if (d.includes(v)) s = Math.max(s, 90 - Math.min(20, Math.abs(d.length - v.length)));
-    }
-    return s;
-  };
-
-  // 1) Try user's own sidebar documents first (fast, precise)
-  const sidebarDocs: any[] = await ctx.runQuery(api.documents.getSidebar);
-  let best: { id: Id<"documents">; score: number; lastModified: number } | null = null;
-  for (const d of sidebarDocs) {
-    const sc = scoreTitle(d.title || "");
-    if (sc > 0) {
-      const lm = (d as any).lastModified || d._creationTime || 0;
-      if (!best || sc > best.score || (sc === best.score && lm > best.lastModified)) {
-        best = { id: d._id, score: sc, lastModified: lm } as any;
-      }
-    }
-  }
-  if (best && best.score >= 80) return best.id; // confident match
-
-  // 2) Fall back to findByTitleAny and search index for fuzzy cases
-  //    - findByTitleAny: exact or substring across owned + public
-  //    - getSearch: title search index for the user
-  try {
-    const anyId = await ctx.runQuery(api.documents.findByTitleAny, { title });
-    if (anyId) return anyId as Id<"documents">;
-  } catch {}
-
-  try {
-    const results: any[] = await ctx.runQuery(api.documents.getSearch, { query: title });
-    let bestSearch: { id: Id<"documents">; score: number; lastModified: number } | null = null;
-    for (const d of results) {
-      const sc = scoreTitle(d.title || "");
-      if (sc > 0) {
-        const lm = (d as any).lastModified || d._creationTime || 0;
-        if (!bestSearch || sc > bestSearch.score || (sc === bestSearch.score && lm > bestSearch.lastModified)) {
-          bestSearch = { id: d._id, score: sc, lastModified: lm } as any;
-        }
-      }
-    }
-    if (bestSearch && bestSearch.score >= 75) return bestSearch.id;
-  } catch {}
-
-  return undefined;
-}
-
-async function resolveDocumentId(
-  ctx: any,
-  args: { documentId?: string; title?: string; threadId?: string },
-): Promise<Id<"documents">> {
-  // Priority: explicit ID > thread summary > title > first sidebar
-  if (args.documentId) return args.documentId as Id<"documents">;
-  const fromThread = await getThreadSummaryDocId(ctx, args.threadId);
-  if (fromThread) return fromThread;
-  if (args.title) {
-    const byTitle = await resolveDocumentIdByTitle(ctx, args.title);
-    if (byTitle) return byTitle;
-    // Do NOT silently fall back to arbitrary doc when a title was specified.
-    // This could cause edits to land in the wrong note.
-    throw new Error(`Document not found by title: ${args.title}`);
-  }
-  const first = await firstSidebarDocId(ctx);
-  if (first) return first;
-  throw new Error("Document not found. Provide a valid documentId or matching title.");
-}
 
 const looksLikeNodeId = (id?: string) => !!id && id.startsWith("k") && id.length > 20;
 
@@ -215,48 +91,11 @@ const looksLikeNodeId = (id?: string) => !!id && id.startsWith("k") && id.length
  *                           OPENAI / GEMINI HELPERS
  * ========================================================================== */
 
-async function getOpenAI() {
-  const OpenAI = (await import("openai")).default;
-  return OpenAI;
-}
-
-/** Guarded Chat Completions (filters unsupported params for nano/mini) */
-async function safeChatCompletion(
-  client: any,
-  args: { model: string; messages: ChatMessage[]; temperature?: number },
-) {
-  const { model, messages, temperature } = args;
-  const payload: any = { model, messages };
-  if (!isGpt5MiniOrNano(model) && typeof temperature === "number") {
-    payload.temperature = temperature;
-  }
-  const resp = await client.chat.completions.create(payload);
-  return resp.choices?.[0]?.message?.content?.trim() ?? "";
-}
 
 /* ========================================================================== *
  *                              STORAGE HELPERS
  * ========================================================================== */
 
-async function storeTextAsFile(
-  ctx: any,
-  text: string,
-  fileName: string,
-  mimeType: string,
-): Promise<Id<"files">> {
-  const enc = new TextEncoder();
-  const bytes = enc.encode(text);
-  const blob = new Blob([bytes], { type: mimeType });
-  const storageId = await ctx.storage.store(blob);
-  const fileId: Id<"files"> = await ctx.runMutation(generatedApi.files.createFile, {
-    storageId,
-    fileName,
-    fileType: "document",
-    mimeType,
-    fileSize: bytes.byteLength,
-  });
-  return fileId;
-}
 
 async function fetchFileTextByFileId(ctx: any, fileId: Id<"files">): Promise<string> {
   const file = await ctx.runQuery(internal.files.getFile, { fileId });
@@ -430,124 +269,7 @@ function generateAaplCsvAndMemoFallback(): { csv: string; memo: string } {
  *                    CSV LEAD WORKFLOW: SCORING & MESSAGING
  * ========================================================================== */
 
-async function scoreLeads(
-  rows: Array<Record<string, string>>,
-  header: string[],
-  client: any,
-): Promise<Array<Record<string, string>>> {
-  // Heuristic fallback (fast, deterministic)
-  const heuristic = (row: Record<string, string>) => {
-    const title = (row["Title"] || row["Job Title"] || "").toLowerCase();
-    const company = (row["Company"] || "").toLowerCase();
-    let score = 50;
-    if (/(ceo|founder|cto|cpo|coo|vp|head|director)/.test(title)) score += 20;
-    if (company.includes("ai") || company.includes("tech")) score += 10;
-    if ((row["Email"] || "").endsWith("@gmail.com")) score -= 10;
-    score = Math.max(0, Math.min(100, score));
-    const tier = score >= 80 ? "A" : score >= 60 ? "B" : "C";
-    return {
-      ...row,
-      Score: String(score),
-      Tier: tier,
-      Notes: tier === "A" ? "High potential" : tier === "B" ? "Promising" : "Low priority",
-    };
-  };
 
-  if (!client) return rows.map(heuristic);
-
-  try {
-    const sample = rows.slice(0, 20);
-    const prompt = [
-      "You are a sales analyst. Score the following leads 0-100, return JSON array.",
-      "Fields: name, email, company, title may vary; use heuristics to infer seniority and fit.",
-      "Return strictly JSON array of objects with keys: index (number by input order), score (0-100), tier ('A'|'B'|'C'), note (short).",
-      "Input:",
-      JSON.stringify(sample, null, 2),
-    ].join("\n");
-
-    const resp = await client.chat.completions.create({
-      model: GPT5_NANO,
-      messages: [
-        { role: "system", content: "Assistant that returns only valid JSON." },
-        { role: "user", content: prompt },
-      ],
-    });
-
-    const content = resp.choices?.[0]?.message?.content?.trim() || "[]";
-    let parsed: Array<{ index: number; score: number; tier: string; note: string }>;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      parsed = [];
-    }
-
-    const merged: Array<Record<string, string>> = rows.map(heuristic);
-    for (const item of parsed) {
-      if (typeof item?.index === "number" && merged[item.index]) {
-        const score = Math.max(0, Math.min(100, Number(item.score)));
-        const tier = score >= 80 ? "A" : score >= 60 ? "B" : "C";
-        merged[item.index].Score = String(score);
-        merged[item.index].Tier = tier;
-        merged[item.index].Notes = item.note || merged[item.index].Notes;
-      }
-    }
-    return merged;
-  } catch {
-    return rows.map(heuristic);
-  }
-}
-
-async function generateMessages(
-  top: Array<Record<string, string>>,
-  client: any,
-): Promise<Array<{ name?: string; email?: string; company?: string; title?: string; message: string }>> {
-  const basic = (r: Record<string, string>) => {
-    const name = r["Name"] || r["Full Name"] || "";
-    const company = r["Company"] || "";
-    const title = r["Title"] || r["Job Title"] || "";
-    const message = `Hi ${name || "there"},\n\nI came across ${
-      company || "your company"
-    } and thought our product could help ${title ? title.toLowerCase() + "s" : "teams"} like yours. Would you be open to a quick chat?\n\nBest,\nYour Name`;
-    return { name, email: r["Email"], company, title, message };
-  };
-
-  if (!client) return top.map(basic);
-
-  try {
-    const prompt = [
-      "Create short, friendly outreach messages for the following leads.",
-      "Return ONLY a JSON array with objects: { index, message }.",
-      JSON.stringify(top, null, 2),
-    ].join("\n");
-
-    const resp = await client.chat.completions.create({
-      model: GPT5_NANO,
-      messages: [
-        { role: "system", content: "Return only valid JSON." },
-        { role: "user", content: prompt },
-      ],
-    });
-
-    const content = resp.choices?.[0]?.message?.content?.trim() || "[]";
-    let parsed: Array<{ index: number; message: string }>;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      parsed = [];
-    }
-
-    return top.map((r, i) => {
-      const m = parsed.find((p) => p.index === i)?.message;
-      if (m) {
-        const name = r["Name"] || r["Full Name"] || "";
-        return { name, email: r["Email"], company: r["Company"], title: r["Title"] || r["Job Title"], message: m };
-      }
-      return basic(r);
-    });
-  } catch {
-    return top.map(basic);
-  }
-}
 
 /* ========================================================================== *
  *                               ZOD SCHEMAS
@@ -751,6 +473,24 @@ const agentTools: any = {
       } else if (title) {
         docId = await resolveDocumentIdByTitle(ctx, title);
       }
+      if (!docId && title) {
+        const cands = await findTopDocumentsByTitle(ctx, title, 5);
+        if (cands.length > 0) {
+          let chosen: Id<"documents"> = cands[0]._id;
+          if (cands.length > 1) {
+            try {
+              const sel: any = await ctx.runAction((internal as any).aiAgents.pickBestDocWithLLM, {
+                ask: title,
+                candidates: cands.map((c: any) => ({ id: c._id, title: c.title })),
+                model: GPT5_MINI,
+                threadId: ctx.threadId,
+              });
+              if (sel?.id) chosen = sel.id as Id<"documents">;
+            } catch {}
+          }
+          docId = chosen;
+        }
+      }
       if (!docId) throw new Error("Document not found. Provide a valid ID or exact title.");
 
       const result = { openedDocumentId: docId };
@@ -771,6 +511,24 @@ const agentTools: any = {
       } else if (title) {
         docId = await resolveDocumentIdByTitle(ctx, title);
       }
+      if (!docId && title) {
+        const cands = await findTopDocumentsByTitle(ctx, title, 5);
+        if (cands.length > 0) {
+          let chosen: Id<"documents"> = cands[0]._id;
+          if (cands.length > 1) {
+            try {
+              const sel: any = await ctx.runAction((internal as any).aiAgents.pickBestDocWithLLM, {
+                ask: title,
+                candidates: cands.map((c: any) => ({ id: c._id, title: c.title })),
+                model: GPT5_MINI,
+                threadId: ctx.threadId,
+              });
+              if (sel?.id) chosen = sel.id as Id<"documents">;
+            } catch {}
+          }
+          docId = chosen;
+        }
+      }
       if (!docId) throw new Error("Document not found. Provide a valid ID or exact title.");
 
       const result = { openedDocumentId: docId };
@@ -783,7 +541,27 @@ const agentTools: any = {
     description: "Edits a document by inserting provided markdown as a new block. Resolves the document by id or title.",
     args: EditDocSchema,
     handler: async (ctx, { documentId, title, markdown, parentId }) => {
-      const docId = await resolveDocumentId(ctx, { documentId, title });
+      let docId: Id<"documents">;
+      try {
+        docId = await resolveDocumentId(ctx, { documentId, title, threadId: ctx.threadId });
+      } catch (e) {
+        if (!title) throw e;
+        const cands = await findTopDocumentsByTitle(ctx, title, 5);
+        if (cands.length === 0) throw e;
+        let chosen: Id<"documents"> = cands[0]._id;
+        if (cands.length > 1) {
+          try {
+            const sel: any = await ctx.runAction((internal as any).aiAgents.pickBestDocWithLLM, {
+              ask: `Edit request: ${title}${markdown ? " | " + String(markdown).slice(0,160) : ""}`,
+              candidates: cands.map((c: any) => ({ id: c._id, title: c.title })),
+              model: GPT5_MINI,
+              threadId: ctx.threadId,
+            });
+            if (sel?.id) chosen = sel.id as Id<"documents">;
+          } catch {}
+        }
+        docId = chosen;
+      }
       const nodeType = detectNodeType(markdown);
       const json = createBlockJson(nodeType, markdown);
       const text = extractPlainText(markdown);
@@ -885,13 +663,13 @@ const agentTools: any = {
     args: QuerySchema,
     handler: async (ctx, { query }) => {
       if (!ctx.userId) throw new Error("User not authenticated");
-      const { results, entries } = await rag.search(ctx, { query, namespace: ctx.userId });
-      const entryMap = new Map(entries.map((e) => [e.entryId, e]));
-      return results.map((r) => {
-        const entry = entryMap.get(r.entryId)!;
+      const { results, entries } = await ragSearch(ctx, { query, namespace: ctx.userId });
+      const entryMap = new Map<any, any>(entries.map((e: any) => [e.entryId, e]));
+      return results.map((r: any) => {
+        const entry: any = entryMap.get(r.entryId)!;
         return {
-          ...(entry.metadata as any),
-          text: r.content.map((c) => c.text).join("\n"),
+          ...(entry?.metadata || {}),
+          text: r.content.map((c: any) => c.text).join("\n"),
           score: r.score,
         };
       });
@@ -1258,6 +1036,82 @@ export const listAgentTools = query({
   },
 });
 
+
+// OpenAI tool-call dispatcher: routes OpenAI tool names to existing Convex handlers.
+// Deprecated note: The legacy agentTools map remains for Convex/Gemini agent flows.
+export const executeOpenAITool = action({
+  args: { name: v.string(), params: v.any() },
+  returns: v.any(),
+  handler: async (ctx, { name, params }) => {
+    const n = (name || "").trim();
+    const p: any = params || {};
+
+    const toCamel = (s: string) => s.replace(/_([a-z])/g, (_m, c) => (c as string).toUpperCase());
+
+    switch (n) {
+      case "run_csv_lead_workflow":
+        return await (agentTools as any).runCsvLeadWorkflow.handler(ctx, { fileId: p.file_id, maxRows: p.max_rows });
+      case "compile_aapl_model":
+        return await (agentTools as any).compileAaplModel.handler(ctx, {});
+      case "create_document":
+        return await (agentTools as any).createDocument.handler(ctx, { title: p.title, content: p.content });
+      case "open_document":
+      case "open_doc":
+        return await (agentTools as any).openDocument.handler(ctx, { documentId: p.document_id, title: p.title });
+      case "edit_doc":
+        return await (agentTools as any).editDoc.handler(ctx, { documentId: p.document_id, title: p.title, markdown: p.markdown, parentId: p.parent_node_id });
+      case "summarize_document":
+        return await (agentTools as any).summarizeDocument.handler(ctx, { documentId: p.document_id, style: p.style, maxWords: p.max_words });
+      case "update_node":
+        return await (agentTools as any).updateNode.handler(ctx, { nodeId: p.node_id, markdown: p.markdown });
+      case "archive_node":
+        return await (agentTools as any).archiveNode.handler(ctx, { id: p.id });
+      case "find_documents":
+        return await (agentTools as any).findDocuments.handler(ctx, { query: p.query });
+      case "rag_ask":
+        return await (agentTools as any).ragAsk.handler(ctx, { prompt: p.prompt });
+      case "rag_add_context":
+        return await (agentTools as any).ragAddContext.handler(ctx, { title: p.title, text: p.text });
+      case "rag_ingest_document":
+        return await (agentTools as any).ragIngestDocument.handler(ctx, { documentId: p.document_id, title: p.title });
+      case "update_document":
+        return await (agentTools as any).updateDocument.handler(ctx, { documentId: p.document_id, title: p.title });
+      case "archive_document":
+        return await (agentTools as any).archiveDocument.handler(ctx, { id: p.id });
+      case "apply_spreadsheet_ops":
+        return await (agentTools as any).applySpreadsheetOps.handler(ctx, { sheetId: p.sheet_id, operations: p.operations });
+      case "send_email":
+        return await (agentTools as any).sendEmail.handler(ctx, { to: p.to, subject: p.subject, body: p.body });
+      case "update_at_position":
+        return await (agentTools as any).updateAtPosition.handler(ctx, { documentId: p.document_id, title: p.title, rootId: p.root_id, path: p.path, markdown: p.markdown });
+      case "propose_update_at_position":
+        return await (agentTools as any).proposeUpdateAtPosition.handler(ctx, { documentId: p.document_id, title: p.title, rootId: p.root_id, path: p.path, markdown: p.markdown });
+      case "read_first_chunk":
+        return await (agentTools as any).read_first_chunk.handler(ctx, { documentId: p.document_id, title: p.title, maxChars: p.max_chars });
+      case "read_next_chunk":
+        return await (agentTools as any).read_next_chunk.handler(ctx, { documentId: p.document_id, title: p.title, cursor: p.cursor, maxChars: p.max_chars });
+      case "read_previous_chunk":
+        return await (agentTools as any).read_previous_chunk.handler(ctx, { documentId: p.document_id, title: p.title, cursor: p.cursor, maxChars: p.max_chars });
+      case "apply_diff":
+        return await (agentTools as any).apply_diff.handler(ctx, { documentId: p.document_id, title: p.title, diffs: p.diffs });
+      case "replace_document":
+        return await (agentTools as any).replace_document.handler(ctx, { documentId: p.document_id, title: p.title, content: p.content });
+      case "plan":
+        return await (agentTools as any).plan.handler(ctx, { steps: p.steps });
+      case "ask_user":
+        return await (agentTools as any).ask_user.handler(ctx, { question: p.question });
+      case "finish_with_summary":
+        return await (agentTools as any).finish_with_summary.handler(ctx, { summary: p.summary });
+      default: {
+        const camel = toCamel(n);
+        const tool = (agentTools as any)[camel] || (agentTools as any)[n];
+        if (tool?.handler) return await tool.handler(ctx, p);
+        throw new Error(`Unknown tool: ${n}`);
+      }
+    }
+  },
+});
+
 /* ========================================================================== *
  *                            AGENT INSTANCES
  * ========================================================================== */
@@ -1483,1206 +1337,50 @@ export const getOrCreateThread = action({
  * - logs are more consistent
  */
 
-async function generateGeminiResponse(ctx: any, messages: Array<{ role: string; content: string }>) {
-  log.info("🔥 [GEMINI] generateGeminiResponse with", messages.length, "messages");
-  const { getGeminiKey } = await import("./genai");
-  const geminiKey = await getGeminiKey(ctx);
-  if (!geminiKey) throw new Error("Gemini API key not configured");
-  const ai = new GoogleGenAI({ apiKey: geminiKey ?? undefined });
-
-  try {
-    const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: messages.map((msg) => ({
-        role: msg.role === "assistant" ? "model" : "user",
-        parts: [{ text: msg.content }],
-      })),
-    });
-
-    try {
-      await ctx.runMutation(internal.usage.incrementDailyUsage, { provider: "gemini" });
-    } catch (e) {
-      log.warn("[usage] incrementDailyUsage failed (gemini)", e);
-    }
-
-    const responseText = result.text || "Sorry, I couldn't generate a response.";
-    log.info("🔥 [GEMINI] Response:", responseText.slice(0, 120), "…");
-    return responseText;
-  } catch (error) {
-    log.error("🔥 [GEMINI] API error:", error);
-    throw error;
-  }
-}
 
 /* ----------------------- Types used by chatWithAgent ---------------------- */
 
-interface AgentResponse {
-  finalResponse: string;
-  thinkingSteps: ThinkingStep[];
-  toolCalls: ToolCall[];
-  adaptations: Adaptation[];
-  candidateDocs?: any[];
-  pmOperations?: any[]; // Optional structured document edit operations returned by the model
-  planExplain?: string; // Optional explanation of the plan for UI rendering
-  plan?: any; // Structured plan (intent, groups) for UI preview
-  runId?: string; // Agent run id for streaming progress
-}
-
-interface ThinkingStep {
-  id: string;
-  type: "analysis" | "planning" | "tool_selection" | "execution" | "evaluation" | "adaptation";
-  content: string;
-  timestamp: number;
-  metadata?: any;
-}
-
-interface ToolCall {
-  id: string;
-  toolName: string;
-  reasoning: string;
-  input: any;
-  output: any;
-  success: boolean;
-  timestamp: number;
-}
-
-interface Adaptation {
-  id: string;
-  trigger: string;
-  decision: string;
-  action: string;
-  timestamp: number;
-}
-
-interface AgentState {
-  thinkingSteps: ThinkingStep[];
-  toolCalls: ToolCall[];
-  adaptations: Adaptation[];
-  context: {
-    userId: Id<"users">;
-    selectedDocumentId?: Id<"documents">;
-    mcpServerId?: Id<"mcpServers">;
-    model: "openai" | "gemini";
-    message: string;
-    openaiVariant?: "gpt-5-nano" | "gpt-5-mini";
-    uiSummary?: string;
-    threadId?: string;
-    runId?: Id<"agentRuns">;
-  };
-}
 
 /* -------------------------- Chat helper utilities ------------------------- */
 
-function newId(prefix: string) {
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-}
 
-async function addThinkingStep(
-  ctx: any,
-  agentState: AgentState,
-  type: ThinkingStep["type"],
-  content: string,
-  metadata?: any,
-) {
-  const step: ThinkingStep = { id: newId("step"), type, content, timestamp: Date.now(), metadata };
-  agentState.thinkingSteps.push(step);
-  log.info(`🧠 [${type.toUpperCase()}]`, content.slice(0, 200));
-  try {
-    const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-    if (ctx && runId) {
-      await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-        runId,
-        kind: "thinking",
-        message: content,
-        data: { type, metadata },
-      });
-    }
-  } catch {}
-  return step;
-}
 
-function previewJson(value: any, maxLen = 1200) {
-  try {
-    const json = JSON.stringify(
-      value,
-      (_key, v) => {
-        if (v instanceof ArrayBuffer) return `ArrayBuffer(${v.byteLength})`;
-        if (typeof v === "bigint") return v.toString();
-        return v;
-      },
-      2,
-    );
-    return json.length > maxLen ? json.slice(0, maxLen) + "…" : json;
-  } catch {
-    try {
-      const s = String(value);
-      return s.length > maxLen ? s.slice(0, maxLen) + "…" : s;
-    } catch {
-      return "<unserializable>";
-    }
-  }
-}
 
-async function addToolCall(
-  ctx: any,
-  agentState: AgentState,
-  toolName: string,
-  reasoning: string,
-  input: any,
-  output: any,
-  success: boolean,
-) {
-  const toolCall: ToolCall = {
-    id: newId("tool"),
-    toolName,
-    reasoning,
-    input,
-    output,
-    success,
-    timestamp: Date.now(),
-  };
-  agentState.toolCalls.push(toolCall);
-  log.info(`🔧 [TOOL-${toolName}] -> ${success ? "SUCCESS" : "FAILED"}`);
-  log.info("   ↳ input:", previewJson(input));
-  log.info("   ↳ output:", previewJson(output));
-  try {
-    const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-    if (ctx && runId) {
-      await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-        runId,
-        kind: "tool",
-        message: reasoning,
-        data: { toolName, input, output, success },
-      });
-    }
-  } catch {}
-  return toolCall;
-}
 
-async function addAdaptation(ctx: any, agentState: AgentState, trigger: string, decision: string, action: string) {
-  const adaptation: Adaptation = {
-    id: newId("adapt"),
-    trigger,
-    decision,
-    action,
-    timestamp: Date.now(),
-  };
-  agentState.adaptations.push(adaptation);
-  log.info("🔄 [ADAPTATION]", trigger, "->", decision, "->", action);
-  try {
-    const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-    if (ctx && runId) {
-      await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-        runId,
-        kind: "adaptation",
-        message: `${trigger} -> ${decision}`,
-        data: { action },
-      });
-    }
-  } catch {}
-  return adaptation;
-}
 
 /* ------------------------------ Intent helpers ---------------------------- */
 
-async function analyzeUserIntent(ctx: any, message: string, model: "openai" | "gemini") {
-  const analysisPrompt = `Analyze this user message and determine:
-1. Primary intent (search, create, update, question, etc.)
-2. Required tools/capabilities
-3. Context needs
-4. Complexity level
 
-User message: "${message}"
 
-Provide a concise analysis focusing on what the user wants and how to achieve it.`;
-
-  try {
-    if (model === "openai") {
-      const OpenAI = await getOpenAI();
-      const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const completion = await openaiClient.chat.completions.create({
-        model: GPT5_NANO,
-        messages: [{ role: "user", content: analysisPrompt }],
-      });
-      return completion.choices[0]?.message?.content || "Intent analysis completed";
-    } else {
-      const { getGeminiKey } = await import("./genai");
-      const geminiKey = await getGeminiKey(ctx);
-      if (!geminiKey) throw new Error("Gemini API key not configured");
-      const ai = new GoogleGenAI({ apiKey: geminiKey ?? undefined });
-      const result = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
-        contents: [{ role: "user", parts: [{ text: analysisPrompt }] }],
-      });
-      try {
-        await ctx.runMutation(internal.usage.incrementDailyUsage, { provider: "gemini" });
-      } catch (e) {
-        log.warn("[usage] incrementDailyUsage failed (gemini)", e);
-      }
-      return result.text || "Intent analysis completed";
-    }
-  } catch (error) {
-    log.error("Intent analysis failed:", error);
-    return `Intent analysis: User wants to "${message}". Will attempt to fulfill request using available tools.`;
-  }
-}
-
-async function gatherContext(ctx: any, context: AgentState["context"]) {
-  const contextInfo: string[] = [];
-
-  if (context.selectedDocumentId) {
-    try {
-      const doc = await ctx.runQuery(api.documents.getById, { documentId: context.selectedDocumentId });
-      if (doc) contextInfo.push(`Working with document: "${doc.title}" (${doc.nodes?.length || 0} blocks)`);
-    } catch {
-      contextInfo.push("Document context unavailable");
-    }
-  }
-
-  if (context.mcpServerId) {
-    try {
-      const server = await ctx.runQuery(api.mcp.getMcpServerById, { serverId: context.mcpServerId });
-      if (server) contextInfo.push(`MCP Server available: ${server.name}`);
-    } catch {
-      contextInfo.push("MCP Server context unavailable");
-    }
-  }
-
-  contextInfo.push(
-    `Using ${context.model.toUpperCase()} model${
-      context.model === "openai" && context.openaiVariant ? ` (${context.openaiVariant})` : ""
-    }`,
-  );
-
-  return contextInfo.length > 0 ? `Context gathered: ${contextInfo.join(". ")}` : "No specific context available.";
-}
-
-async function planToolUsage(_ctx: any, message: string, context: AgentState["context"]) {
-  const signals = {
-    needsSearch: /search|find|look|research|web|internet|current|recent|news|latest/i.test(message),
-    needsDocument: /create|write|document|note|save|add|update|edit/i.test(message),
-    needsAnalysis: /analyze|explain|understand|breakdown|summarize/i.test(message),
-    hasUrl: /https?:\/\//i.test(message),
-  };
-
-  const plan: string[] = [];
-  if (signals.hasUrl && signals.needsSearch) plan.push("EXTRACT from URL via web search");
-  else if (signals.needsSearch && context.mcpServerId) plan.push("SEARCH web via MCP");
-  if (signals.needsDocument) plan.push("CREATE/UPDATE document with findings");
-  if (signals.needsAnalysis) plan.push("ANALYZE results and summarize");
-  if (plan.length === 0) plan.push("RESPOND from knowledge");
-
-  return `Execution plan: ${plan.join(" -> ")}`;
-}
 
 /* ------------------------ Execution path for autonomous ------------------- */
 
-async function performWebSearch(ctx: any, agentState: AgentState, query: string) {
-  const { mcpServerId } = agentState.context;
-  if (!mcpServerId) {
-    await addToolCall(ctx, agentState, "web_search", "Attempted web search", { query }, { error: "No MCP server" }, false);
-    return "Web search unavailable - no MCP server configured.";
-  }
 
-  try {
-    const urlMatch = query.match(/https?:\/\/[^\s]+/);
-    const searchQuery = urlMatch ? `extract content from ${urlMatch[0]}` : query;
 
-    await addThinkingStep(ctx, agentState, "execution", `Searching for: "${searchQuery}"`);
-    const result = await ctx.runAction(api.aiAgents.executeToolWithNaturalLanguage, {
-      serverId: mcpServerId,
-      toolName: "tavily_search",
-      naturalLanguageQuery: searchQuery,
-      model: agentState.context.model,
-      isLearning: false,
-    });
 
-    await addToolCall(
-      ctx, agentState,
-      "tavily_search",
-      `Searching: ${searchQuery}`,
-      { query: searchQuery },
-      result,
-      !!result && !result.error,
-    );
 
-    const isSuccess =
-      result &&
-      (result.success === true ||
-        (result.result && typeof result.result === "string" && result.result.length > 0) ||
-        (result.result && typeof result.result === "object" && Object.keys(result.result).length > 0)) &&
-      !result.error;
-
-    if (isSuccess) {
-      await addThinkingStep(ctx, agentState, "execution", "Search completed successfully");
-      return typeof result.result === "string" ? result.result : JSON.stringify(result.result || result);
-    } else {
-      const errorMsg = result?.error || `No valid result returned`;
-      await addThinkingStep(ctx, agentState, "execution", `Search failed: ${errorMsg}`);
-      return `Search encountered an issue: ${errorMsg}`;
-    }
-  } catch (error) {
-    await addToolCall(ctx, agentState, "web_search", "Web search attempt", { query }, { error: String(error) }, false);
-    return `Web search encountered an issue. Let me provide what I know about: ${query}`;
-  }
-}
-
-async function createDocumentFromMessage(ctx: any, agentState: AgentState, message: string) {
-  const { model } = agentState.context;
-  try {
-    // Extract a topic/title
-    const titleMatch = message.match(/document about ([^.!?]+)/i) || message.match(/create.*?([^.!?]+)/i);
-    const topic = titleMatch ? titleMatch[1].trim() : "general topic";
-    const title = topic.charAt(0).toUpperCase() + topic.slice(1);
-
-    // Generate markdown content (Gemini or OpenAI)
-    let content = "";
-    if (model === "gemini") {
-      content = await generateGeminiResponse(ctx, [
-        {
-          role: "system",
-          content: `Create comprehensive markdown content about "${topic}". Include multiple sections with headings, bullet points, **bold**, and examples.`,
-        },
-        { role: "user", content: `Create detailed content about ${topic}` },
-      ]);
-    } else {
-      const OpenAI = await getOpenAI();
-      const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const openaiModel = agentState.context.openaiVariant ?? GPT5_NANO;
-      const completion = await openaiClient.chat.completions.create({
-        model: openaiModel,
-        messages: [
-          {
-            role: "system",
-            content: `Create comprehensive markdown content about "${topic}". Include multiple sections with headings, bullet points, **bold**, and examples.`,
-          },
-          { role: "user", content: `Create detailed content about ${topic}` },
-        ],
-      });
-      content = completion.choices[0]?.message?.content || "Content generation failed.";
-    }
-
-    // Create doc via tool
-    const createRes = await agentTools.createDocument.handler(ctx, { title, content });
-    await addToolCall(
-      ctx, agentState,
-      "createDocument",
-      `Creating document "${title}"`,
-      { title, contentPreview: content.slice(0, 160) },
-      createRes,
-      true,
-    );
-
-    return `✅ Successfully created document "${title}" with comprehensive content.`;
-  } catch (error) {
-    await addToolCall(ctx, agentState, "createDocument", "Failed to create document from message", { message }, { error }, false);
-    return `❌ I encountered an issue creating the document: ${
-      (error as Error)?.message || String(error)
-    }. Please try again or be more specific.`;
-  }
-}
-
-async function workWithDocument(ctx: any, agentState: AgentState, message: string) {
-  const { selectedDocumentId, model } = agentState.context;
-  if (!selectedDocumentId) return "No document is currently selected. Please select a document first.";
-
-  try {
-    // If a fenced code block was provided, prefer it
-    let markdown: string | null = null;
-    const codeBlockMatch = message.match(/```[a-zA-Z]*\n([\s\S]*?)```/m);
-    if (codeBlockMatch) markdown = codeBlockMatch[1].trim();
-
-    // Otherwise ask the model to produce a concise snippet
-    if (!markdown) {
-      const prompt = `Instruction:\n"""${message}"""\n\nReturn ONLY a minimal, self-contained Markdown snippet (no extra prose).`;
-      if (model === "openai") {
-        const OpenAI = await getOpenAI();
-        const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const openaiModel = agentState.context.openaiVariant ?? GPT5_NANO;
-        const completion = await openaiClient.chat.completions.create({
-          model: openaiModel,
-          messages: [
-            { role: "system", content: "You output only raw Markdown snippets." },
-            { role: "user", content: prompt },
-          ],
-        });
-        markdown = completion.choices[0]?.message?.content?.trim() || null;
-      } else {
-        const { getGeminiKey } = await import("./genai");
-        const geminiKey = await getGeminiKey(ctx);
-        if (!geminiKey) throw new Error("Gemini API key not configured");
-        const ai = new GoogleGenAI({ apiKey: geminiKey ?? undefined });
-        const result = await ai.models.generateContent({
-          model: "gemini-2.0-flash",
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        });
-        try {
-          await ctx.runMutation(internal.usage.incrementDailyUsage, { provider: "gemini" });
-        } catch (e) {
-          log.warn("[usage] incrementDailyUsage failed (gemini)", e);
-        }
-        markdown = result.text?.trim() || null;
-      }
-    }
-
-    if (!markdown) markdown = message.trim();
-
-    // Find anchor if user referenced a section
-    const existing = (await ctx.runQuery(api.nodes.by_document, { docId: selectedDocumentId })) as Doc<"nodes">[];
-
-    // Special case: page reorganization intent -> generate a full-page markdown proposal instead of applying immediately
-    const reorgIntent = /(reorganize|restructure|organize|structure|clean\s*up|tidy\s*up)/i.test(message);
-    if (reorgIntent) {
-      try {
-        const fullText = (existing || []).map((n) => n.text || "").filter(Boolean).join("\n\n").slice(0, 20000);
-        let proposed: string | null = null;
-        if (model === "openai") {
-          const OpenAI = await getOpenAI();
-          const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-          const openaiModel = agentState.context.openaiVariant ?? GPT5_NANO;
-          const sys = "You are an expert technical editor. Return ONLY well-structured Markdown for the page, no explanations.";
-          const user = `Reorganize the following page into clear hierarchical sections with headings (use #, ##, ###), paragraphs, lists, quotes (>), and callouts where appropriate. Preserve all important content, deduplicate, and improve clarity.\n\nPAGE CONTENT:\n\n${fullText}`;
-          const completion = await openaiClient.chat.completions.create({ model: openaiModel, messages: [ { role: 'system', content: sys }, { role: 'user', content: user } ], temperature: 0.3 });
-          proposed = completion.choices?.[0]?.message?.content?.trim() || null;
-        }
-        if (!proposed || proposed.length < 10) proposed = "# Outline\n\n- Section 1\n- Section 2";
-
-        // Emit a non-mutating proposal so the UI shows red/green diff with Accept
-        const output = { actions: [ { type: 'updateNode', markdown: proposed } ], message: 'Proposed page reorganization' };
-        await addToolCall(ctx, agentState, 'proposeUpdateNode', 'Proposed page reorganization (review required)', { documentId: selectedDocumentId }, output, true);
-        return `I prepared a reorganized page proposal. Review the red/green diff and click Apply to accept.`;
-      } catch (e) {
-        // Fall through to normal heuristic insertion if proposal generation fails
-      }
-    }
-
-    const msgLower = message.toLowerCase();
-    const anchorMatch = message.match(
-      /(?:after|below|under|inside|within|into|in|following)\s+(?:the\s+)?(?:section|heading)\s+"?(.+?)"?(?:\.|,|$)/i,
-    );
-    let anchorTitle: string | null = anchorMatch?.[1] ?? null;
-    const knownSections = ["analysis", "overview", "conclusion", "introduction", "background", "results", "discussion"];
-    if (!anchorTitle) {
-      const found = knownSections.find((s) => msgLower.includes(s));
-      if (found) anchorTitle = found;
-    }
-
-    const headings = (existing || []).filter((n) => n.type === "heading" && typeof n.text === "string");
-    let anchorNode: Doc<"nodes"> | null = null;
-    if (anchorTitle) {
-      const t = anchorTitle.toLowerCase();
-      anchorNode = headings.find((h: any) => (h.text || "").toLowerCase().includes(t)) || null;
-    }
-
-    const rootSiblings = (existing || []).filter((n) => !n.parentId);
-    const rootMaxOrder = rootSiblings.reduce((m: number, n) => (typeof n.order === "number" && n.order > m ? n.order : m), 0);
-
-    const wantsEnd = /\bat the end\b|\bappend\b|\bat end\b/i.test(message);
-    const wantsUnder = /\b(under|inside|within|in)\b/i.test(message);
-
-    let parentIdToUse: Id<"nodes"> | undefined;
-    let baseOrder = 0;
-
-    if (anchorNode && wantsUnder) {
-      parentIdToUse = anchorNode._id;
-      const children = (existing || []).filter((n) => String(n.parentId) === String(anchorNode._id));
-      const childMax = children.reduce((m: number, n) => (typeof n.order === "number" && n.order > m ? n.order : m), 0);
-      baseOrder = childMax + 1;
-    } else if (wantsEnd || !anchorNode) {
-      parentIdToUse = undefined;
-      baseOrder = rootMaxOrder + 1;
-    } else {
-      parentIdToUse = anchorNode._id;
-      const children = (existing || []).filter((n) => String(n.parentId) === String(anchorNode._id));
-      const childMax = children.reduce((m: number, n) => (typeof n.order === "number" && n.order > m ? n.order : m), 0);
-      baseOrder = childMax + 1;
-    }
-
-    // Parse into multiple blocks if possible
-    let blocks: any[] | null = null;
-    try {
-      const parsed = (parseMarkdownToBlocks as any)?.(markdown);
-      blocks = Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
-    } catch {
-      /* ignore */
-    }
-
-    const createdIds: Id<"nodes">[] = [];
-    const insertOne = async (bType: string, bText: string, ord: number) => {
-      const json = createBlockJson(bType, bText);
-      const text = extractPlainText(bText);
-      const id = await ctx.runMutation(api.nodes.add, {
-        documentId: selectedDocumentId,
-        parentId: parentIdToUse,
-        order: ord,
-        type: bType,
-        json,
-        text,
-      });
-      return id;
-    };
-
-    if (blocks && blocks.length > 1) {
-      let currentOrder = baseOrder;
-      for (const b of blocks) {
-        const bType = b.type || detectNodeType(b.text ?? "");
-        const bText = typeof b.text === "string" ? b.text : String(b.text ?? "");
-        const id = await insertOne(bType, bText, currentOrder++);
-        createdIds.push(id);
-      }
-    } else {
-      const nodeType = detectNodeType(markdown);
-      const id = await insertOne(nodeType, markdown, baseOrder);
-      createdIds.push(id);
-    }
-
-    await addToolCall(
-      ctx, agentState,
-      "editDoc",
-      "Inserted content into the selected document with smart placement",
-      { documentId: selectedDocumentId, createdCount: createdIds.length },
-      { documentId: selectedDocumentId, createdNodeId: createdIds[0] },
-      true,
-    );
-
-    return "✅ Updated the document with the requested content.";
-  } catch (error) {
-    await addToolCall(
-      ctx, agentState,
-      "editDoc",
-      "Failed to update the selected document",
-      { documentId: selectedDocumentId, message },
-      { error: String(error) },
-      false,
-    );
-    return `I encountered an issue working with the document: ${(error as Error)?.message || String(error)}`;
-  }
-}
-
-async function generateKnowledgeResponse(ctx: any, agentState: AgentState, message: string) {
-  const { model } = agentState.context;
-  try {
-    await addThinkingStep(ctx, agentState, "execution", `Generating response using ${model.toUpperCase()}…`);
-
-    if (model === "openai") {
-      const OpenAI = await getOpenAI();
-      const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const openaiModel = agentState.context.openaiVariant ?? GPT5_NANO;
-
-      const messages: ChatMessage[] = [
-        {
-          role: "system",
-          content:
-            agentState.context.uiSummary
-              ? `Interface context (authoritative):\n${agentState.context.uiSummary}\n\nIf asked about the current page, describe only from this context.`
-              : "You are a helpful AI assistant integrated into a document management system.",
-        },
-        { role: "user", content: message },
-      ];
-
-      const response =
-        (await safeChatCompletion(openaiClient, { model: openaiModel, messages, temperature: 0.7 })) ||
-        "I'm here to help, but I couldn't generate a response.";
-      await addToolCall(ctx, agentState, "openai_generation", "Generated response", { message }, { response }, true);
-      return response;
-    } else {
-      const { getGeminiKey } = await import("./genai");
-      const geminiKey = await getGeminiKey(ctx);
-      if (!geminiKey) throw new Error("Gemini API key not configured");
-      const ai = new GoogleGenAI({ apiKey: geminiKey ?? undefined });
-      const result = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
-        contents: [{ role: "user", parts: [{ text: message }] }],
-      });
-      try {
-        await ctx.runMutation(internal.usage.incrementDailyUsage, { provider: "gemini" });
-      } catch (e) {
-        log.warn("[usage] incrementDailyUsage failed (gemini)", e);
-      }
-      const text = result.text || "I'm here to help, but I couldn't generate a response.";
-      await addToolCall(ctx, agentState, "gemini_generation", "Generated response", { message }, { response: text }, true);
-      return text;
-    }
-  } catch (error) {
-    await addToolCall(ctx, agentState, "knowledge_generation", "Failed to generate response", { message }, { error }, false);
-    return `I understand you're asking about: "${message}". I'm experiencing some technical difficulties, but I'm here to help.`;
-  }
-}
-
-async function enhanceResponse(ctx: any, agentState: AgentState, response: string, originalMessage: string) {
-  const { model } = agentState.context;
-  const enhancementPrompt = `The user asked: "${originalMessage}"
-
-I provided this response: "${response}"
-
-Please enhance this response to be more helpful, detailed, and complete while maintaining accuracy. Add context, examples, or additional insights that would be valuable.`;
-
-  try {
-    if (model === "openai") {
-      const OpenAI = await getOpenAI();
-      const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const openaiModel = agentState.context.openaiVariant ?? GPT5_NANO;
-      const messages: ChatMessage[] = [];
-      if (agentState.context.uiSummary) {
-        messages.push({
-          role: "system",
-          content:
-            `Interface context (authoritative):\n${agentState.context.uiSummary}\nUse this context to ensure enhanced answers align with the visible UI.`,
-        });
-      }
-      messages.push({ role: "user", content: enhancementPrompt });
-
-      const enhanced =
-        (await safeChatCompletion(openaiClient, { model: openaiModel, messages, temperature: 0.5 })) || response;
-      return enhanced;
-    }
-    return response;
-  } catch (_e) {
-    return response;
-  }
-}
 
 // =====================================================================================
 // Structured intent + tool plan via GPT-5-nano (JSON with Zod)
 // - Produces an execution plan with sequential groups; steps within a group run in parallel
 // - Keeps scope conservative: small, known step kinds with safe handlers
 // =====================================================================================
-const StepSchema = z.object({
-  id: z.string().optional(),
-  kind: z.enum([
-    "web.search",
-    "rag.search",
-    "doc.create",
-    "doc.readFirstChunk",
-    "doc.edit",
-    "answer",
-  ]),
-  label: z.string().optional(),
-  args: z.record(z.unknown()).optional(),
-});
-const PlanSchema = z.object({
-  intent: z.enum(["edit_doc", "code_change", "answer", "search", "file_ops"]),
-  explain: z.string().optional(),
-  groups: z.array(z.array(StepSchema)), // sequential groups, each group parallel
-  final: z.enum(["answer_only", "apply_edit", "both"]).optional(),
-});
-
-type Plan = z.infer<typeof PlanSchema>;
-
-async function tryGenerateStructuredPlan(ctx: any, agentState: AgentState): Promise<Plan | undefined> {
-  try {
-    const { model, openaiVariant, uiSummary, message } = agentState.context as any;
-    if (model !== "openai") return undefined;
-    const OpenAI = await getOpenAI();
-    const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const openaiModel = openaiVariant ?? GPT5_NANO;
-
-    const sys = [
-      "You are an orchestrator that returns ONLY JSON per the schema.",
-      "Plan small, safe steps. Use parallel groups when independent.",
-      "If editing a document, ensure a prior read step exists and prefer precise anchored edits.",
-      "If the user requests a large-scale reorganization/restructure of a page, include a doc.edit step with args.propose=true so changes are proposed for review (not applied immediately).",
-      uiSummary ? `Interface context (authoritative):\n${uiSummary}` : undefined,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-type StepKind = z.infer<typeof StepSchema>["kind"];
-
-// Strict arg schemas per step kind
-const StepArgSchemas: Record<StepKind, z.ZodTypeAny> = {
-  "web.search": z.object({ query: z.string().min(1).max(500) }).strict(),
-  "rag.search": z.object({ query: z.string().min(1).max(500), namespace: z.string().optional() }).strict(),
-  "doc.create": z.object({ title: z.string().max(200).optional(), topic: z.string().max(200).optional() })
-    .strict()
-    .refine((o) => !!(o.title || o.topic), { message: "title or topic required" }),
-  "doc.readFirstChunk": z.object({ maxChars: z.number().int().min(200).max(5000).optional() }).strict(),
-  "doc.edit": z.object({ strategy: z.enum(["pmOps","heuristic"]).optional(), anchors: z.array(z.string()).optional(), propose: z.boolean().optional() }).strict(),
-  "answer": z.object({ style: z.enum(["concise","detailed"]).optional() }).strict(),
-};
-
-function validateStepArgs(kind: StepKind, args: unknown) {
-  const schema = StepArgSchemas[kind];
-  if (!schema) return {};
-  try { return schema.parse(args ?? {}); } catch (e) { throw new Error(`Invalid args for ${kind}: ${String((e as any).message || e)}`); }
-}
-
-// Variable substitution: ${step:<id>} or ${step:<id>.data.key}
-function substituteTemplates(value: any, outputs: Record<string, { text?: string; data?: any }>): any {
-  const accessPath = (obj: any, path: string[]): any => path.reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
-  if (typeof value === "string") {
-    return value.replace(/\$\{\s*step:([^}.\s]+)(?:\.([^}]+))?\s*\}/g, (_m, id, path) => {
-      const out = outputs[id];
-      if (!out) return "";
-      if (!path) return out.text ?? "";
-      const parts = path.split(".");
-      const root = parts[0] === "data" ? out.data : out as any;
-      const v = accessPath(root, parts[0] === "data" ? parts.slice(1) : parts);
-      return v == null ? "" : String(v);
-    });
-  } else if (Array.isArray(value)) {
-    return value.map((v) => substituteTemplates(v, outputs));
-  } else if (value && typeof value === "object") {
-    const next: any = Array.isArray(value) ? [] : {};
-    for (const [k, v] of Object.entries(value)) next[k] = substituteTemplates(v, outputs);
-    return next;
-  }
-  return value;
-}
 
 
-    // Streaming plan via function calling when runId available
-    const runId = (agentState.context as any).runId as Id<"agentRuns"> | undefined;
-    if (runId) {
-      try {
-        const messages = [
-          { role: "system", content: sys },
-          { role: "user", content: message },
-        ];
-        const planSchemaJson: any = {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            intent: { type: "string", enum: ["edit_doc","code_change","answer","search","file_ops"] },
-            explain: { type: "string" },
-            final: { type: "string", enum: ["answer_only","apply_edit","both"] },
-            groups: {
-              type: "array",
-              items: {
-                type: "array",
-                items: {
-                  type: "object",
-                  additionalProperties: true,
-                  properties: {
-                    id: { type: "string" },
-                    kind: { type: "string", enum: ["web.search","rag.search","doc.create","doc.readFirstChunk","doc.edit","answer"] },
-                    label: { type: "string" },
-                    args: { type: "object" },
-                  },
-                },
-              },
-            },
-          },
-          required: ["intent","groups"],
-        };
-        const final: any = await ctx.runAction((internal as any).aiAgents.openaiStreamWithTools, {
-          runId,
-          messages,
-          tools: [{ type: "function", function: { name: "plan", description: "Return the execution plan JSON.", parameters: planSchemaJson } }],
-          model: openaiModel,
-        });
-        const tc = final?.choices?.[0]?.message?.tool_calls?.[0];
-        const argStr = tc?.function?.arguments || "";
-        if (argStr) {
-          try {
-            return JSON.parse(argStr) as Plan;
-          } catch {}
-        }
-      } catch (e) {
-        log.warn("[plan] streaming failed; falling back to parse()", e);
-      }
-    }
-
-    const completion = await openaiClient.chat.completions.parse({
-      model: openaiModel,
-      messages: [
-        { role: "system", content: sys },
-        { role: "user", content: message },
-      ],
-      response_format: zodResponseFormat(PlanSchema, "plan"),
-      temperature: isGpt5MiniOrNano(openaiModel) ? undefined : 0.2,
-    });
-    const parsed: Plan | undefined = completion.choices?.[0]?.message?.parsed ?? undefined;
-    return parsed;
-  } catch (e) {
-    log.warn("[plan] structured plan generation failed", e);
-    return undefined;
-  }
-}
-
-// === Global step arg validation & templating helpers (used by executor) ===
-type StepKind = z.infer<typeof StepSchema>["kind"];
-const StepArgSchemas: Record<StepKind, z.ZodTypeAny> = {
-  "web.search": z.object({ query: z.string().min(1).max(500) }).strict(),
-  "rag.search": z.object({ query: z.string().min(1).max(500), namespace: z.string().optional() }).strict(),
-  "doc.create": z.object({ title: z.string().max(200).optional(), topic: z.string().max(200).optional() })
-    .strict()
-    .refine((o) => !!(o.title || o.topic), { message: "title or topic required" }),
-  "doc.readFirstChunk": z.object({ maxChars: z.number().int().min(200).max(5000).optional() }).strict(),
-  "doc.edit": z.object({ strategy: z.enum(["pmOps","heuristic"]).optional(), anchors: z.array(z.string()).optional(), propose: z.boolean().optional() }).strict(),
-  "answer": z.object({ style: z.enum(["concise","detailed"]).optional() }).strict(),
-};
-
-function validateStepArgs(kind: StepKind, args: unknown) {
-  const schema = StepArgSchemas[kind];
-  if (!schema) return {};
-  try { return schema.parse(args ?? {}); } catch (e) { throw new Error(`Invalid args for ${kind}: ${String((e as any).message || e)}`); }
-}
-
-// Variable substitution: ${step:<id>} or ${step:<id>.data.key}
-function substituteTemplates(value: any, outputs: Record<string, { text?: string; data?: any }>): any {
-  const accessPath = (obj: any, path: string[]): any => path.reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
-  if (typeof value === "string") {
-    return value.replace(/\$\{\s*step:([^}.\s]+)(?:\.([^}]+))?\s*\}/g, (_m, id, path) => {
-      const out = outputs[id];
-      if (!out) return "";
-      if (!path) return out.text ?? "";
-      const parts = path.split(".");
-      const root = parts[0] === "data" ? out.data : (out as any);
-      const v = accessPath(root, parts[0] === "data" ? parts.slice(1) : parts);
-      return v == null ? "" : String(v);
-    });
-  } else if (Array.isArray(value)) {
-    return value.map((v) => substituteTemplates(v, outputs));
-  } else if (value && typeof value === "object") {
-    const next: any = Array.isArray(value) ? [] : {};
-    for (const [k, v] of Object.entries(value)) next[k] = substituteTemplates(v, outputs);
-    return next;
-  }
-  return value;
-}
 
 
-type StepResult = { text: string; data?: any };
-async function runPlannedStep(ctx: any, agentState: AgentState, step: z.infer<typeof StepSchema>): Promise<StepResult> {
-  const { selectedDocumentId } = agentState.context as any;
-  switch (step.kind) {
-    case "web.search": {
-      const args = validateStepArgs(step.kind, step.args);
-      const q = String(args.query ?? (agentState.context as any).message);
-      await addThinkingStep(ctx, agentState, "tool_selection", `MCP web.search: ${q.slice(0, 80)}`);
-      const text = await performWebSearch(ctx, agentState, q);
-      return { text };
-    }
-    case "rag.search": {
-      const args = validateStepArgs(step.kind, step.args);
-      const q = String(args.query ?? (agentState.context as any).message);
-      await addThinkingStep(ctx, agentState, "tool_selection", `RAG search: ${q.slice(0, 80)}`);
-      try {
-        const res = await rag.search(ctx, { namespace: "default", query: q });
-        const items = Array.isArray((res as any)?.results) ? (res as any).results : [];
-        const text = items.map((r: any) => {
-          const t = r?.content?.[0]?.text ?? r?.text ?? "";
-          return `• ${String(t).slice(0, 200)}`;
-        }).join("\n");
-        return { text, data: res };
-      } catch (e) {
-        return { text: `RAG search failed: ${String(e)}` };
-      }
-    }
-    case "doc.create": {
-      const args = validateStepArgs(step.kind, step.args) as any;
-      const ask = args.title || args.topic ? `${args.title ?? args.topic}` : (agentState.context as any).message;
-      const text = await createDocumentFromMessage(ctx, agentState, ask);
-      return { text };
-    }
-    case "doc.readFirstChunk": {
-      const args = validateStepArgs(step.kind, step.args) as any;
-      if (!selectedDocumentId) return { text: "No selectedDocumentId for readFirstChunk" };
-      // Announce selected doc in step context
-      try {
-        const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-        if (runId) {
-          await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-            runId,
-            kind: "context.docs",
-            data: { ids: [selectedDocumentId] },
-          });
-        }
-      } catch {}
-
-      const nodes = await ctx.runQuery(api.nodes.by_document, { docId: selectedDocumentId });
-      const full = (nodes || []).map((n: any) => n.text || "").filter(Boolean).join("\n\n");
-      const maxChars = Number(args.maxChars ?? 1200);
-      const chunk = full.slice(0, maxChars);
-      const data = { documentId: selectedDocumentId, chunk, cursor: chunk.length, isEnd: chunk.length >= full.length };
-      await addToolCall(
-        ctx, agentState,
-        "nodebench_read_first_chunk",
-        "Read initial document chunk",
-        { documentId: selectedDocumentId, maxChars },
-        data,
-        true,
-      );
-      return { text: chunk || "", data };
-    }
-    case "doc.edit": {
-      const args = validateStepArgs(step.kind, step.args) as any;
-
-      // Proposal mode driven by structured plan (args.propose === true)
-      if (args?.propose === true) {
-        try {
-          if (!selectedDocumentId) return { text: "No selectedDocumentId for proposal" };
-          const nodes = await ctx.runQuery(api.nodes.by_document, { docId: selectedDocumentId });
-          const full = (nodes || []).map((n: any) => n.text || "").filter(Boolean).join("\n\n").slice(0, 20000);
-          const OpenAI = await getOpenAI();
-          const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-          const openaiModel = (agentState.context as any).openaiVariant ?? GPT5_NANO;
-          const sysMsg = "You are an expert technical editor. Return ONLY well-structured Markdown for the page; no explanations.";
-          const userMsg = `Reorganize the following page into clear hierarchical sections with headings (#, ##, ###), paragraphs, lists, quotes (>), and callouts. Preserve all important content, deduplicate, and improve clarity.\n\nPAGE CONTENT:\n\n${full}`;
-          const completion = await openaiClient.chat.completions.create({ model: openaiModel, messages: [ { role: 'system', content: sysMsg }, { role: 'user', content: userMsg } ], temperature: 0.3 });
-          const proposed = completion.choices?.[0]?.message?.content?.trim() || "# Outline\n\n- Section 1\n- Section 2";
-          const output = { actions: [{ type: 'updateNode', markdown: proposed }], message: 'Proposed page reorganization' };
-          await addToolCall(ctx, agentState, 'proposeUpdateNode', 'Proposed page reorganization (review required)', { documentId: selectedDocumentId }, output, true);
-          return { text: 'Prepared a reorganization proposal (review before applying).', data: { proposed: true } };
-        } catch (e) {
-          return { text: `Failed to generate proposal: ${String(e)}` };
-        }
-      }
-
-      // Try structured pmOperations path first
-      const pmOps = await tryGeneratePmOpsWithStructuredOutputs(ctx, agentState);
-      if (pmOps && pmOps.length) {
-        try {
-          await addThinkingStep(ctx, agentState, "execution", `Applying ${pmOps.length} pmOperations…`);
-          const text = await workWithDocument(ctx, agentState, (agentState.context as any).message);
-          return { text, data: { pmOpsApplied: pmOps.length, strategy: args.strategy ?? "pmOps" } };
-        } catch (e) {
-          return { text: `Failed to apply pmOperations: ${String(e)}` };
-        }
-      }
-
-      // Fallback heuristic edit
-      const text = await workWithDocument(ctx, agentState, (agentState.context as any).message);
-      return { text, data: { strategy: args.strategy ?? "heuristic" } };
-    }
-    case "answer": {
-      const args = validateStepArgs(step.kind, step.args) as any;
-      const text = await generateKnowledgeResponse(ctx, agentState, (agentState.context as any).message);
-      return { text, data: { style: args.style ?? "concise" } };
-    }
-    default:
-      return { text: "Unsupported step kind" };
-  }
-}
-
-async function executeStructuredPlan(ctx: any, agentState: AgentState, plan: Plan): Promise<string> {
-  let aggregate = "";
-  const outputs: Record<string, StepResult> = {};
-  for (let gi = 0; gi < plan.groups.length; gi++) {
-    const group = plan.groups[gi];
-    // Resolve templates in args before executing, using outputs from prior groups
-    const prepared = group.map((step, si) => {
-      const id = step.id || `g${gi}_s${si}`;
-      const resolvedArgs = substituteTemplates(step.args ?? {}, outputs);
-      return { ...step, id, args: resolvedArgs } as typeof step & { id: string };
-    });
 
 
-    // Stream group start
-    try {
-      const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-      if (runId) {
-        await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-          runId,
-          kind: "group.start",
-          message: `Group ${gi + 1} of ${plan.groups.length}`,
-          data: { groupIndex: gi, steps: prepared.length },
-        });
-      }
-    } catch {}
 
-    const results = await Promise.all(
-      prepared.map(async (step, si) => {
-        // step.start
-        try {
-          const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-          if (runId) {
-            await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-              runId,
-              kind: "step.start",
-              message: `${step.kind} [${step.id}]`,
-              data: { args: step.args },
-            });
-          }
-        } catch {}
-
-        try {
-          const res = await runPlannedStep(ctx, agentState, step);
-          outputs[step.id] = res;
-          await addThinkingStep(ctx, agentState, "evaluation", `${step.kind}[${step.id}]: ${String(res.text).slice(0, 140)}`);
-
-	          // step.done (success)
-	          try {
-	            const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-	            if (runId) {
-	              await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-	                runId,
-	                kind: "step.done",
-	                message: `${step.kind} [${step.id}] ok`,
-	                data: { result: typeof res.text === "string" ? res.text.slice(0, 400) : res },
-	              });
-	            }
-	          } catch {}
-
-          return res.text;
-        } catch (e) {
-          const msg = `${step.kind}[${step.id}] failed: ${String(e)}`;
-          await addThinkingStep(ctx, agentState, "evaluation", msg);
-          outputs[step.id] = { text: msg };
-
-	          // step.done (error)
-	          try {
-	            const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-	            if (runId) {
-	              await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-	                runId,
-	                kind: "step.done",
-	                message: `${step.kind} [${step.id}] error`,
-	                data: { error: String(e) },
-	              });
-	            }
-	          } catch {}
-
-          return msg;
-        }
-      }),
-    );
-    aggregate += (aggregate ? "\n\n" : "") + results.filter(Boolean).join("\n\n");
-  }
-  return aggregate;
-}
-
-
-// Attempt to produce structured pmOperations using OpenAI structured outputs (Zod)
-async function tryGeneratePmOpsWithStructuredOutputs(ctx: any, agentState: AgentState) {
-  try {
-    const { model, openaiVariant, uiSummary, message } = agentState.context as any;
-    if (model !== "openai") return undefined;
-
-    const OpenAI = await getOpenAI();
-    const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const openaiModel = openaiVariant ?? GPT5_NANO;
-
-    // Minimal op schema. We keep content as unknown JSON; the client-side editor validates/sanitizes.
-    const InsertOp = z.object({ type: z.literal("insert"), at: z.number().int().nonnegative(), content: z.array(z.unknown()) });
-    const ReplaceOp = z.object({ type: z.literal("replace"), from: z.number().int().nonnegative(), to: z.number().int().nonnegative(), content: z.array(z.unknown()) });
-    const DeleteOp = z.object({ type: z.literal("delete"), from: z.number().int().nonnegative(), to: z.number().int().nonnegative() });
-    const SetAttrs = z.object({ type: z.literal("setAttrs"), pos: z.number().int().nonnegative(), attrs: z.record(z.unknown()) });
-    const PmOps = z.array(z.union([InsertOp, ReplaceOp, DeleteOp, SetAttrs]));
-
-    const DocEditSchema = z.object({ pmOperations: PmOps.optional(), text: z.string().optional() });
-    // Streaming pmOperations via function calling when runId available
-    // Build a local system prompt for streaming (avoid re-declare conflicts later)
-    const sysPm = uiSummary
-      ? `You are a document editing assistant. Use the provided interface context to understand the ProseMirror/Tiptap document and selection. When the user asks to edit the document, return pmOperations using exact positions present in context (do not guess). If no edit is requested, leave pmOperations empty and include text.\n\nInterface context (authoritative):\n${uiSummary}`
-      : `You are a document editing assistant. When the user asks to edit the document, return pmOperations using exact positions present in context (do not guess). If no edit is requested, leave pmOperations empty and include text.`;
-
-    try {
-      const runId = (agentState.context as any).runId as Id<"agentRuns"> | undefined;
-      if (runId) {
-        const pmSchemaJson: any = {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            pmOperations: {
-              type: "array",
-              items: {
-                anyOf: [
-                  { type: "object", properties: { type: { const: "insert" }, at: { type: "integer", minimum: 0 }, content: { type: "array" } }, required: ["type","at","content"], additionalProperties: true },
-                  { type: "object", properties: { type: { const: "replace" }, from: { type: "integer", minimum: 0 }, to: { type: "integer", minimum: 0 }, content: { type: "array" } }, required: ["type","from","to","content"], additionalProperties: true },
-                  { type: "object", properties: { type: { const: "delete" }, from: { type: "integer", minimum: 0 }, to: { type: "integer", minimum: 0 } }, required: ["type","from","to"], additionalProperties: true },
-                  { type: "object", properties: { type: { const: "setAttrs" }, pos: { type: "integer", minimum: 0 }, attrs: { type: "object" } }, required: ["type","pos","attrs"], additionalProperties: true },
-                ],
-              },
-            },
-            text: { type: "string" },
-          },
-        };
-        const final: any = await ctx.runAction((internal as any).aiAgents.openaiStreamWithTools, {
-          runId,
-          messages: [
-            { role: "system", content: sysPm },
-            { role: "user", content: message },
-          ],
-          tools: [{ type: "function", function: { name: "propose_pm_ops", description: "Return document pmOperations and/or text.", parameters: pmSchemaJson } }],
-          model: openaiModel,
-        });
-        const tc = final?.choices?.[0]?.message?.tool_calls?.[0];
-        const argStr = tc?.function?.arguments || "";
-        if (argStr) {
-          try {
-            const parsed = JSON.parse(argStr);
-            const pmOps = Array.isArray(parsed?.pmOperations) ? parsed.pmOperations : undefined;
-            if (pmOps) return pmOps;
-          } catch {}
-        }
-      }
-    } catch (e) {
-      log.warn("[pmOps] streaming failed; falling back to parse()", e);
-    }
-
-
-    const sys = uiSummary
-      ? `You are a document editing assistant. Use the provided interface context to understand the ProseMirror/Tiptap document and selection. When the user asks to edit the document, return pmOperations using exact positions present in context (do not guess). If no edit is requested, leave pmOperations empty and include text.
-
-Interface context (authoritative):\n${uiSummary}`
-      : `You are a document editing assistant. When the user asks to edit the document, return pmOperations using exact positions present in context (do not guess). If no edit is requested, leave pmOperations empty and include text.`;
-
-    const messages: ChatMessage[] = [
-      { role: "system", content: sys },
-      { role: "user", content: message },
-    ];
-
-    // 1) Try GPT-5-nano structured plan first (intent + parallel tool groups)
-    try {
-      const plan = await tryGenerateStructuredPlan(ctx, agentState);
-      if (plan && plan.groups && plan.groups.length > 0) {
-        await addThinkingStep(ctx, agentState, "planning", `Structured plan: intent=${plan.intent}, groups=${plan.groups.length}`);
-        if (plan.explain) {
-          await addThinkingStep(ctx, agentState, "planning", `Plan explain: ${plan.explain.slice(0, 300)}`);
-        }
-        try {
-          const runId = agentState.context.runId as Id<"agentRuns"> | undefined;
-          if (runId) {
-            await ctx.runMutation((internal as any).aiAgents.updateAgentRun, {
-              runId,
-              fields: { planExplain: plan.explain, plan },
-            });
-            await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
-              runId,
-              kind: "plan",
-              message: (plan.explain || `Plan with ${plan.groups.length} groups`).slice(0, 2000),
-              data: { intent: plan.intent, groups: plan.groups.length },
-            });
-          }
-        } catch {}
-
-        const aggregate = await executeStructuredPlan(ctx, agentState, plan);
-        const response: AgentResponse = {
-          finalResponse: aggregate || "Done.",
-          thinkingSteps: agentState.thinkingSteps,
-          toolCalls: agentState.toolCalls,
-          adaptations: agentState.adaptations,
-          candidateDocs: [],
-          planExplain: plan.explain,
-          plan,
-        };
-        return JSON.stringify(response);
-      }
-    } catch (e) {
-      await addAdaptation(ctx, agentState, "Plan generation failed", "Fallback", "Use heuristic pipeline");
-    }
-
-    const completion = await openaiClient.chat.completions.parse({
-      model: openaiModel,
-      messages,
-      response_format: zodResponseFormat(DocEditSchema, "doc_edit"),
-    });
-
-    const parsed: any = completion.choices?.[0]?.message?.parsed ?? null;
-    const pmOps = Array.isArray(parsed?.pmOperations) ? parsed.pmOperations : undefined;
-    return pmOps;
-  } catch (e) {
-    log.warn("[pmOps] structured output generation failed", e);
-    return undefined;
-  }
-}
 
 
 async function executeAutonomousLoop(ctx: any, agentState: AgentState) {
   const { message, mcpServerId, selectedDocumentId } = agentState.context;
 
-  const needsWebSearch = /search|find|research|web|https?:\/\//i.test(message) && mcpServerId;
+  // Prefer internal document search for intents like "find documents about ..."
+  const internalFindMatch = message.match(/\bfind\s+(?:my\s+)?docs?(?:uments)?\s+(?:about|on|for)\s+(.+)/i);
+  // Only treat as web search if they explicitly mention web/internet or include a URL
+  const needsWebSearch = /(web|internet|online|https?:\/\/)/i.test(message) && !!mcpServerId && !internalFindMatch;
   const needsDocumentCreation = /create.*document|new.*document|document.*about/i.test(message);
   const needsDocumentWork =
     /(\bedit\b|\bupdate\b|\bmodify\b|\badd\b|\bappend\b|\binsert\b|\bplace\b|\bput\b|add to|work with|\bsection\b)/i.test(
@@ -2691,7 +1389,43 @@ async function executeAutonomousLoop(ctx: any, agentState: AgentState) {
 
   let response = "";
   try {
-    if (needsWebSearch) {
+    await addThinkingStep(ctx, agentState, "analysis", "Classifying intent (gpt-5-mini)…");
+    let intent: any = null;
+    try {
+      intent = await ctx.runAction((internal as any).agents.lib.intent.classifyIntent, {
+        message,
+        uiSummary: agentState.context.uiSummary,
+        hasSelectedDoc: !!selectedDocumentId,
+      });
+    } catch {}
+
+    if (intent && intent.kind === "doc.search.internal") {
+      const topic = String((intent as any)?.topic || internalFindMatch?.[1] || "").trim() || message;
+      await addThinkingStep(ctx, agentState, "execution", `Searching your documents for: ${topic}`);
+      try {
+        const results: any[] = await ctx.runQuery(api.documents.getSearch, { query: topic });
+        const top = (results || []).slice(0, 10);
+        if (top.length === 0) {
+          response = `I couldn't find any documents matching "${topic}" in your workspace.`;
+        } else {
+          if (agentState.context.runId) {
+            try {
+              await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
+                runId: agentState.context.runId,
+                kind: "context.docs",
+                message: "Candidate documents from internal search",
+                data: { ids: top.map((d: any) => d._id), query: topic },
+              });
+            } catch {}
+          }
+          const list = top.map((d: any, i: number) => `${i + 1}. ${d.title || "Untitled"}`).join("\n");
+          response = `Found ${top.length} document(s) for "${topic}":\n${list}\n\nYou can say: "open <number>" or "summarize <number>".`;
+        }
+      } catch (e) {
+        await addAdaptation(ctx, agentState, "Internal search error", "Fallback", "Provide guidance without crashing");
+        response = `Search had an issue. Try refining your phrase like: "find documents about <topic>".`;
+      }
+    } else if ((intent && intent.kind === "web.search") || needsWebSearch) {
       await addThinkingStep(ctx, agentState, "execution", "Initiating web search via MCP…");
       const searchResult = await performWebSearch(ctx, agentState, message);
       response = searchResult;
@@ -2783,11 +1517,22 @@ export const chatWithAgent = action({
       userMessage = ctxMatch[2].trim();
     }
 
+    // Fallback: derive selectedDocumentId from UI Summary when not explicitly provided
+    let selectedDocFromUi: Id<"documents"> | undefined = undefined;
+    try {
+      if (!selectedDocumentId && parsedUiSummary) {
+        const m = /^Focused:\s*doc=([^\s]+)/m.exec(parsedUiSummary);
+        if (m && m[1]) selectedDocFromUi = m[1] as any;
+      }
+    } catch {}
+
+    const effectiveSelectedDocId = (selectedDocumentId as Id<"documents"> | undefined) ?? selectedDocFromUi;
+
     const userId = await ensureUserId(ctx);
     const actualThreadId =
       threadId ||
       (await ctx.runAction(api.aiAgents.getOrCreateThread, {
-        documentId: selectedDocumentId,
+        documentId: effectiveSelectedDocId,
       }));
 
     // Agent State
@@ -2797,7 +1542,7 @@ export const chatWithAgent = action({
       adaptations: [],
       context: {
         userId,
-        selectedDocumentId,
+        selectedDocumentId: effectiveSelectedDocId,
         mcpServerId,
         model,
         message: userMessage,
@@ -2811,7 +1556,7 @@ export const chatWithAgent = action({
 	    // Start streaming run
 	    const runId = await ctx.runMutation((internal as any).aiAgents.startAgentRun, {
 	      threadId: actualThreadId,
-	      documentId: selectedDocumentId,
+	      documentId: effectiveSelectedDocId,
 	      mcpServerId,
 	      model,
 	      openaiVariant,
@@ -2834,11 +1579,11 @@ export const chatWithAgent = action({
 
               // Emit initial doc context if present
               try {
-                if (selectedDocumentId) {
+                if (effectiveSelectedDocId) {
                   await ctx.runMutation((internal as any).aiAgents.appendRunEvent, {
                     runId,
                     kind: "context.docs",
-                    data: { ids: [selectedDocumentId] },
+                    data: { ids: [effectiveSelectedDocId] },
                   });
                 }
               } catch {}
@@ -3086,7 +1831,7 @@ export const executeToolWithNaturalLanguage = action({
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    const { serverId, toolName, naturalLanguageQuery, model = "openai", isLearning = false } = args;
+    const { serverId, toolName, naturalLanguageQuery, model = "openai", isLearning: _isLearning = false } = args;
     await ensureUserId(ctx);
 
     try {
@@ -3168,7 +1913,7 @@ Return ONLY valid JSON that matches the tool's schema.`;
         model,
       });
 
-      const executionTime = Date.now() - startTime;
+      const _executionTime = Date.now() - startTime;
       const isSuccess = result && !result.error;
 
       // Update aggregate tool usage counters
@@ -3558,8 +2303,100 @@ export const listAgentRunEvents = query({
   handler: async (ctx, { runId }) => {
     return await ctx.db
       .query("agentRunEvents")
-      .withIndex("by_run", q => q.eq("runId", runId))
+      .withIndex("by_run", (q) => q.eq("runId", runId))
       .collect();
+  },
+});
+
+export const pickBestDocWithLLM = internalAction({
+  args: {
+    ask: v.string(),
+    candidates: v.array(v.object({ id: v.id("documents"), title: v.string() })),
+    model: v.optional(v.string()),
+    uiSummary: v.optional(v.string()),
+    threadId: v.optional(v.string()),
+  },
+  returns: v.object({ id: v.id("documents"), reason: v.optional(v.string()) }),
+  handler: async (ctx, { ask, candidates, model, uiSummary, threadId }) => {
+    const { default: OpenAI } = await import("openai");
+    const client = new OpenAI();
+
+    // Try to enrich uiSummary from latest run if not provided
+    let ui = uiSummary;
+    try {
+      if (!ui && threadId) {
+        const run: any = await ctx.runQuery((api as any).aiAgents.latestAgentRunForThread, { threadId });
+        const runId = run?._id;
+        if (runId) {
+          const events: any[] = await ctx.runQuery((api as any).aiAgents.listAgentRunEvents, { runId });
+          const ctxEvents = events.filter((e) => e.kind === "context");
+          if (ctxEvents.length > 0) ui = String(ctxEvents[ctxEvents.length - 1]?.message ?? "");
+        }
+      }
+    } catch {}
+
+    // Recent docs context for additional routing hints
+    let recent: Array<{ _id: string; title: string }> = [];
+    try {
+      const docs: any[] = await ctx.runQuery((api as any).documents.getRecentForMentions, { limit: 8 });
+      recent = docs.map((d) => ({ _id: String(d._id), title: String(d.title || "Untitled") }));
+    } catch {}
+
+    const enumIds = candidates.map((c) => String(c.id));
+    const tools: any[] = [
+      {
+        type: "function",
+        function: {
+          name: "select_document",
+          description: "Select the best candidate document for the ask.",
+          parameters: {
+            type: "object",
+            properties: {
+              id: { type: "string", enum: enumIds },
+              reason: { type: "string" },
+            },
+            required: ["id"],
+            additionalProperties: false,
+          },
+        },
+      },
+    ];
+
+    const parts: string[] = [];
+    parts.push(`Ask: ${ask}`);
+    if (ui) parts.push(`\nUI Summary:\n${String(ui).slice(0, 1200)}`);
+    if (recent.length > 0) parts.push(`\nRecent Docs:\n${recent.map((r) => `- ${r.title} (${r._id})`).join("\n")}`);
+    parts.push(`\nCandidates:\n${candidates.map((c) => `- ${c.title} (${c.id})`).join("\n")}`);
+
+    const messages: any[] = [
+      {
+        role: "system",
+        content:
+          "You are a routing assistant. Given a user ask, optional UI state, recent docs, and candidate documents, choose the single best matching candidate using the provided function. Only choose from the provided ids.",
+      },
+      { role: "user", content: parts.join("\n") },
+    ];
+
+    const res: any = await client.chat.completions.create({
+      model: model || GPT5_MINI,
+      messages,
+      tools,
+      tool_choice: { type: "function", function: { name: "select_document" } },
+    });
+
+    const tc = res?.choices?.[0]?.message?.tool_calls?.[0];
+    if (tc?.function?.arguments) {
+      try {
+        const parsed = JSON.parse(tc.function.arguments);
+        const id = parsed?.id;
+        const reason = parsed?.reason;
+        if (id && enumIds.includes(String(id))) {
+          return { id, reason } as any;
+        }
+      } catch {}
+    }
+    // Fallback to first candidate
+    return { id: candidates[0].id } as any;
   },
 });
 
@@ -3575,10 +2412,11 @@ export const openaiStreamWithTools = internalAction({
   handler: async (ctx, { runId, messages, tools, model }) => {
     const { default: OpenAI } = await import("openai");
     const client = new OpenAI();
+    const toolsToUse = (Array.isArray(tools) && tools.length > 0) ? tools : (agentToolsOpenAI as any);
     const stream: any = await (client as any).chat.completions.stream({
       model,
       messages,
-      tools,
+      tools: toolsToUse,
       stream: true,
     });
 
@@ -3753,7 +2591,7 @@ export const indexDocument = internalAction(async (ctx, { documentId, content }:
     }
   }
 
-  await rag.add(ctx, {
+  await ragAdd(ctx, {
     namespace: doc.createdBy,
     key: documentId,
     text: textContent,
@@ -3772,7 +2610,7 @@ export const indexAllDocuments = internalAction({
   handler: async (ctx) => {
     const docs = await ctx.runQuery(api.documents.getSidebar);
     for (const doc of docs) {
-      await rag.add(ctx, {
+      await ragAdd(ctx, {
         namespace: doc._id,
         text: doc.title + "\n\n" + (doc.content || ""),
       });
