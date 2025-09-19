@@ -46,6 +46,13 @@ AI Agent Timeline View (wrapper page + minimal timeline view):
 
 ![AI Agent Timeline View (091925)](./updated_screenshot/091925_preview_ai_agent_timeline_view.png)
 
+Mini calendar → Full Calendar Hub (parity):
+
+![Mini calendar → Full Calendar Hub (091925)](./updated_screenshot/091925_mini_calendar_full_calendar_hub.png)
+
+![Mini calendar → Full Calendar Hub (091925) — 2](./updated_screenshot/091925_mini_calendar_full_calendar_hub_2.png)
+
+
 ### Screenshots (091825)
 
 Updated homepage doc/filetype cards:
