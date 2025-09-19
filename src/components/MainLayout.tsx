@@ -7,6 +7,8 @@ import { AIChatPanel } from "./AIChatPanel";
 import { PublicDocuments } from "@/components/views/PublicDocuments";
 import { TabManager } from "./TabManager";
 import { DocumentsHomeHub } from "./DocumentsHomeHub";
+import { CalendarHomeHub } from "./CalendarHomeHub";
+
 import { HelpCircle, Sun, Moon, MessageSquare, Settings as SettingsIcon, Link as LinkIcon, Send } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
@@ -19,7 +21,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome }: MainLayoutProps) {
   const [showAIChat, setShowAIChat] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'public'>('documents');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'public'>('documents');
   const [smsMessage, setSmsMessage] = useState<{from: string, message: string} | null>(null);
   const [isGridMode, setIsGridMode] = useState(false);
   // File selection state for AI chat context
@@ -127,7 +129,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       window.removeEventListener('app:help', onHelp as EventListener);
     };
   }, []);
-  
+
   // Resizable panel state
   const [sidebarWidth, setSidebarWidth] = useState(256); // pixels
   const [mainPanelWidth, setMainPanelWidth] = useState(65); // percentage
@@ -162,7 +164,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     setSelectedTaskId(null);
     setSelectedTaskSource(null);
   };
-  
+
   const user = useQuery(api.auth.loggedInUser);
   // Preferences and API key status for reminder UI
   const userPreferences = useQuery(api.userPreferences.getUserPreferences);
@@ -211,8 +213,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   const handleDocumentSelect = (documentId: Id<"documents"> | null) => {
     onDocumentSelect(documentId);
-    // Don't force view switching - let users stay on their current tab
-    // The view will only change if explicitly clicked by the user
+    // Ensure switching back to Documents view when a document is chosen from anywhere
+    if (documentId) {
+      setCurrentView('documents');
+      try { window.dispatchEvent(new CustomEvent('navigate:documents')); } catch {}
+    }
   };
 
   const handleSmsReceived = (from: string, message: string) => {
@@ -228,21 +233,21 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     startXRef.current = e.clientX;
     startMainWidthRef.current = mainPanelWidth;
     startAiWidthRef.current = aiPanelWidth;
-    
+
     document.addEventListener('mousemove', resize);
     document.addEventListener('mouseup', stopResizing);
   };
 
   const resize = (e: MouseEvent) => {
     if (!resizingRef.current) return;
-    
+
     const containerWidth = window.innerWidth - sidebarWidth - 8; // Subtract sidebar width and resize handles
     const diff = e.clientX - startXRef.current;
     const diffPercentage = (diff / containerWidth) * 100;
-    
+
     const newMainWidth = Math.min(Math.max(startMainWidthRef.current + diffPercentage, 30), 85);
     const newAiWidth = Math.min(Math.max(startAiWidthRef.current - diffPercentage, 15), 70);
-    
+
     // Ensure the percentages add up to 100
     const total = newMainWidth + newAiWidth;
     if (total !== 100) {
@@ -267,17 +272,17 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     sidebarResizingRef.current = true;
     startXRef.current = e.clientX;
     startSidebarWidthRef.current = sidebarWidth;
-    
+
     document.addEventListener('mousemove', resizeSidebar);
     document.addEventListener('mouseup', stopSidebarResizing);
   };
 
   const resizeSidebar = (e: MouseEvent) => {
     if (!sidebarResizingRef.current) return;
-    
+
     const diff = e.clientX - startXRef.current;
     const newSidebarWidth = Math.min(Math.max(startSidebarWidthRef.current + diff, 200), 500);
-    
+
     setSidebarWidth(newSidebarWidth);
   };
 
@@ -398,14 +403,25 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     };
   }, [onDocumentSelect, setIsGridMode, setCurrentView]);
 
+  useEffect(() => {
+    const toCalendar = () => setCurrentView('calendar');
+    const toDocuments = () => setCurrentView('documents');
+    window.addEventListener('navigate:calendar', toCalendar as unknown as EventListener);
+    window.addEventListener('navigate:documents', toDocuments as unknown as EventListener);
+    return () => {
+      window.removeEventListener('navigate:calendar', toCalendar as unknown as EventListener);
+      window.removeEventListener('navigate:documents', toDocuments as unknown as EventListener);
+    };
+  }, []);
+
   return (
     <div className="h-screen flex bg-[var(--bg-secondary)] transition-colors duration-200">
       {/* Sidebar - Resizable Width */}
       <div className="flex-shrink-0 h-full" style={{ width: `${sidebarWidth}px` }}>
-        <Sidebar 
+        <Sidebar
           onDocumentSelect={handleDocumentSelect}
           selectedDocumentId={selectedDocumentId}
-          currentView={currentView}
+          currentView={currentView === 'calendar' ? 'documents' : currentView}
           onViewChange={(view) => setCurrentView(view)}
           showAIChat={showAIChat}
           onToggleAIChat={() => setShowAIChat(!showAIChat)}
@@ -416,9 +432,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           onOpenSettings={openSettings}
         />
       </div>
-      
+
       {/* Sidebar Resize Handle */}
-      <div 
+      <div
         className="w-2 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] cursor-col-resize transition-colors duration-200 flex-shrink-0"
         onMouseDown={startSidebarResizing}
       />
@@ -426,8 +442,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Remaining Space Container */}
       <div className="flex-1 flex overflow-hidden">
         {/* Main Content Area */}
-        <div 
-          className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out" 
+        <div
+          className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
           style={{ width: showAIChat ? `${mainPanelWidth}%` : '100%' }}
         >
           {/* Top Bar */}
@@ -545,7 +561,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   {isDarkMode ? "Light" : "Dark"}
                 </span>
               </button>
-              
+
               {/* Welcome/Help Button */}
               {onShowWelcome && (
                 <button
@@ -557,9 +573,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   <span className="hidden sm:inline">Help</span>
                 </button>
               )}
-              
 
-              
+
+
               {/* User Info */}
               {user && (
                 <div className="flex items-center gap-3">
@@ -626,6 +642,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           <div className="flex-1 overflow-hidden" data-main-content>
             {currentView === 'public' ? (
               <PublicDocuments onDocumentSelect={handleDocumentSelect} />
+            ) : currentView === 'calendar' ? (
+              <CalendarHomeHub
+                onDocumentSelect={handleDocumentSelect}
+                onGridModeToggle={() => setIsGridMode((v) => !v)}
+              />
             ) : (
               <div className="h-full flex">
                 <div className="flex-1 overflow-hidden">
@@ -651,7 +672,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             )}
           </div>
 
- 
+
 
           {/* Floating Context Pills */}
           {/* ContextPills now rendered inline in AIChatPanel's Context section */}

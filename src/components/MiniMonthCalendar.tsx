@@ -507,15 +507,15 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
         <CalendarDays className="h-10 w-10 rotate-12" />
       </span>
       {/* Clock + Timezone selector */}
-      <div className="px-3 py-2 border-b border-[var(--border-color)] flex items-center justify-between">
-        <div className="font-mono text-sm text-[var(--text-primary)]" aria-live="polite" aria-label="Current time">
+      <div className="px-3 py-1.5 border-b border-[var(--border-color)] flex items-center justify-between">
+        <div className="font-mono text-[11px] text-[var(--text-primary)]" aria-live="polite" aria-label="Current time">
           {clockText}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <label className="text-[11px] text-[var(--text-muted)]" htmlFor="tz-select">Time zone</label>
           <select
             id="tz-select"
-            className="text-[11px] bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-md px-1.5 py-1"
+            className="h-6 text-[10px] leading-[1rem] bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-md px-1 py-0"
             value={effectiveTz || browserTz || "UTC"}
             onChange={(e) => { void onChangeTimeZone(e.target.value); }}
           >

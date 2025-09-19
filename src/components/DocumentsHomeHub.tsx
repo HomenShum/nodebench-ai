@@ -53,6 +53,16 @@ import { docToPills, taskToPills } from "../lib/metaPillMappers";
 import { shapeTaskForPills, reorderTaskPillsForTightRows } from "../lib/tasks";
 import { CalendarView } from "@/components/views/CalendarView";
 import { MiniMonthCalendar } from "./MiniMonthCalendar";
+import { usePlannerState } from "@/hooks/usePlannerState";
+import { SidebarMiniCalendar } from "@/components/shared/SidebarMiniCalendar";
+import { SidebarUpcoming } from "@/components/shared/SidebarUpcoming";
+import { TopDividerBar } from "@/components/shared/TopDividerBar";
+import { PageHeroHeader } from "@/components/shared/PageHeroHeader";
+import { PresetChip } from "@/components/shared/PresetChip";
+
+
+
+
 // Migrated list DnD to dnd-kit; removed @hello-pangea/dnd
 import MiniEditorPopover from "./MiniEditorPopover.tsx";
 import AgendaEditorPopover from "./agenda/AgendaEditorPopover";
@@ -1361,9 +1371,9 @@ export function DocumentsHomeHub({
     api.tasks.listTasksByStatus,
     loggedInUser ? { status: "blocked" } : "skip",
   ) ?? [];
-  // Tasks & events for list/calendar views will be loaded via the canonical aggregator below.
-  // Focused date (UTC ms of local day start) for CalendarView navigation
-  const [focusedDateMs, setFocusedDateMs] = useState<number | null>(null);
+  // Shared planner state: consume centralized data & handlers
+  const { focusedDateMs, setFocusedDateMs, handleViewWeek, handleViewDay, upcoming } = usePlannerState();
+
   // Week selector popovers (split for Upcoming and Agenda)
   const [showUpcomingWeekPicker, setShowUpcomingWeekPicker] = useState<boolean>(false);
   const [showAgendaWeekPicker, setShowAgendaWeekPicker] = useState<boolean>(false);
@@ -1386,52 +1396,14 @@ export function DocumentsHomeHub({
   const _mondayLocal = new Date(anchorLocal.getTime() - _diffToMonday * 24 * 60 * 60 * 1000);
   const weekStartUtc = _mondayLocal.getTime() - offsetMs;
   const weekEndUtc = weekStartUtc + 7 * 24 * 60 * 60 * 1000 - 1;
-  // Canonical agenda for Today and This Week using the aggregator
-  const todayHolidayRange = useMemo(() => {
-    // Use the effective agenda day for holiday range in agenda section
-    const d = new Date(agendaStartUtc + offsetMs);
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-    return {
-      startUtc: Date.parse(`${key}T00:00:00Z`),
-      endUtc: Date.parse(`${key}T23:59:59Z`),
-    };
-  }, [agendaStartUtc, offsetMs]);
-  const weekHolidayRange = useMemo(() => {
-    return { startUtc: weekStartUtc + offsetMs, endUtc: weekEndUtc + offsetMs };
-  }, [weekStartUtc, weekEndUtc, offsetMs]);
-
-  const todayAgendaRaw = useQuery(
-    (api as any).calendar.listAgendaInRange,
-    loggedInUser
-      ? {
-          start: agendaStartUtc,
-          end: agendaEndUtc,
-          country: "US",
-          holidaysStartUtc: todayHolidayRange.startUtc,
-          holidaysEndUtc: todayHolidayRange.endUtc,
-        }
-      : "skip",
-  );
-  const weekAgendaRaw = useQuery(
-    (api as any).calendar.listAgendaInRange,
-    loggedInUser
-      ? {
-          start: weekStartUtc,
-          end: weekEndUtc,
-          country: "US",
-          holidaysStartUtc: weekHolidayRange.startUtc,
-          holidaysEndUtc: weekHolidayRange.endUtc,
-        }
-      : "skip",
-  );
-
   // Stabilize arrays derived from the aggregator
-  const tasksToday = useMemo(() => todayAgendaRaw?.tasks ?? [], [todayAgendaRaw]);
-  const eventsToday = useMemo(() => todayAgendaRaw?.events ?? [], [todayAgendaRaw]);
-  const holidaysToday = useMemo(() => todayAgendaRaw?.holidays ?? [], [todayAgendaRaw]);
-  const tasksThisWeek = useMemo(() => weekAgendaRaw?.tasks ?? [], [weekAgendaRaw]);
-  const eventsThisWeek = useMemo(() => weekAgendaRaw?.events ?? [], [weekAgendaRaw]);
-  const holidaysThisWeek = useMemo(() => weekAgendaRaw?.holidays ?? [], [weekAgendaRaw]);
+  // Source agenda arrays from shared hook to avoid duplicate fetching
+  const tasksToday = upcoming.today.tasks;
+  const eventsToday = upcoming.today.events;
+  const holidaysToday = upcoming.today.holidays;
+  const tasksThisWeek = upcoming.sevenDays.tasks;
+  const eventsThisWeek = upcoming.sevenDays.events;
+  const holidaysThisWeek = upcoming.sevenDays.holidays;
 
   const archiveDocument = useMutation(api.documents.archive);
   const toggleFavorite = useMutation(api.documents.toggleFavorite);
@@ -1510,17 +1482,17 @@ export function DocumentsHomeHub({
   const onPrevWeek = useCallback(() => {
     const anchor = focusedDateMs ?? Date.now();
     const start = startOfWeekMs(anchor);
-    setFocusedDateMs(start - 7 * 24 * 60 * 60 * 1000);
-  }, [focusedDateMs, startOfWeekMs]);
+    handleViewWeek(start - 7 * 24 * 60 * 60 * 1000);
+  }, [focusedDateMs, startOfWeekMs, handleViewWeek]);
   const onNextWeek = useCallback(() => {
     const anchor = focusedDateMs ?? Date.now();
     const start = startOfWeekMs(anchor);
-    setFocusedDateMs(start + 7 * 24 * 60 * 60 * 1000);
-  }, [focusedDateMs, startOfWeekMs]);
+    handleViewWeek(start + 7 * 24 * 60 * 60 * 1000);
+  }, [focusedDateMs, startOfWeekMs, handleViewWeek]);
 
   const onTodayWeek = useCallback(() => {
-    setFocusedDateMs(startOfWeekMs(Date.now()));
-  }, [startOfWeekMs]);
+    handleViewWeek(startOfWeekMs(Date.now()));
+  }, [startOfWeekMs, handleViewWeek]);
 
   // Agenda (Today's section) week label and handlers
   const agendaWeekLabel = useMemo(() => {
@@ -2325,14 +2297,15 @@ export function DocumentsHomeHub({
 
   const handleSelectTask = useCallback(
     (
-      id: Id<"tasks">,
+      id: Id<"tasks"> | Id<"events">,
       source: "today" | "upcoming" | "week" | "other" = "other",
     ) => {
+      const taskId = id as Id<"tasks">;
       // Toggle behavior: if selecting the same task in list mode, clear; else select
-      if (mode === "list" && selectedTaskId === id) {
+      if (mode === "list" && selectedTaskId === taskId) {
         onClearTaskSelection?.();
       } else {
-        onSelectTask?.(id, source);
+        onSelectTask?.(taskId, source);
       }
     },
     [mode, selectedTaskId, setMode, onSelectTask],
@@ -2417,9 +2390,49 @@ export function DocumentsHomeHub({
         targetDocId = await createDocument({ title: "Timeline Gantt" });
       }
 
-      const timelineId = await createTimelineForDoc({ documentId: targetDocId, name: "Timeline" });
-      // Ensure this doc renders the timeline view immediately
-      await setDocumentType({ id: targetDocId, documentType: "timeline" });
+      let timelineId: Id<'agentTimelines'> | null = null;
+      try {
+        timelineId = await createTimelineForDoc({ documentId: targetDocId, name: "Timeline" });
+      } catch (e) {
+        console.warn("Failed to create agent timeline for document", e);
+      }
+      // If we couldn't create a timeline (e.g., not the owner), immediately fall back to a new doc
+      if (!timelineId) {
+        try {
+          toast?.error?.("Couldn't create a timeline on the selected document. Creating a new Timeline doc you own.");
+        } catch {}
+        const newDoc = await createDocument({ title: "Timeline Gantt" });
+        targetDocId = newDoc;
+        try {
+          timelineId = await createTimelineForDoc({ documentId: targetDocId, name: "Timeline" });
+        } catch (e2) {
+          console.warn("Failed to create agent timeline for fallback document", e2);
+        }
+        try {
+          await setDocumentType({ id: targetDocId, documentType: "timeline" });
+        } catch (e3) {
+          console.warn("Fallback setDocumentType also failed", e3);
+        }
+      }
+      // Ensure this doc renders the timeline view immediately; if not allowed, fall back to a new doc
+      try {
+        await setDocumentType({ id: targetDocId, documentType: "timeline" });
+      } catch (err) {
+        console.warn("setDocumentType failed; creating a new Timeline doc", err);
+        toast.message?.("Created a new Timeline document because you don't own the selected doc.");
+        const newDoc = await createDocument({ title: "Timeline Gantt" });
+        targetDocId = newDoc;
+        try {
+          timelineId = await createTimelineForDoc({ documentId: targetDocId, name: "Timeline" });
+        } catch (e2) {
+          console.warn("Failed to create agent timeline for fallback document", e2);
+        }
+        try {
+          await setDocumentType({ id: targetDocId, documentType: "timeline" });
+        } catch (e3) {
+          console.warn("Fallback setDocumentType also failed", e3);
+        }
+      }
 
       // Seed a simple demo plan
       const baseStartMs = Date.now();
@@ -2430,7 +2443,9 @@ export function DocumentsHomeHub({
         { id: "leaf2", parentId: "main", name: "Summarize", startOffsetMs: 10 * 60 * 1000, durationMs: 15 * 60 * 1000, agentType: "leaf" },
       ];
       const links = [ { sourceId: "leaf1", targetId: "leaf2", type: "e2e" } ];
-      await applyPlanTimeline({ timelineId, baseStartMs, tasks, links });
+      if (timelineId) {
+        await applyPlanTimeline({ timelineId, baseStartMs, tasks, links });
+      }
 
       handleSelectDocument(targetDocId);
       toast.success("Timeline seeded!");
@@ -3080,13 +3095,13 @@ export function DocumentsHomeHub({
   }, [groupedDocuments.calendar, selectedFrequentDoc]);
 
   // MiniMonthCalendar callback handlers
-  const handleViewDay = (dateMs: number) => {
-    setFocusedDateMs(dateMs);
+  const handleViewDayLocal = (dateMs: number) => {
+    handleViewDay(dateMs);
     setMode('weekly');
   };
 
-  const handleViewWeek = (dateMs: number) => {
-    setFocusedDateMs(dateMs);
+  const handleViewWeekLocal = (dateMs: number) => {
+    handleViewWeek(dateMs);
     setMode('weekly');
   };
 
@@ -4965,24 +4980,50 @@ export function DocumentsHomeHub({
 
   // Right dock now uses MiniMonthCalendar; no separate weekly strip helpers needed
 
-  return (
+  const todayLabel = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+  return (<>
     <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative">
       {/* Removed metallic overlay for cleaner look */}
 
       {/* Minimal two-column dashboard with floating docks */}
-      <div className="flex-1 overflow-auto p-8 relative z-10">
-        <div className="dashboard-container max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-8">
+      <div className="flex-1 p-8 relative z-10">
+        <div className="dashboard-container max-w-7xl mx-auto flex gap-8">
           {/* Main column */}
-          <div className="main-column space-y-6">
+          <div className="flex-1 min-w-0 space-y-6">
             {/* Floating main dock: simplified nav + header + AI bar */}
             <div
               id="floating-main-dock"
-              className="sticky top-0 z-20 bg-[var(--bg-primary)]/90 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-primary)]/75 pb-4"
+              className=""
             >
-              <header className="flex items-center justify-between py-2 border-b border-[var(--border-color)]">
-                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-                {/* Moved quick create buttons into Today's Agenda section */}
-              </header>
+              <TopDividerBar
+                left={
+                  <button
+                    onClick={() => { try { window.dispatchEvent(new CustomEvent('navigate:calendar')); } catch { /* noop */ } }}
+                    className="inline-flex items-center gap-2 text-xs px-2 py-1 rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                    title="View Full Calendar"
+                  >
+                    <Calendar className="w-4 h-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">View full calendar</span>
+                    <span className="sm:hidden">Calendar</span>
+                  </button>
+                }
+              />
+              <PageHeroHeader
+                icon={"📄"}
+                title={"Documents Hub"}
+                date={todayLabel}
+                subtitle={"Your productivity command center. Track tasks, plan your week, and stay organized."}
+                presets={
+                  <>
+                    <span className="text-xs text-gray-500 mr-2">Presets:</span>
+                    <PresetChip>Sprint Week</PresetChip>
+                    <PresetChip>Meetings Day</PresetChip>
+                    <PresetChip>Personal</PresetChip>
+                  </>
+                }
+              />
+
               {/* Moved Filters/Tools into Documents & Files section below */}
               <div className="mt-4 flex items-center gap-2 p-2 border border-[var(--border-color)] rounded-xl shadow-sm bg-[var(--bg-primary)]">
                 <input
@@ -6237,7 +6278,7 @@ export function DocumentsHomeHub({
                 handleSeedOnboarding={handleSeedOnboarding}
                 isSeedingTimeline={isSeedingTimeline}
                 handleSeedTimeline={handleSeedTimeline}
-                onOpenCalendarPage={() => setMode('calendar')}
+                onOpenCalendarPage={() => { try { window.dispatchEvent(new CustomEvent('navigate:calendar')); } catch { /* no-op */ } }}
                 onOpenTimelinePage={() => {
                   if (userTimelines && userTimelines.length > 0) {
                     handleSelectDocument(userTimelines[0].documentId);
@@ -6548,454 +6589,20 @@ export function DocumentsHomeHub({
           {/* Bulk actions moved inline into FiltersToolsBar */}
 
           {/* Sidebar column */}
-          <div className="sidebar-column">
-            <div id="floating-right-dock" className="sticky top-8 z-20 space-y-8">
+          <aside className="w-[320px] md:w-[360px] shrink-0 border-l border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
+            <div className="space-y-4">
               {/* Widget 1: Mini Month Calendar */}
-              <div>
-                <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-200">
-                  <h3 className={sectionHeader}>Calendar</h3>
-                  <span className={tipBadge} title="Click a date to focus; use View Full Calendar to open the main calendar." aria-label="Calendar tips">
-                    <Lightbulb className="h-3 w-3 text-amber-500" />
-                    Tips
-                  </span>
-                </div>
-                <button
-                  className="mt-3 w-full px-3 py-2 text-sm rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center justify-center gap-2"
-                  onClick={() => {
-                    // Switch dashboard context and request expanding the Calendar card
-                    setMode('calendar');
-                    // Defer event until after CalendarCard mounts and registers its listener
-                    setTimeout(() => {
-                      try {
-                        window.dispatchEvent(new CustomEvent('dashboard:openCalendarCard'));
-                      } catch { /* no-op */ }
-                    }, 0);
-                  }}
-                  title="Open full calendar"
-                  aria-label="View Full Calendar"
-                >
-                  <CalendarDays className="h-4 w-4" />
-                  <span>View Full Calendar</span>
-                </button>
-                <div className="mt-3">
-                  <MiniMonthCalendar
-                    tzOffsetMinutes={tzOffsetMinutes}
-                    onSelectDate={(ms) => {
-                      setFocusedDateMs(ms);
-                      setMode('calendar');
-                    }}
-                    onViewDay={handleViewDay}
-                    onViewWeek={handleViewWeek}
-                    onWeeklyReview={handleWeeklyReview}
-                    onAddTask={handleAddTaskForDate}
-                    onAddEvent={handleAddEventForDate}
-                  />
-                </div>
-              </div>
+              <SidebarMiniCalendar
+                onSelectDate={(ms) => handleViewWeekLocal(ms)}
+                onViewDay={handleViewDayLocal}
+                onViewWeek={handleViewWeekLocal}
+                showViewFullCalendarLink
+              />
 
               {/* Widget 2: Upcoming (Tasks & Events) */}
-              <div>
-                <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <h3 className={sectionHeader}>Upcoming Week's</h3>
-                    {isUploading && (
-                      <div className="text-[10px] text-[var(--text-secondary)] inline-flex items-center gap-1" aria-live="polite" aria-atomic="true">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span className="truncate">{uploadProgress || "Uploading..."}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1 bg-gray-100 p-1 rounded-lg" role="tablist" aria-label="Upcoming view mode">
-                      <button
-                        onClick={() => onChangeUpcomingMode('list')}
-                        className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-md ${upcomingMode === 'list' ? 'text-gray-800 bg-white shadow' : 'text-gray-500 hover:bg-white/50'}`}
-                        role="tab"
-                        aria-selected={upcomingMode === 'list'}
-                        aria-controls="upcoming-panel-list"
-                        id="upcoming-tab-list"
-                        title="List view"
-                      >
-                        List
-                      </button>
-                      <button
-                        onClick={() => onChangeUpcomingMode('mini')}
-                        className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-md ${upcomingMode === 'mini' ? 'text-gray-800 bg-white shadow' : 'text-gray-500 hover:bg-white/50'}`}
-                        role="tab"
-                        aria-selected={upcomingMode === 'mini'}
-                        aria-controls="upcoming-panel-mini"
-                        id="upcoming-tab-mini"
-                        title="Compact mini rows"
-                      >
-                        Mini
-                      </button>
-                    </div>
-                    {/* Hint removed per request */}
-                  </div>
-                </div>
-                {/* Week selector row below divider (Upcoming) */}
-                <div className="flex items-center gap-2 mb-2">
-                  <button
-                    className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
-                    onClick={onPrevWeek}
-                    aria-label="Previous week"
-                    title="Previous week (←)"
-                  >
-                    <ChevronLeft className="w-4 h-4 text-[var(--text-secondary)]" />
-                  </button>
-                  <button
-                    className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]"
-                    onClick={onTodayWeek}
-                    aria-label="Go to current week"
-                    title="Go to current week"
-                  >
-                    Today
-                  </button>
-                  <div className="relative" ref={upcomingWeekPickerAnchorRef}>
-                    <button
-                      className="text-xs text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)] underline-offset-2 hover:underline"
-                      onClick={() => setShowUpcomingWeekPicker((v) => !v)}
-                      aria-haspopup="dialog"
-                      aria-expanded={showUpcomingWeekPicker}
-                    >
-                      {weekRangeLabel}
-                    </button>
-                    {showUpcomingWeekPicker && (
-                      <div className="absolute z-40 top-full left-0 mt-2" onMouseDown={(e) => e.stopPropagation()} ref={upcomingWeekPickerPanelRef}>
-                        <MiniMonthCalendar
-                          onSelectDate={(dateMs) => {
-                            const wStart = startOfWeekMs(dateMs);
-                            setFocusedDateMs(wStart);
-                            setShowUpcomingWeekPicker(false);
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
-                    onClick={onNextWeek}
-                    aria-label="Next week"
-                    title="Next week (→)"
-                  >
-                    <ChevronRight className="w-4 h-4 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-                {(upcomingWeekDisplay.length === 0 && holidaysThisWeek.length === 0) ? (
-                  <div className="text-sm text-[var(--text-secondary)]">No upcoming items.</div>
-                ) : (
-                  (() => {
-                    // Mini mode: group by day with headers, holidays, and checkboxes for tasks
-                    if (upcomingMode === 'mini') {
-                      const days: Array<{ key: number; label: string; holidays: any[]; entries: AgendaEntry[] }> = [];
-                      for (let i = 0; i < 7; i++) {
-                        const dayStart = weekStartUtc + i * 24 * 60 * 60 * 1000;
-                        const d = new Date(dayStart + offsetMs); d.setUTCHours(0, 0, 0, 0);
-                        const wd = d.toLocaleDateString(undefined, { weekday: 'long' });
-                        const shortDate = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                        days.push({ key: dayStart, label: `${wd} (${shortDate})`, holidays: [], entries: [] });
-                      }
-                      const dayKeyOf = (ts?: number | null): number | null => {
-                        if (typeof ts !== 'number' || !Number.isFinite(ts)) return null;
-                        const d = new Date(ts + offsetMs); d.setUTCHours(0,0,0,0);
-                        return d.getTime() - offsetMs;
-                      };
-                      for (const entry of upcomingWeekDisplay) {
-                        const key = dayKeyOf(entry.time);
-                        if (key == null) continue;
-                        const day = days.find((x) => x.key === key);
-                        if (day) day.entries.push(entry);
-                      }
-                      for (const h of holidaysThisWeek) {
-                        let key: number | null = null;
-                        if (typeof h?.dateKey === 'string') {
-                          const parts = String(h.dateKey).split('-');
-                          if (parts.length === 3) {
-                            const y = Number(parts[0]); const m = Number(parts[1]); const dd = Number(parts[2]);
-                            if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(dd)) {
-                              const local = new Date(y, m - 1, dd, 0, 0, 0, 0);
-                              key = local.getTime() - offsetMs;
-                            }
-                          }
-                        } else if (typeof h?.dateMs === 'number') {
-                          key = dayKeyOf(h.dateMs);
-                        }
-                        if (key != null) {
-                          const day = days.find((x) => x.key === key);
-                          if (day) day.holidays.push(h);
-                        }
-                      }
-                      for (const d of days) d.entries.sort((a, b) => a.time - b.time);
-                      const visible = days.filter((d) => d.entries.length > 0 || d.holidays.length > 0);
-                      if (visible.length === 0) return (<div className="text-sm text-[var(--text-secondary)]">No upcoming items.</div>);
-                      return (
-                        <div className="space-y-2">
-                          {visible.map((day) => (
-                            <div key={String(day.key)} className="space-y-1">
-                              <div className="px-2 py-1 text-sm font-semibold text-[var(--text-primary)] bg-[var(--bg-secondary)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-secondary)]/80 border-b border-[var(--border-color)]">{day.label}</div>
-                              {day.holidays.map((h, idx) => (
-                                <div
-                                  key={`up_h_${day.key}_${idx}`}
-                                  onClick={(e) => {
-                                    setAgendaPopover({
-                                      kind: 'createBoth',
-                                      anchor: e.currentTarget as HTMLElement,
-                                      dateMs: day.key,
-                                      defaultKind: 'event',
-                                      defaultAllDay: true,
-                                      defaultTitle: String(h?.name ?? 'Holiday'),
-                                    });
-                                  }}
-                                >
-                                  <AgendaMiniRow item={h} kind="holiday" onSelect={() => {}} />
-                                </div>
-                              ))}
-                              {day.entries.map((entry) => (
-                                <div
-                                  key={keyOfAgendaEntry(entry)}
-                                  className="relative group"
-                                  onMouseUp={(e) => {
-                                    const anchor = (e.currentTarget.querySelector('[data-agenda-mini-row]') as HTMLElement | null) ?? (e.currentTarget as HTMLElement);
-                                    if (entry.kind === 'event') {
-                                      setSelectedEventId(entry.item._id as Id<'events'>);
-                                      setEventEditorInline(true);
-                                      setAgendaPopover({ kind: 'event', anchor, eventId: entry.item._id as Id<'events'>, documentIdForAssociation: selectedFrequentDoc ?? null });
-                                    } else if (entry.kind === 'task') {
-                                      onSelectTask?.(entry.item._id as Id<'tasks'>, 'upcoming');
-                                      setAgendaPopover({ kind: 'task', anchor, taskId: entry.item._id as Id<'tasks'> });
-                                    }
-                                  }}
-                                >
-                                  <AgendaMiniRow
-                                    item={entry.item}
-                                    kind={entry.kind}
-                                    showCheckbox={entry.kind === 'task'}
-                                    onToggleComplete={(id, completed) => {
-                                      if (entry.kind === 'task') {
-                                        void updateTask({ taskId: id as Id<'tasks'>, status: completed ? 'done' : 'todo' });
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-                    const items = upcomingWeekDisplay.map((entry) => keyOfAgendaEntry(entry));
-                    return (
-                      <div className="space-y-2">
-                        {/* Holidays first */}
-                        {holidaysThisWeek.map((h: any, idx: number) => (
-                          upcomingMode === 'mini' ? (
-                            <div
-                              key={`up_h_${idx}`}
-                              onClick={(e) => {
-                                setAgendaPopover({
-                                  kind: 'createBoth',
-                                  anchor: e.currentTarget as HTMLElement,
-                                  dateMs: (typeof h?.dateKey === 'string' ? Date.parse(String(h.dateKey) + 'T00:00:00') : weekStartUtc),
-                                  defaultKind: 'event',
-                                  defaultAllDay: true,
-                                  defaultTitle: String(h?.name ?? 'Holiday'),
-                                });
-                              }}
-                            >
-                              <AgendaMiniRow item={h} kind="holiday" onSelect={() => {}} />
-                            </div>
-                          ) : (
-                            <div
-                              key={`up_h_${idx}`}
-                              className="flex flex-col gap-1"
-                              onMouseEnter={(e) => {
-                                if (hoverTimerRef.current) { window.clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
-                                setHoverPreview({ kind: 'holiday', item: h, anchorEl: e.currentTarget as HTMLElement });
-                              }}
-                              onMouseLeave={() => {
-                                if (hoverTimerRef.current) { window.clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
-                                hoverTimerRef.current = window.setTimeout(() => {
-                                  if (!hoverLock) setHoverPreview(null);
-                                }, 100) as unknown as number;
-                              }}
-                            >
-                              <HolidayRowGlobal h={h} />
-                            </div>
-                          )
-                        ))}
-                        <SortableList
-                          items={items}
-                          containerClassName="space-y-2"
-                          onReorder={(newOrder) => {
-                            const valid = new Set(items);
-                            const pruned = newOrder.filter((k) => valid.has(k));
-                            setUpcomingListOrder(pruned);
-                            if (loggedInUser) {
-                              void setListOrders({ upcomingListOrder: pruned });
-                            } else {
-                              try { localStorage.setItem("nodebench:upcomingListOrder", JSON.stringify(pruned)); } catch { /* no-op */ }
-                            }
-                          }}
-                          renderItem={(id, index) => {
-                            const entry = upcomingWeekDisplay[index] ?? upcomingWeekDisplay.find((e) => keyOfAgendaEntry(e) === id);
-                            if (!entry) return null;
-                            if (upcomingMode === 'mini') {
-                              if (entry.kind === 'event') {
-                                return (
-                                  <div
-                                    className="flex flex-col gap-1"
-                                    onClick={(e) => {
-                                      setSelectedEventId(entry.item._id as Id<'events'>);
-                                      setEventEditorInline(true);
-                                      setAgendaPopover({ kind: 'event', anchor: e.currentTarget as HTMLElement, eventId: entry.item._id as Id<'events'>, documentIdForAssociation: selectedFrequentDoc ?? null });
-                                    }}
-                                  >
-                                    <AgendaMiniRow item={entry.item} kind="event" onSelect={() => {}} />
-                                  </div>
-                                );
-                              } else {
-                                return (
-                                  <div
-                                    className="flex flex-col gap-1"
-                                    onMouseUp={(e) => {
-                                      onSelectTask?.(entry.item._id as Id<'tasks'>, 'upcoming');
-                                      setAgendaPopover({ kind: 'task', anchor: e.currentTarget as HTMLElement, taskId: entry.item._id as Id<'tasks'> });
-                                    }}
-                                  >
-                                    <AgendaMiniRow item={entry.item} kind="task" onSelect={() => {}} />
-                                  </div>
-                                );
-                              }
-                            }
-                            // List mode rendering with rich rows and hover previews
-                            return entry.kind === 'event' ? (
-                              <div
-                                className="flex flex-col gap-1"
-                                onMouseEnter={(e) => {
-                                  if (hoverTimerRef.current) { window.clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
-                                  setHoverPreview({ kind: 'event', item: entry.item, anchorEl: e.currentTarget as HTMLElement });
-                                }}
-                                onMouseLeave={() => {
-                                  if (hoverTimerRef.current) { window.clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
-                                  hoverTimerRef.current = window.setTimeout(() => {
-                                    if (!hoverLock) setHoverPreview(null);
-                                  }, 100) as unknown as number;
-                                }}
-                                onClick={(e) => {
-                                  setSelectedEventId(entry.item._id as Id<'events'>);
-                                  setEventEditorInline(true);
-                                  setAgendaPopover({ kind: 'event', anchor: e.currentTarget as HTMLElement, eventId: entry.item._id as Id<'events'>, documentIdForAssociation: selectedFrequentDoc ?? null });
-                                }}
-                              >
-                                <TaskRowGlobal
-                                  t={entry.item}
-                                  kind="event"
-                                  density={density}
-                                  onSelect={(id) => setSelectedEventId(id as Id<'events'>)}
-                                  onChangeStatus={(id, status) => void updateEventMutation({ eventId: id as Id<'events'>, status: status as ("confirmed"|"tentative"|"cancelled") })}
-                                  onOpenRef={openReference}
-                                />
-                              </div>
-                            ) : (
-                              <div
-                                className="flex flex-col gap-1"
-                                onMouseEnter={(e) => {
-                                  if (hoverTimerRef.current) { window.clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
-                                  setHoverPreview({ kind: 'task', item: entry.item, anchorEl: e.currentTarget as HTMLElement });
-                                }}
-                                onMouseLeave={() => {
-                                  if (hoverTimerRef.current) { window.clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
-                                  hoverTimerRef.current = window.setTimeout(() => {
-                                    if (!hoverLock) setHoverPreview(null);
-                                  }, 100) as unknown as number;
-                                }}
-                                onMouseUp={(e) => {
-                                  onSelectTask?.(entry.item._id as Id<'tasks'>, 'upcoming');
-                                  setAgendaPopover({ kind: 'task', anchor: e.currentTarget as HTMLElement, taskId: entry.item._id as Id<'tasks'> });
-                                }}
-                              >
-                                <TaskRowGlobal
-                                  t={entry.item}
-                                  density={density}
-                                  onSelect={(tid) => handleSelectTask(tid as Id<'tasks'>, 'upcoming')}
-                                  onChangeStatus={(tid, status) => void updateTask({ taskId: tid as Id<'tasks'>, status: status as ('todo'|'in_progress'|'done'|'blocked') })}
-                                />
-                              </div>
-                            );
-                          }}
-                        />
-                        {/* Unfinished tasks for the week (grouped by day) */}
-                        {(() => {
-                          const unfinished = (tasksThisWeek || []).filter((t: any) => String(t?.status ?? 'todo') !== 'done');
-                          if (unfinished.length === 0) return null;
-                          // Build groups Mon..Sun for the current focused week
-                          const groups: Array<{ label: string; key: string; tasks: any[] }> = [];
-                          for (let i = 0; i < 7; i++) {
-                            const dayLocal = new Date((weekStartUtc + offsetMs) + i * 24 * 60 * 60 * 1000);
-                            dayLocal.setUTCHours(0,0,0,0);
-                            const y = dayLocal.getUTCFullYear();
-                            const m = String(dayLocal.getUTCMonth() + 1).padStart(2, '0');
-                            const d = String(dayLocal.getUTCDate()).padStart(2, '0');
-                            const key = `${y}-${m}-${d}`;
-                            const wd = dayLocal.toLocaleDateString(undefined, { weekday: 'long' });
-                            const shortDate = dayLocal.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                            groups.push({ label: `${wd} (${shortDate})`, key, tasks: [] });
-                          }
-                          const keyOfTs = (ts: number): string => {
-                            const dl = new Date(ts + offsetMs); dl.setUTCHours(0,0,0,0);
-                            const y = dl.getUTCFullYear();
-                            const m = String(dl.getUTCMonth() + 1).padStart(2, '0');
-                            const d = String(dl.getUTCDate()).padStart(2, '0');
-                            return `${y}-${m}-${d}`;
-                          };
-                          for (const t of unfinished) {
-                            const ts = Number((t as any).dueDate ?? (t as any).createdAt ?? 0);
-                            if (!Number.isFinite(ts) || ts <= 0) continue;
-                            const k = keyOfTs(ts);
-                            const g = groups.find((g) => g.key === k);
-                            if (g) g.tasks.push(t);
-                          }
-                          const visible = groups.filter((g) => g.tasks.length > 0);
-                          if (visible.length === 0) return null;
-                          return (
-                            <div className="mt-2 space-y-2">
-                              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">Unfinished tasks ({unfinished.length})</div>
-                              <div className="space-y-2">
-                                {visible.map((g) => (
-                                  <div key={g.key}>
-                                    <div className="text-[11px] font-medium text-[var(--text-secondary)]">{g.label}</div>
-                                    <div className="mt-1 space-y-1">
-                                      {g.tasks.map((t: any) => (
-                                        upcomingMode === 'mini' ? (
-                                          <div key={String(t?._id)}>
-                                            <AgendaMiniRow item={t} kind="task" showCheckbox onToggleComplete={(id, completed) => {
-                                              void updateTask({ taskId: id as Id<'tasks'>, status: completed ? 'done' : 'todo' });
-                                            }} />
-                                          </div>
-                                        ) : (
-                                          <div key={String(t?._id)}>
-                                            <TaskRowGlobal
-                                              t={t}
-                                              density={density}
-                                              onSelect={(tid) => handleSelectTask(tid as Id<'tasks'>, 'upcoming')}
-                                              onChangeStatus={(tid, status) => void updateTask({ taskId: tid as Id<'tasks'>, status: status as ('todo'|'in_progress'|'done'|'blocked') })}
-                                            />
-                                          </div>
-                                        )
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    );
-                  })()
-                )}
-              </div>
+              <SidebarUpcoming upcoming={upcoming} />
             </div>
+          </aside>
           </div>
         </div>
       </div>
@@ -7939,6 +7546,6 @@ export function DocumentsHomeHub({
           </div>
         </div>
       </div>
-    </div>
-  );
+
+  </>);
 }
