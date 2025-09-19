@@ -44,6 +44,13 @@ Optional thumbnail preview:
 ![AI Agent Timeline View](./updated_screenshot/091925_preview_ai_agent_timeline_view.png)
 
 
+#### Preview (091925) — Mini calendar → Full Calendar Hub (parity)
+
+![Mini calendar → Full Calendar Hub](./updated_screenshot/091925_mini_calendar_full_calendar_hub.png)
+
+![Mini calendar → Full Calendar Hub (2)](./updated_screenshot/091925_mini_calendar_full_calendar_hub_2.png)
+
+
 ![AI analysis → Quick note + AI-tagged header](./updated_screenshot/091725_ai_file_analysis_quick_note_ai_tagged.png)
 
 
