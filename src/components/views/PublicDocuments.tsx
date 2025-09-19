@@ -4,6 +4,8 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Globe } from "lucide-react";
 import { DocumentCard } from "@/components/DocumentsHomeHub";
+import { PageHeroHeader } from "@/components/shared/PageHeroHeader";
+
 
 interface PublicDocumentsProps {
   onDocumentSelect: (documentId: Id<"documents">) => void;
@@ -25,13 +27,11 @@ export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Globe className="h-6 w-6 text-green-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Public Documents</h1>
-          </div>
-          <p className="text-gray-600">
-            Discover documents shared by the community
-          </p>
+          <PageHeroHeader
+            icon={<Globe className="h-6 w-6 text-green-600" />}
+            title={"Public Documents"}
+            subtitle={"Discover documents shared by the community"}
+          />
         </div>
 
         {publicDocuments.length === 0 ? (

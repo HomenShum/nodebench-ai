@@ -1,11 +1,10 @@
 // import { useBlockNoteSyncSafe } from "../lib/useBlockNoteSyncSafe";
-import { useBlockNoteSync } from "@convex-dev/prosemirror-sync/blocknote";
-import { BlockNoteView } from "@blocknote/mantine";
+
 import { useQuery, useMutation } from "convex/react";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { 
+import {
   CalendarIcon,
   Sparkles,
   X,
@@ -19,8 +18,11 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-import "@blocknote/core/fonts/inter.css";
-import "@blocknote/mantine/style.css";
+import { PageHeroHeader } from "@/components/shared/PageHeroHeader";
+
+import { PresetChip } from "@/components/shared/PresetChip";
+
+
 import { createCalendarDocument } from "@/lib/calendarHelpers";
 import MiniAgendaEditorPanel from "@/components/agenda/MiniAgendaEditorPanel";
 import EventEditorPanel from "@/components/EventEditorPanel";
@@ -29,34 +31,34 @@ import EventEditorPanel from "@/components/EventEditorPanel";
 const useCalendarDocument = () => {
   const documents = useQuery(api.documents.getSidebar);
   const createWithSnapshot = useMutation(api.prosemirror.createDocumentWithInitialSnapshot);
-  
+
   const [calendarDocId, setCalendarDocId] = useState<Id<"documents"> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  
+
   useEffect(() => {
     const findOrCreateCalendar = async () => {
       if (!documents || isCreating) return;
-      
+
       const now = new Date();
       const currentMonth = now.toLocaleDateString('en-US', { month: 'long' });
       const currentYear = now.getFullYear();
       const monthSpecificTitle = `📅 ${currentMonth} ${currentYear} Calendar`;
-      
+
       // Look for existing calendar document
-      let calendarDoc = documents.find((doc: any) => 
-        doc.title === monthSpecificTitle || 
+      let calendarDoc = documents.find((doc: any) =>
+        doc.title === monthSpecificTitle ||
         doc.title.startsWith(`📅 ${currentMonth} ${currentYear}`)
       );
-      
+
       // Fallback to any calendar from current month
       if (!calendarDoc) {
-        calendarDoc = documents.find((doc: any) => 
-          doc.title.includes('📅') && 
-          doc.title.includes(currentMonth) && 
+        calendarDoc = documents.find((doc: any) =>
+          doc.title.includes('📅') &&
+          doc.title.includes(currentMonth) &&
           doc.title.includes(currentYear.toString())
         );
       }
-      
+
       if (!calendarDoc && !isCreating) {
         setIsCreating(true);
         try {
@@ -78,84 +80,35 @@ const useCalendarDocument = () => {
       }
     };
 
-  // Consistent Quick Add handler (creates a task due on the focused/anchor date at 5pm local)
-  const handleQuickAddCreate = async () => {
-    const title = quickAddText.trim();
-    if (!title) return;
-    if (!loggedInUser) { toast.error("Please sign in to create items"); return; }
-    try {
-      const base = new Date(anchorDate);
-      base.setHours(17, 0, 0, 0);
-      await createTask({
-        title,
-        status: "todo",
-        dueDate: base.getTime(),
-        documentId: calendarDocId ?? undefined,
-      });
-      setQuickAddText("");
-      toast.success("Task created");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to create task");
-    }
-  };
-    
+
+
     void findOrCreateCalendar();
   }, [documents, createWithSnapshot, isCreating]);
-  
+
   return { calendarDocId, isCreating };
 };
 
 // Editor subcomponent that only mounts the sync hook when a valid documentId exists
-function CalendarEditor({ documentId, isDarkMode }: { documentId: Id<"documents">; isDarkMode: boolean }) {
-  const sync = useBlockNoteSync(api.prosemirror, documentId, {
-    snapshotDebounceMs: 2000,
-  });
+function CalendarEditor({
+  _documentId,
+  _isDarkMode,
+  _quickAddText,
+  _setQuickAddText,
+  _handleQuickAddCreate,
+  _anchorDate,
+  _loggedInUser,
+}: {
+  documentId: Id<"documents">;
+  isDarkMode: boolean;
+  quickAddText: string;
+  setQuickAddText: (v: string) => void;
+  handleQuickAddCreate: () => void | Promise<void>;
+  anchorDate: Date;
+  loggedInUser: any;
+}) {
+  // Calendar editor stripped: no ProseMirror/BlockNote usage needed here.
+  return null;
 
-  if (!sync.editor) {
-    return (
-      <div className="flex items-center justify-center min-h-[700px]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <p className="text-sm text-gray-600">Loading editor...</p>
-        </div>
-
-        {/* Quick Add (consistent pattern) */}
-        <div className="px-2">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <input
-              type="text"
-              value={quickAddText}
-              onChange={(e) => setQuickAddText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleQuickAddCreate(); } }}
-              placeholder={(() => {
-                const isToday = anchorDate.toDateString() === now.toDateString();
-                const pretty = anchorDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                const suffix = isToday ? 'today' : pretty;
-                return `Quick add task for ${suffix}…`;
-              })()}
-              className="flex-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
-            />
-            <button
-              onClick={() => { void handleQuickAddCreate(); }}
-              disabled={!loggedInUser || !quickAddText.trim()}
-              className={`text-[11px] px-2.5 py-1 rounded-md border ${(!loggedInUser || !quickAddText.trim()) ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] border-transparent'}`}
-              title={!loggedInUser ? 'Please sign in to create items' : undefined}
-            >
-              Add
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <BlockNoteView
-      editor={sync.editor}
-      theme={isDarkMode ? "dark" : "light"}
-      className="min-h-[700px]"
-    />
-  );
 }
 
 // Main CalendarView Component
@@ -163,9 +116,13 @@ interface CalendarViewProps {
   // UTC ms representing the local day start to focus the calendar week on.
   // If omitted, the current week is shown.
   focusedDateMs?: number;
+  onSelectDate?: (dateMs: number) => void;
+  onViewWeek?: (dateMs: number) => void;
+  onViewDay?: (dateMs: number) => void;
+  onQuickAddTask?: (dateMs: number, title: string, opts?: { documentId?: Id<"documents"> }) => Promise<void> | void;
 }
 
-export function CalendarView({ focusedDateMs }: CalendarViewProps) {
+export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onViewWeek: _onViewWeek, onViewDay: _onViewDay, onQuickAddTask }: CalendarViewProps) {
   const { calendarDocId, isCreating } = useCalendarDocument();
   const editorContainerRef = useRef<HTMLDivElement>(null);
   // Event overlay removed; use inline popovers instead
@@ -195,21 +152,16 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<Id<"events"> | null>(null);
   const [quickAddText, setQuickAddText] = useState("");
-  
+
   // Detect current theme
-  const [isDarkMode] = useState(() => {
-    return typeof window !== 'undefined' 
-      ? window.document.documentElement.classList.contains('dark')
-      : false;
-  });
-  
+
   // Calendar UX settings
-  const [showWorkHoursOnly, setShowWorkHoursOnly] = useState(true);
+  const [showWorkHoursOnly, setShowWorkHoursOnly] = useState(false);
   const [workdayStartHour, setWorkdayStartHour] = useState(9);
   const [workdayEndHour, setWorkdayEndHour] = useState(17);
   const [density, setDensity] = useState<'comfortable' | 'cozy' | 'compact'>('cozy');
-  const [collapseEmpty, setCollapseEmpty] = useState(true);
-  
+  const [collapseEmpty, setCollapseEmpty] = useState(false);
+
   // Persist user preferences across sessions
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -235,16 +187,16 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
       // ignore storage failures (private mode / quota)
     }
   }, [showWorkHoursOnly, workdayStartHour, workdayEndHour, density, collapseEmpty]);
-  
+
   // Note: Keyboard shortcuts are handled in the shared Editor component.
-  
+
   // Handle AI actions
   const handleAIAction = async (action: string) => {
     if (!calendarDocId) return;
-    
+
     setIsGenerating(true);
     setIsAiMenuOpen(false);
-    
+
     const prompts = {
       organize: `Organize today's calendar entries (${new Date().toLocaleDateString()}) by priority and deadlines. Group similar tasks and suggest an optimal order.`,
       timeblock: `Create detailed time blocks for today (${new Date().toLocaleDateString()}) based on the tasks. Include buffer time and breaks.`,
@@ -252,7 +204,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
       weekly: `Create a weekly review summary highlighting completed tasks, pending items, and priorities for next week.`,
       braindump: `Convert the notes and brain dump section into actionable tasks and organize them by project or category.`
     };
-    
+
     try {
       const basePrompt = prompts[action as keyof typeof prompts] || prompts.organize;
       // Emit global quick prompt with documentId to reuse AIChatPanel flow with proper context
@@ -309,6 +261,8 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
     try {
       await createEvent({ title: title.trim() || "Untitled event", startTime: startMs, endTime: endMs });
       toast.success("Event created");
+
+
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to create");
     }
@@ -332,6 +286,32 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
       toast.error(e?.message ?? "Failed to delete");
     }
   };
+
+
+  // Quick Add handler (creates a task due on the anchor date at 5pm local)
+  const handleQuickAddCreate = useCallback(async () => {
+    const title = quickAddText.trim();
+    if (!title) return;
+    if (!loggedInUser) { toast.error("Please sign in to create items"); return; }
+    try {
+      if (onQuickAddTask) {
+        await onQuickAddTask(anchorDate.getTime(), title, { documentId: calendarDocId ?? undefined });
+      } else {
+        const base = new Date(anchorDate);
+        base.setHours(17, 0, 0, 0);
+        await createTask({
+          title,
+          status: "todo",
+          dueDate: base.getTime(),
+          documentId: calendarDocId ?? undefined,
+        });
+      }
+      setQuickAddText("");
+      toast.success("Task created");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to create task");
+    }
+  }, [quickAddText, loggedInUser, anchorDate, createTask, calendarDocId, onQuickAddTask]);
 
   // (Removed popup composer; inline draft used instead)
 
@@ -361,7 +341,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
     const now = new Date();
     const weekStart = startOfWeek(now);
     const isCurrentWeek = (d: Date) => startOfWeek(d).getTime() === weekStart.getTime();
-    
+
     // Density + visible hours
     const hourHeightLocal = density === 'compact' ? 32 : density === 'cozy' ? 44 : 56; // px per hour
     const visibleStartHour = showWorkHoursOnly ? workdayStartHour : 0;
@@ -474,6 +454,9 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
       } else {
         scrollToHour(now.getHours(), now.getMinutes(), prefersReduced ? 'auto' : 'smooth');
       }
+      // Propagate selection so both hubs sync to "today"
+      const today = new Date(); today.setHours(0,0,0,0);
+      _onViewDay?.(today.getTime());
     };
 
     const handleAddAllDayEvent = async () => {
@@ -609,10 +592,10 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                     role="button"
                     tabIndex={0}
                     onClick={(ev) => { ev.stopPropagation(); setEditingId(e._id); setEditingTitle(e.title); }}
-                    onDoubleClick={(ev) => { ev.stopPropagation(); onOpenEditor(e._id); }}
+                    onDoubleClick={(ev) => { ev.stopPropagation(); setSelectedEventId(e._id); }}
                     onKeyDown={(ev) => {
                       if (ev.key === 'Enter') { setEditingId(e._id); setEditingTitle(e.title); }
-                      if (ev.key.toLowerCase() === 'e') { ev.preventDefault(); onOpenEditor(e._id); }
+                      if (ev.key.toLowerCase() === 'e') { ev.preventDefault(); setSelectedEventId(e._id); }
                       if (ev.key === 'Delete') { ev.preventDefault(); void onDelete(e._id); }
                     }}
                     title={e.title}
@@ -1211,8 +1194,8 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
 
   return (
     <>
-      <div className="p-4 md:p-8 overflow-y-auto h-full bg-gradient-to-br from-white to-gray-50">
-        <div className="max-w-5xl mx-auto">
+      <div className="flex-1 min-w-0 space-y-6">
+        <div>
         {/* Loading State */}
         {(isCreating || !calendarDocId) && (
           <div className="flex items-center justify-center py-12">
@@ -1227,29 +1210,25 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
             </div>
           </div>
         )}
-        
+
         {/* Main Calendar View */}
         {calendarDocId && !isCreating && (
           <div className="relative">
             {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                📅 Calendar Hub
-                <span className="text-sm font-normal text-gray-500 ml-2">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </span>
-              </h1>
-              <p className="text-gray-600">
-                Your productivity command center. Track tasks, plan your week, and stay organized.
-              </p>
-              {/* Mock event presets */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="text-xs text-gray-500 mr-2">Presets:</span>
-                <button onClick={() => void addMockEvents("sprint")} className="px-2 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-50">Sprint Week</button>
-                <button onClick={() => void addMockEvents("meetings")} className="px-2 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-50">Meetings Day</button>
-                <button onClick={() => void addMockEvents("personal")} className="px-2 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-50">Personal</button>
-              </div>
-            </div>
+            <PageHeroHeader
+              icon={"📅"}
+              title={"Calendar Hub"}
+              date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              subtitle={"Your productivity command center. Track tasks, plan your week, and stay organized."}
+              presets={
+                <>
+                  <span className="text-xs text-gray-500 mr-2">Presets:</span>
+                  <PresetChip onClick={() => void addMockEvents('sprint')}>Sprint Week</PresetChip>
+                  <PresetChip onClick={() => void addMockEvents('meetings')}>Meetings Day</PresetChip>
+                  <PresetChip onClick={() => void addMockEvents('personal')}>Personal</PresetChip>
+                </>
+              }
+            />
 
             {/* Controls */}
             <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
@@ -1325,7 +1304,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                 onCreate={onCreateInline}
                 onUpdate={onUpdateInline}
                 onDelete={onDeleteInline}
-                onOpenEditor={(id) => setSelectedEventId(id)}
+
                 showWorkHoursOnly={showWorkHoursOnly}
                 workdayStartHour={workdayStartHour}
                 workdayEndHour={workdayEndHour}
@@ -1334,22 +1313,30 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
               />
             </div>
 
-            {/* Editor Container */}
+            {/* Quick Add (no ProseMirror editor) */}
             <div ref={editorContainerRef} className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-              {calendarDocId ? (
-                <CalendarEditor documentId={calendarDocId} isDarkMode={isDarkMode} />
-              ) : (
-                <div className="flex items-center justify-center min-h-[700px]">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    <p className="text-sm text-gray-600">
-                      Loading editor...
-                    </p>
-                  </div>
-                </div>
-              )}
+              <div className="p-3 flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={quickAddText}
+                  onChange={(e) => setQuickAddText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleQuickAddCreate(); } }}
+                  placeholder={"Quick add task…"}
+                  className="flex-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                />
+                <button
+                  onClick={() => { void handleQuickAddCreate(); }}
+                  disabled={!loggedInUser || !quickAddText.trim()}
+                  className={`text-[11px] px-2.5 py-1 rounded-md border ${(!loggedInUser || !quickAddText.trim()) ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] border-transparent'}`}
+                  title={!loggedInUser ? 'Please sign in to create items' : undefined}
+                >
+                  Add
+                </button>
+              </div>
+
+
             </div>
-            
+
             {/* Floating AI Menu Button */}
             <div className="fixed bottom-6 right-6 z-20">
               <button
@@ -1360,7 +1347,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                 <Sparkles className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
                 <span className="font-medium">AI Assistant</span>
               </button>
-              
+
               {/* AI Actions Menu */}
               {isAiMenuOpen && (
                 <div className="absolute bottom-16 right-0 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-72 transform transition-all">
@@ -1376,7 +1363,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                       <X className="w-4 h-4 text-gray-500" />
                     </button>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <button
                       onClick={() => { void handleAIAction('organize'); }}
@@ -1389,7 +1376,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                         <div className="text-xs text-gray-500">Sort by priority & deadlines</div>
                       </div>
                     </button>
-                    
+
                     <button
                       onClick={() => { void handleAIAction('timeblock'); }}
                       disabled={isGenerating}
@@ -1401,7 +1388,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                         <div className="text-xs text-gray-500">Create optimal schedule</div>
                       </div>
                     </button>
-                    
+
                     <button
                       onClick={() => { void handleAIAction('tasklist'); }}
                       disabled={isGenerating}
@@ -1413,7 +1400,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                         <div className="text-xs text-gray-500">Prioritized action items</div>
                       </div>
                     </button>
-                    
+
                     <button
                       onClick={() => void handleAIAction('braindump')}
                       disabled={isGenerating}
@@ -1425,7 +1412,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                         <div className="text-xs text-gray-500">Convert ideas to tasks</div>
                       </div>
                     </button>
-                    
+
                     <button
                       onClick={() => void handleAIAction('weekly')}
                       disabled={isGenerating}
@@ -1438,7 +1425,7 @@ export function CalendarView({ focusedDateMs }: CalendarViewProps) {
                       </div>
                     </button>
                   </div>
-                  
+
                   {isGenerating && (
                     <div className="mt-3 p-2 bg-blue-50 rounded-lg">
                       <p className="text-xs text-blue-600 flex items-center gap-2">
