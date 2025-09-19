@@ -32,6 +32,8 @@ User-defined http routes are defined in the `convex/router.ts` file. We split th
 
 ## Changelog (preview)
 
+- 2025-09-19 — UI refactor (Home Hubs), streamlined layout/navigation, improved MiniEditorPopover, Convex file/document API updates, cleanup of legacy views, and new screenshots. See full details in the [CHANGELOG](./CHANGELOG.md).
+
 - 2025-09-18 — Chat input now supports multi-line entry and preserves list/nested list structure on paste; Convex agent fixes: remove write conflicts on appendRunEvent, await streaming event writes, fix propose_pm_ops schema (array items), and require kind in streamed plan steps. No new dependencies added.
 - 2025-09-17 — Analyze with Gemini → Quick notes; header tags (AI-generated, colored by kind, inline rename, ghost add pill); new backend tag mutations. See full details and screenshots in the [CHANGELOG](./CHANGELOG.md).
 
