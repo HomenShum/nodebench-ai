@@ -8,6 +8,7 @@ import { Editor } from "@/components/Editor/Editor";
 import UnifiedEditor from "@/components/UnifiedEditor";
 import { FileViewer } from "@/components/views/FileViewer";
 import { SpreadsheetView } from "@/components/views/SpreadsheetView";
+import TimelineGanttPage from "@/components/views/TimelineGanttPage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { isValidConvexId } from "@/lib/ids";
 
@@ -103,6 +104,10 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
   // Determine if this viewer can edit: owner or public+allowPublicEdit
   const userId = useQuery(api.presence.getUserId);
   const isOwner = !!userId && !!document && userId === (document as any).createdBy;
+
+	  // Timeline Gantt: check if this doc has an associated agent timeline
+	  const timelineBundle = useQuery(api.agentTimelines.getByDocumentId, isValidId ? { documentId } : "skip");
+
   const editable = !!isOwner || (!!document?.isPublic && !!(document as any).allowPublicEdit);
 
   return (
@@ -141,7 +146,9 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
                 </div>
               )}
               <div className={`flex-1 ${isSpreadsheetDocument ? '' : 'overflow-y-auto'} bg-[var(--bg-primary)]`}>
-                {document.documentType === "file" ? (
+                {(document.documentType === "timeline") || (timelineBundle !== undefined && timelineBundle !== null) ? (
+                  <TimelineGanttPage documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
+                ) : document.documentType === "file" ? (
                   document.fileType === "csv" ? (
                     <SpreadsheetView documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
                   ) : (

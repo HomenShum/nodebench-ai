@@ -29,8 +29,14 @@ const documents = defineTable({
   // Rolling count of snapshots for this document (maintained on insert/delete)
   snapshotCount: v.optional(v.number()),
 
-  // FILE DOCUMENT SUPPORT
-  documentType: v.optional(v.union(v.literal("text"), v.literal("file"))), // "text" (default) or "file"
+  // FILE & SPECIAL DOCUMENT SUPPORT
+  documentType: v.optional(
+    v.union(
+      v.literal("text"),
+      v.literal("file"),
+      v.literal("timeline")
+    )
+  ), // "text" (default) | "file" | "timeline"
   fileId:      v.optional(v.id("files")),     // reference to files table for file documents
   fileType:    v.optional(v.string()),        // "csv", "pdf", "image", etc. for file documents
   mimeType:    v.optional(v.string()),        // MIME type for file documents
@@ -785,6 +791,58 @@ const tasks = defineTable({
   .index("by_document", ["documentId"]);
 
 
+
+/* ------------------------------------------------------------------ */
+/* AGENT TIMELINES – timeline docs + tasks + links                     */
+/* ------------------------------------------------------------------ */
+const agentTimelines = defineTable({
+  // Associate a timeline with a document so it can render in DocumentView
+  documentId: v.id("documents"),
+  name: v.string(),
+  createdBy: v.id("users"),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+}).index("by_document", ["documentId"])
+  .index("by_user", ["createdBy"]);
+
+const agentTasks = defineTable({
+  timelineId: v.id("agentTimelines"),
+  parentId: v.optional(v.id("agentTasks")),
+  name: v.string(),
+  startMs: v.number(),
+  durationMs: v.number(),
+  progress: v.optional(v.number()), // 0..1
+  status: v.optional(v.union(
+    v.literal("pending"),
+    v.literal("running"),
+    v.literal("complete"),
+    v.literal("paused")
+  )),
+  agentType: v.optional(v.union(
+    v.literal("orchestrator"),
+    v.literal("main"),
+    v.literal("leaf")
+  )),
+  assigneeId: v.optional(v.id("users")),
+  outputSizeBytes: v.optional(v.number()),
+  order: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+}).index("by_timeline", ["timelineId"]).index("by_parent", ["parentId"]);
+
+const agentLinks = defineTable({
+  timelineId: v.id("agentTimelines"),
+  sourceTaskId: v.id("agentTasks"),
+  targetTaskId: v.id("agentTasks"),
+  type: v.optional(v.union(
+    v.literal("e2e"),
+    v.literal("s2s"),
+    v.literal("s2e"),
+    v.literal("e2s")
+  )),
+  createdAt: v.number(),
+}).index("by_timeline", ["timelineId"]);
+
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
   documents,
@@ -824,4 +882,8 @@ export default defineSchema({
   userApiKeys,
   dailyUsage,
   subscriptions,
+  agentTimelines,
+  agentTasks,
+  agentLinks,
+
 });

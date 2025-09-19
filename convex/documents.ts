@@ -16,9 +16,9 @@ import { Id } from "./_generated/dataModel";
  */
 const extractPlainTextFromRichContent = (content: any): string => {
   if (!content) return "";
-  
+
   const text = "";
-  
+
   // Handle string content (already plain text)
   if (typeof content === "string") {
     // Try to parse as JSON if it looks like JSON
@@ -32,7 +32,7 @@ const extractPlainTextFromRichContent = (content: any): string => {
     }
     return content;
   }
-  
+
   // Handle JSON content structure
   if (typeof content === "object" && content !== null) {
     // Special case: EditorJS schema with blocks array
@@ -82,17 +82,17 @@ const extractPlainTextFromRichContent = (content: any): string => {
     if (Array.isArray(content)) {
       return content.map((item: any) => extractPlainTextFromRichContent(item)).join(" ");
     }
-    
+
     // Handle text nodes
     if (content.type === "text" && content.text) {
       return content.text;
     }
-    
+
     // Handle nodes with content array
     if (content.content && Array.isArray(content.content)) {
       return content.content.map((item: any) => extractPlainTextFromRichContent(item)).join(" ");
     }
-    
+
     // Handle paragraph-like structures
     if (content.type && (content.type === "paragraph" || content.type === "blockContainer" || content.type === "blockGroup")) {
       if (content.content) {
@@ -100,7 +100,7 @@ const extractPlainTextFromRichContent = (content: any): string => {
       }
     }
   }
-  
+
   return text;
 };
 
@@ -111,10 +111,10 @@ const extractPlainTextFromRichContent = (content: any): string => {
  */
 const parseMarkdownText = (text: string): any[] => {
   if (!text) return [];
-  
+
   const nodes: any[] = [];
   let currentIndex = 0;
-  
+
   // Regex patterns for markdown formatting
   const patterns: Array<{ regex: RegExp; styles: Partial<Record<string, boolean>> }> = [
     { regex: /\*\*\*(.*?)\*\*\*/g, styles: { bold: true, italic: true } }, // ***bold italic***
@@ -122,10 +122,10 @@ const parseMarkdownText = (text: string): any[] => {
     { regex: /\*(.*?)\*/g, styles: { italic: true } }, // *italic*
     { regex: /`(.*?)`/g, styles: { code: true } }, // `code`
   ];
-  
+
   // Find all matches and their positions
   const matches: { start: number; end: number; text: string; styles: Partial<Record<string, boolean>> }[] = [];
-  
+
   for (const pattern of patterns) {
     let match;
     while ((match = pattern.regex.exec(text)) !== null) {
@@ -137,14 +137,14 @@ const parseMarkdownText = (text: string): any[] => {
       });
     }
   }
-  
+
   // Sort matches by start position
   matches.sort((a, b) => a.start - b.start);
-  
+
   // Remove overlapping matches (keep the first one)
   const nonOverlappingMatches: { start: number; end: number; text: string; styles: Partial<Record<string, boolean>> }[] = [];
   for (const match of matches) {
-    const hasOverlap = nonOverlappingMatches.some(existing => 
+    const hasOverlap = nonOverlappingMatches.some(existing =>
       (match.start >= existing.start && match.start < existing.end) ||
       (match.end > existing.start && match.end <= existing.end)
     );
@@ -152,7 +152,7 @@ const parseMarkdownText = (text: string): any[] => {
       nonOverlappingMatches.push(match);
     }
   }
-  
+
   // Build the text nodes
   for (const match of nonOverlappingMatches) {
     // Add plain text before the match
@@ -162,17 +162,17 @@ const parseMarkdownText = (text: string): any[] => {
         nodes.push({ type: "text", text: plainText });
       }
     }
-    
+
     // Add the formatted text
     nodes.push({
       type: "text",
       styles: match.styles,
       text: match.text
     });
-    
+
     currentIndex = match.end;
   }
-  
+
   // Add any remaining plain text
   if (currentIndex < text.length) {
     const remainingText = text.slice(currentIndex);
@@ -180,12 +180,12 @@ const parseMarkdownText = (text: string): any[] => {
       nodes.push({ type: "text", text: remainingText });
     }
   }
-  
+
   // If no matches were found, return the original text as a single node
   if (nodes.length === 0 && text) {
     nodes.push({ type: "text", text });
   }
-  
+
   return nodes;
 };
 
@@ -547,7 +547,7 @@ export const getSidebar = query({
       .filter((q) => q.neq(q.field("isArchived"), true))
       .order("desc")
       .collect();
-    
+
     // Sort by lastModified if available, otherwise by _creationTime
     return documents.sort((a, b) => {
       const aTime = (a as any).lastModified || a._creationTime;
@@ -604,22 +604,22 @@ export const getSidebarWithPreviews = query({
       .filter((q) => q.neq(q.field("isArchived"), true))
       .order("desc")
       .collect();
-    
+
     // Add truncated content preview and sort by lastModified
     const documentsWithPreviews = documents.map(doc => {
       let plainText = "";
       if (doc.content && doc.content.trim()) {
         plainText = extractPlainTextFromRichContent(doc.content);
       }
-      
+
       return {
         ...doc,
-        contentPreview: plainText && plainText.trim() 
-          ? plainText.substring(0, 150).trim() 
+        contentPreview: plainText && plainText.trim()
+          ? plainText.substring(0, 150).trim()
           : null
       };
     });
-    
+
     return documentsWithPreviews.sort((a, b) => {
       const aTime = (a as any).lastModified || a._creationTime;
       const bTime = (b as any).lastModified || b._creationTime;
@@ -637,29 +637,29 @@ export const getSidebarWithOptions = query({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
-    
+
     let documents = await ctx.db
       .query("documents")
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
       .filter((q) => q.neq(q.field("isArchived"), true))
       .collect();
-    
+
     // Apply title filter if provided
     if (args.filterBy) {
       const filter = args.filterBy.toLowerCase();
-      documents = documents.filter(doc => 
+      documents = documents.filter(doc =>
         doc.title.toLowerCase().includes(filter)
       );
     }
-    
+
     // Apply sorting
     const sortBy = args.sortBy || "updated";
     const sortOrder = args.sortOrder || "desc";
-    
+
     documents.sort((a, b) => {
       let aValue: number | string;
       let bValue: number | string;
-      
+
       switch (sortBy) {
         case "created":
           aValue = a._creationTime;
@@ -675,14 +675,14 @@ export const getSidebarWithOptions = query({
           bValue = (b as any).lastModified || b._creationTime;
           break;
       }
-      
+
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortOrder === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
       } else {
         return sortOrder === "asc" ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number);
       }
     });
-    
+
     return documents;
   },
 });
@@ -716,13 +716,13 @@ export const update = mutation({
     const existingDocument = await ctx.db.get(id);
     if (!existingDocument) throw new Error("Not found");
     if (existingDocument.createdBy !== userId) throw new Error("Unauthorized");
-    
+
     // Add lastModified timestamp to track when document was updated
     const updateData = {
       ...rest,
       lastModified: Date.now()
     };
-    
+
     return await ctx.db.patch(id, updateData);
   },
 });
@@ -738,6 +738,21 @@ export const removeIcon = mutation({
     return await ctx.db.patch(args.id, { icon: undefined });
   },
 });
+
+export const setDocumentType = mutation({
+  args: { id: v.id("documents"), documentType: v.union(v.literal("text"), v.literal("file"), v.literal("timeline")) },
+  returns: v.null(),
+  handler: async (ctx, { id, documentType }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const existing = await ctx.db.get(id);
+    if (!existing) throw new Error("Not found");
+    if (existing.createdBy !== userId) throw new Error("Unauthorized");
+    await ctx.db.patch(id, { documentType } as any);
+    return null;
+  },
+});
+
 
 export const removeCoverImage = mutation({
   args: { id: v.id("documents") },
@@ -968,12 +983,12 @@ export const debugDocuments = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
-    
+
     const allUserDocs = await ctx.db
       .query("documents")
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
       .collect();
-    
+
     return allUserDocs.map(doc => ({
       id: doc._id,
       title: doc.title,
@@ -1004,24 +1019,24 @@ export const trackNodeEdit = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    
+
     // Check if user can edit this document
     const document = await ctx.db.get(args.documentId);
     if (!document) throw new Error("Document not found");
-    
+
     const isOwner = document.createdBy === userId;
     const isPublicDocument = document.isPublic === true;
     const isArchived = document.isArchived === true;
-    
+
     if (!isOwner && (!isPublicDocument || isArchived)) {
       throw new Error("Unauthorized");
     }
-    
+
     // Store or update node edit information in a tracking table
     // For now, we'll use document metadata to track the most recently edited nodes
     const now = Date.now();
     const nodeEditKey = `node_${args.nodeId}`;
-    
+
     // Store edit info in document metadata (simple approach)
     // In a more complex system, this could be a separate table
     await ctx.db.patch(args.documentId, {
@@ -1031,7 +1046,7 @@ export const trackNodeEdit = mutation({
       [`${nodeEditKey}_editedAt`]: now,
       [`${nodeEditKey}_content`]: args.content.slice(0, 100), // First 100 chars for identification
     } as any);
-    
+
     return { success: true, timestamp: now };
   },
 });
@@ -1045,14 +1060,14 @@ export const getNodeEditInfo = query({
   handler: async (ctx, args) => {
     const document = await ctx.db.get(args.documentId);
     if (!document) return null;
-    
+
     const nodeEditKey = `node_${args.nodeId}`;
     const editedBy = (document as any)[`${nodeEditKey}_editedBy`];
     const editedAt = (document as any)[`${nodeEditKey}_editedAt`];
     const content = (document as any)[`${nodeEditKey}_content`];
-    
+
     if (!editedBy || !editedAt) return null;
-    
+
     return {
       editedBy,
       editedAt,

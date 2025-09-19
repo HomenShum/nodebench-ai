@@ -63,7 +63,7 @@ type DocumentCardData = {
   _id: Id<"documents">;
   title: string;
   contentPreview: string | null;
-  documentType: "file" | "text";
+  documentType: "file" | "text" | "timeline";
   fileType?: string;
   fileName?: string;
   fileId?: Id<"files">;
@@ -107,12 +107,14 @@ const statusLabel = (s?: string) => {
 function normalizeDocument(d: any): DocumentCardData {
   const title = (d?.title ?? "Untitled") as string;
   const contentPreview = (d?.contentPreview ?? null) as string | null;
-  const isFile = d?.documentType === "file" || !!d?.fileId;
+  const rawType = d?.documentType as ("file"|"text"|"timeline"|undefined);
+  const isFile = rawType === "file" || !!d?.fileId;
+  const documentType: "file"|"text"|"timeline" = rawType === "timeline" ? "timeline" : (isFile ? "file" : "text");
   return {
     _id: d._id as Id<"documents">,
     title,
     contentPreview,
-    documentType: isFile ? "file" : "text",
+    documentType,
     fileType: typeof d?.fileType === "string" ? d.fileType : undefined,
     fileName: typeof d?.fileName === "string" ? d.fileName : undefined,
     fileId: d?.fileId as Id<"files"> | undefined,
@@ -1088,7 +1090,7 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, hybrid
           {/* Pills Metadata Container + persistent Analyze button for files */}
           <div className="mt-auto pt-2 border-t border-[var(--border-color)] flex items-center justify-between gap-2">
             {(() => {
-              const pills = docToPills({ ...doc, meta: { ...(doc.meta ?? {}), type: typeGuess }, typeGuess });
+              const pills = docToPills(({ ...doc, meta: { ...((doc as any).meta ?? {}), type: typeGuess }, typeGuess } as any));
               return (
                 <MetaPills
                   pills={pills}
@@ -1096,6 +1098,10 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, hybrid
                 />
               );
             })()}
+            {doc.documentType === "timeline" && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">Timeline</span>
+            )}
+
 
           </div>
         </div>
@@ -1175,9 +1181,14 @@ const DocumentRow = ({
           <div className="text-[15px] font-semibold text-[var(--text-primary)] truncate">{doc.title}</div>
           <div className="mt-2">
             <MetaPills
-              pills={docToPills({ ...doc, meta: { ...(doc.meta ?? {}), type: typeGuess }, typeGuess })}
+              pills={docToPills(({ ...doc, meta: { ...((doc as any).meta ?? {}), type: typeGuess }, typeGuess } as any))}
               typePillClassName={isCalendarDoc ? "bg-amber-500/10 border-amber-500/30 text-amber-700" : theme.label}
             />
+            {doc.documentType === "timeline" && (
+              <div className="mt-1">
+                <span className="inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">Timeline</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1437,6 +1448,7 @@ export function DocumentsHomeHub({
 
   const [analyzeRunningDocId, setAnalyzeRunningDocId] = useState<Id<"documents"> | null>(null);
   const [isSeedingOnboarding, setIsSeedingOnboarding] = useState<boolean>(false);
+  const [isSeedingTimeline, setIsSeedingTimeline] = useState<boolean>(false);
   const [mode, setMode] = useState<"list" | "kanban" | "weekly">("list");
   // Inline editor is embedded within this component; no parent notification needed
 
@@ -1753,10 +1765,16 @@ export function DocumentsHomeHub({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  const userTimelines = useQuery(api.agentTimelines.listForUser, {});
+
   // File uploads (react-dropzone + Convex storage)
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const createFileRecord = useMutation(api.files.createFile);
   const createDocument = useMutation(api.documents.create);
+  const setDocumentType = useMutation(api.documents.setDocumentType);
+  const createTimelineForDoc = useMutation(api.agentTimelines.createForDocument);
+  const applyPlanTimeline = useMutation(api.agentTimelines.applyPlan);
+
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
@@ -2381,6 +2399,49 @@ export function DocumentsHomeHub({
       setIsSeedingOnboarding(false);
     }
   };
+
+
+  const handleSeedTimeline = async () => {
+    if (!loggedInUser) {
+      toast.error("Please sign in to seed a timeline.");
+      return;
+    }
+    if (isSeedingTimeline) return;
+    setIsSeedingTimeline(true);
+    try {
+      let targetDocId: Id<'documents'>;
+      const selected = Array.from(selectedDocIds) as Array<Id<'documents'>>;
+      if (selected.length === 1) {
+        targetDocId = selected[0];
+      } else {
+        targetDocId = await createDocument({ title: "Timeline Gantt" });
+      }
+
+      const timelineId = await createTimelineForDoc({ documentId: targetDocId, name: "Timeline" });
+      // Ensure this doc renders the timeline view immediately
+      await setDocumentType({ id: targetDocId, documentType: "timeline" });
+
+      // Seed a simple demo plan
+      const baseStartMs = Date.now();
+      const tasks: Array<{ id: string; parentId: string | null; name: string; startOffsetMs?: number; durationMs: number; agentType?: "orchestrator" | "main" | "leaf"; status?: "pending" | "running" | "complete" | "paused"; }> = [
+        { id: "orc", parentId: null, name: "Orchestrate", startOffsetMs: 0, durationMs: 5 * 60 * 1000, agentType: "orchestrator" },
+        { id: "main", parentId: "orc", name: "Main Research", startOffsetMs: 0, durationMs: 30 * 60 * 1000, agentType: "main" },
+        { id: "leaf1", parentId: "main", name: "Collect Sources", startOffsetMs: 0, durationMs: 10 * 60 * 1000, agentType: "leaf" },
+        { id: "leaf2", parentId: "main", name: "Summarize", startOffsetMs: 10 * 60 * 1000, durationMs: 15 * 60 * 1000, agentType: "leaf" },
+      ];
+      const links = [ { sourceId: "leaf1", targetId: "leaf2", type: "e2e" } ];
+      await applyPlanTimeline({ timelineId, baseStartMs, tasks, links });
+
+      handleSelectDocument(targetDocId);
+      toast.success("Timeline seeded!");
+    } catch (e: any) {
+      console.error("Seed timeline failed", e);
+      toast.error(e?.message ?? "Failed to seed timeline");
+    } finally {
+      setIsSeedingTimeline(false);
+    }
+  };
+
 
   // Build EditorJS data from analysis result for createWithContentString
   const buildEditorJsDataFromAnalysis = useCallback((args: { title: string; analysis: string; structuredData?: any; analysisType?: string; }): any => {
@@ -3041,6 +3102,8 @@ export function DocumentsHomeHub({
   const handleCreateDocument = async (type: "text" | "calendar") => {
     const title = type === "calendar" ? "New Calendar" : "Untitled Document";
     const newDoc = await createDocument({ title });
+
+
     handleSelectDocument(newDoc);
   };
 
@@ -3052,6 +3115,18 @@ export function DocumentsHomeHub({
     { id: "files", label: "Files", icon: <File className="h-4 w-4" /> },
     { id: "favorites", label: "Favorites", icon: <Star className="h-4 w-4" /> },
   ];
+
+
+  const handleCreateTimelineDoc = async () => {
+    const newDoc = await createDocument({ title: "Timeline Gantt" });
+    try {
+      await createTimelineForDoc({ documentId: newDoc, name: "Timeline" });
+      await setDocumentType({ id: newDoc, documentType: "timeline" });
+    } catch (e) {
+      console.warn("Failed to create agent timeline for document", e);
+    }
+    handleSelectDocument(newDoc);
+  };
 
   // Roving tab index + arrow key navigation for filter toolbar
   const filterIds: Array<string> = documentTypes.map((t) => t.id);
@@ -6160,6 +6235,16 @@ export function DocumentsHomeHub({
                 handleCompileAaplModel={handleCompileAaplModel}
                 isSeedingOnboarding={isSeedingOnboarding}
                 handleSeedOnboarding={handleSeedOnboarding}
+                isSeedingTimeline={isSeedingTimeline}
+                handleSeedTimeline={handleSeedTimeline}
+                onOpenCalendarPage={() => setMode('calendar')}
+                onOpenTimelinePage={() => {
+                  if (userTimelines && userTimelines.length > 0) {
+                    handleSelectDocument(userTimelines[0].documentId);
+                  } else {
+                    void handleCreateTimelineDoc();
+                  }
+                }}
                 onUploadClick={() => open()}
                 isUploading={isUploading}
                 uploadProgress={uploadProgress}
@@ -7518,7 +7603,49 @@ export function DocumentsHomeHub({
                         >
                           Calendar
                         </button>
+                        <button
+                          onClick={() => void handleCreateTimelineDoc()}
+                          className="text-xs px-3 py-1.5 bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] transition-colors font-medium"
+                        >
+                          Timeline Gantt
+                        </button>
+
                       </div>
+
+                  {/* Agent Hierarchy Card */}
+                  <div className="group relative col-span-1 lg:col-span-2">
+                    <div className="bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] p-6 h-52 flex flex-col transition-all duration-200 hover:shadow-lg hover:bg-[var(--bg-hover)] cursor-default backdrop-blur-sm">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-[var(--accent-primary)] rounded-full flex items-center justify-center shadow-sm">
+                          <span className="text-white text-lg">🤖</span>
+                        </div>
+                        <h3 className="font-medium text-[var(--text-primary)]">Agent Hierarchy</h3>
+                      </div>
+                      <div className="flex-1 overflow-auto custom-scrollbar pr-1">
+                        {userTimelines && userTimelines.length > 0 ? (
+                          <ul className="space-y-2">
+                            {userTimelines.slice(0, 6).map((t) => (
+                              <li key={t.timelineId}>
+                                <button
+                                  onClick={() => handleSelectDocument(t.documentId)}
+                                  className="w-full text-left px-3 py-2 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] flex items-center justify-between gap-2"
+                                >
+                                  <span className="truncate">{t.title}</span>
+                                  <span className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-[var(--border-color)]">{t.taskCount} tasks</span>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-[var(--border-color)]">{t.linkCount} links</span>
+                                  </span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="text-[var(--text-secondary)] text-sm">No timelines yet. Create one with the Timeline Gantt button.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                     </div>
                   </div>
 
