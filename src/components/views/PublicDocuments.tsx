@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { Globe } from "lucide-react";
-import { DocumentCard } from "./DocumentsHomeHub";
+import { DocumentCard } from "@/components/DocumentsHomeHub";
 
 interface PublicDocumentsProps {
   onDocumentSelect: (documentId: Id<"documents">) => void;

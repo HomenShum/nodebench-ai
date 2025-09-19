@@ -62,12 +62,14 @@ const labelizeType = (t?: string) => {
     document: 'Doc',
     doc: 'Doc',
     pdf: 'PDF',
-    csv: 'CSV',
+    csv: 'Spreadsheet',
+    excel: 'Spreadsheet',
+    spreadsheet: 'Spreadsheet',
+    sheet: 'Spreadsheet',
     url: 'Link',
     calendar: 'Calendar',
     audio: 'Audio',
     video: 'Video',
-    sheet: 'Sheet',
     slide: 'Slides',
   };
   return map[k] || (k ? k[0].toUpperCase() + k.slice(1) : 'Doc');

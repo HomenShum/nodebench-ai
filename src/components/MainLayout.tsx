@@ -4,7 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Sidebar } from "./Sidebar";
 import { AIChatPanel } from "./AIChatPanel";
-import { PublicDocuments } from "./PublicDocuments";
+import { PublicDocuments } from "@/components/views/PublicDocuments";
 import { TabManager } from "./TabManager";
 import { DocumentsHomeHub } from "./DocumentsHomeHub";
 import { HelpCircle, Sun, Moon, MessageSquare, Settings as SettingsIcon, Link as LinkIcon, Send } from "lucide-react";

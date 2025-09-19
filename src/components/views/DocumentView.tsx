@@ -1,15 +1,15 @@
 import { useQuery } from "convex/react";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
-import { DocumentHeader } from "./DocumentHeader";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
+import { DocumentHeader } from "@/components/DocumentHeader";
 // Use the richer Editor wrapper (InlineRichEditor) so proposals/mentions work
-import { Editor } from "./Editor/Editor";
-import UnifiedEditor from "./UnifiedEditor";
-import { FileViewer } from "./FileViewer";
-import { SpreadsheetView } from "./SpreadsheetView";
-import { ErrorBoundary } from "./ErrorBoundary";
-import { isValidConvexId } from "../lib/ids";
+import { Editor } from "@/components/Editor/Editor";
+import UnifiedEditor from "@/components/UnifiedEditor";
+import { FileViewer } from "@/components/views/FileViewer";
+import { SpreadsheetView } from "@/components/views/SpreadsheetView";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { isValidConvexId } from "@/lib/ids";
 
 interface DocumentViewProps {
   documentId: Id<"documents">;

@@ -3,7 +3,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { DocumentGrid, type GridTab } from "./DocumentGrid";
-import { DocumentView } from "./DocumentView";
+import { DocumentView } from "@/components/views/DocumentView";
 import { CalendarHomeHub } from "./CalendarHomeHub";
 import { X } from "lucide-react";
 

@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import UnifiedEditor from "./UnifiedEditor";
+import SpreadsheetMiniEditor from "./editors/mini/SpreadsheetMiniEditor";
 
 interface MiniEditorPopoverProps {
   isOpen: boolean;
@@ -147,14 +148,18 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
       </div>
     );
   }
-  // If it's a file document, show spreadsheet mini editor for csv, otherwise document title editor
-  if (fileDoc.document.fileType === "csv") {
-    return (
-      <div className="text-sm text-[var(--text-secondary)]">
-        Quick edits for spreadsheets are not available in the mini editor yet.
-        <div className="mt-2 text-[var(--text-tertiary)]">Open the document to edit the spreadsheet.</div>
-      </div>
-    );
+  // Open spreadsheet mini editor for CSV or Excel (by stored type OR filename extension)
+  {
+    const name = String(fileDoc?.file?.fileName || '').toLowerCase();
+    const ft = String(fileDoc?.document?.fileType || '').toLowerCase();
+    const isSpreadsheet = ft === 'csv' || ft === 'excel' || /\.(xlsx?)$/.test(name) || /\.csv$/.test(name);
+    if (isSpreadsheet) {
+      return (
+        <div className="min-h-[240px]">
+          <SpreadsheetMiniEditor documentId={documentId} onClose={onClose} />
+        </div>
+      );
+    }
   }
   return (
     <div className="min-h-[240px]">
