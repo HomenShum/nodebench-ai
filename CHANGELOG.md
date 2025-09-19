@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2025-09-19
+
+### Highlights
+- UI refactor: Consolidated document and calendar views into Home Hub flows; removed legacy viewer pages.
+- Layout & navigation: Streamlined MainLayout and TabManager; improved MiniEditorPopover UX.
+- Files backend: Updated Convex file APIs for documents/files.
+- Cleanup: Removed PublicDocuments, SpreadsheetView, WelcomePage and other legacy views.
+- Chore: package.json updates.
+
+### Details
+- Removed legacy components
+  - src/components/CalendarView.tsx
+  - src/components/DocumentView.tsx
+  - src/components/FileViewer.tsx
+  - src/components/PublicDocuments.tsx
+  - src/components/SpreadsheetView.tsx
+  - src/components/WelcomePage.tsx
+- Updated UI components
+  - src/components/CalendarHomeHub.tsx; src/components/DocumentsHomeHub.tsx
+  - src/components/DocumentGrid.tsx; src/components/FileSyncButton.tsx; src/components/FileTypeIcon.tsx
+  - src/components/MCPManager.tsx; src/components/MainLayout.tsx; src/components/MiniEditorPopover.tsx; src/components/TabManager.tsx
+  - src/components/editors/mini/SpreadsheetMiniEditor.tsx
+- Backend (Convex)
+  - convex/fileDocuments.ts; convex/files.ts – adjustments to file/document APIs and types.
+- Misc
+  - src/lib/metaPillMappers.ts tweaks; src/App.tsx update; package.json updated.
+
+### Screenshots (091825)
+
+Updated homepage doc/filetype cards:
+
+![Updated doc/filetype cards (091825)](./updated_screenshot/091825_updated_doc_filetype_cards_homepage.png)
+
+Better file viewer sizing:
+
+![Better file viewer sizing (091825)](./updated_screenshot/091825_better_file_viewer_sizing.png)
+
+File analysis prompt popover:
+
+![File analysis prompt popover (091825)](./updated_screenshot/091825_file_analysis_prompt_popover.png)
+
+Updated spreadsheet view:
+
+![Spreadsheet view updated (091825)](./updated_screenshot/091825_spreadsheet_view_updated.png)
+
+
+
 ## 2025-09-17
 
 ### Highlights
