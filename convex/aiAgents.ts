@@ -2619,3 +2619,26 @@ export const indexAllDocuments = internalAction({
     }
   },
 });
+
+// Apply a structured agent plan into a timeline (bridge to agentTimelines.applyPlan)
+export const applyPlanToTimeline = action({
+  args: {
+    timelineId: v.id("agentTimelines"),
+    baseStartMs: v.optional(v.number()),
+    tasks: v.array(v.object({
+      id: v.string(),
+      parentId: v.union(v.string(), v.null()),
+      name: v.string(),
+      startOffsetMs: v.optional(v.number()),
+      durationMs: v.number(),
+      agentType: v.optional(v.union(v.literal("orchestrator"), v.literal("main"), v.literal("leaf"))),
+      status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"))),
+    })),
+    links: v.array(v.object({ sourceId: v.string(), targetId: v.string(), type: v.optional(v.string()) })),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(api.agentTimelines.applyPlan, args as any);
+    return null;
+  },
+});

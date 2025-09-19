@@ -1,5 +1,5 @@
 import React from "react";
-import { Lightbulb, Wrench, Sprout, Star, Trash2, X, Plus, Loader2 } from "lucide-react";
+import { Lightbulb, Wrench, Sprout, Star, Trash2, X, Plus, Loader2, CalendarDays, GitBranch } from "lucide-react";
 
 export type DocumentType = {
   id: string;
@@ -32,6 +32,13 @@ type Props = {
   handleCompileAaplModel: () => Promise<void> | void;
   isSeedingOnboarding: boolean;
   handleSeedOnboarding: () => Promise<void> | void;
+  isSeedingTimeline: boolean;
+  handleSeedTimeline: () => Promise<void> | void;
+
+  // New: quick view buttons
+  onOpenCalendarPage?: () => void;
+  onOpenTimelinePage?: () => void;
+
   // Upload action
   onUploadClick: () => void;
   isUploading: boolean;
@@ -65,6 +72,8 @@ export default function FiltersToolsBar(props: Props) {
     handleCompileAaplModel,
     isSeedingOnboarding,
     handleSeedOnboarding,
+    isSeedingTimeline,
+    handleSeedTimeline,
     onUploadClick,
     isUploading,
     uploadProgress,
@@ -169,6 +178,45 @@ export default function FiltersToolsBar(props: Props) {
           <span className="inline-flex items-center gap-1">
             <Sprout className="h-4 w-4" />
             {isSeedingOnboarding ? "Seeding…" : "Seed Onboarding"}
+          </span>
+        </button>
+        <button
+          onClick={() => void handleSeedTimeline()}
+          className={`inline-flex items-center text-xs px-3 py-1.5 rounded-md transition-colors ${
+            !loggedInUser || isSeedingTimeline
+              ? "bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed"
+              : "bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+          }`}
+          disabled={!loggedInUser || isSeedingTimeline}
+          aria-label="Seed Timeline"
+          title={!loggedInUser ? "Please sign in to seed a timeline" : "Create a timeline doc and seed demo tasks"}
+        >
+          <span className="inline-flex items-center gap-1">
+            <Lightbulb className="h-4 w-4" />
+            {isSeedingTimeline ? "Seeding…" : "Seed Timeline"}
+          </span>
+        </button>
+        {/* Quick view buttons */}
+        <button
+          onClick={() => props.onOpenCalendarPage?.()}
+          className="inline-flex items-center text-xs px-3 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+          aria-label="Open Calendar"
+          title="Open Calendar"
+        >
+          <span className="inline-flex items-center gap-1">
+            <CalendarDays className="h-4 w-4" />
+            Calendar
+          </span>
+        </button>
+        <button
+          onClick={() => props.onOpenTimelinePage?.()}
+          className="inline-flex items-center text-xs px-3 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+          aria-label="Open Timeline"
+          title="Open Timeline"
+        >
+          <span className="inline-flex items-center gap-1">
+            <GitBranch className="h-4 w-4" />
+            Timeline
           </span>
         </button>
       </div>

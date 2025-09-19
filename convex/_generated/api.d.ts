@@ -10,6 +10,7 @@
 
 import type * as account from "../account.js";
 import type * as agentEditor from "../agentEditor.js";
+import type * as agentTimelines from "../agentTimelines.js";
 import type * as agents_agentDispatcher from "../agents/agentDispatcher.js";
 import type * as agents_agentTools from "../agents/agentTools.js";
 import type * as agents_index from "../agents/index.js";
@@ -102,6 +103,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   account: typeof account;
   agentEditor: typeof agentEditor;
+  agentTimelines: typeof agentTimelines;
   "agents/agentDispatcher": typeof agents_agentDispatcher;
   "agents/agentTools": typeof agents_agentTools;
   "agents/index": typeof agents_index;
