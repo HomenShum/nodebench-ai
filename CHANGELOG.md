@@ -29,6 +29,23 @@ All notable changes to this project will be documented in this file.
 - Misc
   - src/lib/metaPillMappers.ts tweaks; src/App.tsx update; package.json updated.
 
+
+### AI Agent Timeline View
+
+- Introduced a minimal TimelineGanttView with a new TimelineGanttPage wrapper for layout composition (timeline on left, notes/logs panel on right). DocumentView now mounts TimelineGanttPage for `documentType === "timeline"` or when a timeline bundle exists.
+- Removed the obsolete TimelineGanttContainer (logic moved into TimelineGanttView and wrapper page).
+- Added quick view buttons in the Home Hub Tools row to open Calendar and Timeline directly:
+  - Calendar button switches the hub to calendar mode.
+  - Timeline button opens your existing timeline doc if present, otherwise creates and seeds a new timeline doc, then navigates to it.
+- Improved timeline document routing and card badges: timeline docs are labeled correctly and consistently open in the timeline view.
+- Seed Timeline action in Tools creates a timeline, applies a demo plan, and navigates to it.
+
+### Screenshots (091925)
+
+AI Agent Timeline View (wrapper page + minimal timeline view):
+
+![AI Agent Timeline View (091925)](./updated_screenshot/091925_preview_ai_agent_timeline_view.png)
+
 ### Screenshots (091825)
 
 Updated homepage doc/filetype cards:

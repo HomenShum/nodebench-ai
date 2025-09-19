@@ -39,6 +39,11 @@ User-defined http routes are defined in the `convex/router.ts` file. We split th
 
 Optional thumbnail preview:
 
+#### Preview (091925) — AI Agent Timeline View
+
+![AI Agent Timeline View](./updated_screenshot/091925_preview_ai_agent_timeline_view.png)
+
+
 ![AI analysis → Quick note + AI-tagged header](./updated_screenshot/091725_ai_file_analysis_quick_note_ai_tagged.png)
 
 
