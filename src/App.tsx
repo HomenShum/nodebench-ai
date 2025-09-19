@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { SignInForm } from "./SignInForm";
 import { api } from "../convex/_generated/api";
 import { MainLayout } from "./components/MainLayout";
-import { WelcomePage } from "./components/WelcomePage";
+import { WelcomePage } from "@/components/views/WelcomePage";
 import { useState, useEffect, useRef } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";

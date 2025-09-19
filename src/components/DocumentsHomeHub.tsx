@@ -51,7 +51,7 @@ import { getThemeForFileType } from "../lib/documentThemes";
 import MetaPills from "./MetaPills";
 import { docToPills, taskToPills } from "../lib/metaPillMappers";
 import { shapeTaskForPills, reorderTaskPillsForTightRows } from "../lib/tasks";
-import { CalendarView } from "./CalendarView";
+import { CalendarView } from "@/components/views/CalendarView";
 import { MiniMonthCalendar } from "./MiniMonthCalendar";
 // Migrated list DnD to dnd-kit; removed @hello-pangea/dnd
 import MiniEditorPopover from "./MiniEditorPopover.tsx";
@@ -65,6 +65,7 @@ type DocumentCardData = {
   contentPreview: string | null;
   documentType: "file" | "text";
   fileType?: string;
+  fileName?: string;
   fileId?: Id<"files">;
   lastModified?: number;
   createdAt: number;
@@ -113,6 +114,7 @@ function normalizeDocument(d: any): DocumentCardData {
     contentPreview,
     documentType: isFile ? "file" : "text",
     fileType: typeof d?.fileType === "string" ? d.fileType : undefined,
+    fileName: typeof d?.fileName === "string" ? d.fileName : undefined,
     fileId: d?.fileId as Id<"files"> | undefined,
     lastModified: d?.lastModified as number | undefined,
     createdAt: Number(d?._creationTime ?? 0),
@@ -882,12 +884,20 @@ interface DocumentsHomeHubProps {
 const getDocumentTypeIcon = (doc: DocumentCardData) => {
   let t: FileType;
   if (doc.documentType === "file") {
-    // We may not have the original filename; infer from extension if present.
-    const nameGuess = doc.fileType ? `file.${doc.fileType}` : doc.title;
-    t = inferFileType({ name: nameGuess });
+    const ft = String(doc.fileType || "").toLowerCase();
+    // If backend set a category like "video", honor it directly.
+    if (["video","audio","image","csv","pdf","excel","json","text","code","web","document"].includes(ft)) {
+      t = ft as FileType;
+    } else {
+      // Fall back to inferring from fileName (preferred) or title
+      const nameGuess = doc.fileName || doc.title;
+      t = inferFileType({ name: nameGuess });
+    }
   } else {
-    // Treat text documents as Nodebench documents (nbdoc)
-    t = inferFileType({ name: doc.title, isNodebenchDoc: true });
+    // For non-file docs: if the title clearly looks like a file (e.g., ends with .xlsx), infer from title; otherwise treat as nbdoc
+    const lower = String(doc.title || "").toLowerCase();
+    const looksLikeFile = /\.(csv|xlsx|xls|pdf|mp4|mov|webm|avi|mkv|jpg|jpeg|png|webp|gif|json|txt|md|markdown|js|ts|tsx|jsx|py|rb|go|rs|html|css|scss|sh)$/.test(lower);
+    t = looksLikeFile ? inferFileType({ name: doc.title }) : inferFileType({ name: doc.title, isNodebenchDoc: true });
   }
   return <FileTypeIcon type={t} className="h-5 w-5" />;
 };
@@ -935,8 +945,16 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, hybrid
   );
   // Theme by document type for consistent visuals across cards
   const typeGuess: FileType = doc.documentType === "file"
-    ? inferFileType({ name: doc.fileType ? `file.${String(doc.fileType).toLowerCase()}` : doc.title })
-    : inferFileType({ name: doc.title, isNodebenchDoc: true });
+    ? (() => {
+      const ft = String(doc.fileType || "").toLowerCase();
+      if (["video","audio","image","csv","pdf","excel","json","text","code","web","document"].includes(ft)) return ft as FileType;
+      return inferFileType({ name: doc.fileName || doc.title });
+    })()
+    : (() => {
+      const lower = String(doc.title || "").toLowerCase();
+      const looksLikeFile = /\.(csv|xlsx|xls|pdf|mp4|mov|webm|avi|mkv|jpg|jpeg|png|webp|gif|json|txt|md|markdown|js|ts|tsx|jsx|py|rb|go|rs|html|css|scss|sh)$/.test(lower);
+      return looksLikeFile ? inferFileType({ name: doc.title }) : inferFileType({ name: doc.title, isNodebenchDoc: true });
+    })();
   const theme = getThemeForFileType(typeGuess);
   return (
     <div className="group relative">
@@ -1026,6 +1044,15 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, hybrid
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
+              {/* Quick Edit Button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); onOpenMiniEditor?.(doc._id, e.currentTarget as HTMLElement); }}
+                className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)] transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                title="Quick edit"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+              </button>
+
               {/* Pin/Favorite Button */}
               <button
                 onClick={handlePinClick}
@@ -1061,7 +1088,7 @@ export function DocumentCard({ doc, onSelect, onDelete, onToggleFavorite, hybrid
           {/* Pills Metadata Container + persistent Analyze button for files */}
           <div className="mt-auto pt-2 border-t border-[var(--border-color)] flex items-center justify-between gap-2">
             {(() => {
-              const pills = docToPills({ ...doc, typeGuess });
+              const pills = docToPills({ ...doc, meta: { ...(doc.meta ?? {}), type: typeGuess }, typeGuess });
               return (
                 <MetaPills
                   pills={pills}
@@ -1099,8 +1126,16 @@ const DocumentRow = ({
     (doc.title.toLowerCase().includes("calendar") || doc.title.toLowerCase().includes("schedule"))
   );
   const typeGuess: FileType = doc.documentType === "file"
-    ? inferFileType({ name: doc.fileType ? `file.${String(doc.fileType).toLowerCase()}` : doc.title })
-    : inferFileType({ name: doc.title, isNodebenchDoc: true });
+    ? (() => {
+      const ft = String(doc.fileType || "").toLowerCase();
+      if (["video","audio","image","csv","pdf","excel","json","text","code","web","document"].includes(ft)) return ft as FileType;
+      return inferFileType({ name: doc.fileName || doc.title });
+    })()
+    : (() => {
+      const lower = String(doc.title || "").toLowerCase();
+      const looksLikeFile = /\.(csv|xlsx|xls|pdf|mp4|mov|webm|avi|mkv|jpg|jpeg|png|webp|gif|json|txt|md|markdown|js|ts|tsx|jsx|py|rb|go|rs|html|css|scss|sh)$/.test(lower);
+      return looksLikeFile ? inferFileType({ name: doc.title }) : inferFileType({ name: doc.title, isNodebenchDoc: true });
+    })();
   const theme = getThemeForFileType(typeGuess);
   const rowPadding = density === "compact" ? "p-4" : "p-6";
 
@@ -1140,7 +1175,7 @@ const DocumentRow = ({
           <div className="text-[15px] font-semibold text-[var(--text-primary)] truncate">{doc.title}</div>
           <div className="mt-2">
             <MetaPills
-              pills={docToPills({ ...doc, typeGuess })}
+              pills={docToPills({ ...doc, meta: { ...(doc.meta ?? {}), type: typeGuess }, typeGuess })}
               typePillClassName={isCalendarDoc ? "bg-amber-500/10 border-amber-500/30 text-amber-700" : theme.label}
             />
           </div>

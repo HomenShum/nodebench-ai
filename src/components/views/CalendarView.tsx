@@ -3,8 +3,8 @@ import { useBlockNoteSync } from "@convex-dev/prosemirror-sync/blocknote";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useQuery, useMutation } from "convex/react";
 import { useEffect, useState, useRef, useMemo } from "react";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { 
   CalendarIcon,
   Sparkles,
@@ -21,9 +21,9 @@ import { toast } from "react-hot-toast";
 
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
-import { createCalendarDocument } from "../lib/calendarHelpers";
-import MiniAgendaEditorPanel from "./agenda/MiniAgendaEditorPanel";
-import EventEditorPanel from "./EventEditorPanel";
+import { createCalendarDocument } from "@/lib/calendarHelpers";
+import MiniAgendaEditorPanel from "@/components/agenda/MiniAgendaEditorPanel";
+import EventEditorPanel from "@/components/EventEditorPanel";
 
 // Custom hook for calendar document
 const useCalendarDocument = () => {

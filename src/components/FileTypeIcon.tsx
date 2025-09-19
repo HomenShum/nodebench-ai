@@ -55,10 +55,13 @@ export function FileTypeIcon({ type, className }: { type: FileType; className?: 
       );
 
     case "video":
+      // Distinct video camera silhouette (purple is applied by theme via currentColor)
       return (
         <BaseSvg className={className}>
-          <rect x="3" y="5" width="18" height="14" rx="2" />
-          <polygon points="10,9 16,12 10,15" />
+          {/* Camera body */}
+          <rect x="3" y="7" width="11" height="10" rx="2" />
+          {/* Lens/prism */}
+          <polygon points="16,9 21,7 21,17 16,15" />
         </BaseSvg>
       );
 

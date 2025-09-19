@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { Id } from "../../convex/_generated/dataModel";
-import { DocumentView } from "./DocumentView";
+import { DocumentView } from "@/components/views/DocumentView";
 import { X, ZoomIn, ZoomOut, Maximize2, Calendar } from "lucide-react";
 import GridLayout, { Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";

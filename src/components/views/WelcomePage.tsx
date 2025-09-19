@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAction, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import ReactMarkdown from 'react-markdown';
 import {
   Bot,
@@ -16,7 +16,7 @@ import {
   Brain,
   Terminal
 } from "lucide-react";
-import { Id } from "../../convex/_generated/dataModel";
+import { Id } from "../../../convex/_generated/dataModel";
 
 interface OnboardingStep {
   id: string;

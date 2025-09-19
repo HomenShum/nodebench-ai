@@ -7,7 +7,7 @@ export const generateUploadUrl = mutation(async (ctx) => {
   if (!identity) {
     throw new Error("Not authenticated");
   }
-  
+
   return await ctx.storage.generateUploadUrl();
 });
 
@@ -55,6 +55,40 @@ export const finalizeCsvReplace = mutation({
   },
 });
 
+// Finalize an Excel (XLSX) replacement by updating the file's storageId and metadata
+export const finalizeExcelReplace = mutation({
+  args: {
+    fileId: v.id("files"),
+    newStorageId: v.string(),
+    newFileSize: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const file = await ctx.db.get(args.fileId);
+    if (!file) throw new Error("File not found");
+    if (file.userId !== userId) throw new Error("Not authorized to modify this file");
+
+    await ctx.db.patch(args.fileId, {
+      storageId: args.newStorageId,
+      fileSize: args.newFileSize,
+      lastModified: Date.now(),
+      modificationCount: (file.modificationCount || 0) + 1,
+    });
+
+    console.log(`XLSX storage replaced for file ${args.fileId}`, {
+      userId,
+      newStorageId: args.newStorageId,
+      newSize: args.newFileSize,
+      timestamp: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+
 export const createFile = mutation({
   args: {
     storageId: v.string(),
@@ -68,7 +102,7 @@ export const createFile = mutation({
     if (!userId) {
       throw new Error("Not authenticated");
     }
-    
+
     // Create the file record first
     const fileId = await ctx.db.insert("files", {
       userId,
@@ -78,7 +112,7 @@ export const createFile = mutation({
       mimeType: args.mimeType,
       fileSize: args.fileSize,
     });
-    
+
     // Automatically create a corresponding file document
     let documentFileType = "unknown";
     if (args.mimeType?.includes("text/csv") || args.fileName?.endsWith(".csv")) {
@@ -96,7 +130,7 @@ export const createFile = mutation({
     }
 
     const now = Date.now();
-    
+
     // Auto-create the file document
     await ctx.db.insert("documents", {
       title: args.fileName,
@@ -109,7 +143,7 @@ export const createFile = mutation({
       mimeType: args.mimeType,
       lastModified: now,
     });
-    
+
     return fileId;
   },
 });
@@ -147,7 +181,7 @@ export const getRecentAnalyses = query({
     if (!identity) {
       return [];
     }
-    
+
     const limit = args.limit || 10;
     const files = await ctx.db
       .query("files")
@@ -155,7 +189,7 @@ export const getRecentAnalyses = query({
       .filter((q) => q.neq(q.field("analysis"), undefined))
       .order("desc")
       .take(limit);
-    
+
     return files.map((file) => ({
       _id: file._id,
       fileName: file.fileName,
@@ -176,24 +210,24 @@ export const getUserFiles = query({
     if (!identity) {
       return [];
     }
-    
+
     let query = ctx.db
       .query("files")
       .withIndex("by_user", (q) => q.eq("userId", identity.subject));
-    
+
     if (args.fileType) {
       const fileType = args.fileType; // Type narrowing assignment
       query = ctx.db
         .query("files")
-        .withIndex("by_user_and_type", (q) => 
+        .withIndex("by_user_and_type", (q) =>
           q.eq("userId", identity.subject).eq("fileType", fileType)
         );
     }
-    
+
     const files = await query
       .order("desc")
       .take(args.limit || 50);
-    
+
     return files;
   },
 });
@@ -234,7 +268,7 @@ export const listRecentFiles = query({
     if (!identity) {
       return [];
     }
-    
+
     const limit = args.limit || 10;
     const files = await ctx.db
       .query("files")
@@ -242,7 +276,7 @@ export const listRecentFiles = query({
       .filter((q) => q.neq(q.field("analysis"), undefined))
       .order("desc")
       .take(limit);
-    
+
     return files.map((file) => ({
       _id: file._id,
       fileName: file.fileName,
@@ -268,7 +302,7 @@ export const createUrlAnalysis = internalMutation({
     if (!identity) {
       throw new Error("Not authenticated");
     }
-    
+
     const analysisId = await ctx.db.insert("urlAnalyses", {
       userId: identity.subject,
       url: args.url,
@@ -277,13 +311,13 @@ export const createUrlAnalysis = internalMutation({
       analyzedAt: Date.now(),
       contentType: args.contentType,
     });
-    
+
     return analysisId;
   },
 });
 
 export const getUrlAnalyses = query({
-  args: { 
+  args: {
     limit: v.optional(v.number()),
     url: v.optional(v.string()),
   },
@@ -292,11 +326,11 @@ export const getUrlAnalyses = query({
     if (!identity) {
       return [];
     }
-    
+
     let query = ctx.db
       .query("urlAnalyses")
       .withIndex("by_user", (q) => q.eq("userId", identity.subject));
-    
+
     if (args.url) {
       const url = args.url; // Type narrowing assignment
       query = ctx.db
@@ -304,11 +338,11 @@ export const getUrlAnalyses = query({
         .withIndex("by_url", (q) => q.eq("url", url))
         .filter((q) => q.eq(q.field("userId"), identity.subject));
     }
-    
+
     const analyses = await query
       .order("desc")
       .take(args.limit || 20);
-    
+
     return analyses;
   },
 });
@@ -345,7 +379,7 @@ export const updateCsvContent = mutation({
     // For now, we'll just update the modification tracking
     // In a full implementation, you'd need to handle file storage through upload URLs
     const contentSize = new TextEncoder().encode(args.csvContent).length;
-    
+
     // Update the file record with modification tracking
     await ctx.db.patch(args.fileId, {
       // Keep existing storageId for now - would need proper file replacement in production

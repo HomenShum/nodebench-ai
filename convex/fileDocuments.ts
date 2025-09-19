@@ -34,17 +34,23 @@ export const createFileDocument = mutation({
 
     // Determine file type category for appropriate viewer
     let fileType = "unknown";
-    if (file.mimeType?.includes("text/csv") || file.fileName?.endsWith(".csv")) {
+    const nameLower = (file.fileName || "").toLowerCase();
+    const mimeLower = (file.mimeType || "").toLowerCase();
+    if (mimeLower.includes("text/csv") || nameLower.endsWith(".csv")) {
       fileType = "csv";
-    } else if (file.mimeType?.includes("application/pdf")) {
+    } else if (mimeLower.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") ||
+               mimeLower.includes("application/vnd.ms-excel") ||
+               nameLower.endsWith(".xlsx") || nameLower.endsWith(".xls")) {
+      fileType = "excel";
+    } else if (mimeLower.includes("application/pdf")) {
       fileType = "pdf";
-    } else if (file.mimeType?.startsWith("image/")) {
+    } else if (mimeLower.startsWith("image/")) {
       fileType = "image";
-    } else if (file.mimeType?.startsWith("video/")) {
+    } else if (mimeLower.startsWith("video/")) {
       fileType = "video";
-    } else if (file.mimeType?.startsWith("audio/")) {
+    } else if (mimeLower.startsWith("audio/")) {
       fileType = "audio";
-    } else if (file.mimeType?.includes("text/")) {
+    } else if (mimeLower.includes("text/")) {
       fileType = "text";
     }
 
@@ -242,17 +248,23 @@ export const syncFilesToDocuments = mutation({
       if (!existingFileIds.has(file._id)) {
         // Determine file type
         let fileType = "unknown";
-        if (file.mimeType?.includes("text/csv") || file.fileName?.endsWith(".csv")) {
+        const nameLower = (file.fileName || "").toLowerCase();
+        const mimeLower = (file.mimeType || "").toLowerCase();
+        if (mimeLower.includes("text/csv") || nameLower.endsWith(".csv")) {
           fileType = "csv";
-        } else if (file.mimeType?.includes("application/pdf")) {
+        } else if (mimeLower.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") ||
+                   mimeLower.includes("application/vnd.ms-excel") ||
+                   nameLower.endsWith(".xlsx") || nameLower.endsWith(".xls")) {
+          fileType = "excel";
+        } else if (mimeLower.includes("application/pdf")) {
           fileType = "pdf";
-        } else if (file.mimeType?.startsWith("image/")) {
+        } else if (mimeLower.startsWith("image/")) {
           fileType = "image";
-        } else if (file.mimeType?.startsWith("video/")) {
+        } else if (mimeLower.startsWith("video/")) {
           fileType = "video";
-        } else if (file.mimeType?.startsWith("audio/")) {
+        } else if (mimeLower.startsWith("audio/")) {
           fileType = "audio";
-        } else if (file.mimeType?.includes("text/")) {
+        } else if (mimeLower.includes("text/")) {
           fileType = "text";
         }
 

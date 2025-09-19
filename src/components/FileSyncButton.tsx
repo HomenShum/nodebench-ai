@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { api } from '../../../convex/_generated/api';
 import { RefreshCw, FileCheck } from 'lucide-react';
 import { toast } from 'sonner';
 

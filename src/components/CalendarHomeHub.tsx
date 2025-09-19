@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
-import { CalendarView } from "./CalendarView";
+import { CalendarView } from "@/components/views/CalendarView";
 import { DocumentsHomeHub } from "./DocumentsHomeHub";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 
