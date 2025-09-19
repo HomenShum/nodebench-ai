@@ -38,3 +38,14 @@ User-defined http routes are defined in the `convex/router.ts` file. We split th
 Optional thumbnail preview:
 
 ![AI analysis → Quick note + AI-tagged header](./updated_screenshot/091725_ai_file_analysis_quick_note_ai_tagged.png)
+
+
+### More previews (091825)
+
+![Updated doc/filetype cards](./updated_screenshot/091825_updated_doc_filetype_cards_homepage.png)
+
+![Better file viewer sizing](./updated_screenshot/091825_better_file_viewer_sizing.png)
+
+![File analysis prompt popover](./updated_screenshot/091825_file_analysis_prompt_popover.png)
+
+![Spreadsheet view updated](./updated_screenshot/091825_spreadsheet_view_updated.png)
