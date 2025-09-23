@@ -61,6 +61,44 @@ node tests/linkupSmoke.mjs
   - linkupCompanyProfile(companyName): structured company brief using a JSON Schema
 
 
+## Agents CLI quickstart
+
+- See full details in agents/README.md. Quick examples:
+
+```bash
+# Research scenario
+npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_1.json
+
+# Summarize scenario
+npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_2.json
+
+# Multi-agent scaffold
+npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_multi_agent_scaffold.json
+
+# Orchestrate graph scenario
+npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_orchestrate_graph.json
+
+# Multimodal Grok
+npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_multimodal_grok.json
+```
+
+- Optional env:
+  - OPENROUTER_API_KEY or OPENAI_API_KEY
+  - AGENTS_DATA=convex, CONVEX_URL, and auth token for Convex-backed data
+
+## Tests: Orchestrator (live + eval)
+
+Run targeted live tests (may call external providers; ensure keys are set):
+
+```bash
+npx vitest run src/test/Orchestrator.live.e2e.test.ts
+npx vitest run src/test/Orchestrator.live.eval.e2e.test.ts
+```
+
+
+
+
+- 2025-09-23 — Agent Dashboard updates: centered Tasks prompt, Final Output copy/collapse, Run History with metrics badges, timeline freeze on completion, Linkup integration docs. See full details in the [CHANGELOG](./CHANGELOG.md).
 
 
 - 2025-09-19 — UI refactor (Home Hubs), streamlined layout/navigation, improved MiniEditorPopover, Convex file/document API updates, cleanup of legacy views, and new screenshots. See full details in the [CHANGELOG](./CHANGELOG.md).
