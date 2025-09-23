@@ -44,6 +44,24 @@ User-defined http routes are defined in the `convex/router.ts` file. We split th
 
 See agents/README.md for CLI usage and DESIGN_SPECS.md for deeper details.
 
+## Linkup API Integration
+
+- We integrate Linkup via a small service wrapper at agents/services/linkup.ts.
+- Environment variables:
+  - LINKUP_API_KEY=sk-linkup-... (or NEXT_PUBLIC_LINKUP_API_KEY)
+- Example smoke test:
+
+```bash
+node tests/linkupSmoke.mjs
+```
+
+- Available helpers (used by tools/orchestrations):
+  - linkupSourcedAnswer(query): returns an answer plus sources
+  - linkupPersonProfile(fullNameAndCompany): structured person brief using a JSON Schema
+  - linkupCompanyProfile(companyName): structured company brief using a JSON Schema
+
+
+
 
 - 2025-09-19 — UI refactor (Home Hubs), streamlined layout/navigation, improved MiniEditorPopover, Convex file/document API updates, cleanup of legacy views, and new screenshots. See full details in the [CHANGELOG](./CHANGELOG.md).
 
@@ -60,6 +78,17 @@ Optional thumbnail preview:
 #### Preview (091925) — Mini calendar → Full Calendar Hub (parity)
 
 ![Mini calendar → Full Calendar Hub](./updated_screenshot/091925_mini_calendar_full_calendar_hub.png)
+### Orchestrator: Step‑by‑step walkthrough (UI)
+
+1) Open Agents → Tasks tab and enter a multi‑line prompt in the centered bar; press Enter to run (Shift+Enter for newline).
+2) You will be navigated to the Timeline tab to observe execution:
+   - The orchestrator bar spans the full workflow; the red current-time-line freezes when the run completes.
+   - Open the Final Output panel: Copy result or collapse/expand (preference is persisted).
+   - Expand Run History to see past runs with badges for tokens, elapsed seconds, model, and retries.
+3) Re-run or refine: Submit another prompt to generate a new plan and compare in history.
+
+Tip: Planner model can be selected in Timeline (Grok via OpenRouter or OpenAI); preference persists to localStorage.
+
 
 ![Mini calendar → Full Calendar Hub (2)](./updated_screenshot/091925_mini_calendar_full_calendar_hub_2.png)
 

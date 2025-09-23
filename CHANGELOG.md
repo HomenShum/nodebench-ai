@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Run history: Added Convex runs table and UI browser; shows badges for tokens, elapsed, model, and retries.
 - Timeline: "current-time-line" now freezes at workflow completion.
 - Stability: updateTaskMetrics now safely no-ops if a task is missing to prevent run failures during orchestration.
+- Integrations: Linkup API support via agents/services/linkup.ts; smoke test at tests/linkupSmoke.mjs; env var LINKUP_API_KEY.
 
 ### Details
 - Frontend
@@ -19,6 +20,8 @@ All notable changes to this project will be documented in this file.
 - Backend (Convex)
   - convex/agentTimelines.ts: updateTaskMetrics now returns early if task not found; avoids unhandled rejections.
   - Runs metadata: modelUsed, token counts, and elapsedMs propagated for history badges (via orchestrator integration).
+- Docs: README now includes a Linkup Integration section and an Orchestrator step-by-step walkthrough (UI).
+
 
 ### Screenshots (092325)
 
