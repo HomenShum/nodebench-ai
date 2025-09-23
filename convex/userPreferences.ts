@@ -41,7 +41,7 @@ export const getUserPreferences = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getSafeUserId(ctx);
-    
+
     // If user is not found, return a special state indicating re-authentication needed
     if (!userId) {
       return {
@@ -182,12 +182,14 @@ export const setDocOrderForSegmented = mutation({
     if (!userId) {
       throw new Error("Not authenticated. Please sign out and sign back in.");
     }
-
     const now = Date.now();
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
+
+
+
 
     if (existing) {
       const current = existing.docOrderBySegmented ?? {};
@@ -228,7 +230,7 @@ export const updateUserPreferences = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    
+
     if (!userId) {
       throw new Error("Not authenticated. Please sign out and sign back in.");
     }
@@ -276,6 +278,9 @@ export const updateUserPreferences = mutation({
           'slack', 'discord', 'webhook', 'zapier'
         ],
         docOrderByGroup: args.docOrderByGroup ?? {},
+
+
+
         linkReminderOptOut: args.linkReminderOptOut ?? false,
         createdAt: now,
         updatedAt: now,
@@ -687,11 +692,11 @@ export const updateUngroupedSectionName = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    
+
     if (!userId) {
       throw new Error("Not authenticated. Please sign out and sign back in.");
     }
-    
+
     const existingPreferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -728,11 +733,11 @@ export const updateUngroupedExpandedState = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    
+
     if (!userId) {
       throw new Error("Not authenticated. Please sign out and sign back in.");
     }
-    
+
     const existingPreferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -754,6 +759,7 @@ export const updateUngroupedExpandedState = mutation({
         createdAt: now,
         updatedAt: now,
       });
+
     }
 
     return { success: true };

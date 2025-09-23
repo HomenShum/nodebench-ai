@@ -1,0 +1,9 @@
+{
+  "goal": "Summarize the local seed notes into a 2-sentence executive summary.",
+  "type": "summarize",
+  "input": {
+    "doc": "seed_notes.md"
+  },
+  "constraints": { "maxSteps": 3 }
+}
+

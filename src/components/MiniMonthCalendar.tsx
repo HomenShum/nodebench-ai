@@ -113,9 +113,10 @@ export interface MiniMonthCalendarProps {
   onWeeklyReview?: (weekAnchorMs: number) => void; // Optional: trigger weekly review
   onAddTask?: (dateMs: number) => void; // Optional: open New Task modal for this date
   onAddEvent?: (dateMs: number) => void; // Optional: open New Event dialog for this date
+  constrainToSidebar?: boolean; // If true, keep previews within sidebar width
 }
 
-export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate, onViewDay: _onViewDay, onViewWeek: _onViewWeek, onWeeklyReview: _onWeeklyReview, onAddTask: _onAddTask, onAddEvent: _onAddEvent }: MiniMonthCalendarProps) {
+export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate, onViewDay: _onViewDay, onViewWeek: _onViewWeek, onWeeklyReview: _onWeeklyReview, onAddTask: _onAddTask, onAddEvent: _onAddEvent, constrainToSidebar = false }: MiniMonthCalendarProps) {
   // Clock state (ticks every second)
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
@@ -589,12 +590,37 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                   // Toggle pin on click; keep hover state consistent
                   setPinnedKey((cur) => (cur === d.key ? null : d.key));
                   setHoveredKey(d.key);
+                  // Notify parent of selected date (UTC ms of local day start)
+                  try {
+                    const localMidnightMs = new Date(
+                      d.date.getFullYear(), d.date.getMonth(), d.date.getDate(),
+                      0, 0, 0, 0,
+                    ).getTime();
+                    _onSelectDate?.(localMidnightMs);
+                  } catch {}
+                }}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  try {
+                    const localMidnightMs = new Date(
+                      d.date.getFullYear(), d.date.getMonth(), d.date.getDate(),
+                      0, 0, 0, 0,
+                    ).getTime();
+                    _onViewDay?.(localMidnightMs);
+                  } catch {}
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     setPinnedKey((cur) => (cur === d.key ? null : d.key));
                     setHoveredKey(d.key);
+                    try {
+                      const localMidnightMs = new Date(
+                        d.date.getFullYear(), d.date.getMonth(), d.date.getDate(),
+                        0, 0, 0, 0,
+                      ).getTime();
+                      _onSelectDate?.(localMidnightMs);
+                    } catch {}
                   }
                 }}
                 onMouseEnter={() => setHoveredKey(d.key)}
@@ -640,9 +666,9 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 {/* Hover/Pinned Preview */}
                 {(activeKey === d.key) && (
                   <div
-                    className={`absolute z-30 top-1 ${editTarget ? "w-[28rem] max-w-[28rem]" : "w-64 max-w-[18rem]"} rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl p-2 text-[11px] ${
-                      // Flip to the left for the last 3 columns to avoid overflow
-                      (idx % 7) >= 4 ? "right-full mr-2" : "left-full ml-2"
+                    className={`absolute z-30 top-1 ${editTarget ? "w-72 max-w-[18rem]" : "w-64 max-w-[18rem]"} rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl p-2 text-[11px] ${
+                      // In sidebar, keep previews inside; otherwise flip near right edge
+                      constrainToSidebar ? "right-2" : ( (idx % 7) >= 4 ? "right-full mr-2" : "left-full ml-2" )
                     }`}
                     role="dialog"
                     aria-label={`Preview for ${d.date.toDateString()}`}
@@ -802,6 +828,47 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                                 >
                                   <StickyNote className="w-3 h-3 text-[var(--text-secondary)]" />
                                   Quick Note
+                                </button>
+                                {/* View actions to sync hubs */}
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--border-color)] bg-blue-50 text-blue-700 hover:bg-blue-100 text-[11px]"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const localMidnightMs = new Date(
+                                        activeInfo.date.getFullYear(),
+                                        activeInfo.date.getMonth(),
+                                        activeInfo.date.getDate(),
+                                        0, 0, 0, 0,
+                                      ).getTime();
+                                      _onViewDay?.(localMidnightMs);
+                                    } catch {}
+                                  }}
+                                  aria-label="View day"
+                                  title="View day"
+                                >
+                                  Day
+                                </button>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--border-color)] bg-blue-50 text-blue-700 hover:bg-blue-100 text-[11px]"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const localMidnightMs = new Date(
+                                        activeInfo.date.getFullYear(),
+                                        activeInfo.date.getMonth(),
+                                        activeInfo.date.getDate(),
+                                        0, 0, 0, 0,
+                                      ).getTime();
+                                      _onViewWeek?.(localMidnightMs);
+                                    } catch {}
+                                  }}
+                                  aria-label="View week"
+                                  title="View week"
+                                >
+                                  Week
                                 </button>
                               </div>
                             )}

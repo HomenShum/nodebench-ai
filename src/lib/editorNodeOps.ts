@@ -141,8 +141,11 @@ export function sanitizeBlocks(blocks: any[]): EditorJsBlock[] {
     // Special handling for other block types
     switch (type) {
       case "header":
-        if (!data.text || typeof data.text !== 'string') data.text = "";
-        if (!data.level || typeof data.level !== 'number') data.level = 2;
+        // Coerce text to string
+        if (typeof data.text !== 'string') data.text = String(data.text ?? "");
+        // Clamp header level to [1,6]
+        const lvl = typeof data.level === 'number' ? data.level : 2;
+        data.level = Math.max(1, Math.min(6, lvl));
         break;
       case "list":
         if (!Array.isArray(data.items)) data.items = [];

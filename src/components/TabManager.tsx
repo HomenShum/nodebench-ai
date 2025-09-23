@@ -13,6 +13,7 @@ interface TabManagerProps {
   isGridMode?: boolean;
   setIsGridMode?: (isGridMode: boolean) => void;
   onOpenTabsChange?: (openTabIds: Id<"documents">[]) => void;
+  currentView?: 'documents' | 'calendar' | 'timeline' | 'public';
 }
 
 export function TabManager({
@@ -21,6 +22,7 @@ export function TabManager({
   isGridMode: externalIsGridMode,
   setIsGridMode: externalSetIsGridMode,
   onOpenTabsChange,
+  currentView,
 }: TabManagerProps) {
   const [openTabs, setOpenTabs] = useState<GridTab[]>([]);
   const [internalIsGridMode, setInternalIsGridMode] = useState(false);
@@ -261,10 +263,16 @@ export function TabManager({
     }
     return (
       <div className="h-full w-full">
-        <CalendarHomeHub
-          onDocumentSelect={(docId) => onDocumentSelect(docId)}
-          onGridModeToggle={toggleGridMode}
-        />
+        {currentView === 'timeline' ? (
+          <div className="h-full w-full flex items-center justify-center">
+            <div className="text-[var(--text-secondary)] text-sm">Timeline view is not available.</div>
+          </div>
+        ) : (
+          <CalendarHomeHub
+            onDocumentSelect={(docId) => onDocumentSelect(docId)}
+            onGridModeToggle={toggleGridMode}
+          />
+        )}
       </div>
     );
   };

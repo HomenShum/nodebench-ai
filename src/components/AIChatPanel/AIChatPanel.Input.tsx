@@ -120,9 +120,9 @@ export const AIChatPanelInput: React.FC<AIChatPanelInputProps> = ({
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
-    const current = el.innerText.replace(/\r\n/g, "\n");
+    const current = (el.textContent || "").replace(/\r\n/g, "\n");
     if (current !== input) {
-      el.innerText = input;
+      el.textContent = input;
     }
   }, [input]);
 
@@ -154,13 +154,13 @@ export const AIChatPanelInput: React.FC<AIChatPanelInputProps> = ({
       insertTextAtCursor(toInsert);
       // Update external state
       const el = editorRef.current;
-      onChangeInput((el?.innerText || "").replace(/\r\n/g, "\n"));
+      onChangeInput((el?.textContent || "").replace(/\r\n/g, "\n"));
     }
   };
 
   const onInput = () => {
     const el = editorRef.current;
-    onChangeInput((el?.innerText || "").replace(/\r\n/g, "\n"));
+    onChangeInput((el?.textContent || "").replace(/\r\n/g, "\n"));
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {

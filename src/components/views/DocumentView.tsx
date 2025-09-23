@@ -8,7 +8,6 @@ import { Editor } from "@/components/Editor/Editor";
 import UnifiedEditor from "@/components/UnifiedEditor";
 import { FileViewer } from "@/components/views/FileViewer";
 import { SpreadsheetView } from "@/components/views/SpreadsheetView";
-import TimelineGanttPage from "@/components/views/TimelineGanttPage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { isValidConvexId } from "@/lib/ids";
 
@@ -147,7 +146,9 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
               )}
               <div className={`flex-1 ${isSpreadsheetDocument ? '' : 'overflow-y-auto'} bg-[var(--bg-primary)]`}>
                 {(document.documentType === "timeline") || (timelineBundle !== undefined && timelineBundle !== null) ? (
-                  <TimelineGanttPage documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
+                  <div className="h-full w-full flex items-center justify-center">
+                    <div className="text-[var(--text-secondary)] text-sm">Timeline view is not available.</div>
+                  </div>
                 ) : document.documentType === "file" ? (
                   document.fileType === "csv" ? (
                     <SpreadsheetView documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
