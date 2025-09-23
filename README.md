@@ -82,16 +82,16 @@ Optional thumbnail preview:
 
 - Tasks view: centered multiline prompt (parity with Timeline)
 
-![Tasks view centered prompt (092325)](./updated_screenshot/092325_agent_tasks_centered_prompt.png)
+![Tasks view centered prompt (092323)](./updated_screenshot/092323_dynamic_search_ai_agent_tasks_view_grid.png)
 
 - Final Output: Copy button and collapse/expand with persisted preference
 
-![Final Output copy + collapse (092325)](./updated_screenshot/092325_final_output_copy_collapse.png)
+![Final Output copy + collapse (092323)](./updated_screenshot/092323_dynamic_search_ai_agent_timeline_view_expanded(1).png)
 
 - Run history: Metrics badges (tokens, elapsed, model, retries)
 
-![Run history with metrics badges (092325)](./updated_screenshot/092325_run_history_badges.png)
+![Run history with metrics badges (092323)](./updated_screenshot/092323_dynamic_search_ai_agent_timeline_view_expanded(2).png)
 
 - Timeline: "current-time-line" freezes when workflow completes
 
-![Timeline now freezes on completion (092325)](./updated_screenshot/092325_timeline_freeze_current_line.png)
+![Timeline now freezes on completion (092323)](./updated_screenshot/092323_dynamic_search_ai_agent_timeline_view.png)

@@ -24,17 +24,17 @@ All notable changes to this project will be documented in this file.
 
 Tasks view centered prompt:
 
-![Tasks view centered prompt (092325)](./updated_screenshot/092325_agent_tasks_centered_prompt.png)
+![Tasks view centered prompt (092323)](./updated_screenshot/092323_dynamic_search_ai_agent_tasks_view_grid.png)
 
 Final Output copy/collapse and Run history badges:
 
-![Final Output copy + collapse (092325)](./updated_screenshot/092325_final_output_copy_collapse.png)
+![Final Output copy + collapse (092323)](./updated_screenshot/092323_dynamic_search_ai_agent_timeline_view_expanded(1).png)
 
-![Run history with metrics badges (092325)](./updated_screenshot/092325_run_history_badges.png)
+![Run history with metrics badges (092323)](./updated_screenshot/092323_dynamic_search_ai_agent_timeline_view_expanded(2).png)
 
 Timeline freeze on completion:
 
-![Timeline now freezes on completion (092325)](./updated_screenshot/092325_timeline_freeze_current_line.png)
+![Timeline now freezes on completion (092323)](./updated_screenshot/092323_dynamic_search_ai_agent_timeline_view.png)
 
 ## 2025-09-19
 
