@@ -442,6 +442,8 @@ const userPreferences = defineTable({
   // Persisted ordering for Today's Agenda (list) and Upcoming lists
   agendaListOrder: v.optional(v.array(v.string())),
   upcomingListOrder: v.optional(v.array(v.string())),
+  // Agents module preferences (generic key/value store)
+  agentsPrefs: v.optional(v.record(v.string(), v.string())),
   // Onboarding status
   onboardingSeededAt: v.optional(v.number()),
   // Future: more UI preferences can be added here
@@ -799,9 +801,15 @@ const agentTimelines = defineTable({
   // Associate a timeline with a document so it can render in DocumentView
   documentId: v.id("documents"),
   name: v.string(),
+  // Base start used to compute absolute times: absoluteStart = baseStartMs + startOffsetMs
+  baseStartMs: v.optional(v.number()),
   createdBy: v.id("users"),
   createdAt: v.number(),
   updatedAt: v.number(),
+  // Latest run result (persisted for UI readout)
+  latestRunInput: v.optional(v.string()),
+  latestRunOutput: v.optional(v.string()),
+  latestRunAt: v.optional(v.number()),
 }).index("by_document", ["documentId"])
   .index("by_user", ["createdBy"]);
 
@@ -809,7 +817,9 @@ const agentTasks = defineTable({
   timelineId: v.id("agentTimelines"),
   parentId: v.optional(v.id("agentTasks")),
   name: v.string(),
-  startMs: v.number(),
+  // Offsets, not absolute times (backward-compatible with legacy startMs)
+  startOffsetMs: v.optional(v.number()),
+  startMs: v.optional(v.number()),
   durationMs: v.number(),
   progress: v.optional(v.number()), // 0..1
   status: v.optional(v.union(
@@ -824,7 +834,16 @@ const agentTasks = defineTable({
     v.literal("leaf")
   )),
   assigneeId: v.optional(v.id("users")),
+  // Visual metadata and runtime stats for richer timeline rendering
+  icon: v.optional(v.string()),
+  color: v.optional(v.string()),
+  sequence: v.optional(v.union(v.literal("parallel"), v.literal("sequential"))),
+  description: v.optional(v.string()),
+  inputTokens: v.optional(v.number()),
+  outputTokens: v.optional(v.number()),
   outputSizeBytes: v.optional(v.number()),
+  elapsedMs: v.optional(v.number()),
+  startedAtMs: v.optional(v.number()),
   order: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -842,6 +861,22 @@ const agentLinks = defineTable({
   )),
   createdAt: v.number(),
 }).index("by_timeline", ["timelineId"]);
+
+
+/* ------------------------------------------------------------------ */
+/* AGENT TIMELINE RUNS – per-run history                               */
+/* ------------------------------------------------------------------ */
+const agentTimelineRuns = defineTable({
+  timelineId: v.id("agentTimelines"),
+  input: v.string(),
+  output: v.string(),
+  retryCount: v.optional(v.number()),
+  modelUsed: v.optional(v.string()),
+  createdAt: v.number(),
+  meta: v.optional(v.any()),
+})
+  .index("by_timeline", ["timelineId"])
+  .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
 
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
@@ -885,5 +920,6 @@ export default defineSchema({
   agentTimelines,
   agentTasks,
   agentLinks,
+  agentTimelineRuns,
 
 });

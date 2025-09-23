@@ -1,0 +1,572 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AgentDashboard > renders and switches tabs 1`] = `
+<DocumentFragment>
+  <div
+    class="agent-dashboard h-full w-full flex flex-col"
+  >
+    <div
+      class="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-10"
+    >
+      <div
+        class="flex items-center gap-3"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-primary)] to-indigo-500 text-white flex items-center justify-center shadow"
+        >
+          <span
+            class="text-sm font-semibold"
+          >
+            A
+          </span>
+        </div>
+        <div>
+          <div
+            class="text-sm font-semibold text-[var(--text-primary)]"
+          >
+            Multi-Agent Research
+          </div>
+          <div
+            class="text-xs text-[var(--text-secondary)]"
+          >
+            Timeline & Tasks
+          </div>
+        </div>
+        <div
+          class="ml-3 inline-flex items-center gap-2"
+        >
+          <select
+            class="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-white"
+          >
+            <option
+              value="tl1"
+            >
+              Agents Hub
+            </option>
+            <option
+              value="tl2"
+            >
+              Project X
+            </option>
+          </select>
+          <button
+            class="px-2 py-1 text-xs rounded-md border bg-[var(--bg-primary)] border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+          >
+            New Timeline
+          </button>
+        </div>
+      </div>
+      <div
+        class="inline-flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
+      >
+        <button
+          class="px-3 py-1.5 text-xs rounded-md border transition-colors bg-white text-[var(--text-primary)] border-[var(--border-color)] shadow-sm"
+        >
+          Timeline
+        </button>
+        <button
+          class="px-3 py-1.5 text-xs rounded-md border transition-colors text-[var(--text-secondary)] border-transparent hover:bg-white/50"
+        >
+          Tasks
+        </button>
+      </div>
+    </div>
+    <div
+      class="flex-1 min-h-0"
+    >
+      <div
+        class="h-full grid"
+        style="grid-template-rows: auto 1fr;"
+      >
+        <div
+          class="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-4 py-2 flex items-center gap-2"
+        >
+          <span
+            class="text-xs text-[var(--text-secondary)]"
+          >
+            Status:
+          </span>
+          <span
+            class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 uppercase tracking-wide"
+          >
+            Active
+          </span>
+        </div>
+        <div
+          class="grid"
+          style="grid-template-columns: 300px 1fr;"
+        >
+          <aside
+            class="border-r border-[var(--border-color)] bg-white overflow-auto"
+          >
+            <div
+              class="sticky top-0 z-10 h-12 border-b border-[var(--border-color)] flex items-center px-3 text-xs text-[var(--text-secondary)] uppercase tracking-wide bg-white"
+            >
+              Agent Hierarchy
+            </div>
+            <div
+              class="divide-y divide-[var(--border-color)]"
+            >
+              <div
+                class="flex items-center gap-2 px-3 h-12 hover:bg-[var(--bg-secondary)] cursor-default"
+              >
+                <div
+                  class="w-6 h-6 rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] flex items-center justify-center text-sm"
+                >
+                  🧩
+                </div>
+                <div
+                  class="flex-1 min-w-0"
+                >
+                  <div
+                    class="text-sm text-[var(--text-primary)] truncate"
+                  >
+                    agent
+                  </div>
+                  <div
+                    class="text-[10px] text-[var(--text-muted)]"
+                  >
+                    2 task(s)
+                  </div>
+                </div>
+                <span
+                  class="w-2 h-2 rounded-full bg-emerald-500"
+                />
+              </div>
+            </div>
+          </aside>
+          <div
+            class="relative bg-white overflow-auto"
+          >
+            <div
+              class="sticky top-0 z-10 bg-white border-b border-[var(--border-color)]"
+            >
+              <div
+                class="h-10 flex items-center text-[10px] uppercase tracking-wide text-[var(--text-muted)] px-3"
+              >
+                Wall-clock
+              </div>
+              <div
+                class="h-10 flex"
+                data-grid="true"
+              >
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  1
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  2
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  3
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  4
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  5
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  6
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  7
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  8
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  9
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  10
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  11
+                </div>
+                <div
+                  class="flex-1 min-w-[80px] border-r border-dashed border-[var(--border-color)] text-[10px] flex items-center justify-center text-[var(--text-secondary)]"
+                >
+                  12
+                </div>
+              </div>
+            </div>
+            <div
+              class="absolute top-[80px] bottom-0 w-px bg-[var(--accent-primary)]/70 pointer-events-none"
+              style="left: 0px;"
+            />
+            <div
+              class="relative"
+            >
+              <div
+                class="h-12 border-b border-dashed border-[var(--border-color)] relative"
+              >
+                <div
+                  class="absolute top-2 h-7 rounded-md bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 px-2 text-xs flex items-center text-[var(--text-primary)] shadow-sm hover:shadow cursor-pointer"
+                  style="left: 0px; width: 60px;"
+                  title="Plan"
+                >
+                  Plan
+                </div>
+                <div
+                  class="absolute top-2 h-7 rounded-md bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 px-2 text-xs flex items-center text-[var(--text-primary)] shadow-sm hover:shadow cursor-pointer"
+                  style="left: 30px; width: 120px;"
+                  title="Collect"
+                >
+                  Collect
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`AgentDashboard > renders and switches tabs 2`] = `
+<DocumentFragment>
+  <div
+    class="agent-dashboard h-full w-full flex flex-col"
+  >
+    <div
+      class="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-10"
+    >
+      <div
+        class="flex items-center gap-3"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-primary)] to-indigo-500 text-white flex items-center justify-center shadow"
+        >
+          <span
+            class="text-sm font-semibold"
+          >
+            A
+          </span>
+        </div>
+        <div>
+          <div
+            class="text-sm font-semibold text-[var(--text-primary)]"
+          >
+            Multi-Agent Research
+          </div>
+          <div
+            class="text-xs text-[var(--text-secondary)]"
+          >
+            Timeline & Tasks
+          </div>
+        </div>
+        <div
+          class="ml-3 inline-flex items-center gap-2"
+        >
+          <select
+            class="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-white"
+          >
+            <option
+              value="tl1"
+            >
+              Agents Hub
+            </option>
+            <option
+              value="tl2"
+            >
+              Project X
+            </option>
+          </select>
+          <button
+            class="px-2 py-1 text-xs rounded-md border bg-[var(--bg-primary)] border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+          >
+            New Timeline
+          </button>
+        </div>
+      </div>
+      <div
+        class="inline-flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]"
+      >
+        <button
+          class="px-3 py-1.5 text-xs rounded-md border transition-colors text-[var(--text-secondary)] border-transparent hover:bg-white/50"
+        >
+          Timeline
+        </button>
+        <button
+          class="px-3 py-1.5 text-xs rounded-md border transition-colors bg-white text-[var(--text-primary)] border-[var(--border-color)] shadow-sm"
+        >
+          Tasks
+        </button>
+      </div>
+    </div>
+    <div
+      class="flex-1 min-h-0"
+    >
+      <div
+        class="h-full overflow-auto bg-[var(--bg-secondary)]"
+      >
+        <div
+          class="max-w-7xl mx-auto p-4 sm:p-6"
+        >
+          <div
+            class="mb-4 flex items-center justify-between"
+          >
+            <div>
+              <h2
+                class="text-base font-semibold text-[var(--text-primary)]"
+              >
+                Agent Tasks
+              </h2>
+              <p
+                class="text-xs text-[var(--text-secondary)]"
+              >
+                Compact cards with hover previews
+              </p>
+            </div>
+            <button
+              class="px-3 py-1.5 text-xs rounded-md bg-[var(--accent-primary)] text-white hover:opacity-90"
+            >
+              + New Task
+            </button>
+          </div>
+          <div
+            class="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          >
+            <div
+              class="relative bg-white border border-[var(--border-color)] rounded-xl overflow-hidden hover:shadow transition cursor-default group"
+            >
+              <div
+                class="hidden group-hover:flex absolute inset-0 z-10 bg-white/95 backdrop-blur px-4 py-3 flex-col"
+              >
+                <div
+                  class="text-sm font-semibold"
+                >
+                  Plan
+                </div>
+                <div
+                  class="text-xs text-[var(--text-secondary)]"
+                >
+                  Final output
+                </div>
+                <div
+                  class="mt-2 p-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs leading-5 whitespace-pre-wrap"
+                >
+                  No output yet.
+                </div>
+                <div
+                  class="mt-auto pt-3 flex gap-2"
+                >
+                  <button
+                    class="px-2.5 py-1 text-xs rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                  >
+                    Open Full View
+                  </button>
+                  <button
+                    class="px-2.5 py-1 text-xs rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    class="px-2.5 py-1 text-xs rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+              <div
+                class="p-3 border-b border-[var(--border-color)] bg-white"
+              >
+                <div
+                  class="text-sm font-medium flex items-center gap-2"
+                >
+                  <span
+                    class="text-lg"
+                  >
+                    🧩
+                  </span>
+                  <span
+                    class="truncate"
+                  >
+                    Plan
+                  </span>
+                </div>
+                <div
+                  class="mt-1 text-xs text-[var(--text-secondary)] flex items-center justify-between"
+                >
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="w-2 h-2 rounded-full bg-emerald-500"
+                    />
+                    <span
+                      class="capitalize"
+                    >
+                      running
+                    </span>
+                  </div>
+                  <span
+                    class="text-[var(--text-muted)]"
+                  >
+                    ~60s
+                  </span>
+                </div>
+              </div>
+              <div
+                class="p-3 bg-[var(--bg-tertiary)] border-t border-[var(--border-color)]"
+              >
+                <div
+                  class="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]"
+                >
+                  Output
+                </div>
+                <div
+                  class="mt-1 text-xs line-clamp-2 whitespace-pre-wrap text-[var(--text-primary)]"
+                >
+                  No output yet.
+                </div>
+              </div>
+            </div>
+            <div
+              class="relative bg-white border border-[var(--border-color)] rounded-xl overflow-hidden hover:shadow transition cursor-default group"
+            >
+              <div
+                class="hidden group-hover:flex absolute inset-0 z-10 bg-white/95 backdrop-blur px-4 py-3 flex-col"
+              >
+                <div
+                  class="text-sm font-semibold"
+                >
+                  Collect
+                </div>
+                <div
+                  class="text-xs text-[var(--text-secondary)]"
+                >
+                  Final output
+                </div>
+                <div
+                  class="mt-2 p-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs leading-5 whitespace-pre-wrap"
+                >
+                  No output yet.
+                </div>
+                <div
+                  class="mt-auto pt-3 flex gap-2"
+                >
+                  <button
+                    class="px-2.5 py-1 text-xs rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                  >
+                    Open Full View
+                  </button>
+                  <button
+                    class="px-2.5 py-1 text-xs rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    class="px-2.5 py-1 text-xs rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+              <div
+                class="p-3 border-b border-[var(--border-color)] bg-white"
+              >
+                <div
+                  class="text-sm font-medium flex items-center gap-2"
+                >
+                  <span
+                    class="text-lg"
+                  >
+                    🧩
+                  </span>
+                  <span
+                    class="truncate"
+                  >
+                    Collect
+                  </span>
+                </div>
+                <div
+                  class="mt-1 text-xs text-[var(--text-secondary)] flex items-center justify-between"
+                >
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <span
+                      class="w-2 h-2 rounded-full bg-amber-500"
+                    />
+                    <span
+                      class="capitalize"
+                    >
+                      pending
+                    </span>
+                  </div>
+                  <span
+                    class="text-[var(--text-muted)]"
+                  >
+                    ~120s
+                  </span>
+                </div>
+              </div>
+              <div
+                class="p-3 bg-[var(--bg-tertiary)] border-t border-[var(--border-color)]"
+              >
+                <div
+                  class="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]"
+                >
+                  Output
+                </div>
+                <div
+                  class="mt-1 text-xs line-clamp-2 whitespace-pre-wrap text-[var(--text-primary)]"
+                >
+                  No output yet.
+                </div>
+              </div>
+            </div>
+            <button
+              class="min-h-[220px] border-2 border-dashed border-indigo-200 rounded-xl grid place-items-center bg-indigo-50/40 hover:bg-indigo-50 text-indigo-600"
+            >
+              <div
+                class="text-center"
+              >
+                <div
+                  class="w-12 h-12 rounded-xl border border-indigo-200 grid place-items-center bg-white mx-auto mb-2 text-lg"
+                >
+                  +
+                </div>
+                <div
+                  class="text-sm font-semibold"
+                >
+                  New Task
+                </div>
+                <div
+                  class="text-xs text-indigo-500"
+                >
+                  Start a new agent job
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

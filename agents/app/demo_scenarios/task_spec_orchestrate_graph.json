@@ -1,0 +1,19 @@
+{
+  "goal": "Research and produce an edited outline using an explicit agent graph.",
+  "type": "orchestrate",
+  "topic": "Multi-agent systems in production (2025)",
+  "graph": {
+    "nodes": [
+      { "id": "research", "kind": "search", "label": "Web Researcher", "prompt": "{{topic}} key reports and benchmarks" },
+      { "id": "kb", "kind": "answer", "label": "KB Retriever", "prompt": "List foundational concepts for: {{topic}}" },
+      { "id": "outline", "kind": "answer", "label": "Outline Generator", "prompt": "Using research: {{channel:research.last}} and KB: {{channel:kb.last}}, produce a clean outline with sections and brief bullets." },
+      { "id": "edit", "kind": "answer", "label": "Editor", "prompt": "Refine for clarity and cohesion: {{channel:outline.last}}" }
+    ],
+    "edges": [
+      { "from": "research", "to": "outline" },
+      { "from": "kb", "to": "outline" },
+      { "from": "outline", "to": "edit" }
+    ]
+  }
+}
+

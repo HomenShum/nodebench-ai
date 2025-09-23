@@ -32,6 +32,19 @@ User-defined http routes are defined in the `convex/router.ts` file. We split th
 
 ## Changelog (preview)
 
+## OpenRouter Integration (Grok 4 fast)
+
+- The project supports using OpenRouter (including x-ai/grok-4-fast:free) in both the standalone agents and Convex RAG action.
+- Environment variables:
+  - OPENROUTER_API_KEY=sk-or-...
+  - Optional: OPENAI_BASE_URL=https://openrouter.ai/api/v1 (assumed when OPENROUTER_API_KEY is set)
+  - Optional: OPENAI_MODEL=x-ai/grok-4-fast:free
+- Default site URL for ranking attribution:
+  - When OPENROUTER_API_KEY is set, HTTP-Referer defaults to https://nodebench-ai.vercel.app/ (override via OPENROUTER_SITE_URL). Title can be set via OPENROUTER_SITE_NAME.
+
+See agents/README.md for CLI usage and DESIGN_SPECS.md for deeper details.
+
+
 - 2025-09-19 — UI refactor (Home Hubs), streamlined layout/navigation, improved MiniEditorPopover, Convex file/document API updates, cleanup of legacy views, and new screenshots. See full details in the [CHANGELOG](./CHANGELOG.md).
 
 - 2025-09-18 — Chat input now supports multi-line entry and preserves list/nested list structure on paste; Convex agent fixes: remove write conflicts on appendRunEvent, await streaming event writes, fix propose_pm_ops schema (array items), and require kind in streamed plan steps. No new dependencies added.
@@ -63,3 +76,22 @@ Optional thumbnail preview:
 ![File analysis prompt popover](./updated_screenshot/091825_file_analysis_prompt_popover.png)
 
 ![Spreadsheet view updated](./updated_screenshot/091825_spreadsheet_view_updated.png)
+
+
+#### Preview (092325) — Agent Dashboard updates
+
+- Tasks view: centered multiline prompt (parity with Timeline)
+
+![Tasks view centered prompt (092325)](./updated_screenshot/092325_agent_tasks_centered_prompt.png)
+
+- Final Output: Copy button and collapse/expand with persisted preference
+
+![Final Output copy + collapse (092325)](./updated_screenshot/092325_final_output_copy_collapse.png)
+
+- Run history: Metrics badges (tokens, elapsed, model, retries)
+
+![Run history with metrics badges (092325)](./updated_screenshot/092325_run_history_badges.png)
+
+- Timeline: "current-time-line" freezes when workflow completes
+
+![Timeline now freezes on completion (092325)](./updated_screenshot/092325_timeline_freeze_current_line.png)

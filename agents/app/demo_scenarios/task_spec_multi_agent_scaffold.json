@@ -1,0 +1,11 @@
+{
+  "goal": "Draft an outline about the state of large language models (LLMs).",
+  "type": "orchestrate",
+  "topic": "The current state of large language models (2025)",
+  "constraints": { "maxSteps": 4 },
+  "planHints": [
+    "Use web researcher, KB retriever, content generator, and editor",
+    "Produce a clean outline"
+  ]
+}
+

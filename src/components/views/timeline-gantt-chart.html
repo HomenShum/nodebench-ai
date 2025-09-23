@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Research Pipeline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #1F1F1F;
+            color: #E0E0E0;
+            overflow-x: auto;
+            min-width: 1400px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header Controls */
+        .header-controls {
+            background: #1A1A1A;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: auto;
+        }
+
+        .status-running {
+            background: #22C55E20;
+            color: #22C55E;
+            border: 1px solid #22C55E40;
+        }
+
+        .btn {
+            background: #2A2A2A;
+            color: #E0E0E0;
+            border: 1px solid #3A3A3A;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #3A3A3A;
+            border-color: #4A4A4A;
+        }
+
+        .btn-primary {
+            background: #6366F1;
+            border-color: #6366F1;
+        }
+
+        .btn-primary:hover {
+            background: #5558E3;
+        }
+
+        /* Timeline Container */
+        .timeline-container {
+            display: flex;
+            flex: 1;
+            overflow: auto;
+        }
+
+        /* Left Sidebar - Agent Hierarchy */
+        .agent-hierarchy {
+            width: 320px;
+            background: #1A1A1A;
+            border-right: 1px solid #333;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .hierarchy-header {
+            height: 80px;
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hierarchy-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #888;
+            letter-spacing: 0.5px;
+        }
+
+        /* Agent Items */
+        .agent-group {
+            border-bottom: 1px solid #2A2A2A;
+        }
+
+        .main-agent {
+            height: 50px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+            background: #1F1F1F;
+        }
+
+        .main-agent:hover {
+            background: #242424;
+        }
+
+        .sub-agent {
+            height: 40px;
+            padding: 0 20px 0 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            background: #1A1A1A;
+            border-left: 2px solid transparent;
+        }
+
+        .sub-agent:hover {
+            background: #222;
+            border-left-color: #6366F1;
+        }
+
+        .agent-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .sub-agent .agent-icon {
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+        }
+
+        .agent-name {
+            flex: 1;
+            font-size: 13px;
+            color: #D0D0D0;
+        }
+
+        .sub-agent .agent-name {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .agent-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-pending { background: #666; }
+        .status-active { background: #22C55E; animation: pulse 2s infinite; }
+        .status-complete { background: #6366F1; }
+        .status-error { background: #EF4444; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .agent-meta {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-size: 10px;
+            color: #666;
+        }
+
+        /* Timeline Chart Area */
+        .timeline-chart {
+            flex: 1;
+            position: relative;
+            background: #1F1F1F;
+        }
+
+        /* Timeline Header */
+        .timeline-header {
+            height: 80px;
+            position: sticky;
+            top: 0;
+            background: #1A1A1A;
+            border-bottom: 1px solid #333;
+            z-index: 10;
+        }
+
+        .time-scale {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid #2A2A2A;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+        }
+
+        .time-units {
+            height: 40px;
+            display: flex;
+            position: relative;
+        }
+
+        .time-unit {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #666;
+            border-right: 1px solid #2A2A2A;
+            min-width: 40px;
+        }
+
+        .time-unit.now {
+            background: #6366F1;
+            color: white;
+            font-weight: 500;
+        }
+
+        /* Current Time Line */
+        .current-time-line {
+            position: absolute;
+            top: 80px;
+            bottom: 0;
+            width: 2px;
+            background: #6366F1;
+            z-index: 5;
+            opacity: 0.5;
+        }
+
+        /* Timeline Rows */
+        .timeline-rows {
+            position: relative;
+        }
+
+        .timeline-row {
+            position: relative;
+            display: flex;
+        }
+
+        .main-row {
+            height: 50px;
+            background: #1F1F1F;
+            border-bottom: 1px solid #2A2A2A;
+        }
+
+        .sub-row {
+            height: 40px;
+            background: #1A1A1A;
+            border-bottom: 1px solid #252525;
+        }
+
+        /* Timeline Grid */
+        .timeline-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            pointer-events: none;
+        }
+
+        .grid-column {
+            flex: 1;
+            border-right: 1px solid #2A2A2A;
+            min-width: 40px;
+        }
+
+        /* Agent Execution Bars */
+        .execution-bar {
+            position: absolute;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 3;
+        }
+
+        .main-row .execution-bar {
+            top: 11px;
+            height: 28px;
+        }
+
+        .sub-row .execution-bar {
+            top: 6px;
+            height: 28px;
+        }
+
+        .execution-bar.pending {
+            background: #2D2D2D;
+            border: 1px dashed #4A4A4A;
+        }
+
+        .execution-bar.running {
+            background: linear-gradient(90deg, #22C55E20, #22C55E30);
+            border: 1px solid #22C55E60;
+        }
+
+        .execution-bar.complete {
+            background: #6366F120;
+            border: 1px solid #6366F140;
+        }
+
+        .execution-bar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        /* Progress indicator inside bars */
+        .progress-indicator {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3));
+            border-radius: 6px;
+            transition: width 0.3s;
+        }
+
+        /* Dependencies */
+        .dependency-line {
+            position: absolute;
+            height: 2px;
+            background: #6366F140;
+            z-index: 2;
+        }
+
+        .dependency-arrow {
+            position: absolute;
+            right: -6px;
+            top: -3px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid #6366F140;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+
+        /* Popover */
+        .popover {
+            position: absolute;
+            background: #2A2A2A;
+            border: 1px solid #3A3A3A;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            z-index: 100;
+            display: none;
+            min-width: 280px;
+        }
+
+        .popover.active {
+            display: block;
+        }
+
+        .popover-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #3A3A3A;
+        }
+
+        .popover-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .popover-content {
+            font-size: 12px;
+            color: #AAA;
+            line-height: 1.6;
+        }
+
+        .popover-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #3A3A3A;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 14px;
+            color: #E0E0E0;
+            font-weight: 500;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #2A2A2A;
+            border-radius: 12px;
+            padding: 24px;
+            min-width: 500px;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #3A3A3A;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 6px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            background: #1F1F1F;
+            border: 1px solid #3A3A3A;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #E0E0E0;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #6366F1;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #3A3A3A;
+        }
+
+        .code-block {
+            background: #1F1F1F;
+            border: 1px solid #3A3A3A;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: #22C55E;
+            margin: 8px 0;
+            overflow-x: auto;
+        }
+
+        .agent-type-badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-orchestrator {
+            background: #6366F120;
+            color: #818CF8;
+            border: 1px solid #6366F140;
+        }
+
+        .badge-main {
+            background: #22C55E20;
+            color: #22C55E;
+            border: 1px solid #22C55E40;
+        }
+
+        .badge-leaf {
+            background: #FFB80020;
+            color: #FFB800;
+            border: 1px solid #FFB80040;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Controls -->
+        <div class="header-controls">
+            <button class="btn btn-primary" onclick="startResearch()">▶ Start Research</button>
+            <button class="btn" onclick="openMasterPrompt()">Master Prompt</button>
+            <button class="btn" onclick="viewAgentHierarchy()">Agent Hierarchy</button>
+            <button class="btn" onclick="pauseExecution()">⏸ Pause</button>
+            <div class="status-badge status-running">Pipeline Active • 4 agents running</div>
+        </div>
+
+        <!-- Timeline Container -->
+        <div class="timeline-container">
+            <!-- Agent Hierarchy Sidebar -->
+            <div class="agent-hierarchy">
+                <div class="hierarchy-header">
+                    <div class="hierarchy-title">Agent Scaffold</div>
+                    <button class="btn" style="padding: 4px 8px; font-size: 11px;">+ Add Agent</button>
+                </div>
+                <div id="agentHierarchy"></div>
+            </div>
+
+            <!-- Timeline Chart -->
+            <div class="timeline-chart">
+                <!-- Timeline Header -->
+                <div class="timeline-header">
+                    <div class="time-scale">
+                        Execution Timeline (Minutes : Seconds)
+                    </div>
+                    <div class="time-units" id="timeUnits"></div>
+                </div>
+
+                <!-- Current Time Line -->
+                <div class="current-time-line" id="currentTimeLine"></div>
+
+                <!-- Timeline Rows -->
+                <div class="timeline-rows" id="timelineRows"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Details Popover -->
+    <div class="popover" id="agentPopover">
+        <div class="popover-header">
+            <div id="popoverIcon" style="width: 24px; height: 24px; background: #6366F1; border-radius: 6px; display: flex; align-items: center; justify-content: center;">🔍</div>
+            <div class="popover-title" id="popoverTitle">Agent Name</div>
+            <span class="agent-type-badge" id="popoverBadge">LEAF</span>
+        </div>
+        <div class="popover-content" id="popoverContent">
+            Agent description and current task details...
+        </div>
+        <div class="popover-metrics">
+            <div class="metric">
+                <div class="metric-label">Status</div>
+                <div class="metric-value" id="popoverStatus">Running</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Progress</div>
+                <div class="metric-value" id="popoverProgress">75%</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Duration</div>
+                <div class="metric-value" id="popoverDuration">2:30</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Output Size</div>
+                <div class="metric-value" id="popoverOutput">1.2 KB</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Master Prompt Modal -->
+    <div class="modal" id="masterPromptModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="width: 28px; height: 28px; background: #6366F1; border-radius: 6px; display: flex; align-items: center; justify-content: center;">🧠</div>
+                Research Orchestrator Configuration
+            </div>
+            <div class="form-group">
+                <label class="form-label">Master Research Objective</label>
+                <textarea class="form-textarea" id="masterPrompt" style="min-height: 200px;">
+You are orchestrating a comprehensive fundraising research pipeline for [Company Name].
+
+OBJECTIVE: Gather deep intelligence on:
+1. Target Person: CEO/Founder background, network, and reputation
+2. Company Analysis: Financial health, market position, growth trajectory  
+3. Fundraising Strategy: Optimal timing, valuation benchmarks, investor targets
+
+COORDINATION PROTOCOL:
+- Execute person and company research in parallel
+- Synthesize findings before fundraising analysis
+- Maintain strict data accuracy standards
+- Cross-reference all claims with multiple sources
+
+OUTPUT FORMAT: Structured JSON report with confidence scores</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Parallel Execution Limit</label>
+                <input type="number" class="form-input" value="5" min="1" max="10">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Error Handling Strategy</label>
+                <select class="form-input">
+                    <option>Retry with backoff</option>
+                    <option>Failover to alternate agent</option>
+                    <option>Skip and continue</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('masterPromptModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveMasterPrompt()">Deploy Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Detail Modal -->
+    <div class="modal" id="agentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div id="agentModalIcon" style="width: 28px; height: 28px; background: #22C55E; border-radius: 6px; display: flex; align-items: center; justify-content: center;">👤</div>
+                <span id="agentModalTitle">Agent Configuration</span>
+                <span class="agent-type-badge" id="agentModalBadge">MAIN</span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Agent Name</label>
+                <input type="text" class="form-input" id="agentName" value="Person Research Agent">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Agent Type</label>
+                <select class="form-input" id="agentType">
+                    <option>Orchestrator</option>
+                    <option selected>Main Agent</option>
+                    <option>Leaf Agent</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Agent Prompt</label>
+                <textarea class="form-textarea" id="agentPrompt" style="min-height: 150px;">
+You are a specialized research agent focused on gathering comprehensive background information about individuals.
+
+CAPABILITIES:
+- LinkedIn profile analysis
+- News and media scanning
+- Professional history compilation
+- Network mapping
+
+CONSTRAINTS:
+- Only use publicly available information
+- Verify all data points from multiple sources
+- Flag any conflicting information</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Expected Output Schema (JSON)</label>
+                <div class="code-block">
+{
+  "name": "string",
+  "current_role": "string",
+  "previous_roles": ["string"],
+  "education": ["object"],
+  "notable_achievements": ["string"],
+  "network_strength": "number",
+  "confidence_score": "number"
+}</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sub-Agents</label>
+                <input type="text" class="form-input" id="subAgents" value="linkedin-scraper, news-scanner, background-analyzer">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Dependencies</label>
+                <input type="text" class="form-input" id="dependencies" placeholder="None">
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('agentModal')">Close</button>
+                <button class="btn btn-primary" onclick="saveAgent()">Save Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Multi-agent system configuration
+        const agentSystem = {
+            orchestrator: {
+                id: 'orchestrator',
+                name: 'Research Orchestrator',
+                icon: '🧠',
+                color: '#6366F1',
+                type: 'orchestrator',
+                status: 'running',
+                startTime: 0,
+                duration: 600, // 10 minutes total
+                prompt: 'Master orchestration agent coordinating all research activities'
+            },
+            mainAgents: [
+                {
+                    id: 'person-research',
+                    name: 'Person Research Agent',
+                    icon: '👤',
+                    color: '#22C55E',
+                    type: 'main',
+                    status: 'running',
+                    startTime: 5,
+                    duration: 180,
+                    parallel: true,
+                    subAgents: [
+                        {
+                            id: 'linkedin-scraper',
+                            name: 'LinkedIn Profile Scraper',
+                            icon: '🔗',
+                            color: '#0A66C2',
+                            type: 'leaf',
+                            status: 'complete',
+                            startTime: 10,
+                            duration: 45,
+                            progress: 100
+                        },
+                        {
+                            id: 'news-scanner',
+                            name: 'News & Media Scanner',
+                            icon: '📰',
+                            color: '#FF6B6B',
+                            type: 'leaf',
+                            status: 'running',
+                            startTime: 10,
+                            duration: 60,
+                            progress: 75
+                        },
+                        {
+                            id: 'background-analyzer',
+                            name: 'Professional Background Analyzer',
+                            icon: '📊',
+                            color: '#4ECDC4',
+                            type: 'leaf',
+                            status: 'running',
+                            startTime: 60,
+                            duration: 90,
+                            progress: 40
+                        }
+                    ]
+                },
+                {
+                    id: 'company-research',
+                    name: 'Company Research Agent',
+                    icon: '🏢',
+                    color: '#FFB800',
+                    type: 'main',
+                    status: 'running',
+                    startTime: 5,
+                    duration: 200,
+                    parallel: true,
+                    subAgents: [
+                        {
+                            id: 'financial-collector',
+                            name: 'Financial Data Collector',
+                            icon: '💰',
+                            color: '#10B981',
+                            type: 'leaf',
+                            status: 'complete',
+                            startTime: 10,
+                            duration: 50,
+                            progress: 100
+                        },
+                        {
+                            id: 'competitor-analysis',
+                            name: 'Competitor Analysis Agent',
+                            icon: '⚔️',
+                            color: '#EF4444',
+                            type: 'leaf',
+                            status: 'running',
+                            startTime: 10,
+                            duration: 80,
+                            progress: 60
+                        },
+                        {
+                            id: 'product-analyzer',
+                            name: 'Product/Service Analyzer',
+                            icon: '📦',
+                            color: '#8B5CF6',
+                            type: 'leaf',
+                            status: 'pending',
+                            startTime: 70,
+                            duration: 70,
+                            progress: 0
+                        },
+                        {
+                            id: 'market-position',
+                            name: 'Market Position Evaluator',
+                            icon: '📈',
+                            color: '#F59E0B',
+                            type: 'leaf',
+                            status: 'pending',
+                            startTime: 145,
+                            duration: 50,
+                            progress: 0
+                        }
+                    ]
+                },
+                {
+                    id: 'fundraising-analysis',
+                    name: 'Fundraising Analysis Agent',
+                    icon: '💎',
+                    color: '#EC4899',
+                    type: 'main',
+                    status: 'pending',
+                    startTime: 210,
+                    duration: 150,
+                    parallel: false,
+                    subAgents: [
+                        {
+                            id: 'previous-rounds',
+                            name: 'Previous Rounds Analyzer',
+                            icon: '📑',
+                            color: '#06B6D4',
+                            type: 'leaf',
+                            status: 'pending',
+                            startTime: 215,
+                            duration: 40,
+                            progress: 0
+                        },
+                        {
+                            id: 'investor-mapper',
+                            name: 'Investor Network Mapper',
+                            icon: '🗺️',
+                            color: '#84CC16',
+                            type: 'leaf',
+                            status: 'pending',
+                            startTime: 215,
+                            duration: 60,
+                            progress: 0
+                        },
+                        {
+                            id: 'valuation-calc',
+                            name: 'Valuation Calculator',
+                            icon: '🧮',
+                            color: '#A855F7',
+                            type: 'leaf',
+                            status: 'pending',
+                            startTime: 280,
+                            duration: 70,
+                            progress: 0
+                        }
+                    ]
+                },
+                {
+                    id: 'synthesis',
+                    name: 'Report Synthesis Agent',
+                    icon: '📄',
+                    color: '#64748B',
+                    type: 'main',
+                    status: 'pending',
+                    startTime: 365,
+                    duration: 100,
+                    parallel: false,
+                    subAgents: [
+                        {
+                            id: 'data-consolidation',
+                            name: 'Data Consolidation',
+                            icon: '🔄',
+                            color: '#0EA5E9',
+                            type: 'leaf',
+                            status: 'pending',
+                            startTime: 370,
+                            duration: 30,
+                            progress: 0
+                        },
+                        {
+                            id: 'report-generator',
+                            name: 'Report Generator',
+                            icon: '✍️',
+                            color: '#F97316',
+                            type: 'leaf',
+                            status: 'pending',
+                            startTime: 405,
+                            duration: 50,
+                            progress: 0
+                        }
+                    ]
+                }
+            ]
+        };
+
+        let currentTime = 70; // Current execution time in seconds
+
+        // Initialize the timeline
+        function initializeTimeline() {
+            renderTimeUnits();
+            renderAgentHierarchy();
+            renderTimelineRows();
+            positionCurrentTimeLine();
+            setInterval(updateCurrentTime, 1000);
+        }
+
+        // Render time units (minutes:seconds)
+        function renderTimeUnits() {
+            const timeUnits = document.getElementById('timeUnits');
+            timeUnits.innerHTML = '';
+            
+            // Show 10 minutes in 30-second intervals
+            for (let i = 0; i <= 600; i += 30) {
+                const unit = document.createElement('div');
+                unit.className = 'time-unit';
+                if (Math.abs(i - currentTime) < 15) {
+                    unit.classList.add('now');
+                }
+                const minutes = Math.floor(i / 60);
+                const seconds = i % 60;
+                unit.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                timeUnits.appendChild(unit);
+            }
+        }
+
+        // Render agent hierarchy
+        function renderAgentHierarchy() {
+            const hierarchy = document.getElementById('agentHierarchy');
+            hierarchy.innerHTML = '';
+
+            // Add orchestrator
+            const orchestratorGroup = document.createElement('div');
+            orchestratorGroup.className = 'agent-group';
+            orchestratorGroup.innerHTML = `
+                <div class="main-agent" onclick="openAgentDetails('orchestrator', null)">
+                    <div class="agent-icon" style="background: ${agentSystem.orchestrator.color}20;">
+                        ${agentSystem.orchestrator.icon}
+                    </div>
+                    <div class="agent-name">${agentSystem.orchestrator.name}</div>
+                    <div class="agent-status status-${agentSystem.orchestrator.status}"></div>
+                </div>
+            `;
+            hierarchy.appendChild(orchestratorGroup);
+
+            // Add main agents and their sub-agents
+            agentSystem.mainAgents.forEach(mainAgent => {
+                const group = document.createElement('div');
+                group.className = 'agent-group';
+                
+                // Main agent
+                group.innerHTML = `
+                    <div class="main-agent" onclick="openAgentDetails('main', '${mainAgent.id}')">
+                        <div class="agent-icon" style="background: ${mainAgent.color}20;">
+                            ${mainAgent.icon}
+                        </div>
+                        <div class="agent-name">${mainAgent.name}</div>
+                        <div class="agent-meta">${mainAgent.parallel ? '⚡ Parallel' : '➜ Sequential'}</div>
+                        <div class="agent-status status-${mainAgent.status}"></div>
+                    </div>
+                `;
+                
+                // Sub-agents
+                mainAgent.subAgents.forEach(subAgent => {
+                    const subDiv = document.createElement('div');
+                    subDiv.className = 'sub-agent';
+                    subDiv.onclick = () => openAgentDetails('sub', subAgent.id, mainAgent.id);
+                    subDiv.innerHTML = `
+                        <div class="agent-icon" style="background: ${subAgent.color}20;">
+                            ${subAgent.icon}
+                        </div>
+                        <div class="agent-name">${subAgent.name}</div>
+                        <div class="agent-status status-${subAgent.status}"></div>
+                    `;
+                    group.appendChild(subDiv);
+                });
+                
+                hierarchy.appendChild(group);
+            });
+        }
+
+        // Render timeline rows
+        function renderTimelineRows() {
+            const timelineRows = document.getElementById('timelineRows');
+            timelineRows.innerHTML = '';
+
+            // Add orchestrator row
+            const orchestratorRow = createTimelineRow(agentSystem.orchestrator, 'main-row');
+            timelineRows.appendChild(orchestratorRow);
+
+            // Add main agents and sub-agents
+            agentSystem.mainAgents.forEach(mainAgent => {
+                const mainRow = createTimelineRow(mainAgent, 'main-row');
+                timelineRows.appendChild(mainRow);
+
+                mainAgent.subAgents.forEach(subAgent => {
+                    const subRow = createTimelineRow(subAgent, 'sub-row');
+                    timelineRows.appendChild(subRow);
+                });
+            });
+        }
+
+        // Create a timeline row
+        function createTimelineRow(agent, rowClass) {
+            const row = document.createElement('div');
+            row.className = `timeline-row ${rowClass}`;
+            
+            // Add grid
+            const grid = document.createElement('div');
+            grid.className = 'timeline-grid';
+            for (let i = 0; i <= 600; i += 30) {
+                const col = document.createElement('div');
+                col.className = 'grid-column';
+                grid.appendChild(col);
+            }
+            row.appendChild(grid);
+
+            // Add execution bar
+            const bar = document.createElement('div');
+            bar.className = `execution-bar ${agent.status}`;
+            const startPos = (agent.startTime / 600) * 100;
+            const width = (agent.duration / 600) * 100;
+            bar.style.left = `${startPos}%`;
+            bar.style.width = `${width}%`;
+            bar.style.background = `linear-gradient(90deg, ${agent.color}20, ${agent.color}30)`;
+            bar.style.borderColor = agent.color + '60';
+            
+            // Add progress indicator for running agents
+            if (agent.status === 'running' && agent.progress !== undefined) {
+                const progress = document.createElement('div');
+                progress.className = 'progress-indicator';
+                progress.style.width = `${agent.progress}%`;
+                bar.appendChild(progress);
+            }
+            
+            bar.onmouseenter = (e) => showAgentPopover(e, agent);
+            bar.onmouseleave = hidePopover;
+            bar.onclick = () => openAgentDetails(agent.type, agent.id);
+            
+            row.appendChild(bar);
+            return row;
+        }
+
+        // Position current time line
+        function positionCurrentTimeLine() {
+            const line = document.getElementById('currentTimeLine');
+            const position = (currentTime / 600) * 100;
+            line.style.left = `${position}%`;
+        }
+
+        // Update current time
+        function updateCurrentTime() {
+            if (currentTime < 600) {
+                currentTime += 1;
+                positionCurrentTimeLine();
+                
+                // Update agent statuses based on time
+                updateAgentStatuses();
+                
+                // Re-render time units to update "now" indicator
+                if (currentTime % 30 === 0) {
+                    renderTimeUnits();
+                }
+            }
+        }
+
+        // Update agent statuses
+        function updateAgentStatuses() {
+            // Update main agents
+            agentSystem.mainAgents.forEach(agent => {
+                const endTime = agent.startTime + agent.duration;
+                if (currentTime >= agent.startTime && currentTime < endTime) {
+                    agent.status = 'running';
+                    if (agent.subAgents) {
+                        agent.subAgents.forEach(sub => {
+                            const subEnd = sub.startTime + sub.duration;
+                            if (currentTime >= sub.startTime && currentTime < subEnd) {
+                                sub.status = 'running';
+                                sub.progress = ((currentTime - sub.startTime) / sub.duration) * 100;
+                            } else if (currentTime >= subEnd) {
+                                sub.status = 'complete';
+                                sub.progress = 100;
+                            }
+                        });
+                    }
+                } else if (currentTime >= endTime) {
+                    agent.status = 'complete';
+                }
+            });
+            
+            // Update display if needed
+            if (currentTime % 5 === 0) {
+                renderAgentHierarchy();
+                renderTimelineRows();
+            }
+        }
+
+        // Show agent popover
+        function showAgentPopover(event, agent) {
+            const popover = document.getElementById('agentPopover');
+            const rect = event.target.getBoundingClientRect();
+            
+            document.getElementById('popoverTitle').textContent = agent.name;
+            document.getElementById('popoverIcon').innerHTML = agent.icon;
+            document.getElementById('popoverIcon').style.background = agent.color + '20';
+            document.getElementById('popoverBadge').textContent = agent.type.toUpperCase();
+            document.getElementById('popoverBadge').className = `agent-type-badge badge-${agent.type}`;
+            
+            document.getElementById('popoverContent').textContent = 
+                agent.type === 'orchestrator' ? 'Coordinating all research agents and managing workflow execution.' :
+                agent.type === 'main' ? 'Managing specialized sub-agents for focused research tasks.' :
+                'Executing specific data collection and analysis tasks.';
+            
+            document.getElementById('popoverStatus').textContent = agent.status.charAt(0).toUpperCase() + agent.status.slice(1);
+            document.getElementById('popoverProgress').textContent = agent.progress ? `${Math.round(agent.progress)}%` : 'N/A';
+            
+            const elapsed = Math.max(0, Math.min(currentTime - agent.startTime, agent.duration));
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('popoverDuration').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('popoverOutput').textContent = agent.status === 'complete' ? '2.4 KB' : 
+                                                                   agent.status === 'running' ? '856 B' : '0 B';
+            
+            popover.style.left = `${Math.min(rect.left, window.innerWidth - 300)}px`;
+            popover.style.top = `${rect.bottom + 10}px`;
+            popover.classList.add('active');
+        }
+
+        // Hide popover
+        function hidePopover() {
+            document.getElementById('agentPopover').classList.remove('active');
+        }
+
+        // Open agent details modal
+        function openAgentDetails(type, agentId, parentId = null) {
+            let agent;
+            if (type === 'orchestrator') {
+                agent = agentSystem.orchestrator;
+            } else if (type === 'main') {
+                agent = agentSystem.mainAgents.find(a => a.id === agentId);
+            } else {
+                const parent = agentSystem.mainAgents.find(a => a.id === parentId);
+                agent = parent?.subAgents.find(s => s.id === agentId);
+            }
+            
+            if (agent) {
+                document.getElementById('agentModalTitle').textContent = agent.name;
+                document.getElementById('agentModalIcon').innerHTML = agent.icon;
+                document.getElementById('agentModalIcon').style.background = agent.color + '20';
+                document.getElementById('agentModalBadge').textContent = agent.type.toUpperCase();
+                document.getElementById('agentModalBadge').className = `agent-type-badge badge-${agent.type}`;
+                document.getElementById('agentName').value = agent.name;
+                document.getElementById('agentType').value = 
+                    agent.type === 'orchestrator' ? 'Orchestrator' :
+                    agent.type === 'main' ? 'Main Agent' : 'Leaf Agent';
+                document.getElementById('agentModal').classList.add('active');
+            }
+        }
+
+        // Modal control functions
+        function startResearch() {
+            currentTime = 0;
+            agentSystem.mainAgents.forEach(agent => {
+                agent.status = 'pending';
+                agent.subAgents?.forEach(sub => {
+                    sub.status = 'pending';
+                    sub.progress = 0;
+                });
+            });
+            agentSystem.orchestrator.status = 'running';
+            renderAgentHierarchy();
+            renderTimelineRows();
+        }
+
+        function pauseExecution() {
+            console.log('Execution paused');
+        }
+
+        function openMasterPrompt() {
+            document.getElementById('masterPromptModal').classList.add('active');
+        }
+
+        function saveMasterPrompt() {
+            const prompt = document.getElementById('masterPrompt').value;
+            console.log('Master prompt saved:', prompt);
+            closeModal('masterPromptModal');
+        }
+
+        function viewAgentHierarchy() {
+            console.log('Viewing agent hierarchy');
+        }
+
+        function saveAgent() {
+            console.log('Agent configuration saved');
+            closeModal('agentModal');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close modal on background click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Initialize
+        initializeTimeline();
+    </script>
+</body>
+</html>

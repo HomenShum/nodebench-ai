@@ -9,6 +9,9 @@ import { TabManager } from "./TabManager";
 import { DocumentsHomeHub } from "./DocumentsHomeHub";
 import { CalendarHomeHub } from "./CalendarHomeHub";
 
+import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
+
+
 import { HelpCircle, Sun, Moon, MessageSquare, Settings as SettingsIcon, Link as LinkIcon, Send } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
@@ -21,7 +24,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome }: MainLayoutProps) {
   const [showAIChat, setShowAIChat] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'public'>('documents');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public'>('documents');
   const [smsMessage, setSmsMessage] = useState<{from: string, message: string} | null>(null);
   const [isGridMode, setIsGridMode] = useState(false);
   // File selection state for AI chat context
@@ -405,14 +408,45 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   useEffect(() => {
     const toCalendar = () => setCurrentView('calendar');
+    const toTimeline = () => setCurrentView('documents'); // legacy
     const toDocuments = () => setCurrentView('documents');
+    const toRoadmap = () => setCurrentView('roadmap');
     window.addEventListener('navigate:calendar', toCalendar as unknown as EventListener);
+    window.addEventListener('navigate:timeline', toTimeline as unknown as EventListener);
     window.addEventListener('navigate:documents', toDocuments as unknown as EventListener);
+    window.addEventListener('navigate:roadmap', toRoadmap as unknown as EventListener);
     return () => {
       window.removeEventListener('navigate:calendar', toCalendar as unknown as EventListener);
+      window.removeEventListener('navigate:timeline', toTimeline as unknown as EventListener);
       window.removeEventListener('navigate:documents', toDocuments as unknown as EventListener);
+      window.removeEventListener('navigate:roadmap', toRoadmap as unknown as EventListener);
     };
   }, []);
+
+  // Sync main view with URL hash for primary hubs
+  useEffect(() => {
+    const applyFromHash = () => {
+      try {
+        const h = (window.location.hash || '').toLowerCase();
+        if (h.startsWith('#calendar')) {
+          setCurrentView('calendar');
+        } else if (h.startsWith('#roadmap')) {
+          setCurrentView('roadmap');
+        } else if (h.startsWith('#timeline')) {
+          setCurrentView('timeline');
+        } else if (h.startsWith('#documents') || h.startsWith('#docs')) {
+          setCurrentView('documents');
+        }
+      } catch {
+        // ignore
+      }
+    };
+    // initialize on mount
+    applyFromHash();
+    window.addEventListener('hashchange', applyFromHash);
+    return () => window.removeEventListener('hashchange', applyFromHash);
+  }, []);
+
 
   return (
     <div className="h-screen flex bg-[var(--bg-secondary)] transition-colors duration-200">
@@ -421,7 +455,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         <Sidebar
           onDocumentSelect={handleDocumentSelect}
           selectedDocumentId={selectedDocumentId}
-          currentView={currentView === 'calendar' ? 'documents' : currentView}
+          currentView={currentView === 'calendar' || currentView === 'timeline' || currentView === 'roadmap' ? 'documents' : currentView}
           onViewChange={(view) => setCurrentView(view)}
           showAIChat={showAIChat}
           onToggleAIChat={() => setShowAIChat(!showAIChat)}
@@ -647,6 +681,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 onDocumentSelect={handleDocumentSelect}
                 onGridModeToggle={() => setIsGridMode((v) => !v)}
               />
+            ) : currentView === 'roadmap' ? (
+              <div className="h-full w-full overflow-auto p-8">
+                <TimelineRoadmapView />
+              </div>
             ) : (
               <div className="h-full flex">
                 <div className="flex-1 overflow-hidden">
@@ -656,6 +694,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                       onDocumentSelect={handleDocumentSelect}
                       isGridMode={isGridMode}
                       setIsGridMode={setIsGridMode}
+                      currentView={currentView}
                     />
                   ) : (
                     <DocumentsHomeHub
@@ -720,3 +759,4 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     </div>
   );
 }
+

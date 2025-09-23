@@ -247,21 +247,35 @@ export const answerQuestionViaRAG = internalAction({
     // 3) Ask the model to answer using the combined context (with safe fallback)
     let answer = "";
     try {
+      const orKey = process.env.OPENROUTER_API_KEY;
       const oaKey = process.env.OPENAI_API_KEY || process.env.CONVEX_OPENAI_API_KEY;
-      const oaBase = normalizeOpenAIBase(process.env.OPENAI_BASE_URL || process.env.CONVEX_OPENAI_BASE_URL);
-      if (!oaKey) {
-        throw new Error("Missing OpenAI API key");
+
+      // Provider-aware base URL selection with strong precedence:
+      // - If OPENROUTER_API_KEY is set, use OpenRouter base (OPENROUTER_BASE_URL or default),
+      //   ignoring OPENAI_BASE_URL to avoid mixing providers.
+      // - Otherwise, use OpenAI base envs.
+      const baseURL = orKey
+        ? (process.env.OPENROUTER_BASE_URL?.trim() || 'https://openrouter.ai/api/v1')
+        : normalizeOpenAIBase(process.env.OPENAI_BASE_URL || process.env.CONVEX_OPENAI_BASE_URL);
+      const apiKey = orKey || oaKey;
+      if (!apiKey) {
+        throw new Error("Missing OpenAI/OpenRouter API key");
       }
-      const client = new OpenAI({ apiKey: oaKey, baseURL: oaBase });
+      const headers: Record<string,string> = {};
+      if (orKey) {
+        headers['HTTP-Referer'] = process.env.OPENROUTER_SITE_URL || 'https://nodebench-ai.vercel.app/';
+        if (process.env.OPENROUTER_SITE_NAME) headers['X-Title'] = process.env.OPENROUTER_SITE_NAME;
+      }
+      const client = new OpenAI({ apiKey, baseURL, ...(Object.keys(headers).length ? { defaultHeaders: headers as any } : {}) } as any);
       const system =
         "Use the provided context to answer the user's question. Cite which parts of the context you used. If unsure, say so.";
+      const model = process.env.OPENAI_MODEL || (orKey ? 'x-ai/grok-4-fast:free' : 'gpt-5-nano');
       const completion: any = await client.chat.completions.create({
-        model: "gpt-5-nano",
+        model,
         messages: [
           { role: "system", content: system },
           { role: "user", content: `# Context\n${contextText}\n\n---\n\n# Question\n${prompt}` },
         ],
-        
       });
       answer = completion.choices[0]?.message?.content ?? "";
     } catch (err) {

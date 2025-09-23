@@ -17,14 +17,17 @@ export async function runPlannedStep(ctx: any, agentState: any, step: z.infer<ty
   const { selectedDocumentId } = context;
   switch (step.kind) {
     case "web.search": {
-      const args = validateStepArgs(step.kind, step.args);
+      // Prefill missing query from context before validation to avoid strict schema errors
+      const prefilled = { ...(step.args || {}), ...(step?.args && (step.args as any).query ? {} : { query: context.message }) } as any;
+      const args = validateStepArgs(step.kind, prefilled) as any;
       const q = String(args.query ?? context.message);
       await addThinkingStep(ctx, agentState, "tool_selection", `MCP web.search: ${q.slice(0, 80)}`);
       const text = await performWebSearch(ctx, agentState, q);
       return { text };
     }
     case "rag.search": {
-      const args = validateStepArgs(step.kind, step.args);
+      const prefilled = { ...(step.args || {}), ...(step?.args && (step.args as any).query ? {} : { query: context.message }) } as any;
+      const args = validateStepArgs(step.kind, prefilled) as any;
       const q = String(args.query ?? context.message);
       await addThinkingStep(ctx, agentState, "tool_selection", `RAG search: ${q.slice(0, 80)}`);
       try {

@@ -16,6 +16,7 @@ export function SidebarMiniCalendar({ onSelectDate, onViewDay, onViewWeek, showV
         onSelectDate={onSelectDate}
         onViewDay={onViewDay}
         onViewWeek={onViewWeek}
+        constrainToSidebar
       />
       {showViewFullCalendarLink && (
         <div className="mt-2">

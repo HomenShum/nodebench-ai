@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## 2025-09-23
+
+### Highlights
+- Tasks view: Replaced "+ New Task" with a centered multiline prompt bar (parity with Timeline). Enter to send; Shift+Enter for newline. Uses the same planner preference (agents.planner).
+- Final Output panel: Added Copy button; collapse/expand with persisted preference.
+- Run history: Added Convex runs table and UI browser; shows badges for tokens, elapsed, model, and retries.
+- Timeline: "current-time-line" now freezes at workflow completion.
+- Stability: updateTaskMetrics now safely no-ops if a task is missing to prevent run failures during orchestration.
+
+### Details
+- Frontend
+  - src/components/agentDashboard/AgentTasks.tsx: Added centered prompt bar row; wired to startFromPrompt; navigates to Timeline on send.
+  - src/components/agentDashboard/AgentTimeline.tsx: Continued parity and minor wiring for prompt planning and metrics display.
+- Backend (Convex)
+  - convex/agentTimelines.ts: updateTaskMetrics now returns early if task not found; avoids unhandled rejections.
+  - Runs metadata: modelUsed, token counts, and elapsedMs propagated for history badges (via orchestrator integration).
+
+### Screenshots (092325)
+
+Tasks view centered prompt:
+
+![Tasks view centered prompt (092325)](./updated_screenshot/092325_agent_tasks_centered_prompt.png)
+
+Final Output copy/collapse and Run history badges:
+
+![Final Output copy + collapse (092325)](./updated_screenshot/092325_final_output_copy_collapse.png)
+
+![Run history with metrics badges (092325)](./updated_screenshot/092325_run_history_badges.png)
+
+Timeline freeze on completion:
+
+![Timeline now freezes on completion (092325)](./updated_screenshot/092325_timeline_freeze_current_line.png)
+
 ## 2025-09-19
 
 ### Highlights

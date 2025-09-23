@@ -1,0 +1,183 @@
+/* Minimal, scoped styles for Agent Dashboard to complement existing Tailwind/util classes */
+.agent-dashboard .document-card__bg { position: absolute; right: 8px; top: 8px; opacity: 0.08; pointer-events: none; }
+.agent-dashboard .now-line { position: absolute; top: 80px; bottom: 0; width: 2px; background: var(--accent-primary); opacity: 0.7; }
+.agent-dashboard .chip { border: 1px solid var(--border-color); border-radius: 999px; padding: 4px 10px; font-size: 12px; color: var(--text-secondary); }
+.agent-dashboard .chip.active { background: var(--accent-primary-bg); color: var(--accent-primary); border-color: color-mix(in srgb, var(--accent-primary), transparent 70%); }
+
+/* Badges to mirror prototype styling */
+.agent-dashboard .badge-orchestrator { background: #EEF2FF; color: var(--accent-primary, #6366F1); border: 1px solid #C7D2FE; }
+.agent-dashboard .badge-main { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+.agent-dashboard .badge-leaf { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+
+
+/* Running task loading stripes */
+@keyframes stripeShift {
+  from { background-position: 0 0; }
+  to { background-position: 40px 0; }
+}
+.agent-dashboard .loading-stripes {
+  position: relative;
+  overflow: hidden;
+}
+.agent-dashboard .loading-stripes::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(99, 102, 241, 0.12) 0px,
+    rgba(99, 102, 241, 0.12) 10px,
+    rgba(99, 102, 241, 0.22) 10px,
+    rgba(99, 102, 241, 0.22) 20px
+  );
+  background-size: 40px 40px;
+  animation: stripeShift 1.2s linear infinite;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+
+/* Task card styles (match prototype structure) */
+.agent-dashboard .task-card { background:#fff; border:1px solid var(--border-color); border-radius:14px; transition:.2s ease; cursor:pointer; }
+.agent-dashboard .task-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,23,42,0.08); border-color: #D1D5DB; }
+.agent-dashboard .task-card.active { border-color: var(--accent-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary), transparent 80%); }
+
+.agent-dashboard .task-header { padding:12px 16px 10px; border-bottom:1px solid var(--border-color); background:#fff; }
+.agent-dashboard .task-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; margin-bottom:6px; }
+.agent-dashboard .task-title .task-icon { font-size:18px; }
+.agent-dashboard .agent-type-badge { padding:3px 7px; border-radius:999px; font-size:10px; text-transform:uppercase; letter-spacing:.5px; border:1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); }
+.agent-dashboard .task-meta { display:flex; align-items:center; justify-content:space-between; font-size:11px; color: var(--text-secondary); }
+.agent-dashboard .task-status { display:flex; align-items:center; gap:6px; text-transform:capitalize; }
+.agent-dashboard .status-dot { width:7px; height:7px; border-radius:50%; background: var(--text-muted); }
+.agent-dashboard .status-dot.running { background:#16A34A; animation: pulse 2s infinite; }
+.agent-dashboard .status-dot.complete { background: var(--accent-primary, #6366F1); }
+.agent-dashboard .status-dot.pending { background: #F59E0B; }
+.agent-dashboard .status-dot.paused { background: #F97316; }
+.agent-dashboard .status-dot.error { background: #EF4444; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+.agent-dashboard .mini-timeline { height:110px; position:relative; background: linear-gradient(#fff, #FAFAFA); }
+.agent-dashboard .mini-agent-row { position:absolute; left:0; right:0; height:9px; display:flex; align-items:center; }
+.agent-dashboard .mini-execution-bar { position:absolute; height:5px; border-radius:4px; border:1px solid transparent; }
+
+.agent-dashboard .task-output { position:relative; padding:14px 20px; background:#F8FAFF; border-top:1px solid var(--border-color); max-height:140px; overflow:hidden; }
+.agent-dashboard .task-output-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color: var(--text-secondary); }
+.agent-dashboard .task-output pre { margin-top:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:12px; line-height:1.5; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; }
+.agent-dashboard .task-output::after { content:""; position:absolute; left:0; right:0; bottom:0; height:28px; background: linear-gradient(transparent, #F8FAFF); }
+
+.agent-dashboard .task-actions { padding:12px 20px; border-top:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; background:#fff; }
+.agent-dashboard .task-metrics { display:flex; gap:16px; font-size:12px; color: var(--text-secondary); }
+.agent-dashboard .task-metrics .metric-value { color: var(--text-primary); font-weight:600; }
+
+/* Hover overlay */
+.agent-dashboard .hover-card { position:absolute; inset:0; background: rgba(255,255,255,0.98); backdrop-filter: blur(8px); border:1px solid var(--border-color); display:none; flex-direction:column; padding:18px; z-index:2; }
+.agent-dashboard .task-card:hover .hover-card { display:flex; }
+.agent-dashboard .hover-title { font-size:16px; font-weight:650; margin-bottom:6px; }
+.agent-dashboard .hover-subtitle { font-size:12px; color: var(--text-secondary); margin-bottom:12px; }
+.agent-dashboard .hover-output { flex:1; display:flex; flex-direction:column; gap:8px; padding:14px; background:#F4F6FF; border:1px solid #DCE3FF; border-radius:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:12px; color: var(--text-primary); overflow:auto; }
+.agent-dashboard .hover-output-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color: var(--text-secondary); }
+.agent-dashboard .hover-actions { margin-top:16px; display:flex; gap:8px; }
+
+
+/* ===== Timeline container (prototype parity) ===== */
+.agent-dashboard .timeline-shell { display:grid; grid-template-rows: auto 1fr; height: calc(100vh - 72px); position: relative; z-index: 0; width: 100%; min-width: 0; }
+.agent-dashboard .timeline-controls { position: sticky; top: 0; z-index: 10; }
+.agent-dashboard .timeline-controls .btn { background:#fff; color: var(--text-primary); border:1px solid var(--border-color); padding:6px 10px; border-radius:8px; font-size:12px; }
+.agent-dashboard .timeline-controls .btn:hover { box-shadow: 0 6px 18px rgba(15,23,42,0.07); }
+.agent-dashboard .timeline-controls .btn.btn-primary { background: var(--accent-primary); color:#fff; border-color: var(--accent-primary); }
+.agent-dashboard .status-badge { margin-left:auto; padding:4px 8px; border-radius: 999px; font-size: 10px; font-weight:600; text-transform: uppercase; letter-spacing: .5px; background: #ECFDF5; color: #16A34A; border:1px solid #A7F3D0; }
+
+.agent-dashboard .timeline-container { position: relative; z-index: 0; display:grid; grid-template-columns: minmax(180px, 320px) 1fr; overflow:hidden; min-width: 0; width: 100%; }
+.agent-dashboard .agent-hierarchy { background:#fff; border-right:1px solid var(--border-color); overflow:auto; padding-bottom:24px; min-width: 0; }
+.agent-dashboard .hierarchy-header { position:sticky; top:0; z-index:5; height:82px; padding:0 16px; background:#fff; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; }
+.agent-dashboard .hierarchy-title { font-size:12px; color: var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; }
+
+/* Allow the timeline chart to account for overlay panels (AI Chat, etc.) via CSS vars */
+.agent-dashboard .timeline-chart { position:relative; background:#fff; overflow:auto; min-width: 0; padding-right: var(--right-overlay-padding, 0); padding-left: var(--left-overlay-padding, 0); }
+
+/* Responsive adjustments so the hierarchy can shrink when side panels expand */
+@media (max-width: 1280px) {
+  .agent-dashboard .timeline-container { grid-template-columns: minmax(160px, 260px) 1fr; }
+  .agent-dashboard .time-unit { min-width: 32px; }
+}
+@media (max-width: 1024px) {
+  .agent-dashboard .timeline-container { grid-template-columns: minmax(140px, 220px) 1fr; }
+  .agent-dashboard .time-unit { min-width: 28px; }
+}
+
+.agent-dashboard .agent-group { border-bottom:0; }
+.agent-dashboard .main-agent, .agent-dashboard .sub-agent { display:flex; gap:10px; align-items:center; cursor:default; transition:.15s ease; }
+.agent-dashboard .main-agent { height:50px; padding:0 16px; background:#fff; border-bottom:1px dashed var(--border-color); }
+.agent-dashboard .main-agent:hover { background: var(--bg-tertiary); }
+.agent-dashboard .sub-agent { height:40px; padding:0 16px 0 40px; background:#fff; border-left:2px solid transparent; border-bottom:1px dashed var(--border-color); }
+.agent-dashboard .sub-agent:hover { background:#F9FAFB; border-left-color: var(--accent-primary); }
+.agent-dashboard .agent-icon { width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; background: var(--bg-tertiary); border:1px solid var(--border-color); }
+.agent-dashboard .sub-agent .agent-icon { width:20px; height:20px; font-size:12px; }
+.agent-dashboard .agent-name { flex:1; min-width:0; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.agent-dashboard .sub-agent .agent-name { font-size:12px; color: var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.agent-dashboard .agent-meta { font-size:11px; color: var(--text-muted); }
+.agent-dashboard .agent-status { width:8px; height:8px; border-radius:50%; }
+.agent-dashboard .status-pending { background:#CBD5E1; }
+.agent-dashboard .status-running { background:#16A34A; animation: pulse 2s infinite; }
+.agent-dashboard .status-complete { background: var(--accent-primary, #6366F1); }
+.agent-dashboard .status-error { background:#EF4444; }
+
+.agent-dashboard .timeline-chart { position:relative; background:#fff; overflow:auto; }
+.agent-dashboard .timeline-header { position:sticky; top:0; z-index:5; background:#fff; border-bottom:1px solid var(--border-color); }
+.agent-dashboard .time-scale { height:40px; display:flex; align-items:center; padding:0 16px; font-size:11px; text-transform:uppercase; color: var(--text-secondary); border-bottom:1px solid var(--border-color); }
+.agent-dashboard .time-units { height:42px; display:flex; }
+.agent-dashboard .time-unit { flex:1; min-width:36px; display:flex; align-items:center; justify-content:center; font-size:11px; color: var(--text-secondary); border-right:1px solid var(--border-color); }
+.agent-dashboard .time-unit.now { background:#EEF2FF; color: var(--accent-primary); font-weight:600; }
+
+.agent-dashboard .current-time-line { position:absolute; top:82px; bottom:0; width:2px; background: var(--accent-primary); opacity:.6; pointer-events:none; }
+
+.agent-dashboard .timeline-rows { position:relative; }
+.agent-dashboard .timeline-row { position:relative; display:flex; }
+.agent-dashboard .main-row { height:50px; background:#fff; border-bottom:1px dashed var(--border-color); }
+.agent-dashboard .sub-row { height:40px; background:#fff; border-bottom:1px dashed var(--border-color); }
+
+.agent-dashboard .timeline-grid { position:absolute; inset:0; display:flex; pointer-events:none; }
+.agent-dashboard .grid-column { flex:1; min-width:36px; border-right:1px dashed var(--border-color); }
+
+.agent-dashboard .execution-bar { position:absolute; height:28px; top:10px; border-radius:8px; display:flex; align-items:center; padding:0 8px; cursor:pointer; transition:.16s ease; border:1px solid var(--border-color); }
+.agent-dashboard .sub-row .execution-bar { height:24px; top:8px; }
+.agent-dashboard .execution-bar.pending { background:#FAFAFA; border-style:dashed; }
+.agent-dashboard .execution-bar.running { box-shadow: inset 0 0 0 9999px rgba(22,163,74,.08); border-color: rgba(22,163,74,.35); }
+.agent-dashboard .execution-bar.complete { box-shadow: inset 0 0 0 9999px rgba(99,102,241,.08); border-color: rgba(99,102,241,.35); }
+.agent-dashboard .execution-bar:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(15,23,42,0.08); }
+
+.agent-dashboard .progress-indicator { position:absolute; left:0; top:0; bottom:0; background: linear-gradient(90deg, transparent, rgba(99,102,241,.25)); border-radius:8px; transition: width .25s ease; }
+
+
+/* Mini timeline highlight and faded states */
+.agent-dashboard .mini-execution-bar.highlight { border-color: #6366F1AA !important; box-shadow: 0 0 0 1px #6366F120; opacity: 1 !important; }
+
+/* Grouped layout */
+.agent-dashboard .orchestrator-section .task-card { width: 100%; }
+.agent-dashboard .group-header span { color: var(--text-secondary); }
+.agent-dashboard .main-agent-card .task-card { margin-bottom: 0; }
+.agent-dashboard .sub-agents-grid { margin-top: 8px; }
+
+/* Tree view */
+.agent-dashboard .tree-view { display: flex; flex-direction: column; gap: 10px; }
+.agent-dashboard .tree-node .node-header .task-card-inline .task-card { margin: 0; }
+.agent-dashboard .tree-node .task-card-inline .hover-card { display: none !important; }
+.agent-dashboard .tree-children { margin-left: 10px; }
+
+
+/* Compact rendering inside Tree nodes */
+.agent-dashboard .tree-node .task-card { border-radius: 10px; }
+.agent-dashboard .tree-node .task-header { padding:8px 12px 6px; }
+.agent-dashboard .tree-node .task-title { font-size:12px; gap:6px; }
+.agent-dashboard .tree-node .task-title .task-icon { font-size:16px; }
+.agent-dashboard .tree-node .task-meta { font-size:10px; }
+.agent-dashboard .tree-node .mini-timeline { height:70px; }
+.agent-dashboard .tree-node .task-output,
+.agent-dashboard .tree-node .task-actions { display:none; }
+
+/* Per-agent lane legend in cards */
+.agent-dashboard .mini-legend { display:flex; align-items:center; gap:10px; padding:6px 12px; border-top:1px solid var(--border-color); background:#fff; font-size:10px; color:var(--text-secondary); }
+.agent-dashboard .mini-legend .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+.agent-dashboard .mini-legend .orch { background:#6366F1; }
+.agent-dashboard .mini-legend .main { background:#16A34A; }
+.agent-dashboard .mini-legend .leaf { background:#F59E0B; }

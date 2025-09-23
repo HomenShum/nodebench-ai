@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Tasks Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0F0F0F;
+            color: #E0E0E0;
+            overflow: hidden;
+        }
+
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: #1A1A1A;
+            padding: 16px 24px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-value {
+            color: #E0E0E0;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            background: #2A2A2A;
+            color: #E0E0E0;
+            border: 1px solid #3A3A3A;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #3A3A3A;
+            border-color: #4A4A4A;
+        }
+
+        .btn-primary {
+            background: #6366F1;
+            border-color: #6366F1;
+        }
+
+        .btn-primary:hover {
+            background: #5558E3;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Tasks Grid */
+        .tasks-grid-container {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background: #0F0F0F;
+        }
+
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Task Card */
+        .task-card {
+            background: #1A1A1A;
+            border: 1px solid #2A2A2A;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+            border-color: #3A3A3A;
+        }
+
+        .task-card.active {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 1px #6366F1;
+        }
+
+        /* Task Card Header */
+        .task-header {
+            padding: 16px;
+            border-bottom: 1px solid #2A2A2A;
+            background: #1F1F1F;
+        }
+
+        .task-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #888;
+        }
+
+        .task-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.running { 
+            background: #22C55E;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.complete { background: #6366F1; }
+        .status-dot.error { background: #EF4444; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Mini Timeline Visualization */
+        .mini-timeline {
+            height: 120px;
+            background: #0F0F0F;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mini-agent-row {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .mini-execution-bar {
+            position: absolute;
+            height: 6px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        /* Task Output Preview */
+        .task-output {
+            padding: 12px 16px;
+            font-size: 11px;
+            color: #AAA;
+            line-height: 1.4;
+            max-height: 60px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .task-output::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(transparent, #1A1A1A);
+        }
+
+        /* Task Actions */
+        .task-actions {
+            padding: 12px 16px;
+            border-top: 1px solid #2A2A2A;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1F1F1F;
+        }
+
+        .task-metrics {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+        }
+
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #888;
+        }
+
+        .metric-value {
+            color: #E0E0E0;
+            font-weight: 500;
+        }
+
+        /* Hover Card */
+        .hover-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 26, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            z-index: 2;
+        }
+
+        .task-card:hover .hover-card {
+            display: flex;
+        }
+
+        .hover-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #FFF;
+        }
+
+        .hover-output {
+            flex: 1;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #CCC;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #0F0F0F;
+            border-radius: 6px;
+            border: 1px solid #2A2A2A;
+        }
+
+        .hover-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Timeline Popover */
+        .timeline-popover {
+            position: fixed;
+            background: #1A1A1A;
+            border: 1px solid #3A3A3A;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            width: 800px;
+            max-height: 500px;
+            overflow: hidden;
+        }
+
+        .timeline-popover.active {
+            display: block;
+        }
+
+        .popover-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #2A2A2A;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1F1F1F;
+        }
+
+        .popover-title {
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #2A2A2A;
+        }
+
+        /* Mini Timeline Content */
+        .popover-content {
+            display: flex;
+            height: 400px;
+        }
+
+        .mini-hierarchy {
+            width: 200px;
+            background: #1A1A1A;
+            border-right: 1px solid #2A2A2A;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .mini-agent-item {
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .mini-agent-item:hover {
+            background: #242424;
+        }
+
+        .mini-agent-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .mini-timeline-view {
+            flex: 1;
+            position: relative;
+            background: #0F0F0F;
+            overflow: auto;
+        }
+
+        /* Full View Panel */
+        .full-view-panel {
+            position: fixed;
+            bottom: -600px;
+            left: 0;
+            right: 0;
+            height: 600px;
+            background: #1A1A1A;
+            border-top: 2px solid #6366F1;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            transition: bottom 0.3s ease-in-out;
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .full-view-panel.active {
+            bottom: 0;
+        }
+
+        .full-view-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #2A2A2A;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1F1F1F;
+        }
+
+        .full-view-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .full-timeline-section {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .full-output-section {
+            width: 400px;
+            border-left: 1px solid #2A2A2A;
+            padding: 20px;
+            overflow-y: auto;
+            background: #0F0F0F;
+        }
+
+        .output-header {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .output-content {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #22C55E;
+            background: #0A0A0A;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid #1A1A1A;
+        }
+
+        /* New Task Button */
+        .new-task-card {
+            background: transparent;
+            border: 2px dashed #3A3A3A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .new-task-card:hover {
+            border-color: #6366F1;
+            background: #6366F108;
+        }
+
+        .new-task-content {
+            text-align: center;
+        }
+
+        .new-task-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            border-radius: 12px;
+            background: #2A2A2A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .new-task-text {
+            font-size: 13px;
+            color: #888;
+        }
+
+        /* Loading State */
+        .loading-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #6366F1, transparent);
+            animation: loading 2s linear infinite;
+        }
+
+        @keyframes loading {
+            0% { width: 0; left: 0; }
+            50% { width: 30%; left: 35%; }
+            100% { width: 0; left: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="header-title">
+                <div style="width: 32px; height: 32px; background: #6366F1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">🚀</div>
+                <h1>Agent Research Tasks</h1>
+            </div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span>Active Tasks:</span>
+                    <span class="stat-value">4</span>
+                </div>
+                <div class="stat-item">
+                    <span>Total Agents:</span>
+                    <span class="stat-value">28</span>
+                </div>
+                <div class="stat-item">
+                    <span>Completed:</span>
+                    <span class="stat-value">12</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn">
+                    <span>⚙️</span> Settings
+                </button>
+                <button class="btn btn-primary" onclick="createNewTask()">
+                    <span>+</span> New Research Task
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="tasks-grid-container">
+                <div class="tasks-grid" id="tasksGrid">
+                    <!-- Task Cards will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Popover -->
+    <div class="timeline-popover" id="timelinePopover">
+        <div class="popover-header">
+            <div class="popover-title">
+                <span id="popoverTaskIcon">🔍</span>
+                <span id="popoverTaskTitle">Research Pipeline</span>
+            </div>
+            <div class="close-btn" onclick="closeTimelinePopover()">✕</div>
+        </div>
+        <div class="popover-content">
+            <div class="mini-hierarchy" id="miniHierarchy"></div>
+            <div class="mini-timeline-view" id="miniTimelineView"></div>
+        </div>
+    </div>
+
+    <!-- Full View Panel -->
+    <div class="full-view-panel" id="fullViewPanel">
+        <div class="full-view-header">
+            <div class="popover-title">
+                <span id="fullViewIcon">📊</span>
+                <span id="fullViewTitle">Full Research Pipeline</span>
+            </div>
+            <button class="btn" onclick="closeFullView()">Close</button>
+        </div>
+        <div class="full-view-content">
+            <div class="full-timeline-section" id="fullTimeline">
+                <!-- Full timeline visualization will be rendered here -->
+            </div>
+            <div class="full-output-section">
+                <div class="output-header">Final Output</div>
+                <div class="output-content" id="finalOutput">
+                    {
+                      "person": {
+                        "name": "John Smith",
+                        "role": "CEO & Founder",
+                        "background": "Serial entrepreneur with 3 exits",
+                        "network_score": 9.2,
+                        "reputation": "excellent"
+                      },
+                      "company": {
+                        "name": "TechCorp Inc",
+                        "valuation": "$250M",
+                        "growth_rate": "127% YoY",
+                        "market_position": "Category leader"
+                      },
+                      "fundraising": {
+                        "recommended_round": "Series B",
+                        "target_amount": "$50-75M",
+                        "optimal_timing": "Q2 2025",
+                        "top_investors": ["Sequoia", "a16z", "Founders Fund"],
+                        "confidence": 0.92
+                      }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample task data
+        const tasks = [
+            {
+                id: 1,
+                title: "Fundraising Research: TechCorp Inc",
+                status: "complete",
+                icon: "💎",
+                createdAt: "2 hours ago",
+                duration: "8m 42s",
+                agentCount: 12,
+                progress: 100,
+                output: {
+                    person: { name: "John Smith", role: "CEO", network_score: 9.2 },
+                    company: { valuation: "$250M", growth: "127% YoY" },
+                    fundraising: { round: "Series B", amount: "$50-75M" }
+                }
+            },
+            {
+                id: 2,
+                title: "Competitor Analysis: AI Market",
+                status: "running",
+                icon: "⚔️",
+                createdAt: "15 mins ago",
+                duration: "3m 21s",
+                agentCount: 8,
+                progress: 65,
+                output: {
+                    status: "Analyzing 47 competitors...",
+                    found: 23,
+                    processed: 15
+                }
+            },
+            {
+                id: 3,
+                title: "Due Diligence: DataFlow Systems",
+                status: "running",
+                icon: "🔍",
+                createdAt: "1 hour ago",
+                duration: "5m 10s",
+                agentCount: 15,
+                progress: 42,
+                output: {
+                    status: "Scanning financial records...",
+                    documents_analyzed: 156
+                }
+            },
+            {
+                id: 4,
+                title: "Market Research: HealthTech Sector",
+                status: "complete",
+                icon: "📊",
+                createdAt: "3 hours ago",
+                duration: "12m 30s",
+                agentCount: 10,
+                progress: 100,
+                output: {
+                    market_size: "$420B",
+                    growth_rate: "15% CAGR",
+                    key_players: 24,
+                    opportunities: 8
+                }
+            },
+            {
+                id: 5,
+                title: "Executive Background Check",
+                status: "pending",
+                icon: "👤",
+                createdAt: "5 mins ago",
+                duration: "0s",
+                agentCount: 6,
+                progress: 0,
+                output: {
+                    status: "Queued for processing..."
+                }
+            },
+            {
+                id: 6,
+                title: "Partnership Opportunity Analysis",
+                status: "running",
+                icon: "🤝",
+                createdAt: "30 mins ago",
+                duration: "4m 15s",
+                agentCount: 9,
+                progress: 78,
+                output: {
+                    potential_partners: 12,
+                    evaluated: 9,
+                    top_matches: 3
+                }
+            }
+        ];
+
+        // Mini agent system for each task
+        const miniAgentSystem = {
+            orchestrator: { color: '#6366F1', startTime: 0, duration: 100 },
+            agents: [
+                { color: '#22C55E', startTime: 5, duration: 30 },
+                { color: '#FFB800', startTime: 5, duration: 40 },
+                { color: '#EC4899', startTime: 40, duration: 30 },
+                { color: '#64748B', startTime: 72, duration: 20 }
+            ],
+            subAgents: [
+                { color: '#0A66C2', startTime: 8, duration: 10 },
+                { color: '#FF6B6B', startTime: 8, duration: 15 },
+                { color: '#4ECDC4', startTime: 25, duration: 12 },
+                { color: '#10B981', startTime: 8, duration: 12 },
+                { color: '#EF4444', startTime: 8, duration: 20 },
+                { color: '#8B5CF6', startTime: 30, duration: 15 }
+            ]
+        };
+
+        let selectedTask = null;
+        let timelinePopoverTask = null;
+
+        function renderTasks() {
+            const grid = document.getElementById('tasksGrid');
+            grid.innerHTML = '';
+
+            tasks.forEach(task => {
+                const card = createTaskCard(task);
+                grid.appendChild(card);
+            });
+
+            // Add new task card
+            const newCard = createNewTaskCard();
+            grid.appendChild(newCard);
+        }
+
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.onclick = (e) => {
+                e.stopPropagation();
+                showTimelinePopover(task);
+            };
+            card.ondblclick = (e) => {
+                e.stopPropagation();
+                showFullView(task);
+            };
+
+            // Generate mini timeline bars
+            const miniTimelineHTML = generateMiniTimeline(task);
+
+            card.innerHTML = `
+                <div class="loading-bar" style="display: ${task.status === 'running' ? 'block' : 'none'}"></div>
+                <div class="task-header">
+                    <div class="task-title">
+                        <span style="font-size: 18px;">${task.icon}</span>
+                        ${task.title}
+                    </div>
+                    <div class="task-meta">
+                        <div class="task-status">
+                            <div class="status-dot ${task.status}"></div>
+                            <span>${task.status}</span>
+                        </div>
+                        <span>${task.createdAt}</span>
+                    </div>
+                </div>
+                <div class="mini-timeline">
+                    ${miniTimelineHTML}
+                </div>
+                <div class="task-output">
+                    ${JSON.stringify(task.output, null, 2).substring(0, 150)}...
+                </div>
+                <div class="task-actions">
+                    <div class="task-metrics">
+                        <div class="metric">
+                            <span>⏱</span>
+                            <span class="metric-value">${task.duration}</span>
+                        </div>
+                        <div class="metric">
+                            <span>🤖</span>
+                            <span class="metric-value">${task.agentCount}</span>
+                        </div>
+                        <div class="metric">
+                            <span>📊</span>
+                            <span class="metric-value">${task.progress}%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hover-card">
+                    <div class="hover-title">${task.title}</div>
+                    <div class="hover-output">
+                        <strong>Current Output:</strong><br><br>
+                        ${JSON.stringify(task.output, null, 2)}
+                    </div>
+                    <div class="hover-actions">
+                        <button class="btn" onclick="event.stopPropagation(); showTimelinePopover(${JSON.stringify(task).replace(/"/g, '&quot;')})">
+                            View Timeline
+                        </button>
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); showFullView(${JSON.stringify(task).replace(/"/g, '&quot;')})">
+                            Open Full View
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function generateMiniTimeline(task) {
+            let html = '';
+            let rowIndex = 0;
+
+            // Orchestrator
+            html += `
+                <div class="mini-agent-row" style="top: ${rowIndex * 10}px;">
+                    <div class="mini-execution-bar" style="
+                        left: ${miniAgentSystem.orchestrator.startTime}%;
+                        width: ${miniAgentSystem.orchestrator.duration}%;
+                        background: ${miniAgentSystem.orchestrator.color}30;
+                        border: 1px solid ${miniAgentSystem.orchestrator.color}60;
+                    "></div>
+                </div>
+            `;
+            rowIndex++;
+
+            // Main agents
+            miniAgentSystem.agents.forEach(agent => {
+                html += `
+                    <div class="mini-agent-row" style="top: ${rowIndex * 10}px;">
+                        <div class="mini-execution-bar" style="
+                            left: ${agent.startTime}%;
+                            width: ${agent.duration}%;
+                            background: ${agent.color}30;
+                            border: 1px solid ${agent.color}60;
+                        "></div>
+                    </div>
+                `;
+                rowIndex++;
+            });
+
+            // Sub agents
+            miniAgentSystem.subAgents.forEach(agent => {
+                html += `
+                    <div class="mini-agent-row" style="top: ${rowIndex * 10}px;">
+                        <div class="mini-execution-bar" style="
+                            left: ${agent.startTime}%;
+                            width: ${agent.duration}%;
+                            background: ${agent.color}20;
+                            border: 1px solid ${agent.color}40;
+                        "></div>
+                    </div>
+                `;
+                rowIndex++;
+            });
+
+            return html;
+        }
+
+        function createNewTaskCard() {
+            const card = document.createElement('div');
+            card.className = 'task-card new-task-card';
+            card.onclick = createNewTask;
+            card.innerHTML = `
+                <div class="new-task-content">
+                    <div class="new-task-icon">+</div>
+                    <div class="new-task-text">Create New Research Task</div>
+                </div>
+            `;
+            return card;
+        }
+
+        function showTimelinePopover(task) {
+            timelinePopoverTask = task;
+            const popover = document.getElementById('timelinePopover');
+            
+            document.getElementById('popoverTaskIcon').textContent = task.icon;
+            document.getElementById('popoverTaskTitle').textContent = task.title;
+            
+            // Render mini hierarchy
+            renderMiniHierarchy();
+            
+            // Render mini timeline
+            renderMiniTimelineView();
+            
+            // Position popover
+            popover.style.left = '50%';
+            popover.style.top = '50%';
+            popover.style.transform = 'translate(-50%, -50%)';
+            popover.classList.add('active');
+        }
+
+        function renderMiniHierarchy() {
+            const hierarchy = document.getElementById('miniHierarchy');
+            hierarchy.innerHTML = `
+                <div class="mini-agent-item">
+                    <div class="mini-agent-icon" style="background: #6366F120;">🧠</div>
+                    <span>Orchestrator</span>
+                </div>
+                <div class="mini-agent-item">
+                    <div class="mini-agent-icon" style="background: #22C55E20;">👤</div>
+                    <span>Person Research</span>
+                </div>
+                <div class="mini-agent-item" style="padding-left: 20px;">
+                    <div class="mini-agent-icon" style="background: #0A66C220;">🔗</div>
+                    <span>LinkedIn</span>
+                </div>
+                <div class="mini-agent-item" style="padding-left: 20px;">
+                    <div class="mini-agent-icon" style="background: #FF6B6B20;">📰</div>
+                    <span>News Scanner</span>
+                </div>
+                <div class="mini-agent-item">
+                    <div class="mini-agent-icon" style="background: #FFB80020;">🏢</div>
+                    <span>Company Research</span>
+                </div>
+                <div class="mini-agent-item" style="padding-left: 20px;">
+                    <div class="mini-agent-icon" style="background: #10B98120;">💰</div>
+                    <span>Financials</span>
+                </div>
+                <div class="mini-agent-item">
+                    <div class="mini-agent-icon" style="background: #EC489920;">💎</div>
+                    <span>Fundraising</span>
+                </div>
+            `;
+        }
+
+        function renderMiniTimelineView() {
+            const timelineView = document.getElementById('miniTimelineView');
+            // This would contain a scaled-down version of the full timeline
+            timelineView.innerHTML = `
+                <div style="padding: 20px; color: #888; text-align: center;">
+                    <div style="margin-bottom: 20px;">Timeline Visualization</div>
+                    ${generateDetailedTimeline()}
+                </div>
+            `;
+        }
+
+        function generateDetailedTimeline() {
+            // Generate a more detailed timeline view
+            return `<svg width="100%" height="300" style="background: #0F0F0F; border-radius: 6px;">
+                <rect x="10" y="20" width="90%" height="8" fill="#6366F130" rx="4"/>
+                <rect x="20" y="40" width="30%" height="6" fill="#22C55E30" rx="3"/>
+                <rect x="20" y="55" width="35%" height="6" fill="#FFB80030" rx="3"/>
+                <rect x="140" y="70" width="25%" height="6" fill="#EC489930" rx="3"/>
+                <rect x="220" y="85" width="20%" height="6" fill="#64748B30" rx="3"/>
+            </svg>`;
+        }
+
+        function closeTimelinePopover() {
+            document.getElementById('timelinePopover').classList.remove('active');
+        }
+
+        function showFullView(task) {
+            selectedTask = task;
+            const panel = document.getElementById('fullViewPanel');
+            
+            document.getElementById('fullViewIcon').textContent = task.icon;
+            document.getElementById('fullViewTitle').textContent = task.title;
+            document.getElementById('finalOutput').textContent = JSON.stringify(task.output, null, 2);
+            
+            // Render full timeline
+            renderFullTimeline();
+            
+            panel.classList.add('active');
+        }
+
+        function renderFullTimeline() {
+            const timeline = document.getElementById('fullTimeline');
+            timeline.innerHTML = `
+                <div style="padding: 20px;">
+                    <h3 style="margin-bottom: 20px;">Complete Agent Execution Timeline</h3>
+                    <div style="height: 400px; background: #0F0F0F; border-radius: 8px; border: 1px solid #2A2A2A; padding: 20px;">
+                        <!-- Full timeline visualization would go here -->
+                        <div style="color: #888; text-align: center; margin-top: 150px;">
+                            Full timeline with all agents and execution details
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeFullView() {
+            document.getElementById('fullViewPanel').classList.remove('active');
+        }
+
+        function createNewTask() {
+            // This would open a modal to configure a new research task
+            alert('Create new research task - configuration modal would open here');
+        }
+
+        // Initialize
+        renderTasks();
+
+        // Simulate live updates
+        setInterval(() => {
+            tasks.forEach(task => {
+                if (task.status === 'running' && task.progress < 100) {
+                    task.progress = Math.min(100, task.progress + Math.random() * 5);
+                    if (task.progress >= 100) {
+                        task.status = 'complete';
+                    }
+                }
+            });
+            renderTasks();
+        }, 3000);
+    </script>
+</body>
+</html>

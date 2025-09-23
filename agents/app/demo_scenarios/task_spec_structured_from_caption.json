@@ -1,0 +1,47 @@
+{
+  "goal": "Generate a caption for an image and extract structured fields from that caption.",
+  "type": "custom",
+  "constraints": { "maxSteps": 4 },
+  "input": {
+    "imageUrl": "@updated_screenshot"
+  },
+  "overridePlan": {
+    "intent": "custom",
+    "final": "answer_only",
+    "groups": [
+      [
+        {
+          "kind": "answer",
+          "label": "Generate concise caption",
+          "args": {
+            "query": "Provide a concise, single-paragraph caption describing the image.",
+            "imageUrl": "@updated_screenshot"
+          }
+        }
+      ],
+      [
+        {
+          "kind": "structured",
+          "label": "Extract structured fields from caption",
+          "args": {
+            "mode": "json",
+            "prompt": "Extract the following fields from the caption. If a field is not applicable, choose a sensible default.",
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "scene_type": { "type": "string" },
+                "key_objects": { "type": "array", "items": { "type": "string" } },
+                "has_ui": { "type": "boolean" },
+                "purpose": { "type": "string" },
+                "summary": { "type": "string" }
+              },
+              "required": ["scene_type", "key_objects", "has_ui", "purpose", "summary"]
+            }
+          }
+        }
+      ]
+    ]
+  }
+}
+

@@ -714,6 +714,9 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   const [expandedPlan, setExpandedPlan] = useState<Set<string>>(new Set());
 
   const [selectedModel, setSelectedModel] = useState<'openai' | 'gemini'>('openai');
+  const [useOrchestrator, setUseOrchestrator] = useState<boolean>(() => {
+    try { return window.localStorage.getItem('aiChat.useOrchestrator') === '1'; } catch { return false; }
+  });
   const isMinimal = variant === 'minimal';
   const convex = useConvex();
 
@@ -1099,6 +1102,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   const _generateAIResponse = useAction(api.ai.generateResponse);
   // Temporary cast to avoid IDE mismatch if Convex types aren’t regenerated yet
   const chatWithAgent = useAction((api as any).aiAgents.chatWithAgent as any);
+  const runOrchestrate = useAction((api as any).agents.orchestrate.run as any);
   // Chat thread persistence mutations
   const startChatThread = useMutation(api.chatThreads.start);
   const appendChatMessage = useMutation(api.chatThreads.appendMessage);
@@ -1169,7 +1173,10 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   }, [availableFiles, selectedContextFileIds]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const node: any = messagesEndRef.current;
+    if (node && typeof node.scrollIntoView === 'function') {
+      try { node.scrollIntoView({ behavior: 'smooth' }); } catch { /* ignore */ }
+    }
   };
 
   useEffect(() => {
@@ -1882,6 +1889,31 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
           messageWithContext += "\n\nPM Context JSON (doc, selection, nodes):\n\n```json\n" + pmJson + "\n```\n";
         }
       } catch { /* ignore */ }
+
+      // If orchestrator mode is enabled and we have a focused document, run the orchestrator and write to the Agent Timeline instead of chatWithAgent.
+      if (useOrchestrator && selectedDocumentId) {
+        try {
+          const res = await runOrchestrate({
+            documentId: selectedDocumentId as any,
+            name: 'Orchestration',
+            taskSpec: { goal: userMessageContent, type: 'ad-hoc', topic: userMessageContent } as any,
+          } as any);
+          const assistantMsg: Message = {
+            id: generateUniqueId('assistant'),
+            type: 'assistant',
+            content: res?.result || 'Orchestrator finished.',
+            timestamp: new Date(),
+          } as any;
+          (assistantMsg as any).timelineId = String(res?.timelineId || '');
+          setMessages((prev) => [...prev, assistantMsg]);
+        } catch (e) {
+          console.error('Orchestrator run failed', e);
+          try { toast.error('Orchestrator failed: ' + ((e as any)?.message || '')); } catch {}
+        } finally {
+          setIsLoading(false);
+        }
+        return;
+      }
 
       // Auto-retry wrapper to handle transient Convex disconnections
       const callOnce = async () => await chatWithAgent({
@@ -2623,10 +2655,41 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
     );
   };
 
+  // Dynamically inform other layouts (e.g., Agent Timeline) about our width so they can avoid being clipped
+  const rightPanelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = rightPanelRef.current;
+    const setPad = () => {
+      const w = el ? Math.ceil(el.getBoundingClientRect().width) : 0;
+      try { document.documentElement.style.setProperty('--right-overlay-padding', w > 0 ? `${w}px` : '0px'); } catch {}
+    };
+    if (!isOpen) {
+      try { document.documentElement.style.setProperty('--right-overlay-padding', '0px'); } catch {}
+      return;
+    }
+    setPad();
+    let ro: ResizeObserver | null = null;
+    try {
+      if (el && typeof ResizeObserver !== 'undefined') {
+        // @ts-ignore
+        ro = new ResizeObserver(() => setPad());
+        // @ts-ignore
+        ro.observe(el);
+      }
+    } catch {}
+    const onResize = () => setPad();
+    window.addEventListener('resize', onResize);
+    return () => {
+      try { document.documentElement.style.setProperty('--right-overlay-padding', '0px'); } catch {}
+      window.removeEventListener('resize', onResize);
+      if (ro) try { ro.disconnect(); } catch {}
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="right-panel flex flex-col h-full">
+    <div ref={rightPanelRef} className="right-panel flex flex-col h-full">
       {/* Header with Tabs */}
       <div className="flow-header">
         <div className="flow-title">
@@ -2997,6 +3060,29 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
                         <AgentRunStream runId={(message as any).runId} />
                       )}
 
+                      {message.type === 'assistant' && (message as any).timelineId && (
+                        <div className="mt-2">
+                          <button
+                            className="text-xs text-[var(--accent-primary)] hover:underline"
+                            onClick={() => {
+                              try {
+                                const tl = (message as any).timelineId as string | undefined;
+                                if (tl && tl.length > 0) {
+                                  const hash = `#calendar/agents?timeline=${encodeURIComponent(tl)}`;
+                                  window.location.hash = hash;
+                                  window.dispatchEvent(new CustomEvent('agents:openTimeline', { detail: { timelineId: tl } }));
+                                } else {
+                                  window.location.hash = '#calendar/agents';
+                                  window.dispatchEvent(new CustomEvent('navigate:calendar'));
+                                }
+                              } catch {}
+                            }}
+                          >
+                            View in Agents Timeline
+                          </button>
+                        </div>
+                      )}
+
                   {/* Thinking Steps */}
                   {message.type === 'assistant' && message.thinkingSteps && message.thinkingSteps.length > 0 && (
                     <div className="mt-2">
@@ -3178,6 +3264,18 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
                   Gemini
                 </button>
               </div>
+              <label className="ml-2 flex items-center gap-1 px-2 py-1 text-xs cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={useOrchestrator}
+                  onChange={(e) => {
+                    const v = e.currentTarget.checked;
+                    setUseOrchestrator(v);
+                    try { window.localStorage.setItem('aiChat.useOrchestrator', v ? '1' : '0'); } catch {}
+                  }}
+                />
+                <span>Orchestrator</span>
+              </label>
             </div>
 
             {/* Model Info + API Key Toggles */}

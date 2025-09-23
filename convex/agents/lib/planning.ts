@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Step and Plan schemas used for structured planning
 export const StepSchema = z.object({
-  id: z.string().optional(),
+  id: z.string().nullable().optional(),
   kind: z.enum([
     "web.search",
     "rag.search",
@@ -11,15 +11,18 @@ export const StepSchema = z.object({
     "doc.edit",
     "answer",
   ]),
-  label: z.string().optional(),
-  args: z.record(z.unknown()).optional(),
+  label: z.string().nullable().optional(),
+  args: z
+    .record(z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .nullable()
+    .optional(),
 });
 
 export const PlanSchema = z.object({
   intent: z.enum(["edit_doc", "code_change", "answer", "search", "file_ops"]),
-  explain: z.string().optional(),
+  explain: z.string().nullable().optional(),
   groups: z.array(z.array(StepSchema)),
-  final: z.enum(["answer_only", "apply_edit", "both"]).optional(),
+  final: z.enum(["answer_only", "apply_edit", "both"]).nullable().optional(),
 });
 
 export type Plan = z.infer<typeof PlanSchema>;
@@ -27,9 +30,10 @@ export type StepKind = z.infer<typeof StepSchema>["kind"];
 
 // Strict arg schemas per step kind
 export const StepArgSchemas: Record<StepKind, z.ZodTypeAny> = {
-  "web.search": z.object({ query: z.string().min(1).max(500) }).strict(),
+  // Allow query to be optional so callers can fall back to context.message safely
+  "web.search": z.object({ query: z.string().min(1).max(500).optional() }).strict(),
   "rag.search": z
-    .object({ query: z.string().min(1).max(500), namespace: z.string().optional() })
+    .object({ query: z.string().min(1).max(500).optional(), namespace: z.string().optional() })
     .strict(),
   "doc.create": z
     .object({ title: z.string().max(200).optional(), topic: z.string().max(200).optional() })

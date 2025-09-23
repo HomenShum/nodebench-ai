@@ -1,0 +1,14 @@
+{
+  "goal": "Find relevant info about 'Agent timeline UI' from local notes and sample page, then produce a short summary.",
+  "type": "research",
+  "input": {
+    "query": "Agent timeline UI",
+    "sources": ["seed_notes.md", "sample_page.html"]
+  },
+  "constraints": { "maxSteps": 5 },
+  "planHints": [
+    "Prefer local search before fetching URLs",
+    "Produce a concise 3-bullet summary"
+  ]
+}
+
