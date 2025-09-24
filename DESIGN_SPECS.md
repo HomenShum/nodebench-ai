@@ -21,7 +21,7 @@ Data Model (Convex)
     - startMs?: number (legacy; normalized to offset when fetched)
     - durationMs: number
     - progress?: number (0..1)
-    - status?: 'pending' | 'running' | 'complete' | 'paused'
+    - status?: 'pending' | 'running' | 'complete' | 'paused' | 'error'
     - agentType?: 'orchestrator' | 'main' | 'leaf'
     - assigneeId?: Id<'users'>
     - icon?: string
@@ -30,6 +30,9 @@ Data Model (Convex)
     - description?: string
     - inputTokens?: number
     - outputTokens?: number
+    - phaseBoundariesMs?: number[]   (relative to task start)
+    - retryOffsetsMs?: number[]      (relative to task start)
+    - failureOffsetMs?: number       (relative to task start)
 
 UI Defaults
 - Agents dashboard defaults to the Tasks tab (so users click into a task to view its timeline details).
@@ -42,6 +45,15 @@ Visual Parity Details
 - Timeline header shows a wall-clock row and evenly spaced columns.
 - Current time line is rendered as an accent vertical rule and updates every 500ms.
 - Running tasks display animated loading stripes (CSS repeating-linear-gradient + keyframes) over the bar.
+
+Recent Enhancements (Mini timeline + Execution bars)
+- Mini timeline view: added subtle time ticks and a live “now” line; compressed to 3 stacked lanes (orchestrator | mains | hot sub-steps). Header now supports fully interactive scrub-to-preview with a tooltip.
+- Execution bars: dynamic phase separators driven by task.phaseBoundariesMs; inner progress-fill overlay shows predicted vs actual; non-janky running stripes via .execution-bar.running::after; inline ETA label.
+- Retry/error markers: rendered from task.retryOffsetsMs and task.failureOffsetMs; error state also uses .execution-bar.error.
+- Popovers: hover delay + pin-on-click; keyboard: Esc closes, Enter focuses primary action; richer metrics (queue time, ETA, token usage, output size) when available.
+- Task cards: added compact metrics row (duration, agent count, last update, SLA/priority pill), and a one-line final-output summary. Deep links (#task-<id>) preserved.
+- Alternatives: micro‑gantt sparkline per card (concurrency density and predicted vs actual), plus a compact Table layout (agent, start, duration, ETA, state) with tiny inline bars.
+
 
     - outputSizeBytes?: number
     - elapsedMs?: number
@@ -57,8 +69,8 @@ Visual Parity Details
   - createForDocument(documentId, name)
   - getByTimelineId(timelineId) => { baseStartMs, tasks[], links[] } with offset normalization
   - addTask(timelineId, name, durationMs, startOffsetMs?, ...optional meta)
-  - updateTaskMetrics(taskId, { progress?, status?, startedAtMs?, elapsedMs?, outputSizeBytes?, inputTokens?, outputTokens?, assigneeId? })
-  - exportSnapshot(timelineId, includeReport?, includeIoPairs?) => { timeline: { timelineId, name, baseStartMs, tasks[], links[] }, report?, ioPairs? }
+  - updateTaskMetrics(taskId, { progress?, status?, startedAtMs?, elapsedMs?, outputSizeBytes?, inputTokens?, outputTokens?, assigneeId?, phaseBoundariesMs?, retryOffsetsMs?, failureOffsetMs? })
+  - exportSnapshot(timelineId, includeReport?, includeIoPairs?) => { timeline: { timelineId, name, baseStartMs, tasks[], links[] }, report?, ioPairs? } (tasks include phaseBoundariesMs/retryOffsetsMs/failureOffsetMs)
 
 
 Interaction Model
@@ -262,3 +274,14 @@ Updates (Dynamic Spawning + UI polish)
   - ⏱ uses elapsedMs (fallback durationMs)
   - 🤖 counts immediate children from links
   - 📊 uses task.progress (fallback elapsedMs/durationMs)
+
+
+
+Final Output Panel + UnifiedEditor (Sep 24, 2025)
+- Final Output location: The Final Output panel appears directly below the Timeline container. The Run History panel appears below the Final Output panel.
+- Editor integration: The Final Output panel embeds UnifiedEditor bound to the timeline's documentId. The editor auto-creates the document when missing and seeds content from latestRunOutput only when the doc is truly empty (whitespace/empty-paragraph). Once content has ever existed, automatic reseeding is disabled to respect intentional clears.
+- Restore from Final Output: The panel header includes a "Restore" button. When clicked and Final Output exists, the editor replaces its content from the latestRunOutput snapshot.
+- Save as Final Output: The panel header includes a "Save as Final Output" button. It exports the editor's current plain text and updates convex/agentTimelines.setLatestRun, setting latestRunOutput while preserving latestRunInput. Success/failure is tosted inline.
+- Server-side had-content flag: A server-side preference key (agentsPrefs) `doc.hasContent.<documentId>` is set to '1' after seeding or any edit, ensuring reseed gating is consistent across devices. A localStorage mirror is also maintained for immediate UX.
+- Copy buttons: Copy respects the panel context: Copy (header) copies the Final Output snapshot; a separate Copy in Run History copies a specific run output.
+- Tests: Existing tests continue to pass; add targeted tests later to cover restore/save interactions if needed.

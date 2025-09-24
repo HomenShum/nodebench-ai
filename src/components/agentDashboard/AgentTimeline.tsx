@@ -34,11 +34,15 @@ enum WindowMode {
   CenterNow = "center", // center window around now
 }
 
-export function AgentTimeline({ timelineId }: { timelineId: Id<"agentTimelines"> }) {
+import UnifiedEditor from "@/components/UnifiedEditor";
+
+export function AgentTimeline({ timelineId, documentId }: { timelineId: Id<"agentTimelines">; documentId?: Id<"documents"> }) {
   const leftRef = useRef<HTMLDivElement | null>(null);
   const rightRef = useRef<HTMLDivElement | null>(null);
   const [currentSec, setCurrentSec] = useState(0);
   const [chartWidth, setChartWidth] = useState<number>(0);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [preview, setPreview] = useState<{ active: boolean; sec: number; leftPct: string }>({ active: false, sec: 0, leftPct: '0%' });
 
   const [prompt, setPrompt] = useState("");
 
@@ -46,6 +50,9 @@ export function AgentTimeline({ timelineId }: { timelineId: Id<"agentTimelines">
 
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [lastRun, setLastRun] = useState<{ input: string; output: string } | null>(null);
+
+  const [restoreTick, setRestoreTick] = useState<number>(0);
+  const editorExporterRef = useRef<null | (() => Promise<{ plain: string }>)>(null);
 
   // Final Output expand/collapse (persisted per timeline)
   const [expandedFinal, setExpandedFinal] = useState<boolean>(() => {
@@ -130,6 +137,8 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
   const startFromPrompt = useAction(api.agents.promptPlan.startFromPrompt);
   const seedFromWeb = useAction((api as any).agents.timelineMock.generateFromWebSearchOnTimeline);
   const runOnTimeline = useAction(api.agents.orchestrate.runOnTimeline);
+  const setLatestRun = useMutation(api.agentTimelines.setLatestRun);
+
 
   const exportSnapshot = useAction((api as any).agentTimelines.exportSnapshot);
 
@@ -176,7 +185,8 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
 
   // Choose data source safely. Auto prefers Convex if present; Convex uses live if available; Scaffold forces demo.
   const liveAvailable = (data?.tasks?.length ?? 0) > 0;
-  const usingScaffold = dataSource === DataSource.Scaffold || (dataSource === DataSource.Auto && !liveAvailable);
+  // Fallback to scaffold whenever live data is unavailable so the timeline is always visible
+  const usingScaffold = (dataSource === DataSource.Scaffold) || !liveAvailable;
   const tasks = usingScaffold ? (scaffold.tasks as any[]) : ((data?.tasks as any[]) ?? []);
   const links = usingScaffold ? (scaffold.links as any[]) : ((data?.links as any[]) ?? []);
 
@@ -329,6 +339,8 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
 
   const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
   const [popoverTask, setPopoverTask] = useState<any | null>(null);
+  const [pinnedTaskId, setPinnedTaskId] = useState<string | null>(null);
+  const hoverTimerRef = useRef<number | null>(null);
 
   const leftPct = (t: Task) => {
     const l = ((Math.max(0, effectiveStartMs(t)) - windowStartMs) / Math.max(1, windowMs)) * 100;
@@ -351,8 +363,6 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
       <span
         className="text-[10px] px-1 py-[1px] rounded bg-[var(--bg-primary)] border border-[var(--border-color)]"
         style={{ position: 'absolute', top: -14, right: 0, opacity: 0.8 }}
-
-
       >{`L${lvl}`}</span>
     );
   };
@@ -587,61 +597,16 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
         </div>
       </div>
 
-      {finalOutput ? (
-        <div className="mt-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)]">
-          <div className="px-2 pt-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
-            <span>Final Output</span>
-            <div className="flex items-center gap-2">
-              <button
-                className="btn"
-                title="Copy output"
-                onClick={() => { void navigator.clipboard.writeText(finalOutput).then(() => { setToast("Copied"); window.setTimeout(() => setToast(""), 1500); }).catch(() => {}); }}
-              >Copy</button>
-              <button
-                className="btn"
-                title={expandedFinal ? "Collapse" : "Expand"}
-                onClick={() => persistExpandedFinal(!expandedFinal)}
-              >{expandedFinal ? "Collapse" : "Expand"}</button>
-            </div>
-          </div>
-          {finalInput ? (
-            <pre className="px-2 py-1 whitespace-pre-wrap break-words text-xs text-[var(--text-primary)]"><strong>Input:</strong> {expandedFinal ? finalInput : truncateOutput(finalInput, 6, 400)}</pre>
-          ) : null}
-          <pre className="px-2 pb-2 whitespace-pre-wrap break-words text-sm text-[var(--text-primary)]">{expandedFinal ? finalOutput : truncateOutput(finalOutput)}</pre>
-        </div>
-      ) : null}
 
-      <div className="mt-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)]">
+
+
+
+      <div className="mt-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)]" id="timeline-section">
         <div className="px-2 pt-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
-          <span>Run History{Array.isArray(runs) ? ` (${runs.length})` : ''}</span>
-          <button className="btn" onClick={() => persistShowHistory(!showHistory)}>{showHistory ? 'Hide' : 'Show'}</button>
+          <span>Timeline</span>
         </div>
-        {showHistory && (
-          <ul className="px-2 pb-2 space-y-1">
-            {(runs ?? []).map((r) => (
-              <li key={String(r._id)} className="border border-[var(--border-color)] rounded p-1">
-                <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                  <span>{new Date(Number(r.createdAt)).toLocaleString()}{typeof r.retryCount === 'number' && r.retryCount > 0 ? ` • retries: ${r.retryCount}` : ''}{r.modelUsed ? ` • ${r.modelUsed}` : ''}{(r as any).meta && (typeof (r as any).meta?.totalInputTokens === 'number' || typeof (r as any).meta?.totalOutputTokens === 'number') ? ` • tok ${(r as any).meta?.totalInputTokens ?? 0}/${(r as any).meta?.totalOutputTokens ?? 0}` : ''}{(r as any).meta && typeof (r as any).meta?.elapsedMs === 'number' ? ` • ${Math.round(((r as any).meta.elapsedMs || 0) / 1000)}s` : ''}</span>
-                  <div className="flex items-center gap-2">
-                    <button className="btn" title="Copy" onClick={() => { void navigator.clipboard.writeText(String(r.output || '')).then(() => { setToast('Copied'); window.setTimeout(() => setToast(''), 1500); }).catch(() => {}); }}>Copy</button>
-                    <button className="btn" onClick={() => toggleRunOpen(String(r._id))}>{openRunIds[String(r._id)] ? 'Hide' : 'View'}</button>
-                  </div>
-                </div>
-                <div className="text-xs text-[var(--text-primary)] mt-1">
-                  {openRunIds[String(r._id)] ? (
-                    <pre className="whitespace-pre-wrap break-words">{String(r.output || '')}</pre>
-                  ) : (
-                    <pre className="whitespace-pre-wrap break-words">{truncateOutput(String(r.output || ''), 6, 400)}</pre>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-
-      <div className="timeline-container">
+        <div className="p-2">
+          <div className="timeline-container">
         {/* Left: Agent Hierarchy */}
         <aside className="agent-hierarchy" ref={leftRef}>
           <div className="hierarchy-header">
@@ -683,13 +648,26 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
 
         {/* Right: Timeline Chart */}
         <section className="timeline-chart" ref={rightRef}>
-          <div className="timeline-header">
+          <div className="timeline-header" ref={headerRef}
+            onMouseMove={(e) => {
+              const el = headerRef.current; if (!el) return;
+              const rect = el.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const ratio = Math.max(0, Math.min(1, x / Math.max(1, rect.width)));
+              const sec = Math.round(ratio * windowSec);
+              setPreview({ active: true, sec, leftPct: `${ratio * 100}%` });
+            }}
+            onMouseLeave={() => setPreview((p) => ({ ...p, active: false }))}
+          >
             <div className="time-scale">Execution Timeline (Minutes : Seconds)</div>
             <div className="time-units">
               {timeUnits.map((sec, i) => (
                 <div key={`sec-${sec}-${i}`} className={`time-unit ${Math.abs(sec - (currentSec - (windowStartMs/1000))) < (unitStepSec / 2) ? 'now' : ''}`}>{fmtMMSS(sec)}</div>
               ))}
             </div>
+            {preview.active && (
+              <div className="scrub-tooltip" aria-label="scrub-tooltip" style={{ left: preview.leftPct }}>{fmtMMSS(preview.sec)}</div>
+            )}
           </div>
 
           <div className="current-time-line" style={{ left: nowLeftPct }} />
@@ -703,11 +681,31 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
                 </div>
                 <div
                   className={`execution-bar ${(o.status ?? 'pending').toLowerCase()}`}
-                  title={`${Math.round(getProgress(o) * 100)}%`}
+                  title={`${Math.round(getProgress(o) * 100)}% • ETA ${Math.max(0, Math.ceil(((o as any).durationMs ?? 0 - ((o as any).elapsedMs ?? 0)) / 1000))}s`}
                   style={{ left: leftPct(o), width: widthPct(o), background: `linear-gradient(90deg, ${colorOf(o)}20, ${colorOf(o)}30)`, borderColor: `${colorOf(o)}55`, position: 'relative' }}
-                  onMouseEnter={(e) => { setPopoverAnchor(e.currentTarget as HTMLElement); setPopoverTask(o); }}
-                  onMouseLeave={() => { setPopoverAnchor(null); setPopoverTask(null); }}
-                >{levelBadge(o)}</div>
+                  onMouseEnter={(e) => { if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); const target = e.currentTarget as HTMLElement; hoverTimerRef.current = window.setTimeout(() => { setPopoverAnchor(target); setPopoverTask(o); }, 120); }}
+                  onMouseLeave={() => { if (pinnedTaskId && pinnedTaskId === String(o._id)) return; if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); setPopoverAnchor(null); setPopoverTask(null); }}
+                >
+                  {Array.isArray((o as any).phaseBoundariesMs) && (o as any).phaseBoundariesMs.length > 0
+                    ? ((o as any).phaseBoundariesMs as number[]).map((ms, idx) => {
+                        const dur = Math.max(1, Number((o as any).durationMs || 1));
+                        const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
+                        return <div className="phase-sep" aria-label={`phase-sep-${ms}ms`} key={`o-ph-${idx}`} style={{ left: `${pct}%` }} />;
+                      })
+                    : (<>
+                        <div className="phase-sep" style={{ left: '33%' }} />
+                        <div className="phase-sep" style={{ left: '66%' }} />
+                      </>)}
+                  {Array.isArray((o as any).retryOffsetsMs) ? ((o as any).retryOffsetsMs as number[]).map((ms, i) => {
+                    const dur = Math.max(1, Number((o as any).durationMs || 1));
+                    const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
+                    return <div className="retry-marker" aria-label={`retry-marker-${ms}ms`} key={`o-rm-${i}`} style={{ left: `${pct}%` }} />;
+                  }) : null}
+                  {typeof (o as any).failureOffsetMs === 'number' ? (() => { const dur = Math.max(1, Number((o as any).durationMs || 1)); const pct = Math.max(0, Math.min(100, (((o as any).failureOffsetMs as number) / dur) * 100)); return <div className="error-marker" aria-label={`error-marker-${(o as any).failureOffsetMs}ms`} style={{ left: `${pct}%` }} />; })() : null}
+                  <div className={`progress-fill ${String((o.status ?? 'pending')).toLowerCase() === 'running' ? 'running' : ''}`} style={{ width: `${Math.round(getProgress(o) * 100)}%`, background: colorOf(o), opacity: 0.5, height: '100%' }} />
+                  <div className="eta-label">{Math.max(0, Math.ceil(((o as any).durationMs ?? 0 - ((o as any).elapsedMs ?? 0)) / 1000))}s</div>
+                  {levelBadge(o)}
+                </div>
               </div>
             ))}
 
@@ -720,11 +718,31 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
                   </div>
                   <div
                     className={`execution-bar ${(m.status ?? 'pending').toLowerCase()}`}
-                    title={`${Math.round(getProgress(m) * 100)}%`}
+                    title={`${Math.round(getProgress(m) * 100)}% · ETA ${Math.max(0, Math.ceil(((m as any).durationMs ?? 0 - ((m as any).elapsedMs ?? 0)) / 1000))}s`}
                     style={{ left: leftPct(m), width: widthPct(m), background: `linear-gradient(90deg, ${colorOf(m)}20, ${colorOf(m)}30)`, borderColor: `${colorOf(m)}55`, position: 'relative' }}
-                    onMouseEnter={(e) => { setPopoverAnchor(e.currentTarget as HTMLElement); setPopoverTask(m); }}
-                    onMouseLeave={() => { setPopoverAnchor(null); setPopoverTask(null); }}
-                  >{levelBadge(m)}</div>
+                    onMouseEnter={(e) => { if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); const target = e.currentTarget as HTMLElement; hoverTimerRef.current = window.setTimeout(() => { setPopoverAnchor(target); setPopoverTask(m); }, 120); }}
+                    onMouseLeave={() => { if (pinnedTaskId && pinnedTaskId === String(m._id)) return; if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); setPopoverAnchor(null); setPopoverTask(null); }}
+                  >
+                    {Array.isArray((m as any).phaseBoundariesMs) && (m as any).phaseBoundariesMs.length > 0
+                      ? ((m as any).phaseBoundariesMs as number[]).map((ms, idx) => {
+                          const dur = Math.max(1, Number((m as any).durationMs || 1));
+                          const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
+                          return <div className="phase-sep" aria-label={`phase-sep-${ms}ms`} key={`m-ph-${idx}`} style={{ left: `${pct}%` }} />;
+                        })
+                      : (<>
+                          <div className="phase-sep" style={{ left: '33%' }} />
+                          <div className="phase-sep" style={{ left: '66%' }} />
+                        </>)}
+                    {Array.isArray((m as any).retryOffsetsMs) ? ((m as any).retryOffsetsMs as number[]).map((ms, i) => {
+                      const dur = Math.max(1, Number((m as any).durationMs || 1));
+                      const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
+                      return <div className="retry-marker" aria-label={`retry-marker-${ms}ms`} key={`m-rm-${i}`} style={{ left: `${pct}%` }} />;
+                    }) : null}
+                    {typeof (m as any).failureOffsetMs === 'number' ? (() => { const dur = Math.max(1, Number((m as any).durationMs || 1)); const pct = Math.max(0, Math.min(100, (((m as any).failureOffsetMs as number) / dur) * 100)); return <div className="error-marker" aria-label={`error-marker-${(m as any).failureOffsetMs}ms`} style={{ left: `${pct}%` }} />; })() : null}
+                    <div className={`progress-fill ${String((m.status ?? 'pending')).toLowerCase() === 'running' ? 'running' : ''}`} style={{ width: `${Math.round(getProgress(m) * 100)}%`, background: colorOf(m), opacity: 0.5, height: '100%' }} />
+                    <div className="eta-label">{Math.max(0, Math.ceil(((m as any).durationMs ?? 0 - ((m as any).elapsedMs ?? 0)) / 1000))}s</div>
+                    {levelBadge(m)}
+                  </div>
                 </div>
                 {childrenOf(m._id).map((s) => (
                   <div className="timeline-row sub-row" data-agent-id={String(s._id)} key={`row-s-${s._id}`}>
@@ -733,11 +751,31 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
                     </div>
                     <div
                       className={`execution-bar ${(s.status ?? 'pending').toLowerCase()}`}
-                      title={`${Math.round(getProgress(s) * 100)}%`}
+                      title={`${Math.round(getProgress(s) * 100)}%   ETA ${Math.max(0, Math.ceil(((s as any).durationMs ?? 0 - ((s as any).elapsedMs ?? 0)) / 1000))}s`}
                       style={{ left: leftPct(s), width: widthPct(s), background: `linear-gradient(90deg, ${colorOf(s)}20, ${colorOf(s)}30)`, borderColor: `${colorOf(s)}55`, position: 'relative' }}
-                      onMouseEnter={(e) => { setPopoverAnchor(e.currentTarget as HTMLElement); setPopoverTask(s); }}
-                      onMouseLeave={() => { setPopoverAnchor(null); setPopoverTask(null); }}
-                    >{levelBadge(s)}</div>
+                      onMouseEnter={(e) => { if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); const target = e.currentTarget as HTMLElement; hoverTimerRef.current = window.setTimeout(() => { setPopoverAnchor(target); setPopoverTask(s); }, 120); }}
+                      onMouseLeave={() => { if (pinnedTaskId && pinnedTaskId === String(s._id)) return; if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); setPopoverAnchor(null); setPopoverTask(null); }}
+                    >
+                      {Array.isArray((s as any).phaseBoundariesMs) && (s as any).phaseBoundariesMs.length > 0
+                        ? ((s as any).phaseBoundariesMs as number[]).map((ms, idx) => {
+                            const dur = Math.max(1, Number((s as any).durationMs || 1));
+                            const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
+                            return <div className="phase-sep" aria-label={`phase-sep-${ms}ms`} key={`s-ph-${idx}`} style={{ left: `${pct}%` }} />;
+                          })
+                        : (<>
+                            <div className="phase-sep" style={{ left: '33%' }} />
+                            <div className="phase-sep" style={{ left: '66%' }} />
+                          </>)}
+                      {Array.isArray((s as any).retryOffsetsMs) ? ((s as any).retryOffsetsMs as number[]).map((ms, i) => {
+                        const dur = Math.max(1, Number((s as any).durationMs || 1));
+                        const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
+                        return <div className="retry-marker" aria-label={`retry-marker-${ms}ms`} key={`s-rm-${i}`} style={{ left: `${pct}%` }} />;
+                      }) : null}
+                      {typeof (s as any).failureOffsetMs === 'number' ? (() => { const dur = Math.max(1, Number((s as any).durationMs || 1)); const pct = Math.max(0, Math.min(100, (((s as any).failureOffsetMs as number) / dur) * 100)); return <div className="error-marker" aria-label={`error-marker-${(s as any).failureOffsetMs}ms`} style={{ left: `${pct}%` }} />; })() : null}
+                      <div className={`progress-fill ${String((s.status ?? 'pending')).toLowerCase() === 'running' ? 'running' : ''}`} style={{ width: `${Math.round(getProgress(s) * 100)}%`, background: colorOf(s), opacity: 0.5, height: '100%' }} />
+                      <div className="eta-label">{Math.max(0, Math.ceil(((s as any).durationMs ?? 0 - ((s as any).elapsedMs ?? 0)) / 1000))}s</div>
+                      {levelBadge(s)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -747,6 +785,91 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
           <AgentPopover isOpen={!!popoverTask} anchorEl={popoverAnchor} agent={popoverTask} onClose={() => { setPopoverAnchor(null); setPopoverTask(null); }} />
         </section>
       </div>
+        </div>
+      </div>
+
+      {finalOutput ? (
+        <div className="mt-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)]">
+          <div className="px-2 pt-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+            <span>Final Output</span>
+            <div className="flex items-center gap-2">
+              <button
+                className="btn"
+                title="Copy output"
+                onClick={() => { void navigator.clipboard.writeText(finalOutput).then(() => { setToast("Copied"); window.setTimeout(() => setToast(""), 1500); }).catch(() => {}); }}
+              >Copy</button>
+              <button
+                className="btn"
+                title="Restore from Final Output"
+                onClick={() => setRestoreTick((t) => t + 1)}
+              >Restore</button>
+              <button
+                className="btn"
+                title="Save current editor content as Final Output"
+                onClick={() => { void (async () => {
+                  try {
+                    const fn = editorExporterRef.current;
+                    if (!fn) { setToast("Editor not ready"); window.setTimeout(() => setToast(""), 1500); return; }
+                    const { plain } = await fn();
+                    const output = String(plain || '').trim();
+                    if (!output) { setToast("Nothing to save"); window.setTimeout(() => setToast(""), 1500); return; }
+                    await setLatestRun({ timelineId, input: finalInput || "", output });
+                    setToast("Saved as Final Output");
+                    window.setTimeout(() => setToast(""), 1500);
+                  } catch (e) { console.error(e); setToast("Save failed"); window.setTimeout(() => setToast(""), 2000); }
+                })(); }}
+              >Save as Final Output</button>
+              <button
+                className="btn"
+                title={expandedFinal ? "Collapse" : "Expand"}
+                onClick={() => persistExpandedFinal(!expandedFinal)}
+              >{expandedFinal ? "Collapse" : "Expand"}</button>
+            </div>
+          </div>
+          <div className="px-2 pb-2">
+            {documentId ? (
+              <UnifiedEditor documentId={documentId as any} mode="quickNote" editable={true} autoCreateIfEmpty={true} seedMarkdown={finalOutput} restoreSignal={restoreTick} restoreMarkdown={finalOutput} registerExporter={(fn) => { editorExporterRef.current = fn; }} />
+            ) : (
+              <>
+                {finalInput ? (
+                  <pre className="px-2 py-1 whitespace-pre-wrap break-words text-xs text-[var(--text-primary)]"><strong>Input:</strong> {expandedFinal ? finalInput : truncateOutput(finalInput, 6, 400)}</pre>
+                ) : null}
+                <pre className="px-2 pb-2 whitespace-pre-wrap break-words text-sm text-[var(--text-primary)]">{expandedFinal ? finalOutput : truncateOutput(finalOutput)}</pre>
+              </>
+            )}
+          </div>
+
+          <div className="mt-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)]">
+            <div className="px-2 pt-2 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+              <span>Run History{Array.isArray(runs) ? ` (${runs.length})` : ''}</span>
+              <button className="btn" onClick={() => persistShowHistory(!showHistory)}>{showHistory ? 'Hide' : 'Show'}</button>
+            </div>
+            {showHistory && (
+              <ul className="px-2 pb-2 space-y-1">
+                {(runs ?? []).map((r) => (
+                  <li key={String(r._id)} className="border border-[var(--border-color)] rounded p-1">
+                    <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                      <span>{new Date(Number(r.createdAt)).toLocaleString()}{typeof r.retryCount === 'number' && r.retryCount > 0 ? ` • retries: ${r.retryCount}` : ''}{r.modelUsed ? ` • ${r.modelUsed}` : ''}{(r as any).meta && (typeof (r as any).meta?.totalInputTokens === 'number' || typeof (r as any).meta?.totalOutputTokens === 'number') ? ` • tok ${(r as any).meta?.totalInputTokens ?? 0}/${(r as any).meta?.totalOutputTokens ?? 0}` : ''}{(r as any).meta && typeof (r as any).meta?.elapsedMs === 'number' ? ` • ${Math.round(((r as any).meta.elapsedMs || 0) / 1000)}s` : ''}</span>
+                      <div className="flex items-center gap-2">
+                        <button className="btn" title="Copy" onClick={() => { void navigator.clipboard.writeText(String(r.output || '')).then(() => { setToast('Copied'); window.setTimeout(() => setToast(''), 1500); }).catch(() => {}); }}>Copy</button>
+                        <button className="btn" onClick={() => toggleRunOpen(String(r._id))}>{openRunIds[String(r._id)] ? 'Hide' : 'View'}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs text-[var(--text-primary)] mt-1">
+                      {openRunIds[String(r._id)] ? (
+                        <pre className="whitespace-pre-wrap break-words">{String(r.output || '')}</pre>
+                      ) : (
+                        <pre className="whitespace-pre-wrap break-words">{truncateOutput(String(r.output || ''), 6, 400)}</pre>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      ) : null}
+
     </section>
   );
 }

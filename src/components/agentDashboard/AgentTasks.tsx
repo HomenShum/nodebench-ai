@@ -12,6 +12,7 @@ enum TasksLayout {
   Grid = "grid",
   Grouped = "grouped",
   Tree = "tree",
+  Table = "table",
 }
 
 type TaskDoc = {
@@ -37,8 +38,13 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
   const updateTask = useMutation(api.agentTimelines.updateTaskMetrics);
 
 
-  // Prompt planning parity with Timeline view
-  const startFromPrompt = useAction(api.agents.promptPlan.startFromPrompt);
+  // Prompt planning parity with Timeline view (safe in tests without ConvexProvider)
+  let startFromPrompt: any;
+  try {
+    startFromPrompt = useAction(api.agents.promptPlan.startFromPrompt);
+  } catch {
+    startFromPrompt = (async () => {}) as any;
+  }
   const [prompt, setPrompt] = useState("");
   const planner = useMemo<string>(() => {
     try {
@@ -248,8 +254,16 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
   const renderMiniTimeline = (highlightId: string, highlightType?: string) => {
     const laneY = (ty: string) => ty === "orchestrator" ? 8 : ty === "main" ? 32 : 56;
     const palette = (ty: string) => ty === "orchestrator" ? { bg: "#6366F120", border: "#6366F155" } : ty === "main" ? { bg: "#16A34A25", border: "#16A34A55" } : { bg: "#F59E0B25", border: "#F59E0B55" };
+    const tickCount = 10;
+    const nowPct = Math.max(0, Math.min(100, (((Date.now() - baseStartMs) - windowStartMs) / Math.max(1, windowMs)) * 100));
     return (
       <div className="mini-timeline" aria-hidden>
+        {/* ticks */}
+        {Array.from({ length: tickCount + 1 }).map((_, i) => (
+          <div key={`tick-${i}`} className="tick" style={{ left: `${(i / tickCount) * 100}%` }} />
+        ))}
+        {/* now line */}
+        <div className="now-line" style={{ left: `${nowPct}%` }} />
         {tasks.map((tk) => {
           const ty = String((tk.agentType || (tk as any).type || "leaf")).toLowerCase();
           const pos = pct(tk);
@@ -318,7 +332,7 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
         role="button"
         tabIndex={0}
         aria-label={aria}
-        onClick={(e) => { e.stopPropagation(); if (clickTimer) return; clickTimer = setTimeout(() => { onViewTimeline?.(t.raw); clickTimer = null; }, 220); }}
+        onClick={(e) => { e.stopPropagation(); if (clickTimer) return; clickTimer = setTimeout(() => { try { window.location.hash = `#task-${encodeURIComponent(String((t.raw as any)._id))}`; } catch {} onViewTimeline?.(t.raw); clickTimer = null; }, 220); }}
         onDoubleClick={(e) => { e.stopPropagation(); if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; } onOpenFullView?.(t.raw); }}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpenFullView?.(t.raw); } if (e.key === ' ') { e.preventDefault(); onViewTimeline?.(t.raw); } }}
       >
@@ -336,6 +350,66 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
             <span className="muted">~{seconds}s</span>
           </div>
         </div>
+
+        {(() => {
+          // Micro-gantt sparkline: concurrency density (predicted vs actual) for this card's subtree
+          const binCount = 24;
+          const pred: number[] = Array.from({ length: binCount }, () => 0);
+          const act: number[] = Array.from({ length: binCount }, () => 0);
+          const winStart = windowStartMs;
+          const winMs = windowMs || 1;
+          const addTaskToBins = (tk: any) => {
+            const start = Number((tk as any).startOffsetMs || 0);
+            const dur = Number((tk as any).durationMs || 0);
+            const elapsed = Number((tk as any).elapsedMs ?? (typeof (tk as any).progress === 'number' ? (tk as any).progress * dur : 0));
+            const end = start + dur;
+            const endAct = start + Math.max(0, Math.min(dur, elapsed));
+            const toBin = (ms: number) => Math.max(0, Math.min(binCount - 1, Math.floor(((ms - winStart) / winMs) * binCount)));
+            const a = toBin(start);
+            const b = toBin(end);
+            const bAct = toBin(endAct);
+            for (let i = a; i <= b; i++) pred[i] += 1;
+            for (let i = a; i <= bAct; i++) act[i] += 1;
+          };
+          // Collect subtree tasks (self + descendants)
+          const id = String((t.raw as any)._id);
+          const collect = (root: string) => {
+            const out: any[] = [];
+            const q: string[] = [root];
+            const seen = new Set<string>();
+            while (q.length) {
+              const cur = q.shift()!;
+              if (seen.has(cur)) continue;
+              seen.add(cur);
+              const doc = tasks.find((x)=> String((x as any)._id) === cur);
+              if (doc) out.push(doc);
+              const kids = children.get(cur) || [];
+              for (const k of kids) q.push(k);
+            }
+            return out;
+          };
+          const subtree = collect(id);
+          subtree.forEach(addTaskToBins);
+          const maxPred = Math.max(1, ...pred);
+          return (
+            <div className="sparkline my-1">
+              <div className="relative h-7 w-full">
+                {/* predicted layer */}
+                <div className="absolute inset-0 flex items-end gap-[1px]">
+                  {pred.map((v, i) => (
+                    <div key={`p-${i}`} className="flex-1 bg-indigo-200/40" style={{ height: `${Math.round((v / maxPred) * 100)}%` }} />
+                  ))}
+                </div>
+                {/* actual layer */}
+                <div className="absolute inset-0 flex items-end gap-[1px] mix-blend-multiply">
+                  {act.map((v, i) => (
+                    <div key={`a-${i}`} className="flex-1 bg-indigo-600/50" style={{ height: `${Math.round((v / maxPred) * 100)}%` }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {renderMiniTimeline(String((t.raw as any)._id), highlightType)}
 
@@ -386,6 +460,7 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
               <option value={TasksLayout.Grid}>Grid</option>
               <option value={TasksLayout.Grouped}>Grouped</option>
               <option value={TasksLayout.Tree}>Tree</option>
+              <option value={TasksLayout.Table}>Table</option>
             </select>
           </div>
         </div>
@@ -482,6 +557,52 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
             })}
           </div>
         )}
+
+        {layout === TasksLayout.Table && (
+          <div className="overflow-auto border border-[var(--border-color)] rounded-md">
+            <table className="min-w-full text-xs">
+              <thead className="bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+                <tr>
+                  <th className="text-left px-3 py-2 border-b">Agent</th>
+                  <th className="text-left px-3 py-2 border-b">Start</th>
+                  <th className="text-left px-3 py-2 border-b">Duration</th>
+                  <th className="text-left px-3 py-2 border-b">ETA</th>
+                  <th className="text-left px-3 py-2 border-b">State</th>
+                  <th className="text-left px-3 py-2 border-b">Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it) => {
+                  const raw: any = it.raw;
+                  const left = Math.max(0, (Number(raw.startOffsetMs || 0) - windowStartMs) / Math.max(1, windowMs));
+                  const width = Math.max(0, Number(raw.durationMs || 0) / Math.max(1, windowMs));
+                  const dur = Number(raw.durationMs || 0);
+                  const elapsed = Number(raw.elapsedMs ?? (typeof raw.progress === 'number' ? raw.progress * dur : 0));
+                  const etaSec = Math.max(0, Math.ceil((dur - elapsed)/1000));
+                  const progressPct = Math.round((typeof raw.progress === 'number' ? raw.progress : (dur>0? elapsed/dur : 0)) * 100);
+                  return (
+                    <tr key={`row-${it.id}`} className="odd:bg-white even:bg-[var(--bg-secondary)]">
+                      <td className="px-3 py-2 border-b">
+                        <button className="underline hover:no-underline" onClick={() => onOpenFullView?.(raw)}>{it.title}</button>
+                      </td>
+                      <td className="px-3 py-2 border-b">{Math.round((Number(raw.startOffsetMs||0))/1000)}s</td>
+                      <td className="px-3 py-2 border-b">{Math.round(dur/1000)}s</td>
+                      <td className="px-3 py-2 border-b">{etaSec}s</td>
+                      <td className="px-3 py-2 border-b capitalize">{String(it.status)}</td>
+                      <td className="px-3 py-2 border-b">
+                        <div className="relative h-3 w-40 border border-[var(--border-color)] rounded bg-[var(--bg-primary)] overflow-hidden">
+                          <div className="absolute inset-y-0 left-0 bg-[var(--accent-primary)]/30" style={{ width: `${Math.min(100, Math.max(0, width*100))}%`, transform: `translateX(${Math.min(100, Math.max(0, left*100))}%)` }} />
+                          <div className="absolute inset-y-0 left-0 bg-[var(--accent-primary)]/70" style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
 
         {layout === TasksLayout.Tree && (
           <AgentTree

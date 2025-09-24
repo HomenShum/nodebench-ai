@@ -88,15 +88,59 @@ export default function AgentPopover({
             ? "Managing specialized sub-agents for focused research tasks."
             : "Executing specific data collection and analysis tasks."}
         </div>
-        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-[var(--border-color)] text-[11px]">
-          <div>
-            <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Status</div>
-            <div className="font-semibold capitalize text-[var(--text-primary)]">{status}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Progress</div>
-            <div className="font-semibold text-[var(--text-primary)]">{Number.isFinite(progressPct) ? `${progressPct}%` : "—"}</div>
-          </div>
+        {(() => {
+          const dur = Number((agent as any)?.durationMs ?? 0);
+          const elapsed = Number((agent as any)?.elapsedMs ?? ((agent as any)?.progress ? Number((agent as any)?.progress) * dur : 0));
+          const etaSec = Math.max(0, Math.ceil((dur - elapsed) / 1000));
+          const inTok = Number((agent as any)?.inputTokens ?? 0);
+          const outTok = Number((agent as any)?.outputTokens ?? 0);
+          const outSz = Number((agent as any)?.outputSizeBytes ?? 0);
+          return (
+            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-[var(--border-color)] text-[11px]">
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Status</div>
+                <div className="font-semibold capitalize text-[var(--text-primary)]">{status}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Progress</div>
+                <div className="font-semibold text-[var(--text-primary)]">{Number.isFinite(progressPct) ? `${progressPct}%` : "—"}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">ETA</div>
+                <div className="font-semibold text-[var(--text-primary)]">{etaSec}s</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Elapsed</div>
+                <div className="font-semibold text-[var(--text-primary)]">{Math.max(0, Math.floor(elapsed/1000))}s</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Tokens</div>
+                <div className="font-semibold text-[var(--text-primary)]">{inTok}/{outTok}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Output size</div>
+                <div className="font-semibold text-[var(--text-primary)]">{outSz} B</div>
+              </div>
+            </div>
+          );
+        })()}
+
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            className="px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)]"
+            onClick={() => {
+              const action = String(status).toLowerCase() === 'running' ? 'pause' : 'resume';
+              window.dispatchEvent(new CustomEvent('agents:taskAction', { detail: { action, task: agent } }));
+            }}
+          >{String(status).toLowerCase() === 'running' ? 'Pause' : 'Resume'}</button>
+          <button
+            className="px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)]"
+            onClick={() => window.dispatchEvent(new CustomEvent('agents:taskAction', { detail: { action: 'rerun', task: agent } }))}
+          >Re-run</button>
+          <button
+            className="px-2 py-1 rounded border border-[var(--border-color)] bg-white hover:bg-[var(--bg-secondary)]"
+            onClick={() => window.dispatchEvent(new CustomEvent('agents:openFullView', { detail: { task: agent } }))}
+          >Open Full View</button>
         </div>
       </div>
     </div>,

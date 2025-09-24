@@ -155,6 +155,28 @@ Updates: Tasks layouts and tests
   - tree layout (.tree-view, .tree-node, .node-header, .task-card-inline)
 - src/test/AgentTasks.layouts.test.tsx validates grouped/tree layouts and mini-timeline highlighting.
 
+New visual enhancements (Sep 24, 2025)
+- Mini timeline
+  - Subtle time ticks and a live now-line; compressed to 3 lanes (orchestrator | mains | hot sub-steps).
+  - Scrub-to-preview: header scrub updates a preview tooltip without committing selection.
+- Execution bars
+  - Dynamic phase separators from task.phaseBoundariesMs via .phase-sep; inner .progress-fill overlay indicates predicted vs actual progress; inline .eta-label.
+  - Running stripes applied via .execution-bar.running::after; pending uses dashed borders; error class supported; retry/error markers rendered from task.retryOffsetsMs/failureOffsetMs.
+- Alternatives
+  - Micro-gantt sparkline per task card to convey concurrency density and predicted vs actual.
+  - Table layout for power users with compact rows and tiny inline bars.
+- Popovers
+  - Hover delay + pin-on-click; richer metrics (queue time, ETA, tokens, output bytes); keyboard accessible (Esc to close).
+- CSS additions
+  - agentDashboard.css: added .execution-bar .phase-sep/.progress-fill/.eta-label, .retry-marker, .error-marker, and .scrub-tooltip
+  - Maintains existing .badge-* and status dot styles.
+- Tests
+  - src/components/agentDashboard/__tests__/AgentTasks.interactions.test.tsx covers mini timeline ticks/now-line and Table layout toggle.
+  - src/components/agentDashboard/__tests__/AgentTimeline.markers.test.tsx validates phase/retry/error marker rendering from backend fields.
+  - src/components/agentDashboard/__tests__/AgentTimeline.scrub.test.tsx validates interactive scrub-to-preview tooltip appears.
+  - All tests pass via `npm run test:run`.
+
+
 Notes
 - AgentTimeline uses scaffold fallback when Convex data is undefined/null to display the full hierarchy and timeline bars.
 
@@ -169,3 +191,24 @@ Enhancements (Dynamic graph extend + CSS truncation)
   - src/styles/agentDashboard.css: .agent-name clamps long titles with ellipsis; prevents text from overflowing the hierarchy row.
   - src/components/agentDashboard/AgentTasks.tsx: task metrics derive from live data (elapsedMs/durationMs, children count, progress fallback).
   - Prompt planning providers: Default is Grok via OpenRouter when OPENROUTER_API_KEY is present (override model with OPENROUTER_MODEL). The UI exposes a Model select (Grok | OpenAI). Fallbacks: OpenAI (OPENAI_API_KEY) → heuristic planner (agents/core/plan). No more fixed 3-node stub.
+
+
+
+Additions (Final Output + UnifiedEditor)
+- src/components/UnifiedEditor.tsx
+  - Integrated BlockNote + Convex ProseMirror sync for timeline documents.
+  - Props used by AgentTimeline:
+    - documentId: Id<'documents'>
+    - seedMarkdown?: string (latestRunOutput)
+    - autoCreateIfEmpty?: boolean (true in Final Output panel)
+    - restoreSignal?: number (ticks to trigger reseed)
+    - restoreMarkdown?: string (latestRunOutput)
+    - registerExporter?: (fn) => void (returns { plain } for Save as Final Output)
+- src/components/agentDashboard/AgentTimeline.tsx
+  - Final Output panel renders UnifiedEditor above Run History.
+  - Header actions: Copy, Restore (reseed from Final Output), Save as Final Output (convex.agentTimelines.setLatestRun), Collapse/Expand.
+  - Run History panel moved below Final Output; each entry supports Copy and inline expand.
+- convex/agentsPrefs.ts
+  - getAgentsPrefs/setAgentsPrefs used to persist `doc.hasContent.<documentId>` = '1' for cross-device reseed gating.
+- convex/agentTimelines.ts
+  - setLatestRun(timelineId, input, output) updates latestRunOutput used to seed/restore editor.

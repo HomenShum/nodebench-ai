@@ -11,6 +11,8 @@ import "@blocknote/mantine/style.css";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useBlockNoteSync } from "@convex-dev/prosemirror-sync/blocknote";
+import { useQuery, useMutation } from "convex/react";
+
 import { BlockNoteEditor, type PartialBlock } from "@blocknote/core";
 
 import TaskList from "@tiptap/extension-task-list";
@@ -36,6 +38,14 @@ export interface UnifiedEditorProps {
   editable?: boolean;
   // If true, automatically initialize an empty document when none exists (skips the "Create document" button)
   autoCreateIfEmpty?: boolean;
+  // Optional: when creating a new doc (or when empty), seed from this markdown (e.g., last output)
+  seedMarkdown?: string;
+  // Signal to force-restore from provided markdown (increments to trigger)
+  restoreSignal?: number;
+  // Markdown to use for restore/seed operations
+  restoreMarkdown?: string;
+  // Provide a way for parent to extract plain text from the editor
+  registerExporter?: (fn: () => Promise<{ plain: string }>) => void;
 }
 
 /**
@@ -46,7 +56,7 @@ export interface UnifiedEditorProps {
  *   - quickNote: minimal single-note feel (no slash menu, compact paddings)
  *   - full: full-featured document editor
  */
-export default function UnifiedEditor({ documentId, mode = "full", isGridMode, isFullscreen, editable = true, autoCreateIfEmpty = false }: UnifiedEditorProps) {
+export default function UnifiedEditor({ documentId, mode = "full", isGridMode, isFullscreen, editable = true, autoCreateIfEmpty = false, seedMarkdown, restoreSignal, restoreMarkdown, registerExporter }: UnifiedEditorProps) {
 
 
   // Explicit Convex refs required by the sync hook
@@ -97,8 +107,24 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     anchorHeading?: string;
   };
 
+  // Server-side content flag via agentsPrefs
+  const prefs = useQuery((api as any).agentsPrefs.getAgentsPrefs, {} as any) as (Record<string, string> | undefined);
+  const serverHadContent = useMemo(() => {
+    try { return (prefs && prefs[`doc.hasContent.${String(documentId)}`] === '1') || false; } catch { return false; }
+  }, [prefs, documentId]);
+  const setAgentsPrefs = useMutation((api as any).agentsPrefs.setAgentsPrefs);
+  const serverMarkedRef = useRef(false);
+  const markHasContent = useCallback(async () => {
+    if (serverMarkedRef.current) return;
+    serverMarkedRef.current = true;
+    try {
+      await setAgentsPrefs({ prefs: { [`doc.hasContent.${String(documentId)}`]: '1' } as any });
+    } catch {}
+  }, [setAgentsPrefs, documentId]);
+
   const [pendingProposal, setPendingProposal] = useState<null | { message: string; actions: AIToolAction[]; anchorBlockId: string | null }>(null);
   const attemptedAutoCreateRef = useRef(false);
+  const attemptedSeedRef = useRef(false);
 
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -172,6 +198,71 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       return [{ type: 'paragraph', content: [{ type: 'text', text: txt }] }];
     }
   }, [parserEditor]);
+
+  // Seed the document with provided markdown if editor exists and doc is empty or trivial
+  useEffect(() => {
+    const editor: any = sync.editor as any;
+    if (!editor) return;
+    if (attemptedSeedRef.current) return;
+
+    // Note: Do NOT skip seeding purely based on a local flag; only seed when the doc is actually empty/trivial.
+    // This ensures previously created "null" docs still get seeded on first render.
+
+    const blocks: any[] = Array.isArray(editor.topLevelBlocks) ? editor.topLevelBlocks : [];
+    const extractText = (n: any): string => {
+      if (!n) return '';
+      if (typeof n === 'string') return n;
+      if (Array.isArray(n)) return n.map(extractText).join('');
+      if (n.type === 'text' && typeof n.text === 'string') return n.text;
+      if (Array.isArray(n.content)) return n.content.map(extractText).join('');
+      if (Array.isArray(n.children)) return n.children.map(extractText).join('');
+      return '';
+    };
+    const plain = blocks.map(extractText).join('');
+    const isTriviallyEmpty = plain.replace(/\s+/g, '').length === 0;
+
+    const seed = (seedMarkdown || '').trim();
+    const localHad = (() => { try { return window.localStorage.getItem(`nb.doc.hasContent.${String(documentId)}`) === '1'; } catch { return false; } })();
+    const hadEverContent = (!!serverHadContent) || localHad;
+    if (isTriviallyEmpty && seed) {
+      // If the doc ever had content and is now empty, assume user intentionally cleared it; do not auto-reseed
+      if (hadEverContent) { attemptedSeedRef.current = true; return; }
+      attemptedSeedRef.current = true;
+      void (async () => {
+        try {
+          const newBlocks = await blocksFromMarkdown(seed);
+          if (Array.isArray(newBlocks) && newBlocks.length > 0) {
+            const existing: any[] = Array.isArray(editor.topLevelBlocks) ? editor.topLevelBlocks : [];
+            // Replace existing (possibly empty) blocks with seeded blocks
+            editor.replaceBlocks(existing, newBlocks);
+            // Mark document as having content
+            try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {} ; void markHasContent();
+          }
+        } catch (e) {
+          console.warn('[UnifiedEditor] failed to seed from markdown', e);
+        }
+      })();
+    }
+  }, [sync.editor, seedMarkdown, blocksFromMarkdown, documentId, serverHadContent, markHasContent]);
+
+  // Restore from provided markdown when signal changes
+  useEffect(() => {
+    const editor: any = sync.editor as any;
+    if (!editor) return;
+    if (typeof restoreSignal !== 'number') return;
+    const seed = (restoreMarkdown || '').trim();
+    if (!seed) return;
+    void (async () => {
+      try {
+        const newBlocks = await blocksFromMarkdown(seed);
+        const existing: any[] = Array.isArray(editor.topLevelBlocks) ? editor.topLevelBlocks : [];
+        editor.replaceBlocks(existing, newBlocks);
+        try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {} ; void markHasContent();
+      } catch (e) {
+        console.warn('[UnifiedEditor] restore failed', e);
+      }
+    })();
+  }, [restoreSignal, restoreMarkdown, blocksFromMarkdown, sync.editor, documentId, markHasContent]);
 
   // Helper: resolve target block by heading text (case-insensitive)
   const resolvePositionByHeading = useCallback((heading: string): any | null => {
@@ -501,14 +592,36 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
           if (!preview) {
             try {
               const texts: string[] = [];
+  // Expose exporter to parent
+  useEffect(() => {
+    if (!registerExporter) return;
+    const ed: any = sync.editor as any;
+    if (!ed) return;
+    registerExporter(async () => {
+      try {
+        const blocks: any[] = ed?.topLevelBlocks ?? [];
+        const plain = blocks.map(getBlockText).join('\n\n');
+        return { plain };
+      } catch {
+        return { plain: '' };
+      }
+    });
+  }, [registerExporter, sync.editor, getBlockText]);
+
               editor.state.doc.descendants((n: any) => { if (n.isText && typeof n.text === 'string') texts.push(n.text); });
               preview = texts.join(' ').slice(0, 200);
             } catch {}
           }
           window.dispatchEvent(new CustomEvent('nodebench:editor:focused', { detail: { documentId, preview } }));
+          // Persist a local flag indicating this doc has content, to avoid reseeding on next mount
+          if ((preview || '').trim().length > 0) {
+            try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {} ; void markHasContent();
+          }
         } catch {}
       };
       try { emit(); } catch {}
+  // Expose exporter to parent
+
       try { editor.on('selectionUpdate', emit); } catch {}
       try { editor.on('update', emit); } catch {}
       return () => {
@@ -516,6 +629,22 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         try { editor.off?.('update', emit); } catch {}
       };
     }, [sync.editor, documentId, getCurrentOrLastBlock, getBlockText]);
+
+  // Expose exporter to parent
+  useEffect(() => {
+    if (!registerExporter) return;
+    const ed: any = sync.editor as any;
+    if (!ed) return;
+    registerExporter(async () => {
+      try {
+        const blocks: any[] = ed?.topLevelBlocks ?? [];
+        const plain = blocks.map(getBlockText).join('\n\n');
+        return { plain };
+      } catch {
+        return { plain: '' };
+      }
+    });
+  }, [registerExporter, sync.editor, getBlockText]);
 
 
     return null;
@@ -532,6 +661,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
           const containsBN = JSON.stringify(json).includes('blockContainer') || JSON.stringify(json).includes('blockGroup');
           const extractText = (node: any): string => {
             if (!node) return '';
+
             if (typeof node === 'string') return node;
             if (Array.isArray(node)) return node.map(extractText).join(' ');
             const type = node.type;
