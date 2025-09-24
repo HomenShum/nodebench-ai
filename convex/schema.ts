@@ -826,7 +826,8 @@ const agentTasks = defineTable({
     v.literal("pending"),
     v.literal("running"),
     v.literal("complete"),
-    v.literal("paused")
+    v.literal("paused"),
+    v.literal("error"),
   )),
   agentType: v.optional(v.union(
     v.literal("orchestrator"),
@@ -844,6 +845,10 @@ const agentTasks = defineTable({
   outputSizeBytes: v.optional(v.number()),
   elapsedMs: v.optional(v.number()),
   startedAtMs: v.optional(v.number()),
+  // New: per-phase and retry/error markers
+  phaseBoundariesMs: v.optional(v.array(v.number())),
+  retryOffsetsMs: v.optional(v.array(v.number())),
+  failureOffsetMs: v.optional(v.number()),
   order: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),

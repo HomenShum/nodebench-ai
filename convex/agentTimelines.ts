@@ -89,7 +89,7 @@ export const importSnapshot = mutation({
       startOffsetMs: v.optional(v.number()),
       durationMs: v.number(),
       progress: v.optional(v.number()),
-      status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"))),
+      status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"), v.literal("error"))),
       agentType: v.optional(v.union(v.literal("orchestrator"), v.literal("main"), v.literal("leaf"))),
       // Optional visual + metrics
       icon: v.optional(v.string()),
@@ -101,6 +101,10 @@ export const importSnapshot = mutation({
       outputSizeBytes: v.optional(v.number()),
       elapsedMs: v.optional(v.number()),
       startedAtMs: v.optional(v.number()),
+      // New: phase boundaries and retry/error markers
+      phaseBoundariesMs: v.optional(v.array(v.number())),
+      retryOffsetsMs: v.optional(v.array(v.number())),
+      failureOffsetMs: v.optional(v.number()),
     })),
     links: v.array(v.object({
       sourceId: v.string(),
@@ -160,6 +164,9 @@ export const importSnapshot = mutation({
         outputSizeBytes: t.outputSizeBytes,
         elapsedMs: t.elapsedMs,
         startedAtMs: (t as any).startedAtMs,
+        phaseBoundariesMs: (t as any).phaseBoundariesMs,
+        retryOffsetsMs: (t as any).retryOffsetsMs,
+        failureOffsetMs: (t as any).failureOffsetMs,
         createdAt: now,
         updatedAt: now,
       } as any);
@@ -208,7 +215,7 @@ export const applyPlan = mutation({
       startOffsetMs: v.optional(v.number()),
       durationMs: v.number(),
       agentType: v.optional(v.union(v.literal("orchestrator"), v.literal("main"), v.literal("leaf"))),
-      status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"))),
+      status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"), v.literal("error"))),
       icon: v.optional(v.string()),
       color: v.optional(v.string()),
       sequence: v.optional(v.union(v.literal("parallel"), v.literal("sequential"))),
@@ -217,6 +224,9 @@ export const applyPlan = mutation({
       outputTokens: v.optional(v.number()),
       outputSizeBytes: v.optional(v.number()),
       elapsedMs: v.optional(v.number()),
+      phaseBoundariesMs: v.optional(v.array(v.number())),
+      retryOffsetsMs: v.optional(v.array(v.number())),
+      failureOffsetMs: v.optional(v.number()),
     })),
     links: v.array(v.object({ sourceId: v.string(), targetId: v.string(), type: v.optional(v.string()) })),
   },
@@ -242,6 +252,9 @@ export const applyPlan = mutation({
       outputTokens: t.outputTokens,
       outputSizeBytes: t.outputSizeBytes,
       elapsedMs: t.elapsedMs,
+      phaseBoundariesMs: (t as any).phaseBoundariesMs,
+      retryOffsetsMs: (t as any).retryOffsetsMs,
+      failureOffsetMs: (t as any).failureOffsetMs,
     }));
     await ctx.runMutation(api.agentTimelines.importSnapshot, { timelineId, tasks: normalized as any, links: links as any });
     return null;
@@ -288,7 +301,7 @@ export const addTask = mutation({
     startMs: v.optional(v.number()),
     durationMs: v.number(),
     progress: v.optional(v.number()),
-    status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"))),
+    status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"), v.literal("error"))),
     agentType: v.optional(v.union(v.literal("orchestrator"), v.literal("main"), v.literal("leaf"))),
     assigneeId: v.optional(v.id("users")),
     icon: v.optional(v.string()),
@@ -300,6 +313,10 @@ export const addTask = mutation({
     outputSizeBytes: v.optional(v.number()),
     elapsedMs: v.optional(v.number()),
     startedAtMs: v.optional(v.number()),
+    // New optional segmentation/markers
+    phaseBoundariesMs: v.optional(v.array(v.number())),
+    retryOffsetsMs: v.optional(v.array(v.number())),
+    failureOffsetMs: v.optional(v.number()),
   },
   returns: v.id("agentTasks"),
   handler: async (ctx, args) => {
@@ -333,6 +350,9 @@ export const addTask = mutation({
       outputSizeBytes: args.outputSizeBytes,
       elapsedMs: args.elapsedMs,
       startedAtMs: (args as any).startedAtMs,
+      phaseBoundariesMs: (args as any).phaseBoundariesMs,
+      retryOffsetsMs: (args as any).retryOffsetsMs,
+      failureOffsetMs: (args as any).failureOffsetMs,
       createdAt: now,
       updatedAt: now,
     } as any);
@@ -369,13 +389,17 @@ export const updateTaskMetrics = mutation({
   args: {
     taskId: v.id("agentTasks"),
     progress: v.optional(v.number()),
-    status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"))),
+    status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"), v.literal("error"))),
     startedAtMs: v.optional(v.number()),
     elapsedMs: v.optional(v.number()),
     outputSizeBytes: v.optional(v.number()),
     inputTokens: v.optional(v.number()),
     outputTokens: v.optional(v.number()),
     assigneeId: v.optional(v.id("users")),
+    // Optional updates to segmentation/markers
+    phaseBoundariesMs: v.optional(v.array(v.number())),
+    retryOffsetsMs: v.optional(v.array(v.number())),
+    failureOffsetMs: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -395,6 +419,9 @@ export const updateTaskMetrics = mutation({
     if (typeof args.inputTokens === "number") patch.inputTokens = args.inputTokens;
     if (typeof args.outputTokens === "number") patch.outputTokens = args.outputTokens;
     if (args.assigneeId) patch.assigneeId = args.assigneeId;
+    if (Array.isArray((args as any).phaseBoundariesMs)) patch.phaseBoundariesMs = (args as any).phaseBoundariesMs;
+    if (Array.isArray((args as any).retryOffsetsMs)) patch.retryOffsetsMs = (args as any).retryOffsetsMs;
+    if (typeof (args as any).failureOffsetMs === "number") patch.failureOffsetMs = (args as any).failureOffsetMs;
     await ctx.db.patch(args.taskId, patch);
     // Avoid patching the parent timeline here to prevent OCC hotspots under concurrent updates.
     // The timeline's updatedAt will be bumped by plan application and structural changes (applyPlan/addTask).
@@ -519,6 +546,9 @@ export const getByDocumentId = query({
           outputSizeBytes: v.optional(v.number()),
           elapsedMs: v.optional(v.number()),
           startedAtMs: v.optional(v.number()),
+          phaseBoundariesMs: v.optional(v.array(v.number())),
+          retryOffsetsMs: v.optional(v.array(v.number())),
+          failureOffsetMs: v.optional(v.number()),
         })
       ),
       links: v.array(
@@ -570,6 +600,9 @@ export const getByDocumentId = query({
         outputSizeBytes: (t as any).outputSizeBytes as number | undefined,
         elapsedMs: (t as any).elapsedMs as number | undefined,
         startedAtMs: (t as any).startedAtMs as number | undefined,
+        phaseBoundariesMs: (t as any).phaseBoundariesMs as number[] | undefined,
+        retryOffsetsMs: (t as any).retryOffsetsMs as number[] | undefined,
+        failureOffsetMs: (t as any).failureOffsetMs as number | undefined,
       };
     });
 
@@ -629,6 +662,9 @@ export const getByTimelineId = query({
           outputSizeBytes: v.optional(v.number()),
           elapsedMs: v.optional(v.number()),
           startedAtMs: v.optional(v.number()),
+          phaseBoundariesMs: v.optional(v.array(v.number())),
+          retryOffsetsMs: v.optional(v.array(v.number())),
+          failureOffsetMs: v.optional(v.number()),
         })
       ),
       links: v.array(
@@ -676,6 +712,9 @@ export const getByTimelineId = query({
         outputSizeBytes: (t as any).outputSizeBytes as number | undefined,
         elapsedMs: (t as any).elapsedMs as number | undefined,
         startedAtMs: (t as any).startedAtMs as number | undefined,
+        phaseBoundariesMs: (t as any).phaseBoundariesMs as number[] | undefined,
+        retryOffsetsMs: (t as any).retryOffsetsMs as number[] | undefined,
+        failureOffsetMs: (t as any).failureOffsetMs as number | undefined,
       };
     });
 
@@ -719,7 +758,7 @@ export const exportSnapshot = action({
         startOffsetMs: v.number(),
         durationMs: v.number(),
         progress: v.optional(v.number()),
-        status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"))),
+        status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"), v.literal("error"))),
         agentType: v.optional(v.union(v.literal("orchestrator"), v.literal("main"), v.literal("leaf"))),
         icon: v.optional(v.string()),
         color: v.optional(v.string()),
@@ -730,6 +769,9 @@ export const exportSnapshot = action({
         outputSizeBytes: v.optional(v.number()),
         elapsedMs: v.optional(v.number()),
         startedAtMs: v.optional(v.number()),
+        phaseBoundariesMs: v.optional(v.array(v.number())),
+        retryOffsetsMs: v.optional(v.array(v.number())),
+        failureOffsetMs: v.optional(v.number()),
       })),
       links: v.array(v.object({
         sourceId: v.string(),
@@ -827,6 +869,9 @@ export const exportSnapshot = action({
       outputSizeBytes: (t.outputSizeBytes as any) ?? undefined,
       elapsedMs: (t.elapsedMs as any) ?? undefined,
       startedAtMs: (t.startedAtMs as any) ?? undefined,
+      phaseBoundariesMs: (t as any).phaseBoundariesMs ?? undefined,
+      retryOffsetsMs: (t as any).retryOffsetsMs ?? undefined,
+      failureOffsetMs: (t as any).failureOffsetMs ?? undefined,
     }));
 
     const links = tl.links.map((l: NonNullable<TL>['links'][number]) => ({

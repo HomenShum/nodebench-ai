@@ -12,7 +12,7 @@ export type AgentDashboardTab = "timeline" | "tasks";
 export function AgentDashboard() {
   const [tab, setTab] = useState<AgentDashboardTab>("tasks");
   const timelines = useQuery(api.agentTimelines.listForUser, {}) as Array<{
-    timelineId: Id<"agentTimelines">; title: string; updatedAt: number;
+    timelineId: Id<"agentTimelines">; documentId: Id<"documents">; title: string; updatedAt: number;
   }> | undefined;
   const sorted = useMemo(() => (timelines ?? []).slice().sort((a, b) => b.updatedAt - a.updatedAt), [timelines]);
   const [selectedId, setSelectedId] = useState<Id<"agentTimelines"> | null>(null);
@@ -58,10 +58,40 @@ export function AgentDashboard() {
     };
   }, [setSelectedId, setTab]);
 
+
+
   const convex = useConvex();
   const createDoc = useMutation(api.documents.create);
   const createTimeline = useMutation(api.agentTimelines.createForDocument);
   const updateTask = useMutation(api.agentTimelines.updateTaskMetrics);
+
+  // Global actions from popovers/buttons (depends on updateTask)
+  useEffect(() => {
+    const onAction = async (e: Event) => {
+      const ev = e as CustomEvent<{ action: string; task: any }>;
+      const { action, task } = ev.detail || ({} as any);
+      if (!task || !task._id) return;
+      try {
+        if (action === 'pause') await updateTask({ taskId: task._id, status: 'paused' } as any);
+        if (action === 'resume') await updateTask({ taskId: task._id, status: 'running', startedAtMs: Date.now() } as any);
+        if (action === 'rerun') await updateTask({ taskId: task._id, status: 'running', progress: 0, startedAtMs: Date.now(), elapsedMs: 0 } as any);
+      } catch (err) {
+        console.error('Task action failed', err);
+      }
+    };
+    const onOpenFullView = (e: Event) => {
+      const ev = e as CustomEvent<{ task: any }>;
+      const t = ev.detail?.task;
+      if (t) setFullViewTask(t);
+    };
+    window.addEventListener('agents:taskAction', onAction as EventListener);
+    window.addEventListener('agents:openFullView', onOpenFullView as EventListener);
+    return () => {
+      window.removeEventListener('agents:taskAction', onAction as EventListener);
+      window.removeEventListener('agents:openFullView', onOpenFullView as EventListener);
+    };
+  }, [updateTask]);
+
 
   const [fullViewTask, setFullViewTask] = useState<any | null>(null);
 
@@ -130,7 +160,7 @@ export function AgentDashboard() {
         <div className="flex-1 min-h-0">
           {selectedTimelineId ? (
             tab === "timeline" ? (
-              <AgentTimeline timelineId={selectedTimelineId} />
+              <AgentTimeline timelineId={selectedTimelineId} documentId={sorted.find(t => t.timelineId === selectedTimelineId)?.documentId as Id<'documents'> | undefined} />
             ) : (
               <AgentTasks
                 timelineId={selectedTimelineId}
