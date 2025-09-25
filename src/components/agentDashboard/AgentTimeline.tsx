@@ -202,18 +202,23 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
     const offsets = tasks.map((t: any) => Math.max(0, Number(t.startOffsetMs || 0)));
     const durations = tasks.map((t: any) => Math.max(0, Number(t.durationMs || 0)));
     const minStart = offsets.length ? Math.min(...offsets) : 0;
-    let maxEnd = offsets.length ? Math.max(...offsets.map((o, i) => o + (durations[i] || 0))) : DEFAULT_WINDOW_SEC * 1000;
+    const maxEnd = offsets.length ? Math.max(...offsets.map((o, i) => o + (durations[i] || 0))) : DEFAULT_WINDOW_SEC * 1000;
 
     let start = 0;
     let total = DEFAULT_WINDOW_SEC * 1000;
     if (wm === WindowMode.Fit) {
       const span = Math.max(1, maxEnd - minStart);
-      const pad = Math.round(span * 0.1);
-      // Ensure the window also grows to include "now"
+      const pad = Math.max(1000, Math.round(span * 0.1)); // >=1s padding
       const nowOffset = Math.max(0, currentSec * 1000);
-      maxEnd = Math.max(maxEnd, nowOffset + pad);
-      start = Math.max(0, Math.min(minStart, Math.max(0, nowOffset - pad)));
-      total = Math.max(1, (maxEnd - start) + pad);
+      const anyRunning = tasks.some((t: any) => String((t.status ?? '')).toLowerCase() === 'running');
+      let fitStart = Math.max(0, minStart - pad);
+      let fitEnd = maxEnd + pad;
+      if (anyRunning) {
+        fitStart = Math.max(0, Math.min(fitStart, Math.max(0, nowOffset - pad)));
+        fitEnd = Math.max(fitEnd, nowOffset + pad);
+      }
+      start = fitStart;
+      total = Math.max(1, fitEnd - fitStart);
     } else if (wm === WindowMode.CenterNow) {
       const nowOffset = Math.max(0, currentSec * 1000);
       total = DEFAULT_WINDOW_SEC * 1000;
@@ -238,7 +243,7 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
     }
     const units = Array.from({ length: Math.floor(sec / step) + 1 }, (_, i) => i * step);
     return { windowStartMs: start, windowMs: total, windowSec: sec, timeUnits: units };
-  }, [tasks, windowMode, baseStartMs, chartWidth, currentSec]);
+  }, [tasks, wm, baseStartMs, chartWidth, currentSec]);
 
 	  const unitStepSec = useMemo(() => (timeUnits.length > 1 ? timeUnits[1] - timeUnits[0] : windowSec), [timeUnits, windowSec]);
 
