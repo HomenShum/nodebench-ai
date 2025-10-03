@@ -54,16 +54,42 @@
 
 ## Earlier Releases
 
-### v2025.09.19-2
-- Timeline visual upgrades
-- Agent dashboard improvements
+### v0.8.0 - Timeline Visual Improvements
+**Commit:** 8dc6f34
 
-### v2025.09.19
-- Initial multi-agent orchestration
-- Basic timeline visualization
+- Tightened 'Fit window to content' (less whitespace)
+- Dedicated Timeline section
+- Consistent panel order
 
-### 092325
-- Early prototype release
+### v0.7.0 - UI Standardization (2025-09-19-2)
+**Commit:** b55a950
+
+- UI parity across Calendar & Documents Home Hubs
+- Shared TopDividerBar and PageHeroHeader components
+- PresetChip component
+- Right-aligned hero date
+- Removed top spacing in Calendar hub
+- Standardized PublicDocuments layout
+- Updated previews (mini calendar + full calendar hub)
+
+### v0.6.0 - UI Refactor & Home Hubs (2025-09-19)
+**Commit:** 05e5a95
+
+- Consolidated Home Hubs (Documents & Calendar)
+- Streamlined layout and navigation
+- Improved MiniEditorPopover
+- Convex file/document API updates
+- Cleanup of legacy views
+- New screenshots and documentation
+
+### v0.5.0 - Early Prototype (092325)
+**Commit:** dc817ec
+
+- Agent Timeline with Tasks prompt
+- Final Output copy/collapse
+- Run history
+- Timeline freeze
+- Task metrics handling
 
 ---
 
