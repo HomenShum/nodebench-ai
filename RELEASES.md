@@ -1,6 +1,6 @@
 # Release History
 
-## v0.9.1 - Web.Fetch Template Validation & Cleanup (January 2025)
+## v0.9.1 - Web.Fetch Template Validation & Cleanup (October 2025)
 
 **Commits:** 395c806, fb0b067
 
@@ -25,7 +25,7 @@
 
 ---
 
-## v0.9.0 - Orchestrator Dataflow & Code Execution Enhancement (January 2025)
+## v0.9.0 - Orchestrator Dataflow & Code Execution Enhancement (October 2025)
 
 **Commit:** 43d1d19
 
@@ -135,5 +135,5 @@ Review the v0.9.0 release notes for dataflow architecture changes. Existing work
 
 ---
 
-**Last Updated:** January 2025
+**Last Updated:** October 2025
 

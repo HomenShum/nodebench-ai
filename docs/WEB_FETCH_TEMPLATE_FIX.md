@@ -2,7 +2,7 @@
 
 **Issue:** ENOENT error when web.fetch receives unresolved template variables  
 **Commit:** 395c806  
-**Date:** January 2025
+**Date:** October 2025
 
 ## Problem
 
