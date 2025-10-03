@@ -1,0 +1,20 @@
+{
+  "goal": "Plan a 2-day trip to San Francisco from October 3-4, 2025",
+  "type": "orchestrate",
+  "topic": "San Francisco trip October 3-4, 2025",
+  "tripPlanning": {
+    "destination": "San Francisco",
+    "startDate": "2025-10-03",
+    "endDate": "2025-10-04",
+    "budget": "moderate",
+    "preferences": {
+      "cuisine": ["Italian", "Japanese", "Farm-to-table"],
+      "activities": ["museums", "parks", "food tours", "scenic views"],
+      "pace": "moderate",
+      "dietary": ["vegetarian-friendly"],
+      "accessibility": []
+    },
+    "travelers": 2
+  }
+}
+

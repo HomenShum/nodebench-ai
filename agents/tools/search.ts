@@ -5,7 +5,7 @@
 // We'll dynamically import Node modules only when running under Node.
 
 import type { ExecContext } from '../core/execute';
-import { linkupStructuredSearch } from '../services/linkup';
+import { linkupStructuredSearch, linkupImageSearch } from '../services/linkup';
 import OpenAI from 'openai';
 
 // Sanitize JSON Schema for AJV strict: replace union `type: [..]` with anyOf
@@ -86,8 +86,25 @@ async function generateSchemaWithGrok(input: { query: string; intent?: string })
 
 export function searchTool(opts: { root: string }) {
   const root = opts.root;
-  return async function tool(args: { query: string; sources?: string[]; schema?: any; intent?: string; schemaGenerator?: 'grok' | 'provided' }, ctx: ExecContext): Promise<{ hits: Array<{ source: string; lines: number[] }>; snippet?: string; structured?: any }> {
+  return async function tool(args: { query: string; sources?: string[]; schema?: any; intent?: string; schemaGenerator?: 'grok' | 'provided'; includeImages?: boolean }, ctx: ExecContext): Promise<{ hits: Array<{ source: string; lines: number[] }>; snippet?: string; structured?: any; images?: Array<{ name: string; url: string; type: string }> }> {
     const q = String(args?.query || '').toLowerCase();
+
+    // If includeImages is true, use image search
+    if (args?.includeImages) {
+      try {
+        const images = await linkupImageSearch(q, 'standard');
+        ctx.memory.set('lastSearchQuery', q);
+        ctx.memory.set('lastSearchImages', images);
+        ctx.memory.putDoc(`search_images_${Date.now()}`, JSON.stringify(images));
+        return {
+          hits: images.slice(0, 5).map((img) => ({ source: img.url, lines: [1] })),
+          snippet: `Found ${images.length} images for "${q}"`,
+          images
+        };
+      } catch (e) {
+        ctx.trace.warn('search.linkup.images.failed', { message: (e as Error).message });
+      }
+    }
 
     // Primary: Linkup structured search (standard depth) using provided schema or a deep default
     try {

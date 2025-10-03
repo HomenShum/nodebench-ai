@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+/// <reference types="vitest" />
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -42,5 +43,10 @@ window.addEventListener('message', async (message) => {
   },
   optimizeDeps: {
     include: ["react", "react-dom", "wx-react-gantt"],
+  },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
   },
 }));

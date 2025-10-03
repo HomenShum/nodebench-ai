@@ -845,6 +845,7 @@ const agentTasks = defineTable({
   outputSizeBytes: v.optional(v.number()),
   elapsedMs: v.optional(v.number()),
   startedAtMs: v.optional(v.number()),
+  completedAtMs: v.optional(v.number()),
   // New: per-phase and retry/error markers
   phaseBoundariesMs: v.optional(v.array(v.number())),
   retryOffsetsMs: v.optional(v.array(v.number())),
@@ -881,6 +882,29 @@ const agentTimelineRuns = defineTable({
   meta: v.optional(v.any()),
 })
   .index("by_timeline", ["timelineId"])
+  .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
+
+/* ------------------------------------------------------------------ */
+/* AGENT IMAGE RESULTS – images found during agent execution          */
+/* ------------------------------------------------------------------ */
+const agentImageResults = defineTable({
+  timelineId: v.id("agentTimelines"),
+  taskId: v.optional(v.id("agentTasks")),
+  imageUrl: v.string(),
+  sourceUrl: v.optional(v.string()),        // Source page URL
+  title: v.optional(v.string()),            // Image title/description
+  thumbnailUrl: v.optional(v.string()),     // Thumbnail URL
+  width: v.optional(v.number()),            // Image width
+  height: v.optional(v.number()),           // Image height
+  format: v.optional(v.string()),           // Image format (jpg, png, etc.)
+  classification: v.optional(v.string()),   // Classification result
+  classificationConfidence: v.optional(v.number()), // Confidence score
+  classificationDetails: v.optional(v.any()), // Detailed classification data
+  metadata: v.optional(v.any()),            // Additional metadata
+  createdAt: v.number(),
+})
+  .index("by_timeline", ["timelineId"])
+  .index("by_task", ["taskId"])
   .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
 
 export default defineSchema({
@@ -926,5 +950,6 @@ export default defineSchema({
   agentTasks,
   agentLinks,
   agentTimelineRuns,
+  agentImageResults,
 
 });

@@ -1,0 +1,29 @@
+{
+  "goal": "Search for medical images",
+  "type": "orchestrate",
+  "topic": "medical images",
+  "graph": {
+    "nodes": [
+      {
+        "id": "search_medical_images",
+        "kind": "search",
+        "label": "Search for medical images",
+        "prompt": "medical images",
+        "includeImages": true
+      },
+      {
+        "id": "analyze_images",
+        "kind": "answer",
+        "label": "Analyze image results",
+        "prompt": "Analyze the medical images found. List the top 10 images with their names and URLs. Provide a summary of the types of medical images found.\n\nImage results: {{channel:search_medical_images.last}}"
+      }
+    ],
+    "edges": [
+      {
+        "from": "search_medical_images",
+        "to": "analyze_images"
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,91 @@
+{
+  "type": "orchestrate",
+  "topic": "Product Quality Control and Defect Detection",
+  "goal": "Find product images and detect manufacturing defects using vision LLMs",
+  "graph": {
+    "nodes": [
+      {
+        "id": "search_product_images",
+        "kind": "custom",
+        "label": "Search for Product Images",
+        "tool": "image.search",
+        "payload": {
+          "query": "manufacturing defects quality control inspection products",
+          "depth": "standard",
+          "maxResults": 10
+        }
+      },
+      {
+        "id": "retrieve_qc_knowledge",
+        "kind": "search",
+        "label": "Retrieve Quality Control Knowledge",
+        "query": "manufacturing defect detection quality control inspection standards visual inspection"
+      },
+      {
+        "id": "detect_defects",
+        "kind": "custom",
+        "label": "Detect Defects with Vision LLMs",
+        "tool": "vision.multi",
+        "payload": {
+          "dataset": "{{channel:search_product_images.last}}",
+          "analysisPrompt": "Inspect this product image for defects. Identify:\n1. Defect types (scratches, dents, discoloration, misalignment, etc.)\n2. Defect locations on the product\n3. Severity (minor, moderate, critical)\n4. Pass/fail recommendation\n5. Confidence in assessment (0-1)"
+        }
+      },
+      {
+        "id": "generate_qc_report",
+        "kind": "structured",
+        "label": "Generate Quality Control Report",
+        "query": "Generate a quality control report with:\n1. Products inspected (with source URLs)\n2. Defects detected for each product\n3. Pass/fail status\n4. Severity assessments\n5. Recommendations\n6. Citations for all images\n\nImages: {{channel:search_product_images.last}}\nInspection: {{channel:detect_defects.last}}\nKnowledge: {{channel:retrieve_qc_knowledge.last}}",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "type": "object",
+              "properties": {
+                "totalProducts": { "type": "number" },
+                "passed": { "type": "number" },
+                "failed": { "type": "number" },
+                "defectsFound": { "type": "number" }
+              }
+            },
+            "inspections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": { "type": "string" },
+                  "sourceUrl": { "type": "string" },
+                  "defects": { "type": "array", "items": { "type": "string" } },
+                  "severity": { "type": "string" },
+                  "status": { "type": "string" },
+                  "confidence": { "type": "number" }
+                }
+              }
+            },
+            "recommendations": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "citations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": { "type": "string" },
+                  "sourceUrl": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "edges": [
+      { "from": "search_product_images", "to": "detect_defects" },
+      { "from": "retrieve_qc_knowledge", "to": "generate_qc_report" },
+      { "from": "search_product_images", "to": "generate_qc_report" },
+      { "from": "detect_defects", "to": "generate_qc_report" }
+    ]
+  }
+}
+

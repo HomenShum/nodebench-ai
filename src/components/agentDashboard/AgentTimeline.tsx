@@ -5,6 +5,8 @@ import { Id } from "../../../convex/_generated/dataModel";
 import AgentPopover from "./AgentPopover";
 import { researchScaffold, toTimelineData } from "./scaffoldData";
 import { AgentWindowContext } from "./AgentWindowContext";
+import { ProductionMockSeeder } from "./ProductionMockSeeder";
+import { ExecutionBar } from "./ExecutionBar";
 
 // Helper to format mm:ss
 function fmtMMSS(totalSec: number) {
@@ -19,9 +21,6 @@ function trunc(s: string | undefined, n: number) {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
 }
 
-
-const DEFAULT_WINDOW_SEC = 600; // 10 minutes baseline
-
 enum DataSource {
   Auto = "auto",
   Convex = "convex",
@@ -35,6 +34,32 @@ enum WindowMode {
 }
 
 import UnifiedEditor from "@/components/UnifiedEditor";
+
+const normalizeId = (value: unknown): string => {
+  if (value === null || value === undefined) return "";
+  const str = String(value);
+  if (!str || str === "undefined" || str === "null") return "";
+  return str;
+};
+
+const deriveTaskId = (task: any): string => {
+  return normalizeId(task?.id ?? task?._id ?? task?.taskId ?? task?.name);
+};
+
+const extractElapsedMs = (task: any): number => {
+  const candidates = [
+    (task as any)?.elapsedMs,
+    (task as any)?.metrics?.elapsedMs,
+    (task as any)?.meta?.elapsedMs,
+    (task as any)?.latencyMs,
+    (task as any)?.stats?.elapsedMs,
+  ];
+  for (const candidate of candidates) {
+    const ms = Number(candidate);
+    if (Number.isFinite(ms) && ms > 0) return ms;
+  }
+  return 0;
+};
 
 export function AgentTimeline({ timelineId, documentId }: { timelineId: Id<"agentTimelines">; documentId?: Id<"documents"> }) {
   const leftRef = useRef<HTMLDivElement | null>(null);
@@ -124,6 +149,8 @@ export function AgentTimeline({ timelineId, documentId }: { timelineId: Id<"agen
     }
   });
 
+  const [showMockSeeder, setShowMockSeeder] = useState(false);
+
 const windowCtx = useContext(AgentWindowContext);
 const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
 
@@ -195,22 +222,101 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
   const finalInput = (latestInput ?? lastRun?.input) || "";
   const finalOutput = (latestOutput ?? lastRun?.output) || "";
 
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string, any[]>();
+    const byId = new Map<string, any>();
+    for (const task of tasks as any[]) {
+      const id = deriveTaskId(task);
+      if (!id) continue;
+      byId.set(id, task);
+    }
+    for (const task of tasks as any[]) {
+      const parentId = normalizeId((task as any)?.parentId);
+      if (!parentId) continue;
+      const existing = map.get(parentId);
+      if (existing) existing.push(task);
+      else map.set(parentId, [task]);
+    }
+    for (const link of links as any[]) {
+      const source = normalizeId((link as any)?.sourceTaskId ?? (link as any)?.sourceId ?? (link as any)?.source);
+      const target = normalizeId((link as any)?.targetTaskId ?? (link as any)?.targetId ?? (link as any)?.target);
+      if (!source || !target) continue;
+      const child = byId.get(target);
+      if (!child) continue;
+      const existing = map.get(source);
+      if (existing) {
+        if (!existing.includes(child)) existing.push(child);
+      } else {
+        map.set(source, [child]);
+      }
+    }
+    return map;
+  }, [tasks, links]);
 
   // Determine window positioning and size
-  const baseStartMs = usingScaffold ? ((scaffold as any).baseStartMs ?? Date.now()) : ((data?.baseStartMs ?? Date.now()));
   const { windowStartMs, windowMs, windowSec, timeUnits } = useMemo(() => {
-    const offsets = tasks.map((t: any) => Math.max(0, Number(t.startOffsetMs || 0)));
-    const durations = tasks.map((t: any) => Math.max(0, Number(t.durationMs || 0)));
-    const minStart = offsets.length ? Math.min(...offsets) : 0;
-    const maxEnd = offsets.length ? Math.max(...offsets.map((o, i) => o + (durations[i] || 0))) : DEFAULT_WINDOW_SEC * 1000;
+    const actualStarts: number[] = [];
+    const actualEnds: number[] = [];
+    const runningStarts: number[] = [];
+    const runningEnds: number[] = [];
+    const fallbackStarts: number[] = [];
+    const fallbackEnds: number[] = [];
 
-    let start = 0;
-    let total = DEFAULT_WINDOW_SEC * 1000;
+    const nowOffset = Math.max(0, currentSec * 1000);
+
+    for (const task of tasks as any[]) {
+      const rawStart = Number((task as any)?.startOffsetMs ?? 0);
+      const start = Math.max(0, Number.isFinite(rawStart) ? rawStart : 0);
+      const duration = Math.max(0, Number((task as any)?.durationMs ?? 0));
+      const elapsed = extractElapsedMs(task);
+      const status = String((task as any)?.status ?? '').toLowerCase();
+
+      if (elapsed > 0) {
+        actualStarts.push(start);
+        actualEnds.push(start + elapsed);
+        continue;
+      }
+
+      if (status === 'running') {
+        runningStarts.push(start);
+        runningEnds.push(Math.max(nowOffset, start + duration, start + elapsed));
+        continue;
+      }
+
+      fallbackStarts.push(start);
+      fallbackEnds.push(start + (duration || 1000));
+    }
+
+    let minStart = 0;
+    let maxEnd = 0;
+
+    if (actualEnds.length) {
+      minStart = actualStarts.length ? Math.min(...actualStarts) : 0;
+      const candidates = actualEnds.concat(runningEnds);
+      maxEnd = candidates.length ? Math.max(...candidates) : Math.max(...actualEnds);
+    } else if (runningEnds.length) {
+      minStart = runningStarts.length ? Math.min(...runningStarts) : 0;
+      maxEnd = Math.max(...runningEnds);
+    } else if (fallbackEnds.length) {
+      minStart = fallbackStarts.length ? Math.min(...fallbackStarts) : 0;
+      maxEnd = Math.max(...fallbackEnds);
+    } else {
+      minStart = 0;
+      maxEnd = 60000;
+    }
+
+    if (!Number.isFinite(minStart)) minStart = 0;
+    if (!Number.isFinite(maxEnd) || maxEnd <= minStart) {
+      maxEnd = minStart + 1000;
+    }
+
+    const span = Math.max(1, maxEnd - minStart);
+    let start = Math.max(0, minStart);
+    let total = span;
+
     if (wm === WindowMode.Fit) {
-      const span = Math.max(1, maxEnd - minStart);
-      const pad = Math.max(1000, Math.round(span * 0.1)); // >=1s padding
-      const nowOffset = Math.max(0, currentSec * 1000);
-      const anyRunning = tasks.some((t: any) => String((t.status ?? '')).toLowerCase() === 'running');
+      const pad = Math.max(1000, Math.round(span * 0.1));
+      const anyRunning = tasks.some((t: any) => String((t?.status ?? '')).toLowerCase() === 'running');
       let fitStart = Math.max(0, minStart - pad);
       let fitEnd = maxEnd + pad;
       if (anyRunning) {
@@ -220,20 +326,16 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
       start = fitStart;
       total = Math.max(1, fitEnd - fitStart);
     } else if (wm === WindowMode.CenterNow) {
-      const nowOffset = Math.max(0, currentSec * 1000);
-      total = DEFAULT_WINDOW_SEC * 1000;
+      total = Math.max(span, 60000);
       start = Math.max(0, Math.round(nowOffset - total / 2));
-
-
     } else {
-      // Fixed 10m at start 0
-      start = 0;
-      total = DEFAULT_WINDOW_SEC * 1000;
+      const pad = Math.max(1000, Math.round(span * 0.1));
+      total = Math.max(span + pad, 60000);
+      start = Math.max(0, Math.min(minStart, nowOffset > maxEnd ? nowOffset - total / 2 : minStart));
     }
 
     const sec = Math.max(1, Math.ceil(total / 1000));
-    // Dynamic tick step: choose the smallest step that keeps columns within available width
-    const minColPx = 40; // align with CSS min-width ~36px
+    const minColPx = 40;
     const maxCols = chartWidth > 0 ? Math.max(6, Math.floor(chartWidth / minColPx)) : Math.floor(sec / 30) + 1;
     const candidates = [15, 30, 60, 120, 300, 600];
     let step = candidates[candidates.length - 1];
@@ -243,7 +345,7 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
     }
     const units = Array.from({ length: Math.floor(sec / step) + 1 }, (_, i) => i * step);
     return { windowStartMs: start, windowMs: total, windowSec: sec, timeUnits: units };
-  }, [tasks, wm, baseStartMs, chartWidth, currentSec]);
+  }, [tasks, wm, chartWidth, currentSec]);
 
 	  const unitStepSec = useMemo(() => (timeUnits.length > 1 ? timeUnits[1] - timeUnits[0] : windowSec), [timeUnits, windowSec]);
 
@@ -280,61 +382,72 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
   type Task = { _id: string; name: string; status?: string; durationMs?: number; startOffsetMs?: number; agentType?: string; parentId?: string; icon?: string; color?: string; };
   const orchestrators: Task[] = tasks.filter((t: Task) => (t.agentType ?? "").toLowerCase() === "orchestrator");
   const mains: Task[] = tasks.filter((t: Task) => (t.agentType ?? "").toLowerCase() === "main");
-  const leaves: Task[] = tasks.filter((t: Task) => (t.agentType ?? "").toLowerCase() === "leaf");
 
-  const taskIdOf = (t: Task) => String((t as any).id ?? (t as any)._id ?? (t as any).taskId ?? "");
-  const effectiveStartMs = (t: Task) => {
+  const taskIdOf = (t: Task) => deriveTaskId(t);
+  const effectiveStartMs = (t: Task): number => {
     const selfStart = Math.max(0, Number(t.startOffsetMs || 0));
     const id = taskIdOf(t);
     const kids = id ? childrenOf(id) : [];
     if (!kids.length) return selfStart;
-    const minKidStart = Math.min(...kids.map((k) => Math.max(0, Number(k.startOffsetMs || 0))));
-    return Math.min(selfStart, minKidStart);
+    const kidStarts = kids.map((k) => effectiveStartMs(k));
+    return Math.min(selfStart, ...kidStarts);
   };
-  const effectiveEndMs = (t: Task) => {
+  const effectiveEndMs = (t: Task): number => {
     const start = Math.max(0, Number(t.startOffsetMs || 0));
     const planned = Math.max(0, Number(t.durationMs || 0));
+    const elapsed = extractElapsedMs(t);
     const status = String(t.status || '').toLowerCase();
     const nowOffset = Math.max(0, currentSec * 1000);
-    let end = start + planned;
-    if (status === 'running') end = Math.max(end, nowOffset);
-    else if (status === 'complete') {
-      const elapsed = Number((t as any).elapsedMs || 0);
-      if (elapsed > 0) end = start + elapsed;
-    }
     const id = taskIdOf(t);
     const kids = id ? childrenOf(id) : [];
-    if (kids.length) {
-      const kidEnds = kids.map((k) => {
-        const ks = Math.max(0, Number(k.startOffsetMs || 0));
-        const kp = Math.max(0, Number(k.durationMs || 0));
-        const kstatus = String(k.status || '').toLowerCase();
-        let ke = ks + kp;
-        if (kstatus === 'running') ke = Math.max(ke, nowOffset);
-        else if (kstatus === 'complete') {
-          const kel = Number((k as any).elapsedMs || 0);
-          if (kel > 0) ke = ks + kel;
-        }
-        return ke;
-      });
-      end = Math.max(end, ...kidEnds);
+    const kidEnds = kids.length ? kids.map((k) => effectiveEndMs(k)) : [];
+    const childMax = kidEnds.length ? Math.max(...kidEnds) : null;
+
+    const candidates: number[] = [];
+
+    if (elapsed > 0) {
+      candidates.push(start + elapsed);
     }
-    return end;
+
+    if (status === 'running') {
+      const runningTarget = Math.max(nowOffset, start + (elapsed > 0 ? elapsed : 0), start + planned);
+      candidates.push(runningTarget);
+    }
+
+    if (childMax !== null) {
+      candidates.push(childMax);
+    }
+
+    if (!candidates.length) {
+      if (planned > 0) candidates.push(start + planned);
+      else candidates.push(start + 1000);
+    }
+
+    return Math.max(start, ...candidates);
   };
 
 
-  const childrenOf = (parentId: string) => leaves.filter((s) => String(s.parentId ?? "") === String(parentId));
+  const childrenOf = (parentId: string): Task[] => {
+    const list = childrenByParent.get(parentId);
+    return Array.isArray(list) ? (list as Task[]) : [];
+  };
 
 
   const getProgress = (t: Task) => {
     const start = Math.max(0, Number(t.startOffsetMs || 0));
-    const dur = Math.max(1, Number((t as any).elapsedMs || t.durationMs || 0));
+    const elapsed = extractElapsedMs(t);
+    const planned = Math.max(0, Number(t.durationMs || 0));
     const status = String(t.status || '').toLowerCase();
     const nowOffset = Math.max(0, currentSec * 1000);
-    if (status === 'complete') return 1;
+    const effectiveDuration = Math.max(1, elapsed > 0 ? elapsed : planned || 1);
 
-
-    if (status === 'running') return Math.max(0, Math.min(1, (nowOffset - start) / dur));
+    if (status === 'complete' || status === 'error') return 1;
+    if (status === 'running') {
+      return Math.max(0, Math.min(1, (nowOffset - start) / effectiveDuration));
+    }
+    if (elapsed > 0 && planned > 0) {
+      return Math.max(0, Math.min(1, elapsed / effectiveDuration));
+    }
     return Math.max(0, Math.min(1, ((t as any).progress ?? 0)));
   };
 
@@ -345,6 +458,9 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
   const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
   const [popoverTask, setPopoverTask] = useState<any | null>(null);
   const [pinnedTaskId, setPinnedTaskId] = useState<string | null>(null);
+  // Collapsible main agent groups
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleCollapsed = (id: string) => setCollapsed((m) => ({ ...m, [id]: !m[id] }));
   const hoverTimerRef = useRef<number | null>(null);
 
   const leftPct = (t: Task) => {
@@ -359,56 +475,6 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
     const w = ((clampedEnd - clampedStart) / Math.max(1, windowMs)) * 100;
     return `${Math.max(0.5, Math.min(100, w))}%`;
   };
-
-  const runningCount = tasks.filter((t: Task) => (t.status ?? "").toLowerCase() === "running").length;
-
-  const levelBadge = (t: Task) => {
-    const lvl = levelMap.get(String((t as any)._id)) ?? 0;
-    return (
-      <span
-        className="text-[10px] px-1 py-[1px] rounded bg-[var(--bg-primary)] border border-[var(--border-color)]"
-        style={{ position: 'absolute', top: -14, right: 0, opacity: 0.8 }}
-      >{`L${lvl}`}</span>
-    );
-  };
-
-  const isAllComplete = Array.isArray(tasks) && tasks.length > 0 && tasks.every((t: any) => String(t.status || '').toLowerCase() === 'complete');
-  let displayNowMs = currentSec * 1000;
-  if (isAllComplete) {
-    try {
-      const ends = (tasks as any[]).map((t) => effectiveEndMs(t as any));
-      if (ends.length) displayNowMs = Math.max(...ends);
-    } catch {}
-  }
-  const nowLeftPct = `${Math.max(0, Math.min(100, (((displayNowMs) - windowStartMs) / Math.max(1, windowMs)) * 100))}%`;
-
-  return (
-    <section className="timeline-shell">
-      {toast ? (
-        <div data-testid="agents-fallback-toast" style={{ position: 'fixed', top: 12, right: 12, zIndex: 1000 }} className="rounded-md shadow px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-primary)]">
-          {toast}
-        </div>
-      ) : null}
-      {/* Controls: Prompt input + Send, plus Data Source / Time Window / Seed */}
-      <div className="mt-2 flex items-center gap-2 p-1 border border-[var(--border-color)] rounded-lg shadow-sm bg-[var(--bg-primary)] timeline-controls text-sm">
-        <textarea
-          placeholder="Ask AI to plan your week, find documents, etc... (Shift+Enter for newline, Enter to send)"
-          rows={3}
-          className="flex-grow bg-transparent outline-none text-sm px-2 py-1 text-[var(--text-primary)] placeholder-[var(--text-secondary)] resize-y min-h-[60px]"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={async (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              if (!prompt.trim()) return;
-              try {
-                await startFromPrompt({ timelineId, prompt: prompt.trim(), provider: planner as any });
-                setDataSource(DataSource.Convex);
-                try { window.localStorage.setItem("agents.dataSource", DataSource.Convex); } catch {}
-                setPrompt("");
-              } catch (err) {
-                console.error('Prompt plan failed', err);
-              }
 
   // Stop the live "now" ticker when all tasks complete
   useEffect(() => {
@@ -434,31 +500,32 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
     return () => window.clearInterval(id);
   }, [data?.baseStartMs, tasks]);
 
-            }
-          }}
-        />
-        <button
-          className="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-[#007AFF] hover:bg-[#0056b3] text-white rounded-md"
-          title="Send"
-          onClick={async () => {
-            if (!prompt.trim()) return;
-            try {
-              await startFromPrompt({ timelineId, prompt: prompt.trim(), provider: planner as any });
-              setDataSource(DataSource.Convex);
-              try { window.localStorage.setItem("agents.dataSource", DataSource.Convex); } catch {}
-              setPrompt("");
-            } catch (err) {
-              console.error('Prompt plan failed', err);
-            }
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send w-5 h-5" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></svg>
-        </button>
+  const runningCount = tasks.filter((t: Task) => (t.status ?? "").toLowerCase() === "running").length;
 
-        <div className="muted" style={{ marginLeft: 8 }} />
-        <button className="btn" title="Settings" onClick={() => setShowAdvanced((v) => !v)}>
-          																																																																							⚙︎
-        </button>
+  const isAllComplete = Array.isArray(tasks) && tasks.length > 0 && tasks.every((t: any) => String(t.status || '').toLowerCase() === 'complete');
+  let displayNowMs = currentSec * 1000;
+  if (isAllComplete) {
+    try {
+      const ends = (tasks as any[]).map((t) => effectiveEndMs(t as any));
+      if (ends.length) displayNowMs = Math.max(...ends);
+    } catch {}
+  }
+  const nowLeftPct = `${Math.max(0, Math.min(100, (((displayNowMs) - windowStartMs) / Math.max(1, windowMs)) * 100))}%`;
+
+  return (
+    <section className="timeline-shell">
+      {toast ? (
+        <div data-testid="agents-fallback-toast" style={{ position: 'fixed', top: 12, right: 12, zIndex: 1000 }} className="rounded-md shadow px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-primary)]">
+          {toast}
+        </div>
+      ) : null}
+      {/* Controls: Prompt input + Send, plus Data Source / Time Window / Seed */}
+      <div className="mt-2 flex flex-col gap-2 p-2 border border-[var(--border-color)] rounded-lg shadow-sm bg-[var(--bg-primary)] timeline-controls text-sm">
+        {/* Top row: Settings button, advanced controls, and status badge */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button className="btn" title="Settings" onClick={() => setShowAdvanced((v) => !v)}>
+            ⚙︎
+          </button>
 
         {showAdvanced && (<>
 
@@ -535,6 +602,36 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
           }}
         >Seed from Scaffold</button>
         <button
+          className="btn btn-primary"
+          title="Seed production-ready mock scenarios"
+          onClick={() => setShowMockSeeder(!showMockSeeder)}
+        >
+          🎬 Production Mocks
+        </button>
+        <button
+          className="btn"
+          style={{ backgroundColor: '#10b981', color: 'white' }}
+          title="Run Medical X-Ray Workflow (Image Search + Classification)"
+          onClick={async () => {
+            try {
+              const xrayWorkflow = await import('../../../agents/app/demo_scenarios/medical_xray_workflow.json');
+              await startFromPrompt({
+                timelineId,
+                prompt: "Find and classify medical X-ray images",
+                provider: planner as any,
+                overrideGraph: xrayWorkflow.graph as any,
+              });
+              setDataSource(DataSource.Convex);
+              try { window.localStorage.setItem("agents.dataSource", DataSource.Convex); } catch {}
+              console.log("Started Medical X-Ray Workflow");
+            } catch (e) {
+              console.error("X-Ray Workflow failed:", e);
+            }
+          }}
+        >
+          🩺 X-Ray Workflow
+        </button>
+        <button
           className="btn"
           title="Seed live Convex timeline from Web (Grok + Linkup)"
           onClick={async () => {
@@ -595,14 +692,66 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
         >Download JSON</button>
         </>)}
 
+          <div className="status-badge flex-grow" role="status" aria-live="polite">
+            {`${usingScaffold ? 'Source: Scaffold' : 'Source: Convex'} • ${wm === WindowMode.Fixed ? 'Fixed 10m' : wm === WindowMode.Fit ? 'Fit tasks' : 'Center now'} • ${runningCount} running${latestOutput ? ' • Last: ' + trunc(latestOutput, 80) : ''}`}
+          </div>
+        </div>
 
-
-        <div className="status-badge" role="status" aria-live="polite">
-          {`${usingScaffold ? 'Source: Scaffold' : 'Source: Convex'} • ${wm === WindowMode.Fixed ? 'Fixed 10m' : wm === WindowMode.Fit ? 'Fit tasks' : 'Center now'} • ${runningCount} running${latestOutput ? ' • Last: ' + trunc(latestOutput, 80) : ''}`}
+        {/* Bottom row: Textarea and Send button */}
+        <div className="flex items-start gap-2">
+          <textarea
+            placeholder="Ask AI to plan your week, find documents, etc... (Shift+Enter for newline, Enter to send)"
+            rows={3}
+            className="flex-grow bg-transparent outline-none text-sm px-2 py-1 text-[var(--text-primary)] placeholder-[var(--text-secondary)] resize-y min-h-[60px] border border-[var(--border-color)] rounded-md"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!prompt.trim()) return;
+                try {
+                  await startFromPrompt({ timelineId, prompt: prompt.trim(), provider: planner as any });
+                  setDataSource(DataSource.Convex);
+                  try { window.localStorage.setItem("agents.dataSource", DataSource.Convex); } catch {}
+                  setPrompt("");
+                } catch (err) {
+                  console.error('Prompt plan failed', err);
+                }
+              }
+            }}
+          />
+          <button
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-[#007AFF] hover:bg-[#0056b3] text-white rounded-md"
+            title="Send"
+            onClick={async () => {
+              if (!prompt.trim()) return;
+              try {
+                await startFromPrompt({ timelineId, prompt: prompt.trim(), provider: planner as any });
+                setDataSource(DataSource.Convex);
+                try { window.localStorage.setItem("agents.dataSource", DataSource.Convex); } catch {}
+                setPrompt("");
+              } catch (err) {
+                console.error('Prompt plan failed', err);
+              }
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send w-5 h-5" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></svg>
+          </button>
         </div>
       </div>
 
-
+      {/* Production Mock Seeder Panel */}
+      {showMockSeeder && (
+        <div style={{ marginTop: '1rem' }}>
+          <ProductionMockSeeder
+            documentId={data?.documentId as Id<"documents"> | undefined}
+            onSeeded={(newTimelineId) => {
+              setShowMockSeeder(false);
+              console.log("Seeded timeline:", newTimelineId);
+            }}
+          />
+        </div>
+      )}
 
 
 
@@ -613,7 +762,7 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
         <div className="p-2">
           <div className="timeline-container">
         {/* Left: Agent Hierarchy */}
-        <aside className="agent-hierarchy" ref={leftRef}>
+        <aside className="agent-hierarchy" ref={leftRef} role="complementary" aria-label="Agent Hierarchy">
           <div className="hierarchy-header">
             <div className="hierarchy-title">{usingScaffold ? "Agent Scaffold" : ((data as any)?.name || "Agents")}</div>
             <button className="btn" style={{ padding: "6px 10px", fontSize: 12 }} title="Add a new main agent" onClick={() => console.log("+ Add Agent")}>+ Add Agent</button>
@@ -625,7 +774,9 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
               <div className="agent-group" key={`o-${o._id}`}>
                 <div className="main-agent">
                   <div className="agent-icon" style={{ background: "var(--accent-2)", borderColor: "#C7D2FE" }}>{o.icon || "🧠"}</div>
-                  <div className="agent-name">{o.name || "Orchestrator"}</div>
+                  <div className="agent-name" title={String(o.name || "Orchestrator")} aria-label={String(o.name || "Orchestrator")}>
+                    {o.name || "Orchestrator"}
+                  </div>
                   <div className={`agent-status status-${(o.status ?? "pending").toLowerCase()}`}></div>
                 </div>
               </div>
@@ -633,17 +784,17 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
             {/* Main agents and their sub-agents */}
             {mains.map((m) => (
               <div className="agent-group" key={`m-${m._id}`}>
-                <div className="main-agent">
+                <div className="main-agent" onClick={() => toggleCollapsed(String(m._id))} aria-expanded={!collapsed[String(m._id)]} title="Click to expand/collapse">
                   <div className="agent-icon" style={{ background: "#F0FDF4", borderColor: "#BBF7D0" }}>{m.icon || "👤"}</div>
-                  <div className="agent-name">{m.name}</div>
+                  <div className="agent-name" title={String(m.name)} aria-label={String(m.name)}>{m.name}</div>
                   <div className="agent-meta">{"⚡ Parallel"}</div>
-                  <div className={`agent-status status-${(m.status ?? "pending").toLowerCase()}`}></div>
+                  <div className={`agent-status status-${(m.status ?? "pending").toLowerCase()}`} title={`Status: ${String(m.status ?? 'pending')}`}></div>
                 </div>
-                {childrenOf(m._id).map((s) => (
+                {!collapsed[String(m._id)] && childrenOf(m._id).map((s) => (
                   <div className="sub-agent" key={`s-${s._id}`}>
                     <div className="agent-icon">{s.icon || "🔗"}</div>
-                    <div className="agent-name">{s.name}</div>
-                    <div className={`agent-status status-${(s.status ?? "pending").toLowerCase()}`}></div>
+                    <div className="agent-name" title={String(s.name)} aria-label={String(s.name)}>{s.name}</div>
+                    <div className={`agent-status status-${(s.status ?? "pending").toLowerCase()}`} title={`Status: ${String(s.status ?? 'pending')}`}></div>
                   </div>
                 ))}
               </div>
@@ -652,7 +803,7 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
         </aside>
 
         {/* Right: Timeline Chart */}
-        <section className="timeline-chart" ref={rightRef}>
+        <section className="timeline-chart" ref={rightRef} role="region" aria-label="Execution Timeline">
           <div className="timeline-header" ref={headerRef}
             onMouseMove={(e) => {
               const el = headerRef.current; if (!el) return;
@@ -677,40 +828,26 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
 
           <div className="current-time-line" style={{ left: nowLeftPct }} />
 
+          {/* Single timeline grid overlay for all rows */}
+          <div className="timeline-grid-overlay" aria-hidden="true">
+            {timeUnits.map((t) => (<div key={`g-ov-${t}`} className="grid-column" />))}
+          </div>
+
           <div className="timeline-rows">
             {/* Orchestrator row */}
             {orchestrators.slice(0,1).map((o) => (
               <div className="timeline-row main-row" data-agent-id={String(o._id)} key={`row-o-${o._id}`}>
-                <div className="timeline-grid">
-                  {timeUnits.map((t) => (<div key={`g-o-${t}`} className="grid-column" />))}
-                </div>
-                <div
-                  className={`execution-bar ${(o.status ?? 'pending').toLowerCase()}`}
-                  title={`${Math.round(getProgress(o) * 100)}% • ETA ${Math.max(0, Math.ceil(((o as any).durationMs ?? 0 - ((o as any).elapsedMs ?? 0)) / 1000))}s`}
-                  style={{ left: leftPct(o), width: widthPct(o), background: `linear-gradient(90deg, ${colorOf(o)}20, ${colorOf(o)}30)`, borderColor: `${colorOf(o)}55`, position: 'relative' }}
+                <ExecutionBar
+                  task={o}
+                  leftPct={leftPct(o)}
+                  widthPct={widthPct(o)}
+                  color={colorOf(o)}
+                  progress={getProgress(o)}
                   onMouseEnter={(e) => { if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); const target = e.currentTarget as HTMLElement; hoverTimerRef.current = window.setTimeout(() => { setPopoverAnchor(target); setPopoverTask(o); }, 120); }}
                   onMouseLeave={() => { if (pinnedTaskId && pinnedTaskId === String(o._id)) return; if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); setPopoverAnchor(null); setPopoverTask(null); }}
-                >
-                  {Array.isArray((o as any).phaseBoundariesMs) && (o as any).phaseBoundariesMs.length > 0
-                    ? ((o as any).phaseBoundariesMs as number[]).map((ms, idx) => {
-                        const dur = Math.max(1, Number((o as any).durationMs || 1));
-                        const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
-                        return <div className="phase-sep" aria-label={`phase-sep-${ms}ms`} key={`o-ph-${idx}`} style={{ left: `${pct}%` }} />;
-                      })
-                    : (<>
-                        <div className="phase-sep" style={{ left: '33%' }} />
-                        <div className="phase-sep" style={{ left: '66%' }} />
-                      </>)}
-                  {Array.isArray((o as any).retryOffsetsMs) ? ((o as any).retryOffsetsMs as number[]).map((ms, i) => {
-                    const dur = Math.max(1, Number((o as any).durationMs || 1));
-                    const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
-                    return <div className="retry-marker" aria-label={`retry-marker-${ms}ms`} key={`o-rm-${i}`} style={{ left: `${pct}%` }} />;
-                  }) : null}
-                  {typeof (o as any).failureOffsetMs === 'number' ? (() => { const dur = Math.max(1, Number((o as any).durationMs || 1)); const pct = Math.max(0, Math.min(100, (((o as any).failureOffsetMs as number) / dur) * 100)); return <div className="error-marker" aria-label={`error-marker-${(o as any).failureOffsetMs}ms`} style={{ left: `${pct}%` }} />; })() : null}
-                  <div className={`progress-fill ${String((o.status ?? 'pending')).toLowerCase() === 'running' ? 'running' : ''}`} style={{ width: `${Math.round(getProgress(o) * 100)}%`, background: colorOf(o), opacity: 0.5, height: '100%' }} />
-                  <div className="eta-label">{Math.max(0, Math.ceil(((o as any).durationMs ?? 0 - ((o as any).elapsedMs ?? 0)) / 1000))}s</div>
-                  {levelBadge(o)}
-                </div>
+                  onClick={() => setPinnedTaskId((p) => (p === String(o._id) ? null : String(o._id)))}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPinnedTaskId((p) => (p === String(o._id) ? null : String(o._id))); setPopoverTask(o); } if (e.key === 'Escape') { setPinnedTaskId(null); setPopoverTask(null); } }}
+                />
               </div>
             ))}
 
@@ -718,69 +855,31 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
             {mains.map((m) => (
               <div key={`rows-${m._id}`}>
                 <div className="timeline-row main-row" data-agent-id={String(m._id)}>
-                  <div className="timeline-grid">
-                    {timeUnits.map((t) => (<div key={`g-m-${m._id}-${t}`} className="grid-column" />))}
-                  </div>
-                  <div
-                    className={`execution-bar ${(m.status ?? 'pending').toLowerCase()}`}
-                    title={`${Math.round(getProgress(m) * 100)}% · ETA ${Math.max(0, Math.ceil(((m as any).durationMs ?? 0 - ((m as any).elapsedMs ?? 0)) / 1000))}s`}
-                    style={{ left: leftPct(m), width: widthPct(m), background: `linear-gradient(90deg, ${colorOf(m)}20, ${colorOf(m)}30)`, borderColor: `${colorOf(m)}55`, position: 'relative' }}
+                  <ExecutionBar
+                    task={m}
+                    leftPct={leftPct(m)}
+                    widthPct={widthPct(m)}
+                    color={colorOf(m)}
+                    progress={getProgress(m)}
                     onMouseEnter={(e) => { if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); const target = e.currentTarget as HTMLElement; hoverTimerRef.current = window.setTimeout(() => { setPopoverAnchor(target); setPopoverTask(m); }, 120); }}
                     onMouseLeave={() => { if (pinnedTaskId && pinnedTaskId === String(m._id)) return; if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); setPopoverAnchor(null); setPopoverTask(null); }}
-                  >
-                    {Array.isArray((m as any).phaseBoundariesMs) && (m as any).phaseBoundariesMs.length > 0
-                      ? ((m as any).phaseBoundariesMs as number[]).map((ms, idx) => {
-                          const dur = Math.max(1, Number((m as any).durationMs || 1));
-                          const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
-                          return <div className="phase-sep" aria-label={`phase-sep-${ms}ms`} key={`m-ph-${idx}`} style={{ left: `${pct}%` }} />;
-                        })
-                      : (<>
-                          <div className="phase-sep" style={{ left: '33%' }} />
-                          <div className="phase-sep" style={{ left: '66%' }} />
-                        </>)}
-                    {Array.isArray((m as any).retryOffsetsMs) ? ((m as any).retryOffsetsMs as number[]).map((ms, i) => {
-                      const dur = Math.max(1, Number((m as any).durationMs || 1));
-                      const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
-                      return <div className="retry-marker" aria-label={`retry-marker-${ms}ms`} key={`m-rm-${i}`} style={{ left: `${pct}%` }} />;
-                    }) : null}
-                    {typeof (m as any).failureOffsetMs === 'number' ? (() => { const dur = Math.max(1, Number((m as any).durationMs || 1)); const pct = Math.max(0, Math.min(100, (((m as any).failureOffsetMs as number) / dur) * 100)); return <div className="error-marker" aria-label={`error-marker-${(m as any).failureOffsetMs}ms`} style={{ left: `${pct}%` }} />; })() : null}
-                    <div className={`progress-fill ${String((m.status ?? 'pending')).toLowerCase() === 'running' ? 'running' : ''}`} style={{ width: `${Math.round(getProgress(m) * 100)}%`, background: colorOf(m), opacity: 0.5, height: '100%' }} />
-                    <div className="eta-label">{Math.max(0, Math.ceil(((m as any).durationMs ?? 0 - ((m as any).elapsedMs ?? 0)) / 1000))}s</div>
-                    {levelBadge(m)}
-                  </div>
+                    onClick={() => setPinnedTaskId((p) => (p === String(m._id) ? null : String(m._id)))}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPinnedTaskId((p) => (p === String(m._id) ? null : String(m._id))); setPopoverTask(m); } if (e.key === 'Escape') { setPinnedTaskId(null); setPopoverTask(null); } }}
+                  />
                 </div>
-                {childrenOf(m._id).map((s) => (
+                {!collapsed[String(m._id)] && childrenOf(m._id).map((s) => (
                   <div className="timeline-row sub-row" data-agent-id={String(s._id)} key={`row-s-${s._id}`}>
-                    <div className="timeline-grid">
-                      {timeUnits.map((t) => (<div key={`g-s-${s._id}-${t}`} className="grid-column" />))}
-                    </div>
-                    <div
-                      className={`execution-bar ${(s.status ?? 'pending').toLowerCase()}`}
-                      title={`${Math.round(getProgress(s) * 100)}%   ETA ${Math.max(0, Math.ceil(((s as any).durationMs ?? 0 - ((s as any).elapsedMs ?? 0)) / 1000))}s`}
-                      style={{ left: leftPct(s), width: widthPct(s), background: `linear-gradient(90deg, ${colorOf(s)}20, ${colorOf(s)}30)`, borderColor: `${colorOf(s)}55`, position: 'relative' }}
+                    <ExecutionBar
+                      task={s}
+                      leftPct={leftPct(s)}
+                      widthPct={widthPct(s)}
+                      color={colorOf(s)}
+                      progress={getProgress(s)}
                       onMouseEnter={(e) => { if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); const target = e.currentTarget as HTMLElement; hoverTimerRef.current = window.setTimeout(() => { setPopoverAnchor(target); setPopoverTask(s); }, 120); }}
                       onMouseLeave={() => { if (pinnedTaskId && pinnedTaskId === String(s._id)) return; if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current); setPopoverAnchor(null); setPopoverTask(null); }}
-                    >
-                      {Array.isArray((s as any).phaseBoundariesMs) && (s as any).phaseBoundariesMs.length > 0
-                        ? ((s as any).phaseBoundariesMs as number[]).map((ms, idx) => {
-                            const dur = Math.max(1, Number((s as any).durationMs || 1));
-                            const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
-                            return <div className="phase-sep" aria-label={`phase-sep-${ms}ms`} key={`s-ph-${idx}`} style={{ left: `${pct}%` }} />;
-                          })
-                        : (<>
-                            <div className="phase-sep" style={{ left: '33%' }} />
-                            <div className="phase-sep" style={{ left: '66%' }} />
-                          </>)}
-                      {Array.isArray((s as any).retryOffsetsMs) ? ((s as any).retryOffsetsMs as number[]).map((ms, i) => {
-                        const dur = Math.max(1, Number((s as any).durationMs || 1));
-                        const pct = Math.max(0, Math.min(100, (ms / dur) * 100));
-                        return <div className="retry-marker" aria-label={`retry-marker-${ms}ms`} key={`s-rm-${i}`} style={{ left: `${pct}%` }} />;
-                      }) : null}
-                      {typeof (s as any).failureOffsetMs === 'number' ? (() => { const dur = Math.max(1, Number((s as any).durationMs || 1)); const pct = Math.max(0, Math.min(100, (((s as any).failureOffsetMs as number) / dur) * 100)); return <div className="error-marker" aria-label={`error-marker-${(s as any).failureOffsetMs}ms`} style={{ left: `${pct}%` }} />; })() : null}
-                      <div className={`progress-fill ${String((s.status ?? 'pending')).toLowerCase() === 'running' ? 'running' : ''}`} style={{ width: `${Math.round(getProgress(s) * 100)}%`, background: colorOf(s), opacity: 0.5, height: '100%' }} />
-                      <div className="eta-label">{Math.max(0, Math.ceil(((s as any).durationMs ?? 0 - ((s as any).elapsedMs ?? 0)) / 1000))}s</div>
-                      {levelBadge(s)}
-                    </div>
+                      onClick={() => setPinnedTaskId((p) => (p === String(s._id) ? null : String(s._id)))}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPinnedTaskId((p) => (p === String(s._id) ? null : String(s._id))); setPopoverTask(s); } if (e.key === 'Escape') { setPinnedTaskId(null); setPopoverTask(null); } }}
+                    />
                   </div>
                 ))}
               </div>
@@ -789,7 +888,7 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
 
           <AgentPopover isOpen={!!popoverTask} anchorEl={popoverAnchor} agent={popoverTask} onClose={() => { setPopoverAnchor(null); setPopoverTask(null); }} />
         </section>
-      </div>
+          </div>
         </div>
       </div>
 
@@ -833,7 +932,7 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
           </div>
           <div className="px-2 pb-2">
             {documentId ? (
-              <UnifiedEditor documentId={documentId as any} mode="quickNote" editable={true} autoCreateIfEmpty={true} seedMarkdown={finalOutput} restoreSignal={restoreTick} restoreMarkdown={finalOutput} registerExporter={(fn) => { editorExporterRef.current = fn; }} />
+              <UnifiedEditor documentId={documentId as any} mode="quickNote" editable={true} autoCreateIfEmpty={true} seedMarkdown={undefined} restoreSignal={restoreTick} restoreMarkdown={finalOutput} registerExporter={(fn) => { editorExporterRef.current = fn; }} />
             ) : (
               <>
                 {finalInput ? (

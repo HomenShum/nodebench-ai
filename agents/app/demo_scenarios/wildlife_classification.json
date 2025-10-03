@@ -1,0 +1,88 @@
+{
+  "type": "orchestrate",
+  "topic": "Wildlife Species Classification",
+  "goal": "Find wildlife images and classify species using vision LLMs",
+  "graph": {
+    "nodes": [
+      {
+        "id": "search_wildlife_images",
+        "kind": "custom",
+        "label": "Search for Wildlife Images",
+        "tool": "image.search",
+        "payload": {
+          "query": "endangered species wildlife animals nature photography",
+          "depth": "deep",
+          "maxResults": 10
+        }
+      },
+      {
+        "id": "retrieve_species_knowledge",
+        "kind": "search",
+        "label": "Retrieve Species Classification Knowledge",
+        "query": "wildlife species classification taxonomy endangered animals identification"
+      },
+      {
+        "id": "classify_species",
+        "kind": "custom",
+        "label": "Classify Species with Vision LLMs",
+        "tool": "vision.multi",
+        "payload": {
+          "dataset": "{{channel:search_wildlife_images.last}}",
+          "analysisPrompt": "Identify the species in this image. Provide:\n1. Species name (common and scientific)\n2. Conservation status (endangered, vulnerable, etc.)\n3. Habitat and geographic range\n4. Key identifying features\n5. Confidence in identification (0-1)"
+        }
+      },
+      {
+        "id": "generate_species_report",
+        "kind": "structured",
+        "label": "Generate Species Report with Citations",
+        "query": "Generate a comprehensive wildlife species report with:\n1. Species identified (with source image URLs)\n2. Conservation status for each species\n3. Geographic distribution\n4. Key identifying features\n5. Citations for all images\n\nImages: {{channel:search_wildlife_images.last}}\nClassifications: {{channel:classify_species.last}}\nKnowledge: {{channel:retrieve_species_knowledge.last}}",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "type": "object",
+              "properties": {
+                "totalImages": { "type": "number" },
+                "speciesIdentified": { "type": "number" },
+                "endangeredSpecies": { "type": "number" }
+              }
+            },
+            "species": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": { "type": "string" },
+                  "sourceUrl": { "type": "string" },
+                  "commonName": { "type": "string" },
+                  "scientificName": { "type": "string" },
+                  "conservationStatus": { "type": "string" },
+                  "habitat": { "type": "string" },
+                  "confidence": { "type": "number" }
+                }
+              }
+            },
+            "citations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": { "type": "string" },
+                  "sourceUrl": { "type": "string" },
+                  "species": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "edges": [
+      { "from": "search_wildlife_images", "to": "classify_species" },
+      { "from": "retrieve_species_knowledge", "to": "generate_species_report" },
+      { "from": "search_wildlife_images", "to": "generate_species_report" },
+      { "from": "classify_species", "to": "generate_species_report" }
+    ]
+  }
+}
+

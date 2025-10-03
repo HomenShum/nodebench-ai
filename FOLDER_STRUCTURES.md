@@ -7,7 +7,8 @@ Key Paths
 - src/components/agentDashboard/
   - AgentDashboard.tsx       # header, timeline selector, tabs, bottom Full View
   - AgentTimeline.tsx        # left hierarchy, right timeline grid + bars + popover (shows L{n} level badges from graph links)
-  - AgentTasks.tsx           # task cards grid, hover overlay actions
+  - AgentTasks.tsx           # task cards grid + grouped/tree/table layouts (Table is default)
+  - AgentChats.tsx           # chat history table sourced from convex/chatThreads
   - AgentPopover.tsx         # fixed-position popover anchored to timeline bars
 - src/components/
   - AIChatPanel.tsx           # AI chat with model selector; now includes an Orchestrator toggle to route send to Convex orchestrator and link to Agents timeline
@@ -208,6 +209,15 @@ Additions (Final Output + UnifiedEditor)
   - Final Output panel renders UnifiedEditor above Run History.
   - Header actions: Copy, Restore (reseed from Final Output), Save as Final Output (convex.agentTimelines.setLatestRun), Collapse/Expand.
   - Run History panel moved below Final Output; each entry supports Copy and inline expand.
+
+Updates (Sep 25, 2025)
+- AgentTimeline.tsx
+  - Uses a single `.timeline-grid-overlay` inside the chart to render time columns once; removed per-row `.timeline-grid` duplication.
+  - Adds ARIA roles and keyboard support for execution bars.
+- src/styles/agentDashboard.css
+  - New rules for `.timeline-grid-overlay` and `current-time-line::after` pulse indicator.
+  - `.execution-bar` now reads `left`/`width` from CSS custom properties (`--left`, `--width`).
+
 - convex/agentsPrefs.ts
   - getAgentsPrefs/setAgentsPrefs used to persist `doc.hasContent.<documentId>` = '1' for cross-device reseed gating.
 - convex/agentTimelines.ts

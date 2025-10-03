@@ -175,6 +175,20 @@ OpenAI & Web Search Providers
 - LLM tools (answer/summarize) use OpenAI-compatible chat.completions (OpenRouter supported via OPENROUTER_API_KEY)
 - Schema-aware web.search:
   - If args.schema is omitted, Grok 4 fast synthesizes a task-suited JSON Schema (draft-07)
+
+## AgentTimeline: Accessibility, Responsiveness and Grid Overlay (Sep 25, 2025)
+- Accessibility
+  - Added ARIA roles: aside[role="complementary"][aria-label="Agent Hierarchy"], section[role="region"][aria-label="Execution Timeline"].
+  - Execution bars are keyboard focusable (role="button", tabIndex=0) and support Enter/Space to pin the popover, Esc to dismiss.
+  - Agent names expose full text via title + aria-label; status dots include title tooltips.
+- Timeline grid
+  - Removed per-row duplicated grid columns; a single `.timeline-grid-overlay` renders once per chart and spans all rows.
+  - Current time line now includes a pulsing dot indicator via `::after` + keyframes.
+- Inline styles → CSS vars
+  - Bars now pass dynamic positioning via CSS custom props (`--left`, `--width`); styling centralized in `src/styles/agentDashboard.css`.
+- Tests
+  - Existing timeline tests continue to pass; added coverage planned for keyboard focus and ARIA roles.
+
   - Linkup runs with outputType=structured and depth=standard using that schema
   - Callers can supply args.schema to override; args.intent helps tailor the schema per task
 - Env:
@@ -284,4 +298,11 @@ Final Output Panel + UnifiedEditor (Sep 24, 2025)
 - Save as Final Output: The panel header includes a "Save as Final Output" button. It exports the editor's current plain text and updates convex/agentTimelines.setLatestRun, setting latestRunOutput while preserving latestRunInput. Success/failure is tosted inline.
 - Server-side had-content flag: A server-side preference key (agentsPrefs) `doc.hasContent.<documentId>` is set to '1' after seeding or any edit, ensuring reseed gating is consistent across devices. A localStorage mirror is also maintained for immediate UX.
 - Copy buttons: Copy respects the panel context: Copy (header) copies the Final Output snapshot; a separate Copy in Run History copies a specific run output.
+
+Chat History Integration (Sep 25, 2025)
+- New dashboard tab: Chat — displays recent AI Chat Panel threads in a table.
+- Backend: convex/chatThreads.listThreadsForUser returns {threadId, title, lastModified, messageCount, lastMessage?}.
+- Frontend: src/components/agentDashboard/AgentChats.tsx renders the table; rows open the underlying document.
+- Default layout change: AgentTasks now defaults to Table view (persisted via localStorage key agents.tasksLayout).
+
 - Tests: Existing tests continue to pass; add targeted tests later to cover restore/save interactions if needed.

@@ -4,10 +4,11 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { AgentTimeline } from "@/components/agentDashboard/AgentTimeline";
 import { AgentTasks } from "@/components/agentDashboard/AgentTasks";
+import { AgentChats } from "@/components/agentDashboard/AgentChats";
 import "@/styles/agentDashboard.css";
 import { AgentWindowProvider } from "./AgentWindowContext";
 
-export type AgentDashboardTab = "timeline" | "tasks";
+export type AgentDashboardTab = "timeline" | "tasks" | "chat";
 
 export function AgentDashboard() {
   const [tab, setTab] = useState<AgentDashboardTab>("tasks");
@@ -64,6 +65,7 @@ export function AgentDashboard() {
   const createDoc = useMutation(api.documents.create);
   const createTimeline = useMutation(api.agentTimelines.createForDocument);
   const updateTask = useMutation(api.agentTimelines.updateTaskMetrics);
+  const [isRunningTest, setIsRunningTest] = useState(false);
 
   // Global actions from popovers/buttons (depends on updateTask)
   useEffect(() => {
@@ -79,21 +81,11 @@ export function AgentDashboard() {
         console.error('Task action failed', err);
       }
     };
-    const onOpenFullView = (e: Event) => {
-      const ev = e as CustomEvent<{ task: any }>;
-      const t = ev.detail?.task;
-      if (t) setFullViewTask(t);
-    };
     window.addEventListener('agents:taskAction', onAction as EventListener);
-    window.addEventListener('agents:openFullView', onOpenFullView as EventListener);
     return () => {
       window.removeEventListener('agents:taskAction', onAction as EventListener);
-      window.removeEventListener('agents:openFullView', onOpenFullView as EventListener);
     };
   }, [updateTask]);
-
-
-  const [fullViewTask, setFullViewTask] = useState<any | null>(null);
 
   const handleCreateTimeline = async () => {
     try {
@@ -105,6 +97,117 @@ export function AgentDashboard() {
     } catch (err) {
       console.error(err);
       alert((err as any)?.message ?? "Failed to create timeline");
+    }
+  };
+
+  const handleRunVisualLLMTest = async () => {
+    if (isRunningTest) return;
+
+    try {
+      setIsRunningTest(true);
+
+      // Create a new timeline for the test
+      const docId = await createDoc({
+        title: "Visual LLM Validation Test",
+        parentId: undefined,
+        content: [] as any
+      });
+      const tlId = await createTimeline({
+        documentId: docId as Id<"documents">,
+        name: "Visual LLM Test"
+      });
+
+      // Switch to the new timeline and timeline tab
+      setSelectedId(tlId as Id<"agentTimelines">);
+      setTab("timeline");
+
+      // Run the visual LLM validation workflow
+      // Note: This calls an internal action, so we need to use the convex client
+      await convex.action(api.agents.orchestrate.run, {
+        documentId: docId as Id<"documents">,
+        name: "Visual LLM Validation Test",
+        taskSpec: {
+          goal: "Visual LLM validation workflow: search for test images, validate and filter them, analyze with GPT-5-mini and Gemini 2.5 Flash using real vision APIs, compare results, and recommend best model",
+          type: "orchestrate",
+          topic: "Visual LLM Model Validation for VR Avatar Quality Assessment (GPT-5-mini vs Gemini 2.5 Flash)",
+          graph: {
+            nodes: [
+              {
+                id: "image_search",
+                kind: "search",
+                label: "Search VR Avatar Test Images",
+                prompt: "VR avatars virtual reality characters full body 3D models hands feet eyes clothing",
+              },
+              {
+                id: "image_validation",
+                kind: "custom",
+                label: "Validate Image URLs",
+                prompt: "{{channel:image_search.last}}",
+              },
+              {
+                id: "image_filtering",
+                kind: "custom",
+                label: "Filter Valid Images",
+                prompt: "{{channel:image_validation.last}}",
+              },
+              {
+                id: "vision_analysis",
+                kind: "custom",
+                label: "Parallel Vision Analysis (GPT-5-mini + Gemini 2.5 Flash)",
+                prompt: "{{channel:image_filtering.last}}",
+              },
+              {
+                id: "statistical_analysis",
+                kind: "custom",
+                label: "Statistical Analysis & Aggregation",
+                prompt: "{{channel:vision_analysis.last}}",
+              },
+              {
+                id: "visualization",
+                kind: "custom",
+                label: "Generate Plotly Visualizations",
+                prompt: "{{channel:statistical_analysis.last}}",
+              },
+              {
+                id: "model_comparison",
+                kind: "structured",
+                label: "Model Performance Comparison",
+                prompt: "Based on statistical analysis {{channel:statistical_analysis.last}} and visualizations {{channel:visualization.last}}, compare GPT-5-mini vs Gemini 2.5 Flash.",
+              },
+              {
+                id: "prompt_optimization",
+                kind: "answer",
+                label: "Enhanced Prompt Generation",
+                prompt: "Based on model comparison {{channel:model_comparison.last}}, generate enhanced prompts to improve GPT-5-mini and Gemini 2.5 Flash performance.",
+              },
+              {
+                id: "eval_quality",
+                kind: "eval",
+                label: "Quality Check & Follow-up",
+                prompt: "Evaluate the completeness of the analysis. Check if all steps completed successfully.",
+              },
+            ],
+            edges: [
+              { from: "image_search", to: "image_validation" },
+              { from: "image_validation", to: "image_filtering" },
+              { from: "image_filtering", to: "vision_analysis" },
+              { from: "vision_analysis", to: "statistical_analysis" },
+              { from: "statistical_analysis", to: "visualization" },
+              { from: "visualization", to: "model_comparison" },
+              { from: "model_comparison", to: "prompt_optimization" },
+              { from: "prompt_optimization", to: "eval_quality" },
+            ],
+          },
+        },
+      });
+
+      // Success notification
+      alert("Visual LLM validation test started! Check the Timeline tab for progress.");
+    } catch (err) {
+      console.error("Failed to run Visual LLM test:", err);
+      alert((err as any)?.message ?? "Failed to run Visual LLM test. Make sure API keys are configured.");
+    } finally {
+      setIsRunningTest(false);
     }
   };
 
@@ -137,6 +240,27 @@ export function AgentDashboard() {
             >
               New Timeline
             </button>
+            <button
+              className={`px-3 py-1 text-xs rounded-md border font-medium transition-colors ${
+                isRunningTest
+                  ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
+                  : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-transparent hover:from-purple-600 hover:to-indigo-600 shadow-sm"
+              }`}
+              onClick={handleRunVisualLLMTest}
+              disabled={isRunningTest}
+              title="Run Visual LLM validation test with GPT-5-mini and Gemini 2.5 Flash"
+            >
+              {isRunningTest ? (
+                <>
+                  <span className="inline-block animate-spin mr-1">⏳</span>
+                  Running Test...
+                </>
+              ) : (
+                <>
+                  🧪 Run Visual LLM Test
+                </>
+              )}
+            </button>
           </div>
         </div>
         <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]">
@@ -152,6 +276,12 @@ export function AgentDashboard() {
           >
             Timeline
           </button>
+          <button
+            className={`px-3 py-1.5 text-xs rounded-md border transition-colors ${tab === "chat" ? "bg-white text-[var(--text-primary)] border-[var(--border-color)] shadow-sm" : "text-[var(--text-secondary)] border-transparent hover:bg-white/50"}`}
+            onClick={() => setTab("chat")}
+          >
+            Chat
+          </button>
         </div>
       </div>
 
@@ -159,79 +289,39 @@ export function AgentDashboard() {
       <AgentWindowProvider>
         <div className="flex-1 min-h-0">
           {selectedTimelineId ? (
-            tab === "timeline" ? (
-              <AgentTimeline timelineId={selectedTimelineId} documentId={sorted.find(t => t.timelineId === selectedTimelineId)?.documentId as Id<'documents'> | undefined} />
-            ) : (
-              <AgentTasks
-                timelineId={selectedTimelineId}
-                onOpenFullView={setFullViewTask}
-                onViewTimeline={() => setTab("timeline")}
-              />
-            )
+            <>
+              {/* Timeline Tab - Keep mounted, hide with CSS to prevent editor reappending */}
+              <div style={{ display: tab === "timeline" ? "block" : "none" }} className="h-full">
+                <AgentTimeline
+                  timelineId={selectedTimelineId}
+                  documentId={sorted.find(t => t.timelineId === selectedTimelineId)?.documentId as Id<'documents'> | undefined}
+                />
+              </div>
+
+              {/* Chat Tab - Keep mounted, hide with CSS */}
+              <div style={{ display: tab === "chat" ? "block" : "none" }} className="h-full">
+                <AgentChats />
+              </div>
+
+              {/* Tasks Tab - Keep mounted, hide with CSS */}
+              <div style={{ display: tab === "tasks" ? "block" : "none" }} className="h-full">
+                <AgentTasks
+                  timelineId={selectedTimelineId}
+                  onViewTimeline={() => setTab("timeline")}
+                />
+              </div>
+            </>
           ) : (
-            <div className="p-6 text-sm text-[var(--text-secondary)]">No timelines yet. Create one to get started.</div>
+            tab === "chat" ? (
+              <AgentChats />
+            ) : (
+              <div className="p-6 text-sm text-[var(--text-secondary)]">No timelines yet. Create one to get started.</div>
+            )
           )}
         </div>
       </AgentWindowProvider>
 
-      {/* Bottom Full View panel */}
-      {fullViewTask && (
-        <div className="fixed left-0 right-0 bottom-0 bg-white border-t border-[var(--border-color)] shadow-[0_-12px_40px_rgba(15,23,42,0.15)] z-20">
-          <div className="max-w-6xl mx-auto">
-            <div className="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-base">\ud83d\udcca</span>
-                <div className="text-sm font-semibold">{fullViewTask.name || fullViewTask.title || "Task"}</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
-                  onClick={async () => {
-                    const assigneeId = window.prompt("Assign to user id:")?.trim();
-                    if (!assigneeId) return;
-                    try { await updateTask({ taskId: fullViewTask._id, assigneeId }); } catch (e) { console.error(e); }
-                  }}
-                >Assign</button>
-                <button
-                  className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
-                  onClick={async () => {
-                    try { await updateTask({ taskId: fullViewTask._id, status: "running", progress: 0, startedAtMs: Date.now() }); } catch (e) { console.error(e); }
-                  }}
-                >Re-run</button>
-                <button
-                  className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
-                  onClick={() => {
-                    const text = String((fullViewTask.description as string) || (fullViewTask.output as string) || "");
-                    const blob = new Blob([text], { type: "application/json;charset=utf-8" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `${(fullViewTask.name || fullViewTask.title || "task").toString().replace(/\s+/g, "_")}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => {
-                      URL.revokeObjectURL(url);
-                      a.remove();
-                    }, 0);
-                  }}
-                >Download</button>
-                <button className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)]" onClick={() => setFullViewTask(null)}>Close</button>
-              </div>
-            </div>
-            <div className="px-4 py-4 grid gap-4" style={{ gridTemplateColumns: "1fr 420px" }}>
-              <div className="min-h-[220px] overflow-auto border border-[var(--border-color)] rounded-md bg-[var(--bg-secondary)] p-3 text-xs whitespace-pre-wrap">
-                {(fullViewTask.description as string) || (fullViewTask.output as string) || "No output yet."}
-              </div>
-              <aside className="border-l border-[var(--border-color)] pl-4">
-                <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)] mb-2">Final Output</div>
-                <div className="border border-[var(--border-color)] rounded-md bg-[var(--bg-secondary)] p-3 text-xs whitespace-pre-wrap overflow-auto max-h-[240px]">
-                  {(fullViewTask.description as string) || (fullViewTask.output as string) || "{}"}
-                </div>
-              </aside>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

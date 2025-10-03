@@ -10,6 +10,7 @@
 
 import type * as account from "../account.js";
 import type * as agentEditor from "../agentEditor.js";
+import type * as agentImageResults from "../agentImageResults.js";
 import type * as agentTimelines from "../agentTimelines.js";
 import type * as agents_agentDispatcher from "../agents/agentDispatcher.js";
 import type * as agents_agentTools from "../agents/agentTools.js";
@@ -29,7 +30,10 @@ import type * as agents_lib_ragOps from "../agents/lib/ragOps.js";
 import type * as agents_lib_types from "../agents/lib/types.js";
 import type * as agents_orchestrate from "../agents/orchestrate.js";
 import type * as agents_promptPlan from "../agents/promptPlan.js";
+import type * as agents_seedProductionMocks from "../agents/seedProductionMocks.js";
 import type * as agents_timelineMock from "../agents/timelineMock.js";
+import type * as agents_visualLLMValidation from "../agents/visualLLMValidation.js";
+import type * as agents_xrayWorkflow from "../agents/xrayWorkflow.js";
 import type * as agentsPrefs from "../agentsPrefs.js";
 import type * as ai from "../ai.js";
 import type * as aiAgents from "../aiAgents.js";
@@ -107,6 +111,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   account: typeof account;
   agentEditor: typeof agentEditor;
+  agentImageResults: typeof agentImageResults;
   agentTimelines: typeof agentTimelines;
   "agents/agentDispatcher": typeof agents_agentDispatcher;
   "agents/agentTools": typeof agents_agentTools;
@@ -126,7 +131,10 @@ declare const fullApi: ApiFromModules<{
   "agents/lib/types": typeof agents_lib_types;
   "agents/orchestrate": typeof agents_orchestrate;
   "agents/promptPlan": typeof agents_promptPlan;
+  "agents/seedProductionMocks": typeof agents_seedProductionMocks;
   "agents/timelineMock": typeof agents_timelineMock;
+  "agents/visualLLMValidation": typeof agents_visualLLMValidation;
+  "agents/xrayWorkflow": typeof agents_xrayWorkflow;
   agentsPrefs: typeof agentsPrefs;
   ai: typeof ai;
   aiAgents: typeof aiAgents;

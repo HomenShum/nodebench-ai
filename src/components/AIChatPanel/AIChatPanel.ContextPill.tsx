@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
-import { FileTypeIcon } from "./FileTypeIcon";
-import { inferFileType, type FileType } from "../lib/fileTypes";
+import { FileTypeIcon } from "../FileTypeIcon";
+import { inferFileType, type FileType } from "../../lib/fileTypes";
 import { X } from "lucide-react";
 
 export interface ContextPillProps {

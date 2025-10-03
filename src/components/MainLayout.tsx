@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Sidebar } from "./Sidebar";
-import { AIChatPanel } from "./AIChatPanel";
+import { AIChatPanel } from "./AIChatPanel/AIChatPanel";
 import { PublicDocuments } from "@/components/views/PublicDocuments";
 import { TabManager } from "./TabManager";
 import { DocumentsHomeHub } from "./DocumentsHomeHub";

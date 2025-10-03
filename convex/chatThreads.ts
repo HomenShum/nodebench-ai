@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 // Id not needed in this module
 import { createBlockJson, detectNodeType, extractPlainText, coerceToBlockJson } from "./lib/markdown";
@@ -149,5 +150,78 @@ export const appendMessage = mutation({
     await ctx.db.patch(threadDocumentId, { lastModified: Date.now() });
 
     return nodeId;
+  },
+});
+
+
+/**
+ * List recent chat threads for the current user with summary info.
+ */
+export const listThreadsForUser = query({
+  args: { limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      threadId: v.id("documents"),
+      title: v.string(),
+      lastModified: v.number(),
+      messageCount: v.number(),
+      lastMessage: v.optional(
+        v.object({
+          role: v.union(v.literal("user"), v.literal("assistant")),
+          text: v.string(),
+          createdAt: v.number(),
+        })
+      ),
+    })
+  ),
+  handler: async (ctx, { limit }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    // Fetch user's documents likely to be chat threads. Heuristic: Title starts with "Chat — ".
+    const docs = await ctx.db
+      .query("documents")
+      .withIndex("by_user", (q) => q.eq("createdBy", userId))
+      .collect();
+
+    const threads = docs
+      .filter((d) => !d.isArchived && typeof d.title === "string" && /^Chat\s\u2014|^Chat\s\-\-|^Chat\s\u2013|^Chat\s\u2015|^Chat\s\-/.test(d.title) || d.title.startsWith("Chat — ") || d.title.startsWith("Chat - "))
+      .sort((a, b) => (Number(b.lastModified || 0) - Number(a.lastModified || 0)));
+
+    const limited = typeof limit === "number" ? threads.slice(0, Math.max(1, limit)) : threads.slice(0, 50);
+
+    const out: Array<{
+      threadId: Id<"documents">;
+      title: string;
+      lastModified: number;
+      messageCount: number;
+      lastMessage?: { role: "user" | "assistant"; text: string; createdAt: number };
+    }> = [];
+
+    for (const d of limited) {
+      const nodes = await ctx.db
+        .query("nodes")
+        .withIndex("by_document", (q) => q.eq("documentId", d._id))
+        .collect();
+      const rootNodes = nodes.filter((n) => !("parentId" in n) || (n as any).parentId === undefined || (n as any).parentId === null);
+      const messageCount = rootNodes.length;
+      const last = rootNodes.sort((a, b) => Number(b.createdAt) - Number(a.createdAt))[0];
+      const lastMessage = last
+        ? {
+            role: (last as any).isUserNode ? ("user" as const) : ("assistant" as const),
+            text: String(last.text || "").slice(0, 200),
+            createdAt: Number(last.createdAt || 0),
+          }
+        : undefined;
+      out.push({
+        threadId: d._id,
+        title: d.title,
+        lastModified: Number(d.lastModified || 0),
+        messageCount,
+        lastMessage,
+      });
+    }
+
+    return out;
   },
 });

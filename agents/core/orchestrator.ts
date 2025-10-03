@@ -9,9 +9,13 @@ import { executePlan, ToolsRegistry } from "./execute";
 export type OrchestrateGraph = {
   nodes: Array<{
     id: string;
-    kind: "answer" | "search" | "summarize" | "structured" | "eval" | "custom";
+    kind: "answer" | "search" | "summarize" | "structured" | "eval" | "custom" | "code.exec";
     label?: string;
     prompt?: string; // may include {{channel:<nodeId>.last}}
+    tool?: string; // for custom kind, specify which tool to use (e.g., "image.validate")
+    payload?: any; // for custom kind, specify the payload to pass to the tool
+    includeImages?: boolean; // for search kind, include images in results
+    depth?: "standard" | "deep"; // for search kind, search depth
   }>;
   edges: Array<{ from: string; to: string }>;
 };
@@ -85,7 +89,7 @@ export async function orchestrate(input: OrchestrateInput): Promise<OrchestrateR
         const t0 = Date.now();
         let result = "";
         if (node.kind === "search") {
-          const plan = makePlan({ taskSpec: { goal: node.label || `Search: ${topic}`, type: "research", input: { query: resolvePrompt(node.prompt) || topic }, constraints: { maxSteps: 2 }, planHints: ["web"] } as any });
+          const plan = makePlan({ taskSpec: { goal: node.label || `Search: ${topic}`, type: "research", input: { query: resolvePrompt(node.prompt) || topic, includeImages: (node as any).includeImages || false }, constraints: { maxSteps: 2 }, planHints: ["web"] } as any });
           const res = await executePlan({ plan, tools, memory, trace, data, constraints: { maxSteps: 2 } });
           result = res.result || "";
         } else if (node.kind === "answer") {
@@ -118,6 +122,10 @@ export async function orchestrate(input: OrchestrateInput): Promise<OrchestrateR
                     kind: { type: 'string' },
                     label: { type: 'string' },
                     prompt: { type: 'string' },
+                    tool: { type: 'string' },
+                    payload: { type: 'object', additionalProperties: true },
+                    includeImages: { type: 'boolean' },
+                    depth: { type: 'string', enum: ['standard','deep'] },
                   },
                   required: ['id','kind']
                 }
@@ -165,8 +173,53 @@ export async function orchestrate(input: OrchestrateInput): Promise<OrchestrateR
             }
           }
           result = JSON.stringify(out ?? {});
+        } else if (node.kind === "custom") {
+          // Custom kind: if tool is specified, call it directly; otherwise use code.exec
+          if (node.tool && tools[node.tool]) {
+            const toolFn = tools[node.tool];
+            const resolvedPayload = typeof node.payload === 'string'
+              ? resolvePrompt(node.payload)
+              : node.payload && typeof node.payload === 'object'
+                ? JSON.parse(
+                    JSON.stringify(node.payload).replace(/\{\{channel:([^}]+?)(?:\.last)?\}\}/g, (_m, ref) => {
+                      const arr = channels[ref] || [];
+                      const val = Array.isArray(arr) && arr.length ? arr[arr.length - 1] : '';
+                      return typeof val === 'string' ? val : JSON.stringify(val);
+                    })
+                  )
+                : {};
+            const toolResult = await toolFn(resolvedPayload, { memory, trace, data });
+            result = typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult);
+          } else {
+            // Fallback to code.exec if no tool specified
+            const plan = { intent: "custom", groups: [[{ kind: "code.exec" as any, label: node.label || "Code Execution", args: { prompt: resolvePrompt(node.prompt) || topic } }]], final: "answer_only" as const };
+            const res = await executePlan({ plan: plan as any, tools, memory, trace, data });
+            result = typeof res.result === 'string' ? res.result : JSON.stringify(res.result);
+          }
+        } else if (node.kind === "code.exec") {
+          // Direct code execution. If payload is provided, call tool with payload; otherwise use prompt-only plan.
+          const toolFn = tools['code.exec'];
+          if (toolFn && node.payload) {
+            const resolvedPayload = typeof node.payload === 'string'
+              ? resolvePrompt(node.payload)
+              : node.payload && typeof node.payload === 'object'
+                ? JSON.parse(
+                    JSON.stringify(node.payload).replace(/\{\{channel:([^}]+?)(?:\.last)?\}\}/g, (_m, ref) => {
+                      const arr = channels[ref] || [];
+                      const val = Array.isArray(arr) && arr.length ? arr[arr.length - 1] : '';
+                      return typeof val === 'string' ? val : JSON.stringify(val);
+                    })
+                  )
+                : {};
+            const toolRes = await toolFn(resolvedPayload, { memory, trace, data });
+            result = typeof toolRes === 'string' ? toolRes : JSON.stringify(toolRes);
+          } else {
+            const plan = { intent: "code.exec", groups: [[{ kind: "code.exec" as any, label: node.label || "Code Execution", args: { prompt: resolvePrompt(node.prompt) || topic } }]], final: "answer_only" as const };
+            const res = await executePlan({ plan: plan as any, tools, memory, trace, data });
+            result = typeof res.result === 'string' ? res.result : JSON.stringify(res.result);
+          }
         } else {
-          // Unknown/custom kinds default to an 'answer' plan using the prompt/topic
+          // Unknown kinds default to an 'answer' plan using the prompt/topic
           const plan = { intent: "answer", groups: [[{ kind: "answer", label: node.label || "Answer", args: { query: resolvePrompt(node.prompt) || topic } }]], final: "answer_only" as const };
           const res = await executePlan({ plan: plan as any, tools, memory, trace, data });
           result = res.result || "";

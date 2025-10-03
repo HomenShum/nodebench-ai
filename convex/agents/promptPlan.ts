@@ -118,14 +118,74 @@ export const startFromPrompt = action({
     timelineId: v.id("agentTimelines"),
     prompt: v.string(),
     provider: v.optional(v.union(v.literal("local"), v.literal("openai"), v.literal("grok"))),
+    overrideGraph: v.optional(v.any()),
   },
   returns: v.object({ timelineId: v.id("agentTimelines") }),
-  handler: async (ctx, { timelineId, prompt, provider }) => {
+  handler: async (ctx, { timelineId, prompt, provider, overrideGraph }) => {
     const now = Date.now();
-    const p = provider && providers[provider]
-      ? provider
-      : (process.env.OPENROUTER_API_KEY ? "grok" : (process.env.OPENAI_API_KEY ? "openai" : "heuristic"));
-    const out = await providers[p](ctx, prompt);
+
+    let out: ProviderOutput;
+
+    // If overrideGraph is provided, use it directly
+    if (overrideGraph && overrideGraph.nodes && overrideGraph.edges) {
+      // Convert the override graph to ProviderOutput format
+      const suffix = Math.floor(Math.random() * 1e6).toString(36);
+      const tasks: ProviderOutput["tasks"] = [];
+      const links: ProviderOutput["links"] = [];
+
+      // Create orchestrator task
+      const rootId = `orchestrate-${suffix}`;
+      tasks.push({
+        id: rootId,
+        parentId: null,
+        name: `Orchestrator: ${prompt.slice(0, 80)}`,
+        startOffsetMs: 0,
+        durationMs: 10 * 60_000,
+        agentType: "orchestrator",
+        status: "running",
+        icon: "🧠"
+      });
+
+      // Create tasks for each node
+      overrideGraph.nodes.forEach((node: any, idx: number) => {
+        const taskId = `task-${node.id}-${suffix}`;
+        const agentType = node.kind === 'orchestrator' ? 'orchestrator' : (node.kind === 'eval' ? 'main' : 'leaf');
+        tasks.push({
+          id: taskId,
+          parentId: rootId,
+          name: node.label || node.id,
+          startOffsetMs: idx * 15_000,
+          durationMs: 60_000,
+          agentType: agentType as any,
+          status: "pending",
+          icon: node.kind === 'custom' ? '🔧' : (node.kind === 'search' ? '🔍' : '📝')
+        });
+
+        // Link to orchestrator
+        links.push({ sourceId: rootId, targetId: taskId, type: "e2e" });
+      });
+
+      // Create links for edges
+      overrideGraph.edges.forEach((edge: any) => {
+        const sourceTask = tasks.find(t => t.name.includes(edge.from));
+        const targetTask = tasks.find(t => t.name.includes(edge.to));
+        if (sourceTask && targetTask) {
+          links.push({ sourceId: sourceTask.id, targetId: targetTask.id, type: "e2e" });
+        }
+      });
+
+      out = {
+        tasks,
+        links,
+        graph: overrideGraph
+      };
+    } else {
+      // Use the planner to generate a plan
+      const p = provider && providers[provider]
+        ? provider
+        : (process.env.OPENROUTER_API_KEY ? "grok" : (process.env.OPENAI_API_KEY ? "openai" : "heuristic"));
+      out = await providers[p](ctx, prompt);
+    }
 
     // 1) Apply the plan to the existing timeline (so UI renders immediately)
     await ctx.runMutation(apiAny.agentTimelines.applyPlan, {
@@ -137,12 +197,58 @@ export const startFromPrompt = action({
 
     // 2) Trigger orchestration to stream progress updates onto the SAME timeline
     try {
+      // Build a self-adaptive bootstrap graph that can add tool nodes dynamically via an eval step.
+      const toolCatalog = [
+        { id: 'web.search', kind: 'search', label: 'Web Search (web.search)' },
+        { id: 'web.fetch', kind: 'custom', label: 'Fetch URL (web.fetch)', tool: 'web.fetch' },
+        { id: 'structured', kind: 'structured', label: 'Structured' },
+        { id: 'code.exec', kind: 'code.exec', label: 'Code Execution' },
+        { id: 'image.search', kind: 'custom', label: 'Image Search', tool: 'image.search' },
+        { id: 'xray.classify', kind: 'custom', label: 'X-Ray Classification', tool: 'xray.classify' },
+        { id: 'vision.multi', kind: 'custom', label: 'Vision Multi-Model', tool: 'vision.multi' },
+      ];
+
+      const bootstrapGraph = {
+        nodes: [
+          {
+            id: 'bootstrap_eval',
+            kind: 'eval',
+            label: 'Decide and compose tools',
+            // The orchestrator will substitute {{topic}} and allow this eval to add nodes/edges.
+            prompt: `Topic: {{topic}}
+
+Available tools (id, kind):\n${toolCatalog.map(t => `- ${t.id} (${t.kind})`).join('\n')}
+
+Instructions:
+- Mandatory wiring rule: Every node AFTER the first MUST reference an upstream output using {{channel:<nodeId>.last}} in its prompt or payload. If you cannot wire data via channel refs, set pass=false and propose the missing node.
+- For custom kinds, ALWAYS set 'tool' and a JSON 'payload'. Examples:
+  - web.fetch: { url: "{{channel:search_prices.last}}", maxBytes: 500000 }
+  - code.exec: { prompt: "Compute 7-day SMA over last 30 days", context: { csv: "{{channel:fetch_prices.last}}" } }
+- Use stable ids when relevant: search_prices, fetch_prices, compute_sma7, search_news, summarize_news, correlate.
+
+- If the topic involves STOCK PRICES / MOVING AVERAGES:
+  1) Add a search node to locate a reliable source of recent daily prices (e.g., "GOOGL historical stock prices last 30 days daily closing prices").
+  2) Prefer adding a custom web.fetch node to retrieve raw CSV or page content from a specific URL found by search.
+  3) Add a code.exec node that parses the CSV/text into rows {date, close}, filters to the last 30 calendar days, and computes a 7-day simple moving average (SMA7). Return JSON: { data: [{ date, close, sma7 }...], summary: string }.
+  4) Add a second search node for news in the same 30-day window (e.g., "Google OR Alphabet stock news last 30 days").
+  5) Add a structured node to summarize the top news items with dates, headlines, impact, and source URLs.
+  6) Optionally add a final structured node to correlate the largest price moves with news events by date.
+
+- If the topic involves IMAGES/VISION (e.g., x-ray, classify):
+  - Add image.search → xray.classify (or vision.multi) → structured report with citations.
+
+Return pass=false with addNodes (id, kind, label, and for custom kinds set 'tool' and 'payload') and addEdges that wire the execution order.`,
+          }
+        ],
+        edges: [],
+      } as any;
+
       await ctx.runAction(apiAny.agents.orchestrate.runOnTimeline, {
         timelineId,
         taskSpec: {
           goal: prompt,
-          type: "ad-hoc",
-          graph: { nodes: out.graph.nodes, edges: out.graph.edges },
+          type: 'ad-hoc',
+          graph: bootstrapGraph,
         },
       });
     } catch (e) {
