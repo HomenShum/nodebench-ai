@@ -27,3 +27,13 @@ dist-ssr
 package-lock.json
 *storybook.log
 storybook-static
+
+# Temporary/refactoring summary files
+*_REFACTORING_SUMMARY.md
+*_COMPLETE.md
+*_QUICKSTART.md
+RELEASE_NOTES_*.md
+
+# Test artifacts
+coverage/
+.nyc_output/
