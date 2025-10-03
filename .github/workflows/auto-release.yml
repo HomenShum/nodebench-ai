@@ -1,0 +1,100 @@
+name: Auto Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create GitHub Release and optional Discussion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare release notes
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          NOTES_FILE="RELEASE_NOTES_${TAG}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            echo "notes_path=$NOTES_FILE" >> "$GITHUB_OUTPUT"
+          else
+            PREV_TAG=$(git tag -l 'v[0-9]*' | sort -V | awk -v t="$TAG" '$0<t {last=$0} END{print last}')
+            if [ -n "$PREV_TAG" ]; then RANGE="$PREV_TAG..$TAG"; else RANGE="$TAG"; fi
+            TEMP="$(mktemp)"
+            {
+              echo "# Release $TAG"
+              echo
+              echo "**Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+              echo
+              echo "## Changes"
+              git log --oneline ${RANGE}
+            } > "$TEMP"
+            echo "notes_path=$TEMP" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body_path: ${{ steps.notes.outputs.notes_path }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Discussion (Announcements)
+        uses: actions/github-script@v7
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = process.env.GITHUB_REF_NAME;
+            const { owner, repo } = context.repo;
+            // Find an Announcements category
+            const categories = await github.graphql(`
+              query($owner:String!, $repo:String!){
+                repository(owner:$owner, name:$repo){
+                  id
+                  discussionCategories(first: 50){ nodes{ id name } }
+                }
+              }`, { owner, repo });
+            const repoId = categories.repository.id;
+            const cats = categories.repository.discussionCategories.nodes || [];
+            const ann = cats.find(c => /announce/i.test(c.name));
+            if (!ann) {
+              core.info('No Announcements category found; skipping discussion creation.');
+              return;
+            }
+            const fs = require('fs');
+            const notesPath = `${{ steps.notes.outputs.notes_path }}`;
+            let body = `Release ${tag} is out. See the full notes in the GitHub Release.`;
+            try {
+              const txt = fs.readFileSync(notesPath, 'utf8');
+              const first = (txt.split(/\r?\n/).find(Boolean) || '').replace(/^#\s*/, '');
+              body = `${first}\n\nSee the GitHub Release for details.`;
+            } catch {}
+            const create = await github.graphql(`
+              mutation($repoId:ID!, $catId:ID!, $title:String!, $body:String!){
+                createDiscussion(input:{repositoryId:$repoId, categoryId:$catId, title:$title, body:$body}){
+                  discussion{ number }
+                }
+              }`, { repoId, catId: ann.id, title: `Release ${tag}`, body });
+            core.info(`Created discussion #${create.createDiscussion.discussion.number}`);
+
+      - name: Pin Discussion (best effort)
+        if: ${{ !cancelled() }}
+        uses: actions/github-script@v7
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            core.info('Pinning discussions may require elevated permissions; skipping by default.');
+
