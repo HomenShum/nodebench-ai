@@ -1,0 +1,53 @@
+name: Validate Tag Chronology
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Verify semantic version tags follow commit chronology
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # fetch full history & tags
+
+      - name: Fetch all tags
+        run: |
+          git fetch --tags --force --prune
+
+      - name: Print tags and commit dates
+        run: |
+          echo "Tags (semver-sorted) with commit dates:" 
+          git tag -l 'v[0-9]*' | sort -V | while read t; do \
+            d=$(git log -1 --format=%ct "$t"); \
+            echo "$t $(date -d @${d} -u '+%Y-%m-%d %H:%M:%S UTC')"; \
+          done
+
+      - name: Validate chronological order
+        run: |
+          set -euo pipefail
+          tags=$(git tag -l 'v[0-9]*' | sort -V)
+          prev=""
+          prev_date=0
+          for t in $tags; do
+            d=$(git log -1 --format=%ct "$t")
+            if [ -n "$prev" ] && [ "$d" -lt "$prev_date" ]; then
+              echo "Tag chronology invalid: $t ($(date -d @${d} -u '+%Y-%m-%d %H:%M:%S UTC')) < $prev ($(date -d @${prev_date} -u '+%Y-%m-%d %H:%M:%S UTC'))"
+              echo "Hint: Newer tag versions must point to commits no earlier than the previous version."
+              exit 1
+            fi
+            prev="$t"
+            prev_date="$d"
+          done
+          echo "Chronology validation passed."
+
