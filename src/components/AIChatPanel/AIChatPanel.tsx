@@ -1,28 +1,18 @@
 // Agent Workflow Panel component
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useMcp } from "../hooks/useMcp";
-import { useContextPills } from "../hooks/contextPills";
+import { useMcp } from "../../hooks/useMcp";
+import { useContextPills } from "../../hooks/contextPills";
 import { useQuery, useMutation, useAction } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import {
-  ReactFlow,
-  Background,
-  Controls,
   useNodesState,
   useEdgesState,
   addEdge,
   Connection,
   Edge,
   Node,
-  Handle,
-  Position,
-  NodeTypes,
-  MarkerType,
-  BackgroundVariant
 } from 'reactflow';
-import 'reactflow/dist/style.css';
-import type { NodeProps } from 'reactflow';
 
 import {
   Send,
@@ -32,46 +22,38 @@ import {
   Edit3,
   Plus,
   CheckCircle,
-  AlertCircle,
   Brain,
   Wrench,
   Loader2,
   ChevronDown,
   ChevronRight,
-  RotateCcw,
   X,
   Sparkles,
   Zap,
-  Key,
-  Eye,
-  EyeOff,
-  Edit2,
-  ArrowUp,
-  Undo2,
-  Check,
-  Trash2,
-  Upload,
-  Image as ImageIcon,
-  Hash,
+  Save,
   Settings,
-  FileCheck,
-  Calendar,
-  User,
-  Bot,
-  Activity,
-  Info,
-  Save
+  Trash2,
+  RotateCcw,
+  AlertCircle
 } from 'lucide-react';
 
 import { toast } from "sonner";
 
-import { ContextPills } from "./ContextPills";
-import { FileTypeIcon } from "./FileTypeIcon";
-import { inferFileType, type FileType } from "../lib/fileTypes";
-import { EnhancedMcpPanel } from "./EnhancedMcpPanel";
-import { Input as AIChatPanelInput, Messages as AIChatPanelMessages, ContextPill, useThinkingMode, useExpandedThinking, renderThinkingStep } from "../features/chat";
+import { ContextPills } from "../ContextPills";
+import { FileTypeIcon } from "../FileTypeIcon";
+import { inferFileType, type FileType } from "../../lib/fileTypes";
+import { EnhancedMcpPanel } from "../EnhancedMcpPanel";
+import { Input as AIChatPanelInput, Messages as AIChatPanelMessages, ContextPill, useThinkingMode, useExpandedThinking, renderThinkingStep } from "../../features/chat";
+import { nodeTypes } from "../../features/chat/flow/nodeTypes";
 
-import { nodeTypes } from "../features/chat/flow/nodeTypes";
+// Import new modular components
+import { AIChatPanelHeader } from "./AIChatPanel.Header";
+import { AIChatPanelQuickActions } from "./AIChatPanel.QuickActions";
+import { AIChatPanelMcpSelector } from "./AIChatPanel.McpSelector";
+import { AIChatPanelErrorBanner } from "./AIChatPanel.ErrorBanner";
+import { AIChatPanelTurnDetails } from "./AIChatPanel.TurnDetails";
+import { AIChatPanelChatView } from "./AIChatPanel.ChatView";
+import { AIChatPanelFlowView } from "./AIChatPanel.FlowView";
 
 
 // Minimal shared action type used for AI change proposals
@@ -1717,191 +1699,46 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   return (
     <div className="right-panel flex flex-col h-full">
       {/* Header with Tabs */}
-      <div className="flow-header">
-        <div className="flow-title">
-          <span className="text-base">💡</span>
-          <span>Nodebench AI</span>
-          {/* Tabs: Chat / Flow */}
-          <div className="ml-3 inline-flex rounded-md border border-[var(--border-color)] overflow-hidden">
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`px-3 py-1.5 text-xs ${activeTab === 'chat' ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
-            >
-              Chat
-            </button>
-            <button
-              onClick={() => setActiveTab('flow')}
-              className={`px-3 py-1.5 text-xs ${activeTab === 'flow' ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
-            >
-              Flow
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Auto-save toggle */}
-          <button
-            onClick={() => setAutoSaveChat(v => !v)}
-            className={`p-2 rounded transition-colors ${autoSaveChat ? 'bg-[var(--accent-primary)] text-white' : 'hover:bg-[var(--bg-hover)]'}`}
-            title={autoSaveChat ? 'Auto-save chat: On' : 'Auto-save chat: Off'}
-          >
-            <Save className="h-4 w-4" />
-          </button>
-          {/* Manual Save */}
-          <button
-            onClick={() => void handleManualSaveChat()}
-            className="p-2 hover:bg-[var(--bg-hover)] rounded transition-colors"
-            title="Save chat to a thread document"
-          >
-            <FileText className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
-          {threadDocumentId && (
-            <button
-              onClick={() => _onDocumentSelect(threadDocumentId)}
-              className="p-2 hover:bg-[var(--bg-hover)] rounded transition-colors"
-              title="Open Chat Thread Document"
-            >
-              <FileText className="h-4 w-4 text-[var(--text-secondary)]" />
-            </button>
-          )}
-          <button
-            onClick={handleClearMessages}
-            className="p-2 hover:bg-[var(--bg-hover)] rounded transition-colors"
-            title="Clear Messages"
-          >
-            <Trash2 className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
-          <button
-            onClick={handleResetWorkflow}
-            className="p-2 hover:bg-[var(--bg-hover)] rounded transition-colors"
-            title="Reset Workflow"
-          >
-            <RotateCcw className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-[var(--bg-hover)] rounded transition-colors"
-          >
-            <X className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
-        </div>
-      </div>
+      <AIChatPanelHeader
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        autoSaveChat={autoSaveChat}
+        setAutoSaveChat={setAutoSaveChat}
+        onSaveChat={handleManualSaveChat}
+        onClose={onClose}
+        isLoading={isLoading}
+      />
 
       {/* Error Banner */}
-      {errorBanner && errorBanner.errors.length > 0 && (
-        <div className="mx-3 mb-2 rounded border border-red-200 bg-red-50 text-red-800">
-          <div className="flex items-start gap-2 p-2">
-            <AlertCircle className="h-4 w-4 mt-0.5 text-red-600" />
-            <div className="flex-1">
-              <div className="text-sm font-medium">Some AI tools failed</div>
-              {!errorBanner.expanded ? (
-                <div className="text-xs">{errorBanner.errors.map((e) => e.tool).join(', ')}</div>
-              ) : (
-                <ul className="mt-1 space-y-1 text-xs">
-                  {errorBanner.errors.map((e, i) => (
-                    <li key={i} className="p-2 bg-white/70 rounded border border-red-200">
-                      <div className="font-medium">{e.tool}</div>
-                      <div className="text-red-700 break-words">{e.message}</div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setErrorBanner((prev) => (prev ? { ...prev, expanded: !prev.expanded } : prev))}
-                className="px-2 py-1 text-xs rounded hover:bg-red-100 text-red-700"
-              >
-                {errorBanner.expanded ? 'Hide' : 'Details'}
-              </button>
-              <button
-                onClick={() => setErrorBanner(null)}
-                className="p-1 rounded hover:bg-red-100"
-                aria-label="Dismiss error banner"
-                title="Dismiss"
-              >
-                <X className="h-4 w-4 text-red-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AIChatPanelErrorBanner
+        errorBanner={errorBanner}
+        onDismiss={() => setErrorBanner(null)}
+        onToggleExpanded={() => setErrorBanner((prev) => (prev ? { ...prev, expanded: !prev.expanded } : prev))}
+      />
 
-      {/* Flow Canvas (Flow tab only) */}
-      <div className={`${activeTab === 'flow' ? 'flex-1 p-3' : 'hidden'} overflow-hidden`}>
-        <div className="flow-canvas" ref={flowContainerRef} style={{ minHeight: 320, height: '100%', position: 'relative' }}>
-          {flowReady ? (
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={handleNodeClick}
-            onSelectionChange={(params) => {
-              const first = params?.nodes && params.nodes.length > 0 ? params.nodes[0] : null;
-              setSelectedFlowNode(first ? first.id : null);
-            }}
-            nodeTypes={nodeTypes}
-            onInit={(instance) => {
-              reactFlowInstanceRef.current = instance;
-              // Ensure the initial view fits content
-              setTimeout(() => instance.fitView({ padding: 0.2 }), 0);
-            }}
-            defaultEdgeOptions={{
-              style: { strokeWidth: 2, stroke: '#94a3b8' },
-              markerEnd: { type: MarkerType.ArrowClosed },
-            }}
-            fitView
-            fitViewOptions={{ padding: 0.1 }}
-            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-            <Controls position="bottom-right" />
-          </ReactFlow>
-          ) : (
-            <div className="w-full h-[320px] flex items-center justify-center text-[var(--text-secondary)] text-xs border border-[var(--border-color)] rounded bg-[var(--bg-tertiary)]">
-              Flow view will appear here
-            </div>
-          )}
-          {/* Turn Details Overlay */}
-          {renderTurnDetails()}
-        </div>
-      </div>
-
-      {/* Quick Actions (Chat tab only) */}
-      <div className={`p-3 border-b border-[var(--border-color)] ${activeTab === 'chat' ? '' : 'hidden'}`}>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-medium text-[var(--text-primary)]">Quick Actions {selectedDocumentId && <span className="text-[var(--accent-green)]">(for current doc)</span>}</p>
-          <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-            {selectedModel === "openai" ? (
-              <><Sparkles className="h-3 w-3" />Precise & Structured</>
-            ) : (
-              <><Zap className="h-3 w-3" />Creative & Conversational</>
-            )}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {selectedDocumentId ? (
-            <>
-              <button onClick={() => handleQuickAction("Add a new section about")} className="w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md transition-colors"><Plus className="h-3 w-3" />Add Section</button>
-              <button onClick={() => handleQuickAction("Create an outline with key points")} className="w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md transition-colors"><FileText className="h-3 w-3" />Add Outline</button>
-              <button onClick={() => handleQuickAction("Add a code example for")} className="w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md transition-colors"><Edit3 className="h-3 w-3" />Add Code</button>
-              <button onClick={() => handleQuickAction("Add a checklist for")} className="w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md transition-colors"><CheckCircle className="h-3 w-3" />Add Checklist</button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => handleQuickAction("Create a new document about")} className="w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md transition-colors"><Plus className="h-3 w-3" />New Doc</button>
-              <button onClick={() => handleQuickAction("Find documents about")} className="w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md transition-colors"><Search className="h-3 w-3" />Find Docs</button>
-              <button onClick={() => handleQuickAction("Create a project plan")} className="w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md transition-colors"><FileText className="h-3 w-3" />Project Plan</button>
-              <button onClick={() => handleQuickAction("Create meeting notes")} className="w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md transition-colors"><Edit3 className="h-3 w-3" />Meeting Notes</button>
-            </>
-          )}
-        </div>
-        {selectedNodeId && <div className="mt-2 p-2 bg-[var(--accent-secondary)] rounded-md"><p className="text-xs text-[var(--accent-primary)]"><strong>Block selected:</strong> You can ask me to update or expand this specific section</p></div>}
-
-      <AIChatPanelMessages
+      {/* Flow View */}
+      <AIChatPanelFlowView
         activeTab={activeTab}
+        flowReady={flowReady}
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        handleNodeClick={handleNodeClick}
+        selectedFlowNode={selectedFlowNode}
+        setSelectedFlowNode={setSelectedFlowNode}
+        selectedTurnDetails={selectedTurnDetails}
+        setSelectedTurnDetails={setSelectedTurnDetails}
+      />
+
+      {/* Chat View */}
+      <AIChatPanelChatView
+        activeTab={activeTab}
+        selectedDocumentId={selectedDocumentId}
+        selectedNodeId={selectedNodeId}
         messages={messages}
+        isLoading={isLoading}
         hoveredMessageId={hoveredMessageId}
         setHoveredMessageId={setHoveredMessageId}
         editingMessageId={editingMessageId}
@@ -1909,181 +1746,18 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
         setEditingContent={setEditingContent}
         handleSaveEdit={handleSaveEdit}
         handleCancelEdit={handleCancelEdit}
-        toggleThinking={toggleThinking}
         expandedThinking={expandedThinking}
+        toggleThinking={toggleThinking}
         renderThinkingStep={renderThinkingStep}
         onDocumentSelect={_onDocumentSelect}
+        handleQuickAction={handleQuickAction}
         handleEditMessage={handleEditMessage}
         handleRerunFromMessage={handleRerunFromMessage}
         handleRollbackToMessage={handleRollbackToMessage}
         handleUndoLastResponse={handleUndoLastResponse}
-        isLoading={isLoading}
-        messagesEndRef={messagesEndRef}
       />
 
-        {/* Divider between Quick Actions and Context (removed top context UI; unified at bottom) */}
-        <div className="border-t border-[var(--border-color)] my-3"></div>
-      </div>
 
-      {/* Chat transcript (Chat tab only) */}
-      {false && (<div className={`${activeTab === 'chat' ? '' : 'hidden'} flex-1 overflow-y-auto p-4 space-y-4`}>
-        {messages.map((message, index) => (
-          <div
-            key={message.id}
-            className={`group flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} relative`}
-            onMouseEnter={() => setHoveredMessageId(message.id)}
-            onMouseLeave={() => setHoveredMessageId(null)}
-          >
-            <div className={`max-w-[90%] rounded-lg px-3 py-2 relative ${message.type === 'user' ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'}`}>
-              {/* Message Content or Edit Input */}
-              {editingMessageId === message.id ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={editingContent}
-                    onChange={(e) => setEditingContent(e.target.value)}
-                    className="w-full p-2 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
-                    rows={3}
-                    autoFocus
-                  />
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => void handleSaveEdit()}
-                      className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--accent-primary)] text-white rounded hover:bg-[var(--accent-primary)]/80 transition-colors"
-                    >
-                      <Check className="h-3 w-3" />
-                      Save & Rerun
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded hover:bg-[var(--bg-hover)] transition-colors"
-                    >
-                      <X className="h-3 w-3" />
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-
-                  {/* Proposal UI is handled by the Editor overlay; no inline chat panel */}
-
-                  {/* Thinking Steps */}
-                  {message.type === 'assistant' && message.thinkingSteps && message.thinkingSteps.length > 0 && (
-                    <div className="mt-2">
-                      <button onClick={() => toggleThinking(message.id)} className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-                        {expandedThinking.has(message.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                        <Brain className="h-3 w-3" />Show thinking ({message.thinkingSteps.length} steps)
-                      </button>
-                      {expandedThinking.has(message.id) && <div className="mt-2 space-y-2">{message.thinkingSteps.map((step, index) => renderThinkingStep(step, index))}</div>}
-                    </div>
-                  )}
-
-                  {/* Candidate Documents from RAG */}
-                  {message.type === 'assistant' && Array.isArray(message.candidateDocs) && message.candidateDocs.length > 0 && (
-                    <div className="mt-2 p-2 bg-[var(--bg-tertiary)] rounded border border-[var(--border-color)]">
-                      <div className="flex items-center gap-2 text-xs text-[var(--accent-primary)]">
-                        <Search className="h-3 w-3" />
-                        <span>Candidate documents ({message.candidateDocs.length})</span>
-                      </div>
-                      <ul className="mt-1 space-y-2 max-h-48 overflow-auto">
-                        {message.candidateDocs.slice(0, 5).map((c: any, i: number) => (
-                          <li key={i} className="text-xs">
-                            <div className="flex items-center gap-2">
-                              <button
-                                className="text-[var(--accent-primary)] hover:underline"
-                                title={c.title || String(c.documentId)}
-                                onClick={() => {
-                                  try {
-                                    _onDocumentSelect(c.documentId as Id<'documents'>);
-                                  } catch (e) {
-                                    console.warn('Failed to open candidate doc', e);
-                                  }
-                                }}
-                              >
-                                {c.title || String(c.documentId)}
-                              </button>
-                              <span className="text-[var(--text-secondary)]">
-                                {typeof c.score === 'number' ? `score ${c.score.toFixed(2)}` : ''}
-                                {c.source ? ` • ${c.source}` : ''}
-                              </span>
-                            </div>
-                            {c.snippet && (
-                              <div className="mt-0.5 text-[var(--text-secondary)] line-clamp-3">
-                                {c.snippet}
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                        {message.candidateDocs.length > 5 && (
-                          <li className="text-[10px] text-[var(--text-secondary)]">+{message.candidateDocs.length - 5} more</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Document Created */}
-                  {message.documentCreated && (
-                    <div className="mt-2 p-2 bg-[var(--bg-tertiary)] rounded border border-[var(--border-color)]">
-                      <div className="flex items-center gap-2 text-xs text-[var(--accent-primary)]"><FileText className="h-3 w-3" /><span>Created: {message.documentCreated.title}</span></div>
-                    </div>
-                  )}
-
-                  {/* Message Footer */}
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs opacity-70">{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                    {message.isProcessing && <Loader2 className="h-3 w-3 animate-spin opacity-70" />}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* ChatGPT-like Message Actions */}
-            {hoveredMessageId === message.id && editingMessageId !== message.id && (
-              <div className={`absolute -top-2 ${message.type === 'user' ? 'right-0' : 'left-0'} -translate-y-full flex items-center gap-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg px-2 py-1 whitespace-nowrap max-w-[70vw] sm:max-w-[50vw] overflow-hidden text-ellipsis z-10`}>
-                {message.type === 'user' && (
-                  <>
-                    <button
-                      onClick={() => handleEditMessage(message.id, message.content)}
-                      className="p-1 hover:bg-[var(--bg-hover)] rounded transition-colors"
-                      title="Edit message"
-                    >
-                      <Edit2 className="h-3 w-3 text-[var(--text-secondary)]" />
-                    </button>
-                    <button
-                      onClick={() => void handleRerunFromMessage(message.id)}
-                      className="p-1 hover:bg-[var(--bg-hover)] rounded transition-colors"
-                      title="Rerun from here"
-                    >
-                      <RotateCcw className="h-3 w-3 text-[var(--text-secondary)]" />
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={() => handleRollbackToMessage(message.id)}
-                  className="p-1 hover:bg-[var(--bg-hover)] rounded transition-colors"
-                  title="Rollback to here"
-                >
-                  <ArrowUp className="h-3 w-3 text-[var(--text-secondary)]" />
-                </button>
-                {message.type === 'assistant' && index === messages.length - 1 && (
-                  <button
-                    onClick={handleUndoLastResponse}
-                    className="p-1 hover:bg-[var(--bg-hover)] rounded transition-colors"
-                    title="Undo this response"
-                  >
-                    <Undo2 className="h-3 w-3 text-[var(--text-secondary)]" />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-        {isLoading && !messages.some(m => m.isProcessing) && (
-          <div className="flex justify-start"><div className="bg-[var(--bg-secondary)] rounded-lg px-3 py-2 flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /><span className="text-sm text-[var(--text-secondary)]">Thinking...</span></div></div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>)}
 
 
 
@@ -2782,230 +2456,70 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
               )}
             </button>
 
-            {/* Animated MCP Server Square Icons */}
-            <div className="flex items-center gap-1 animate-in fade-in-0 scale-in-95 duration-200">
-              {/* No MCP Option */}
-              <button
-                onClick={() => selectServer(null)}
-                className={`group relative w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-105 ${
-                  !mcpSessionId
-                    ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] shadow-sm scale-105'
-                    : 'bg-[var(--bg-secondary)] border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:bg-[var(--bg-hover)]'
-                }`}
-                title="No MCP - Use standard AI without MCP context"
-              >
-                <X className={`transition-all duration-200 ${
-                  !mcpSessionId
-                    ? 'h-3 w-3 text-white m-auto'
-                    : 'h-2.5 w-2.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] m-auto'
-                }`} />
+            {/* MCP Server Selector */}
+            <AIChatPanelMcpSelector
+              servers={servers}
+              mcpSessionId={mcpSessionId}
+              onSelectServer={selectServer}
+              showMcpPanel={showMcpPanel}
+              onToggleMcpPanel={onToggleMcpPanel}
+              toolsCount={tools?.length ?? 0}
+              isLoading={isLoading}
+            />
 
-                {/* Selection indicator dot */}
-                {!mcpSessionId && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-in zoom-in-0 duration-200" />
-                )}
-              </button>
-
-              {/* MCP Server Icons */}
-              {servers.map((server, index) => {
-                const isSelected = mcpSessionId === server._id;
-                return (
+            {/* Developer Tools - Hidden in production */}
+            {process.env.NODE_ENV === 'development' && (
+              <details className="ml-2 inline-block">
+                <summary className="px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] cursor-pointer">
+                  Dev Tools
+                </summary>
+                <div className="absolute right-0 mt-1 p-2 bg-white border border-[var(--border-color)] rounded shadow-lg z-50 flex flex-col gap-1">
                   <button
-                    key={server._id}
-                    onClick={() => selectServer(server._id)}
-                    className={`group relative w-6 h-6 rounded border-2 transition-all duration-200 hover:scale-105 animate-in fade-in-0 scale-in-95 ${
-                      isSelected
-                        ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] shadow-sm scale-105'
-                        : 'bg-[var(--bg-secondary)] border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:bg-[var(--bg-hover)]'
-                    }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    title={`${server.name}${server.description ? ` - ${server.description}` : ''} - Click to ${isSelected ? 'deselect' : 'select'}`}
+                    onClick={() => {
+                      const actions = [{ type: 'updateNode', nodeId: (selectedNodeId as any) || undefined, markdown: 'Test: Replace block\n\n- old\n+ new' }];
+                      window.dispatchEvent(new CustomEvent('nodebench:aiProposal', { detail: { actions, message: 'Test: Replace' } }));
+                    }}
+                    className="px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] whitespace-nowrap"
                   >
-                    <ServerIcon className={`transition-all duration-200 ${
-                      isSelected
-                        ? 'h-3 w-3 text-white m-auto'
-                        : 'h-2.5 w-2.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] m-auto'
-                    }`} />
-
-                    {/* Selection indicator dot */}
-                    {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-in zoom-in-0 duration-200" />
-                    )}
+                    Test Replace Block
                   </button>
-                );
-              })}
-
-              {/* Show label when servers are available */}
-              {servers.length > 0 && (
-                <span className="text-xs text-[var(--text-muted)] ml-1 animate-in fade-in-0 slide-in-from-left-2 duration-300">
-                  MCP
-                </span>
-              )}
-            </div>
-
-            {/* MCP Panel Toggle (moved from MainLayout) */}
-            <button
-              onClick={() => onToggleMcpPanel?.()}
-              className={`ml-2 px-2 py-1 text-xs rounded border transition-colors ${
-                showMcpPanel
-                  ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)]'
-                  : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-              }`}
-              title={`${showMcpPanel ? 'Hide MCP panel' : 'Show MCP panel'}${
-                mcpServersList.length ? ` • ${mcpServersList.length} server${mcpServersList.length !== 1 ? 's' : ''}, ${tools?.length ?? 0} tool${(tools?.length ?? 0) !== 1 ? 's' : ''}` : ''
-              }`}
-              disabled={isLoading}
-            >
-              <span className="inline-flex items-center gap-1">
-                <ServerIcon className="h-3 w-3" />
-                <span>MCP Panel</span>
-                {(tools?.length ?? 0) > 0 && (
-                  <span className="inline-flex items-center justify-center rounded-full bg-[var(--bg-hover)] text-[var(--text-secondary)] px-1 py-[1px] text-[10px] leading-4">
-                    {tools?.length}
-                  </span>
-                )}
-              </span>
-            </button>
-
-            {/* Test Proposals */}
-            <button
-              onClick={() => {
-                // Replace the currently selected block (Editor: caret must be in the target block)
-                const actions = [
-                  {
-                    type: 'updateNode',
-                    nodeId: (selectedNodeId as any) || undefined,
-                    markdown: 'This proposal REPLACES the current block with this content.\n\n- old line\n+ new line',
-                  },
-                ];
-                const message = 'Test: Replace current block';
-                try {
-                  window.dispatchEvent(new CustomEvent('nodebench:aiProposal', { detail: { actions, message } }));
-                } catch (e) {
-                  console.warn('Failed to dispatch test replace-block proposal', e);
-                }
-              }}
-              className="ml-2 px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-              title="Replace the current editor block (place your caret in a block before clicking)"
-              disabled={isLoading}
-            >
-              Test Replace Block
-            </button>
-
-            <button
-              onClick={() => {
-                // Insert a new section below the current block
-                const actions = [
-                  {
-                    type: 'createNode',
-                    markdown: '## Inserted Section (Test)\nThis content was inserted below the current block.',
-                  },
-                ];
-                const message = 'Test: Insert below current block';
-                try {
-                  window.dispatchEvent(new CustomEvent('nodebench:aiProposal', { detail: { actions, message } }));
-                } catch (e) {
-                  console.warn('Failed to dispatch test insert proposal', e);
-                }
-              }}
-              className="ml-2 px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-              title="Insert a new section below the current block"
-              disabled={isLoading}
-            >
-              Test Insert Below
-            </button>
-
-            <button
-              onClick={() => {
-                // Ensure the current document is opened, then show a replace-block diff
-                if (selectedDocumentId) {
-                  try { _onDocumentSelect(selectedDocumentId); } catch {}
-                  setTimeout(() => {
-                    const actions = [
-                      {
-                        type: 'updateNode',
-                        nodeId: (selectedNodeId as any) || undefined,
-                        markdown: 'Open & Diff (Test)\n\n- old\n+ updated',
-                      },
-                    ];
-                    const message = 'Test: Open doc and show diff';
-                    try {
-                      window.dispatchEvent(new CustomEvent('nodebench:aiProposal', { detail: { actions, message } }));
-                    } catch (e) {
-                      console.warn('Failed to dispatch test open+diff proposal', e);
-                    }
-                  }, 200);
-                } else {
-                  try { console.warn('No selected document for Open & Diff test.'); } catch {}
-                }
-              }}
-              className="ml-2 px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-              title="Open the selected document and show a diff (replace current block)"
-              disabled={isLoading}
-            >
-              Test Open & Diff
-            </button>
-
-            {/* Test button: append an assistant message with thinking steps */}
-            <button
-              onClick={() => {
-                try {
-                  const id = generateUniqueId('assistant');
-                  const thinkingSteps: ThinkingStep[] = [
-                    { type: 'thinking', content: 'Analyzing the request and available context…', timestamp: new Date() },
-                    {
-                      type: 'tool_call',
-                      content: 'Calling proposeNode to draft a new section',
-                      timestamp: new Date(),
-                      toolCall: { name: 'proposeNode', args: { topic: 'Sample' } },
-                    },
-                    { type: 'result', content: 'Drafted a new section mock result', timestamp: new Date() },
-                  ];
-                  setMessages((prev) => prev.concat({
-                    id,
-                    type: 'assistant',
-                    content: 'Here is my thinking process (mock).',
-                    timestamp: new Date(),
-                    thinkingSteps,
-                    isThinking: false,
-                  }));
-                } catch (e) {
-                  console.warn('Failed to append mock thinking message', e);
-                }
-              }}
-              className="ml-2 px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-              title="Append a mock assistant message with thinking steps"
-              disabled={isLoading}
-            >
-              Test Thinking
-            </button>
-
-            {/* Test button: append an assistant message with candidate RAG docs */}
-            <button
-              onClick={() => {
-                try {
-                  const id = generateUniqueId('assistant');
-                  const candidateDocs = [
-                    { documentId: 'mock-doc-1' as any, title: 'Mock Doc Alpha', score: 0.92, snippet: 'Alpha summary snippet lorem ipsum…', source: 'RAG' },
-                    { documentId: 'mock-doc-2' as any, title: 'Mock Doc Beta', score: 0.87, snippet: 'Beta summary snippet dolor sit…', source: 'RAG' },
-                  ];
-                  setMessages((prev) => prev.concat({
-                    id,
-                    type: 'assistant',
-                    content: 'I found these related documents (mock).',
-                    timestamp: new Date(),
-                    candidateDocs,
-                  }));
-                } catch (e) {
-                  console.warn('Failed to append mock candidate docs message', e);
-                }
-              }}
-              className="ml-2 px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-              title="Append a mock assistant message with candidate documents"
-              disabled={isLoading}
-            >
-              Test RAG
-            </button>
+                  <button
+                    onClick={() => {
+                      const actions = [{ type: 'createNode', markdown: '## Test Insert\nInserted below current block.' }];
+                      window.dispatchEvent(new CustomEvent('nodebench:aiProposal', { detail: { actions, message: 'Test: Insert' } }));
+                    }}
+                    className="px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] whitespace-nowrap"
+                  >
+                    Test Insert Below
+                  </button>
+                  <button
+                    onClick={() => {
+                      const id = generateUniqueId('assistant');
+                      const thinkingSteps: ThinkingStep[] = [
+                        { type: 'thinking', content: 'Analyzing...', timestamp: new Date() },
+                        { type: 'tool_call', content: 'Calling tool', timestamp: new Date(), toolCall: { name: 'proposeNode', args: {} } },
+                      ];
+                      setMessages((prev) => prev.concat({ id, type: 'assistant', content: 'Test thinking', timestamp: new Date(), thinkingSteps, isThinking: false }));
+                    }}
+                    className="px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] whitespace-nowrap"
+                  >
+                    Test Thinking
+                  </button>
+                  <button
+                    onClick={() => {
+                      const id = generateUniqueId('assistant');
+                      const candidateDocs = [
+                        { documentId: 'mock-1' as any, title: 'Mock Doc', score: 0.9, snippet: 'Test...', source: 'RAG' },
+                      ];
+                      setMessages((prev) => prev.concat({ id, type: 'assistant', content: 'Test RAG', timestamp: new Date(), candidateDocs }));
+                    }}
+                    className="px-2 py-1 text-xs border border-[var(--border-color)] rounded hover:bg-[var(--bg-hover)] whitespace-nowrap"
+                  >
+                    Test RAG
+                  </button>
+                </div>
+              </details>
+            )}
           </div>
         </div>
         <p className={`${activeTab === 'chat' ? '' : 'hidden'} text-xs text-[var(--text-muted)] mt-2`}>

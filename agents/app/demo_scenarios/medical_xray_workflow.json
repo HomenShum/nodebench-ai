@@ -1,0 +1,135 @@
+{
+  "type": "orchestrate",
+  "topic": "Medical X-Ray Image Search and Classification",
+  "goal": "Find medical X-ray images using Linkup image search, display them in real-time, and classify them using vision LLMs with source citations",
+  "graph": {
+    "nodes": [
+      {
+        "id": "search_xray_images",
+        "kind": "custom",
+        "label": "Search for Medical X-Ray Images",
+        "tool": "xray.search",
+        "payload": {
+          "condition": "chest pneumonia tuberculosis",
+          "maxResults": 5
+        }
+      },
+      {
+        "id": "retrieve_classification_knowledge",
+        "kind": "search",
+        "label": "Retrieve Knowledge on X-Ray Classification",
+        "query": "medical X-ray classification methods radiology diagnosis techniques"
+      },
+      {
+        "id": "classify_xray_images",
+        "kind": "custom",
+        "label": "Classify X-Ray Images with Vision LLMs",
+        "tool": "xray.classify",
+        "payload": {
+          "images": "{{channel:search_xray_images.last}}"
+        }
+      },
+      {
+        "id": "generate_classification_report",
+        "kind": "structured",
+        "label": "Generate Classification Report with Citations",
+        "query": "Based on the X-ray images found and classified, generate a comprehensive report with:\n1. Summary of images found (with source URLs)\n2. Classification results for each image\n3. Key findings and abnormalities detected\n4. Confidence scores and severity assessments\n5. Recommendations for follow-up\n6. Citations for all image sources\n\nImages found: {{channel:search_xray_images.last}}\nClassification results: {{channel:classify_xray_images.last}}\nKnowledge base: {{channel:retrieve_classification_knowledge.last}}",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "type": "object",
+              "properties": {
+                "totalImages": { "type": "number" },
+                "imagesClassified": { "type": "number" },
+                "averageConfidence": { "type": "number" },
+                "sources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "imageUrl": { "type": "string" },
+                      "sourceUrl": { "type": "string" },
+                      "title": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "classifications": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": { "type": "string" },
+                  "sourceUrl": { "type": "string" },
+                  "classification": { "type": "string" },
+                  "confidence": { "type": "number" },
+                  "severity": { "type": "string" },
+                  "abnormalities": { "type": "array", "items": { "type": "string" } },
+                  "requiresFollowup": { "type": "boolean" }
+                }
+              }
+            },
+            "keyFindings": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "recommendations": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "citations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": { "type": "string" },
+                  "sourceUrl": { "type": "string" },
+                  "title": { "type": "string" },
+                  "usedFor": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "quality_check",
+        "kind": "eval",
+        "label": "Quality Check & Validation",
+        "query": "Evaluate the quality of the X-ray classification workflow:\n1. Were images successfully found and retrieved?\n2. Are classifications accurate and well-supported?\n3. Are all sources properly cited?\n4. Is the report comprehensive and actionable?\n\nReport: {{channel:generate_classification_report.last}}",
+        "assertions": [
+          {
+            "type": "contains",
+            "value": "imageUrl",
+            "description": "Report should contain image URLs"
+          },
+          {
+            "type": "contains",
+            "value": "sourceUrl",
+            "description": "Report should contain source URLs for citations"
+          },
+          {
+            "type": "contains",
+            "value": "classification",
+            "description": "Report should contain classification results"
+          },
+          {
+            "type": "contains",
+            "value": "confidence",
+            "description": "Report should contain confidence scores"
+          }
+        ]
+      }
+    ],
+    "edges": [
+      { "from": "search_xray_images", "to": "classify_xray_images" },
+      { "from": "retrieve_classification_knowledge", "to": "generate_classification_report" },
+      { "from": "search_xray_images", "to": "generate_classification_report" },
+      { "from": "classify_xray_images", "to": "generate_classification_report" },
+      { "from": "generate_classification_report", "to": "quality_check" }
+    ]
+  }
+}
+

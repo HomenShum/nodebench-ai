@@ -1,0 +1,88 @@
+{
+  "type": "orchestrate",
+  "topic": "Art Style Analysis and Classification",
+  "goal": "Find artwork images and analyze artistic styles, periods, and techniques",
+  "graph": {
+    "nodes": [
+      {
+        "id": "search_artwork_images",
+        "kind": "custom",
+        "label": "Search for Artwork Images",
+        "tool": "image.search",
+        "payload": {
+          "query": "impressionist paintings art museum masterpieces",
+          "depth": "deep",
+          "maxResults": 8
+        }
+      },
+      {
+        "id": "retrieve_art_history_knowledge",
+        "kind": "search",
+        "label": "Retrieve Art History Knowledge",
+        "query": "art history movements impressionism post-impressionism painting techniques analysis"
+      },
+      {
+        "id": "analyze_art_style",
+        "kind": "custom",
+        "label": "Analyze Art Style with Vision LLMs",
+        "tool": "vision.multi",
+        "payload": {
+          "dataset": "{{channel:search_artwork_images.last}}",
+          "analysisPrompt": "Analyze this artwork and provide:\n1. Art movement/period (Impressionism, Cubism, etc.)\n2. Likely artist or similar artists\n3. Techniques used (brushwork, color palette, composition)\n4. Subject matter and themes\n5. Estimated time period\n6. Confidence in analysis (0-1)"
+        }
+      },
+      {
+        "id": "generate_art_analysis_report",
+        "kind": "structured",
+        "label": "Generate Art Analysis Report",
+        "query": "Generate a comprehensive art analysis report with:\n1. Artworks analyzed (with source URLs)\n2. Art movements identified\n3. Techniques and styles observed\n4. Historical context\n5. Citations for all images\n\nImages: {{channel:search_artwork_images.last}}\nAnalysis: {{channel:analyze_art_style.last}}\nKnowledge: {{channel:retrieve_art_history_knowledge.last}}",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "type": "object",
+              "properties": {
+                "totalArtworks": { "type": "number" },
+                "movementsIdentified": { "type": "array", "items": { "type": "string" } },
+                "timePeriod": { "type": "string" }
+              }
+            },
+            "artworks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": { "type": "string" },
+                  "sourceUrl": { "type": "string" },
+                  "movement": { "type": "string" },
+                  "likelyArtist": { "type": "string" },
+                  "techniques": { "type": "array", "items": { "type": "string" } },
+                  "timePeriod": { "type": "string" },
+                  "confidence": { "type": "number" }
+                }
+              }
+            },
+            "citations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": { "type": "string" },
+                  "sourceUrl": { "type": "string" },
+                  "title": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "edges": [
+      { "from": "search_artwork_images", "to": "analyze_art_style" },
+      { "from": "retrieve_art_history_knowledge", "to": "generate_art_analysis_report" },
+      { "from": "search_artwork_images", "to": "generate_art_analysis_report" },
+      { "from": "analyze_art_style", "to": "generate_art_analysis_report" }
+    ]
+  }
+}
+

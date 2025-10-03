@@ -27,6 +27,24 @@ import { ProposalBar } from "./proposals/ProposalBar";
 
 import { computeStructuredOps, prismHighlight, detectFenceLang, diffWords, annotateMoves, type AnnotatedOp, type MovePair } from "./proposals/diffUtils";
 
+const seededDocCache = new Map<string, string>();
+const restoreCache = new Map<string, { seed: string; signal: number }>();
+
+const extractPlainText = (node: any): string => {
+  if (!node) return '';
+  if (typeof node === 'string') return node;
+  if (Array.isArray(node)) return node.map(extractPlainText).join('');
+  if (node.type === 'text' && typeof node.text === 'string') return node.text;
+  if (Array.isArray(node.content)) return node.content.map(extractPlainText).join('');
+  if (Array.isArray(node.children)) return node.children.map(extractPlainText).join('');
+  return '';
+};
+
+const blocksAreTriviallyEmpty = (blocks: any[]): boolean => {
+  const plain = (blocks || []).map(extractPlainText).join('');
+  return plain.replace(/\s+/g, '').length === 0;
+};
+
 export type EditorMode = "quickEdit" | "quickNote" | "full";
 
 export interface UnifiedEditorProps {
@@ -205,28 +223,22 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     if (!editor) return;
     if (attemptedSeedRef.current) return;
 
+    const docKey = String(documentId);
+
     // Note: Do NOT skip seeding purely based on a local flag; only seed when the doc is actually empty/trivial.
     // This ensures previously created "null" docs still get seeded on first render.
 
     const blocks: any[] = Array.isArray(editor.topLevelBlocks) ? editor.topLevelBlocks : [];
-    const extractText = (n: any): string => {
-      if (!n) return '';
-      if (typeof n === 'string') return n;
-      if (Array.isArray(n)) return n.map(extractText).join('');
-      if (n.type === 'text' && typeof n.text === 'string') return n.text;
-      if (Array.isArray(n.content)) return n.content.map(extractText).join('');
-      if (Array.isArray(n.children)) return n.children.map(extractText).join('');
-      return '';
-    };
-    const plain = blocks.map(extractText).join('');
-    const isTriviallyEmpty = plain.replace(/\s+/g, '').length === 0;
+    const isTriviallyEmpty = blocksAreTriviallyEmpty(blocks);
 
     const seed = (seedMarkdown || '').trim();
+    const cachedSeed = seed ? seededDocCache.get(docKey) : undefined;
     const localHad = (() => { try { return window.localStorage.getItem(`nb.doc.hasContent.${String(documentId)}`) === '1'; } catch { return false; } })();
     const hadEverContent = (!!serverHadContent) || localHad;
     if (isTriviallyEmpty && seed) {
+      if (cachedSeed === seed) { attemptedSeedRef.current = true; return; }
       // If the doc ever had content and is now empty, assume user intentionally cleared it; do not auto-reseed
-      if (hadEverContent) { attemptedSeedRef.current = true; return; }
+      if (hadEverContent) { attemptedSeedRef.current = true; seededDocCache.set(docKey, seed); return; }
       attemptedSeedRef.current = true;
       void (async () => {
         try {
@@ -235,6 +247,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             const existing: any[] = Array.isArray(editor.topLevelBlocks) ? editor.topLevelBlocks : [];
             // Replace existing (possibly empty) blocks with seeded blocks
             editor.replaceBlocks(existing, newBlocks);
+            seededDocCache.set(docKey, seed);
             // Mark document as having content
             try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {} ; void markHasContent();
           }
@@ -242,8 +255,11 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
           console.warn('[UnifiedEditor] failed to seed from markdown', e);
         }
       })();
+    } else if (seed) {
+      seededDocCache.set(docKey, seed);
     }
   }, [sync.editor, seedMarkdown, blocksFromMarkdown, documentId, serverHadContent, markHasContent]);
+
 
   // Restore from provided markdown when signal changes
   useEffect(() => {
@@ -252,11 +268,26 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     if (typeof restoreSignal !== 'number') return;
     const seed = (restoreMarkdown || '').trim();
     if (!seed) return;
+
+    const docKey = String(documentId);
+    const existing: any[] = Array.isArray(editor.topLevelBlocks) ? editor.topLevelBlocks : [];
+    const isTriviallyEmpty = blocksAreTriviallyEmpty(existing);
+    const explicitRestore = restoreSignal > 0;
+    const cached = restoreCache.get(docKey);
+
+    if (!explicitRestore) {
+      if (!isTriviallyEmpty) return;
+      if (cached && cached.seed === seed) return;
+    } else if (cached && cached.seed === seed && cached.signal === restoreSignal) {
+      return;
+    }
+
     void (async () => {
       try {
         const newBlocks = await blocksFromMarkdown(seed);
-        const existing: any[] = Array.isArray(editor.topLevelBlocks) ? editor.topLevelBlocks : [];
         editor.replaceBlocks(existing, newBlocks);
+        restoreCache.set(docKey, { seed, signal: explicitRestore ? restoreSignal : 0 });
+        seededDocCache.set(docKey, seed);
         try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {} ; void markHasContent();
       } catch (e) {
         console.warn('[UnifiedEditor] restore failed', e);

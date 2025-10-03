@@ -3,6 +3,39 @@ import React, { useEffect, useMemo, useState } from "react";
 export type AgentType = "orchestrator" | "main" | "leaf";
 export type Status = "pending" | "running" | "complete" | "error";
 
+const extractElapsedMs = (task: any): number => {
+  const candidates = [
+    (task as any)?.elapsedMs,
+    (task as any)?.metrics?.elapsedMs,
+    (task as any)?.metrics?.latencyMs,
+    (task as any)?.meta?.elapsedMs,
+    (task as any)?.latencyMs,
+    (task as any)?.stats?.elapsedMs,
+  ];
+  for (const candidate of candidates) {
+    const ms = Number(candidate);
+    if (Number.isFinite(ms) && ms > 0) return ms;
+  }
+  return 0;
+};
+
+const formatDurationShort = (ms: number): string => {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSec / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  if (hours > 0) {
+    if (minutes === 0 && seconds === 0) return `${hours}h`;
+    if (seconds === 0) return `${hours}h ${minutes}m`;
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+  if (minutes > 0) {
+    if (seconds === 0) return `${minutes}m`;
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+};
+
 export type TaskNode = {
   id: string;
   parentId: string | null;
@@ -10,6 +43,15 @@ export type TaskNode = {
   agentType: AgentType;
   startOffsetMs: number;
   durationMs: number;
+  elapsedMs?: number;
+  startedAtMs?: number;
+  completedAtMs?: number;
+  finishedAtMs?: number;
+  progress?: number;
+  metrics?: { elapsedMs?: number; latencyMs?: number };
+  meta?: { elapsedMs?: number };
+  latencyMs?: number;
+  stats?: { elapsedMs?: number };
   status?: Status;
 };
 
@@ -182,6 +224,26 @@ function TreeRow(props: {
 }) {
   const { node, depth, hasChevron, expanded, onToggle, orchestratorDuration, onRowClick, renderMini } = props;
 
+  const status = String(node.status ?? 'pending').toLowerCase();
+  const elapsedMs = extractElapsedMs(node);
+  const startedAtMs = Number((node as any).startedAtMs ?? 0);
+  const completedAtMs = Number((node as any).completedAtMs ?? (node as any).finishedAtMs ?? 0);
+  const nowMs = typeof window !== 'undefined' ? Date.now() : 0;
+  const runtimeCandidates: number[] = [];
+  if (elapsedMs > 0) runtimeCandidates.push(elapsedMs);
+  if (status === 'complete' || status === 'error') {
+    if (startedAtMs && completedAtMs && completedAtMs > startedAtMs) runtimeCandidates.push(completedAtMs - startedAtMs);
+  } else if (status === 'running') {
+    if (startedAtMs) runtimeCandidates.push(Math.max(0, nowMs - startedAtMs));
+    if (node.durationMs > 0 && typeof (node as any).progress === 'number' && (node as any).progress > 0) {
+      runtimeCandidates.push(Math.max(0, (node as any).progress * node.durationMs));
+    }
+  }
+  const runtimeMs = runtimeCandidates.length ? Math.max(...runtimeCandidates) : null;
+  const runtimeLabel = runtimeMs !== null
+    ? formatDurationShort(runtimeMs)
+    : (node.durationMs > 0 ? formatDurationShort(node.durationMs) : '—');
+
   const leftPct = clampPct((node.startOffsetMs / Math.max(1, orchestratorDuration)) * 100);
   const widthPct = clampPct((node.durationMs / Math.max(1, orchestratorDuration)) * 100);
 
@@ -220,10 +282,10 @@ function TreeRow(props: {
               </div>
               <div className="task-meta flex items-center gap-3 text-xs text-[var(--text-secondary)]">
                 <div className="task-status inline-flex items-center gap-1">
-                  <span className={`status-dot ${node.status ?? "pending"}`} />
-                  <span className="capitalize">{node.status ?? "pending"}</span>
+                  <span className={`status-dot ${status}`} />
+                  <span className="capitalize">{status}</span>
                 </div>
-                <span className="muted">~{Math.round(node.durationMs / 1000)}s</span>
+                <span className="muted">{runtimeLabel}</span>
               </div>
             </div>
             {renderMini ? (

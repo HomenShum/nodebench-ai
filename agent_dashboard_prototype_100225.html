@@ -1,0 +1,1930 @@
+--- START OF FILE agent_dashboard_prototype.html ---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Multi-Agent Research • Timeline & Tasks</title>
+<style>
+  :root{
+    --bg:#F7F7FB;
+    --surface:#FFFFFF;
+    --surface-2:#F3F4F6;
+    --text:#0F172A;
+    --muted:#6B7280;
+    --muted-2:#94A3B8;
+    --border:#E5E7EB;
+    --accent:#6366F1;
+    --accent-2:#EEF2FF;
+    --success:#16A34A;
+    --warn:#F59E0B;
+    --danger:#EF4444;
+    --shadow:0 8px 24px rgba(15,23,42,0.08);
+    --shadow-2:0 12px 40px rgba(15,23,42,0.10);
+  }
+
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+    overflow-x: hidden;
+  }
+
+  /* App Shell */
+  .app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    position: sticky; top:0; z-index: 50;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .brand-logo {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #8B5CF6);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size: 18px; box-shadow: var(--shadow);
+  }
+  .brand h1 { font-size: 18px; font-weight: 650; letter-spacing:.2px; }
+
+  /* Tabs */
+  .tabs {
+    display:flex; align-items:center; gap: 6px;
+    background: var(--surface-2);
+    border:1px solid var(--border);
+    border-radius: 10px; padding: 4px;
+  }
+  .tab {
+    padding: 8px 14px; font-size: 13px; border-radius: 8px;
+    cursor:pointer; color: var(--muted);
+    border:1px solid transparent; background: transparent;
+    transition: .18s ease;
+  }
+  .tab:hover { color: var(--text); background:#fff; }
+  .tab.active {
+    color: var(--text); background: #fff;
+    border-color: var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .header-actions {
+    display: flex; gap: 8px; justify-self: end;
+  }
+  .btn {
+    background:#fff; color: var(--text);
+    border:1px solid var(--border);
+    padding:8px 12px; border-radius:8px; cursor:pointer; font-size:13px;
+    display:flex; align-items:center; gap:8px; transition:.18s ease;
+  }
+  .btn:hover { box-shadow: var(--shadow); }
+  .btn-primary {
+    background: var(--accent); color:#fff; border-color: var(--accent);
+  }
+  .btn-primary:hover { filter: brightness(0.95); }
+
+  /* CONTENT AREAS */
+  .content { flex: 1; }
+
+  /* ===== TIMELINE TAB ===== */
+  .timeline-shell {
+    display: grid; grid-template-rows: auto 1fr; height: calc(100vh - 72px);
+  }
+  .timeline-controls {
+    background: var(--surface);
+    border-bottom:1px solid var(--border);
+    padding: 12px 20px; display:flex; align-items:center; gap:10px;
+  }
+  .status-badge {
+    margin-left:auto;
+    padding:6px 10px; border-radius: 999px; font-size: 11px; font-weight:600;
+    text-transform: uppercase; letter-spacing: .5px; background: #ECFDF5; color: var(--success); border:1px solid #A7F3D0;
+  }
+
+  .timeline-container {
+    display: grid; grid-template-columns: 340px 1fr; overflow: hidden; min-width: 1100px;
+  }
+  .agent-hierarchy {
+    background: var(--surface);
+    border-right:1px solid var(--border);
+    overflow:auto; padding-bottom: 24px;
+  }
+  .hierarchy-header {
+    position: sticky; top: 0; z-index: 5;
+    height: 82px;
+    padding: 0 16px;
+    background: #fff;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .hierarchy-title { font-size:12px; color: var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+
+  .agent-group { border-bottom: 0; }
+  .main-agent, .sub-agent {
+    display:flex; gap:10px; align-items:center; cursor:pointer; transition:.15s ease;
+  }
+  .main-agent {
+    height: 50px; padding: 0 16px; background: #fff; border-bottom:1px dashed var(--border);
+  }
+  .main-agent:hover { background: var(--surface-2); }
+  .sub-agent {
+    height: 40px; padding:0 16px 0 40px; background: #fff; border-left:2px solid transparent; border-bottom:1px dashed var(--border);
+  }
+  .sub-agent:hover { background: #F9FAFB; border-left-color: var(--accent); }
+
+  .agent-icon {
+    width: 24px; height: 24px; border-radius: 6px; display:flex; align-items:center; justify-content:center;
+    font-size:14px; background: var(--surface-2); border:1px solid var(--border);
+  }
+  .sub-agent .agent-icon { width: 20px; height: 20px; font-size:12px; }
+  .agent-name { flex:1; font-size: 13px; }
+  .sub-agent .agent-name { font-size: 12px; color: var(--muted); }
+  .agent-meta { font-size: 11px; color: var(--muted-2); }
+
+  .agent-status { width:8px; height:8px; border-radius:50%; }
+  .status-pending { background: #CBD5E1; }
+  .status-active { background: var(--success); animation: pulse 2s infinite; }
+  .status-complete { background: var(--accent); }
+  .status-error { background: var(--danger); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+  .timeline-chart { position: relative; background: var(--surface); overflow:auto; }
+  .timeline-header { position: sticky; top:0; z-index: 5; background: #fff; border-bottom:1px solid var(--border); }
+  .time-scale {
+    height: 40px; display:flex; align-items:center; padding: 0 16px; font-size: 11px; text-transform: uppercase; color: var(--muted);
+    border-bottom:1px solid var(--border);
+  }
+  .time-units { height: 42px; display:flex; }
+  .time-unit {
+    flex: 1; min-width: 50px; display:flex; align-items:center; justify-content:center;
+    font-size: 11px; color: var(--muted); border-right:1px solid var(--border);
+  }
+  .time-unit.now { background: var(--accent-2); color: var(--accent); font-weight:600; }
+
+  .current-time-line {
+    position:absolute; top: 82px; bottom: 0; width: 2px; background: var(--accent);
+    opacity: .6; pointer-events: none;
+  }
+
+  .timeline-rows { position: relative; }
+  .timeline-row { position: relative; display:flex; }
+  .main-row { height: 50px; background:#fff; border-bottom:1px dashed var(--border); }
+  .sub-row { height: 40px; background:#fff; border-bottom:1px dashed var(--border); }
+
+  .timeline-grid {
+    position:absolute; inset:0; display:flex; pointer-events: none;
+  }
+  .grid-column { flex:1; min-width:50px; border-right:1px dashed var(--border); }
+
+  /* ENHANCED EXECUTION BAR STYLES */
+  .execution-bar{
+    position:absolute;
+    height: 32px; /* Taller to fit more info */
+    top: 9px;
+    border-radius: 8px;
+    display:flex;
+    flex-direction: column; /* Stack visual elements */
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 8px;
+    cursor:pointer;
+    transition: .16s ease;
+    border:1px solid var(--border);
+    background: var(--surface); /* Default background */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Subtle shadow */
+    overflow: hidden; /* For progress indicator and markers */
+  }
+  .sub-row .execution-bar {
+    height: 26px;
+    top: 7px;
+    padding: 3px 6px;
+  }
+  /* Status-specific styles use box-shadow for clarity */
+  .execution-bar.pending { background: #FAFAFA; border-style: dashed; }
+  .execution-bar.running { box-shadow: inset 0 0 0 2px rgba(22,163,74,.35); border-color: rgba(22,163,74,.5); background: #fff; }
+  .execution-bar.complete { box-shadow: inset 0 0 0 2px rgba(99,102,241,.35); border-color: rgba(99,102,241,.5); background: #fff; }
+  .execution-bar:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+
+
+  /* Heatmap/Richer Visual Bar (Confidence Score) */
+  .roadmap-visuals {
+    position: absolute; /* Cover the whole bar width */
+    left: 0; right: 0; bottom: 0;
+    height: 6px; /* Thin bar at the bottom for heatmap */
+    opacity: 0.8;
+    z-index: 0;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+  .sub-row .roadmap-visuals {
+    height: 4px;
+  }
+
+  /* Status/Milestone Markers (Roadmap elements) */
+  .status-marker {
+    width: 8px; height: 8px; border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 2px solid var(--surface); /* White border for visibility */
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+  .status-marker.start { left: -4px; background: var(--accent); }
+  .status-marker.end { right: -4px; background: var(--success); }
+
+  /* Text inside the bar */
+  .execution-bar-title {
+    position: relative;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    z-index: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1;
+  }
+  .sub-row .execution-bar-title { font-size: 11px; }
+
+
+  .progress-indicator {
+    position:absolute; left:0; top:0; bottom:0;
+    /* Use transparent background here, actual color set dynamically in JS */
+    background: transparent; 
+    border-radius:8px; transition: width .25s ease;
+    z-index: 1; /* Under the text, over the base bar */
+  }
+  /* END ENHANCED EXECUTION BAR STYLES */
+
+
+  /* Popover (Agent details) */
+  .popover {
+    position: fixed; background:#fff; border:1px solid var(--border); border-radius:12px; padding: 14px;
+    box-shadow: var(--shadow-2); z-index: 1000; display:none; min-width: 300px;
+  }
+  .popover.active { display:block; }
+  .popover-header { display:flex; align-items:center; gap:10px; padding-bottom: 10px; border-bottom:1px solid var(--border); }
+  .popover-title { font-size:14px; font-weight:600; }
+  .agent-type-badge{
+    padding: 3px 8px; border-radius: 999px; font-size:10px; letter-spacing: .5px; text-transform: uppercase;
+    border:1px solid var(--border); background: var(--surface-2); color: var(--muted);
+  }
+  .badge-orchestrator{ background: var(--accent-2); color: var(--accent); border-color: #C7D2FE; }
+  .badge-main{ background:#DCFCE7; color:#166534; border-color:#BBF7D0; }
+  .badge-leaf{ background:#FEF3C7; color:#92400E; border-color:#FDE68A; }
+
+  .popover-content { font-size:12px; color: var(--muted); margin-top:10px; }
+  .popover-metrics { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+  .metric-label { font-size:10px; color: var(--muted-2); text-transform:uppercase; }
+  .metric-value { font-size:14px; font-weight:600; }
+
+  /* Modals */
+  .modal{ position:fixed; inset:0; background: rgba(15,23,42,.4); display:none; align-items:center; justify-content:center; z-index:1100; }
+  .modal.active{ display:flex; }
+  .modal-content{ background:#fff; border:1px solid var(--border); border-radius: 14px; padding: 20px; min-width: 540px; max-width: 800px; max-height:80vh; overflow:auto; box-shadow: var(--shadow-2);}
+  .modal-header{ font-size:18px; font-weight:650; padding-bottom: 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .form-group{ margin-top: 14px; }
+  .form-label{ font-size:12px; color: var(--muted); margin-bottom:6px; display:block; text-transform:uppercase; letter-spacing:.5px; }
+  .form-input, .form-textarea, select{
+    width:100%; background: #fff; border:1px solid var(--border); border-radius:8px; padding: 10px 12px; font-size:14px; color: var(--text);
+  }
+  .form-textarea{ min-height: 140px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; }
+  .modal-footer{ display:flex; justify-content:flex-end; gap:10px; margin-top: 16px; padding-top: 12px; border-top:1px solid var(--border); }
+  .code-block{ background: #0A0F1C; color:#86EFAC; border:1px solid #0B1226; border-radius:8px; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:12px; overflow:auto; }
+
+  /* ===== TASKS TAB ===== */
+  .tasks-shell {
+    height: calc(100vh - 72px);
+    display: grid;
+    grid-template-rows: auto auto auto 1fr;
+  }
+  .tasks-header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .tasks-header-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .tasks-header-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #8B5CF6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: var(--shadow);
+  }
+  .tasks-header-copy h2 {
+    font-size: 18px;
+    font-weight: 650;
+    margin-bottom: 4px;
+  }
+  .tasks-header-copy p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .tasks-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tasks-stats {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .tasks-stat-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: var(--shadow);
+  }
+  .tasks-stat-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--muted);
+  }
+  .tasks-stat-value {
+    font-size: 20px;
+    font-weight: 650;
+    color: var(--text);
+  }
+  .tasks-stat-helper {
+    font-size: 12px;
+    color: var(--muted-2);
+  }
+  .tasks-toolbar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .chip {
+    padding: 6px 12px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    background: #fff;
+    cursor: pointer;
+    transition: .18s ease;
+  }
+  .chip.active {
+    background: var(--accent-2);
+    border-color: #C7D2FE;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .search {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--muted);
+  }
+  .search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: var(--text);
+    background: transparent;
+  }
+  .select {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    color: var(--text);
+    font-size: 13px;
+  }
+  .tasks-grid-wrap {
+    overflow: auto;
+    background: var(--bg);
+  }
+  .tasks-grid {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  }
+  .task-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    transition: .2s ease;
+    cursor: pointer;
+  }
+  .task-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+    border-color: #D1D5DB;
+  }
+  .task-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-2);
+  }
+  .task-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+  }
+  .task-title {
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .task-title .task-icon {
+    font-size: 20px;
+  }
+  .task-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .task-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: capitalize;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted-2);
+  }
+  .status-dot.running { background: var(--success); animation: pulse 2s infinite; }
+  .status-dot.complete { background: var(--accent); }
+  .status-dot.pending { background: var(--warn); }
+  .status-dot.error { background: var(--danger); }
+  .mini-timeline {
+    height: 130px;
+    position: relative;
+    background: linear-gradient(#fff, #FAFAFA);
+  }
+  .mini-agent-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 10px;
+    display: flex;
+    align-items: center;
+  }
+  .mini-execution-bar {
+    position: absolute;
+    height: 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+  }
+  .task-output {
+    position: relative;
+    padding: 14px 20px;
+    background: #F8FAFF;
+    border-top: 1px solid var(--border);
+    max-height: 140px;
+    overflow: hidden;
+  }
+  .task-output-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--muted);
+  }
+  .task-output pre {
+    margin-top: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .task-output::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 28px;
+    background: linear-gradient(transparent, #F8FAFF);
+  }
+  .task-actions {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+  }
+  .task-metrics {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .task-metrics .metric-value {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .new-task-card {
+    border-style: dashed;
+    border-color: #C7D2FE;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F8FAFF;
+  }
+  .new-task-card:hover {
+    background: #EEF2FF;
+    border-color: var(--accent);
+  }
+  .new-task-content {
+    text-align: center;
+  }
+  .new-task-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 10px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #C7D2FE;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 600;
+  }
+
+  /* Hover overlay with title + final output preview */
+  .hover-card {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.98);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    display: none;
+    flex-direction: column;
+    padding: 18px;
+    z-index: 2;
+  }
+  .task-card:hover .hover-card { display: flex; }
+  .hover-title {
+    font-size: 16px;
+    font-weight: 650;
+    margin-bottom: 6px;
+  }
+  .hover-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .hover-output {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    background: #F4F6FF;
+    border: 1px solid #DCE3FF;
+    border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    color: var(--text);
+    overflow: auto;
+  }
+  .hover-output-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--muted);
+  }
+  .hover-output pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .hover-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Popover for tasks (mini scaffold + timeline) */
+  .timeline-popover{
+    position: fixed; left:50%; top:50%; transform: translate(-50%,-50%);
+    width: 900px; max-height: 560px; background:#fff; border:1px solid var(--border); border-radius:14px;
+    box-shadow: var(--shadow-2); z-index: 1100; display:none; overflow:hidden;
+  }
+  .timeline-popover.active{ display:block; }
+  .pop-header{ padding: 14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#fff; }
+  .pop-title{ display:flex; align-items:center; gap:10px; font-weight:650; }
+  .pop-close{ width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .pop-close:hover{ background: var(--surface-2); }
+  .pop-body{ display:flex; height: 480px; }
+  .mini-hierarchy{ width: 240px; border-right:1px solid var(--border); padding: 12px; overflow:auto; background:#fff; }
+  .mini-agent-item{ padding:8px 8px; border-radius:8px; font-size:12px; display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .mini-agent-item:hover{ background: var(--surface-2); }
+  .mini-agent-icon{ width:18px; height:18px; border-radius:4px; background: var(--surface-2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size: 11px; }
+  .mini-timeline-view{ flex:1; position:relative; background: linear-gradient(#fff, #FAFAFA); overflow:auto; }
+
+  /* Full view bottom panel */
+  .full-view{ position: fixed; left:0; right:0; bottom:-640px; height: 640px; background:#fff; border-top: 2px solid var(--accent); box-shadow: 0 -12px 40px rgba(15,23,42,.15); transition: bottom .25s ease; z-index:1050; display:flex; flex-direction:column; }
+  .full-view.active{ bottom:0; }
+  .full-top{ padding: 14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#fff; }
+  .full-content{ flex:1; display:flex; overflow:hidden; }
+  .full-timeline{ flex:1; padding: 18px; overflow:auto; }
+  .full-output{ width: 440px; border-left:1px solid var(--border); padding: 18px; background: var(--surface-2); overflow:auto; }
+  .output-header{ font-size:12px; text-transform:uppercase; letter-spacing:1px; color: var(--muted); margin-bottom: 10px; }
+  .output-content{
+    background: #F8FAFF;
+    color: var(--text);
+    border: 1px solid #DCE3FF;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow: auto;
+  }
+
+  /* Loading stripe for running tasks */
+  .loading-bar{ position:absolute; top:0; left:0; height:2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: loading 2s linear infinite; }
+  @keyframes loading { 0%{width:0; left:0} 50%{width:30%; left:35%} 100%{width:0; left:100%} }
+
+  /* Highlights for synchronization */
+  .timeline-row.highlight { background: #EEF2FF; box-shadow: inset 0 0 0 1px #C7D2FE; }
+  .main-agent.highlight, .sub-agent.highlight { background: #EEF2FF !important; }
+
+  /* Visually hidden (a11y) */
+  .sr-only { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  @media (max-width: 1200px) {
+    .timeline-container { grid-template-columns: 300px 1fr; min-width: 980px; }
+  }
+  @media (max-width: 980px) {
+    .timeline-container { grid-template-columns: 240px 1fr; min-width: 820px; }
+  }
+
+  /* Utility */
+  .muted{ color: var(--muted); }
+  .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; padding:2px 6px; border:1px solid var(--border); border-radius:6px; background:#fff; color: var(--muted); }
+  /* Ensure hidden panels never flash before JS flips tabs */
+  [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce){
+    * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+    .loading-bar { display:none !important; }
+    .status-dot.running { animation: none !important; }
+  }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <header class="app-header" role="tablist" aria-label="Primary Tabs">
+    <div class="brand">
+      <div class="brand-logo">🧠</div>
+      <h1>Multi-Agent Research</h1>
+    </div>
+    <div class="tabs">
+      <button class="tab" role="tab" aria-controls="timelineTab" aria-selected="false" id="tabTimelineBtn">Timeline</button>
+      <button class="tab active" role="tab" aria-controls="tasksTab" aria-selected="true" id="tabTasksBtn">Tasks</button>
+    </div>
+    <div class="header-actions">
+      <button class="btn" id="kbHelpBtn">Shortcuts <span class="kbd">T</span>/<span class="kbd">Y</span></button>
+      <button class="btn btn-primary" id="newTaskHeaderBtn">+ New Task</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <!-- ========== TIMELINE TAB ========== -->
+    <section id="timelineTab" class="timeline-shell" role="tabpanel" aria-labelledby="tabTimelineBtn" hidden>
+      <div class="timeline-controls">
+        <button class="btn btn-primary" onclick="startResearch()">▶ Start Research</button>
+        <button class="btn" onclick="openMasterPrompt()">Master Prompt</button>
+        <button class="btn" onclick="viewAgentHierarchy()">Agent Hierarchy</button>
+        <button class="btn" id="pauseBtn" onclick="pauseExecution()" title="Pause or resume timeline">⏸ Pause</button>
+        <div id="timelineContext" class="muted" style="margin-left:8px;"></div>
+        <button class="btn" id="backToTaskBtn" style="display:none" onclick="backToTask()" aria-label="Back to task">↩ Back to Task</button>
+        <div class="status-badge" id="statusBadge" role="status" aria-live="polite" title="Pipeline status">Pipeline Active • 0 agents running</div>
+      </div>
+
+      <div class="timeline-container">
+        <!-- Left: Agent Hierarchy -->
+        <aside class="agent-hierarchy">
+          <div class="hierarchy-header">
+            <div class="hierarchy-title">Agent Scaffold</div>
+            <button class="btn" style="padding:6px 10px;font-size:12px;" onclick="addAgent()" title="Add a new main agent">+ Add Agent</button>
+          </div>
+          <div id="agentHierarchy"></div>
+        </aside>
+
+        <!-- Right: Timeline -->
+        <section class="timeline-chart">
+          <div class="timeline-header">
+            <div class="time-scale">Execution Timeline (Minutes : Seconds)</div>
+            <div class="time-units" id="timeUnits"></div>
+          </div>
+
+          <div class="current-time-line" id="currentTimeLine"></div>
+          <div class="timeline-rows" id="timelineRows"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ========== TASKS TAB ========== -->
+        <section id="tasksTab" class="tasks-shell" role="tabpanel" aria-labelledby="tabTasksBtn">
+      <div class="tasks-header">
+        <div class="tasks-header-info">
+          <div class="tasks-header-icon">🗂</div>
+          <div class="tasks-header-copy">
+            <h2>Agent Task Cards</h2>
+            <p>Hover for orchestrator summaries, click to inspect the scaffold timeline.</p>
+          </div>
+        </div>
+        <div class="tasks-header-actions">
+          <button class="btn" type="button" onclick="setTab('timeline')">Timeline View</button>
+          <button class="btn" id="tasksPauseBtn" type="button" onclick="pauseExecution()" aria-live="polite">⏸ Pause</button>
+          <button class="btn btn-primary" type="button" onclick="createNewTask()">+ New Task</button>
+        </div>
+      </div>
+      <div class="tasks-stats">
+        <div class="tasks-stat-card">
+          <span class="tasks-stat-label">Active Tasks</span>
+          <span class="tasks-stat-value" id="metricActive">0</span>
+          <span class="tasks-stat-helper">Running or pending orchestrations</span>
+        </div>
+        <div class="tasks-stat-card">
+          <span class="tasks-stat-label">Running</span>
+          <span class="tasks-stat-value" id="metricRunning">0</span>
+          <span class="tasks-stat-helper">Currently executing agents</span>
+        </div>
+        <div class="tasks-stat-card">
+          <span class="tasks-stat-label">Completed</span>
+          <span class="tasks-stat-value" id="metricComplete">0</span>
+          <span class="tasks-stat-helper">Ready for review</span>
+        </div>
+        <div class="tasks-stat-card">
+          <span class="tasks-stat-label">Total Agents</span>
+          <span class="tasks-stat-value" id="metricAgents">0</span>
+          <span class="tasks-stat-helper">Across visible tasks</span>
+        </div>
+      </div>
+      <div class="tasks-toolbar">
+        <div class="chip active" data-filter="all">All</div>
+        <div class="chip" data-filter="running">Running</div>
+        <div class="chip" data-filter="complete">Complete</div>
+        <div class="chip" data-filter="pending">Pending</div>
+        <div class="search">
+          <span aria-hidden="true">🔎</span>
+          <input id="taskSearch" type="text" placeholder="Search tasks (title, output)..." aria-label="Search tasks"/>
+        </div>
+        <select class="select" id="sortSelect">
+          <option value="recent">Sort: Most Recent</option>
+          <option value="progress">Sort: Progress</option>
+          <option value="duration">Sort: Duration</option>
+          <option value="agents">Sort: Agent Count</option>
+        </select>
+        <button class="btn" type="button" onclick="createNewTask()">+ New Task</button>
+      </div>
+      <div class="tasks-grid-wrap">
+        <div class="tasks-grid" id="tasksGrid"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- AGENT POPOVER -->
+<div class="popover" id="agentPopover" role="dialog" aria-modal="true" aria-labelledby="popoverTitle">
+  <div class="popover-header">
+    <div id="popoverIcon" class="agent-icon">🔍</div>
+    <div class="popover-title" id="popoverTitle">Agent Name</div>
+    <span class="agent-type-badge" id="popoverBadge">LEAF</span>
+  </div>
+  <div class="popover-content" id="popoverContent">Agent description and current task details…</div>
+  <div class="popover-metrics">
+    <div><div class="metric-label">Status</div><div class="metric-value" id="popoverStatus">Running</div></div>
+    <div><div class="metric-label">Progress</div><div class="metric-value" id="popoverProgress">75%</div></div>
+    <div><div class="metric-label">Elapsed</div><div class="metric-value" id="popoverDuration">2:30</div></div>
+    <div><div class="metric-label">Output</div><div class="metric-value" id="popoverOutput">1.2 KB</div></div>
+  </div>
+</div>
+
+<!-- MASTER PROMPT MODAL -->
+<div class="modal" id="masterPromptModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="agent-icon" style="background:var(--accent-2); color:var(--accent); border-color:#C7D2FE;">🧠</div>
+      Research Orchestrator Configuration
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Master Research Objective</label>
+      <textarea class="form-textarea" id="masterPrompt" style="min-height: 200px;">
+You are orchestrating a comprehensive fundraising research pipeline for [Company Name].
+
+OBJECTIVE:
+1) Person: CEO/Founder background, network, reputation
+2) Company: Financial health, market position, growth trajectory
+3) Fundraising: Timing, valuation benchmarks, investor targets
+
+PROTOCOL:
+• Person & Company research in parallel
+• Synthesize before fundraising analysis
+• Maintain accuracy & cross-reference all claims
+
+OUTPUT: Structured JSON with confidence scores
+      </textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Parallel Execution Limit</label>
+      <input class="form-input" type="number" value="5" min="1" max="10"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Error Handling Strategy</label>
+      <select class="form-input">
+        <option>Retry with backoff</option>
+        <option>Failover to alternate agent</option>
+        <option>Skip and continue</option>
+      </select>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('masterPromptModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMasterPrompt()">Deploy Configuration</button>
+    </div>
+  </div>
+</div>
+
+<!-- AGENT DETAIL MODAL -->
+<div class="modal" id="agentModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div id="agentModalIcon" class="agent-icon" style="background:#DCFCE7;border-color:#BBF7D0;">👤</div>
+      <span id="agentModalTitle">Agent Configuration</span>
+      <span class="agent-type-badge" id="agentModalBadge">MAIN</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Agent Name</label>
+      <input id="agentName" class="form-input" value="Person Research Agent"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Agent Type</label>
+      <select id="agentType" class="form-input">
+        <option>Orchestrator</option>
+        <option selected>Main Agent</option>
+        <option>Leaf Agent</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Agent Prompt</label>
+      <textarea id="agentPrompt" class="form-textarea" style="min-height: 140px;">
+You are a specialized research agent focused on gathering comprehensive background information about individuals.
+
+CAPABILITIES:
+- LinkedIn profile analysis
+- News scanning
+- Professional history compilation
+- Network mapping
+
+CONSTRAINTS:
+- Public sources only
+- Verify data with multiple sources
+- Flag conflicts
+      </textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Expected Output Schema (JSON)</label>
+      <div class="code-block">{
+  "name": "string",
+  "current_role": "string",
+  "previous_roles": ["string"],
+  "education": ["object"],
+  "notable_achievements": ["string"],
+  "network_strength": "number",
+  "confidence_score": "number"
+}</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Sub-Agents</label>
+      <input id="subAgents" class="form-input" value="linkedin-scraper, news-scanner, background-analyzer"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Dependencies</label>
+      <input id="dependencies" class="form-input" placeholder="None"/>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('agentModal')">Close</button>
+      <button class="btn btn-primary" onclick="saveAgent()">Save Configuration</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASKS: TIMELINE MINI POPOVER -->
+<div class="timeline-popover" id="timelinePopover" aria-modal="true" role="dialog">
+  <div class="pop-header">
+    <div class="pop-title">
+      <span id="popoverTaskIcon">🔍</span>
+      <span id="popoverTaskTitle">Research Pipeline</span>
+    </div>
+    <div class="pop-close" onclick="closeTimelinePopover()" role="button" tabindex="0" aria-label="Close">✕</div>
+  </div>
+  <div class="pop-body">
+    <div class="mini-hierarchy" id="miniHierarchy"></div>
+    <div class="mini-timeline-view" id="miniTimelineView"></div>
+  </div>
+</div>
+
+<!-- TASKS: FULL VIEW PANEL -->
+<div class="full-view" id="fullViewPanel" role="dialog" aria-modal="true" aria-labelledby="fullViewTitle">
+  <div class="full-top">
+    <div class="pop-title">
+      <span id="fullViewIcon">📊</span>
+      <span id="fullViewTitle" tabindex="-1">Full Research Pipeline</span>
+    </div>
+    <button class="btn" onclick="closeFullView()">Close</button>
+  </div>
+  <div class="full-content">
+    <div class="full-timeline" id="fullTimeline"></div>
+    <aside class="full-output">
+      <div class="output-header">Final Output</div>
+      <div id="finalOutput" class="output-content">{}</div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* ===================== DATA ===================== */
+const agentSystem = {
+  orchestrator: {
+    id:'orchestrator', name:'Research Orchestrator', icon:'🧠', color:'#6366F1',
+    type:'orchestrator', status:'running', startTime:0, duration:600,
+    prompt:'Master orchestration agent coordinating all research activities'
+  },
+  mainAgents: [
+    {
+      id:'person-research', name:'Person Research Agent', icon:'👤', color:'#16A34A',
+      type:'main', status:'running', startTime:5, duration:180, parallel:true,
+      subAgents:[
+        { id:'linkedin-scraper', name:'LinkedIn Profile Scraper', icon:'🔗', color:'#0A66C2', type:'leaf', status:'complete', startTime:10, duration:45, progress:100 },
+        { id:'news-scanner', name:'News & Media Scanner', icon:'📰', color:'#EF4444', type:'leaf', status:'running', startTime:10, duration:60, progress:75 },
+        { id:'background-analyzer', name:'Professional Background Analyzer', icon:'📊', color:'#14B8A6', type:'leaf', status:'running', startTime:60, duration:90, progress:40 }
+      ]
+    },
+    {
+      id:'company-research', name:'Company Research Agent', icon:'🏢', color:'#F59E0B',
+      type:'main', status:'running', startTime:5, duration:200, parallel:true,
+      subAgents:[
+        { id:'financial-collector', name:'Financial Data Collector', icon:'💰', color:'#10B981', type:'leaf', status:'complete', startTime:10, duration:50, progress:100 },
+        { id:'competitor-analysis', name:'Competitor Analysis Agent', icon:'⚔️', color:'#EF4444', type:'leaf', status:'running', startTime:10, duration:80, progress:60 },
+        { id:'product-analyzer', name:'Product/Service Analyzer', icon:'📦', color:'#8B5CF6', type:'leaf', status:'pending', startTime:70, duration:70, progress:0 },
+        { id:'market-position', name:'Market Position Evaluator', icon:'📈', color:'#F59E0B', type:'leaf', status:'pending', startTime:145, duration:50, progress:0 }
+      ]
+    },
+    {
+      id:'fundraising-analysis', name:'Fundraising Analysis Agent', icon:'💎', color:'#EC4899',
+      type:'main', status:'pending', startTime:210, duration:150, parallel:false,
+      subAgents:[
+        { id:'previous-rounds', name:'Previous Rounds Analyzer', icon:'📑', color:'#06B6D4', type:'leaf', status:'pending', startTime:215, duration:40, progress:0 },
+        { id:'investor-mapper', name:'Investor Network Mapper', icon:'🗺️', color:'#84CC16', type:'leaf', status:'pending', startTime:215, duration:60, progress:0 },
+        { id:'valuation-calc', name:'Valuation Calculator', icon:'🧮', color:'#A855F7', type:'leaf', status:'pending', startTime:280, duration:70, progress:0 }
+      ]
+    },
+    {
+      id:'synthesis', name:'Report Synthesis Agent', icon:'📄', color:'#64748B',
+      type:'main', status:'pending', startTime:365, duration:100, parallel:false,
+      subAgents:[
+        { id:'data-consolidation', name:'Data Consolidation', icon:'🔄', color:'#0EA5E9', type:'leaf', status:'pending', startTime:370, duration:30, progress:0 },
+        { id:'report-generator', name:'Report Generator', icon:'✍️', color:'#F97316', type:'leaf', status:'pending', startTime:405, duration:50, progress:0 }
+      ]
+    }
+  ]
+};
+
+const tasks = [
+  {
+    id:1, title:"Fundraising Research: TechCorp Inc", status:"complete", icon:"💎",
+    createdAt: Date.now() - 2*60*60*1000, durationSec: 8*60+42, agentCount: 12, progress: 100,
+    output: {
+      person:{ name:"John Smith", role:"CEO", network_score:9.2 },
+      company:{ valuation:"$250M", growth:"127% YoY" },
+      fundraising:{ round:"Series B", amount:"$50–75M" }
+    }
+  },
+  {
+    id:2, title:"Competitor Analysis: AI Market", status:"running", icon:"⚔️",
+    createdAt: Date.now() - 15*60*1000, durationSec: 3*60+21, agentCount: 8, progress: 65,
+    output:{ status:"Analyzing 47 competitors…", found:23, processed:15 }
+  },
+  {
+    id:3, title:"Due Diligence: DataFlow Systems", status:"running", icon:"🔍",
+    createdAt: Date.now() - 60*60*1000, durationSec: 5*60+10, agentCount: 15, progress: 42,
+    output:{ status:"Scanning financial records…", documents_analyzed:156 }
+  },
+  {
+    id:4, title:"Market Research: HealthTech Sector", status:"complete", icon:"📊",
+    createdAt: Date.now() - 3*60*60*1000, durationSec: 12*60+30, agentCount: 10, progress: 100,
+    output:{ market_size:"$420B", growth_rate:"15% CAGR", key_players:24, opportunities:8 }
+  },
+  {
+    id:5, title:"Executive Background Check", status:"pending", icon:"👤",
+    createdAt: Date.now() - 5*60*1000, durationSec: 0, agentCount: 6, progress: 0,
+    output:{ status:"Queued for processing…" }
+  },
+  {
+    id:6, title:"Partnership Opportunity Analysis", status:"running", icon:"🤝",
+    createdAt: Date.now() - 30*60*1000, durationSec: 4*60+15, agentCount: 9, progress: 78,
+    output:{ potential_partners:12, evaluated:9, top_matches:3 }
+  }
+];
+
+/* Mini agent system (scaled, percent-based for cards) */
+  // Global controls/state
+  let isPaused = false;
+  let timelineTimer = null;
+  let scrollSyncLock = false;
+  let currentEditAgentRef = null; // { type: 'orchestrator'|'main'|'sub', agentId: string, parentId?: string }
+
+  function startTimelineTimer(){
+    if (timelineTimer) return;
+    timelineTimer = setInterval(updateCurrentTime, 1000);
+  }
+  function stopTimelineTimer(){
+    if (timelineTimer) { clearInterval(timelineTimer); timelineTimer = null; }
+  }
+
+  function setupScrollSync(){
+    const sidebar = document.querySelector('.agent-hierarchy');
+    const chart = document.querySelector('.timeline-chart');
+    if(!sidebar || !chart) return;
+    sidebar.addEventListener('scroll', ()=>{
+      if (scrollSyncLock) return; scrollSyncLock = true;
+      chart.scrollTop = sidebar.scrollTop; scrollSyncLock = false;
+    });
+    chart.addEventListener('scroll', ()=>{
+      if (scrollSyncLock) return; scrollSyncLock = true;
+      sidebar.scrollTop = chart.scrollTop; scrollSyncLock = false;
+    });
+  }
+
+  function updateStatusBadge(){
+    const badge = document.getElementById('statusBadge');
+    if(!badge) return;
+    let running = 0;
+    if (agentSystem.orchestrator.status === 'running') running++;
+    agentSystem.mainAgents.forEach(m=>{
+      if (m.status==='running') running++;
+      m.subAgents.forEach(s=>{ if (s.status==='running') running++; });
+    });
+    badge.textContent = (isPaused ? 'Paused' : 'Pipeline Active') + ` • ${running} agents running`;
+  }
+
+  function setTimelineContext(title){
+    const el = document.getElementById('timelineContext');
+    if (el) el.textContent = title ? `Task: ${title}` : '';
+    const back = document.getElementById('backToTaskBtn');
+    if (back) back.style.display = title ? '' : 'none';
+  }
+  function backToTask(){
+    if (!selectedTask) return;
+    try { history.replaceState(null,'',`#task-${selectedTask.id}`); } catch {}
+    setTab('tasks'); renderTasks(); showFullView(selectedTask);
+  }
+
+
+  function scrollToAgent(agentId){
+    if(!agentId) return;
+    const chart = document.querySelector('.timeline-chart');
+    const row = document.querySelector(`.timeline-row[data-agent-id="${agentId}"]`);
+    if(chart && row){
+      chart.scrollTop = row.offsetTop - 60;
+      row.classList.add('highlight');
+      setTimeout(()=> row.classList.remove('highlight'), 1500);
+    }
+  }
+
+  function addAgent(){
+    const idx = agentSystem.mainAgents.length + 1;
+    const id = `main-${Date.now()}-${idx}`;
+    agentSystem.mainAgents.push({
+      id, name: `New Main Agent ${idx}`, icon:'🧪', color:'#22C55E', type:'main', status:'pending',
+      startTime: Math.floor(Math.random()*60), duration: 120, parallel: true, subAgents: []
+    });
+    renderAgentHierarchy(); renderTimelineRows(); updateStatusBadge();
+    scrollToAgent(id);
+  }
+
+const miniAgentSystem = {
+  orchestrator: { color:'#6366F1', startPct:0, durPct:100 },
+  agents: [
+    { color:'#16A34A', startPct:5,  durPct:30 },
+    { color:'#F59E0B', startPct:5,  durPct:40 },
+    { color:'#EC4899', startPct:40, durPct:30 },
+    { color:'#64748B', startPct:72, durPct:20 }
+  ],
+  subAgents: [
+    { color:'#0A66C2', startPct:8,  durPct:10 },
+    { color:'#EF4444', startPct:8,  durPct:15 },
+    { color:'#14B8A6', startPct:25, durPct:12 },
+    { color:'#10B981', startPct:8,  durPct:12 },
+    { color:'#EF4444', startPct:8,  durPct:20 },
+    { color:'#8B5CF6', startPct:30, durPct:15 }
+  ]
+};
+
+/* ===================== TIMELINE RENDERING ===================== */
+let currentTime = 70; // seconds
+
+/* NEW: Helper to simulate a heatmap gradient based on a mock metric (e.g., Confidence Score) */
+function getMockHeatmapGradient(agentId){
+  const seed = (agentId || 'orchestrator').charCodeAt(0) + (agentId || 'orchestrator').length;
+  // Simulates a changing metric (e.g., Confidence Score over time: Red=Low, Green=High)
+  if(seed % 4 === 0) return 'linear-gradient(to right, #EF4444, #F59E0B, #16A34A)'; // Low->Medium->High
+  if(seed % 4 === 1) return 'linear-gradient(to right, #16A34A, #F59E0B, #EF4444)'; // High->Medium->Low (Degrading data)
+  if(seed % 4 === 2) return 'linear-gradient(to right, #6366F1, #3B82F6)'; // Blue: Neutral/Processing
+  return 'linear-gradient(to right, #65A30D, #CA8A04, #94A3B8)'; // Green/Yellow/Grey (Mixed results)
+}
+
+
+function initializeTimeline(){
+  renderTimeUnits();
+  renderAgentHierarchy();
+  renderTimelineRows();
+  positionCurrentTimeLine();
+  setupScrollSync();
+  if (!document.getElementById('timelineTab').hidden) startTimelineTimer();
+  updateStatusBadge();
+  const saved = localStorage.getItem('masterPrompt');
+  if (saved) {
+    const mp = document.getElementById('masterPrompt');
+    if (mp) mp.value = saved;
+  }
+}
+
+function renderTimeUnits(){
+  const timeUnits = document.getElementById('timeUnits');
+  timeUnits.innerHTML = '';
+  for(let i=0;i<=600;i+=30){
+    const unit = document.createElement('div');
+    unit.className = 'time-unit';
+    if(Math.abs(i-currentTime)<15) unit.classList.add('now');
+    const m = Math.floor(i/60), s = i%60;
+    unit.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    timeUnits.appendChild(unit);
+  }
+}
+
+function renderAgentHierarchy(){
+  const wrap = document.getElementById('agentHierarchy');
+  wrap.innerHTML = '';
+  // Orchestrator
+  const root = document.createElement('div');
+  root.className = 'agent-group';
+  root.innerHTML = `
+    <div class="main-agent" onclick="openAgentDetails('orchestrator', 'orchestrator', null)">
+      <div class="agent-icon" style="background: var(--accent-2); border-color:#C7D2FE;">${agentSystem.orchestrator.icon}</div>
+      <div class="agent-name">${agentSystem.orchestrator.name}</div>
+      <div class="agent-status status-${agentSystem.orchestrator.status}"></div>
+    </div>`;
+  wrap.appendChild(root);
+
+  agentSystem.mainAgents.forEach(main=>{
+    const group = document.createElement('div');
+    group.className = 'agent-group';
+    group.innerHTML = `
+      <div class="main-agent" onclick="openAgentDetails('main','${main.id}', null)">
+        <div class="agent-icon" style="background:#F0FDF4;border-color:#BBF7D0;">${main.icon}</div>
+        <div class="agent-name">${main.name}</div>
+        <div class="agent-meta">${main.parallel?'⚡ Parallel':'➜ Sequential'}</div>
+        <div class="agent-status status-${main.status}"></div>
+      </div>`;
+    main.subAgents.forEach(sub=>{
+      const el = document.createElement('div');
+      el.className = 'sub-agent';
+      el.onclick = ()=> openAgentDetails('sub', sub.id, main.id);
+      el.innerHTML = `
+        <div class="agent-icon">${sub.icon}</div>
+        <div class="agent-name">${sub.name}</div>
+        <div class="agent-status status-${sub.status}"></div>`;
+      group.appendChild(el);
+    });
+    wrap.appendChild(group);
+  });
+}
+
+function renderTimelineRows(){
+  const rows = document.getElementById('timelineRows');
+  rows.innerHTML = '';
+  // Orchestrator
+  rows.appendChild(createTimelineRow(agentSystem.orchestrator, 'main-row', null));
+  agentSystem.mainAgents.forEach(main=>{
+    rows.appendChild(createTimelineRow(main, 'main-row', null));
+    // Pass the main agent's ID as the parentId for sub-agents
+    main.subAgents.forEach(sub=> rows.appendChild(createTimelineRow(sub, 'sub-row', main.id)));
+  });
+}
+
+function createTimelineRow(agent, rowClass, parentId = null){
+  const row = document.createElement('div');
+  row.className = `timeline-row ${rowClass}`;
+  row.dataset.agentId = agent.id || '';
+  // grid
+  const grid = document.createElement('div');
+  grid.className = 'timeline-grid';
+  for(let i=0;i<=600;i+=30){
+    const col = document.createElement('div');
+    col.className = 'grid-column';
+    grid.appendChild(col);
+  }
+  row.appendChild(grid);
+
+  // bar
+  const bar = document.createElement('div');
+  bar.className = `execution-bar ${agent.status}`;
+  const leftPct = (agent.startTime/600)*100;
+  const widthPct = (agent.duration/600)*100;
+  bar.style.left = `${leftPct}%`;
+  bar.style.width = `${widthPct}%`;
+
+  // --- START: Roadmap/Heatmap additions ---
+
+  // 1. Heatmap/Visuals Bar (Simulating Confidence Score/Task Density)
+  const visuals = document.createElement('div');
+  visuals.className = 'roadmap-visuals';
+  visuals.style.background = getMockHeatmapGradient(agent.id);
+  bar.appendChild(visuals);
+
+  // 2. Execution Bar Title
+  const title = document.createElement('div');
+  title.className = 'execution-bar-title';
+  const dur_sec = agent.duration;
+  const dur_min = Math.floor(dur_sec/60);
+  const dur_s = dur_sec%60;
+  title.textContent = `${agent.name} (${dur_min}m ${dur_s}s)`;
+  bar.appendChild(title);
+  
+  // 3. Status/Milestone Markers (Roadmap element)
+  if (agent.status !== 'pending') {
+    const startMarker = document.createElement('div');
+    startMarker.className = 'status-marker start';
+    startMarker.title = `Start: ${Math.floor(agent.startTime/60)}:${(agent.startTime%60).toString().padStart(2,'0')}`;
+    bar.appendChild(startMarker);
+    
+    if (agent.status === 'complete' || currentTime >= (agent.startTime + agent.duration)) {
+      const endMarker = document.createElement('div');
+      endMarker.className = 'status-marker end';
+      endMarker.title = `End: ${Math.floor((agent.startTime+agent.duration)/60)}:${((agent.startTime+agent.duration)%60).toString().padStart(2,'0')}`;
+      bar.appendChild(endMarker);
+    }
+  }
+
+  // --- END: Roadmap/Heatmap additions ---
+
+  if(agent.status==='running' && agent.progress!==undefined){
+    const prog = document.createElement('div');
+    prog.className = 'progress-indicator';
+    prog.style.width = `${agent.progress}%`;
+    // Update progress indicator to use the agent's color
+    prog.style.background = `linear-gradient(90deg, ${agent.color}40, ${agent.color}40)`; 
+    bar.appendChild(prog);
+  }
+  
+  bar.onmouseenter = (e)=> showAgentPopover(e, agent);
+  bar.onmouseleave = hidePopover;
+  bar.onclick = ()=> openAgentDetails(agent.type, agent.id, parentId);
+
+  row.appendChild(bar);
+  return row;
+}
+
+function positionCurrentTimeLine(){
+  const line = document.getElementById('currentTimeLine');
+  line.style.left = `${(currentTime/600)*100}%`;
+}
+
+function updateCurrentTime(){
+  if(currentTime<600) currentTime += 1;
+  positionCurrentTimeLine();
+  if(currentTime%30===0) renderTimeUnits();
+  updateAgentStatuses();
+}
+
+function updateAgentStatuses(){
+  agentSystem.mainAgents.forEach(main=>{
+    const end = main.startTime + main.duration;
+    if(currentTime>=main.startTime && currentTime<end){
+      main.status='running';
+      main.subAgents.forEach(sub=>{
+        const sEnd = sub.startTime + sub.duration;
+        if(currentTime>=sub.startTime && currentTime<sEnd){
+          sub.status='running';
+          sub.progress = Math.min(100, ((currentTime - sub.startTime)/sub.duration)*100);
+        } else if(currentTime>=sEnd){
+          sub.status='complete'; sub.progress=100;
+        }
+      });
+    } else if(currentTime>=end) {
+      main.status='complete';
+    }
+  });
+  // Refresh occasionally
+  if(currentTime%5===0){
+    renderAgentHierarchy();
+    renderTimelineRows();
+  }
+  updateStatusBadge();
+}
+
+/* Agent popover */
+function showAgentPopover(ev, agent){
+  const pop = document.getElementById('agentPopover');
+  const r = ev.target.getBoundingClientRect();
+  document.getElementById('popoverTitle').textContent = agent.name;
+  const iconEl = document.getElementById('popoverIcon');
+  iconEl.textContent = agent.icon;
+  iconEl.style.background = '#fff';
+  iconEl.style.borderColor = '#E5E7EB';
+
+  const badge = document.getElementById('popoverBadge');
+  badge.textContent = agent.type.toUpperCase();
+  badge.className = 'agent-type-badge ' + (
+    agent.type==='orchestrator' ? 'badge-orchestrator' : agent.type==='main' ? 'badge-main' : 'badge-leaf'
+  );
+
+  document.getElementById('popoverContent').textContent =
+    agent.type==='orchestrator' ? 'Coordinating all research agents and managing workflow execution.' :
+    agent.type==='main' ? 'Managing specialized sub-agents for focused research tasks.' :
+    'Executing specific data collection and analysis tasks.';
+
+  document.getElementById('popoverStatus').textContent = agent.status[0].toUpperCase()+agent.status.slice(1);
+  document.getElementById('popoverProgress').textContent = agent.progress!=null ? `${Math.round(agent.progress)}%` : '—';
+
+  const elapsed = Math.max(0, Math.min(currentTime - agent.startTime, agent.duration));
+  const m = Math.floor(elapsed/60), s = elapsed%60;
+  document.getElementById('popoverDuration').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+
+  document.getElementById('popoverOutput').textContent =
+    agent.status==='complete' ? '2.4 KB' : agent.status==='running' ? '856 B' : '0 B';
+
+  const left = Math.min(r.left, window.innerWidth - 340);
+  const top  = r.bottom + 10;
+  pop.style.left = `${left}px`;
+  pop.style.top  = `${top}px`;
+  pop.classList.add('active');
+}
+function hidePopover(){ document.getElementById('agentPopover').classList.remove('active'); }
+
+/* Modals and controls */
+function startResearch(){
+  currentTime = 0;
+  isPaused = false; startTimelineTimer(); startTasksTimer();
+  const btn = document.getElementById('pauseBtn'); if(btn) btn.textContent='\u23f8 Pause';
+  agentSystem.orchestrator.status='running';
+  agentSystem.mainAgents.forEach(a=>{
+    a.status='pending';
+    a.subAgents.forEach(s=>{ s.status='pending'; s.progress=0; });
+  });
+  renderAgentHierarchy(); renderTimelineRows(); renderTimeUnits(); positionCurrentTimeLine();
+  updateStatusBadge();
+}
+function pauseExecution(){
+  const btn = document.getElementById('pauseBtn');
+  const btn2 = document.getElementById('tasksPauseBtn');
+  if(!isPaused){
+    isPaused = true; stopTimelineTimer(); stopTasksTimer();
+    if(btn) btn.textContent = '▶ Resume';
+    if(btn2) btn2.textContent = '▶ Resume';
+  } else {
+    isPaused = false; startTimelineTimer(); startTasksTimer();
+    if(btn) btn.textContent = '⏸ Pause';
+    if(btn2) btn2.textContent = '⏸ Pause';
+  }
+  updateStatusBadge();
+}
+function openMasterPrompt(){ document.getElementById('masterPromptModal').classList.add('active'); }
+function saveMasterPrompt(){
+  try {
+    const val = document.getElementById('masterPrompt').value;
+    localStorage.setItem('masterPrompt', val);
+  } catch (e) { console.warn('Failed saving master prompt', e); }
+  closeModal('masterPromptModal');
+}
+function viewAgentHierarchy(){ console.log('Hierarchy view'); }
+function openAgentDetails(type, agentId, parentId=null){
+  let agent;
+  if(type==='orchestrator') agent = agentSystem.orchestrator;
+  else if(type==='main') agent = agentSystem.mainAgents.find(a=>a.id===agentId);
+  else {
+    const parent = agentSystem.mainAgents.find(a=>a.id===parentId) || agentSystem.mainAgents.find(a=>a.subAgents.some(s=>s.id===agentId));
+    agent = parent?.subAgents.find(s=>s.id===agentId);
+  }
+  if(agent){
+    currentEditAgentRef = { type, agentId: agent.id || agentId, parentId };
+    document.getElementById('agentModalTitle').textContent = agent.name;
+    const icon = document.getElementById('agentModalIcon'); icon.textContent = agent.icon;
+    document.getElementById('agentModalBadge').textContent = agent.type.toUpperCase();
+    document.getElementById('agentName').value = agent.name;
+    document.getElementById('agentType').value = agent.type==='orchestrator' ? 'Orchestrator' : agent.type==='main' ? 'Main Agent' : 'Leaf Agent';
+    document.getElementById('agentModal').classList.add('active');
+    scrollToAgent(agent.id || agentId);
+  }
+}
+function saveAgent(){
+  try {
+    if(!currentEditAgentRef){ closeModal('agentModal'); return; }
+    const name = document.getElementById('agentName').value;
+    const typeLabel = document.getElementById('agentType').value;
+    const type = typeLabel==='Orchestrator' ? 'orchestrator' : (typeLabel==='Main Agent' ? 'main' : 'leaf');
+    let agent;
+    if(currentEditAgentRef.type==='orchestrator') agent = agentSystem.orchestrator;
+    else if(currentEditAgentRef.type==='main') agent = agentSystem.mainAgents.find(a=>a.id===currentEditAgentRef.agentId);
+    else {
+      const parent = agentSystem.mainAgents.find(a=>a.subAgents.some(s=>s.id===currentEditAgentRef.agentId));
+      agent = parent?.subAgents.find(s=>s.id===currentEditAgentRef.agentId);
+    }
+    if(agent){ agent.name = name; agent.type = type; }
+    renderAgentHierarchy(); renderTimelineRows(); updateStatusBadge();
+  } catch (e) { console.warn('Failed to save agent', e); }
+  closeModal('agentModal');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.modal').forEach(m=> m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('active'); }));
+
+/* ===================== TASKS RENDERING ===================== */
+let activeFilter = 'all';
+const tasksGrid = document.getElementById('tasksGrid');
+const metricActiveEl = document.getElementById('metricActive');
+const metricRunningEl = document.getElementById('metricRunning');
+const metricCompleteEl = document.getElementById('metricComplete');
+const metricAgentsEl = document.getElementById('metricAgents');
+
+const chips = document.querySelectorAll('.chip');
+chips.forEach(c=> c.addEventListener('click', ()=>{
+  chips.forEach(x=>x.classList.remove('active'));
+  c.classList.add('active'); activeFilter = c.dataset.filter; renderTasks();
+}));
+
+document.getElementById('taskSearch').addEventListener('input', renderTasks);
+document.getElementById('sortSelect').addEventListener('change', renderTasks);
+document.getElementById('newTaskHeaderBtn').addEventListener('click', createNewTask);
+
+function renderTasks(){
+  const searchEl = document.getElementById('taskSearch');
+  const sortEl = document.getElementById('sortSelect');
+  const query = (searchEl && searchEl.value ? searchEl.value : '').toLowerCase();
+  const sort = sortEl && sortEl.value ? sortEl.value : 'recent';
+
+  let list = tasks.filter(t=>{
+    const statusOk = activeFilter==='all' || t.status===activeFilter;
+    const serialized = JSON.stringify(t.output).toLowerCase();
+    const qOk = !query || t.title.toLowerCase().includes(query) || serialized.includes(query);
+    return statusOk && qOk;
+  });
+
+  list.sort((a,b)=>{
+    if(sort==='recent') return b.createdAt - a.createdAt;
+    if(sort==='progress') return b.progress - a.progress;
+    if(sort==='duration') return b.durationSec - a.durationSec;
+    if(sort==='agents') return b.agentCount - a.agentCount;
+    return 0;
+  });
+
+  tasksGrid.innerHTML = '';
+  list.forEach(t=> tasksGrid.appendChild(createTaskCard(t)));
+
+  const newCard = document.createElement('div');
+  newCard.className = 'task-card new-task-card';
+  newCard.innerHTML = `
+    <div class="new-task-content">
+      <div class="new-task-icon">+</div>
+      <div class="muted">Create new research task</div>
+    </div>`;
+  newCard.onclick = createNewTask;
+  tasksGrid.appendChild(newCard);
+
+  if(metricActiveEl){
+    const totalAgents = list.reduce((sum,t)=> sum + (t.agentCount || 0), 0);
+    const runningCount = list.filter(t=> t.status==='running').length;
+    const completeCount = list.filter(t=> t.status==='complete').length;
+    const activeCount = list.filter(t=> t.status!=='complete').length;
+    metricActiveEl.textContent = activeCount;
+    metricRunningEl.textContent = runningCount;
+    metricCompleteEl.textContent = completeCount;
+    metricAgentsEl.textContent = totalAgents;
+  }
+}
+function createTaskCard(task){
+  const el = document.createElement('div');
+  el.className = 'task-card';
+  // Accessibility + interaction
+  el.setAttribute('role','button');
+  el.setAttribute('tabindex','0');
+  el.setAttribute('aria-label', `${task.title}. Status ${task.status}. Press Enter for full view, Space for scaffold.`);
+  // Debounce click so double-click won’t also open the popover
+  let clickTimer = null;
+  el.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if (clickTimer) return;
+    clickTimer = setTimeout(()=>{
+      showTimelinePopover(task, el);
+      clickTimer = null;
+    }, 220);
+  });
+  el.addEventListener('dblclick', (e)=>{
+    e.stopPropagation();
+    if (clickTimer){ clearTimeout(clickTimer); clickTimer = null; }
+    showFullView(task);
+  });
+  el.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter'){ e.preventDefault(); showFullView(task); }
+    if (e.key === ' '){ e.preventDefault(); showTimelinePopover(task, el); }
+  });
+
+  const mini = generateMiniTimelineHTML(miniAgentSystem);
+  const dur = task.durationSec>0 ? `${Math.floor(task.durationSec/60)}m ${task.durationSec%60}s` : '0s';
+  const createdAgo = timeAgo(task.createdAt);
+  const outputJson = JSON.stringify(task.output, null, 2);
+  const previewJson = outputJson.length > 260 ? outputJson.slice(0, 260) + '...' : outputJson;
+
+  el.innerHTML = `
+    ${task.status==='running' ? '<div class="loading-bar"></div>' : ''}
+    <div class="task-header">
+      <div class="task-title">
+        <span class="task-icon">${task.icon}</span>
+        <span>${task.title}</span>
+        <span class="agent-type-badge" title="Auto-generated by Orchestrator">auto</span>
+      </div>
+      <div class="task-meta">
+        <div class="task-status"><div class="status-dot ${task.status}"></div><span>${task.status}</span></div>
+        <span class="muted">${createdAgo}</span>
+      </div>
+    </div>
+    <div class="mini-timeline">${mini}</div>
+    <div class="task-output">
+      <div class="task-output-label">Final Output</div>
+      <pre>${safe(previewJson)}</pre>
+    </div>
+    <div class="task-actions">
+      <div class="task-metrics">
+        <div>⏱ <span class="metric-value">${dur}</span></div>
+        <div>🤖 <span class="metric-value">${task.agentCount}</span></div>
+        <div>📊 <span class="metric-value">${task.progress}%</span></div>
+      </div>
+      <div class="muted">Click for mini scaffold • Double-click for full view</div>
+    </div>
+    <div class="hover-card">
+      <div class="hover-title">${task.title}</div>
+      <div class="hover-subtitle">Auto generated by the orchestrator agent</div>
+      <div class="hover-output">
+        <div class="hover-output-label">Final Output</div>
+        <pre>${safe(outputJson)}</pre>
+      </div>
+      <div class="hover-actions">
+        <button class="btn" onclick="event.stopPropagation(); showTimelinePopover(${encodeTask(task)}, null)">View Scaffold</button>
+        <button class="btn" onclick="event.stopPropagation(); goToTimelineFor(${encodeTask(task)})">Open in Timeline</button>
+        <button class="btn btn-primary" onclick="event.stopPropagation(); showFullView(${encodeTask(task)})">Open Full View</button>
+      </div>
+    </div>
+  `;
+  return el;
+}
+function generateMiniTimelineHTML(sys){
+  let html = '', row=0;
+  // Orchestrator
+  html += `<div class="mini-agent-row" style="top:${row*12+8}px;">
+    <div class="mini-execution-bar" style="left:${sys.orchestrator.startPct}%; width:${sys.orchestrator.durPct}%; background:${sys.orchestrator.color}20; border-color:${sys.orchestrator.color}55;"></div>
+  </div>`; row++;
+  sys.agents.forEach(a=>{
+    html += `<div class="mini-agent-row" style="top:${row*12+8}px;">
+      <div class="mini-execution-bar" style="left:${a.startPct}%; width:${a.durPct}%; background:${a.color}25; border-color:${a.color}55;"></div>
+    </div>`; row++;
+  });
+  sys.subAgents.forEach(a=>{
+    html += `<div class="mini-agent-row" style="top:${row*12+8}px;">
+      <div class="mini-execution-bar" style="left:${a.startPct}%; width:${a.durPct}%; background:${a.color}18; border-color:${a.color}44;"></div>
+    </div>`; row++;
+  });
+  return html;
+}
+
+function timeAgo(ts){
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s<60) return `${s}s ago`;
+  const m = Math.floor(s/60); if(m<60) return `${m}m ago`;
+  const h = Math.floor(m/60); if(h<24) return `${h}h ago`;
+  const d = Math.floor(h/24); return `${d}d ago`;
+}
+
+function safe(s){ return s.replace(/[&<>]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c])); }
+function encodeTask(t){ return JSON.stringify(t).replace(/"/g,'&quot;'); }
+
+/* Mini popover (Tasks) */
+let timelinePopoverTask = null;
+function showTimelinePopover(task, anchorEl){
+  timelinePopoverTask = task;
+  const pop = document.getElementById('timelinePopover');
+  document.getElementById('popoverTaskIcon').textContent = task.icon;
+  document.getElementById('popoverTaskTitle').textContent = task.title;
+  renderMiniHierarchy();
+  renderMiniTimelineView();
+  setTimelineContext(task.title);
+
+  if (anchorEl) {
+    const r = anchorEl.getBoundingClientRect();
+    // ensure width measured post-render
+    pop.style.display = 'block';
+    const w = pop.offsetWidth || 900;
+    const left = Math.min(r.left, window.innerWidth - w - 12);
+    const top  = Math.max(12, r.bottom + 8);
+    pop.style.transform = 'none';
+    pop.style.left = `${left}px`;
+    pop.style.top  = `${top}px`;
+    pop.style.display = '';
+  } else {
+    pop.style.left = '50%';
+    pop.style.top = '50%';
+    pop.style.transform = 'translate(-50%, -50%)';
+  }
+
+  pop.classList.add('active');
+}
+function closeTimelinePopover(){ document.getElementById('timelinePopover').classList.remove('active'); }
+
+function renderMiniHierarchy(){
+  const h = document.getElementById('miniHierarchy');
+  h.innerHTML = `
+    <div class="mini-agent-item"><div class="mini-agent-icon" style="background:var(--accent-2);border-color:#C7D2FE;">🧠</div><span>Orchestrator</span></div>
+    <div class="mini-agent-item"><div class="mini-agent-icon" style="background:#F0FDF4;border-color:#BBF7D0;">👤</div><span>Person Research</span></div>
+    <div class="mini-agent-item" style="padding-left:18px;"><div class="mini-agent-icon">🔗</div><span>LinkedIn</span></div>
+    <div class="mini-agent-item" style="padding-left:18px;"><div class="mini-agent-icon">📰</div><span>News Scanner</span></div>
+    <div class="mini-agent-item"><div class="mini-agent-icon" style="background:#FEF3C7;border-color:#FDE68A;">🏢</div><span>Company Research</span></div>
+    <div class="mini-agent-item" style="padding-left:18px;"><div class="mini-agent-icon">💰</div><span>Financials</span></div>
+    <div class="mini-agent-item"><div class="mini-agent-icon" style="background:#FCE7F3;border-color:#FBCFE8;">💎</div><span>Fundraising</span></div>
+  `;
+}
+
+function renderMiniTimelineView(){
+  const view = document.getElementById('miniTimelineView');
+  // create a compact grid timeline using SVG
+  const svg = `
+  <svg width="100%" height="360" viewBox="0 0 900 360" preserveAspectRatio="xMidYMid meet">
+    <rect x="0" y="0" width="900" height="360" fill="#FFFFFF"/>
+    <!-- Grid -->
+    ${Array.from({length:12}).map((_,i)=>`<line x1="${(i+1)*70}" y1="20" x2="${(i+1)*70}" y2="340" stroke="#E5E7EB" stroke-dasharray="3,4"/>`).join('')}
+    <!-- Orchestrator -->
+    <rect x="30" y="40" width="840" height="10" rx="5" fill="#6366F126" stroke="#6366F199"/>
+    <!-- Main Agents -->
+    <rect x="60" y="80" width="270" height="8" rx="4" fill="#16A34A30" stroke="#16A34A88"/>
+    <rect x="60" y="110" width="315" height="8" rx="4" fill="#F59E0B30" stroke="#F59E0B88"/>
+    <rect x="300" y="140" width="225" height="8" rx="4" fill="#EC489930" stroke="#EC489988"/>
+    <rect x="450" y="170" width="180" height="8" rx="4" fill="#64748B30" stroke="#64748B88"/>
+    <!-- Sub Agents (a few representatives) -->
+    <rect x="80" y="210" width="90" height="6" rx="3" fill="#0A66C230" stroke="#0A66C280"/>
+    <rect x="80" y="230" width="130" height="6" rx="3" fill="#EF444430" stroke="#EF444480"/>
+    <rect x="180" y="250" width="100" height="6" rx="3" fill="#14B8A630" stroke="#14B8A680"/>
+    <rect x="80" y="270" width="100" height="6" rx="3" fill="#10B98130" stroke="#10B98180"/>
+    <rect x="180" y="290" width="150" height="6" rx="3" fill="#8B5CF630" stroke="#8B5CF680"/>
+  </svg>`;
+  view.innerHTML = svg;
+}
+
+/* Full view (Tasks) */
+let selectedTask = null;
+function showFullView(task){
+  selectedTask = task;
+  setTimelineContext(task.title);
+  try { history.replaceState(null,'',`#task-${task.id}`); } catch {}
+  const pnl = document.getElementById('fullViewPanel');
+  document.getElementById('fullViewIcon').textContent = task.icon;
+  const titleEl = document.getElementById('fullViewTitle');
+  titleEl.textContent = task.title;
+  document.getElementById('finalOutput').textContent = JSON.stringify(task.output, null, 2);
+  renderFullTimeline();
+  pnl.classList.add('active');
+
+  // Focus title for a11y announcement
+  titleEl.focus && titleEl.focus();
+}
+
+function goToTimelineFor(task){
+  selectedTask = task;
+  setTimelineContext(task.title);
+  setTab('timeline');
+  closeTimelinePopover();
+  // nice touch: scroll/highlight orchestrator row
+  scrollToAgent('orchestrator');
+}
+
+function closeFullView(){ document.getElementById('fullViewPanel').classList.remove('active');
+  if ((location.hash||'').toLowerCase().startsWith('#task-')) { try { history.replaceState(null,'','#tasks'); } catch {} }
+}
+
+function renderFullTimeline(){
+  const el = document.getElementById('fullTimeline');
+  el.innerHTML = `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px; padding:16px; box-shadow: var(--shadow);">
+      <div style="font-weight:650;margin-bottom:12px;">Complete Agent Execution Timeline</div>
+      <div style="height:420px; position:relative; background: linear-gradient(#fff,#FAFAFA); border:1px dashed var(--border); border-radius:10px; overflow:hidden;">
+        ${generateMiniTimelineHTML(miniAgentSystem)}
+        <div style="position:absolute; right:12px; bottom:10px; font-size:12px; color:var(--muted)">Scaled view</div>
+      </div>
+    </div>
+  `;
+}
+
+/* Simulate live updates for running tasks (managed) */
+let tasksTimer = null;
+function startTasksTimer(){
+  if (tasksTimer) return;
+  tasksTimer = setInterval(updateTasksProgress, 3000);
+}
+function stopTasksTimer(){
+  if (tasksTimer){ clearInterval(tasksTimer); tasksTimer = null; }
+}
+function updateTasksProgress(){
+  tasks.forEach(t=>{
+    if (t.status==='running' && t.progress<100){
+      t.progress = Math.min(100, t.progress + Math.random()*5);
+      if (t.progress>=100) t.status='complete';
+    }
+  });
+  renderTasks();
+}
+
+/* ===================== TABS & INIT ===================== */
+const timelineTabEl = document.getElementById('timelineTab');
+const tasksTabEl = document.getElementById('tasksTab');
+const tabTimelineBtn = document.getElementById('tabTimelineBtn');
+const tabTasksBtn = document.getElementById('tabTasksBtn');
+
+tabTimelineBtn.addEventListener('click', ()=> setTab('timeline'));
+tabTasksBtn.addEventListener('click', ()=> setTab('tasks'));
+
+function setTab(which){
+  const isTimeline = which==='timeline';
+  // fast path: avoid work if already on that tab
+  if (timelineTabEl.hidden === !isTimeline && tasksTabEl.hidden === isTimeline) return;
+  timelineTabEl.hidden = !isTimeline;
+  tasksTabEl.hidden   = isTimeline;
+  tabTimelineBtn.classList.toggle('active', isTimeline);
+  tabTasksBtn.classList.toggle('active', !isTimeline);
+  tabTimelineBtn.setAttribute('aria-selected', isTimeline);
+  tabTasksBtn.setAttribute('aria-selected', !isTimeline);
+  try { localStorage.setItem('activeTab', which); } catch {}
+  const targetHash = '#' + which;
+  if (location.hash !== targetHash && !location.hash.toLowerCase().startsWith('#task-')) {
+    history.replaceState(null, '', targetHash);
+  }
+  // run timeline timer only when visible (perf)
+  if (isTimeline && !isPaused) startTimelineTimer(); else stopTimelineTimer();
+}
+
+
+
+
+/* Keyboard shortcuts: T -> Timeline, Y -> Tasks, ←/→ switch tabs, Esc -> close popovers/panels */
+document.addEventListener('keydown', (e)=>{
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+  if(e.key==='t' || e.key==='T' || e.key==='ArrowLeft'){ setTab('timeline'); }
+  if(e.key==='y' || e.key==='Y' || e.key==='ArrowRight'){ setTab('tasks'); }
+  if(e.key==='Escape'){ 
+    closeTimelinePopover(); 
+    closeFullView(); 
+    // Check if any modal is active
+    if (document.querySelector('.modal.active')) {
+      document.querySelector('.modal.active').classList.remove('active');
+    }
+    hidePopover(); 
+  }
+});
+
+
+// Deep link hash routing
+window.addEventListener('hashchange', ()=>{
+  const h = (location.hash || '').toLowerCase();
+  if (h.startsWith('#timeline')) return setTab('timeline');
+  if (h.startsWith('#tasks'))    return setTab('tasks');
+  if (h.startsWith('#task-')){
+    const id = parseInt(h.replace('#task-',''),10);
+    const task = tasks.find(t => t.id === id);
+    setTab('tasks'); renderTasks();
+    if (task) showFullView(task);
+  }
+});
+
+/* Header shortcuts helper */
+document.getElementById('kbHelpBtn').addEventListener('click', ()=> alert('Shortcuts:\nT → Timeline tab\nY → Tasks tab\nEsc → Close popovers/panels'));
+
+/* Create new task (demo) */
+function createNewTask(){
+  const id = tasks.length ? Math.max(...tasks.map(t=>t.id))+1 : 1;
+  tasks.unshift({
+    id, title:`New Research Task #${id}`, status:'pending', icon:'🧪',
+    createdAt: Date.now(), durationSec: 0, agentCount: 7, progress: 0,
+    output:{ status:'Awaiting orchestrator planning…' }
+  });
+  setTab('tasks'); renderTasks();
+}
+
+
+function getInitialTab(){
+  const hash = (location.hash || '').toLowerCase();
+  if (hash.startsWith('#timeline')) return 'timeline';
+  if (hash.startsWith('#tasks')) return 'tasks';
+  if (hash.startsWith('#task-')) return 'tasks'; // full view lives in Tasks tab
+  try {
+    const saved = localStorage.getItem('activeTab');
+    return saved === 'timeline' ? 'timeline' : 'tasks';
+  } catch { return 'tasks'; }
+}
+
+/* Init */
+const initialTab = getInitialTab();
+setTab(initialTab);
+renderTasks();
+// paint Tasks first; then prep Timeline off-screen
+requestAnimationFrame(() => { initializeTimeline(); });
+// start tasks timer
+startTasksTimer();
+
+// If the URL points straight to a task, open its full view after first paint
+(function handleInitialHash(){
+  const h = (location.hash || '').toLowerCase();
+  if (h.startsWith('#task-')){
+    const id = parseInt(h.replace('#task-',''),10);
+    const task = tasks.find(t=>t.id===id);
+    if (task) showFullView(task);
+  }
+})();
+
+/* Utility close on outside click for the popover */
+window.addEventListener('click',(e)=>{
+  const pop = document.getElementById('timelinePopover');
+  if(pop.classList.contains('active') && !pop.contains(e.target)){
+    pop.classList.remove('active');
+  }
+});
+</script>
+</body>
+</html>

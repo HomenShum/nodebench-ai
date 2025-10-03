@@ -19,14 +19,58 @@ import { structuredTool } from "../../agents/tools/structured";
 import { searchTool } from "../../agents/tools/search";
 import { linkupCompanyProfile, linkupPersonProfile } from "../../agents/services/linkup";
 import { fetchUrlTool } from "../../agents/tools/fetchUrl";
+import { codeExecTool } from "../../agents/tools/codeExec";
+import { filterImages, validateImageUrl } from "../../agents/tools/imageCollector";
+import { analyzeImageMultiModel } from "../../agents/tools/visionAnalysis";
+import { imageSearchTool, medicalXRaySearchTool } from "../../agents/tools/imageSearch";
+import { xrayClassificationTool } from "../../agents/tools/xrayClassification";
 
 // Instantiate tool factories here to satisfy ToolsRegistry types
 const demoRoot = `${process.cwd()}/agents/app/demo_scenarios`;
+
+// Image validation tool
+const imageValidationTool = async (payload: any) => {
+  const urls = Array.isArray(payload) ? payload : (payload?.urls || []);
+  const results = await Promise.all(urls.map((url: string) => validateImageUrl(url)));
+  return results;
+};
+
+// Image filtering tool
+const imageFilteringTool = async (payload: any) => {
+  const images = Array.isArray(payload) ? payload : (payload?.images || []);
+  const filters = payload?.filters || { validOnly: true, formats: ['jpeg', 'jpg', 'png'], maxSize: 500 * 1024 };
+  return filterImages(images, filters);
+};
+
+// Vision analysis tool (parallel GPT-5-mini + Gemini)
+const visionParallelTool = async (payload: any) => {
+  const dataset = payload?.dataset || [];
+  const prompt = payload?.analysisPrompt || "Analyze this image for quality issues.";
+  const models: Array<"gpt-5-mini" | "gemini-2.0-flash"> = ['gpt-5-mini', 'gemini-2.0-flash'];
+  const apiKeys = {
+    openai: process.env.OPENAI_API_KEY,
+    google: process.env.GOOGLE_API_KEY,
+  };
+  const results = [];
+  for (const img of dataset) {
+    const analysis = await analyzeImageMultiModel(img.url, img.id || img.url, prompt, models, apiKeys);
+    results.push(analysis);
+  }
+  return results;
+};
+
 const tools: ToolsRegistry = {
   "web.search": searchTool({ root: demoRoot }),
   "web.fetch": fetchUrlTool(),
   "answer": answerTool,
   "structured": structuredTool,
+  "code.exec": codeExecTool(),
+  "image.validate": imageValidationTool,
+  "image.filter": imageFilteringTool,
+  "image.search": imageSearchTool(),
+  "xray.search": medicalXRaySearchTool(),
+  "xray.classify": xrayClassificationTool(),
+  "vision.multi": visionParallelTool,
   // Linkup profile tools (optional, used by plans that ask for profiles)
   "get_person_profile": async (args: { full_name_and_company: string }) => {
     return await linkupPersonProfile(String(args?.full_name_and_company || ""));
@@ -79,7 +123,7 @@ export const run = action({
     if (graph?.nodes && graph.nodes.length) {
       const tasks = [
         { id: "root", parentId: null, name: name ?? "Orchestration", startOffsetMs: 0, durationMs: 20000, agentType: "orchestrator" },
-        ...graph.nodes.map((n, i) => ({ id: n.id, parentId: "root", name: n.label || n.id, startOffsetMs: i * 20000, durationMs: 20000, agentType: "leaf" })),
+        ...graph.nodes.map((n, i) => ({ id: n.id, parentId: "root", name: n.label || n.id, startOffsetMs: i * 20000, durationMs: 20000, agentType: "main" })),
       ];
       const links = [
         ...graph.edges!.map((e) => ({ sourceId: e.from, targetId: e.to })),
@@ -281,7 +325,7 @@ export const runOnTimeline = action({
             // If we haven't seen this node before (no graph.extend and no pre-applied plan), create a task on-the-fly
             if (!taskId) {
               const nid = String(nodeId).toLowerCase();
-              const agentType = nid.includes('orchestrate') ? 'orchestrator' : (nid.includes('main') ? 'main' : 'leaf');
+              const agentType = nid.includes('orchestrate') ? 'orchestrator' : 'main';
               const topic = (taskSpec as any)?.topic as string | undefined;
               const goal = (taskSpec as any)?.goal as string | undefined;
               const prettyName = `${agentType.charAt(0).toUpperCase() + agentType.slice(1)}${topic ? `: ${topic}` : (goal ? `: ${goal}` : '')}`.trim();
@@ -309,7 +353,7 @@ export const runOnTimeline = action({
             let taskId = nodeToTaskId[nodeId];
             if (!taskId) {
               const nid = String(nodeId).toLowerCase();
-              const agentType = nid.includes('orchestrate') ? 'orchestrator' : (nid.includes('main') ? 'main' : 'leaf');
+              const agentType = nid.includes('orchestrate') ? 'orchestrator' : 'main';
               const topic = (taskSpec as any)?.topic as string | undefined;
               const goal = (taskSpec as any)?.goal as string | undefined;
               const prettyName = `${agentType.charAt(0).toUpperCase() + agentType.slice(1)}${topic ? `: ${topic}` : (goal ? `: ${goal}` : '')}`.trim();

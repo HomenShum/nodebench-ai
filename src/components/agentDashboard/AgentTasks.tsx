@@ -1,9 +1,43 @@
-import { useEffect, useMemo, useState, useContext } from "react";
+import { useEffect, useMemo, useState, useContext, useCallback } from "react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { AgentWindowContext } from "./AgentWindowContext";
 import AgentTree, { TaskNode as AgentTaskNode } from "./AgentTree";
+
+
+const extractElapsedMs = (task: any): number => {
+  const candidates = [
+    (task as any)?.elapsedMs,
+    (task as any)?.metrics?.elapsedMs,
+    (task as any)?.metrics?.latencyMs,
+    (task as any)?.meta?.elapsedMs,
+    (task as any)?.latencyMs,
+    (task as any)?.stats?.elapsedMs,
+  ];
+  for (const candidate of candidates) {
+    const ms = Number(candidate);
+    if (Number.isFinite(ms) && ms > 0) return ms;
+  }
+  return 0;
+};
+
+const formatDurationShort = (ms: number): string => {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSec / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  if (hours > 0) {
+    if (minutes === 0 && seconds === 0) return `${hours}h`;
+    if (seconds === 0) return `${hours}h ${minutes}m`;
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+  if (minutes > 0) {
+    if (seconds === 0) return `${minutes}m`;
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+};
 
 
 // Keep existing cards, add grouped and tree layouts, and sync mini timelines with full timeline
@@ -23,19 +57,61 @@ type TaskDoc = {
   description?: string;
   startOffsetMs?: number;
   durationMs?: number;
+  elapsedMs?: number;
+  startedAtMs?: number;
+  completedAtMs?: number;
+  finishedAtMs?: number;
+  progress?: number;
   agentType?: "orchestrator" | "main" | "leaf" | string;
+  metrics?: { elapsedMs?: number; latencyMs?: number };
+  meta?: { elapsedMs?: number };
+  latencyMs?: number;
+  stats?: { elapsedMs?: number };
 };
 
 type LinkDoc = { sourceTaskId: string; targetTaskId: string };
 
-export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { timelineId: Id<"agentTimelines">; onOpenFullView?: (task: any) => void; onViewTimeline?: (task: any) => void; }) {
+export function AgentTasks({ timelineId, onViewTimeline }: { timelineId: Id<"agentTimelines">; onViewTimeline?: (task: any) => void; }) {
   const data = useQuery(api.agentTimelines.getByTimelineId, timelineId ? { timelineId } : ("skip" as any)) as { baseStartMs?: number; tasks?: TaskDoc[]; links?: LinkDoc[] } | undefined;
   const tasks: TaskDoc[] = (data?.tasks as any[]) || [];
   const links: LinkDoc[] = (data?.links as any[]) || [];
   const baseStartMs = data?.baseStartMs ?? Date.now();
 
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const addTask = useMutation(api.agentTimelines.addTask);
   const updateTask = useMutation(api.agentTimelines.updateTaskMetrics);
+
+  const runtimeForTask = useCallback((task: TaskDoc): number | null => {
+    const raw: any = task as any;
+    const status = String(raw.status || '').toLowerCase();
+    const elapsed = extractElapsedMs(raw);
+    const startedAt = Number(raw.startedAtMs ?? 0);
+    const completedAt = Number(raw.completedAtMs ?? raw.finishedAtMs ?? 0);
+    const nowOffset = Math.max(0, nowMs - baseStartMs);
+    const startOffset = Math.max(0, Number(raw.startOffsetMs ?? 0));
+
+    if (status === 'complete' || status === 'error') {
+      if (elapsed > 0) return elapsed;
+      if (startedAt && completedAt && completedAt > startedAt) return completedAt - startedAt;
+      return elapsed > 0 ? elapsed : null;
+    }
+
+    if (status === 'running') {
+      let runtime = elapsed;
+      if (startedAt) runtime = Math.max(runtime, nowMs - startedAt);
+      runtime = Math.max(runtime, nowOffset - startOffset);
+      return Math.max(0, runtime);
+    }
+
+    if (elapsed > 0) return elapsed;
+    return null;
+  }, [nowMs, baseStartMs]);
 
 
   // Prompt planning parity with Timeline view (safe in tests without ConvexProvider)
@@ -312,16 +388,23 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
 
   // UI rendering
   const renderCard = (t: any) => {
-    const elapsedOrDurMs = Number((t.raw as any)?.elapsedMs ?? (t.raw as any)?.durationMs ?? 0);
-    const seconds = Math.max(0, Math.round(elapsedOrDurMs / 1000));
+    const runtimeMs = runtimeForTask(t.raw);
+    const fallbackElapsed = extractElapsedMs(t.raw);
+    const effectiveElapsedMs = runtimeMs ?? (fallbackElapsed > 0 ? fallbackElapsed : null);
+    const runtimeLabel = effectiveElapsedMs !== null ? formatDurationShort(effectiveElapsedMs) : '—';
     const idStr = String((t.raw as any)._id);
     const childCount = (children.get(idStr)?.length || 0);
-    const progressVal = (typeof (t.raw as any)?.progress === 'number'
-      ? Number((t.raw as any).progress)
-      : ((t.raw as any)?.elapsedMs && (t.raw as any)?.durationMs
-          ? Math.min(1, Number((t.raw as any).elapsedMs) / Math.max(1, Number((t.raw as any).durationMs)))
-          : 0));
-    const status = String(t.status || 'pending');
+    const durationMs = Math.max(0, Number((t.raw as any)?.durationMs ?? 0));
+    const status = String(t.status || 'pending').toLowerCase();
+
+    // Progress should always be 1 (100%) for completed/error tasks
+    const progressVal = (status === 'complete' || status === 'error')
+      ? 1
+      : (typeof (t.raw as any)?.progress === 'number'
+          ? Number((t.raw as any).progress)
+          : (effectiveElapsedMs !== null && durationMs > 0
+              ? Math.min(1, effectiveElapsedMs / Math.max(1, durationMs))
+              : 0));
     const aria = `${t.title}. Status ${status}. Press Enter for full view, Space for scaffold or to open timeline.`;
     let clickTimer: any = null;
     const highlightType = String((t.raw.agentType || (t.raw as any).type || "")).toLowerCase();
@@ -333,8 +416,8 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
         tabIndex={0}
         aria-label={aria}
         onClick={(e) => { e.stopPropagation(); if (clickTimer) return; clickTimer = setTimeout(() => { try { window.location.hash = `#task-${encodeURIComponent(String((t.raw as any)._id))}`; } catch {} onViewTimeline?.(t.raw); clickTimer = null; }, 220); }}
-        onDoubleClick={(e) => { e.stopPropagation(); if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; } onOpenFullView?.(t.raw); }}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpenFullView?.(t.raw); } if (e.key === ' ') { e.preventDefault(); onViewTimeline?.(t.raw); } }}
+        onDoubleClick={(e) => { e.stopPropagation(); if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; } onViewTimeline?.(t.raw); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onViewTimeline?.(t.raw); } if (e.key === ' ') { e.preventDefault(); onViewTimeline?.(t.raw); } }}
       >
 
 
@@ -347,7 +430,7 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
           </div>
           <div className="task-meta">
             <div className="task-status"><div className={`status-dot ${status}`}></div><span className="capitalize">{status}</span></div>
-            <span className="muted">~{seconds}s</span>
+            <span className="muted">{runtimeLabel}</span>
           </div>
         </div>
 
@@ -361,7 +444,8 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
           const addTaskToBins = (tk: any) => {
             const start = Number((tk as any).startOffsetMs || 0);
             const dur = Number((tk as any).durationMs || 0);
-            const elapsed = Number((tk as any).elapsedMs ?? (typeof (tk as any).progress === 'number' ? (tk as any).progress * dur : 0));
+            const actualElapsed = extractElapsedMs(tk as any);
+            const elapsed = actualElapsed > 0 ? actualElapsed : (typeof (tk as any).progress === 'number' ? (tk as any).progress * dur : 0);
             const end = start + dur;
             const endAct = start + Math.max(0, Math.min(dur, elapsed));
             const toBin = (ms: number) => Math.max(0, Math.min(binCount - 1, Math.floor(((ms - winStart) / winMs) * binCount)));
@@ -437,7 +521,7 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
 
         <div className="task-actions">
           <div className="task-metrics">
-            <div>⏱ <span className="metric-value">{seconds}s</span></div>
+            <div>⏱ <span className="metric-value">{runtimeLabel}</span></div>
             <div>🤖 <span className="metric-value">{childCount}</span></div>
             <div>📊 <span className="metric-value">{Math.round(progressVal * 100)}%</span></div>
           </div>
@@ -574,20 +658,33 @@ export function AgentTasks({ timelineId, onOpenFullView, onViewTimeline }: { tim
               <tbody>
                 {items.map((it) => {
                   const raw: any = it.raw;
+                  const status = String(it.status || 'pending').toLowerCase();
                   const left = Math.max(0, (Number(raw.startOffsetMs || 0) - windowStartMs) / Math.max(1, windowMs));
                   const width = Math.max(0, Number(raw.durationMs || 0) / Math.max(1, windowMs));
                   const dur = Number(raw.durationMs || 0);
-                  const elapsed = Number(raw.elapsedMs ?? (typeof raw.progress === 'number' ? raw.progress * dur : 0));
-                  const etaSec = Math.max(0, Math.ceil((dur - elapsed)/1000));
-                  const progressPct = Math.round((typeof raw.progress === 'number' ? raw.progress : (dur>0? elapsed/dur : 0)) * 100);
+                  const actualElapsed = extractElapsedMs(raw);
+                  const elapsed = actualElapsed > 0 ? actualElapsed : (typeof raw.progress === 'number' ? raw.progress * dur : 0);
+                  const runtimeMsForRow = runtimeForTask(raw) ?? (actualElapsed > 0 ? actualElapsed : null);
+                  const runtimeLabelRow = runtimeMsForRow !== null ? formatDurationShort(runtimeMsForRow) : '—';
+
+                  // ETA should be 0 for completed/error tasks
+                  const etaSec = (status === 'complete' || status === 'error')
+                    ? 0
+                    : Math.max(0, Math.ceil((dur - elapsed)/1000));
+
+                  // Progress should always be 100% for completed/error tasks
+                  const progressPct = (status === 'complete' || status === 'error')
+                    ? 100
+                    : Math.round((typeof raw.progress === 'number' ? raw.progress : (dur>0? elapsed/dur : 0)) * 100);
+
                   return (
                     <tr key={`row-${it.id}`} className="odd:bg-white even:bg-[var(--bg-secondary)]">
                       <td className="px-3 py-2 border-b">
-                        <button className="underline hover:no-underline" onClick={() => onOpenFullView?.(raw)}>{it.title}</button>
+                        <button className="underline hover:no-underline" onClick={() => onViewTimeline?.(raw)}>{it.title}</button>
                       </td>
                       <td className="px-3 py-2 border-b">{Math.round((Number(raw.startOffsetMs||0))/1000)}s</td>
-                      <td className="px-3 py-2 border-b">{Math.round(dur/1000)}s</td>
-                      <td className="px-3 py-2 border-b">{etaSec}s</td>
+                      <td className="px-3 py-2 border-b">{runtimeLabelRow}</td>
+                      <td className="px-3 py-2 border-b">{etaSec > 0 ? `${etaSec}s` : '—'}</td>
                       <td className="px-3 py-2 border-b capitalize">{String(it.status)}</td>
                       <td className="px-3 py-2 border-b">
                         <div className="relative h-3 w-40 border border-[var(--border-color)] rounded bg-[var(--bg-primary)] overflow-hidden">

@@ -391,6 +391,7 @@ export const updateTaskMetrics = mutation({
     progress: v.optional(v.number()),
     status: v.optional(v.union(v.literal("pending"), v.literal("running"), v.literal("complete"), v.literal("paused"), v.literal("error"))),
     startedAtMs: v.optional(v.number()),
+    completedAtMs: v.optional(v.number()),
     elapsedMs: v.optional(v.number()),
     outputSizeBytes: v.optional(v.number()),
     inputTokens: v.optional(v.number()),
@@ -410,10 +411,24 @@ export const updateTaskMetrics = mutation({
       console.warn("updateTaskMetrics: Task not found, skipping", String(args.taskId));
       return null;
     }
-    const patch: any = { updatedAt: Date.now() };
+    const now = Date.now();
+    const patch: any = { updatedAt: now };
     if (typeof args.progress === "number") patch.progress = args.progress;
-    if (args.status) patch.status = args.status;
+    if (args.status) {
+      patch.status = args.status;
+      // Automatically set completedAtMs and progress when task is marked as complete or error
+      if (args.status === "complete" || args.status === "error") {
+        if (!(task as any).completedAtMs) {
+          patch.completedAtMs = args.completedAtMs ?? now;
+        }
+        // Ensure progress is set to 1 (100%) for completed tasks if not explicitly provided
+        if (typeof args.progress !== "number") {
+          patch.progress = 1;
+        }
+      }
+    }
     if (typeof args.startedAtMs === "number") patch.startedAtMs = args.startedAtMs;
+    if (typeof args.completedAtMs === "number") patch.completedAtMs = args.completedAtMs;
     if (typeof args.elapsedMs === "number") patch.elapsedMs = args.elapsedMs;
     if (typeof args.outputSizeBytes === "number") patch.outputSizeBytes = args.outputSizeBytes;
     if (typeof args.inputTokens === "number") patch.inputTokens = args.inputTokens;

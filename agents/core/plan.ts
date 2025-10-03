@@ -1,7 +1,7 @@
 // agents/core/plan.ts
 // Pure planner: given a TaskSpec and current state, produce a bounded Plan.
 
-export type StepKind = 'web.search' | 'web.fetch' | 'answer' | 'summarize' | 'structured';
+export type StepKind = 'web.search' | 'web.fetch' | 'answer' | 'summarize' | 'structured' | 'code.exec';
 
 export type Step = {
   id?: string;
@@ -59,6 +59,8 @@ export function makePlan(input: { taskSpec: TaskSpec; state?: any }): Plan {
           // If caller provides a schema, we pass it through; otherwise the tool will ask Grok 4 fast to synthesize one.
           schema: inputAny.schema,
           schemaGenerator: inputAny.schema ? 'provided' : 'grok',
+          // Support image search
+          includeImages: inputAny.includeImages || false,
         },
       },
     ];

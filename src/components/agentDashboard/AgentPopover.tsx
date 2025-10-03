@@ -43,8 +43,11 @@ export default function AgentPopover({
 
   if (!isOpen || !portalRoot || !agent) return null;
 
-  const status = String(agent?.status ?? "pending");
-  const progressPct = Math.round(Number(agent?.progress ?? 0) * 100) || (typeof agent?.progress === 'number' ? Math.round(agent.progress) : 0);
+  const status = String(agent?.status ?? "pending").toLowerCase();
+  // Progress should always be 100% for completed/error tasks
+  const progressPct = (status === 'complete' || status === 'error')
+    ? 100
+    : (Math.round(Number(agent?.progress ?? 0) * 100) || (typeof agent?.progress === 'number' ? Math.round(agent.progress) : 0));
 
   const badgeClass =
     String(agent?.agentType ?? agent?.type) === "orchestrator"
@@ -91,7 +94,11 @@ export default function AgentPopover({
         {(() => {
           const dur = Number((agent as any)?.durationMs ?? 0);
           const elapsed = Number((agent as any)?.elapsedMs ?? ((agent as any)?.progress ? Number((agent as any)?.progress) * dur : 0));
-          const etaSec = Math.max(0, Math.ceil((dur - elapsed) / 1000));
+
+          // ETA should be 0 or "—" for completed/error tasks
+          const isComplete = status === 'complete' || status === 'error';
+          const etaSec = isComplete ? 0 : Math.max(0, Math.ceil((dur - elapsed) / 1000));
+
           const inTok = Number((agent as any)?.inputTokens ?? 0);
           const outTok = Number((agent as any)?.outputTokens ?? 0);
           const outSz = Number((agent as any)?.outputSizeBytes ?? 0);
@@ -107,10 +114,10 @@ export default function AgentPopover({
               </div>
               <div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">ETA</div>
-                <div className="font-semibold text-[var(--text-primary)]">{etaSec}s</div>
+                <div className="font-semibold text-[var(--text-primary)]">{etaSec > 0 ? `${etaSec}s` : "—"}</div>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Elapsed</div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Runtime</div>
                 <div className="font-semibold text-[var(--text-primary)]">{Math.max(0, Math.floor(elapsed/1000))}s</div>
               </div>
               <div>

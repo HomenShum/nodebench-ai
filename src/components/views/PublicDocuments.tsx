@@ -1,9 +1,8 @@
-import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Globe } from "lucide-react";
-import { DocumentCard } from "@/components/DocumentsHomeHub";
+import { DocumentCard } from "@/components/documentsHub";
 import { PageHeroHeader } from "@/components/shared/PageHeroHeader";
 
 
@@ -13,7 +12,6 @@ interface PublicDocumentsProps {
 
 export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
   const publicDocuments = useQuery(api.documents.getPublic);
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   if (publicDocuments === undefined) {
     return (
@@ -59,7 +57,7 @@ export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
                 isFavorite: (doc as any).isFavorite,
                 coverImage: (doc as any).coverImage,
                 icon: (doc as any).icon,
-                contentPreview: undefined,
+                contentPreview: null,
               };
 
               return (
@@ -67,8 +65,6 @@ export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
                   key={doc._id}
                   doc={cardDoc}
                   onSelect={onDocumentSelect}
-                  hoveredCard={hoveredCard}
-                  setHoveredCard={setHoveredCard}
                   hybrid={true}
                   openOnSingleClick={true}
                 />
