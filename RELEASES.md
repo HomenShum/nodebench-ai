@@ -61,7 +61,16 @@
 - Dedicated Timeline section
 - Consistent panel order
 
-### v0.7.0 - UI Standardization (2025-09-19-2)
+### v0.7.0 - Early Prototype (092325)
+**Commit:** dc817ec
+
+- Agent Timeline with Tasks prompt
+- Final Output copy/collapse
+- Run history
+- Timeline freeze
+- Task metrics handling
+
+### v0.6.0 - Timeline upgrades (2025-09-19-2)
 **Commit:** b55a950
 
 - UI parity across Calendar & Documents Home Hubs
@@ -72,7 +81,7 @@
 - Standardized PublicDocuments layout
 - Updated previews (mini calendar + full calendar hub)
 
-### v0.6.0 - UI Refactor & Home Hubs (2025-09-19)
+### v0.5.0 - Initial multi-agent (2025-09-19)
 **Commit:** 05e5a95
 
 - Consolidated Home Hubs (Documents & Calendar)
@@ -81,15 +90,6 @@
 - Convex file/document API updates
 - Cleanup of legacy views
 - New screenshots and documentation
-
-### v0.5.0 - Early Prototype (092325)
-**Commit:** dc817ec
-
-- Agent Timeline with Tasks prompt
-- Final Output copy/collapse
-- Run history
-- Timeline freeze
-- Task metrics handling
 
 ---
 
