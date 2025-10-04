@@ -38,12 +38,12 @@ OpenAI integration
   - Optional: OPENAI_BASE_URL=<custom endpoint, will normalize to /v1>
   - Optional: OPENAI_MODEL (defaults to gpt-5-nano)
 - The CLI now registers tools:
-OpenRouter + Grok 4 fast
-- To use OpenRouter end-to-end (including Grok 4 fast):
+OpenRouter + GLM 4.6
+- To use OpenRouter end-to-end (including GLM 4.6):
   - Set OPENROUTER_API_KEY=<your key>
   - Optional: OPENAI_BASE_URL=https://openrouter.ai/api/v1 (auto-assumed if OPENROUTER_API_KEY is present)
   - Optional: OPENROUTER_SITE_URL and OPENROUTER_SITE_NAME for ranking headers
-  - Optional: OPENAI_MODEL=x-ai/grok-4-fast:free (auto-defaults to this when OPENROUTER_API_KEY is present)
+  - Optional: OPENAI_MODEL=z-ai/glm-4.6 (auto-defaults to this when OPENROUTER_API_KEY is present)
 - The answer, summarize, and structured tools will route via OpenRouter when configured. Multimodal (image_url) is supported in answer via args.imageUrl/imageUrls.
 
   - answer — LLM answer generation using optional contextual data
@@ -54,7 +54,7 @@ Optional Convex data provider (NodeBench AI schema)
   - AGENTS_DATA=convex
   - CONVEX_URL=<your convex deployment URL>
   - Optional auth: CONVEX_AUTH_TOKEN or AGENTS_CONVEX_TOKEN
-- Multimodal Grok fast scenario: npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_multimodal_grok.json
+- Multimodal GLM scenario: npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_multimodal_glm.json
 
 - Structured from caption scenario: npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_structured_from_caption.json
 

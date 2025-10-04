@@ -26,6 +26,8 @@ export function CalendarHomeHub({
     const apply = () => {
       try {
         const h = (window.location.hash || "").toLowerCase();
+        // Only react to hash changes that target the calendar hub; ignore unrelated hashes
+        if (!h.startsWith("#calendar")) return;
         setSubView(h.includes("calendar/agents") ? "agents" : "calendar");
       } catch {
         // noop

@@ -37,3 +37,13 @@ RELEASE_NOTES_*.md
 # Test artifacts
 coverage/
 .nyc_output/
+
+# Temporary files
+temp_*.txt
+temp_*.md
+
+# Implementation notes (keep only core docs)
+docs/
+!docs/FEATURES.md
+!docs/DESIGN_SYSTEM.md
+!docs/CODESTYLE.md

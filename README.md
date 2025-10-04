@@ -31,8 +31,9 @@
 * **Collaborative, Notion‑like editing** with rich‑text, lists, and paste‑preserving structure.
 * **Multi‑modal documents**: PDFs, Word, CSV/Spreadsheets, Markdown; audio/video via transcript ingestion.
 * **Agentic orchestration** with a **Timeline/Gantt** view for step‑level traces (plan → tool → verify → render).
-* **Observability**: run history, token/latency badges, final output panel with copy & collapse.
-* **Convex backend via Chef**: real‑time data, auth, file/document APIs, action functions for RAG/agents.
+* **Multi-agent workflows**: Web search with image collection, parallel visual LLM analysis, code execution (Google Genai/GPT-5-mini), cross-model comparison, and conversational follow-up.
+* **Observability**: run history, token/latency badges, final output panel with copy & collapse, real-time progress tracking.
+* **Convex backend**: real‑time data, auth, file/document APIs, action functions for RAG/agents, analytics.
 * **Auth**: Anonymous sign‑in for frictionless onboarding (switchable), Google OAuth supported.
 * **Offline/stub mode** ready: run demos without external API keys.
 
@@ -40,10 +41,12 @@
 
 ## Architecture at a Glance
 
-* **Frontend**: React + Vite UI; Agents Dashboard with **Tasks**, **Timeline**, and **Run History**.
-* **Backend**: Convex (functions, storage, auth). `convex/router.ts` exposes user HTTP routes separate from auth.
+* **Frontend**: React + Vite UI; Unified layout with **Documents**, **Calendar**, and **Agents** hubs.
+* **Agents Dashboard**: **Tasks**, **Timeline/Gantt**, and **Run History** with real-time progress, metrics badges, and final output panel.
+* **Backend**: Convex (functions, storage, auth, analytics). `convex/router.ts` exposes user HTTP routes separate from auth.
 * **Agents**: Planner/Executor/Verifier loops (standalone CLI + Convex actions). Typed tool I/O and traces.
-* **Observation**: JSONL trace emitter → Timeline Gantt visualization; metrics & statuses.
+* **Multi-agent orchestration**: Supports web search (Linkup with image collection), parallel visual LLM analysis (OpenAI GPT-4o, Anthropic Claude, Google Gemini), code execution, and cross-model comparison.
+* **Observation**: JSONL trace emitter → Timeline Gantt visualization; metrics & statuses; real-time execution tracking.
 
 ---
 
@@ -96,7 +99,7 @@ Create `.env.local` at the project root for provider keys and options.
 
 ### OpenRouter (Grok 4 Fast)
 
-Used by standalone agents and Convex RAG actions.
+Used by standalone agents and Convex RAG actions. Defaults to **Grok 4 Fast** via OpenRouter.
 
 ```
 # Required for OpenRouter
@@ -104,12 +107,14 @@ OPENROUTER_API_KEY=sk-or-...
 
 # Optional overrides
 OPENAI_BASE_URL=https://openrouter.ai/api/v1
-OPENAI_MODEL=x-ai/grok-4-fast:free
+OPENAI_MODEL=x-ai/grok-2-1212
 
 # Attribution (defaults when OPENROUTER_API_KEY is set)
 OPENROUTER_SITE_URL=https://nodebench-ai.vercel.app/
 OPENROUTER_SITE_NAME=NodeBench AI
 ```
+
+**Alternative**: Set `OPENAI_API_KEY` to use OpenAI directly instead of OpenRouter.
 
 See `agents/README.md` and `DESIGN_SPECS.md` for deeper details.
 
@@ -154,8 +159,8 @@ npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_multi_agent_scaffo
 # Orchestrate graph scenario
 npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_orchestrate_graph.json
 
-# Multimodal Grok
-npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_multimodal_grok.json
+# Multimodal GLM
+npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_multimodal_glm.json
 ```
 
 **Optional env**

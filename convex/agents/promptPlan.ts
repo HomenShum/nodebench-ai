@@ -76,7 +76,33 @@ const providers: Record<string, (ctx: any, prompt: string) => Promise<ProviderOu
     return planToProviderOutput(fallback, prompt);
   },
 
-  // Grok via OpenRouter (defaults to OPENROUTER_MODEL or a Grok ID). Falls back gracefully.
+  // GPT-5-mini fallback planner
+  gpt5mini: async (_ctx: any, prompt: string) => {
+    try {
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
+      const client = new OpenAI({ apiKey });
+      const sys = "You are an orchestrator that returns ONLY JSON per the schema. Plan small, safe steps. Use parallel groups when independent.";
+      const completion: any = await (client as any).chat.completions.parse({
+        model: "gpt-5-mini",
+        messages: [
+          { role: "system", content: sys },
+          { role: "user", content: prompt },
+        ],
+        response_format: zodResponseFormat(PlanSchema, "plan"),
+      });
+      const plan = completion?.choices?.[0]?.message?.parsed;
+      if (plan && Array.isArray((plan as any).groups)) return planToProviderOutput(plan as any, prompt);
+    } catch (e) {
+      console.warn("[gpt5mini] GPT-5-mini planner failed; falling back", e);
+    }
+    // Fallback to heuristic if GPT-5-mini fails
+    const fallback = makePlan({ taskSpec: { goal: prompt, type: "custom", constraints: { maxSteps: 6 } } as any });
+    return planToProviderOutput(fallback, prompt);
+  },
+
+  // GLM 4.6 via OpenRouter (defaults to OPENROUTER_MODEL or GLM 4.6). Falls back gracefully.
   grok: async (_ctx: any, prompt: string) => {
     try {
       const OpenAI = (await import("openai")).default;
@@ -90,7 +116,7 @@ const providers: Record<string, (ctx: any, prompt: string) => Promise<ProviderOu
           "X-Title": process.env.OPENROUTER_X_TITLE || "Agent Dashboard",
         },
       });
-      const model = process.env.OPENROUTER_MODEL || "x-ai/grok-4-fast:free"; // Set OPENROUTER_MODEL to your Grok 4 fast slug
+      const model = process.env.OPENROUTER_MODEL || "z-ai/glm-4.6"; // Set OPENROUTER_MODEL to override GLM 4.6
       const sys = "You are an orchestrator that returns ONLY JSON per the schema. Plan small, safe steps. Use parallel groups when independent.";
       const completion: any = await (client as any).chat.completions.parse({
         model,
@@ -104,9 +130,15 @@ const providers: Record<string, (ctx: any, prompt: string) => Promise<ProviderOu
       const plan = completion?.choices?.[0]?.message?.parsed;
       if (plan && Array.isArray((plan as any).groups)) return planToProviderOutput(plan as any, prompt);
     } catch (e) {
-      console.warn("[grok] OpenRouter planner failed; falling back", e);
+      console.warn("[glm] GLM 4.6 planner failed; falling back", e);
     }
-    // Fallback chain: OpenAI → heuristic
+    // Fallback chain: GPT-5-mini → OpenAI → heuristic
+    try {
+      console.log("[glm] Trying GPT-5-mini fallback...");
+      return await providers.gpt5mini(null, prompt);
+    } catch (e) {
+      console.warn("[glm] GPT-5-mini fallback failed, trying OpenAI", e);
+    }
     try { return await providers.openai(null, prompt); } catch {}
     const fallback = makePlan({ taskSpec: { goal: prompt, type: "custom", constraints: { maxSteps: 6 } } as any });
     return planToProviderOutput(fallback, prompt);

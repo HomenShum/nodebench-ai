@@ -70,7 +70,7 @@ function getOpenRouterClient() {
 async function generateSchemaWithGrok(input: { query: string; intent?: string }): Promise<any | null> {
   try {
     const client = getOpenRouterClient();
-    const model = process.env.OPENAI_MODEL || (process.env.OPENROUTER_API_KEY ? 'x-ai/grok-4-fast:free' : 'gpt-5-nano');
+    const model = process.env.OPENAI_MODEL || (process.env.OPENROUTER_API_KEY ? 'z-ai/glm-4.6' : 'gpt-5-nano');
     const system = 'You are a schema generator. Output ONLY a valid JSON Schema (draft-07) object. No prose.';
     const user = `Create a deep, task-suited JSON Schema for structured web results.\nIntent: ${input.intent || 'research'}\nQuery: ${input.query}\nConstraints: Include fields for summary, key findings, metrics (label, value, unit, date, source), entities (people, companies, orgs), timeline (date, event, source), and citations (name, url, snippet).`;
     const rsp = await client.chat.completions.create({ model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] });

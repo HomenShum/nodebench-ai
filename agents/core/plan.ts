@@ -56,9 +56,9 @@ export function makePlan(input: { taskSpec: TaskSpec; state?: any }): Plan {
           query,
           sources,
           intent: inputAny.intent || taskSpec.type || 'research',
-          // If caller provides a schema, we pass it through; otherwise the tool will ask Grok 4 fast to synthesize one.
+          // If caller provides a schema, we pass it through; otherwise the tool will ask GLM 4.6 to synthesize one.
           schema: inputAny.schema,
-          schemaGenerator: inputAny.schema ? 'provided' : 'grok',
+          schemaGenerator: inputAny.schema ? 'provided' : 'glm',
           // Support image search
           includeImages: inputAny.includeImages || false,
         },
