@@ -88,7 +88,7 @@ async function createWithFallback(client: any, payloadBase: any, ctx: ExecContex
     ? [envModel]
     : (orKey
         ? [
-            'x-ai/grok-4-fast:free', // may be rate-limited
+            'z-ai/glm-4.6',          // GLM 4.6 via OpenRouter
             'openai/gpt-4o-mini',    // OpenRouter route to OpenAI
           ]
         : [

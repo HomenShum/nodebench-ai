@@ -7,6 +7,8 @@ import { AgentTasks } from "@/components/agentDashboard/AgentTasks";
 import { AgentChats } from "@/components/agentDashboard/AgentChats";
 import "@/styles/agentDashboard.css";
 import { AgentWindowProvider } from "./AgentWindowContext";
+import { PageHeroHeader } from "@/components/shared/PageHeroHeader";
+import { PresetChip } from "@/components/shared/PresetChip";
 
 export type AgentDashboardTab = "timeline" | "tasks" | "chat";
 
@@ -213,6 +215,26 @@ export function AgentDashboard() {
 
   return (
     <div className="agent-dashboard h-full w-full flex flex-col">
+      {/* Page Hero Header with Presets */}
+      <PageHeroHeader
+        icon={"🤖"}
+        title={"Agents Hub"}
+        date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        presets={
+          <>
+            <span className="text-xs text-gray-500 mr-2">
+              Presets:
+            </span>
+
+            <PresetChip>Research Mode</PresetChip>
+
+            <PresetChip>Code Review</PresetChip>
+
+            <PresetChip>Data Analysis</PresetChip>
+          </>
+        }
+      />
+
       {/* Header */}
       <div className="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">

@@ -91,11 +91,11 @@ Testing
   - Renders dashboard, switches tabs, asserts key UI elements
   - Replaced brittle snapshots with targeted assertions
 - Schema-aware search + timeline mapping
-  - src/test/Plan.research.schemaArgs.test.ts ensures web.search steps include intent and schemaGenerator (grok) or pass through provided schema
+  - src/test/Plan.research.schemaArgs.test.ts ensures web.search steps include intent and schemaGenerator (glm) or pass through provided schema
   - src/test/StructuredToTimeline.test.ts validates mapping a structured result into tasks/links similar to convex/agents/timelineMock.ts
 - Orchestrator self-conducting (dynamic spawn + real registry shape)
   - src/test/Orchestrator.selfConducting.research.test.ts exercises dynamic spawn via eval with fully stubbed tools (no network)
-  - src/test/Orchestrator.selfConducting.realTools.test.ts uses the real registry shape (web.search, answer, structured) with network mocked at module boundaries (linkup, openai); asserts spawned agents and that web.search was invoked; optionally calls Grok 4 fast to judge output quality if OPENROUTER_API_KEY is present.
+  - src/test/Orchestrator.selfConducting.realTools.test.ts uses the real registry shape (web.search, answer, structured) with network mocked at module boundaries (linkup, openai); asserts spawned agents and that web.search was invoked; optionally calls GLM 4.6 to judge output quality if OPENROUTER_API_KEY is present.
 - src/test/Orchestrator.live.e2e.test.ts runs a real end-to-end orchestrator flow against live providers (Linkup + OpenRouter/OpenAI). It is gated and skipped by default; enable with LIVE_E2E=1 and set LINKUP_API_KEY plus either OPENROUTER_API_KEY or OPENAI_API_KEY. Uses a simple graph (search -> answer), 120s timeout.
 - Other tests left untouched; targeted run used for verification (npx vitest run -t AgentDashboard --run)
 
@@ -174,7 +174,7 @@ Agents Module Extraction & Bounded Control Flows
 OpenAI & Web Search Providers
 - LLM tools (answer/summarize) use OpenAI-compatible chat.completions (OpenRouter supported via OPENROUTER_API_KEY)
 - Schema-aware web.search:
-  - If args.schema is omitted, Grok 4 fast synthesizes a task-suited JSON Schema (draft-07)
+  - If args.schema is omitted, GLM 4.6 synthesizes a task-suited JSON Schema (draft-07)
 
 ## AgentTimeline: Accessibility, Responsiveness and Grid Overlay (Sep 25, 2025)
 - Accessibility
@@ -192,7 +192,7 @@ OpenAI & Web Search Providers
   - Linkup runs with outputType=structured and depth=standard using that schema
   - Callers can supply args.schema to override; args.intent helps tailor the schema per task
 - Env:
-  - OPENROUTER_API_KEY (preferred for Grok 4 fast), OPENAI_API_KEY fallback, OPENAI_BASE_URL optional (/v1 normalized), OPENAI_MODEL optional
+  - OPENROUTER_API_KEY (preferred for GLM 4.6), OPENAI_API_KEY fallback, OPENAI_BASE_URL optional (/v1 normalized), OPENAI_MODEL optional
 - When AGENTS_DATA=convex and CONVEX_URL provided, search.ts prefers ConvexContextStore for:
   - documents:getSearch, documents:getById, calendar:listAgendaInRange, agentTimelines:getByDocumentId
 - CLI wires the provider automatically and passes it through execute context for tools to use.
@@ -223,7 +223,7 @@ Multi‑agent (leaf agent scaffold)
 - New actions for timeline mocks:
   - convex/agents/timelineMock.ts
     - generateFromStructured(documentId, name?, prompt, schema?) → calls agents/tools/structured with a strict JSON Schema to produce {agents[], timeline[]} and applies them to agentTimelines.
-    - generateFromWebSearch(documentId, name?, query, intent?, schema?) → research → web.search (schema via Grok) → mapStructuredToTimeline → applyPlan to render a live, data‑driven timeline.
+    - generateFromWebSearch(documentId, name?, query, intent?, schema?) → research → web.search (schema via GLM) → mapStructuredToTimeline → applyPlan to render a live, data‑driven timeline.
     - seedDeterministicMock(documentId, name?) → writes the exact mock hierarchy/timeline without model calls (10‑minute window), updates statuses to match the example.
 
 - Graph schema: taskSpec.graph with nodes (id, kind, label?, prompt?) and edges; orchestrator substitutes {{channel:<nodeId>.last}} and {{topic}} in prompts.
@@ -278,10 +278,10 @@ Updates (Dynamic Spawning + UI polish)
   - parent set to orchestrator when applicable
   - startOffsetMs≈now-baseStartMs; status transitions to running/complete accordingly
 - Header parity: AgentTimeline left header shows "Agent Scaffold" when viewing the demo source, matching prototype wording.
-- Prompt planner: startFromPrompt now uses Grok (OpenRouter) by default and offers a model toggle in the UI:
-  - Default: If OPENROUTER_API_KEY is set → Grok via OpenRouter generates a structured step plan (parallel groups) mapped to timeline tasks/links. Override model via OPENROUTER_MODEL.
-  - Toggle: A "Model" select in AgentTimeline controls lets you choose Grok (OpenRouter) or OpenAI at send time; selection persists in localStorage (agents.planner).
-  - Fallbacks: If OpenRouter is not configured, it falls back to OpenAI when OPENAI_API_KEY is present; otherwise to a heuristic planner (agents/core/plan). The old deterministic 3-node local stub is removed.
+- Prompt planner: startFromPrompt now uses GLM (OpenRouter) by default and offers a model toggle in the UI:
+  - Default: If OPENROUTER_API_KEY is set → GLM 4.6 via OpenRouter generates a structured step plan (parallel groups) mapped to timeline tasks/links. Override model via OPENROUTER_MODEL.
+  - Toggle: A "Model" select in AgentTimeline controls lets you choose GLM (OpenRouter) or OpenAI at send time; selection persists in localStorage (agents.planner).
+  - Fallbacks: If OpenRouter is not configured, it falls back to GPT-5-mini when OPENAI_API_KEY is present, then to OpenAI, and finally to a heuristic planner (agents/core/plan). The old deterministic 3-node local stub is removed.
 
 
 - UI: .agent-name now clamps with ellipsis to prevent overflow; task metrics now bind to workflow data:

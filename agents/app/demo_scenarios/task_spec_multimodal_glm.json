@@ -1,0 +1,21 @@
+{
+  "goal": "Describe the updated screenshot content succinctly for release notes.",
+  "type": "research",
+  "input": {
+    "query": "What is in this image? Provide a 3-sentence summary with key UI elements and inferred purpose.",
+    "imageUrl": "@updated_screenshot"
+  },
+  "constraints": { "maxSteps": 3 },
+  "planHints": ["use multimodal reasoning", "prefer concise phrasing"],
+  "notes": {
+    "provider": "OpenRouter",
+    "modelDefault": "z-ai/glm-4.6 when OPENROUTER_API_KEY is set (else OPENAI_MODEL or gpt-5-nano)",
+    "env": [
+      "OPENROUTER_API_KEY required to use GLM 4.6",
+      "Optional: OPENAI_MODEL=z-ai/glm-4.6",
+      "Optional: OPENAI_BASE_URL=https://openrouter.ai/api/v1"
+    ],
+    "usage": "npx tsx agents/app/cli.ts agents/app/demo_scenarios/task_spec_multimodal_glm.json"
+  }
+}
+

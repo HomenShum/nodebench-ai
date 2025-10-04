@@ -100,7 +100,7 @@ Agents (Extracted, Modular)
     - demo_scenarios/
       - task_spec_1.json
       - task_spec_2.json
-      - task_spec_multimodal_grok.json
+      - task_spec_multimodal_glm.json
       - task_spec_structured_from_caption.json
       - task_spec_multi_agent_scaffold.json
       - task_spec_orchestrate_graph.json
@@ -191,7 +191,7 @@ Enhancements (Dynamic graph extend + CSS truncation)
 - UI polish:
   - src/styles/agentDashboard.css: .agent-name clamps long titles with ellipsis; prevents text from overflowing the hierarchy row.
   - src/components/agentDashboard/AgentTasks.tsx: task metrics derive from live data (elapsedMs/durationMs, children count, progress fallback).
-  - Prompt planning providers: Default is Grok via OpenRouter when OPENROUTER_API_KEY is present (override model with OPENROUTER_MODEL). The UI exposes a Model select (Grok | OpenAI). Fallbacks: OpenAI (OPENAI_API_KEY) → heuristic planner (agents/core/plan). No more fixed 3-node stub.
+  - Prompt planning providers: Default is GLM 4.6 via OpenRouter when OPENROUTER_API_KEY is present (override model with OPENROUTER_MODEL). The UI exposes a Model select (GLM | OpenAI). Fallbacks: GPT-5-mini (OPENAI_API_KEY) → OpenAI → heuristic planner (agents/core/plan). No more fixed 3-node stub.
 
 
 

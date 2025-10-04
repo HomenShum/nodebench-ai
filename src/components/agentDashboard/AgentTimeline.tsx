@@ -567,7 +567,7 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
               try { window.localStorage.setItem("agents.planner", v); } catch {}
             }}
           >
-            <option value="grok">Grok (OpenRouter)</option>
+            <option value="grok">GLM (OpenRouter)</option>
             <option value="openai">OpenAI</option>
           </select>
         </label>

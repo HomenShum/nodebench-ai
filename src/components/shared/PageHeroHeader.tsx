@@ -25,7 +25,7 @@ export function PageHeroHeader({ icon, title, date, subtitle, presets, className
         <p className="text-gray-600">{subtitle}</p>
       ) : null}
       {presets ? (
-        <div className="mt-3 flex flex-wrap gap-2">{presets}</div>
+        <div className="mt-3 pb-4 flex flex-wrap gap-2">{presets}</div>
       ) : null}
     </div>
   );

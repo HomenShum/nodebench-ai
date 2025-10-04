@@ -682,9 +682,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 onGridModeToggle={() => setIsGridMode((v) => !v)}
               />
             ) : currentView === 'roadmap' ? (
-              <div className="h-full w-full overflow-auto p-8">
-                <TimelineRoadmapView />
-              </div>
+              <TimelineRoadmapView />
             ) : (
               <div className="h-full flex">
                 <div className="flex-1 overflow-hidden">

@@ -89,7 +89,7 @@ export const structuredTool: Tool = async (args: any, ctx: ExecContext) => {
   // Try tool calling first (more robust on models that support it)
   if (mode === 'tool') {
     const rsp = await createWithBackoff({
-      model: process.env.OPENAI_MODEL || (process.env.OPENROUTER_API_KEY ? 'x-ai/grok-4-fast:free' : 'gpt-5-nano'),
+      model: process.env.OPENAI_MODEL || (process.env.OPENROUTER_API_KEY ? 'z-ai/glm-4.6' : 'gpt-5-nano'),
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: combinedPrompt },
@@ -126,7 +126,7 @@ export const structuredTool: Tool = async (args: any, ctx: ExecContext) => {
 
   // JSON text mode
   const rsp2 = await createWithBackoff({
-    model: process.env.OPENAI_MODEL || (process.env.OPENROUTER_API_KEY ? 'x-ai/grok-4-fast:free' : 'gpt-5-nano'),
+    model: process.env.OPENAI_MODEL || (process.env.OPENROUTER_API_KEY ? 'z-ai/glm-4.6' : 'gpt-5-nano'),
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: `${combinedPrompt}\n\nReturn ONLY JSON.` },

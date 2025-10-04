@@ -130,9 +130,11 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
   // Auth + event data for Google Calendar-like view
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
+  // Ensure we use the same timestamp for both frontend week calculation and backend query
+  const effectiveFocusedDateMs = useMemo(() => focusedDateMs ?? Date.now(), [focusedDateMs]);
   const eventsThisWeekRaw = useQuery(
     api.events.listEventsForWeek,
-    loggedInUser ? { tzOffsetMinutes, dateMs: focusedDateMs } : "skip",
+    loggedInUser ? { tzOffsetMinutes, dateMs: effectiveFocusedDateMs } : "skip",
   );
   const eventsThisWeek: WeekEvent[] = useMemo(() => {
     // Defensive: remove duplicates by _id before rendering
@@ -239,7 +241,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     return date;
   };
 
-  const anchorDate = useMemo(() => (focusedDateMs ? new Date(focusedDateMs) : new Date()), [focusedDateMs]);
+  const anchorDate = useMemo(() => new Date(effectiveFocusedDateMs), [effectiveFocusedDateMs]);
   const weekDays: Date[] = useMemo(() => {
     const start = startOfWeek(anchorDate);
     return Array.from({ length: 7 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
@@ -325,6 +327,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     workdayEndHour = 17,
     density = 'cozy',
     collapseEmpty = true,
+    weekDaysFromParent,
   }: {
     events: WeekEvent[];
     onCreate: (title: string, startMs: number, endMs: number) => Promise<void>;
@@ -335,11 +338,17 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     workdayEndHour?: number;
     density?: 'comfortable' | 'cozy' | 'compact';
     collapseEmpty?: boolean;
+    weekDaysFromParent?: Date[];
   }) => {
     // Scrollable container
     const containerRef = useRef<HTMLDivElement | null>(null);
     const now = new Date();
-    const weekStart = startOfWeek(now);
+    // Use the weekDays passed from parent to ensure columns match the focused date
+    const weekDaysToUse = weekDaysFromParent ?? (() => {
+      const weekStart = startOfWeek(now);
+      return Array.from({ length: 7 }, (_, i) => new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i));
+    })();
+    const weekStart = weekDaysToUse[0];
     const isCurrentWeek = (d: Date) => startOfWeek(d).getTime() === weekStart.getTime();
 
     // Density + visible hours
@@ -370,7 +379,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
       return spansDays || coversDay;
     };
 
-    const weekStartDate = startOfWeek(anchorDate);
+    const weekStartDate = weekStart;
     const dayDiff = (a: Date, b: Date) => Math.floor((a.getTime() - b.getTime()) / (24 * 60 * 60 * 1000));
 
     type AllDaySpan = { e: WeekEvent; startIdx: number; endIdx: number };
@@ -483,38 +492,18 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     };
 
     return (
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm relative">
-        {/* Floating Go to Now button */}
-        <button
-          onClick={handleGoToNow}
-          className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shadow-sm"
-          title="Go to current time"
-          aria-label="Go to now"
-        >
-          <Clock className="w-3.5 h-3.5" /> Now
-        </button>
-        {/* Yellow tips badge */}
-        <div
-          className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-amber-50 text-amber-700 border border-amber-200 shadow-sm"
-          role="note"
-          title="Drag on the grid to create events. Click an event to edit. Double-click to open the full editor."
-          aria-label="Tips for using the calendar grid"
-        >
-          <Lightbulb className="w-3.5 h-3.5" /> Tips
-        </div>
-        {/* Add All-day Event button */}
-        <button
-          onClick={() => { void handleAddAllDayEvent(); }}
-          className="absolute top-2 right-24 z-10 inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 shadow-sm"
-          title="Add all-day event for this day"
-          aria-label="Add all-day event"
-        >
-          <Plus className="w-3.5 h-3.5" /> All-day
-        </button>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm relative h-[calc(100vh-280px)] min-h-[600px] flex flex-col">
         {/* Day header */}
-        <div className={`grid ${collapseEmpty ? 'grid-cols-7' : 'grid-cols-8'} px-2 py-1 bg-[var(--bg-secondary)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-secondary)]/80 border-b border-[var(--border-color)] text-xs text-[var(--text-secondary)]`}>
-          {!collapseEmpty && <div className="p-2" />}
-          {weekDays.map((d, idx) => (
+        <div
+          className="grid px-2 py-1 bg-[var(--bg-secondary)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-secondary)]/80 border-b border-[var(--border-color)] text-xs text-[var(--text-secondary)]"
+          style={{ gridTemplateColumns: collapseEmpty ? `repeat(7, minmax(0, 1fr))` : `auto repeat(7, minmax(0, 1fr))` }}
+        >
+          {!collapseEmpty && (
+            <div className="p-2 flex items-center justify-center">
+              <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+            </div>
+          )}
+          {weekDaysToUse.map((d, idx) => (
             <div
               key={idx}
               className="p-2 text-center"
@@ -548,7 +537,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 </span>
               </div>
             )}
-            {weekDays.map((d, idx) => (
+            {weekDaysToUse.map((d, idx) => (
               <div
                 key={`alldaycell-${idx}`}
                 className="relative border-l border-gray-100"
@@ -648,7 +637,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
         {/* Grid */}
         <div
           ref={containerRef}
-          className="grid max-h-[600px] overflow-y-auto"
+          className="grid flex-1 overflow-y-auto"
           style={{ gridTemplateColumns: collapseEmpty ? `repeat(7, minmax(0, 1fr))` : `auto repeat(7, minmax(0, 1fr))` }}
         >
           {/* Time gutter (hidden in collapsed mode due to non-linear scale) */}
@@ -663,7 +652,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
           )}
 
           {/* Day columns */}
-          {weekDays.map((d, dayIdx) => {
+          {weekDaysToUse.map((d, dayIdx) => {
             const dayStart = new Date(d);
             dayStart.setHours(0, 0, 0, 0);
             const dayEnd = new Date(d);
@@ -1219,7 +1208,6 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               icon={"📅"}
               title={"Calendar Hub"}
               date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-              subtitle={"Your productivity command center. Track tasks, plan your week, and stay organized."}
               presets={
                 <>
                   <span className="text-xs text-gray-500 mr-2">Presets:</span>
@@ -1230,75 +1218,8 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               }
             />
 
-            {/* Controls */}
-            <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
-              {/* Work hours toggle */}
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showWorkHoursOnly}
-                  onChange={(e) => setShowWorkHoursOnly(e.target.checked)}
-                />
-                <span className="text-gray-700">Show work hours only</span>
-              </label>
-
-              {/* Start hour */}
-              <label className="inline-flex items-center gap-2">
-                <span className="text-gray-600">Start</span>
-                <select
-                  className="border border-gray-300 rounded-md px-2 py-1 bg-white"
-                  value={workdayStartHour}
-                  onChange={(e) => setWorkdayStartHour(Number(e.target.value))}
-                >
-                  {hours.map((h) => (
-                    <option key={h} value={h}>{hourLabel(h)}</option>
-                  ))}
-                </select>
-              </label>
-
-              {/* End hour */}
-              <label className="inline-flex items-center gap-2">
-                <span className="text-gray-600">End</span>
-                <select
-                  className="border border-gray-300 rounded-md px-2 py-1 bg-white"
-                  value={workdayEndHour}
-                  onChange={(e) => setWorkdayEndHour(Number(e.target.value))}
-                >
-                  {hours.map((h) => (
-                    <option key={h} value={h}>{hourLabel(h)}</option>
-                  ))}
-                </select>
-              </label>
-
-              {/* Density */}
-              <label className="inline-flex items-center gap-2">
-                <span className="text-gray-600">Density</span>
-                <select
-                  className="border border-gray-300 rounded-md px-2 py-1 bg-white"
-                  value={density}
-                  onChange={(e) => setDensity(e.target.value as 'comfortable' | 'cozy' | 'compact')}
-                >
-                  <option value="comfortable">Comfortable</option>
-                  <option value="cozy">Cozy</option>
-                  <option value="compact">Compact</option>
-                </select>
-              </label>
-
-              {/* Collapse empty gaps */}
-              <label className="inline-flex items-center gap-2 ml-auto">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={collapseEmpty}
-                  onChange={(e) => setCollapseEmpty(e.target.checked)}
-                />
-                <span className="text-gray-700">Collapse empty gaps</span>
-              </label>
-            </div>
-
             {/* Google Calendar-like Week View */}
-            <div className="mb-6">
+            <div className="mb-6 flex-1 min-h-0">
               <GoogleWeekView
                 events={eventsThisWeek}
                 onCreate={onCreateInline}
@@ -1310,133 +1231,10 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 workdayEndHour={workdayEndHour}
                 density={density}
                 collapseEmpty={collapseEmpty}
+                weekDaysFromParent={weekDays}
               />
             </div>
 
-            {/* Quick Add (no ProseMirror editor) */}
-            <div ref={editorContainerRef} className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-              <div className="p-3 flex flex-wrap items-center gap-2">
-                <input
-                  type="text"
-                  value={quickAddText}
-                  onChange={(e) => setQuickAddText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleQuickAddCreate(); } }}
-                  placeholder={"Quick add task…"}
-                  className="flex-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
-                />
-                <button
-                  onClick={() => { void handleQuickAddCreate(); }}
-                  disabled={!loggedInUser || !quickAddText.trim()}
-                  className={`text-[11px] px-2.5 py-1 rounded-md border ${(!loggedInUser || !quickAddText.trim()) ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] border-transparent'}`}
-                  title={!loggedInUser ? 'Please sign in to create items' : undefined}
-                >
-                  Add
-                </button>
-              </div>
-
-
-            </div>
-
-            {/* Floating AI Menu Button */}
-            <div className="fixed bottom-6 right-6 z-20">
-              <button
-                onClick={() => setIsAiMenuOpen(!isAiMenuOpen)}
-                className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 hover:brightness-105 active:scale-100 active:brightness-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-                disabled={isGenerating}
-              >
-                <Sparkles className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
-                <span className="font-medium">AI Assistant</span>
-              </button>
-
-              {/* AI Actions Menu */}
-              {isAiMenuOpen && (
-                <div className="absolute bottom-16 right-0 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-72 transform transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-purple-500" />
-                      AI Calendar Assistant
-                    </h3>
-                    <button
-                      onClick={() => setIsAiMenuOpen(false)}
-                      className="p-1 hover:bg-gray-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                    >
-                      <X className="w-4 h-4 text-gray-500" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => { void handleAIAction('organize'); }}
-                      disabled={isGenerating}
-                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-blue-50 rounded-lg flex items-center gap-3 transition-colors group"
-                    >
-                      <CalendarIcon className="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <div className="font-medium text-gray-900">Organize Calendar</div>
-                        <div className="text-xs text-gray-500">Sort by priority & deadlines</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => { void handleAIAction('timeblock'); }}
-                      disabled={isGenerating}
-                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-green-50 rounded-lg flex items-center gap-3 transition-colors group"
-                    >
-                      <Clock className="w-4 h-4 text-green-500 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <div className="font-medium text-gray-900">Time Blocking</div>
-                        <div className="text-xs text-gray-500">Create optimal schedule</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => { void handleAIAction('tasklist'); }}
-                      disabled={isGenerating}
-                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-purple-50 rounded-lg flex items-center gap-3 transition-colors group"
-                    >
-                      <ListTodo className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <div className="font-medium text-gray-900">Task List</div>
-                        <div className="text-xs text-gray-500">Prioritized action items</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => void handleAIAction('braindump')}
-                      disabled={isGenerating}
-                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-orange-50 rounded-lg flex items-center gap-3 transition-colors group"
-                    >
-                      <Brain className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <div className="font-medium text-gray-900">Process Notes</div>
-                        <div className="text-xs text-gray-500">Convert ideas to tasks</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => void handleAIAction('weekly')}
-                      disabled={isGenerating}
-                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-indigo-50 rounded-lg flex items-center gap-3 transition-colors group"
-                    >
-                      <CheckSquare className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <div className="font-medium text-gray-900">Weekly Review</div>
-                        <div className="text-xs text-gray-500">Summary & next steps</div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {isGenerating && (
-                    <div className="mt-3 p-2 bg-blue-50 rounded-lg">
-                      <p className="text-xs text-blue-600 flex items-center gap-2">
-                        <RefreshCw className="w-3 h-3 animate-spin" />
-                        AI is working on your request...
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
           </div>
         )}
         </div>

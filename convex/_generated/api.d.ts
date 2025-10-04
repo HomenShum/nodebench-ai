@@ -37,6 +37,7 @@ import type * as agents_xrayWorkflow from "../agents/xrayWorkflow.js";
 import type * as agentsPrefs from "../agentsPrefs.js";
 import type * as ai from "../ai.js";
 import type * as aiAgents from "../aiAgents.js";
+import type * as analytics from "../analytics.js";
 import type * as apiKeys from "../apiKeys.js";
 import type * as apiKeysActions from "../apiKeysActions.js";
 import type * as auth from "../auth.js";
@@ -138,6 +139,7 @@ declare const fullApi: ApiFromModules<{
   agentsPrefs: typeof agentsPrefs;
   ai: typeof ai;
   aiAgents: typeof aiAgents;
+  analytics: typeof analytics;
   apiKeys: typeof apiKeys;
   apiKeysActions: typeof apiKeysActions;
   auth: typeof auth;
