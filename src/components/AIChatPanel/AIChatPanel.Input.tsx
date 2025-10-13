@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
+import { Mic, Square } from "lucide-react";
 
 export type AIChatPanelInputProps = {
   input: string;
@@ -8,6 +9,13 @@ export type AIChatPanelInputProps = {
   isLoading: boolean;
   onSend: () => void;
   onFilesDrop?: (files: File[]) => void;
+  voice?: {
+    isSupported: boolean;
+    isRecording: boolean;
+    isPermissionDenied?: boolean;
+    onStart: () => void;
+    onStop: () => void;
+  };
 };
 
 // Convert pasted HTML to plain text while preserving list and nested list structure
@@ -98,6 +106,7 @@ export const AIChatPanelInput: React.FC<AIChatPanelInputProps> = ({
   isLoading,
   onSend,
   onFilesDrop,
+  voice,
 }) => {
   const editorRef = useRef<HTMLDivElement | null>(null);
 
@@ -123,6 +132,14 @@ export const AIChatPanelInput: React.FC<AIChatPanelInputProps> = ({
     const current = (el.textContent || "").replace(/\r\n/g, "\n");
     if (current !== input) {
       el.textContent = input;
+      if (document.activeElement === el) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
     }
   }, [input]);
 
@@ -168,8 +185,19 @@ export const AIChatPanelInput: React.FC<AIChatPanelInputProps> = ({
     onKeyPress(e);
   };
 
+  const voiceButtonDisabled =
+    !voice?.isSupported || voice?.isPermissionDenied || isLoading;
+
+  const voiceButtonTitle = !voice?.isSupported
+    ? "Voice input is not supported in this browser"
+    : voice?.isPermissionDenied
+      ? "Microphone access is blocked"
+      : voice?.isRecording
+        ? "Stop and send voice capture"
+        : "Start voice capture";
+
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 items-start sm:items-center">
       <div
         className="flex-1 relative"
         onDragEnter={prevent}
@@ -191,7 +219,34 @@ export const AIChatPanelInput: React.FC<AIChatPanelInputProps> = ({
           style={{ outline: "none" }}
         />
       </div>
+      {voice && (
+        <button
+          type="button"
+          onClick={voice.isRecording ? voice.onStop : voice.onStart}
+          disabled={voiceButtonDisabled}
+          title={voiceButtonTitle}
+          aria-pressed={voice.isRecording}
+          className={`relative px-3 py-2 rounded-md border text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-primary)] ${
+            voice.isRecording
+              ? "bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]"
+              : "bg-[var(--bg-primary)] border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+          } disabled:opacity-40 disabled:cursor-not-allowed`}
+        >
+          {voice.isRecording ? (
+            <Square className="h-4 w-4" aria-hidden />
+          ) : (
+            <Mic className="h-4 w-4" aria-hidden />
+          )}
+          <span className="sr-only">
+            {voice.isRecording ? "Stop and send voice capture" : "Start voice capture"}
+          </span>
+          {voice.isRecording && (
+            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[var(--accent-primary)] animate-pulse" aria-hidden />
+          )}
+        </button>
+      )}
       <button
+        type="button"
         onClick={onSend}
         disabled={!input.trim() || isLoading}
         className="px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] disabled:opacity-50 transition-colors"

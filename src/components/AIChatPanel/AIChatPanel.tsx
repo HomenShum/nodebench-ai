@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useMcp } from "../../hooks/useMcp";
 import { useContextPills } from "../../hooks/contextPills";
+import { useVoiceChat, type TranscriptChangeMeta } from "../../hooks/useVoiceChat";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -202,6 +203,61 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   const [showLlmInfo, setShowLlmInfo] = useState(true);
   const [activeTab, setActiveTab] = useState<'chat' | 'flow'>('chat');
 
+  const handleSendMessageRef = useRef<((message?: string) => void | Promise<void>) | null>(null);
+  const lastVoiceSubmissionRef = useRef<string | null>(null);
+
+  const handleTranscriptChange = useCallback(
+    (value: string, meta: TranscriptChangeMeta) => {
+      setInput((prev) => (prev === value ? prev : value));
+
+      if (!meta.isFinal) {
+        return;
+      }
+
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      if (lastVoiceSubmissionRef.current === trimmed) {
+        return;
+      }
+
+      lastVoiceSubmissionRef.current = trimmed;
+
+      const maybeSend = handleSendMessageRef.current?.(trimmed);
+      if (maybeSend && typeof (maybeSend as any).then === "function") {
+        (maybeSend as Promise<void>)
+          .then(() => {
+            setInput("");
+          })
+          .catch((error) => {
+            console.error("Voice submission failed", error);
+            lastVoiceSubmissionRef.current = null;
+            setInput(trimmed);
+          });
+      } else {
+        setInput("");
+      }
+    },
+    []
+  );
+
+  const {
+    isRecognitionSupported,
+    isRecording: isVoiceRecording,
+    startRecording: startVoiceRecording,
+    stopRecording: stopVoiceRecording,
+    error: voiceError,
+    isPermissionDenied: isVoicePermissionDenied,
+    isSpeechSynthesisSupported,
+    speak: speakMessage,
+    stopSpeaking,
+    speakingMessageId,
+  } = useVoiceChat({
+    onTranscriptChange: handleTranscriptChange,
+  });
+
   // Manual chat persistence control (default off)
   const [autoSaveChat, setAutoSaveChat] = useState<boolean>(() => {
     try { return localStorage.getItem('nb.autoSaveChat') === '1'; } catch { return false; }
@@ -214,6 +270,13 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   useEffect(() => {
     if (showMcpPanel) setActiveTab('chat');
   }, [showMcpPanel]);
+
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'chat') {
+      stopVoiceRecording();
+      stopSpeaking();
+    }
+  }, [isOpen, activeTab, stopVoiceRecording, stopSpeaking]);
 
   // MCP connection state
   const { sessionId: mcpSessionId, invoking: mcpConnecting, servers, selectServer, tools } = useMcp();
@@ -1028,6 +1091,8 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
 
 
   const handleSendMessage = useCallback(async (message?: string) => {
+    stopVoiceRecording();
+    stopSpeaking();
     const userMessageContent = message ?? input.trim();
     if (!userMessageContent || isLoading) return;
 
@@ -1471,7 +1536,13 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
     currentUser,
     thinkingMode,
     autoSaveChat,
+    stopVoiceRecording,
+    stopSpeaking,
   ]);
+
+  useEffect(() => {
+    handleSendMessageRef.current = handleSendMessage;
+  }, [handleSendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1755,6 +1826,10 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
         handleRerunFromMessage={handleRerunFromMessage}
         handleRollbackToMessage={handleRollbackToMessage}
         handleUndoLastResponse={handleUndoLastResponse}
+        onSpeakMessage={speakMessage}
+        onStopSpeaking={stopSpeaking}
+        speakingMessageId={speakingMessageId}
+        isSpeechSynthesisSupported={isSpeechSynthesisSupported}
       />
 
 
@@ -2372,7 +2447,31 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
                 setInput(prev => prev + (prev ? ' ' : '') + `[File: ${fileNames}]`);
               }
             }}
+            voice={{
+              isSupported: isRecognitionSupported,
+              isRecording: isVoiceRecording,
+              isPermissionDenied: isVoicePermissionDenied,
+              onStart: () => {
+                stopSpeaking();
+                lastVoiceSubmissionRef.current = null;
+                startVoiceRecording(input);
+              },
+              onStop: stopVoiceRecording,
+            }}
           />
+
+          {(voiceError || isVoicePermissionDenied) && (
+            <p className="text-xs text-red-500">
+              {isVoicePermissionDenied
+                ? 'Microphone access is blocked. Update your browser permissions to use voice capture.'
+                : voiceError}
+            </p>
+          )}
+          {!voiceError && !isVoicePermissionDenied && isRecognitionSupported && (
+            <p className="text-xs text-[var(--text-secondary)]">
+              Voice capture will auto-send when you stop recording.
+            </p>
+          )}
 
           {false && (<div className="flex gap-2">
             <div

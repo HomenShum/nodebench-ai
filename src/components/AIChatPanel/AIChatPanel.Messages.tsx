@@ -1,6 +1,20 @@
 import React from "react";
 import { Id } from "../../convex/_generated/dataModel";
-import { ChevronDown, ChevronRight, Brain, Search, FileText, Loader2, ArrowUp, Undo2, Edit2, X, Check } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Brain,
+  Search,
+  FileText,
+  Loader2,
+  ArrowUp,
+  Undo2,
+  Edit2,
+  X,
+  Check,
+  Volume2,
+  Square,
+} from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 
 export type MessagesProps = {
@@ -23,7 +37,21 @@ export type MessagesProps = {
   handleUndoLastResponse: () => void;
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement>;
+  onSpeakMessage?: (messageId: string, text: string) => void;
+  onStopSpeaking?: () => void;
+  speakingMessageId?: string | null;
+  isSpeechSynthesisSupported?: boolean;
 };
+
+const sanitizeMarkdownForSpeech = (text: string) =>
+  text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[(.*?)\]\((.*?)\)/g, "$1")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/[#>*_~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 export const AIChatPanelMessages: React.FC<MessagesProps> = (props) => {
   const {
@@ -46,6 +74,10 @@ export const AIChatPanelMessages: React.FC<MessagesProps> = (props) => {
     handleUndoLastResponse,
     isLoading,
     messagesEndRef,
+    onSpeakMessage,
+    onStopSpeaking,
+    speakingMessageId,
+    isSpeechSynthesisSupported,
   } = props;
 
   return (
@@ -135,6 +167,27 @@ export const AIChatPanelMessages: React.FC<MessagesProps> = (props) => {
                 )}
                 {message.type === 'assistant' && index === messages.length - 1 && (
                   <button onClick={handleUndoLastResponse} className="p-1 hover:bg-[var(--bg-hover)] rounded" title="Undo last response"><Undo2 className="h-3 w-3" /></button>
+                )}
+                {message.type === 'assistant' && isSpeechSynthesisSupported && (
+                  <button
+                    onClick={() =>
+                      speakingMessageId === message.id
+                        ? onStopSpeaking?.()
+                        : onSpeakMessage?.(message.id, sanitizeMarkdownForSpeech(message.content))
+                    }
+                    className={`p-1 rounded transition-colors ${
+                      speakingMessageId === message.id
+                        ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
+                        : 'hover:bg-[var(--bg-hover)]'
+                    }`}
+                    title={speakingMessageId === message.id ? 'Stop playback' : 'Play response'}
+                  >
+                    {speakingMessageId === message.id ? (
+                      <Square className="h-3 w-3" />
+                    ) : (
+                      <Volume2 className="h-3 w-3" />
+                    )}
+                  </button>
                 )}
               </div>
             )}

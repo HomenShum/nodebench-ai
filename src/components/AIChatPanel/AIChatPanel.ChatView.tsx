@@ -36,6 +36,10 @@ interface ChatViewProps {
   handleRerunFromMessage: (messageId: string) => void;
   handleRollbackToMessage: (messageId: string) => void;
   handleUndoLastResponse: () => void;
+  onSpeakMessage?: (messageId: string, text: string) => void;
+  onStopSpeaking?: () => void;
+  speakingMessageId?: string | null;
+  isSpeechSynthesisSupported?: boolean;
 }
 
 /**
@@ -69,6 +73,10 @@ export function AIChatPanelChatView({
   handleRerunFromMessage,
   handleRollbackToMessage,
   handleUndoLastResponse,
+  onSpeakMessage,
+  onStopSpeaking,
+  speakingMessageId,
+  isSpeechSynthesisSupported,
 }: ChatViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -107,6 +115,10 @@ export function AIChatPanelChatView({
         handleUndoLastResponse={handleUndoLastResponse}
         isLoading={isLoading}
         messagesEndRef={messagesEndRef}
+        onSpeakMessage={onSpeakMessage}
+        onStopSpeaking={onStopSpeaking}
+        speakingMessageId={speakingMessageId}
+        isSpeechSynthesisSupported={isSpeechSynthesisSupported}
       />
     </>
   );
