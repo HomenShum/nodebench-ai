@@ -12,13 +12,13 @@ export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
 export const statusChipClasses = (s?: string) => {
   switch (s) {
     case "in_progress":
-      return "bg-blue-100 text-blue-700 border-blue-200";
+      return "bg-blue-50 text-blue-700 border-blue-200";
     case "done":
-      return "bg-green-100 text-green-700 border-green-200";
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
     case "blocked":
-      return "bg-red-100 text-red-700 border-red-200";
+      return "bg-rose-50 text-rose-700 border-rose-200";
     default:
-      return "bg-gray-100 text-gray-700 border-gray-200";
+      return "bg-slate-50 text-slate-700 border-slate-200";
   }
 };
 
@@ -28,15 +28,15 @@ export const statusChipClasses = (s?: string) => {
 export const statusLabel = (s?: string) => {
   switch (s) {
     case "in_progress":
-      return "In Progress";
+      return "IN PROGRESS";
     case "done":
-      return "Done";
+      return "DONE";
     case "blocked":
-      return "Blocked";
+      return "BLOCKED";
     case "todo":
-      return "To Do";
+      return "TODO";
     default:
-      return "Unknown";
+      return "TODO";
   }
 };
 
@@ -52,13 +52,13 @@ export const isTaskStatus = (v: string): v is TaskStatus =>
 export const eventStatusBar = (s?: string) => {
   switch (s) {
     case "confirmed":
-      return "bg-green-500";
+      return "bg-emerald-500/60";
     case "tentative":
-      return "bg-yellow-500";
+      return "bg-amber-500/60";
     case "cancelled":
-      return "bg-red-500";
+      return "bg-rose-500/60";
     default:
-      return "bg-blue-500";
+      return "bg-[var(--border-color)]";
   }
 };
 
@@ -68,15 +68,15 @@ export const eventStatusBar = (s?: string) => {
 export const kanbanStatusBar = (s?: string) => {
   switch (s) {
     case "todo":
-      return "bg-gray-400";
+      return "bg-slate-400/70";
     case "in_progress":
-      return "bg-blue-500";
+      return "bg-blue-400/70";
     case "done":
-      return "bg-green-500";
+      return "bg-emerald-500/80";
     case "blocked":
-      return "bg-red-500";
+      return "bg-rose-500/80";
     default:
-      return "bg-gray-300";
+      return "bg-[var(--border-color)]";
   }
 };
 
@@ -86,15 +86,15 @@ export const kanbanStatusBar = (s?: string) => {
 export const priorityClasses = (p?: string) => {
   switch ((p || "").toLowerCase()) {
     case "low":
-      return "bg-gray-100 text-gray-600 border-gray-200";
+      return "bg-green-500/10 text-green-700 border-green-400/30";
     case "medium":
-      return "bg-blue-100 text-blue-600 border-blue-200";
+      return "bg-yellow-500/10 text-yellow-700 border-yellow-400/30";
     case "high":
-      return "bg-orange-100 text-orange-600 border-orange-200";
+      return "bg-orange-500/10 text-orange-700 border-orange-400/30";
     case "urgent":
-      return "bg-red-100 text-red-600 border-red-200";
+      return "bg-red-500/10 text-red-700 border-red-400/30";
     default:
-      return "bg-gray-100 text-gray-600 border-gray-200";
+      return "bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]";
   }
 };
 

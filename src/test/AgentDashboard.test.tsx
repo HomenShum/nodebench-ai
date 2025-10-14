@@ -26,6 +26,7 @@ vi.mock('convex/react', async () => {
       ];
     },
     useMutation: () => async () => undefined,
+    useAction: () => (async () => undefined),
     useConvex: () => ({ query: vi.fn(), mutation: vi.fn() }),
   };
 });

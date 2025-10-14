@@ -17,7 +17,7 @@ interface Artifact {
   type: string;
 }
 
-interface TurnDetails {
+export interface TurnDetails {
   thinkingSteps?: ThinkingStep[];
   toolCalls?: ToolCall[];
   artifacts?: Artifact[];

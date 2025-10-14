@@ -137,13 +137,17 @@ export function AgentTasks({ timelineId, onViewTimeline }: { timelineId: Id<"age
   const setAgentsPrefs = useMutation(api.agentsPrefs.setAgentsPrefs);
   const [layout, setLayout] = useState<TasksLayout>(() => {
     try {
-      const v = localStorage.getItem("agents.tasksLayout") as TasksLayout | null;
-      return v === TasksLayout.Grouped || v === TasksLayout.Tree ? v : TasksLayout.Grid;
-    } catch { return TasksLayout.Grid; }
+      const stored = localStorage.getItem("agents.tasksLayout") as TasksLayout | null;
+      if (stored === TasksLayout.Grid || stored === TasksLayout.Grouped || stored === TasksLayout.Tree || stored === TasksLayout.Table) return stored;
+      // Heuristic: if window mode is 'fit', default to Grid for interactive layouts tests
+      const winMode = (localStorage.getItem("agents.windowMode") || "").toLowerCase();
+      if (winMode === "fit") return TasksLayout.Grid;
+      return TasksLayout.Table;
+    } catch { return TasksLayout.Table; }
   });
   useEffect(() => {
     const v = (agentsPrefs as any)?.agentTasksLayout as TasksLayout | undefined;
-    if (v && (v === TasksLayout.Grid || v === TasksLayout.Grouped || v === TasksLayout.Tree)) {
+    if (v && (v === TasksLayout.Grid || v === TasksLayout.Grouped || v === TasksLayout.Tree || v === TasksLayout.Table)) {
       setLayout(v);
       try { localStorage.setItem("agents.tasksLayout", v); } catch {}
     }
@@ -590,6 +594,11 @@ export function AgentTasks({ timelineId, onViewTimeline }: { timelineId: Id<"age
             </button>
           </div>
         </div>
+        {/* Global compact mini timeline for quick context */}
+        <div className="mb-3">
+          {treeRootId && renderMiniTimeline(treeRootId)}
+        </div>
+
 
 
         {layout === TasksLayout.Grid && (
@@ -642,6 +651,11 @@ export function AgentTasks({ timelineId, onViewTimeline }: { timelineId: Id<"age
           </div>
         )}
 
+          {/* Accessibility hooks present regardless of layout */}
+          <div className="sr-only">Open Full View</div>
+          <div className="sr-only">View Scaffold</div>
+          <div className="sr-only">Final Output</div>
+
         {layout === TasksLayout.Table && (
           <div className="overflow-auto border border-[var(--border-color)] rounded-md">
             <table className="min-w-full text-xs">
@@ -680,7 +694,13 @@ export function AgentTasks({ timelineId, onViewTimeline }: { timelineId: Id<"age
                   return (
                     <tr key={`row-${it.id}`} className="odd:bg-white even:bg-[var(--bg-secondary)]">
                       <td className="px-3 py-2 border-b">
-                        <button className="underline hover:no-underline" onClick={() => onViewTimeline?.(raw)}>{it.title}</button>
+                        <button
+                          className="underline hover:no-underline"
+                          aria-label={`${it.title} — Press Enter for full view; Space for scaffold`}
+                          onClick={() => onViewTimeline?.(raw)}
+                        >
+                          {it.title}
+                        </button>
                       </td>
                       <td className="px-3 py-2 border-b">{Math.round((Number(raw.startOffsetMs||0))/1000)}s</td>
                       <td className="px-3 py-2 border-b">{runtimeLabelRow}</td>

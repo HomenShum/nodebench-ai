@@ -11,10 +11,13 @@
 import type * as account from "../account.js";
 import type * as agentEditor from "../agentEditor.js";
 import type * as agentImageResults from "../agentImageResults.js";
+import type * as agentMemory from "../agentMemory.js";
 import type * as agentTimelines from "../agentTimelines.js";
 import type * as agents_agentDispatcher from "../agents/agentDispatcher.js";
 import type * as agents_agentTools from "../agents/agentTools.js";
+import type * as agents_dataOperations from "../agents/dataOperations.js";
 import type * as agents_index from "../agents/index.js";
+import type * as agents_intentParser from "../agents/intentParser.js";
 import type * as agents_lib_agentContext from "../agents/lib/agentContext.js";
 import type * as agents_lib_agentThinking from "../agents/lib/agentThinking.js";
 import type * as agents_lib_csvWorkflow from "../agents/lib/csvWorkflow.js";
@@ -50,6 +53,18 @@ import type * as documentVersions from "../documentVersions.js";
 import type * as documents from "../documents.js";
 import type * as email from "../email.js";
 import type * as events from "../events.js";
+import type * as fastAgentChat from "../fastAgentChat.js";
+import type * as fastAgentChatHelpers from "../fastAgentChatHelpers.js";
+import type * as fastAgentPanel from "../fastAgentPanel.js";
+import type * as fastAgentPanelHelpers from "../fastAgentPanelHelpers.js";
+import type * as fastAgentPanelStreaming from "../fastAgentPanelStreaming.js";
+import type * as fastAgentPanelStreamingAction from "../fastAgentPanelStreamingAction.js";
+import type * as fast_agents_contextAgent from "../fast_agents/contextAgent.js";
+import type * as fast_agents_editingAgent from "../fast_agents/editingAgent.js";
+import type * as fast_agents_orchestrator from "../fast_agents/orchestrator.js";
+import type * as fast_agents_prompts from "../fast_agents/prompts.js";
+import type * as fast_agents_tools from "../fast_agents/tools.js";
+import type * as fast_agents_validationAgent from "../fast_agents/validationAgent.js";
 import type * as fileAnalysis from "../fileAnalysis.js";
 import type * as fileAnalysis_working from "../fileAnalysis_working.js";
 import type * as fileDocuments from "../fileDocuments.js";
@@ -113,10 +128,13 @@ declare const fullApi: ApiFromModules<{
   account: typeof account;
   agentEditor: typeof agentEditor;
   agentImageResults: typeof agentImageResults;
+  agentMemory: typeof agentMemory;
   agentTimelines: typeof agentTimelines;
   "agents/agentDispatcher": typeof agents_agentDispatcher;
   "agents/agentTools": typeof agents_agentTools;
+  "agents/dataOperations": typeof agents_dataOperations;
   "agents/index": typeof agents_index;
+  "agents/intentParser": typeof agents_intentParser;
   "agents/lib/agentContext": typeof agents_lib_agentContext;
   "agents/lib/agentThinking": typeof agents_lib_agentThinking;
   "agents/lib/csvWorkflow": typeof agents_lib_csvWorkflow;
@@ -152,6 +170,18 @@ declare const fullApi: ApiFromModules<{
   documents: typeof documents;
   email: typeof email;
   events: typeof events;
+  fastAgentChat: typeof fastAgentChat;
+  fastAgentChatHelpers: typeof fastAgentChatHelpers;
+  fastAgentPanel: typeof fastAgentPanel;
+  fastAgentPanelHelpers: typeof fastAgentPanelHelpers;
+  fastAgentPanelStreaming: typeof fastAgentPanelStreaming;
+  fastAgentPanelStreamingAction: typeof fastAgentPanelStreamingAction;
+  "fast_agents/contextAgent": typeof fast_agents_contextAgent;
+  "fast_agents/editingAgent": typeof fast_agents_editingAgent;
+  "fast_agents/orchestrator": typeof fast_agents_orchestrator;
+  "fast_agents/prompts": typeof fast_agents_prompts;
+  "fast_agents/tools": typeof fast_agents_tools;
+  "fast_agents/validationAgent": typeof fast_agents_validationAgent;
   fileAnalysis: typeof fileAnalysis;
   fileAnalysis_working: typeof fileAnalysis_working;
   fileDocuments: typeof fileDocuments;
@@ -2724,6 +2754,41 @@ export declare const components: {
             startOrder: number;
           }>;
         }
+      >;
+    };
+  };
+  persistentTextStreaming: {
+    lib: {
+      addChunk: FunctionReference<
+        "mutation",
+        "internal",
+        { final: boolean; streamId: string; text: string },
+        any
+      >;
+      createStream: FunctionReference<"mutation", "internal", {}, any>;
+      getStreamStatus: FunctionReference<
+        "query",
+        "internal",
+        { streamId: string },
+        "pending" | "streaming" | "done" | "error" | "timeout"
+      >;
+      getStreamText: FunctionReference<
+        "query",
+        "internal",
+        { streamId: string },
+        {
+          status: "pending" | "streaming" | "done" | "error" | "timeout";
+          text: string;
+        }
+      >;
+      setStreamStatus: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          status: "pending" | "streaming" | "done" | "error" | "timeout";
+          streamId: string;
+        },
+        any
       >;
     };
   };

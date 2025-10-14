@@ -12,29 +12,30 @@ import {
   Connection,
   Edge,
   Node,
+  MarkerType,
 } from 'reactflow';
 
 import {
   Send,
   Server as ServerIcon,
   FileText,
-  Search,
-  Edit3,
-  Plus,
-  CheckCircle,
   Brain,
   Wrench,
-  Loader2,
   ChevronDown,
   ChevronRight,
   X,
   Sparkles,
   Zap,
-  Save,
   Settings,
-  Trash2,
-  RotateCcw,
-  AlertCircle
+  Info,
+  Key,
+  Eye,
+  EyeOff,
+  Upload,
+  Hash,
+  Image as ImageIcon,
+  FileCheck,
+  Calendar,
 } from 'lucide-react';
 
 import { toast } from "sonner";
@@ -51,7 +52,7 @@ import { AIChatPanelHeader } from "./AIChatPanel.Header";
 import { AIChatPanelQuickActions } from "./AIChatPanel.QuickActions";
 import { AIChatPanelMcpSelector } from "./AIChatPanel.McpSelector";
 import { AIChatPanelErrorBanner } from "./AIChatPanel.ErrorBanner";
-import { AIChatPanelTurnDetails } from "./AIChatPanel.TurnDetails";
+import { AIChatPanelTurnDetails, type TurnDetails } from "./AIChatPanel.TurnDetails";
 import { AIChatPanelChatView } from "./AIChatPanel.ChatView";
 import { AIChatPanelFlowView } from "./AIChatPanel.FlowView";
 
@@ -120,20 +121,20 @@ interface Message {
   candidateDocs?: any[];
 }
 
-interface ConversationTurnData {
+// Local conversation node data used only for building the flow graph
+interface FlowConversationNodeData {
   messageId: string;
   type: 'user' | 'assistant';
   title: string;
   content: string;
   timestamp: Date;
   status: 'active' | 'completed' | 'error';
-  // Detailed process info for AI turns
   thinkingSteps?: any[];
   toolCalls?: any[];
   artifacts?: any[];
   adaptations?: any[];
   candidateDocs?: any[];
-  documentCreated?: any;
+  documentCreated?: { title?: string } | null;
 }
 
 // Context Pill Component for showing selected documents/files
@@ -243,7 +244,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedFlowNode, setSelectedFlowNode] = useState<string | null>(null);
-  const [selectedTurnDetails, setSelectedTurnDetails] = useState<ConversationTurnData | null>(null);
+  const [selectedTurnDetails, setSelectedTurnDetails] = useState<TurnDetails | null>(null);
   const reactFlowInstanceRef = useRef<any>(null);
   const flowContainerRef = useRef<HTMLDivElement | null>(null);
   const [flowReady, setFlowReady] = useState(false);
@@ -295,6 +296,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   });
   // Error banner state for surfacing tool call failures
   const [errorBanner, setErrorBanner] = useState<{
+    message: string;
     errors: Array<{ tool: string; message: string }>;
     expanded: boolean;
   } | null>(null);
@@ -765,7 +767,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
     setSelectedFlowNode(node.id);
 
     // Show detailed view for AI nodes with process details
-    const turnData = node.data as ConversationTurnData;
+    const turnData = node.data as FlowConversationNodeData;
     if (turnData.type === 'assistant' && (
       (turnData.thinkingSteps?.length || 0) > 0 ||
       (turnData.toolCalls?.length || 0) > 0 ||
@@ -979,6 +981,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
       cancelEditing();
     } catch (err: any) {
       setErrorBanner({
+        message: 'Rename failed',
         errors: [
           {
             tool: 'rename',
@@ -1329,7 +1332,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
               }))
           : [];
         if (failed.length > 0) {
-          setErrorBanner({ errors: failed, expanded: false });
+          setErrorBanner({ message: 'One or more tools failed', errors: failed, expanded: false });
         } else {
           setErrorBanner(null);
         }
@@ -1429,7 +1432,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
       // Show a top-level banner for request errors too
       try {
         const msg = error instanceof Error ? error.message : 'Unknown error';
-        setErrorBanner({ errors: [{ tool: 'chatWithAgent', message: msg }], expanded: false });
+        setErrorBanner({ message: 'Chat failed', errors: [{ tool: 'chatWithAgent', message: msg }], expanded: false });
       } catch (e) {
         console.debug('⚠️ [FRONTEND] Failed to set error banner', e);
       }

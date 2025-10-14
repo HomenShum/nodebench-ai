@@ -114,7 +114,12 @@ export function ExecutionBar({
   const runtimeMs = runtimeCandidates.length ? Math.max(...runtimeCandidates) : null;
   const runtimeLabel = runtimeMs !== null ? formatDuration(runtimeMs) : null;
   const plannedLabel = durationMs > 0 ? formatDuration(durationMs) : null;
-  const etaMs = status === 'running' && durationMs > 0 && runtimeMs !== null ? Math.max(0, durationMs - runtimeMs) : null;
+  // ETA: prefer runtime-based; fallback to progress-based; show for running tasks when duration is known
+  let etaMs: number | null = null;
+  if (status === 'running' && durationMs > 0) {
+    if (runtimeMs !== null) etaMs = Math.max(0, durationMs - runtimeMs);
+    else if (typeof progress === 'number') etaMs = Math.max(0, Math.round((1 - Math.max(0, Math.min(1, progress))) * durationMs));
+  }
   const titleParts = [`${Math.round(progress * 100)}%`];
   if (runtimeLabel) titleParts.push(`runtime ${runtimeLabel}`);
   else if (plannedLabel) titleParts.push(`plan ${plannedLabel}`);
@@ -159,6 +164,7 @@ export function ExecutionBar({
         <div
           key={`retry-${i}`}
           className="retry-marker"
+          aria-label={`retry-marker-${offset}ms`}
           style={{ left: `${durationMs > 0 ? (offset / durationMs) * 100 : 0}%` }}
           title={`Retry ${i + 1} at ${Math.floor(offset / 1000)}s`}
         />
@@ -168,6 +174,7 @@ export function ExecutionBar({
       {failureOffsetMs !== undefined && (
         <div
           className="error-marker"
+          aria-label={`error-marker-${failureOffsetMs}ms`}
           style={{ left: `${durationMs > 0 ? (failureOffsetMs / durationMs) * 100 : 0}%` }}
           title={`Failed at ${Math.floor(failureOffsetMs / 1000)}s`}
         >

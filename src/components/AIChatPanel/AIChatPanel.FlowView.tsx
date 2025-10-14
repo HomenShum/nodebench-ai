@@ -12,39 +12,29 @@ import {
   type OnConnect,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { AIChatPanelTurnDetails } from "./AIChatPanel.TurnDetails";
+import { AIChatPanelTurnDetails, type TurnDetails } from "./AIChatPanel.TurnDetails";
 import { nodeTypes } from "../../features/chat/flow/nodeTypes";
-
-interface ConversationTurnData {
-  turnId: string;
-  role: string;
-  content: string;
-  thinkingSteps?: any[];
-  toolCalls?: any[];
-  artifacts?: any[];
-  documentsCreated?: any[];
-}
 
 interface FlowViewProps {
   // Display state
   activeTab: 'chat' | 'flow';
   flowReady: boolean;
-  
+
   // Flow data
   nodes: Node[];
   edges: Edge[];
-  
+
   // Flow handlers
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
   handleNodeClick: (event: React.MouseEvent, node: Node) => void;
-  
+
   // Selection state
   selectedFlowNode: string | null;
   setSelectedFlowNode: (nodeId: string | null) => void;
-  selectedTurnDetails: ConversationTurnData | null;
-  setSelectedTurnDetails: (details: ConversationTurnData | null) => void;
+  selectedTurnDetails: TurnDetails | null;
+  setSelectedTurnDetails: React.Dispatch<React.SetStateAction<TurnDetails | null>>;
 }
 
 /**

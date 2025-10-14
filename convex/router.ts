@@ -1,9 +1,18 @@
+"use node";
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { PersistentTextStreaming, StreamId } from "@convex-dev/persistent-text-streaming";
+import { components } from "./_generated/api";
+import { openai } from "@ai-sdk/openai";
+import { streamText } from "ai";
 
 const http = httpRouter();
+
+const persistentTextStreaming = new PersistentTextStreaming(
+  components.persistentTextStreaming
+);
 
 // Helper: Base64 encode ASCII strings without relying on Node or browser globals.
 // Used for HTTP Basic Authorization headers in environments without btoa/Buffer.
@@ -209,6 +218,117 @@ http.route({
       const message = e instanceof Error ? e.message : "Internal error";
       return err(id ?? null, -32000, message, undefined, 500);
     }
+  }),
+});
+
+http.route({
+  path: "/api/stream/:runId",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const url = new URL(request.url);
+    const runIdParam = url.pathname.split("/").pop();
+
+    if (!runIdParam) {
+      return new Response("Missing runId", { status: 400 });
+    }
+
+    const runId = runIdParam as Id<"agentRuns">;
+    const run = await ctx.runQuery(api.aiAgents.getAgentRun, { runId });
+    if (!run) {
+      return new Response("Run not found", { status: 404 });
+    }
+
+    const encoder = new TextEncoder();
+    let lastSeq: number | undefined = undefined;
+    let isClosed = false;
+
+    const sendEvent = (controller: ReadableStreamDefaultController<Uint8Array>, payload: any) => {
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+    };
+
+    const loadEvents = async () => {
+      const events = await ctx.runQuery(api.aiAgents.listAgentRunEvents, { runId });
+      return events
+        .filter((event: any) => (lastSeq === undefined ? true : event.seq > lastSeq))
+        .sort((a: any, b: any) => a.seq - b.seq)
+        .slice(-100);
+    };
+
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        sendEvent(controller, { kind: "sse.hello", message: "connected" });
+
+        const dispatchInitial = async () => {
+          try {
+            const initialEvents = await loadEvents();
+            for (const event of initialEvents) {
+              lastSeq = event.seq;
+              sendEvent(controller, {
+                kind: event.kind,
+                message: event.message,
+                data: event.data,
+                seq: event.seq,
+                createdAt: event.createdAt,
+              });
+            }
+          } catch (error: any) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ kind: "error", message: String(error?.message ?? "Failed to load events") })}\n\n`));
+            controller.close();
+            isClosed = true;
+            return;
+          }
+        };
+
+        void dispatchInitial();
+
+        const interval = setInterval(() => {
+          void (async () => {
+            if (isClosed) return;
+            try {
+              const newEvents = await loadEvents();
+              if (!newEvents.length) {
+                controller.enqueue(encoder.encode(`: heartbeat\n\n`));
+                return;
+              }
+              for (const event of newEvents) {
+                lastSeq = event.seq;
+                sendEvent(controller, {
+                  kind: event.kind,
+                  message: event.message,
+                  data: event.data,
+                  seq: event.seq,
+                  createdAt: event.createdAt,
+                });
+              }
+            } catch (error: any) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ kind: "error", message: String(error?.message ?? "Failed to load events") })}\n\n`));
+              controller.close();
+              isClosed = true;
+            }
+          })();
+        }, 1500);
+
+        controller.enqueue(encoder.encode(`retry: 5000\n\n`));
+
+        return () => {
+          clearInterval(interval);
+          isClosed = true;
+        };
+      },
+      cancel() {
+        isClosed = true;
+      },
+    });
+
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   }),
 });
 
@@ -725,6 +845,133 @@ http.route({
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
+  }),
+});
+
+// Persistent Text Streaming endpoint for FastAgentPanel
+
+// CORS preflight handler
+http.route({
+  path: "/api/chat-stream",
+  method: "OPTIONS",
+  handler: httpAction(async (ctx, request) => {
+    const origin = request.headers.get("Origin");
+    const headers = new Headers();
+    headers.set("Access-Control-Allow-Origin", origin ?? "*");
+    headers.set("Vary", "Origin");
+    headers.set("Access-Control-Allow-Credentials", "true");
+    headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    headers.set("Access-Control-Allow-Headers", "Content-Type, Accept");
+    headers.set("Access-Control-Max-Age", "600");
+    return new Response(null, { status: 204, headers });
+  }),
+});
+
+http.route({
+  path: "/api/chat-stream",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const origin = request.headers.get("Origin");
+    const body = (await request.json()) as {
+      streamId: string;
+      model?: string;
+    };
+
+    const generateChat = async (
+      ctx: any,
+      request: any,
+      streamId: StreamId,
+      chunkAppender: (chunk: string) => Promise<void>
+    ) => {
+      try {
+        // 1) Load the target message and conversation history
+        const message = await ctx.runQuery(api.fastAgentPanelStreaming.getMessageByStreamId, {
+          streamId,
+        });
+        if (!message) {
+          await chunkAppender("Error: Message not found");
+          return;
+        }
+
+        // Use internal, no-auth query to avoid losing auth context in HTTP
+        const messages = await ctx.runQuery(internal.fastAgentPanelStreaming.getThreadMessagesForStreaming, {
+          threadId: message.threadId,
+        });
+
+        console.log(`[chat-stream] Current message ID: ${message._id}`);
+        console.log(`[chat-stream] Found ${messages.length} total messages in thread`);
+
+        // Build conversation history: include all complete messages
+        // Exclude the current streaming message (empty content)
+        const conversation = messages
+          .filter((m: any) => {
+            const isComplete = m.status === "complete";
+            const hasContent = m.content && m.content.trim().length > 0;
+            const isNotCurrentMessage = m._id !== message._id;
+            console.log(`[chat-stream] Message ${m._id}: role=${m.role}, status=${m.status}, content="${m.content?.substring(0, 20)}...", complete=${isComplete}, hasContent=${hasContent}, notCurrent=${isNotCurrentMessage}`);
+            return isComplete && hasContent && isNotCurrentMessage;
+          })
+          .map((m: any) => ({
+            role: m.role as "user" | "assistant" | "system",
+            content: m.content as string,
+          }));
+
+        console.log(`[chat-stream] Built conversation with ${conversation.length} messages`);
+        if (conversation.length > 0) {
+          console.log(`[chat-stream] First message: ${conversation[0].role}: "${conversation[0].content.substring(0, 50)}..."`);
+        }
+
+        // Ensure we have at least one message
+        if (conversation.length === 0) {
+          console.error(`[chat-stream] ERROR: No conversation history found!`);
+          await chunkAppender("Error: No conversation history found. Please try sending your message again.");
+          return;
+        }
+
+        // 2) Map model name to AI SDK model
+        // Support GPT-5 series: gpt-5, gpt-5-mini, gpt-5-nano
+        // Support other models: gemini
+        const modelName = body.model || "gpt-5";
+        const chatModel = openai.chat(modelName);
+
+        // 3) Stream using AI SDK
+        const result = streamText({
+          model: chatModel,
+          messages: conversation,
+        });
+
+        // 4) Append chunks as they arrive and accumulate the final content
+        let fullResponse = "";
+        for await (const chunk of result.textStream) {
+          fullResponse += chunk;
+          await chunkAppender(chunk);
+        }
+
+        // 4) Finalize the message in the DB
+        await ctx.runMutation(internal.fastAgentPanelStreaming.markStreamComplete, {
+          messageId: message._id,
+          finalContent: fullResponse,
+        });
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        await chunkAppender(`Sorry, an error occurred: ${msg}`);
+      }
+    };
+
+    const response = await persistentTextStreaming.stream(
+      ctx,
+      request,
+      body.streamId as StreamId,
+      generateChat
+    );
+
+    // Set CORS headers
+    response.headers.set("Access-Control-Allow-Origin", origin ?? "*");
+    response.headers.set("Vary", "Origin");
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Accept");
+    return response;
   }),
 });
 
