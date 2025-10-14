@@ -331,6 +331,46 @@ const agentRunEvents = defineTable({
 })
   .index("by_run", ["runId", "seq"]);
 
+/* ------------------------------------------------------------------ */
+/* CHAT THREADS - FastAgentPanel conversation threads                 */
+/* ------------------------------------------------------------------ */
+const chatThreads = defineTable({
+  userId: v.id("users"),
+  title: v.string(),
+  pinned: v.optional(v.boolean()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_updated", ["userId", "updatedAt"])
+  .index("by_user_pinned", ["userId", "pinned"]);
+
+const chatMessages = defineTable({
+  threadId: v.id("chatThreads"),
+  role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
+  content: v.string(),
+  status: v.union(
+    v.literal("sending"),
+    v.literal("streaming"),
+    v.literal("complete"),
+    v.literal("error")
+  ),
+  runId: v.optional(v.id("agentRuns")),
+  streamId: v.optional(v.string()), // For persistent text streaming
+  isStreaming: v.optional(v.boolean()), // Whether message is actively streaming
+  model: v.optional(v.string()),
+  fastMode: v.optional(v.boolean()),
+  tokensUsed: v.optional(v.object({
+    input: v.number(),
+    output: v.number(),
+  })),
+  elapsedMs: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_thread", ["threadId", "createdAt"])
+  .index("by_run", ["runId"])
+  .index("by_streamId", ["streamId"]);
 
 /* ------------------------------------------------------------------ */
 /* MCP TOOLS - Available tools from connected MCP servers             */
@@ -933,6 +973,8 @@ export default defineSchema({
   mcpSessions,
   agentRuns,
   agentRunEvents,
+  chatThreads,
+  chatMessages,
   mcpToolLearning,
   mcpGuidanceExamples,
   mcpToolHistory,

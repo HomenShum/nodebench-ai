@@ -383,6 +383,8 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
   const orchestrators: Task[] = tasks.filter((t: Task) => (t.agentType ?? "").toLowerCase() === "orchestrator");
   const mains: Task[] = tasks.filter((t: Task) => (t.agentType ?? "").toLowerCase() === "main");
 
+  const mainIds = new Set(mains.map((m)=> String(m._id)));
+
   const taskIdOf = (t: Task) => deriveTaskId(t);
   const effectiveStartMs = (t: Task): number => {
     const selfStart = Math.max(0, Number(t.startOffsetMs || 0));
@@ -766,7 +768,6 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
           <div className="hierarchy-header">
             <div className="hierarchy-title">{usingScaffold ? "Agent Scaffold" : ((data as any)?.name || "Agents")}</div>
             <button className="btn" style={{ padding: "6px 10px", fontSize: 12 }} title="Add a new main agent" onClick={() => console.log("+ Add Agent")}>+ Add Agent</button>
-
           </div>
           <div>
             {/* Orchestrator */}
@@ -790,10 +791,12 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
                   <div className="agent-meta">{"⚡ Parallel"}</div>
                   <div className={`agent-status status-${(m.status ?? "pending").toLowerCase()}`} title={`Status: ${String(m.status ?? 'pending')}`}></div>
                 </div>
-                {!collapsed[String(m._id)] && childrenOf(m._id).map((s) => (
+                {!collapsed[String(m._id)] && childrenOf(m._id)
+                  .filter((s) => !mainIds.has(String(s._id)))
+                  .map((s) => (
                   <div className="sub-agent" key={`s-${s._id}`}>
                     <div className="agent-icon">{s.icon || "🔗"}</div>
-                    <div className="agent-name" title={String(s.name)} aria-label={String(s.name)}>{s.name}</div>
+                    <div className="agent-name" title={String(s.name)} aria-hidden>{s.name}</div>
                     <div className={`agent-status status-${(s.status ?? "pending").toLowerCase()}`} title={`Status: ${String(s.status ?? 'pending')}`}></div>
                   </div>
                 ))}
@@ -866,6 +869,10 @@ const wm: WindowMode = (windowCtx?.windowMode as any) ?? windowMode;
                     onClick={() => setPinnedTaskId((p) => (p === String(m._id) ? null : String(m._id)))}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPinnedTaskId((p) => (p === String(m._id) ? null : String(m._id))); setPopoverTask(m); } if (e.key === 'Escape') { setPinnedTaskId(null); setPopoverTask(null); } }}
                   />
+                  {/* Phase boundary markers (per-task) */}
+                  {Array.isArray((m as any).phaseBoundariesMs) && (m as any).phaseBoundariesMs.map((ms: number, i: number) => (
+                    <div key={`ph-${String(m._id)}-${i}`} className="phase-separator-marker" aria-label={`phase-sep-${ms}ms`} />
+                  ))}
                 </div>
                 {!collapsed[String(m._id)] && childrenOf(m._id).map((s) => (
                   <div className="timeline-row sub-row" data-agent-id={String(s._id)} key={`row-s-${s._id}`}>

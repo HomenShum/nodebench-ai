@@ -39,14 +39,10 @@ export function discoverFields(sampleOutputs: any[]): FieldClassification {
     return { numerical, categorical, excluded };
   }
 
-  // Take first sample to discover field structure
-  const sample = sampleOutputs[0];
-
-  for (const [key, value] of Object.entries(sample)) {
-    const keyLower = key.toLowerCase();
-
-    // Exclude metadata and long-form text fields
-    if (
+  const isLongText = (s: unknown) => typeof s === 'string' && s.length >= 100;
+  const isMetaKey = (k: string) => {
+    const keyLower = k.toLowerCase();
+    return (
       keyLower === 'imageid' ||
       keyLower === 'image_id' ||
       keyLower === 'modelname' ||
@@ -55,55 +51,42 @@ export function discoverFields(sampleOutputs: any[]): FieldClassification {
       keyLower.includes('description') ||
       keyLower.includes('findings') ||
       keyLower.includes('details')
-    ) {
-      excluded.add(key);
-      continue;
-    }
+    );
+  };
 
-    // Classify as numerical if:
-    // - Contains 'rating', 'score', 'confidence', 'count' in name
-    // - Is a number type
-    // - Is nested object with numeric values
-    if (
-      keyLower.includes('rating') ||
-      keyLower.includes('score') ||
-      keyLower.includes('confidence') ||
-      keyLower.includes('count') ||
-      typeof value === 'number'
-    ) {
-      numerical.add(key);
-      continue;
-    }
+  const visit = (obj: any, prefix = '') => {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+    for (const [k, v] of Object.entries(obj)) {
+      const path = prefix ? `${prefix}.${k}` : k;
+      if (isMetaKey(k)) { excluded.add(path); continue; }
+      if (isLongText(v)) { excluded.add(path); continue; }
 
-    // Handle nested objects (e.g., ratings: { movementMotion: 4, ... })
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      for (const [nestedKey, nestedValue] of Object.entries(value)) {
-        const fullKey = `${key}.${nestedKey}`;
-        if (typeof nestedValue === 'number') {
-          numerical.add(fullKey);
-        } else if (typeof nestedValue === 'boolean' || Array.isArray(nestedValue)) {
-          categorical.add(fullKey);
-        }
+      if (typeof v === 'number') {
+        numerical.add(path);
+        continue;
       }
-      continue;
+      if (typeof v === 'boolean') {
+        categorical.add(path);
+        continue;
+      }
+      if (Array.isArray(v)) {
+        categorical.add(path);
+        continue;
+      }
+      if (typeof v === 'string') {
+        // short strings count as categorical
+        categorical.add(path);
+        continue;
+      }
+      if (v && typeof v === 'object') {
+        // Recurse into nested objects
+        visit(v as any, path);
+      }
     }
+  };
 
-    // Classify as categorical if:
-    // - Is an array
-    // - Is a boolean
-    // - Is a short string (< 100 chars)
-    if (
-      Array.isArray(value) ||
-      typeof value === 'boolean' ||
-      (typeof value === 'string' && value.length < 100)
-    ) {
-      categorical.add(key);
-      continue;
-    }
-
-    // Default: exclude if we can't classify
-    excluded.add(key);
-  }
+  // Use all samples to accumulate field sets to be robust across varied outputs
+  for (const sample of sampleOutputs) visit(sample);
 
   return { numerical, categorical, excluded };
 }
@@ -210,7 +193,7 @@ data: List[Dict[str, Any]] = ${dataJson}
 
 # Helper function to extract nested field values
 def get_field_value(obj: Dict[str, Any], field_path: str) -> Any:
-    """Extract value from nested field path (e.g., 'ratings.movementMotion')"""
+    """Extract value from a nested path (e.g., 'a.b.c')"""
     parts = field_path.split('.')
     value = obj
     for part in parts:

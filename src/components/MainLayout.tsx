@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Sidebar } from "./Sidebar";
 import { AIChatPanel } from "./AIChatPanel/AIChatPanel";
+import { FastAgentPanel } from "./FastAgentPanel";
 import { PublicDocuments } from "@/components/views/PublicDocuments";
 import { TabManager } from "./TabManager";
 import { DocumentsHomeHub } from "./DocumentsHomeHub";
@@ -12,7 +13,7 @@ import { CalendarHomeHub } from "./CalendarHomeHub";
 import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
 
 
-import { HelpCircle, Sun, Moon, MessageSquare, Settings as SettingsIcon, Link as LinkIcon, Send } from "lucide-react";
+import { HelpCircle, Sun, Moon, MessageSquare, Settings as SettingsIcon, Link as LinkIcon, Send, Zap } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
 
@@ -24,6 +25,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome }: MainLayoutProps) {
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showFastAgent, setShowFastAgent] = useState(false);
   const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public'>('documents');
   const [smsMessage, setSmsMessage] = useState<{from: string, message: string} | null>(null);
   const [isGridMode, setIsGridMode] = useState(false);
@@ -570,6 +572,20 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             </div>
 
             <div className="flex items-center gap-3 ml-auto">
+              {/* Fast Agent Toggle */}
+              <button
+                onClick={() => setShowFastAgent(!showFastAgent)}
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                  showFastAgent
+                    ? 'bg-[var(--accent-primary)] text-white'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                }`}
+                title="Toggle Fast Agent Panel"
+              >
+                <Zap className="h-4 w-4" />
+                <span className="hidden sm:inline">Fast Agent</span>
+              </button>
+
               {/* Settings Button */}
               <button
                 onClick={() => openSettings("usage")}
@@ -746,6 +762,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           </div>
         )}
       </div>
+
+      {/* Fast Agent Panel - Overlay */}
+      <FastAgentPanel
+        isOpen={showFastAgent}
+        onClose={() => setShowFastAgent(false)}
+        selectedDocumentId={selectedDocumentId || undefined}
+      />
+
       {/* Central Settings Modal */}
       {showSettingsModal && (
         <SettingsModal

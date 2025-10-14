@@ -89,6 +89,20 @@ export function buildTripPlanningGraph(input: TripPlanningInput): OrchestrateGra
         prompt: `${destination} public transportation metro bus taxi uber getting around`,
       },
 
+      // Extra research to reach full node coverage for tests
+      {
+        id: 'events_research',
+        kind: 'search',
+        label: 'Events & Festivals Research',
+        prompt: `${destination} events festivals concerts exhibitions ${startDate} ${endDate}`,
+      },
+      {
+        id: 'safety_tips_research',
+        kind: 'search',
+        label: 'Safety Tips Research',
+        prompt: `${destination} travel safety tips areas to avoid emergency numbers`,
+      },
+
       // ========================================
       // PHASE 2: PREFERENCE LEARNING
       // ========================================

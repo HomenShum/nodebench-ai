@@ -18,10 +18,14 @@ export type DocumentCardData = {
   fileId?: Id<"files">;
   lastModified?: number;
   tags?: string[];
-  favorite?: boolean;
-  archived?: boolean;
+  // Harmonized flags expected by tests
+  isFavorite?: boolean;
+  isArchived?: boolean;
   createdAt?: number;
   updatedAt?: number;
+  createdBy?: string;
+  coverImage?: string;
+  icon?: string;
 };
 
 /**
@@ -31,15 +35,16 @@ export function normalizeDocument(d: any): DocumentCardData {
   const title = (d?.title ?? "Untitled") as string;
   const contentPreview = (d?.contentPreview ?? null) as string | null;
 
+  // Determine document type
   let documentType: "file" | "text" | "timeline" = "text";
   let fileType: string | undefined;
   let fileName: string | undefined;
   let fileId: Id<"files"> | undefined;
 
-  if (d?.documentType === "file") {
+  if (d?.documentType === "file" || d?.fileId) {
     documentType = "file";
     fileType = d?.fileType;
-    fileName = d?.fileName;
+    fileName = d?.fileName ?? d?.title;
     fileId = d?.fileId;
   } else if (d?.documentType === "timeline") {
     documentType = "timeline";
@@ -55,10 +60,13 @@ export function normalizeDocument(d: any): DocumentCardData {
     fileId,
     lastModified: d?.lastModified,
     tags: d?.tags,
-    favorite: d?.favorite,
-    archived: d?.archived,
-    createdAt: d?.createdAt,
+    isFavorite: d?.isFavorite ?? d?.favorite ?? false,
+    isArchived: d?.isArchived ?? d?.archived ?? false,
+    createdAt: d?._creationTime ?? d?.createdAt ?? 0,
     updatedAt: d?.updatedAt,
+    createdBy: d?.createdBy,
+    coverImage: d?.coverImage,
+    icon: d?.icon,
   };
 }
 
