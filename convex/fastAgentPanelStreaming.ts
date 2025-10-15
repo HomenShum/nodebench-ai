@@ -372,8 +372,10 @@ export const streamAsync = internalAction({
         { promptMessageId: args.promptMessageId },
         {
           saveStreamDeltas: {
-            chunking: "word",
-            throttleMs: 50  // Faster updates for smoother animation
+            // Use default chunking (regex-based) for best results
+            // Default is: /[.!?;:]\s+/ which chunks by punctuation + whitespace
+            throttleMs: 50,  // Lower throttle for more frequent updates (smoother streaming)
+            returnImmediately: false  // Wait for stream to complete
           }
         }
       );
@@ -381,9 +383,16 @@ export const streamAsync = internalAction({
       console.log('[streamAsync] Stream started, messageId:', result.messageId);
 
       // Consume the stream to ensure it finishes
-      await result.consumeStream();
-      
-      console.log('[streamAsync] Stream completed successfully');
+      // This will iterate through all chunks and save them as deltas
+      let chunkCount = 0;
+      for await (const chunk of result.textStream) {
+        chunkCount++;
+        if (chunkCount % 10 === 0) {
+          console.log(`[streamAsync] Processed ${chunkCount} chunks...`);
+        }
+      }
+
+      console.log(`[streamAsync] Stream completed successfully. Total chunks: ${chunkCount}`);
     } catch (error) {
       console.error('[streamAsync] Error:', error);
       throw error;
