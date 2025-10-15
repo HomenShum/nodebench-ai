@@ -240,10 +240,22 @@ export const runAllTests = action({
   args: {
     categories: v.optional(v.array(v.string())),
     createNewThread: v.optional(v.boolean()),
+    userId: v.optional(v.id("users")), // Optional userId for evaluation tests
   },
   returns: v.any(),
   handler: async (ctx, args): Promise<EvaluationSummary> => {
     console.log("\n🚀 Starting comprehensive tool evaluation...\n");
+
+    // Get test user if not provided
+    let userId = args.userId;
+    if (!userId) {
+      // Get the test user from golden dataset
+      const testUser = await ctx.runQuery(api.seedGoldenDataset.getTestUser, {});
+      if (testUser) {
+        userId = testUser._id;
+        console.log(`Using test user: ${userId}\n`);
+      }
+    }
 
     // Filter test cases by category if specified
     let testCases = allTestCases;
@@ -268,6 +280,7 @@ export const runAllTests = action({
         const result = await ctx.runAction(internal.tools.evaluation.evaluator.runSingleTest, {
           testId: testCase.id,
           threadId,
+          userId, // Pass userId to each test
         });
         results.push(result);
         
