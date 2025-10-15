@@ -13,14 +13,73 @@ import { vStreamArgs, syncStreams, listUIMessages } from "@convex-dev/agent";
 
 // Import tools
 import { linkupSearch } from "./tools/linkupSearch";
+import {
+  findDocument,
+  getDocumentContent,
+  analyzeDocument,
+  updateDocument,
+  createDocument
+} from "./tools/documentTools";
+import {
+  searchMedia,
+  analyzeMediaFile,
+  getMediaDetails,
+  listMediaFiles
+} from "./tools/mediaTools";
+import {
+  listTasks,
+  createTask,
+  updateTask,
+  listEvents,
+  createEvent,
+  getFolderContents
+} from "./tools/dataAccessTools";
 
 // Helper to create agent with specific model for agent streaming mode
 const createChatAgent = (model: string) => new Agent(components.agent, {
   name: "FastChatAgent",
   languageModel: openai.chat(model),
-  instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions. When you need current information or facts that might have changed, use the linkupSearch tool to search the web.",
+  instructions: `You are a helpful AI assistant with access to the user's documents, tasks, events, and media files.
+
+You can help with:
+- Finding and opening documents by title or content
+- Analyzing and summarizing documents
+- Creating and editing documents
+- Searching for images and videos
+- Managing tasks and calendar events
+- Organizing files in folders
+- Searching the web for current information
+
+When the user asks to find, open, or work with documents, use the document tools.
+When they ask about tasks or calendar, use the task and event tools.
+When they want to find images or videos, use the media tools.
+When you need current web information, use the linkupSearch tool.
+
+Always provide clear, helpful responses and confirm actions you take.`,
   tools: {
+    // Web search
     linkupSearch,
+
+    // Document operations
+    findDocument,
+    getDocumentContent,
+    analyzeDocument,
+    updateDocument,
+    createDocument,
+
+    // Media operations
+    searchMedia,
+    analyzeMediaFile,
+    getMediaDetails,
+    listMediaFiles,
+
+    // Data access
+    listTasks,
+    createTask,
+    updateTask,
+    listEvents,
+    createEvent,
+    getFolderContents,
   },
 });
 
