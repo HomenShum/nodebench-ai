@@ -79,15 +79,16 @@ export const linkupSearch = createTool({
 
       // Add images if present
       if (data.images && data.images.length > 0) {
-        result += "Images:\n";
+        result += "Images:\n\n";
         data.images.slice(0, 5).forEach((image, idx) => {
-          result += `${idx + 1}. ${image.url}\n`;
+          // Use markdown image syntax to display images
+          const altText = image.description || `Image ${idx + 1}`;
+          result += `![${altText}](${image.url})\n`;
           if (image.description) {
-            result += `   ${image.description}\n`;
+            result += `*${image.description}*\n`;
           }
           result += "\n";
         });
-        result += "\n";
       }
 
       // Add sources
