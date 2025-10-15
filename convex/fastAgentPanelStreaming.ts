@@ -1,9 +1,8 @@
-// FastAgentPanel Streaming - Backend functions for persistent-text-streaming
+// FastAgentPanel Streaming - Backend functions for Agent component streaming
 import { v } from "convex/values";
 import { query, mutation, internalQuery, internalMutation, action, internalAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { components, internal } from "./_generated/api";
-import { PersistentTextStreaming } from "@convex-dev/persistent-text-streaming";
 import { Agent } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
 import { paginationOptsValidator } from "convex/server";
@@ -11,10 +10,6 @@ import type { Id } from "./_generated/dataModel";
 
 // Import streaming utilities from @convex-dev/agent
 import { vStreamArgs, syncStreams, listUIMessages } from "@convex-dev/agent";
-
-const persistentTextStreaming = new PersistentTextStreaming(
-  components.persistentTextStreaming
-);
 
 // Helper to create agent with specific model for agent streaming mode
 const createChatAgent = (model: string) => new Agent(components.agent, {
@@ -371,28 +366,20 @@ export const streamAsync = internalAction({
         { threadId: args.threadId },
         { promptMessageId: args.promptMessageId },
         {
+          // Match the documentation's recommended settings
           saveStreamDeltas: {
-            // Use default chunking (regex-based) for best results
-            // Default is: /[.!?;:]\s+/ which chunks by punctuation + whitespace
-            throttleMs: 50,  // Lower throttle for more frequent updates (smoother streaming)
-            returnImmediately: false  // Wait for stream to complete
+            chunking: "word",   // Same as docs
+            throttleMs: 100     // Same as docs
           }
         }
       );
 
       console.log('[streamAsync] Stream started, messageId:', result.messageId);
 
-      // Consume the stream to ensure it finishes
-      // This will iterate through all chunks and save them as deltas
-      let chunkCount = 0;
-      for await (const chunk of result.textStream) {
-        chunkCount++;
-        if (chunkCount % 10 === 0) {
-          console.log(`[streamAsync] Processed ${chunkCount} chunks...`);
-        }
-      }
+      // Use consumeStream() as recommended in the docs
+      await result.consumeStream();
 
-      console.log(`[streamAsync] Stream completed successfully. Total chunks: ${chunkCount}`);
+      console.log('[streamAsync] Stream completed successfully');
     } catch (error) {
       console.error('[streamAsync] Error:', error);
       throw error;
