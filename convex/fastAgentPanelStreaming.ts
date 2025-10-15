@@ -19,8 +19,8 @@ const persistentTextStreaming = new PersistentTextStreaming(
 
 // Helper to create agent with specific model for agent streaming mode
 const createChatAgent = (model: string) => new Agent(components.agent, {
-  chat: openai.chat(model),
-  textEmbedding: openai.embedding("text-embedding-3-small"),
+  name: "FastChatAgent",
+  languageModel: openai.chat(model),
   instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
 });
 

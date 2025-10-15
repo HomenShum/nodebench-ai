@@ -11,8 +11,8 @@ import { paginationOptsValidator } from "convex/server";
 
 // Helper to create agent with specific model
 const createChatAgent = (model: string) => new Agent(components.agent, {
-  chat: openai.chat(model),
-  textEmbedding: openai.embedding("text-embedding-3-small"),
+  name: "ChatAgent",
+  languageModel: openai.chat(model),
   instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
 });
 

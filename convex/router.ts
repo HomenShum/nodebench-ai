@@ -6,7 +6,6 @@ import type { Id } from "./_generated/dataModel";
 import { PersistentTextStreaming, StreamId } from "@convex-dev/persistent-text-streaming";
 import { components } from "./_generated/api";
 import { openai } from "@ai-sdk/openai";
-import { streamText } from "ai";
 import { Agent } from "@convex-dev/agent";
 
 const http = httpRouter();
@@ -938,8 +937,8 @@ http.route({
 
       // Create agent instance with selected model
       const chatAgent = new Agent(components.agent, {
-        chat: openai.chat(modelName),
-        textEmbedding: openai.embedding("text-embedding-3-small"),
+        name: "RouterChatAgent",
+        languageModel: openai.chat(modelName),
         instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
       });
 
