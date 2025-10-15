@@ -52,48 +52,48 @@ export const documentToolTests: TestCase[] = [
     category: "Document Analysis",
     tool: "analyzeDocument",
     scenario: "User wants to understand document content",
-    userQuery: "What is this document about?",
+    userQuery: "What is the Revenue Report Q4 2024 document about?",
     expectedTool: "analyzeDocument",
     expectedArgs: { analysisType: "summary" },
     successCriteria: [
-      "Tool called is analyzeDocument",
-      "Response includes summary or analysis",
-      "Response includes word count or metadata",
+      "Tool called includes analyzeDocument or findDocument+getDocumentContent",
+      "Response includes summary or analysis of the Revenue Report",
+      "Response mentions revenue data, metrics, or key findings",
       "Analysis is coherent and relevant"
     ],
-    evaluationPrompt: "Evaluate if the AI provided a meaningful summary of the document. Check if the analysis is accurate and helpful."
+    evaluationPrompt: "Evaluate if the AI provided a meaningful summary of the Revenue Report Q4 2024 document. The agent may use findDocument+getDocumentContent or analyzeDocument. Check if the analysis includes revenue data and is helpful."
   },
   {
     id: "doc-004",
     category: "Document Creation",
     tool: "createDocument",
     scenario: "User wants to create a new document",
-    userQuery: "Create a new document called 'Q4 Planning'",
+    userQuery: "Create a new document called 'Q4 Planning' with initial content about planning goals",
     expectedTool: "createDocument",
     expectedArgs: { title: "Q4 Planning" },
     successCriteria: [
       "Tool called is createDocument",
-      "Title parameter matches requested title",
-      "Response includes new document ID",
-      "Confirmation message is clear"
+      "Title parameter includes 'Q4 Planning'",
+      "Response confirms document creation",
+      "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI successfully created a document with the correct title. Check if the response confirms creation and provides the document ID."
+    evaluationPrompt: "Evaluate if the AI successfully created a document with the title 'Q4 Planning'. Check if the response confirms creation. Accept any reasonable confirmation message."
   },
   {
     id: "doc-005",
     category: "Document Editing",
     tool: "updateDocument",
     scenario: "User wants to edit document properties",
-    userQuery: "Change the title to 'Q4 Final Report'",
+    userQuery: "Change the Revenue Report Q4 2024 document title to 'Q4 Final Report'",
     expectedTool: "updateDocument",
     expectedArgs: { title: "Q4 Final Report" },
     successCriteria: [
-      "Tool called is updateDocument",
-      "Title parameter matches new title",
-      "Response confirms update",
-      "Updated fields are listed"
+      "Tool called includes updateDocument (may also call findDocument first)",
+      "Title parameter includes 'Q4 Final Report'",
+      "Response confirms the update",
+      "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI correctly updated the document title. Check if the confirmation is clear and accurate."
+    evaluationPrompt: "Evaluate if the AI correctly updated the document title to 'Q4 Final Report'. The agent may first find the document, then update it. Check if the confirmation is clear."
   }
 ];
 

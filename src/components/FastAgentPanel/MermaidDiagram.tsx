@@ -2,7 +2,6 @@
 // Renders Mermaid diagrams from code blocks
 
 import React, { useEffect, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 import { Code2, Image as ImageIcon, Copy, Check } from 'lucide-react';
 
 interface MermaidDiagramProps {
@@ -10,8 +9,50 @@ interface MermaidDiagramProps {
   id?: string;
 }
 
+// Load Mermaid from CDN
+declare global {
+  interface Window {
+    mermaid: any;
+  }
+}
+
 // Initialize mermaid once
 let mermaidInitialized = false;
+let mermaidLoading = false;
+
+async function loadMermaid() {
+  if (window.mermaid) return;
+  
+  if (mermaidLoading) {
+    // Wait for it to load
+    await new Promise(resolve => {
+      const check = setInterval(() => {
+        if (window.mermaid) {
+          clearInterval(check);
+          resolve(undefined);
+        }
+      }, 100);
+    });
+    return;
+  }
+  
+  mermaidLoading = true;
+  
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    script.type = 'module';
+    script.onload = () => {
+      mermaidLoading = false;
+      resolve(undefined);
+    };
+    script.onerror = () => {
+      mermaidLoading = false;
+      reject(new Error('Failed to load Mermaid'));
+    };
+    document.head.appendChild(script);
+  });
+}
 
 export function MermaidDiagram({ code, id }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,30 +62,33 @@ export function MermaidDiagram({ code, id }: MermaidDiagramProps) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Initialize mermaid if not already done
-    if (!mermaidInitialized) {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: 'default',
-        securityLevel: 'loose',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: 14,
-        flowchart: {
-          useMaxWidth: true,
-          htmlLabels: true,
-          curve: 'basis',
-        },
-      });
-      mermaidInitialized = true;
-    }
-
     const renderDiagram = async () => {
       try {
+        // Load Mermaid from CDN
+        await loadMermaid();
+        
+        // Initialize mermaid if not already done
+        if (!mermaidInitialized && window.mermaid) {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 14,
+            flowchart: {
+              useMaxWidth: true,
+              htmlLabels: true,
+              curve: 'basis',
+            },
+          });
+          mermaidInitialized = true;
+        }
+        
         // Generate unique ID for this diagram
         const diagramId = id || `mermaid-${Math.random().toString(36).substr(2, 9)}`;
         
         // Render the diagram
-        const { svg: renderedSvg } = await mermaid.render(diagramId, code);
+        const { svg: renderedSvg } = await window.mermaid.render(diagramId, code);
         setSvg(renderedSvg);
         setError('');
       } catch (err) {

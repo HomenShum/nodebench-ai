@@ -43,7 +43,6 @@ window.addEventListener('message', async (message) => {
   },
   optimizeDeps: {
     include: ["react", "react-dom", "wx-react-gantt"],
-    exclude: ["mermaid"],
   },
   test: {
     globals: true,
