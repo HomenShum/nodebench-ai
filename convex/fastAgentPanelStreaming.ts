@@ -2,7 +2,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalQuery, internalMutation, action, internalAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { components, internal, api } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 import { Agent } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
 import { paginationOptsValidator } from "convex/server";
@@ -629,7 +629,7 @@ export const sendMessageInternal = internalAction({
   }),
   handler: async (ctx, args) => {
     // For evaluation, we'll use the Agent component directly
-    const agent = createChatAgent("gpt-4o");
+    const agent = createChatAgent("gpt-5-chat-latest");
 
     let response = "";
     const toolsCalled: string[] = [];
@@ -656,16 +656,24 @@ export const sendMessageInternal = internalAction({
       // Extract response text
       response = result.text || "";
 
-      // Get the message to extract tool calls
-      const message = await ctx.runQuery(api.agent.messages.getMessage, {
-        messageId: result.messageId,
+      // Get all messages from the thread to extract tool calls
+      const messages = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+        threadId,
+        order: "desc",
+        paginationOpts: { numItems: 10, cursor: null },
       });
 
-      // Extract tool calls from message parts
-      if (message && message.parts) {
-        for (const part of message.parts) {
-          if (part.type === "tool-call" && part.toolName) {
-            toolsCalled.push(part.toolName);
+      // Extract tool calls from the most recent assistant message
+      if (messages && messages.page && messages.page.length > 0) {
+        const latestMessage = messages.page[0];
+        if (latestMessage.message && typeof latestMessage.message === 'object') {
+          const msg = latestMessage.message as any;
+          if (msg.content && Array.isArray(msg.content)) {
+            for (const part of msg.content) {
+              if (part.type === "tool-call" && part.toolName) {
+                toolsCalled.push(part.toolName);
+              }
+            }
           }
         }
       }

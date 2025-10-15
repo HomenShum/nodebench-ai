@@ -166,7 +166,7 @@ Respond in JSON format:
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5-chat-latest",
       messages: [
         {
           role: "system",
