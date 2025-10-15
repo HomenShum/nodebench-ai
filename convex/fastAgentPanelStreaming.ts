@@ -11,11 +11,17 @@ import type { Id } from "./_generated/dataModel";
 // Import streaming utilities from @convex-dev/agent
 import { vStreamArgs, syncStreams, listUIMessages } from "@convex-dev/agent";
 
+// Import tools
+import { linkupSearch } from "./tools/linkupSearch";
+
 // Helper to create agent with specific model for agent streaming mode
 const createChatAgent = (model: string) => new Agent(components.agent, {
   name: "FastChatAgent",
   languageModel: openai.chat(model),
-  instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
+  instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions. When you need current information or facts that might have changed, use the linkupSearch tool to search the web.",
+  tools: {
+    linkupSearch,
+  },
 });
 
 /* ================================================================

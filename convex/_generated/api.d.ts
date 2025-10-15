@@ -103,6 +103,7 @@ import type * as sync_mutations from "../sync_mutations.js";
 import type * as tags from "../tags.js";
 import type * as tags_actions from "../tags_actions.js";
 import type * as tasks from "../tasks.js";
+import type * as tools_linkupSearch from "../tools/linkupSearch.js";
 import type * as usage from "../usage.js";
 import type * as userPreferences from "../userPreferences.js";
 import type * as users from "../users.js";
@@ -218,6 +219,7 @@ declare const fullApi: ApiFromModules<{
   tags: typeof tags;
   tags_actions: typeof tags_actions;
   tasks: typeof tasks;
+  "tools/linkupSearch": typeof tools_linkupSearch;
   usage: typeof usage;
   userPreferences: typeof userPreferences;
   users: typeof users;

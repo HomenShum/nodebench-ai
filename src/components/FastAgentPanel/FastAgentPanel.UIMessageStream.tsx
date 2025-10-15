@@ -29,27 +29,26 @@ export function UIMessageStream({
   }, [messages, autoScroll]);
   
   return (
-    <div 
+    <div
       ref={scrollRef}
-      className="message-stream-container"
+      className="flex-1 overflow-y-auto p-6"
+      style={{ maxHeight: '100%' }}
     >
-      <div className="message-stream-content">
-        {messages.length === 0 ? (
-          <div className="empty-state">
-            <p className="empty-state-text">No messages yet. Start a conversation!</p>
-          </div>
-        ) : (
-          <>
-            {messages.map((message) => (
-              <UIMessageBubble 
-                key={message.key || message._id} 
-                message={message} 
-              />
-            ))}
-            <div ref={messagesEndRef} />
-          </>
-        )}
-      </div>
+      {messages.length === 0 ? (
+        <div className="flex items-center justify-center h-full text-gray-500">
+          <p>No messages yet. Start a conversation!</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {messages.map((message) => (
+            <UIMessageBubble
+              key={message.key || message._id}
+              message={message}
+            />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
     </div>
   );
 }
