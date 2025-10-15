@@ -2,6 +2,8 @@ import React from "react";
 import { Id } from "../../convex/_generated/dataModel";
 import { ChevronDown, ChevronRight, Brain, Search, FileText, Loader2, ArrowUp, Undo2, Edit2, X, Check } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 
 export type MessagesProps = {
   activeTab: string;
@@ -75,7 +77,11 @@ export const AIChatPanelMessages: React.FC<MessagesProps> = (props) => {
             ) : (
               <>
                 <div className="text-sm whitespace-pre-wrap">
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                  <ReactMarkdown 
+                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
                 </div>
 
                 {/* Document Created Badge */}
