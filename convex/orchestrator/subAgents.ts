@@ -37,7 +37,7 @@ import { youtubeSearch } from "../tools/youtubeSearch";
 /**
  * Document Agent - Specialized for document operations
  */
-export const createDocumentAgent = (model: string = "gpt-4o-mini") => new Agent(components.agent, {
+export const createDocumentAgent = (model: string = "gpt-5-mini") => new Agent(components.agent, {
   name: "DocumentAgent",
   languageModel: openai.chat(model),
   instructions: `You are a specialized Document Agent focused on document operations.
@@ -69,7 +69,7 @@ Be proactive, complete, and accurate.`,
 /**
  * Media Agent - Specialized for media operations
  */
-export const createMediaAgent = (model: string = "gpt-4o-mini") => new Agent(components.agent, {
+export const createMediaAgent = (model: string = "gpt-5-mini") => new Agent(components.agent, {
   name: "MediaAgent",
   languageModel: openai.chat(model),
   instructions: `You are a specialized Media Agent focused on media file operations.
@@ -98,7 +98,7 @@ Be helpful and accurate with media operations.`,
 /**
  * Task Agent - Specialized for task management
  */
-export const createTaskAgent = (model: string = "gpt-4o-mini") => new Agent(components.agent, {
+export const createTaskAgent = (model: string = "gpt-5-mini") => new Agent(components.agent, {
   name: "TaskAgent",
   languageModel: openai.chat(model),
   instructions: `You are a specialized Task Agent focused on task management.
@@ -127,7 +127,7 @@ Be proactive and complete all task operations.`,
 /**
  * Event Agent - Specialized for calendar/event management
  */
-export const createEventAgent = (model: string = "gpt-4o-mini") => new Agent(components.agent, {
+export const createEventAgent = (model: string = "gpt-5-mini") => new Agent(components.agent, {
   name: "EventAgent",
   languageModel: openai.chat(model),
   instructions: `You are a specialized Event Agent focused on calendar and event management.
@@ -154,7 +154,7 @@ Be proactive and complete all event operations.`,
 /**
  * Web Agent - Specialized for web search
  */
-export const createWebAgent = (model: string = "gpt-4o-mini") => new Agent(components.agent, {
+export const createWebAgent = (model: string = "gpt-5-mini") => new Agent(components.agent, {
   name: "WebAgent",
   languageModel: openai.chat(model),
   instructions: `You are a specialized Web Agent focused on web search operations.

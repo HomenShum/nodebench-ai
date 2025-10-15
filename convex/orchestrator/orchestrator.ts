@@ -39,23 +39,23 @@ async function executeStep(
     let agent;
     switch (step.domain) {
       case "document":
-        agent = createDocumentAgent("gpt-4o-mini");
+        agent = createDocumentAgent("gpt-5-mini");
         break;
       case "media":
-        agent = createMediaAgent("gpt-4o-mini");
+        agent = createMediaAgent("gpt-5-mini");
         break;
       case "task":
-        agent = createTaskAgent("gpt-4o-mini");
+        agent = createTaskAgent("gpt-5-mini");
         break;
       case "event":
-        agent = createEventAgent("gpt-4o-mini");
+        agent = createEventAgent("gpt-5-mini");
         break;
       case "web":
-        agent = createWebAgent("gpt-4o-mini");
+        agent = createWebAgent("gpt-5-mini");
         break;
       default:
         // Fallback to document agent for general queries
-        agent = createDocumentAgent("gpt-4o-mini");
+        agent = createDocumentAgent("gpt-5-mini");
     }
 
     // Build context-aware prompt
@@ -224,22 +224,22 @@ export async function executeSimple(
   let agent;
   switch (domain) {
     case "document":
-      agent = createDocumentAgent("gpt-4o-mini");
+      agent = createDocumentAgent("gpt-5-mini");
       break;
     case "media":
-      agent = createMediaAgent("gpt-4o-mini");
+      agent = createMediaAgent("gpt-5-mini");
       break;
     case "task":
-      agent = createTaskAgent("gpt-4o-mini");
+      agent = createTaskAgent("gpt-5-mini");
       break;
     case "event":
-      agent = createEventAgent("gpt-4o-mini");
+      agent = createEventAgent("gpt-5-mini");
       break;
     case "web":
-      agent = createWebAgent("gpt-4o-mini");
+      agent = createWebAgent("gpt-5-mini");
       break;
     default:
-      agent = createDocumentAgent("gpt-4o-mini");
+      agent = createDocumentAgent("gpt-5-mini");
   }
 
   try {
