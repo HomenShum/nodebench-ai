@@ -953,6 +953,7 @@ export const submitFileQuestion = mutation({
     // Create streaming message in our table
     const streamMessageId = await ctx.db.insert("chatMessagesStream", {
       threadId: args.threadId,
+      userId: userId,
       role: "user",
       content: args.question,
       status: "complete",

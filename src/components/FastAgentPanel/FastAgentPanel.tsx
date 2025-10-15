@@ -14,6 +14,7 @@ import { ThreadList } from './FastAgentPanel.ThreadList';
 import { MessageStream } from './FastAgentPanel.MessageStream';
 import { UIMessageStream } from './FastAgentPanel.UIMessageStream';
 import { InputBar } from './FastAgentPanel.InputBar';
+import { FileUpload } from './FastAgentPanel.FileUpload';
 import { ExportMenu } from './FastAgentPanel.ExportMenu';
 import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
 import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
@@ -602,6 +603,17 @@ export function FastAgentPanel({
               liveToolCalls={liveToolCalls}
               liveSources={liveSources}
               liveTokens={liveTokens}
+            />
+          )}
+
+          {/* File Upload */}
+          {activeThreadId && chatMode === 'agent-streaming' && (
+            <FileUpload
+              threadId={activeThreadId as Id<"chatThreadsStream">}
+              onFileSubmitted={() => {
+                // Refresh messages after file submission
+                // The agent will automatically respond
+              }}
             />
           )}
 

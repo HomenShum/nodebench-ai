@@ -356,6 +356,235 @@ export const workflowTests: TestCase[] = [
   }
 ];
 
+// ============================================================================
+// EDGE CASES & ERROR HANDLING TESTS
+// ============================================================================
+
+export const edgeCaseTests: TestCase[] = [
+  {
+    id: "edge-001",
+    category: "Empty Results",
+    tool: "findDocument",
+    scenario: "User searches for non-existent document",
+    userQuery: "Find document about quantum physics research",
+    expectedTool: "findDocument",
+    expectedArgs: { query: "quantum physics research" },
+    successCriteria: [
+      "Tool called is findDocument",
+      "Response acknowledges no results found",
+      "Response is helpful and suggests alternatives",
+      "No errors or crashes"
+    ],
+    evaluationPrompt: "Evaluate if the AI gracefully handles empty search results. Check if it acknowledges no documents were found and offers helpful suggestions."
+  },
+  {
+    id: "edge-002",
+    category: "Ambiguous Query",
+    tool: "findDocument",
+    scenario: "User provides vague search query",
+    userQuery: "Find my document",
+    expectedTool: "findDocument",
+    expectedArgs: { query: "document" },
+    successCriteria: [
+      "Tool called is findDocument",
+      "Response asks for clarification or shows multiple results",
+      "Response is helpful in narrowing down the search",
+      "Response is accurate"
+    ],
+    evaluationPrompt: "Evaluate if the AI handles ambiguous queries well. Check if it asks for clarification or provides multiple options."
+  },
+  {
+    id: "edge-003",
+    category: "Date Range Edge Case",
+    tool: "listTasks",
+    scenario: "User asks for tasks with no due date",
+    userQuery: "Show me tasks that don't have a due date",
+    expectedTool: "listTasks",
+    expectedArgs: { filter: "all", status: "all" },
+    successCriteria: [
+      "Tool called is listTasks",
+      "Response addresses tasks without due dates",
+      "Response is helpful and accurate",
+      "No errors"
+    ],
+    evaluationPrompt: "Evaluate if the AI can handle edge cases like tasks without due dates. Check if the response is accurate and helpful."
+  },
+  {
+    id: "edge-004",
+    category: "Multiple Tool Calls",
+    tool: "findDocument",
+    scenario: "User asks complex question requiring multiple tools",
+    userQuery: "Find my revenue report and tell me what tasks are related to it",
+    expectedTool: "findDocument",
+    expectedArgs: { query: "revenue report" },
+    successCriteria: [
+      "Multiple tools are called (findDocument and listTasks)",
+      "Response connects documents to related tasks",
+      "Response is comprehensive and helpful",
+      "All information is accurate"
+    ],
+    evaluationPrompt: "Evaluate if the AI can handle complex queries requiring multiple tools. Check if it successfully uses both document and task tools and provides a comprehensive answer."
+  },
+  {
+    id: "edge-005",
+    category: "Time Zone Handling",
+    tool: "listEvents",
+    scenario: "User asks for events today (time-sensitive)",
+    userQuery: "What events do I have today?",
+    expectedTool: "listEvents",
+    expectedArgs: { timeRange: "today" },
+    successCriteria: [
+      "Tool called is listEvents",
+      "Response shows events for current day",
+      "Time information is accurate",
+      "Response is helpful"
+    ],
+    evaluationPrompt: "Evaluate if the AI correctly handles time-sensitive queries. Check if today's events are shown accurately."
+  },
+];
+
+// ============================================================================
+// ADVANCED SCENARIO TESTS
+// ============================================================================
+
+export const advancedScenarioTests: TestCase[] = [
+  {
+    id: "adv-001",
+    category: "Document Analysis Chain",
+    tool: "analyzeDocument",
+    scenario: "User wants deep analysis of document",
+    userQuery: "Analyze the Revenue Report Q4 2024 and give me key insights",
+    expectedTool: "analyzeDocument",
+    expectedArgs: { query: "Revenue Report Q4 2024" },
+    successCriteria: [
+      "Tool called includes analyzeDocument or findDocument + analyzeDocument",
+      "Response provides insights about revenue data",
+      "Response mentions key metrics or trends",
+      "Analysis is accurate and helpful"
+    ],
+    evaluationPrompt: "Evaluate if the AI provides meaningful analysis of the document. Check if insights are accurate and relevant."
+  },
+  {
+    id: "adv-002",
+    category: "Cross-Reference",
+    tool: "findDocument",
+    scenario: "User wants to cross-reference multiple documents",
+    userQuery: "Compare the revenue report with the product roadmap",
+    expectedTool: "findDocument",
+    expectedArgs: { query: "revenue report" },
+    successCriteria: [
+      "Multiple documents are found and retrieved",
+      "Response compares information from both documents",
+      "Comparison is accurate and insightful",
+      "Response is well-structured"
+    ],
+    evaluationPrompt: "Evaluate if the AI can cross-reference multiple documents. Check if the comparison is accurate and provides valuable insights."
+  },
+  {
+    id: "adv-003",
+    category: "Priority-Based Filtering",
+    tool: "listTasks",
+    scenario: "User wants high-priority tasks only",
+    userQuery: "Show me only my high priority tasks",
+    expectedTool: "listTasks",
+    expectedArgs: { filter: "all", status: "all" },
+    successCriteria: [
+      "Tool called is listTasks",
+      "Response filters for high priority tasks",
+      "Only high priority tasks are shown",
+      "Response is accurate"
+    ],
+    evaluationPrompt: "Evaluate if the AI correctly filters tasks by priority. Check if only high-priority tasks are shown."
+  },
+  {
+    id: "adv-004",
+    category: "Natural Language Date",
+    tool: "listEvents",
+    scenario: "User uses natural language for dates",
+    userQuery: "What meetings do I have next week?",
+    expectedTool: "listEvents",
+    expectedArgs: { timeRange: "week" },
+    successCriteria: [
+      "Tool called is listEvents",
+      "Natural language date is correctly interpreted",
+      "Events for next week are shown",
+      "Response is accurate"
+    ],
+    evaluationPrompt: "Evaluate if the AI correctly interprets natural language dates like 'next week'. Check if the correct time range is used."
+  },
+  {
+    id: "adv-005",
+    category: "Contextual Follow-up",
+    tool: "getDocumentContent",
+    scenario: "User asks follow-up question in context",
+    userQuery: "Show me more details about that revenue report",
+    expectedTool: "getDocumentContent",
+    expectedArgs: { query: "revenue report" },
+    successCriteria: [
+      "Tool called is getDocumentContent or findDocument",
+      "Response provides detailed information",
+      "Context from previous conversation is maintained",
+      "Response is helpful and accurate"
+    ],
+    evaluationPrompt: "Evaluate if the AI maintains context for follow-up questions. Check if it correctly identifies 'that revenue report' from context."
+  },
+];
+
+// ============================================================================
+// PERFORMANCE & STRESS TESTS
+// ============================================================================
+
+export const performanceTests: TestCase[] = [
+  {
+    id: "perf-001",
+    category: "Large Result Set",
+    tool: "listTasks",
+    scenario: "User requests all tasks (potentially large dataset)",
+    userQuery: "Show me all my tasks",
+    expectedTool: "listTasks",
+    expectedArgs: { filter: "all", status: "all" },
+    successCriteria: [
+      "Tool called is listTasks",
+      "Response handles large result set gracefully",
+      "Response is well-formatted and readable",
+      "No performance issues or timeouts"
+    ],
+    evaluationPrompt: "Evaluate if the AI handles large result sets efficiently. Check if the response is well-formatted despite potentially many tasks."
+  },
+  {
+    id: "perf-002",
+    category: "Complex Search Query",
+    tool: "findDocument",
+    scenario: "User provides complex multi-word search",
+    userQuery: "Find documents about Q4 2024 revenue analysis and financial projections",
+    expectedTool: "findDocument",
+    expectedArgs: { query: "Q4 2024 revenue analysis financial projections" },
+    successCriteria: [
+      "Tool called is findDocument",
+      "Complex query is handled correctly",
+      "Relevant documents are found",
+      "Response is accurate and helpful"
+    ],
+    evaluationPrompt: "Evaluate if the AI handles complex multi-word searches. Check if relevant documents are found despite query complexity."
+  },
+  {
+    id: "perf-003",
+    category: "Rapid Sequential Queries",
+    tool: "listTasks",
+    scenario: "User asks multiple related questions quickly",
+    userQuery: "What tasks are due today? And what about tomorrow?",
+    expectedTool: "listTasks",
+    expectedArgs: { filter: "today" },
+    successCriteria: [
+      "Both questions are addressed",
+      "Tasks for today and tomorrow are shown",
+      "Response is organized and clear",
+      "No confusion between the two queries"
+    ],
+    evaluationPrompt: "Evaluate if the AI handles multiple questions in one query. Check if both today's and tomorrow's tasks are addressed."
+  },
+];
+
 // Combine all test cases
 export const allTestCases: TestCase[] = [
   ...documentToolTests,
@@ -365,6 +594,9 @@ export const allTestCases: TestCase[] = [
   ...organizationToolTests,
   ...webSearchToolTests,
   ...workflowTests,
+  ...edgeCaseTests,
+  ...advancedScenarioTests,
+  ...performanceTests,
 ];
 
 // Export test case counts
@@ -376,6 +608,9 @@ export const testCaseStats = {
   organization: organizationToolTests.length,
   webSearch: webSearchToolTests.length,
   workflows: workflowTests.length,
+  edgeCases: edgeCaseTests.length,
+  advancedScenarios: advancedScenarioTests.length,
+  performance: performanceTests.length,
   total: allTestCases.length,
 };
 
