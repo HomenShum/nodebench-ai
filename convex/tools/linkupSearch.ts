@@ -19,6 +19,15 @@ interface LinkupSearchResult {
     url: string;
     description?: string;
   }>;
+  videos?: Array<{
+    url: string;
+    description?: string;
+    thumbnail?: string;
+  }>;
+  audios?: Array<{
+    url: string;
+    description?: string;
+  }>;
 }
 
 /**
@@ -72,9 +81,9 @@ export const linkupSearch = createTool({
 
       const data: LinkupSearchResult = await response.json();
 
-      console.log(`[linkupSearch] Found answer with ${data.sources.length} sources${data.images ? ` and ${data.images.length} images` : ''}`);
+      console.log(`[linkupSearch] Found answer with ${data.sources.length} sources${data.images ? ` and ${data.images.length} images` : ''}${data.videos ? ` and ${data.videos.length} videos` : ''}${data.audios ? ` and ${data.audios.length} audios` : ''}`);
 
-      // Format the response with answer, images, and sources
+      // Format the response with answer, images, videos, audios, and sources
       let result = `${data.answer}\n\n`;
 
       // Add images if present
@@ -86,6 +95,40 @@ export const linkupSearch = createTool({
           result += `![${altText}](${image.url})\n`;
           if (image.description) {
             result += `*${image.description}*\n`;
+          }
+          result += "\n";
+        });
+      }
+
+      // Add videos if present (future-proofing for when Linkup adds video support)
+      if (data.videos && data.videos.length > 0) {
+        result += "Videos:\n\n";
+        data.videos.slice(0, 5).forEach((video, idx) => {
+          // Use HTML5 video tag for videos (ReactMarkdown with rehype-raw will render this)
+          result += `<video controls width="400" ${video.thumbnail ? `poster="${video.thumbnail}"` : ''}>\n`;
+          result += `  <source src="${video.url}" type="video/webm" />\n`;
+          result += `  <source src="${video.url}" type="video/mp4" />\n`;
+          result += `  Your browser does not support the video tag.\n`;
+          result += `</video>\n`;
+          if (video.description) {
+            result += `*${video.description}*\n`;
+          }
+          result += "\n";
+        });
+      }
+
+      // Add audios if present (future-proofing for when Linkup adds audio support)
+      if (data.audios && data.audios.length > 0) {
+        result += "Audio:\n\n";
+        data.audios.slice(0, 5).forEach((audio, idx) => {
+          // Use HTML5 audio tag for audio files (ReactMarkdown with rehype-raw will render this)
+          result += `<audio controls>\n`;
+          result += `  <source src="${audio.url}" type="audio/webm" />\n`;
+          result += `  <source src="${audio.url}" type="audio/mpeg" />\n`;
+          result += `  Your browser does not support the audio tag.\n`;
+          result += `</audio>\n`;
+          if (audio.description) {
+            result += `*${audio.description}*\n`;
           }
           result += "\n";
         });

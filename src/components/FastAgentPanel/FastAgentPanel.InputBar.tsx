@@ -2,10 +2,12 @@
 // Enhanced input bar with auto-resize and keyboard shortcuts
 
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Send, Loader2, Paperclip, X } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Mic, Video, Image as ImageIcon } from 'lucide-react';
+import { MediaRecorderComponent } from './FastAgentPanel.MediaRecorder';
+import { FileDropOverlay } from '../FileDropOverlay';
 
 interface InputBarProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, files?: File[]) => void;
   disabled?: boolean;
   placeholder?: string;
   maxLength?: number;
@@ -22,8 +24,11 @@ export function InputBar({
 }: InputBarProps) {
   const [input, setInput] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingMode, setRecordingMode] = useState<'audio' | 'video' | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Auto-resize textarea
   useEffect(() => {
@@ -44,9 +49,9 @@ export function InputBar({
   
   const handleSend = () => {
     const trimmed = input.trim();
-    if (!trimmed || disabled) return;
+    if ((!trimmed && attachedFiles.length === 0) || disabled) return;
     
-    onSend(trimmed);
+    onSend(trimmed, attachedFiles.length > 0 ? attachedFiles : undefined);
     setInput('');
     setAttachedFiles([]);
     
@@ -69,50 +74,143 @@ export function InputBar({
     setAttachedFiles(prev => [...prev, ...files]);
   };
   
+  const handleFilesDrop = (files: File[]) => {
+    // Filter for media files (images, audio, video)
+    const mediaFiles = files.filter(file => 
+      file.type.startsWith('image/') || 
+      file.type.startsWith('audio/') || 
+      file.type.startsWith('video/')
+    );
+    
+    if (mediaFiles.length > 0) {
+      setAttachedFiles(prev => [...prev, ...mediaFiles]);
+    }
+  };
+  
+  const startRecording = (mode: 'audio' | 'video') => {
+    setRecordingMode(mode);
+    setIsRecording(true);
+  };
+  
+  const handleRecordingComplete = (blob: Blob, type: 'audio' | 'video') => {
+    const file = new File(
+      [blob], 
+      `${type}-${Date.now()}.webm`,
+      { type: type === 'video' ? 'video/webm' : 'audio/webm' }
+    );
+    setAttachedFiles(prev => [...prev, file]);
+    setIsRecording(false);
+    setRecordingMode(null);
+  };
+  
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) return <ImageIcon className="h-3.5 w-3.5" />;
+    if (file.type.startsWith('audio/')) return <Mic className="h-3.5 w-3.5" />;
+    if (file.type.startsWith('video/')) return <Video className="h-3.5 w-3.5" />;
+    return <Paperclip className="h-3.5 w-3.5" />;
+  };
+  
+  const getFilePreview = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return URL.createObjectURL(file);
+    }
+    return null;
+  };
+  
   const removeFile = (index: number) => {
     setAttachedFiles(prev => prev.filter((_, i) => i !== index));
   };
   
-  const canSend = input.trim().length > 0 && !disabled;
+  const canSend = (input.trim().length > 0 || attachedFiles.length > 0) && !disabled;
   
   return (
-    <div className="input-bar">
+    <div ref={containerRef} className="input-bar">
+      {/* File drop overlay */}
+      <FileDropOverlay
+        containerRef={containerRef}
+        onFilesDrop={handleFilesDrop}
+        disabled={disabled || isRecording}
+        hint="Drop media files here (Images, Audio, Video)"
+      />
+      
+      {/* Recording Modal */}
+      {isRecording && recordingMode && (
+        <div className="recording-modal">
+          <MediaRecorderComponent
+            mode={recordingMode}
+            onRecordingComplete={handleRecordingComplete}
+            onClose={() => {
+              setIsRecording(false);
+              setRecordingMode(null);
+            }}
+          />
+        </div>
+      )}
+      
       {/* Attached files */}
       {attachedFiles.length > 0 && (
         <div className="attached-files">
-          {attachedFiles.map((file, index) => (
-            <div key={index} className="attached-file">
-              <Paperclip className="h-3.5 w-3.5" />
-              <span className="file-name">{file.name}</span>
-              <button
-                onClick={() => removeFile(index)}
-                className="remove-file"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
+          {attachedFiles.map((file, index) => {
+            const preview = getFilePreview(file);
+            return (
+              <div key={index} className="attached-file">
+                {preview ? (
+                  <img src={preview} alt={file.name} className="file-preview-img" />
+                ) : (
+                  getFileIcon(file)
+                )}
+                <span className="file-name">{file.name}</span>
+                <button
+                  onClick={() => removeFile(index)}
+                  className="remove-file"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
       
       {/* Input container */}
       <div className="input-container">
-        {/* File upload button */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={disabled}
-          className="input-action-btn"
-          title="Attach file"
-        >
-          <Paperclip className="h-5 w-5" />
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          onChange={handleFileSelect}
-          style={{ display: 'none' }}
-        />
+        {/* Media action buttons */}
+        <div className="media-actions">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+            className="input-action-btn"
+            title="Attach file"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,audio/*,video/*"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+          
+          <button
+            onClick={() => startRecording('audio')}
+            disabled={disabled || isRecording}
+            className="input-action-btn"
+            title="Record audio"
+          >
+            <Mic className="h-5 w-5" />
+          </button>
+          
+          <button
+            onClick={() => startRecording('video')}
+            disabled={disabled || isRecording}
+            className="input-action-btn"
+            title="Record video"
+          >
+            <Video className="h-5 w-5" />
+          </button>
+        </div>
         
         {/* Textarea */}
         <textarea
@@ -156,9 +254,19 @@ export function InputBar({
       
       <style>{`
         .input-bar {
+          position: relative;
           border-top: 1px solid var(--border-color);
           background: var(--bg-primary);
           padding: 1rem;
+        }
+        
+        .recording-modal {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1000;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
         
         .attached-files {
@@ -178,6 +286,13 @@ export function InputBar({
           border-radius: 0.5rem;
           font-size: 0.8125rem;
           color: var(--text-primary);
+        }
+        
+        .file-preview-img {
+          width: 2rem;
+          height: 2rem;
+          object-fit: cover;
+          border-radius: 0.25rem;
         }
         
         .file-name {
@@ -215,6 +330,12 @@ export function InputBar({
         
         .input-container:focus-within {
           border-color: #3b82f6;
+        }
+        
+        .media-actions {
+          display: flex;
+          gap: 0.25rem;
+          flex-shrink: 0;
         }
         
         .input-action-btn {

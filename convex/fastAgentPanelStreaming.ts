@@ -2,7 +2,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalQuery, internalMutation, action, internalAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { components, internal } from "./_generated/api";
+import { components, internal, api } from "./_generated/api";
 import { Agent } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
 import { paginationOptsValidator } from "convex/server";
@@ -607,5 +607,77 @@ export const markStreamComplete = internalMutation({
 
     // Update thread timestamp
     await ctx.db.patch(message.threadId, { updatedAt: Date.now() });
+  },
+});
+
+/* ================================================================
+ * EVALUATION SUPPORT
+ * ================================================================ */
+
+/**
+ * Internal action to send a message and get response for evaluation
+ * Returns the response text and tools called
+ */
+export const sendMessageInternal = internalAction({
+  args: {
+    threadId: v.optional(v.string()),
+    message: v.string(),
+  },
+  returns: v.object({
+    response: v.string(),
+    toolsCalled: v.array(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    // For evaluation, we'll use the Agent component directly
+    const agent = createChatAgent("gpt-4o");
+
+    let response = "";
+    const toolsCalled: string[] = [];
+
+    try {
+      let thread;
+      let threadId = args.threadId;
+
+      // Create or get thread
+      if (threadId) {
+        thread = await agent.getThread(ctx, { threadId });
+      } else {
+        const result = await agent.createThread(ctx, {});
+        thread = result.thread;
+        threadId = result.threadId;
+      }
+
+      // Generate response
+      const result = await thread.generateText({
+        prompt: args.message,
+        system: agent.options.instructions,
+      });
+
+      // Extract response text
+      response = result.text || "";
+
+      // Get the message to extract tool calls
+      const message = await ctx.runQuery(api.agent.messages.getMessage, {
+        messageId: result.messageId,
+      });
+
+      // Extract tool calls from message parts
+      if (message && message.parts) {
+        for (const part of message.parts) {
+          if (part.type === "tool-call" && part.toolName) {
+            toolsCalled.push(part.toolName);
+          }
+        }
+      }
+
+    } catch (error: any) {
+      console.error("Error in sendMessageInternal:", error);
+      response = `Error: ${error.message}`;
+    }
+
+    return {
+      response,
+      toolsCalled,
+    };
   },
 });
