@@ -109,6 +109,7 @@ import type * as tasks from "../tasks.js";
 import type * as testYoutubeSearch from "../testYoutubeSearch.js";
 import type * as tools_dataAccessTools from "../tools/dataAccessTools.js";
 import type * as tools_documentTools from "../tools/documentTools.js";
+import type * as tools_evaluation_comprehensiveTest from "../tools/evaluation/comprehensiveTest.js";
 import type * as tools_evaluation_evaluator from "../tools/evaluation/evaluator.js";
 import type * as tools_evaluation_helpers from "../tools/evaluation/helpers.js";
 import type * as tools_evaluation_quickTest from "../tools/evaluation/quickTest.js";
@@ -237,6 +238,7 @@ declare const fullApi: ApiFromModules<{
   testYoutubeSearch: typeof testYoutubeSearch;
   "tools/dataAccessTools": typeof tools_dataAccessTools;
   "tools/documentTools": typeof tools_documentTools;
+  "tools/evaluation/comprehensiveTest": typeof tools_evaluation_comprehensiveTest;
   "tools/evaluation/evaluator": typeof tools_evaluation_evaluator;
   "tools/evaluation/helpers": typeof tools_evaluation_helpers;
   "tools/evaluation/quickTest": typeof tools_evaluation_quickTest;

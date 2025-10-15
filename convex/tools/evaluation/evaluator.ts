@@ -234,17 +234,16 @@ The test PASSES only if ALL criteria are met. Be strict and objective.`;
 }
 
 /**
- * Run all test cases and generate summary
+ * Run all test cases in parallel and generate summary
  */
-export const runAllTests = action({
+export const runAllTestsParallel = action({
   args: {
     categories: v.optional(v.array(v.string())),
-    createNewThread: v.optional(v.boolean()),
     userId: v.optional(v.id("users")), // Optional userId for evaluation tests
   },
   returns: v.any(),
   handler: async (ctx, args): Promise<EvaluationSummary> => {
-    console.log("\n🚀 Starting comprehensive tool evaluation...\n");
+    console.log("\n🚀 Starting comprehensive tool evaluation (PARALLEL MODE)...\n");
 
     // Get test user if not provided
     let userId = args.userId;
@@ -263,32 +262,19 @@ export const runAllTests = action({
       testCases = allTestCases.filter(t => args.categories!.includes(t.category));
     }
 
-    console.log(`📊 Running ${testCases.length} test cases...\n`);
+    console.log(`📊 Running ${testCases.length} test cases in parallel...\n`);
 
-    // Create a test thread if needed
-    let threadId: any = undefined;
-    if (args.createNewThread) {
-      // You would create a thread here if needed
-      // threadId = await ctx.runMutation(api.threads.create, {});
-    }
-
-    const results: EvaluationResult[] = [];
-
-    // Run tests sequentially to avoid rate limits
-    for (const testCase of testCases) {
+    // Run ALL tests in parallel
+    const testPromises = testCases.map(async (testCase) => {
       try {
         const result = await ctx.runAction(internal.tools.evaluation.evaluator.runSingleTest, {
           testId: testCase.id,
-          threadId,
           userId, // Pass userId to each test
         });
-        results.push(result);
-        
-        // Small delay to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        return result;
       } catch (error: any) {
         console.error(`Failed to run test ${testCase.id}:`, error.message);
-        results.push({
+        return {
           testId: testCase.id,
           category: testCase.category,
           scenario: testCase.scenario,
@@ -306,17 +292,39 @@ export const runAllTests = action({
           latencyMs: 0,
           timestamp: Date.now(),
           errors: [error.message],
-        });
+        } as EvaluationResult;
       }
-    }
+    });
+
+    // Wait for all tests to complete
+    const results = await Promise.all(testPromises);
 
     // Generate summary
     const summary = generateSummary(results);
-    
+
     // Print summary
     printSummary(summary);
 
     return summary;
+  },
+});
+
+/**
+ * Run all test cases sequentially (legacy - use runAllTestsParallel instead)
+ */
+export const runAllTests = action({
+  args: {
+    categories: v.optional(v.array(v.string())),
+    createNewThread: v.optional(v.boolean()),
+    userId: v.optional(v.id("users")),
+  },
+  returns: v.any(),
+  handler: async (ctx, args): Promise<EvaluationSummary> => {
+    // Just call the parallel version - it's faster and better
+    return await ctx.runAction(api.tools.evaluation.evaluator.runAllTestsParallel, {
+      categories: args.categories,
+      userId: args.userId,
+    });
   },
 });
 

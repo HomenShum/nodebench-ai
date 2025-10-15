@@ -426,6 +426,7 @@ export const getDocumentIds = query({
 
 /**
  * Get the test user for evaluation
+ * Returns the first user in the database (same logic as getOrCreateTestUser)
  */
 export const getTestUser = query({
   args: {},
@@ -438,9 +439,9 @@ export const getTestUser = query({
     v.null()
   ),
   handler: async (ctx) => {
+    // Get the first user (same as what seeding uses)
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("email"), "test@evaluation.com"))
       .first();
 
     if (!user) return null;
