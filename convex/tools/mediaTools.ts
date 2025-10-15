@@ -184,6 +184,10 @@ export const getMediaDetails = createTool({
     const fileSizeMB = (fileDoc.file.fileSize / (1024 * 1024)).toFixed(2);
     const mediaType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes((fileDoc.document.fileType || '').toLowerCase()) ? 'Image' : 'Video';
     
+    const lastModified = fileDoc.document.lastModified
+      ? new Date(fileDoc.document.lastModified).toLocaleString()
+      : 'Unknown';
+
     return `${mediaType} Details: "${fileDoc.document.title}"
 
 File Information:
@@ -192,7 +196,7 @@ File Information:
 - Type: ${fileDoc.document.fileType || 'unknown'}
 - Size: ${fileSizeMB} MB
 - MIME Type: ${fileDoc.document.mimeType || 'unknown'}
-- Last Modified: ${new Date(fileDoc.document.lastModified || fileDoc.document._creationTime).toLocaleString()}
+- Last Modified: ${lastModified}
 
 Preview URL: ${fileDoc.storageUrl || 'Not available'}
 

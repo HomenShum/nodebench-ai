@@ -251,8 +251,15 @@ export const createDocument = createTool({
     const documentId = await ctx.runMutation(api.documents.create, {
       title: args.title,
       content: contentArray,
-      isPublic: args.isPublic,
     });
+
+    // If user wants it public, update it
+    if (args.isPublic) {
+      await ctx.runMutation(api.documents.update, {
+        id: documentId,
+        isPublic: true,
+      });
+    }
 
     return `Document created successfully!
 
