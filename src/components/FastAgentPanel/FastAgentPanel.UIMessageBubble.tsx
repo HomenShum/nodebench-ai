@@ -11,6 +11,7 @@ import { User, Bot, Wrench, Image as ImageIcon } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
+import { MermaidDiagram } from './MermaidDiagram';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
@@ -238,10 +239,20 @@ export function UIMessageBubble({ message }: UIMessageBubbleProps) {
               components={{
                 code({ inline, className, children, ...props }: any) {
                   const match = /language-(\w+)/.exec(className || '');
+                  const language = match ? match[1] : '';
+                  
+                  // Special handling for Mermaid diagrams
+                  if (!inline && language === 'mermaid') {
+                    return (
+                      <MermaidDiagram code={String(children).replace(/\n$/, '')} />
+                    );
+                  }
+                  
+                  // Regular code blocks
                   return !inline && match ? (
                     <SyntaxHighlighter
                       style={vscDarkPlus}
-                      language={match[1]}
+                      language={language}
                       PreTag="div"
                       {...props}
                     >

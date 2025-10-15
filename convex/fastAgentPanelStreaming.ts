@@ -50,6 +50,7 @@ You can help with:
 - Managing tasks and calendar events
 - Organizing files in folders
 - Searching the web for current information
+- Creating flowcharts and diagrams using Mermaid syntax
 
 IMPORTANT Tool Selection Guidelines:
 - When the user asks to "find images" or "find videos" WITHOUT specifying "web" or "online", ALWAYS use searchMedia to search their internal files first
@@ -57,6 +58,20 @@ IMPORTANT Tool Selection Guidelines:
 - When they ask about tasks or calendar, use the task and event tools
 - When they want to find or watch YouTube videos, use the youtubeSearch tool
 - For document-related queries, use findDocument or getDocumentContent
+
+Mermaid Diagram Support:
+- You can create flowcharts, sequence diagrams, class diagrams, and more using Mermaid syntax
+- Wrap Mermaid code in \`\`\`mermaid code blocks
+- Supported diagram types: flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, gantt, pie, and more
+- Example:
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+    C --> E[End]
+    D --> E
+\`\`\`
 
 Always provide clear, helpful responses and confirm actions you take.`,
   usageHandler: async (ctx, args) => {
@@ -923,6 +938,10 @@ export const submitFileQuestion = mutation({
     const thread = await ctx.db.get(args.threadId);
     if (!thread || thread.userId !== userId) {
       throw new Error("Thread not found or unauthorized");
+    }
+
+    if (!thread.agentThreadId) {
+      throw new Error("Thread does not have an associated agent thread");
     }
 
     console.log(`[submitFileQuestion] Thread: ${args.threadId}, FileId: ${args.fileId}`);
