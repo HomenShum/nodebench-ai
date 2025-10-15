@@ -77,7 +77,7 @@ export const runSingleTest = internalAction({
     let errors: string[] = [];
 
     try {
-      // Send message to agent and get response
+      // Use original agent for evaluation tests (orchestrator not working yet)
       const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
         threadId: args.threadId,
         message: testCase.userQuery,
@@ -86,7 +86,7 @@ export const runSingleTest = internalAction({
 
       response = result.response || "";
       toolsCalled = result.toolsCalled || [];
-      
+
     } catch (error: any) {
       errors.push(error.message);
       console.error(`❌ Error running test: ${error.message}`);
