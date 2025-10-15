@@ -638,45 +638,94 @@ export const sendMessageInternal = internalAction({
       let thread;
       let threadId = args.threadId;
 
-      // Create or get thread
+      // Create or continue thread
       if (threadId) {
-        thread = await agent.getThread(ctx, { threadId });
+        const result = await agent.continueThread(ctx, { threadId });
+        thread = result.thread;
       } else {
         const result = await agent.createThread(ctx, {});
         thread = result.thread;
         threadId = result.threadId;
       }
 
-      // Generate response
-      const result = await thread.generateText({
+      // Generate response with tools enabled
+      // First generation - may include tool calls
+      let result = await thread.generateText({
         prompt: args.message,
-        system: agent.options.instructions,
       });
 
-      // Extract response text
-      response = result.text || "";
+      // Check if tools were called by looking at the result
+      // If tools were called, we need to generate again to get the final text response
+      let attempts = 0;
+      const maxAttempts = 5;
 
-      // Get all messages from the thread to extract tool calls
-      const messages = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-        threadId,
-        order: "desc",
-        paginationOpts: { numItems: 10, cursor: null },
-      });
+      while (attempts < maxAttempts) {
+        // Get the latest messages to check for tool calls
+        const messages = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+          threadId,
+          order: "desc",
+          paginationOpts: { numItems: 10, cursor: null },
+        });
 
-      // Extract tool calls from the most recent assistant message
-      if (messages && messages.page && messages.page.length > 0) {
-        const latestMessage = messages.page[0];
-        if (latestMessage.message && typeof latestMessage.message === 'object') {
-          const msg = latestMessage.message as any;
-          if (msg.content && Array.isArray(msg.content)) {
-            for (const part of msg.content) {
-              if (part.type === "tool-call" && part.toolName) {
-                toolsCalled.push(part.toolName);
+        console.log(`[sendMessageInternal] Loop attempt ${attempts + 1}, checking ${messages?.page?.length || 0} messages`);
+
+        // Check ALL assistant messages for tool calls and text responses
+        let hasToolCalls = false;
+        let hasTextResponse = false;
+
+        if (messages && messages.page && messages.page.length > 0) {
+          for (const msg of messages.page) {
+            if (msg.message && typeof msg.message === 'object') {
+              const message = msg.message as any;
+              if (message.role === "assistant" && Array.isArray(message.content)) {
+                for (const part of message.content) {
+                  if (part.type === "tool-call" && part.toolName) {
+                    hasToolCalls = true;
+                    if (!toolsCalled.includes(part.toolName)) {
+                      toolsCalled.push(part.toolName);
+                    }
+                  }
+                  if (part.type === "text" && part.text) {
+                    hasTextResponse = true;
+                    if (!response) {
+                      response = part.text;
+                    }
+                  }
+                }
               }
             }
           }
         }
+
+        console.log(`[sendMessageInternal] hasToolCalls=${hasToolCalls}, hasTextResponse=${hasTextResponse}`);
+
+        // If we have a text response, we're done
+        if (hasTextResponse) {
+          console.log(`[sendMessageInternal] Found text response, exiting loop`);
+          break;
+        }
+
+        // If we had tool calls but no text response, generate again
+        if (hasToolCalls) {
+          console.log(`[sendMessageInternal] Tool calls detected, generating follow-up response (attempt ${attempts + 1})`);
+          result = await thread.generateText({
+            prompt: "", // Empty prompt to continue from where we left off
+          });
+          attempts++;
+        } else {
+          // No tool calls and no text response - something went wrong
+          console.log(`[sendMessageInternal] No tool calls and no text response, exiting loop`);
+          break;
+        }
       }
+
+      // Fallback to result.text if no response found in messages
+      if (!response) {
+        response = result.text || "";
+      }
+
+      console.log(`[sendMessageInternal] Final response length: ${response.length} chars`);
+      console.log(`[sendMessageInternal] Tools called: ${toolsCalled.join(', ') || 'none'}`);
 
     } catch (error: any) {
       console.error("Error in sendMessageInternal:", error);

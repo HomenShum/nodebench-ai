@@ -3,6 +3,8 @@
 
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { User, Bot, Wrench, Image as ImageIcon } from 'lucide-react';
@@ -15,54 +17,111 @@ interface UIMessageBubbleProps {
 }
 
 /**
- * Helper to extract and render images from tool output text
+ * Helper to render tool output with markdown support and gallery layout for images
  */
 function ToolOutputRenderer({ output }: { output: unknown }) {
   const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
 
-  // Extract image URLs from the output (format: "1. https://example.com/image.jpg")
-  const imageUrlRegex = /^\d+\.\s+(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg))/gim;
-  const imageMatches = outputText.matchAll(imageUrlRegex);
-  const imageUrls = Array.from(imageMatches).map(match => match[1]);
-
-  // Split output into sections
-  const sections = outputText.split(/\n\n(?=Images:|Sources:)/);
+  // Check if this output contains multiple images (for gallery layout)
+  const imageCount = (outputText.match(/!\[.*?\]\(.*?\)/g) || []).length;
+  const hasMultipleImages = imageCount > 2;
 
   return (
     <div className="text-xs text-gray-600 mt-1 space-y-2">
-      {sections.map((section, idx) => {
-        // Check if this is the Images section
-        if (section.startsWith('Images:')) {
-          return (
-            <div key={idx}>
-              <div className="font-medium text-gray-700 mb-2">Images:</div>
-              <div className="grid grid-cols-2 gap-2">
-                {imageUrls.map((url, imgIdx) => (
-                  <div key={imgIdx} className="rounded overflow-hidden border border-gray-200">
-                    <img
-                      src={url}
-                      alt={`Search result ${imgIdx + 1}`}
-                      className="w-full h-auto object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        // Fallback if image fails to load
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        }
-
-        // Regular text section
-        return (
-          <pre key={idx} className="whitespace-pre-wrap font-mono text-xs">
-            {section}
-          </pre>
-        );
-      })}
+      <ReactMarkdown
+        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+        components={{
+          // Custom wrapper for image sections
+          h2: ({ node, children, ...props }) => {
+            const text = String(children);
+            if (text === 'Images' && hasMultipleImages) {
+              return (
+                <h2 {...props} className="text-sm font-semibold text-gray-700 mt-3 mb-2">
+                  {children}
+                  <span className="text-xs font-normal text-gray-500 ml-2">
+                    (scroll to see all)
+                  </span>
+                </h2>
+              );
+            }
+            return <h2 {...props} className="text-sm font-semibold text-gray-700 mt-3 mb-2" />;
+          },
+          // Gallery layout for images
+          img: ({ node, ...props }) => {
+            if (hasMultipleImages) {
+              return (
+                <div className="inline-block mr-3 mb-2 last:mr-0">
+                  <img
+                    {...props}
+                    className="h-48 w-auto rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                    loading="lazy"
+                    style={{ objectFit: 'cover' }}
+                    onClick={(e) => {
+                      // Open in new tab on click
+                      window.open(props.src, '_blank');
+                    }}
+                  />
+                </div>
+              );
+            }
+            // Single image - full width
+            return (
+              <img
+                {...props}
+                className="max-w-full h-auto rounded-lg border border-gray-200 my-2 cursor-pointer hover:shadow-lg transition-shadow"
+                loading="lazy"
+                style={{ maxHeight: '400px', objectFit: 'contain' }}
+                onClick={(e) => {
+                  window.open(props.src, '_blank');
+                }}
+              />
+            );
+          },
+          // Wrapper for multiple images to enable horizontal scroll
+          p: ({ node, children, ...props }) => {
+            // Check if this paragraph contains only images
+            const hasOnlyImages = node?.children?.every(
+              (child: any) => child.tagName === 'img'
+            );
+            
+            if (hasOnlyImages && hasMultipleImages) {
+              return (
+                <div 
+                  className="flex overflow-x-auto gap-0 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                  style={{ scrollbarWidth: 'thin' }}
+                >
+                  {children}
+                </div>
+              );
+            }
+            
+            return <p {...props} className="text-xs text-gray-600 mb-2">{children}</p>;
+          },
+          // Style links
+          a: ({ node, ...props }) => (
+            <a
+              {...props}
+              className="text-blue-600 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            />
+          ),
+          // Style videos with gallery support
+          video: ({ node, ...props }) => (
+            <video
+              {...props}
+              className="max-w-full h-auto rounded-lg border border-gray-200 my-2"
+              style={{ maxHeight: '300px' }}
+            />
+          ),
+          // Style audio
+          audio: ({ node, ...props }) => (
+            <audio {...props} className="w-full my-2" />
+          ),
+        }}
+      >
+        {outputText}
+      </ReactMarkdown>
     </div>
   );
 }
