@@ -5,7 +5,7 @@
  * Run with: npx convex run seedGoldenDataset:seedAll
  */
 
-import { internalMutation } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -409,3 +409,17 @@ async function seedFolders(ctx: any) {
   }
 }
 
+/**
+ * Get document IDs for testing
+ */
+export const getDocumentIds = query({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("documents"),
+    title: v.string(),
+  })),
+  handler: async (ctx) => {
+    const docs = await ctx.db.query("documents").collect();
+    return docs.map(doc => ({ _id: doc._id, title: doc.title }));
+  },
+});

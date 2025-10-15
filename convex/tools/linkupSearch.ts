@@ -185,13 +185,15 @@ export const linkupSearch = createTool({
       success = true;
       
       // Track API usage (asynchronously, don't wait)
+      // Linkup Pricing (2025): €5/1,000 standard searches = ~$0.0055/search = 0.55 cents
+      // Deep search would be ~5.5 cents but we only use standard
       const responseTime = Date.now() - startTime;
       _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
         apiName: "linkup",
         operation: "search",
         unitsUsed: 1,
-        estimatedCost: outputType === "searchResults" ? 2 : 1,
-        requestMetadata: { query: args.query, imageCount },
+        estimatedCost: 1, // 0.55 cents for standard, round up to 1 cent
+        requestMetadata: { query: args.query, imageCount, depth: args.depth },
         success: true,
         responseTime,
       });
