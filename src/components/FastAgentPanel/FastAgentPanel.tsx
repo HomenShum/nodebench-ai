@@ -12,6 +12,7 @@ import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 import './FastAgentPanel.animations.css';
 import { ThreadList } from './FastAgentPanel.ThreadList';
 import { MessageStream } from './FastAgentPanel.MessageStream';
+import { UIMessageStream } from './FastAgentPanel.UIMessageStream';
 import { InputBar } from './FastAgentPanel.InputBar';
 import { ExportMenu } from './FastAgentPanel.ExportMenu';
 import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
@@ -150,20 +151,9 @@ export function FastAgentPanel({
   // Use the appropriate data based on mode
   const threads = chatMode === 'agent' ? agentThreads : streamingThreads;
 
-  // Convert UIMessages to Message format for MessageStream component
-  const convertedStreamingMessages = streamingMessages?.map((uiMsg: any) => ({
-    _id: uiMsg.key || uiMsg._id,
-    _creationTime: uiMsg._creationTime || Date.now(),
-    threadId: activeThreadId as Id<"chatThreadsStream">,
-    userId: '' as Id<"users">,
-    role: uiMsg.role,
-    content: uiMsg.text || '',
-    status: uiMsg.status || 'complete',
-    createdAt: uiMsg._creationTime || Date.now(),
-    updatedAt: uiMsg._creationTime || Date.now(),
-  }));
-
-  const messages = chatMode === 'agent' ? agentMessages : convertedStreamingMessages;
+  // For agent mode, use the regular messages
+  // For streaming mode, we use streamingMessages directly (UIMessage format)
+  const messages = agentMessages;
 
   // ========== EFFECTS ==========
 
@@ -596,16 +586,24 @@ export function FastAgentPanel({
         <div className="chat-area">
           {/* Agent hierarchy / spawned agents */}
           <AgentHierarchy agents={liveAgents} isStreaming={isStreaming} />
-          {/* Messages */}
-          <MessageStream
-            messages={displayMessages}
-            isStreaming={isStreaming}
-            streamingMessageId={streamingMessageId}
-            liveThinking={liveThinking}
-            liveToolCalls={liveToolCalls}
-            liveSources={liveSources}
-            liveTokens={liveTokens}
-          />
+
+          {/* Messages - Use UIMessageStream for streaming mode, MessageStream for agent mode */}
+          {chatMode === 'agent-streaming' ? (
+            <UIMessageStream
+              messages={streamingMessages || []}
+              autoScroll={true}
+            />
+          ) : (
+            <MessageStream
+              messages={displayMessages}
+              isStreaming={isStreaming}
+              streamingMessageId={streamingMessageId}
+              liveThinking={liveThinking}
+              liveToolCalls={liveToolCalls}
+              liveSources={liveSources}
+              liveTokens={liveTokens}
+            />
+          )}
 
           {/* Input Bar */}
           <InputBar
