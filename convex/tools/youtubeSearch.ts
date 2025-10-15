@@ -56,6 +56,10 @@ export const youtubeSearch = createTool({
   
   handler: async (_ctx, args): Promise<string> => {
     const apiKey = process.env.YOUTUBE_API_KEY;
+    const startTime = Date.now();
+    let success = false;
+    let videoCount = 0;
+    let errorMsg: string | undefined;
 
     if (!apiKey) {
       throw new Error("YOUTUBE_API_KEY environment variable is not set. Get your API key from https://console.cloud.google.com/apis/credentials");
@@ -90,9 +94,23 @@ export const youtubeSearch = createTool({
 
       const data: YouTubeSearchResult = await response.json();
 
-      console.log(`[youtubeSearch] ✅ Found ${data.items?.length || 0} videos`);
+      videoCount = data.items?.length || 0;
+      console.log(`[youtubeSearch] ✅ Found ${videoCount} videos`);
 
       if (!data.items || data.items.length === 0) {
+        success = true;
+        
+        // Track empty result
+        _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+          apiName: "youtube",
+          operation: "search",
+          unitsUsed: 100,
+          estimatedCost: 0,
+          requestMetadata: { query: args.query, videoCount: 0 },
+          success: true,
+          responseTime: Date.now() - startTime,
+        });
+        
         return "No videos found for your search query. Try different keywords.";
       }
 
@@ -127,9 +145,47 @@ export const youtubeSearch = createTool({
         result += "---\n\n";
       });
 
+      success = true;
+      
+      // Track successful search
+      const responseTime = Date.now() - startTime;
+      _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+        apiName: "youtube",
+        operation: "search",
+        unitsUsed: 100, // YouTube charges 100 units per search
+        estimatedCost: 0, // Free within quota (10,000 units/day)
+        requestMetadata: { 
+          query: args.query, 
+          videoCount,
+          maxResults: args.maxResults,
+          order: args.order,
+        },
+        success: true,
+        responseTime,
+      });
+
       return result;
     } catch (error) {
+      errorMsg = error instanceof Error ? error.message : String(error);
       console.error("[youtubeSearch] Error:", error);
+      
+      // Track failed search
+      const responseTime = Date.now() - startTime;
+      try {
+        _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+          apiName: "youtube",
+          operation: "search",
+          unitsUsed: 0,
+          estimatedCost: 0,
+          requestMetadata: { query: args.query },
+          success: false,
+          errorMessage: errorMsg,
+          responseTime,
+        });
+      } catch (trackError) {
+        console.error("[youtubeSearch] Failed to track error:", trackError);
+      }
+      
       throw error;
     }
   },

@@ -427,6 +427,8 @@ export const streamAsync = internalAction({
   handler: async (ctx, args) => {
     console.log('[streamAsync] Starting stream for message:', args.promptMessageId);
     const chatAgent = createChatAgent(args.model);
+    const startTime = Date.now();
+    let success = false;
 
     try {
       const result = await chatAgent.streamText(
@@ -448,8 +450,64 @@ export const streamAsync = internalAction({
       await result.consumeStream();
 
       console.log('[streamAsync] Stream completed successfully');
+      success = true;
+
+      // Track OpenAI usage
+      const responseTime = Date.now() - startTime;
+      const usage = await result.usage;
+      const text = await result.text;
+      
+      // Estimate cost based on GPT-5 pricing
+      // GPT-5 series: ~$0.01/1K input tokens, ~$0.03/1K output tokens
+      const inputCostPer1K = 0.01;  // $0.01 per 1K input tokens
+      const outputCostPer1K = 0.03; // $0.03 per 1K output tokens
+      
+      const promptTokens = usage?.promptTokens || 0;
+      const completionTokens = usage?.completionTokens || 0;
+      const totalTokens = usage?.totalTokens || 0;
+      
+      const estimatedCostCents = Math.round(
+        (promptTokens / 1000 * inputCostPer1K + completionTokens / 1000 * outputCostPer1K) * 100
+      );
+
+      ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+        apiName: "openai",
+        operation: "generate",
+        unitsUsed: totalTokens,
+        estimatedCost: estimatedCostCents,
+        requestMetadata: {
+          model: args.model,
+          tokensUsed: totalTokens,
+          promptTokens,
+          completionTokens,
+          textLength: text?.length || 0,
+        },
+        success: true,
+        responseTime,
+      });
+
     } catch (error) {
       console.error('[streamAsync] Error:', error);
+      
+      // Track failed generation
+      const responseTime = Date.now() - startTime;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      
+      try {
+        ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+          apiName: "openai",
+          operation: "generate",
+          unitsUsed: 0,
+          estimatedCost: 0,
+          requestMetadata: { model: args.model },
+          success: false,
+          errorMessage: errorMsg,
+          responseTime,
+        });
+      } catch (trackError) {
+        console.error('[streamAsync] Failed to track error:', trackError);
+      }
+      
       throw error;
     }
   },
@@ -634,6 +692,11 @@ export const sendMessageInternal = internalAction({
   handler: async (ctx, args) => {
     // For evaluation, we'll use the Agent component directly
     const agent = createChatAgent("gpt-5-chat-latest");
+
+    // Store userId in context for tools to access
+    if (args.userId) {
+      (ctx as any).evaluationUserId = args.userId;
+    }
 
     let response = "";
     const toolsCalled: string[] = [];

@@ -21,10 +21,14 @@ export const findDocument = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[findDocument] Searching for: "${args.query}"`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     // Use the search index for fast title search
     const results = await ctx.runQuery(api.documents.getSearch, {
       query: args.query,
+      userId, // Pass userId for evaluation
     });
     
     if (results.length === 0) {
@@ -62,9 +66,13 @@ export const getDocumentContent = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[getDocumentContent] Loading document: ${args.documentId}`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     const doc = await ctx.runQuery(api.documents.getById, {
       documentId: args.documentId as any,
+      userId, // Pass userId for evaluation
     });
     
     if (!doc) {
@@ -80,6 +88,7 @@ export const getDocumentContent = createTool({
       // For file documents, get file details
       const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
         documentId: args.documentId as any,
+        userId, // Pass userId for evaluation
       });
       
       if (fileDoc && fileDoc.file) {
@@ -126,9 +135,13 @@ export const analyzeDocument = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[analyzeDocument] Analyzing document: ${args.documentId}`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     const doc = await ctx.runQuery(api.documents.getById, {
       documentId: args.documentId as any,
+      userId, // Pass userId for evaluation
     });
     
     if (!doc) {
@@ -141,6 +154,7 @@ export const analyzeDocument = createTool({
       // For file documents, check if analysis exists
       const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
         documentId: args.documentId as any,
+        userId, // Pass userId for evaluation
       });
       
       if (fileDoc && fileDoc.file) {

@@ -110,27 +110,68 @@ export const testYoutubeSearchTool = action({
 });
 
 /**
- * Quick test - just search for one video
+ * Quick test - direct API call to YouTube
  */
 export const quickYoutubeTest = action({
   args: {},
-  handler: async (ctx) => {
+  handler: async (_ctx) => {
     console.log("🚀 Quick YouTube search test...");
     
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    
+    if (!apiKey) {
+      console.error("❌ YOUTUBE_API_KEY not set!");
+      return {
+        success: false,
+        error: "YOUTUBE_API_KEY environment variable is not set",
+      };
+    }
+    
+    console.log("✅ API Key found");
+    
     try {
-      const result = await youtubeSearch.handler(ctx, {
-        query: "javascript tutorial",
-        maxResults: 1,
-        order: "relevance",
-        videoDuration: "any",
+      const params = new URLSearchParams({
+        part: 'snippet',
+        q: 'javascript tutorial',
+        type: 'video',
+        maxResults: '2',
+        order: 'relevance',
+        key: apiKey,
       });
+
+      console.log("📡 Calling YouTube API...");
+      const response = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ API error (${response.status}):`, errorText);
+        return {
+          success: false,
+          error: `YouTube API error: ${response.status} ${errorText.substring(0, 200)}`,
+        };
+      }
+
+      const data: any = await response.json();
+      console.log(`✅ Success! Found ${data.items?.length || 0} videos`);
       
-      console.log("✅ Success!");
-      console.log(result);
+      if (data.items && data.items.length > 0) {
+        const firstVideo = data.items[0];
+        console.log(`First video: ${firstVideo.snippet.title}`);
+        console.log(`Video ID: ${firstVideo.id.videoId}`);
+        console.log(`Channel: ${firstVideo.snippet.channelTitle}`);
+      }
       
       return {
         success: true,
-        result,
+        videosFound: data.items?.length || 0,
+        firstVideoTitle: data.items?.[0]?.snippet?.title,
+        firstVideoId: data.items?.[0]?.id?.videoId,
+        message: "YouTube API test passed! ✅",
       };
     } catch (error: any) {
       console.error("❌ Failed:", error.message);

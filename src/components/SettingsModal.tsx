@@ -23,6 +23,7 @@ import {
   Slack,
   Webhook,
 } from "lucide-react";
+import { ApiUsageDisplay } from "./ApiUsageDisplay";
 
 type SettingsTab =
   | "profile"
@@ -479,6 +480,9 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   <ApiKeyItem provider="openai" label="OpenAI" />
                   <ApiKeyItem provider="gemini" label="Gemini" />
                 </div>
+
+                {/* API Usage Tracking */}
+                <ApiUsageDisplay />
               </div>
             ) : active === "billing" ? (
               <div className="space-y-4">

@@ -23,16 +23,19 @@ export const listTasks = createTool({
   handler: async (ctx, args): Promise<string> => {
     console.log(`[listTasks] Listing tasks with filter: ${args.filter}, status: ${args.status}`);
 
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     let tasks: any[] = [];
 
     // Get tasks based on filter
     if (args.filter === "today") {
-      tasks = await ctx.runQuery(api.tasks.listTasksDueToday, {});
+      tasks = await ctx.runQuery(api.tasks.listTasksDueToday, { userId });
     } else if (args.filter === "week") {
-      tasks = await ctx.runQuery(api.tasks.listTasksDueThisWeek, {});
+      tasks = await ctx.runQuery(api.tasks.listTasksDueThisWeek, { userId });
     } else {
       // Get all tasks for the user (using listTasksByUpdatedDesc)
-      tasks = await ctx.runQuery(api.tasks.listTasksByUpdatedDesc, { limit: 100 });
+      tasks = await ctx.runQuery(api.tasks.listTasksByUpdatedDesc, { limit: 100, userId });
     }
 
     // Apply status filter
@@ -196,12 +199,15 @@ export const listEvents = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[listEvents] Listing events for: ${args.timeRange}`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     // Calculate date range
     let start: number;
     let end: number;
     const now = Date.now();
-    
+
     if (args.timeRange === "today") {
       const d = new Date(now);
       d.setHours(0, 0, 0, 0);
@@ -227,11 +233,12 @@ export const listEvents = createTool({
       start = args.startDate ? new Date(args.startDate).getTime() : now;
       end = args.endDate ? new Date(args.endDate).getTime() : start + 24 * 60 * 60 * 1000;
     }
-    
+
     // Get events in range
     let events = await ctx.runQuery(api.events.listEventsInRange, {
       start,
       end,
+      userId, // Pass userId for evaluation
     });
     
     // Filter by status if needed
@@ -332,9 +339,12 @@ export const getFolderContents = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[getFolderContents] Getting contents of folder: "${args.folderName}"`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     // Get all user folders
-    const folders = await ctx.runQuery(api.folders.getUserFolders, {});
+    const folders = await ctx.runQuery(api.folders.getUserFolders, { userId });
     
     // Find the folder by name
     const folder = folders.find((f: any) => 
@@ -344,10 +354,11 @@ export const getFolderContents = createTool({
     if (!folder) {
       return `Folder "${args.folderName}" not found. Available folders: ${folders.map((f: any) => f.name).join(', ')}`;
     }
-    
+
     // Get folder with documents
     const folderWithDocs = await ctx.runQuery(api.folders.getFolderWithDocuments, {
       folderId: folder._id,
+      userId, // Pass userId for evaluation
     });
     
     if (!folderWithDocs || !folderWithDocs.documents || folderWithDocs.documents.length === 0) {

@@ -1003,4 +1003,35 @@ export default defineSchema({
   agentTimelineRuns,
   agentImageResults,
 
+  // API Usage Tracking
+  apiUsage: defineTable({
+    userId: v.id("users"),
+    apiName: v.string(),
+    operation: v.string(),
+    timestamp: v.number(),
+    unitsUsed: v.optional(v.number()),
+    estimatedCost: v.optional(v.number()),
+    requestMetadata: v.optional(v.any()),
+    success: v.boolean(),
+    errorMessage: v.optional(v.string()),
+    responseTime: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_api", ["userId", "apiName"])
+    .index("by_user_and_timestamp", ["userId", "timestamp"]),
+
+  apiUsageDaily: defineTable({
+    userId: v.id("users"),
+    apiName: v.string(),
+    date: v.string(),
+    totalCalls: v.number(),
+    successfulCalls: v.number(),
+    failedCalls: v.number(),
+    totalUnitsUsed: v.number(),
+    totalCost: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_date", ["userId", "date"])
+    .index("by_user_api_date", ["userId", "apiName", "date"]),
+
 });
