@@ -43,6 +43,10 @@ export const linkupSearch = createTool({
   
   handler: async (_ctx, args): Promise<string> => {
     const apiKey = process.env.LINKUP_API_KEY;
+    const startTime = Date.now();
+    let success = false;
+    let imageCount = 0;
+    let errorMsg: string | undefined;
 
     if (!apiKey) {
       throw new Error("LINKUP_API_KEY environment variable is not set. Please add it to your Convex environment variables.");
@@ -112,6 +116,7 @@ export const linkupSearch = createTool({
 
       // Add images if present
       if (imageResults.length > 0) {
+        imageCount = imageResults.length;
         result += "## Images\n\n";
         // Put all images in a single paragraph for horizontal gallery layout
         imageResults.slice(0, 10).forEach((image) => {
@@ -177,9 +182,42 @@ export const linkupSearch = createTool({
         });
       }
 
+      success = true;
+      
+      // Track API usage (asynchronously, don't wait)
+      const responseTime = Date.now() - startTime;
+      _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+        apiName: "linkup",
+        operation: "search",
+        unitsUsed: 1,
+        estimatedCost: outputType === "searchResults" ? 2 : 1,
+        requestMetadata: { query: args.query, imageCount },
+        success: true,
+        responseTime,
+      });
+
       return result;
     } catch (error) {
+      errorMsg = error instanceof Error ? error.message : String(error);
       console.error("[linkupSearch] Error:", error);
+      
+      // Track failed API call (asynchronously)
+      const responseTime = Date.now() - startTime;
+      try {
+        _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+          apiName: "linkup",
+          operation: "search",
+          unitsUsed: 0,
+          estimatedCost: 0,
+          requestMetadata: { query: args.query },
+          success: false,
+          errorMessage: errorMsg,
+          responseTime,
+        });
+      } catch (trackError) {
+        console.error("[linkupSearch] Failed to track error:", trackError);
+      }
+      
       throw error;
     }
   },

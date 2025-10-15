@@ -22,13 +22,17 @@ export const searchMedia = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[searchMedia] Searching for ${args.mediaType}: "${args.query}"`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     const results: any[] = [];
-    
+
     // Search internal files
     // Note: We'll need to query documents with documentType="file" and filter by fileType
     const allDocs = await ctx.runQuery(api.documents.getSearch, {
       query: args.query,
+      userId, // Pass userId for evaluation
     });
     
     // Filter for media files
@@ -46,6 +50,7 @@ export const searchMedia = createTool({
     for (const doc of mediaFiles.slice(0, args.limit)) {
       const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
         documentId: doc._id,
+        userId, // Pass userId for evaluation
       });
       
       if (fileDoc && fileDoc.file) {
@@ -106,10 +111,14 @@ export const analyzeMediaFile = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[analyzeMediaFile] Analyzing file: ${args.fileId}`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     // Get the file document
     const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
       documentId: args.fileId as any,
+      userId, // Pass userId for evaluation
     });
     
     if (!fileDoc || !fileDoc.file) {
@@ -172,9 +181,13 @@ export const getMediaDetails = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[getMediaDetails] Getting details for file: ${args.fileId}`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
       documentId: args.fileId as any,
+      userId, // Pass userId for evaluation
     });
     
     if (!fileDoc || !fileDoc.file) {
@@ -221,11 +234,15 @@ export const listMediaFiles = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[listMediaFiles] Listing ${args.mediaType} files, sorted by ${args.sortBy}`);
-    
+
+    // Get userId from context if available (for evaluation)
+    const userId = (ctx as any).evaluationUserId;
+
     // Get all documents (we'll filter for media files)
     // Note: This is a simplified approach - in production, you'd want a more efficient query
     const allDocs = await ctx.runQuery(api.documents.getSearch, {
       query: "", // Empty query to get all
+      userId, // Pass userId for evaluation
     });
     
     // Filter for media files

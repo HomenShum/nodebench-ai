@@ -77,7 +77,10 @@ export const createFileDocument = mutation({
  * Get file document with file details
  */
 export const getFileDocument = query({
-  args: { documentId: v.id("documents") },
+  args: {
+    documentId: v.id("documents"),
+    userId: v.optional(v.id("users")), // Optional for evaluation/testing
+  },
   returns: v.union(
     v.object({
       document: v.object({
@@ -104,7 +107,8 @@ export const getFileDocument = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    // Use provided userId or fall back to authenticated user
+    const userId = args.userId || await getAuthUserId(ctx);
     if (!userId) {
       return null;
     }
