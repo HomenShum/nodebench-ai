@@ -132,7 +132,7 @@ async function generateAnalysis(
   try {
     // Try structured output first
     const structuredResponse = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: createUserContent([...contentParts, prompt]),
       config: {
         responseMimeType: "application/json",
@@ -158,7 +158,7 @@ async function generateAnalysis(
     
     // Also get plain text analysis
     const textResponse = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: createUserContent([...contentParts, prompt])
     });
     
@@ -172,7 +172,7 @@ async function generateAnalysis(
     
     // Fallback to text-only analysis
     const textResponse = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: createUserContent([...contentParts, prompt])
     });
     

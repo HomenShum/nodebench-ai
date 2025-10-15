@@ -89,10 +89,10 @@ async function createWithFallback(client: any, payloadBase: any, ctx: ExecContex
     : (orKey
         ? [
             'z-ai/glm-4.6',          // GLM 4.6 via OpenRouter
-            'openai/gpt-4o-mini',    // OpenRouter route to OpenAI
+            'openai/gpt-5-mini',     // OpenRouter route to OpenAI
           ]
         : [
-            'gpt-4o-mini',
+            'gpt-5-mini',
           ]);
 
   const maxAttemptsPerModel = 2;

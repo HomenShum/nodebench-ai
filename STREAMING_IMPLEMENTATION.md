@@ -13,7 +13,7 @@ This document describes the implementation of true incremental streaming for the
 - **Key Features**:
   - Streams tokens as they arrive from OpenAI (no buffering)
   - Uses `@ai-sdk/openai` package instead of raw OpenAI SDK
-  - Supports GPT-5 series (o1, o1-mini, o1-preview) and GPT-4 series models
+  - Supports GPT-5 series (gpt-5, gpt-5-mini, gpt-5-nano) models
   - Proper CORS headers for cross-origin requests
 
 ```typescript
@@ -52,10 +52,9 @@ for await (const chunk of result.textStream) {
 - Displays streamed text in real-time
 
 #### 2. Settings Panel
-- Model selection dropdown with GPT-5 and GPT-4 options
+- Model selection dropdown with GPT-5 options
 - Organized into optgroups:
-  - **GPT-5 Series (Reasoning Models)**: o1, o1-mini, o1-preview
-  - **GPT-4 Series**: gpt-4o, gpt-4o-mini
+  - **GPT-5 Series**: gpt-5, gpt-5-mini, gpt-5-nano
   - **Other**: gemini
 
 ## Supported Models
@@ -150,7 +149,7 @@ When complete:
 
 ### No text showing
 - Check OPENAI_API_KEY is set in Convex environment
-- Verify model name is valid (o1, o1-mini, o1-preview, gpt-4o, gpt-4o-mini)
+- Verify model name is valid (gpt-5, gpt-5-mini, gpt-5-nano)
 - Check browser console for errors
 - Inspect Network tab for failed requests
 
@@ -172,7 +171,7 @@ When complete:
 4. **Retry logic**: Automatic retry on transient failures
 5. **Rate limiting**: Implement per-user rate limits
 6. **Cost tracking**: Track token usage and costs per model
-7. **Model fallback**: Automatic fallback to GPT-4 if GPT-5 unavailable
+7. **Model fallback**: Automatic fallback to gpt-5-mini if gpt-5 unavailable
 
 ## References
 

@@ -23,7 +23,7 @@
     "@blocknote/core": "^0.31.3",
     "@blocknote/mantine": "^0.31.3",
     "@blocknote/react": "^0.31.3",
-    "@convex-dev/agent": "^0.1.15",
+    "@convex-dev/agent": "^0.2.10",
     "@convex-dev/auth": "^0.0.80",
     "@convex-dev/persistent-text-streaming": "^0.2.3",
     "@convex-dev/polar": "^0.6.3",

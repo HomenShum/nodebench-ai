@@ -306,3 +306,23 @@ Chat History Integration (Sep 25, 2025)
 - Default layout change: AgentTasks now defaults to Table view (persisted via localStorage key agents.tasksLayout).
 
 - Tests: Existing tests continue to pass; add targeted tests later to cover restore/save interactions if needed.
+
+FastAgentPanel Streaming Integration (Jan 2025)
+- Dual-mode chat system: FastAgentPanel supports two chat modes that users can toggle between:
+  - **Agent Mode** (default): Uses @convex-dev/agent component with automatic memory management (non-streaming responses)
+  - **Agent Streaming Mode**: Uses @convex-dev/agent component PLUS @convex-dev/persistent-text-streaming for real-time ChatGPT-style streaming responses with automatic memory management
+- Toggle UI: Header includes a chat mode toggle button with visual indicator (green gradient when streaming is active)
+- Mode persistence: Selected mode is saved to localStorage (key: 'fastAgentPanel.chatMode') and restored on reload
+- Backend architecture:
+  - Agent mode: convex/agentChat.ts with @convex-dev/agent component (generateText)
+  - Agent Streaming mode: convex/fastAgentPanelStreaming.ts + router.ts with agent component (streamText) + persistent-text-streaming
+  - HTTP endpoint: /api/chat-stream handles streaming requests using agent.continueThread() + thread.streamText() (convex/router.ts)
+- Unified memory: Both modes use @convex-dev/agent for automatic conversation history management
+- Thread linking: chatThreadsStream.agentThreadId links streaming threads to agent component threads
+- Automatic thread reset: Switching modes clears active thread and shows toast notification
+- Frontend components:
+  - FastAgentPanel.tsx: Main container with mode toggle and conditional rendering
+  - FastAgentPanel.StreamingMessage.tsx: Streaming message component using useStream hook
+  - MessageStream: Unified message display supporting both modes
+- Schema: chatThreadsStream and chatMessagesStream tables with streamId and agentThreadId support (convex/schema.ts)
+- Component registration: persistentTextStreaming and agent registered in convex/convex.config.ts

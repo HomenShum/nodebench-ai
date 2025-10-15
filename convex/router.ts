@@ -7,6 +7,7 @@ import { PersistentTextStreaming, StreamId } from "@convex-dev/persistent-text-s
 import { components } from "./_generated/api";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
+import { Agent } from "@convex-dev/agent";
 
 const http = httpRouter();
 
@@ -877,101 +878,140 @@ http.route({
       model?: string;
     };
 
-    const generateChat = async (
-      ctx: any,
-      request: any,
-      streamId: StreamId,
-      chunkAppender: (chunk: string) => Promise<void>
-    ) => {
-      try {
-        // 1) Load the target message and conversation history
-        const message = await ctx.runQuery(api.fastAgentPanelStreaming.getMessageByStreamId, {
-          streamId,
+    try {
+      // Get the streaming message to find thread and last user message
+      const streamingMessage = await ctx.runQuery(api.fastAgentPanelStreaming.getMessageByStreamId, {
+        streamId: body.streamId,
+      });
+      
+      if (!streamingMessage) {
+        return new Response(JSON.stringify({ error: "Message not found" }), {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": origin ?? "*",
+          },
         });
-        if (!message) {
-          await chunkAppender("Error: Message not found");
-          return;
-        }
-
-        // Use internal, no-auth query to avoid losing auth context in HTTP
-        const messages = await ctx.runQuery(internal.fastAgentPanelStreaming.getThreadMessagesForStreaming, {
-          threadId: message.threadId,
-        });
-
-        console.log(`[chat-stream] Current message ID: ${message._id}`);
-        console.log(`[chat-stream] Found ${messages.length} total messages in thread`);
-
-        // Build conversation history: include all complete messages
-        // Exclude the current streaming message (empty content)
-        const conversation = messages
-          .filter((m: any) => {
-            const isComplete = m.status === "complete";
-            const hasContent = m.content && m.content.trim().length > 0;
-            const isNotCurrentMessage = m._id !== message._id;
-            console.log(`[chat-stream] Message ${m._id}: role=${m.role}, status=${m.status}, content="${m.content?.substring(0, 20)}...", complete=${isComplete}, hasContent=${hasContent}, notCurrent=${isNotCurrentMessage}`);
-            return isComplete && hasContent && isNotCurrentMessage;
-          })
-          .map((m: any) => ({
-            role: m.role as "user" | "assistant" | "system",
-            content: m.content as string,
-          }));
-
-        console.log(`[chat-stream] Built conversation with ${conversation.length} messages`);
-        if (conversation.length > 0) {
-          console.log(`[chat-stream] First message: ${conversation[0].role}: "${conversation[0].content.substring(0, 50)}..."`);
-        }
-
-        // Ensure we have at least one message
-        if (conversation.length === 0) {
-          console.error(`[chat-stream] ERROR: No conversation history found!`);
-          await chunkAppender("Error: No conversation history found. Please try sending your message again.");
-          return;
-        }
-
-        // 2) Map model name to AI SDK model
-        // Support GPT-5 series: gpt-5, gpt-5-mini, gpt-5-nano
-        // Support other models: gemini
-        const modelName = body.model || "gpt-5";
-        const chatModel = openai.chat(modelName);
-
-        // 3) Stream using AI SDK
-        const result = streamText({
-          model: chatModel,
-          messages: conversation,
-        });
-
-        // 4) Append chunks as they arrive and accumulate the final content
-        let fullResponse = "";
-        for await (const chunk of result.textStream) {
-          fullResponse += chunk;
-          await chunkAppender(chunk);
-        }
-
-        // 4) Finalize the message in the DB
-        await ctx.runMutation(internal.fastAgentPanelStreaming.markStreamComplete, {
-          messageId: message._id,
-          finalContent: fullResponse,
-        });
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        await chunkAppender(`Sorry, an error occurred: ${msg}`);
       }
-    };
 
-    const response = await persistentTextStreaming.stream(
-      ctx,
-      request,
-      body.streamId as StreamId,
-      generateChat
-    );
+      // Get the streaming thread to find the linked agent thread
+      const streamingThread = await ctx.runQuery(api.fastAgentPanelStreaming.getThreadByStreamId, {
+        threadId: streamingMessage.threadId,
+      });
 
-    // Set CORS headers
-    response.headers.set("Access-Control-Allow-Origin", origin ?? "*");
-    response.headers.set("Vary", "Origin");
-    response.headers.set("Access-Control-Allow-Credentials", "true");
-    response.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Accept");
-    return response;
+      if (!streamingThread || !streamingThread.agentThreadId) {
+        return new Response(JSON.stringify({ error: "Thread configuration error" }), {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": origin ?? "*",
+          },
+        });
+      }
+
+      const agentThreadId = streamingThread.agentThreadId;
+
+      // Get all messages to find the last user message
+      const messages = await ctx.runQuery(internal.fastAgentPanelStreaming.getThreadMessagesForStreaming, {
+        threadId: streamingMessage.threadId,
+      });
+
+      // Find the last user message (the prompt for this response)
+      const userMessages = messages.filter((m: any) => 
+        m.role === "user" && m._id !== streamingMessage._id && m.content?.trim()
+      );
+      const lastUserMessage = userMessages[userMessages.length - 1];
+
+      if (!lastUserMessage || !lastUserMessage.content) {
+        return new Response(JSON.stringify({ error: "No user message found" }), {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": origin ?? "*",
+          },
+        });
+      }
+
+      const prompt = lastUserMessage.content;
+      const modelName = body.model || "gpt-5-chat-latest";
+      console.log(`[chat-stream-agent] Prompt: "${prompt.substring(0, 50)}..." for thread ${agentThreadId} with model ${modelName}`);
+
+      // Create agent instance with selected model
+      const chatAgent = new Agent(components.agent, {
+        chat: openai.chat(modelName),
+        textEmbedding: openai.embedding("text-embedding-3-small"),
+        instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
+      });
+
+      // Stream using persistent-text-streaming with agent
+      const generateChat = async (
+        ctx: any,
+        request: any,
+        streamId: StreamId,
+        chunkAppender: (chunk: string) => Promise<void>
+      ) => {
+        let fullResponse = "";
+        try {
+          // Use agent's native streaming
+          const result = await chatAgent.streamText(
+            ctx,
+            { threadId: agentThreadId },
+            { prompt }
+          );
+
+          // Stream text chunks through persistent-text-streaming
+          for await (const chunk of result.textStream) {
+            fullResponse += chunk;
+            await chunkAppender(chunk);
+          }
+
+          console.log(`[chat-stream-agent] Streaming complete: ${fullResponse.length} chars`);
+          
+          // Update the streaming message with final content
+          await ctx.runMutation(internal.fastAgentPanelStreaming.markStreamComplete, {
+            messageId: streamingMessage._id,
+            finalContent: fullResponse,
+            status: "complete",
+          });
+        } catch (error) {
+          console.error(`[chat-stream-agent] ERROR:`, error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          await chunkAppender(`Error: ${errorMsg}`);
+          
+          await ctx.runMutation(internal.fastAgentPanelStreaming.markStreamComplete, {
+            messageId: streamingMessage._id,
+            finalContent: fullResponse || `Error: ${errorMsg}`,
+            status: "error",
+          });
+        }
+      };
+
+      const response = await persistentTextStreaming.stream(
+        ctx,
+        request,
+        body.streamId as StreamId,
+        generateChat
+      );
+      
+      // Set CORS headers
+      response.headers.set("Access-Control-Allow-Origin", origin ?? "*");
+      response.headers.set("Vary", "Origin");
+      response.headers.set("Access-Control-Allow-Credentials", "true");
+      response.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+      response.headers.set("Access-Control-Allow-Headers", "Content-Type, Accept");
+      
+      return response;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[chat-stream-agent] ERROR:`, error);
+      return new Response(JSON.stringify({ error: msg }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": origin ?? "*",
+        },
+      });
+    }
   }),
 });
 

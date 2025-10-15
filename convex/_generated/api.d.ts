@@ -9,6 +9,7 @@
  */
 
 import type * as account from "../account.js";
+import type * as agentChat from "../agentChat.js";
 import type * as agentEditor from "../agentEditor.js";
 import type * as agentImageResults from "../agentImageResults.js";
 import type * as agentMemory from "../agentMemory.js";
@@ -55,10 +56,7 @@ import type * as email from "../email.js";
 import type * as events from "../events.js";
 import type * as fastAgentChat from "../fastAgentChat.js";
 import type * as fastAgentChatHelpers from "../fastAgentChatHelpers.js";
-import type * as fastAgentPanel from "../fastAgentPanel.js";
-import type * as fastAgentPanelHelpers from "../fastAgentPanelHelpers.js";
 import type * as fastAgentPanelStreaming from "../fastAgentPanelStreaming.js";
-import type * as fastAgentPanelStreamingAction from "../fastAgentPanelStreamingAction.js";
 import type * as fast_agents_contextAgent from "../fast_agents/contextAgent.js";
 import type * as fast_agents_editingAgent from "../fast_agents/editingAgent.js";
 import type * as fast_agents_orchestrator from "../fast_agents/orchestrator.js";
@@ -126,6 +124,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   account: typeof account;
+  agentChat: typeof agentChat;
   agentEditor: typeof agentEditor;
   agentImageResults: typeof agentImageResults;
   agentMemory: typeof agentMemory;
@@ -172,10 +171,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   fastAgentChat: typeof fastAgentChat;
   fastAgentChatHelpers: typeof fastAgentChatHelpers;
-  fastAgentPanel: typeof fastAgentPanel;
-  fastAgentPanelHelpers: typeof fastAgentPanelHelpers;
   fastAgentPanelStreaming: typeof fastAgentPanelStreaming;
-  fastAgentPanelStreamingAction: typeof fastAgentPanelStreamingAction;
   "fast_agents/contextAgent": typeof fast_agents_contextAgent;
   "fast_agents/editingAgent": typeof fast_agents_editingAgent;
   "fast_agents/orchestrator": typeof fast_agents_orchestrator;

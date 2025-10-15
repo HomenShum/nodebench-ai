@@ -83,7 +83,7 @@ export const chatWithAgentModern = action({
         });
 
         // Update the assistant message with the response
-        const messages = await ctx.runQuery(internal.fastAgentChatHelpers.getMessagesByRun, {
+        const messages: any[] = await ctx.runQuery(internal.fastAgentChatHelpers.getMessagesByRun, {
           runId,
         });
 
@@ -108,7 +108,7 @@ export const chatWithAgentModern = action({
         });
 
         // Update the assistant message with error
-        const messages = await ctx.runQuery(internal.fastAgentChatHelpers.getMessagesByRun, {
+        const messages: any[] = await ctx.runQuery(internal.fastAgentChatHelpers.getMessagesByRun, {
           runId,
         });
 
@@ -209,7 +209,7 @@ async function handleChatResponse(
     apiKey: process.env.OPENAI_API_KEY,
   });
 
-  const modelName = model === "openai" ? "gpt-4o-mini" : "gpt-4o-mini";
+  const modelName = model === "openai" ? "gpt-5-mini" : "gpt-5-mini";
 
   const completion = await openai.chat.completions.create({
     model: modelName,

@@ -3,13 +3,24 @@ Folder Structure: Agents Dashboard & Convex Wiring
 Key Paths
 - convex/
   - agentTimelines.ts        # queries/mutations for timelines, tasks, links
-  - schema.ts                # agentTimelines/agentTasks/agentLinks tables
+  - agentChat.ts             # Agent-based chat using @convex-dev/agent component (non-streaming)
+  - fastAgentPanelStreaming.ts # Agent streaming chat using @convex-dev/agent + @convex-dev/persistent-text-streaming
+  - router.ts                # HTTP routes including /api/chat-stream endpoint (agent streaming)
+  - schema.ts                # agentTimelines/agentTasks/agentLinks tables, chatThreadsStream/chatMessagesStream (linked to agent threads)
 - src/components/agentDashboard/
   - AgentDashboard.tsx       # header, timeline selector, tabs, bottom Full View
   - AgentTimeline.tsx        # left hierarchy, right timeline grid + bars + popover (shows L{n} level badges from graph links)
   - AgentTasks.tsx           # task cards grid + grouped/tree/table layouts (Table is default)
   - AgentChats.tsx           # chat history table sourced from convex/chatThreads
   - AgentPopover.tsx         # fixed-position popover anchored to timeline bars
+- src/components/FastAgentPanel/
+  - FastAgentPanel.tsx       # Main container with dual-mode chat (Agent/Streaming toggle)
+  - FastAgentPanel.StreamingMessage.tsx # Streaming message component using useStream hook
+  - FastAgentPanel.MessageStream.tsx    # Unified message display for both modes
+  - FastAgentPanel.ThreadList.tsx       # Thread sidebar with search/pin/delete
+  - FastAgentPanel.InputBar.tsx         # Auto-resizing input with keyboard shortcuts
+  - FastAgentPanel.Settings.tsx         # Settings panel for model/mode configuration
+  - types/                   # TypeScript type definitions (message, thread, stream, agent)
 - src/components/
   - AIChatPanel.tsx           # AI chat with model selector; now includes an Orchestrator toggle to route send to Convex orchestrator and link to Agents timeline
 

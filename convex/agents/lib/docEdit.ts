@@ -23,7 +23,7 @@ export async function createDocumentFromMessage(ctx: any, agentState: any, messa
       const { GoogleGenAI } = await import("@google/genai");
       const ai = new GoogleGenAI({ apiKey: geminiKey ?? undefined });
       const result = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: [
           { role: "system", parts: [{ text: `Create comprehensive markdown content about "${topic}". Include multiple sections with headings, bullet points, **bold**, and examples.` }] },
           { role: "user", parts: [{ text: `Create detailed content about ${topic}` }] },
@@ -107,7 +107,7 @@ export async function workWithDocument(ctx: any, agentState: any, message: strin
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({ apiKey: geminiKey ?? undefined });
         const result = await ai.models.generateContent({
-          model: "gemini-2.0-flash",
+          model: "gemini-2.5-flash",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
         try {

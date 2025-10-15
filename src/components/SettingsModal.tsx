@@ -981,7 +981,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           <div>
                             <div className="text-sm font-semibold">OpenAI</div>
                             <div className="text-xs text-[var(--text-secondary)]">
-                              GPT-4, GPT-3.5, Embeddings
+                              GPT-5, GPT-5 Mini, Embeddings
                             </div>
                           </div>
                         </div>

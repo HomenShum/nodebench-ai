@@ -150,10 +150,10 @@ async function testLinkupIntegration() {
         console.log(`URL: ${testImage.url.substring(0, 60)}...`);
         
         const visionPrompt = `Analyze this image for quality. Rate visual quality on 1-5 scale.`;
-        const models: Array<"gpt-5-mini" | "gemini-2.0-flash"> = [];
+        const models: Array<"gpt-5-mini" | "gemini-2.5-flash"> = [];
         
         if (openaiKey) models.push("gpt-5-mini");
-        if (googleKey) models.push("gemini-2.0-flash");
+        if (googleKey) models.push("gemini-2.5-flash");
         
         const apiKeys = {
           openai: openaiKey,

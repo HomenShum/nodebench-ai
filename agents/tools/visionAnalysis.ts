@@ -276,7 +276,7 @@ export async function analyzeImageMultiModel(
   imageUrl: string,
   imageId: string,
   prompt: string,
-  models: Array<"gpt-5-mini" | "gemini-2.0-flash">,
+  models: Array<"gpt-5-mini" | "gemini-2.5-flash">,
   apiKeys: { openai?: string; google?: string }
 ): Promise<Record<string, VisualLLMAnalysis>> {
   const tasks: Promise<[string, VisualLLMAnalysis]>[] = [];
@@ -290,10 +290,10 @@ export async function analyzeImageMultiModel(
     );
   }
 
-  if (models.includes("gemini-2.0-flash") && apiKeys.google) {
+  if (models.includes("gemini-2.5-flash") && apiKeys.google) {
     tasks.push(
       analyzeImageWithGemini(imageUrl, imageId, prompt, apiKeys.google).then((result) => [
-        "gemini-2.0-flash",
+        "gemini-2.5-flash",
         result,
       ])
     );

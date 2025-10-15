@@ -85,40 +85,57 @@ export function MessageBubble({
           {/* Use StreamingMessage for messages with streamId */}
           {isAssistant && message.streamId ? (
             <StreamingMessage message={message} />
+          ) : message.content && typeof message.content === 'string' ? (
+            <>
+              <ReactMarkdown
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {contentToRender}
+              </ReactMarkdown>
+              {isStreaming && (
+                <span 
+                  className="typing-cursor"
+                  style={{
+                    display: 'inline-block',
+                    width: '2px',
+                    height: '1em',
+                    backgroundColor: 'currentColor',
+                    marginLeft: '2px',
+                    animation: 'blink 1s infinite',
+                    verticalAlign: 'middle'
+                  }}
+                />
+              )}
+            </>
+          ) : typeof message.content === 'object' ? (
+            <p className="text-red-500">
+              Error: Invalid message content (object received)
+            </p>
           ) : message.content ? (
-            <ReactMarkdown
-              components={{
-                code({ node, inline, className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  return !inline && match ? (
-                    <SyntaxHighlighter
-                      style={vscDarkPlus}
-                      language={match[1]}
-                      PreTag="div"
-                      {...props}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
-                  ) : (
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
-                  );
-                },
-              }}
-            >
-              {contentToRender}
-            </ReactMarkdown>
-          ) : isStreaming ? (
-            <div className="streaming-placeholder">
+            <p>{String(message.content)}</p>
+          ) : (
+            <p className="streaming-placeholder">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Thinking...</span>
-            </div>
-          ) : null}
-
-          {/* Streaming cursor - only show for non-streamId messages */}
-          {isStreaming && message.content && !message.streamId && (
-            <span className="streaming-cursor">|</span>
+              Thinking...
+            </p>
           )}
         </div>
         
