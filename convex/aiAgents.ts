@@ -1117,8 +1117,8 @@ export const executeOpenAITool = action({
  * ========================================================================== */
 
 export const openaiAgent = new Agent(components.agent, {
-  chat: openai.chat(GPT5_NANO),
-  textEmbedding: openai.embedding(TEXT_EMBED_MODEL),
+  name: "OpenAIAgent",
+  languageModel: openai.chat(GPT5_NANO),
   instructions: `You are a helpful AI document assistant. Your job is to help users create, edit, and manage their documents.
 
 CRITICAL REQUIREMENTS:
@@ -1146,8 +1146,8 @@ RESPONSE STYLE (apply to every reply):
 
 export const geminiAgent = new Agent(components.agent, {
   // Uses OpenAI chat for framework compatibility while separate Gemini calls exist in actions
-  chat: openai.chat(GPT5_NANO),
-  textEmbedding: openai.embedding(TEXT_EMBED_MODEL),
+  name: "GeminiAgent",
+  languageModel: openai.chat(GPT5_NANO),
   instructions:
     `You are an expert AI assistant integrated into a document editor. Your primary function is to help users write and manage their content by calling the appropriate tools based on the user's request and their current context within the document.
 
