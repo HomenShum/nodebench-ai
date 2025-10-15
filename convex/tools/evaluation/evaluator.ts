@@ -160,7 +160,7 @@ async function evaluateWithJudge(
   responseAccurate: boolean;
   allCriteriaMet: boolean;
 }> {
-  const judgePrompt = `You are an expert evaluator for AI agent tool usage. Evaluate the following test case with STRICT pass/fail criteria.
+  const judgePrompt = `You are an expert evaluator for AI agent tool usage. Evaluate the following test case based on the SUCCESS CRITERIA provided.
 
 **Test Scenario:** ${testCase.scenario}
 **User Query:** "${testCase.userQuery}"
@@ -177,14 +177,20 @@ ${testCase.successCriteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 **Evaluation Instructions:**
 ${testCase.evaluationPrompt}
 
-Evaluate each aspect:
-1. Was the CORRECT tool called? (exact match to expectedTool)
-2. Were the tool ARGUMENTS correct and appropriate?
-3. Is the response HELPFUL and answers the user's query?
-4. Is the response ACCURATE based on what the tool would return?
-5. Are ALL success criteria met?
+IMPORTANT EVALUATION RULES:
+1. Follow the SUCCESS CRITERIA exactly as written - they define what "correct" means for this test
+2. If the criteria say "may also call X" or "includes Y", then calling additional tools is ACCEPTABLE
+3. If the criteria say "or", then either option is valid
+4. Focus on whether the user's request was fulfilled, not on exact tool matching
+5. Empty responses should fail unless the criteria explicitly allow them
+6. The test PASSES if ALL success criteria are met according to their written definitions
 
-The test PASSES only if ALL criteria are met. Be strict and objective.`;
+Evaluate each aspect based on the success criteria:
+1. correctToolCalled: Does the tool usage match what the success criteria allow?
+2. correctArguments: Are the arguments appropriate per the success criteria?
+3. responseHelpful: Is the response helpful and answers the user's query?
+4. responseAccurate: Is the response factually accurate based on what the tools would return?
+5. allCriteriaMet: Are ALL success criteria met as written?`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -192,7 +198,7 @@ The test PASSES only if ALL criteria are met. Be strict and objective.`;
       messages: [
         {
           role: "system",
-          content: "You are an expert AI agent evaluator. Provide objective, strict pass/fail evaluations. A test only passes if ALL criteria are perfectly met."
+          content: "You are an expert AI agent evaluator. Provide objective pass/fail evaluations based on the success criteria as written. Interpret criteria flexibly when they include words like 'may', 'includes', 'or'. A test passes if ALL criteria are met according to their written definitions."
         },
         {
           role: "user",
@@ -200,7 +206,7 @@ The test PASSES only if ALL criteria are met. Be strict and objective.`;
         }
       ],
       response_format: zodResponseFormat(JudgeEvaluationSchema, "evaluation"),
-      temperature: 0.1, // Very low temperature for consistent strict evaluations
+      temperature: 0.1, // Low temperature for consistent evaluations
     });
 
     const messageContent = completion.choices[0].message.content;
