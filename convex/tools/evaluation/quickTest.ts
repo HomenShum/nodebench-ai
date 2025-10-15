@@ -62,14 +62,16 @@ export const runQuickTest = action({
 
         if (result.passed) {
           passed++;
-          console.log(`\n✅ PASSED (Score: ${result.score}/100)`);
+          console.log(`\n✅ PASSED`);
           console.log(`Tools Called: ${result.toolsCalled.join(", ")}`);
           console.log(`Latency: ${result.latencyMs}ms`);
+          console.log(`✓ Tool: ${result.correctToolCalled}, Args: ${result.correctArguments}, Helpful: ${result.responseHelpful}, Accurate: ${result.responseAccurate}`);
         } else {
           failed++;
-          console.log(`\n❌ FAILED (Score: ${result.score}/100)`);
+          console.log(`\n❌ FAILED`);
           console.log(`Tools Called: ${result.toolsCalled.join(", ")}`);
-          console.log(`Reason: ${result.judgeReasoning}`);
+          console.log(`✗ Tool: ${result.correctToolCalled}, Args: ${result.correctArguments}, Helpful: ${result.responseHelpful}, Accurate: ${result.responseAccurate}`);
+          console.log(`Reason: ${result.reasoning}`);
         }
 
         // Small delay between tests

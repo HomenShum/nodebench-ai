@@ -5,6 +5,8 @@ import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
 import { internal, api } from "../../_generated/api";
 import OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
 import { allTestCases, TestCase } from "./testCases";
 
 const openai = new OpenAI();
@@ -15,12 +17,15 @@ export interface EvaluationResult {
   scenario: string;
   userQuery: string;
   passed: boolean;
-  score: number; // 0-100
   toolsCalled: string[];
   expectedTools: string[];
   response: string;
-  judgeReasoning: string;
-  criteriaResults: Record<string, boolean>;
+  reasoning: string;
+  correctToolCalled: boolean;
+  correctArguments: boolean;
+  responseHelpful: boolean;
+  responseAccurate: boolean;
+  allCriteriaMet: boolean;
   latencyMs: number;
   timestamp: number;
   errors?: string[];
@@ -30,18 +35,21 @@ export interface EvaluationSummary {
   totalTests: number;
   passed: number;
   failed: number;
-  averageScore: number;
+  passRate: number;
   averageLatency: number;
   categoryResults: Record<string, {
     total: number;
     passed: number;
-    averageScore: number;
+    passRate: number;
   }>;
   failedTests: Array<{
     testId: string;
     scenario: string;
-    score: number;
     reason: string;
+    correctToolCalled: boolean;
+    correctArguments: boolean;
+    responseHelpful: boolean;
+    responseAccurate: boolean;
   }>;
 }
 
@@ -93,12 +101,15 @@ export const runSingleTest = internalAction({
       scenario: testCase.scenario,
       userQuery: testCase.userQuery,
       passed: evaluation.passed,
-      score: evaluation.score,
       toolsCalled,
-      expectedTools: testCase.expectedTool.split(','),
+      expectedTools: testCase.expectedTool.split(',').map(t => t.trim()),
       response,
-      judgeReasoning: evaluation.reasoning,
-      criteriaResults: evaluation.criteriaResults,
+      reasoning: evaluation.reasoning,
+      correctToolCalled: evaluation.correctToolCalled,
+      correctArguments: evaluation.correctArguments,
+      responseHelpful: evaluation.responseHelpful,
+      responseAccurate: evaluation.responseAccurate,
+      allCriteriaMet: evaluation.allCriteriaMet,
       latencyMs,
       timestamp: Date.now(),
       errors: errors.length > 0 ? errors : undefined,
@@ -106,9 +117,11 @@ export const runSingleTest = internalAction({
 
     // Log result
     if (result.passed) {
-      console.log(`✅ PASSED (${result.score}/100) - ${testCase.id}`);
+      console.log(`✅ PASSED - ${testCase.id}`);
+      console.log(`   ✓ Tool: ${result.correctToolCalled}, Args: ${result.correctArguments}, Helpful: ${result.responseHelpful}, Accurate: ${result.responseAccurate}`);
     } else {
-      console.log(`❌ FAILED (${result.score}/100) - ${testCase.id}`);
+      console.log(`❌ FAILED - ${testCase.id}`);
+      console.log(`   ✗ Tool: ${result.correctToolCalled}, Args: ${result.correctArguments}, Helpful: ${result.responseHelpful}, Accurate: ${result.responseAccurate}`);
       console.log(`   Reason: ${evaluation.reasoning}`);
     }
 
@@ -116,8 +129,21 @@ export const runSingleTest = internalAction({
   },
 });
 
+// Define the structured output schema using Zod - Simple pass/fail evaluation
+const JudgeEvaluationSchema = z.object({
+  passed: z.boolean().describe("Whether the test passed - all criteria must be met"),
+  reasoning: z.string().describe("Detailed explanation of why the test passed or failed"),
+  correctToolCalled: z.boolean().describe("Whether the correct tool was called"),
+  correctArguments: z.boolean().describe("Whether the tool arguments were correct and appropriate"),
+  responseHelpful: z.boolean().describe("Whether the response is helpful and answers the user's query"),
+  responseAccurate: z.boolean().describe("Whether the response is factually accurate based on the tool output"),
+  allCriteriaMet: z.boolean().describe("Whether ALL success criteria were met"),
+});
+
+type JudgeEvaluation = z.infer<typeof JudgeEvaluationSchema>;
+
 /**
- * Evaluate a test result using GPT-4 as a judge
+ * Evaluate a test result using GPT-5 as a judge with structured outputs
  */
 async function evaluateWithJudge(
   testCase: TestCase,
@@ -125,11 +151,14 @@ async function evaluateWithJudge(
   toolsCalled: string[]
 ): Promise<{
   passed: boolean;
-  score: number;
   reasoning: string;
-  criteriaResults: Record<string, boolean>;
+  correctToolCalled: boolean;
+  correctArguments: boolean;
+  responseHelpful: boolean;
+  responseAccurate: boolean;
+  allCriteriaMet: boolean;
 }> {
-  const judgePrompt = `You are an expert evaluator for AI agent tool usage. Evaluate the following test case:
+  const judgePrompt = `You are an expert evaluator for AI agent tool usage. Evaluate the following test case with STRICT pass/fail criteria.
 
 **Test Scenario:** ${testCase.scenario}
 **User Query:** "${testCase.userQuery}"
@@ -140,29 +169,20 @@ async function evaluateWithJudge(
 **Agent Response:**
 ${response}
 
-**Success Criteria:**
+**Success Criteria (ALL must be met to pass):**
 ${testCase.successCriteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 
-**Evaluation Task:**
+**Evaluation Instructions:**
 ${testCase.evaluationPrompt}
 
-Please evaluate this test case and provide:
-1. A score from 0-100 (100 = perfect, 0 = complete failure)
-2. Whether the test PASSED (score >= 70) or FAILED
-3. Detailed reasoning for your evaluation
-4. For each success criterion, indicate if it was met (true/false)
+Evaluate each aspect:
+1. Was the CORRECT tool called? (exact match to expectedTool)
+2. Were the tool ARGUMENTS correct and appropriate?
+3. Is the response HELPFUL and answers the user's query?
+4. Is the response ACCURATE based on what the tool would return?
+5. Are ALL success criteria met?
 
-Respond in JSON format:
-{
-  "score": <number 0-100>,
-  "passed": <boolean>,
-  "reasoning": "<detailed explanation>",
-  "criteriaResults": {
-    "criterion_1": <boolean>,
-    "criterion_2": <boolean>,
-    ...
-  }
-}`;
+The test PASSES only if ALL criteria are met. Be strict and objective.`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -170,32 +190,43 @@ Respond in JSON format:
       messages: [
         {
           role: "system",
-          content: "You are an expert AI agent evaluator. Provide objective, detailed evaluations in JSON format."
+          content: "You are an expert AI agent evaluator. Provide objective, strict pass/fail evaluations. A test only passes if ALL criteria are perfectly met."
         },
         {
           role: "user",
           content: judgePrompt
         }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
+      response_format: zodResponseFormat(JudgeEvaluationSchema, "evaluation"),
+      temperature: 0.1, // Very low temperature for consistent strict evaluations
     });
 
-    const result = JSON.parse(completion.choices[0].message.content || "{}");
-    
+    const messageContent = completion.choices[0].message.content;
+    if (!messageContent) {
+      throw new Error("No content in response");
+    }
+
+    const result: JudgeEvaluation = JSON.parse(messageContent);
+
     return {
-      passed: result.passed || false,
-      score: result.score || 0,
-      reasoning: result.reasoning || "No reasoning provided",
-      criteriaResults: result.criteriaResults || {},
+      passed: result.passed,
+      reasoning: result.reasoning,
+      correctToolCalled: result.correctToolCalled,
+      correctArguments: result.correctArguments,
+      responseHelpful: result.responseHelpful,
+      responseAccurate: result.responseAccurate,
+      allCriteriaMet: result.allCriteriaMet,
     };
   } catch (error: any) {
     console.error("Error in LLM judge:", error.message);
     return {
       passed: false,
-      score: 0,
       reasoning: `Judge evaluation failed: ${error.message}`,
-      criteriaResults: {},
+      correctToolCalled: false,
+      correctArguments: false,
+      responseHelpful: false,
+      responseAccurate: false,
+      allCriteriaMet: false,
     };
   }
 }
@@ -248,12 +279,15 @@ export const runAllTests = action({
           scenario: testCase.scenario,
           userQuery: testCase.userQuery,
           passed: false,
-          score: 0,
           toolsCalled: [],
-          expectedTools: testCase.expectedTool.split(','),
+          expectedTools: testCase.expectedTool.split(',').map(t => t.trim()),
           response: "",
-          judgeReasoning: `Test execution failed: ${error.message}`,
-          criteriaResults: {},
+          reasoning: `Test execution failed: ${error.message}`,
+          correctToolCalled: false,
+          correctArguments: false,
+          responseHelpful: false,
+          responseAccurate: false,
+          allCriteriaMet: false,
           latencyMs: 0,
           timestamp: Date.now(),
           errors: [error.message],
@@ -274,24 +308,24 @@ export const runAllTests = action({
 function generateSummary(results: EvaluationResult[]): EvaluationSummary {
   const passed = results.filter(r => r.passed).length;
   const failed = results.length - passed;
-  const averageScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
+  const passRate = results.length > 0 ? (passed / results.length) * 100 : 0;
   const averageLatency = results.reduce((sum, r) => sum + r.latencyMs, 0) / results.length;
 
   // Category breakdown
-  const categoryResults: Record<string, { total: number; passed: number; averageScore: number }> = {};
-  
+  const categoryResults: Record<string, { total: number; passed: number; passRate: number }> = {};
+
   for (const result of results) {
     if (!categoryResults[result.category]) {
-      categoryResults[result.category] = { total: 0, passed: 0, averageScore: 0 };
+      categoryResults[result.category] = { total: 0, passed: 0, passRate: 0 };
     }
     categoryResults[result.category].total++;
     if (result.passed) categoryResults[result.category].passed++;
-    categoryResults[result.category].averageScore += result.score;
   }
 
-  // Calculate averages
+  // Calculate pass rates
   for (const category in categoryResults) {
-    categoryResults[category].averageScore /= categoryResults[category].total;
+    const cat = categoryResults[category];
+    cat.passRate = cat.total > 0 ? (cat.passed / cat.total) * 100 : 0;
   }
 
   // Failed tests
@@ -300,15 +334,18 @@ function generateSummary(results: EvaluationResult[]): EvaluationSummary {
     .map(r => ({
       testId: r.testId,
       scenario: r.scenario,
-      score: r.score,
-      reason: r.judgeReasoning,
+      reason: r.reasoning,
+      correctToolCalled: r.correctToolCalled,
+      correctArguments: r.correctArguments,
+      responseHelpful: r.responseHelpful,
+      responseAccurate: r.responseAccurate,
     }));
 
   return {
     totalTests: results.length,
     passed,
     failed,
-    averageScore,
+    passRate,
     averageLatency,
     categoryResults,
     failedTests,
@@ -320,30 +357,27 @@ function printSummary(summary: EvaluationSummary) {
   console.log("📊 EVALUATION SUMMARY");
   console.log("=".repeat(80));
   console.log(`\nTotal Tests: ${summary.totalTests}`);
-  console.log(`✅ Passed: ${summary.passed} (${((summary.passed / summary.totalTests) * 100).toFixed(1)}%)`);
-  console.log(`❌ Failed: ${summary.failed} (${((summary.failed / summary.totalTests) * 100).toFixed(1)}%)`);
-  console.log(`📈 Average Score: ${summary.averageScore.toFixed(1)}/100`);
+  console.log(`✅ Passed: ${summary.passed} (${summary.passRate.toFixed(1)}%)`);
+  console.log(`❌ Failed: ${summary.failed} (${(100 - summary.passRate).toFixed(1)}%)`);
   console.log(`⚡ Average Latency: ${summary.averageLatency.toFixed(0)}ms`);
 
   console.log("\n" + "-".repeat(80));
   console.log("📂 CATEGORY BREAKDOWN");
   console.log("-".repeat(80));
-  
+
   for (const [category, stats] of Object.entries(summary.categoryResults)) {
-    const passRate = (stats.passed / stats.total) * 100;
     console.log(`\n${category}:`);
-    console.log(`  Tests: ${stats.passed}/${stats.total} passed (${passRate.toFixed(1)}%)`);
-    console.log(`  Avg Score: ${stats.averageScore.toFixed(1)}/100`);
+    console.log(`  Tests: ${stats.passed}/${stats.total} passed (${stats.passRate.toFixed(1)}%)`);
   }
 
   if (summary.failedTests.length > 0) {
     console.log("\n" + "-".repeat(80));
     console.log("❌ FAILED TESTS");
     console.log("-".repeat(80));
-    
+
     for (const failed of summary.failedTests) {
       console.log(`\n${failed.testId}: ${failed.scenario}`);
-      console.log(`  Score: ${failed.score}/100`);
+      console.log(`  Tool: ${failed.correctToolCalled ? '✓' : '✗'}, Args: ${failed.correctArguments ? '✓' : '✗'}, Helpful: ${failed.responseHelpful ? '✓' : '✗'}, Accurate: ${failed.responseAccurate ? '✓' : '✗'}`);
       console.log(`  Reason: ${failed.reason}`);
     }
   }

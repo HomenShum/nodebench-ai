@@ -9,24 +9,18 @@ import { z } from "zod";
 
 // Linkup API types
 interface LinkupSearchResult {
-  answer: string;
-  sources: Array<{
+  answer?: string;
+  sources?: Array<{
     name: string;
     url: string;
     snippet: string;
   }>;
-  images?: Array<{
+  results?: Array<{
+    type: "text" | "image" | "video" | "audio";
+    name: string;
     url: string;
-    description?: string;
-  }>;
-  videos?: Array<{
-    url: string;
-    description?: string;
+    content?: string;
     thumbnail?: string;
-  }>;
-  audios?: Array<{
-    url: string;
-    description?: string;
   }>;
 }
 
@@ -37,12 +31,12 @@ interface LinkupSearchResult {
  * providing grounded, factual responses with sources.
  */
 export const linkupSearch = createTool({
-  description: "Search the web for current information using Linkup's AI-optimized search. Use this when you need up-to-date facts, news, or information that isn't in your training data. Returns an answer with sources.",
+  description: "Search the web for current information using Linkup's AI-optimized search. Use this when you need up-to-date facts, news, or information that isn't in your training data. Returns an answer with sources and optionally images. IMPORTANT: When users ask for 'images', 'pictures', 'photos' or want to 'see' something visual, you MUST set includeImages to true!",
   
   args: z.object({
     query: z.string().describe("The natural language search query. Be specific and detailed for best results."),
     depth: z.enum(["standard", "deep"]).default("standard").describe("Search depth: 'standard' is faster, 'deep' is more comprehensive but slower"),
-    includeImages: z.boolean().default(false).describe("Whether to include images in the search results. Set to true when searching for visual content."),
+    includeImages: z.boolean().default(false).describe("CRITICAL: Set to TRUE when users ask for images, pictures, photos, or want to see visual content. Set to FALSE for text-only searches."),
     includeDomains: z.array(z.string()).optional().describe("Optional: Specific domains to search within (e.g., ['microsoft.com', 'github.com'])"),
     excludeDomains: z.array(z.string()).optional().describe("Optional: Domains to exclude from search (e.g., ['wikipedia.com'])"),
   }),
@@ -54,7 +48,10 @@ export const linkupSearch = createTool({
       throw new Error("LINKUP_API_KEY environment variable is not set. Please add it to your Convex environment variables.");
     }
 
-    console.log(`[linkupSearch] Searching for: "${args.query}" (depth: ${args.depth}, images: ${args.includeImages})`);
+    // Use searchResults output type when images are requested to get the mixed results array
+    const outputType = args.includeImages ? "searchResults" : "sourcedAnswer";
+    
+    console.log(`[linkupSearch] Searching for: "${args.query}" (depth: ${args.depth}, images: ${args.includeImages}, outputType: ${outputType})`);
 
     try {
       const response = await fetch("https://api.linkup.so/v1/search", {
@@ -66,7 +63,7 @@ export const linkupSearch = createTool({
         body: JSON.stringify({
           q: args.query,
           depth: args.depth,
-          outputType: "sourcedAnswer",
+          outputType,
           includeImages: args.includeImages,
           includeDomains: args.includeDomains,
           excludeDomains: args.excludeDomains,
@@ -81,68 +78,102 @@ export const linkupSearch = createTool({
 
       const data: LinkupSearchResult = await response.json();
 
-      console.log(`[linkupSearch] Found answer with ${data.sources.length} sources${data.images ? ` and ${data.images.length} images` : ''}${data.videos ? ` and ${data.videos.length} videos` : ''}${data.audios ? ` and ${data.audios.length} audios` : ''}`);
+      // Filter results by type
+      const textResults = data.results?.filter(r => r.type === "text") || [];
+      const imageResults = data.results?.filter(r => r.type === "image") || [];
+      const videoResults = data.results?.filter(r => r.type === "video") || [];
+      const audioResults = data.results?.filter(r => r.type === "audio") || [];
 
-      // Format the response with answer, images, videos, audios, and sources
-      let result = `${data.answer}\n\n`;
-
-      // Add images if present
-      if (data.images && data.images.length > 0) {
-        result += "Images:\n\n";
-        data.images.slice(0, 5).forEach((image, idx) => {
-          // Use markdown image syntax to display images
-          const altText = image.description || `Image ${idx + 1}`;
-          result += `![${altText}](${image.url})\n`;
-          if (image.description) {
-            result += `*${image.description}*\n`;
-          }
-          result += "\n";
-        });
+      console.log(`[linkupSearch] ✅ Response received:`, {
+        resultsTotal: data.results?.length || 0,
+        textCount: textResults.length,
+        imagesCount: imageResults.length,
+        videosCount: videoResults.length,
+        audiosCount: audioResults.length,
+        hasAnswer: !!data.answer,
+        hasSources: !!data.sources
+      });
+      
+      // Debug: Log first image if present
+      if (imageResults.length > 0) {
+        console.log(`[linkupSearch] 📸 First image URL:`, imageResults[0].url);
+        console.log(`[linkupSearch] 📸 First image name:`, imageResults[0].name);
+      } else if (args.includeImages) {
+        console.warn(`[linkupSearch] ⚠️ includeImages was TRUE but API returned 0 images!`);
       }
 
-      // Add videos if present (future-proofing for when Linkup adds video support)
-      if (data.videos && data.videos.length > 0) {
-        result += "Videos:\n\n";
-        data.videos.slice(0, 5).forEach((video, idx) => {
+      // Format the response
+      let result = "";
+
+      // Add answer if using sourcedAnswer output type
+      if (data.answer) {
+        result += `${data.answer}\n\n`;
+      }
+
+      // Add images if present
+      if (imageResults.length > 0) {
+        result += "## Images\n\n";
+        // Put all images in a single paragraph for horizontal gallery layout
+        imageResults.slice(0, 10).forEach((image) => {
+          const altText = image.name || "Image";
+          result += `![${altText}](${image.url}) `;
+        });
+        result += "\n\n";
+      }
+
+      // Add videos if present
+      if (videoResults.length > 0) {
+        result += "## Videos\n\n";
+        videoResults.slice(0, 5).forEach((video) => {
           // Use HTML5 video tag for videos (ReactMarkdown with rehype-raw will render this)
           result += `<video controls width="400" ${video.thumbnail ? `poster="${video.thumbnail}"` : ''}>\n`;
           result += `  <source src="${video.url}" type="video/webm" />\n`;
           result += `  <source src="${video.url}" type="video/mp4" />\n`;
           result += `  Your browser does not support the video tag.\n`;
           result += `</video>\n`;
-          if (video.description) {
-            result += `*${video.description}*\n`;
+          if (video.name) {
+            result += `*${video.name}*\n`;
           }
           result += "\n";
         });
       }
 
-      // Add audios if present (future-proofing for when Linkup adds audio support)
-      if (data.audios && data.audios.length > 0) {
-        result += "Audio:\n\n";
-        data.audios.slice(0, 5).forEach((audio, idx) => {
+      // Add audios if present
+      if (audioResults.length > 0) {
+        result += "## Audio\n\n";
+        audioResults.slice(0, 5).forEach((audio) => {
           // Use HTML5 audio tag for audio files (ReactMarkdown with rehype-raw will render this)
           result += `<audio controls>\n`;
           result += `  <source src="${audio.url}" type="audio/webm" />\n`;
           result += `  <source src="${audio.url}" type="audio/mpeg" />\n`;
           result += `  Your browser does not support the audio tag.\n`;
           result += `</audio>\n`;
-          if (audio.description) {
-            result += `*${audio.description}*\n`;
+          if (audio.name) {
+            result += `*${audio.name}*\n`;
           }
           result += "\n";
         });
       }
 
-      // Add sources
-      if (data.sources && data.sources.length > 0) {
-        result += "Sources:\n";
-        data.sources.slice(0, 5).forEach((source, idx) => {
-          result += `${idx + 1}. ${source.name}\n   ${source.url}\n`;
-          if (source.snippet) {
-            result += `   ${source.snippet.substring(0, 200)}...\n`;
+      // Add text results if using searchResults output type
+      if (textResults.length > 0 && !data.answer) {
+        result += "## Search Results\n\n";
+        textResults.slice(0, 5).forEach((text, idx) => {
+          result += `${idx + 1}. **[${text.name}](${text.url})** 🔗\n\n`;
+          if (text.content) {
+            result += `   ${text.content.substring(0, 200)}...\n\n`;
           }
-          result += "\n";
+        });
+      }
+
+      // Add sources (for sourcedAnswer output type)
+      if (data.sources && data.sources.length > 0) {
+        result += "## Sources\n\n";
+        data.sources.slice(0, 5).forEach((source, idx) => {
+          result += `${idx + 1}. **[${source.name}](${source.url})** 🔗\n\n`;
+          if (source.snippet) {
+            result += `   ${source.snippet.substring(0, 200)}...\n\n`;
+          }
         });
       }
 
