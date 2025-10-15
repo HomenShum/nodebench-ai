@@ -163,11 +163,11 @@ export function ApiUsageDisplay() {
         <div className="text-xs text-gray-700">
           <div className="font-medium mb-1">About API Usage Tracking</div>
           <div className="text-gray-600 space-y-1">
-            <div>• <strong>Linkup:</strong> Web search with images (~1-2¢ per search)</div>
+            <div>• <strong>Linkup:</strong> Web search (~€0.005 = 0.5¢ per search)</div>
             <div>• <strong>YouTube:</strong> Video search (free: 10K units/day, 100 units/search)</div>
-            <div>• <strong>OpenAI GPT-5:</strong> AI text generation (~$0.01/1K input, ~$0.03/1K output tokens)</div>
+            <div>• <strong>OpenAI GPT-5:</strong> $1.25/1M input ($0.00125/1K), $10/1M output ($0.01/1K)</div>
             <div className="mt-2 pt-2 border-t border-blue-200">
-              Costs are estimates. Actual pricing may vary.
+              Pricing updated August 2025. Actual costs may vary with usage patterns.
             </div>
           </div>
         </div>

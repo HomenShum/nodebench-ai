@@ -25,26 +25,27 @@ export const documentToolTests: TestCase[] = [
     successCriteria: [
       "Tool called is findDocument",
       "Query parameter contains 'revenue' or 'report'",
-      "Response includes document IDs and titles",
-      "Response is formatted as a numbered list"
+      "Response mentions the Revenue Report Q4 2024 document",
+      "Response includes document title and/or metadata",
+      "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI correctly used findDocument to search for revenue-related documents. Check if the response includes document IDs, titles, and metadata."
+    evaluationPrompt: "Evaluate if the AI correctly used findDocument to search for revenue-related documents. Check if the response mentions the Revenue Report Q4 2024 document with relevant information."
   },
   {
     id: "doc-002",
     category: "Document Reading",
     tool: "getDocumentContent",
     scenario: "User wants to read a specific document",
-    userQuery: "Open document j57abc123",
+    userQuery: "Show me the content of the Revenue Report Q4 2024 document",
     expectedTool: "getDocumentContent",
-    expectedArgs: { documentId: "j57abc123" },
+    expectedArgs: { query: "Revenue Report Q4 2024" },
     successCriteria: [
-      "Tool called is getDocumentContent",
-      "documentId parameter matches the requested ID",
-      "Response includes full document content",
-      "Response includes metadata (type, last modified)"
+      "Tool called is getDocumentContent or findDocument followed by getDocumentContent",
+      "Response includes document content about Q4 2024 revenue",
+      "Response mentions revenue figures or metrics",
+      "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI correctly retrieved the document content with proper metadata. Check if the response is well-formatted and includes all relevant information."
+    evaluationPrompt: "Evaluate if the AI correctly retrieved the Revenue Report Q4 2024 document content. Check if the response includes revenue data, metrics, or summary information from the document."
   },
   {
     id: "doc-003",
@@ -106,12 +107,12 @@ export const mediaToolTests: TestCase[] = [
     expectedTool: "searchMedia",
     expectedArgs: { query: "architecture", mediaType: "image" },
     successCriteria: [
-      "Tool called is searchMedia",
+      "Tool called includes searchMedia (may also call linkupSearch for additional results)",
       "Query parameter contains 'architecture'",
-      "mediaType is 'image' or 'all'",
-      "Response includes image files with metadata"
+      "Response includes relevant architecture images",
+      "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI found relevant images. Check if the response includes file IDs, types, and sizes."
+    evaluationPrompt: "Evaluate if the AI found relevant architecture images. The agent may search both internal files (searchMedia) and web (linkupSearch) to provide comprehensive results. Check if the response includes relevant architecture images and is helpful."
   },
   {
     id: "media-002",

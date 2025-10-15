@@ -9,7 +9,7 @@ import { paginationOptsValidator } from "convex/server";
 import type { Id } from "./_generated/dataModel";
 
 // Import streaming utilities from @convex-dev/agent
-import { vStreamArgs, syncStreams, listUIMessages } from "@convex-dev/agent";
+import { vStreamArgs, syncStreams, listUIMessages, vProviderMetadata } from "@convex-dev/agent";
 
 // Import tools
 import { linkupSearch } from "./tools/linkupSearch";
@@ -46,18 +46,36 @@ You can help with:
 - Finding and opening documents by title or content
 - Analyzing and summarizing documents
 - Creating and editing documents
-- Searching for images and videos (web images via linkupSearch, YouTube videos via youtubeSearch)
+- Searching for images and videos in the user's files
 - Managing tasks and calendar events
 - Organizing files in folders
 - Searching the web for current information
 
-When the user asks to find, open, or work with documents, use the document tools.
-When they ask about tasks or calendar, use the task and event tools.
-When they want to find images, use linkupSearch with includeImages: true.
-When they want to find or watch YouTube videos, use the youtubeSearch tool.
-When you need current web information, use the linkupSearch tool.
+IMPORTANT Tool Selection Guidelines:
+- When the user asks to "find images" or "find videos" WITHOUT specifying "web" or "online", ALWAYS use searchMedia to search their internal files first
+- Use linkupSearch ONLY when the user explicitly asks for web/online images or current web information
+- When they ask about tasks or calendar, use the task and event tools
+- When they want to find or watch YouTube videos, use the youtubeSearch tool
+- For document-related queries, use findDocument or getDocumentContent
 
 Always provide clear, helpful responses and confirm actions you take.`,
+  usageHandler: async (ctx, args) => {
+    // Track OpenAI API usage for billing/analytics
+    if (!args.userId) {
+      console.debug("[usageHandler] No userId, skipping tracking");
+      return;
+    }
+    
+    await ctx.runMutation(internal.fastAgentPanelStreaming.insertApiUsage, {
+      userId: args.userId,
+      apiName: "openai",
+      operation: "generate",
+      model: args.model,
+      provider: args.provider,
+      usage: args.usage, // Pass as-is, will transform in mutation
+      providerMetadata: args.providerMetadata,
+    });
+  },
   tools: {
     // Web search
     linkupSearch,
@@ -427,8 +445,6 @@ export const streamAsync = internalAction({
   handler: async (ctx, args) => {
     console.log('[streamAsync] Starting stream for message:', args.promptMessageId);
     const chatAgent = createChatAgent(args.model);
-    const startTime = Date.now();
-    let success = false;
 
     try {
       const result = await chatAgent.streamText(
@@ -450,64 +466,10 @@ export const streamAsync = internalAction({
       await result.consumeStream();
 
       console.log('[streamAsync] Stream completed successfully');
-      success = true;
-
-      // Track OpenAI usage
-      const responseTime = Date.now() - startTime;
-      const usage = await result.usage;
-      const text = await result.text;
+      // Note: Usage tracking is handled automatically by the agent's usageHandler
       
-      // Estimate cost based on GPT-5 pricing
-      // GPT-5 series: ~$0.01/1K input tokens, ~$0.03/1K output tokens
-      const inputCostPer1K = 0.01;  // $0.01 per 1K input tokens
-      const outputCostPer1K = 0.03; // $0.03 per 1K output tokens
-      
-      const promptTokens = usage?.promptTokens || 0;
-      const completionTokens = usage?.completionTokens || 0;
-      const totalTokens = usage?.totalTokens || 0;
-      
-      const estimatedCostCents = Math.round(
-        (promptTokens / 1000 * inputCostPer1K + completionTokens / 1000 * outputCostPer1K) * 100
-      );
-
-      ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
-        apiName: "openai",
-        operation: "generate",
-        unitsUsed: totalTokens,
-        estimatedCost: estimatedCostCents,
-        requestMetadata: {
-          model: args.model,
-          tokensUsed: totalTokens,
-          promptTokens,
-          completionTokens,
-          textLength: text?.length || 0,
-        },
-        success: true,
-        responseTime,
-      });
-
     } catch (error) {
       console.error('[streamAsync] Error:', error);
-      
-      // Track failed generation
-      const responseTime = Date.now() - startTime;
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      
-      try {
-        ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
-          apiName: "openai",
-          operation: "generate",
-          unitsUsed: 0,
-          estimatedCost: 0,
-          requestMetadata: { model: args.model },
-          success: false,
-          errorMessage: errorMsg,
-          responseTime,
-        });
-      } catch (trackError) {
-        console.error('[streamAsync] Failed to track error:', trackError);
-      }
-      
       throw error;
     }
   },
@@ -668,6 +630,97 @@ export const markStreamComplete = internalMutation({
 
     // Update thread timestamp
     await ctx.db.patch(message.threadId, { updatedAt: Date.now() });
+  },
+});
+
+/* ================================================================
+ * API USAGE TRACKING
+ * ================================================================ */
+
+/**
+ * Internal mutation to insert API usage data
+ * Called by the agent's usageHandler
+ */
+export const insertApiUsage = internalMutation({
+  args: {
+    userId: v.string(),
+    apiName: v.string(),
+    operation: v.string(),
+    model: v.string(),
+    provider: v.string(),
+    usage: v.object({
+      totalTokens: v.optional(v.number()),
+      inputTokens: v.optional(v.number()),
+      outputTokens: v.optional(v.number()),
+      reasoningTokens: v.optional(v.number()),
+      cachedInputTokens: v.optional(v.number()),
+    }),
+    providerMetadata: v.optional(vProviderMetadata),
+  },
+  handler: async (ctx, args) => {
+    const timestamp = Date.now();
+    const date = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Transform usage format and calculate cost
+    // From Convex Agent: inputTokens, outputTokens, totalTokens
+    // GPT-5 Standard: $1.25/1M input, $10/1M output
+    const inputTokens = args.usage.inputTokens ?? 0;
+    const outputTokens = args.usage.outputTokens ?? 0;
+    const totalTokens = args.usage.totalTokens ?? (inputTokens + outputTokens);
+    
+    const inputCostPer1K = 0.00125;  // $1.25 per 1M
+    const outputCostPer1K = 0.01;    // $10 per 1M
+    
+    const estimatedCostCents = Math.round(
+      (inputTokens / 1000 * inputCostPer1K + outputTokens / 1000 * outputCostPer1K) * 100
+    );
+    
+    // Insert usage record
+    await ctx.db.insert("apiUsage", {
+      userId: args.userId as Id<"users">,
+      apiName: args.apiName,
+      operation: args.operation,
+      timestamp,
+      unitsUsed: totalTokens,
+      estimatedCost: estimatedCostCents,
+      requestMetadata: {
+        model: args.model,
+        provider: args.provider,
+        tokensUsed: totalTokens,
+        promptTokens: inputTokens,
+        completionTokens: outputTokens,
+      },
+      success: true,
+      responseTime: undefined,
+    });
+    
+    // Update daily aggregate
+    const existing = await ctx.db
+      .query("apiUsageDaily")
+      .withIndex("by_user_api_date", (q) =>
+        q.eq("userId", args.userId as Id<"users">).eq("apiName", args.apiName).eq("date", date)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        totalCalls: existing.totalCalls + 1,
+        successfulCalls: existing.successfulCalls + 1,
+        totalUnitsUsed: existing.totalUnitsUsed + totalTokens,
+        totalCost: existing.totalCost + estimatedCostCents,
+      });
+    } else {
+      await ctx.db.insert("apiUsageDaily", {
+        userId: args.userId as Id<"users">,
+        apiName: args.apiName,
+        date,
+        totalCalls: 1,
+        successfulCalls: 1,
+        failedCalls: 0,
+        totalUnitsUsed: totalTokens,
+        totalCost: estimatedCostCents,
+      });
+    }
   },
 });
 

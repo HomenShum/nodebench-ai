@@ -179,11 +179,11 @@ export const getUserApiUsageHistory = query({
 
     let results;
     
-    if (args.apiName) {
+    if (args.apiName && args.apiName.length > 0) {
       results = await ctx.db
         .query("apiUsage")
         .withIndex("by_user_and_api", (q) =>
-          q.eq("userId", userId).eq("apiName", args.apiName)
+          q.eq("userId", userId).eq("apiName", args.apiName!)
         )
         .order("desc")
         .take(args.limit || 50);
