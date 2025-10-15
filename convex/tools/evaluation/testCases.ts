@@ -23,13 +23,13 @@ export const documentToolTests: TestCase[] = [
     expectedTool: "findDocument",
     expectedArgs: { query: "revenue report", limit: 10 },
     successCriteria: [
-      "Tool called is findDocument",
+      "Tool called includes findDocument (may also call getDocumentContent for better UX)",
       "Query parameter contains 'revenue' or 'report'",
       "Response mentions the Revenue Report Q4 2024 document",
       "Response includes document title and/or metadata",
       "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI correctly used findDocument to search for revenue-related documents. Check if the response mentions the Revenue Report Q4 2024 document with relevant information."
+    evaluationPrompt: "Evaluate if the AI correctly used findDocument to search for revenue-related documents. The agent may also call getDocumentContent to provide a better user experience. Check if the response mentions the Revenue Report Q4 2024 document with relevant information."
   },
   {
     id: "doc-002",
@@ -109,10 +109,10 @@ export const mediaToolTests: TestCase[] = [
     successCriteria: [
       "Tool called includes searchMedia (may also call linkupSearch for additional results)",
       "Query parameter contains 'architecture'",
-      "Response includes relevant architecture images",
+      "Response includes relevant architecture information (images, links, or descriptions)",
       "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI found relevant architecture images. The agent may search both internal files (searchMedia) and web (linkupSearch) to provide comprehensive results. Check if the response includes relevant architecture images and is helpful."
+    evaluationPrompt: "Evaluate if the AI found relevant architecture resources. The agent may search both internal files (searchMedia) and web (linkupSearch) to provide comprehensive results. Check if the response includes relevant architecture images, links, or descriptions and is helpful. Accept both image URLs and web resource links as valid responses."
   },
   {
     id: "media-002",

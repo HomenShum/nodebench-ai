@@ -1,13 +1,13 @@
 // src/components/FastAgentPanel/FastAgentPanel.UIMessageBubble.tsx
 // Message bubble component optimized for UIMessage format from Agent component
 
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Wrench, Image as ImageIcon } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2 } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
@@ -15,6 +15,54 @@ import { MermaidDiagram } from './MermaidDiagram';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
+}
+
+/**
+ * Image component with loading and error states
+ */
+function SafeImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center gap-2 p-4 bg-gray-50 border border-gray-200 rounded">
+        <AlertCircle className="h-5 w-5 text-red-500" />
+        <div className="text-sm text-gray-700">
+          <div className="font-medium">Failed to load image</div>
+          <div className="text-xs text-gray-500 mt-1">The file may be too large or unavailable</div>
+          <a 
+            href={src} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline text-xs mt-1 inline-block"
+          >
+            Try opening directly
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded">
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={cn(className, loading && 'opacity-0')}
+        onLoad={() => setLoading(false)}
+        onError={() => {
+          setLoading(false);
+          setError(true);
+        }}
+      />
+    </div>
+  );
 }
 
 /**
@@ -65,13 +113,10 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
           <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ scrollbarWidth: 'thin' }}>
             {imageUrls.map((img, idx) => (
               <div key={idx} className="flex-shrink-0">
-                <img
+                <SafeImage
                   src={img.url}
                   alt={img.alt}
                   className="h-48 w-auto rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
-                  loading="lazy"
-                  style={{ objectFit: 'cover' }}
-                  onClick={() => window.open(img.url, '_blank')}
                 />
               </div>
             ))}
@@ -203,7 +248,7 @@ export function UIMessageBubble({ message }: UIMessageBubbleProps) {
           return (
             <div key={idx} className="rounded-lg overflow-hidden border border-gray-200">
               {isImage ? (
-                <img
+                <SafeImage
                   src={fileUrl}
                   alt={fileName}
                   className="max-w-full h-auto"

@@ -423,3 +423,32 @@ export const getDocumentIds = query({
     return docs.map(doc => ({ _id: doc._id, title: doc.title }));
   },
 });
+
+/**
+ * Get the test user for evaluation
+ */
+export const getTestUser = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      name: v.string(),
+      email: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), "test@evaluation.com"))
+      .first();
+
+    if (!user) return null;
+
+    return {
+      _id: user._id,
+      name: user.name || "",
+      email: user.email || "",
+    };
+  },
+});
