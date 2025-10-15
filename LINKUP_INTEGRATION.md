@@ -30,8 +30,10 @@ Successfully integrated Linkup's AI-optimized search API as a tool for the Conve
 **Features:**
 - **Web Search**: Search for current information using natural language queries
 - **Search Depth**: Choose between `standard` (faster) or `deep` (more comprehensive)
+- **Image Search**: Include images in search results with `includeImages: true`
 - **Domain Filtering**: Optional include/exclude domain lists
 - **Source Citations**: Returns answer with up to 5 sources (name, URL, snippet)
+- **Image Display**: Images are automatically extracted and displayed in a grid
 - **Error Handling**: Proper error messages and logging
 - **Type Safety**: Full TypeScript support with Zod validation
 
@@ -51,11 +53,12 @@ export const linkupSearch = createTool({
   args: z.object({
     query: z.string().describe("The natural language search query"),
     depth: z.enum(["standard", "deep"]).default("standard"),
+    includeImages: z.boolean().default(false).describe("Include images in results"),
     includeDomains: z.array(z.string()).optional(),
     excludeDomains: z.array(z.string()).optional(),
   }),
-  handler: async (ctx, args): Promise<string> => {
-    // Calls Linkup API and returns formatted results
+  handler: async (_ctx, args): Promise<string> => {
+    // Calls Linkup API and returns formatted results with images
   },
 });
 ```
@@ -109,11 +112,14 @@ npx convex env set LINKUP_API_KEY your_api_key_here
    - "What is Microsoft's 2024 revenue?"
    - "What are the latest developments in AI?"
    - "Search for recent news about Convex"
+   - **With images**: "Search for images of the latest iPhone models"
+   - **With images**: "Find pictures of the Eiffel Tower with includeImages set to true"
 
 4. Watch for:
    - Tool call appearing with wrench icon
    - Search results being incorporated
    - Sources listed in the response
+   - **Images displayed in a 2-column grid** (when includeImages is true)
 
 ## API Reference
 
@@ -123,11 +129,13 @@ npx convex env set LINKUP_API_KEY your_api_key_here
 |-----------|------|---------|-------------|
 | `query` | string | required | Natural language search query |
 | `depth` | "standard" \| "deep" | "standard" | Search depth (standard is faster) |
+| `includeImages` | boolean | false | Whether to include images in results |
 | `includeDomains` | string[] | optional | Domains to search within |
 | `excludeDomains` | string[] | optional | Domains to exclude |
 
 ### Response Format
 
+**Without Images:**
 ```
 {answer}
 
@@ -141,6 +149,23 @@ Sources:
    {snippet preview}...
 ```
 
+**With Images:**
+```
+{answer}
+
+Images:
+1. https://example.com/image1.jpg
+   {image description}
+
+2. https://example.com/image2.jpg
+   {image description}
+
+Sources:
+1. {source name}
+   {source url}
+   {snippet preview}...
+```
+
 ## UI Display
 
 Tool calls are automatically displayed in `UIMessageBubble`:
@@ -149,6 +174,10 @@ Tool calls are automatically displayed in `UIMessageBubble`:
 - **Tool name** shown (e.g., "linkupSearch")
 - **Tool output** displayed in formatted box
 - **Blue background** for tool call sections
+- **Images displayed in 2-column grid** when present
+- **Automatic image extraction** from tool output URLs
+- **Lazy loading** for better performance
+- **Error handling** for failed image loads
 
 ## Benefits
 
@@ -241,8 +270,10 @@ Tool calls are automatically displayed in `UIMessageBubble`:
 
 ✅ **Scrolling fixed** - Messages now scroll properly in streaming mode
 ✅ **Linkup integrated** - AI can search the web for current information
+✅ **Image search enabled** - AI can search for and display images
 ✅ **Tool calls displayed** - Proper UI for tool invocations and results
+✅ **Smart image rendering** - Images automatically extracted and displayed in grid
 ✅ **Documentation complete** - Full setup and usage instructions
 
-The AI assistant now has access to the internet through Linkup's search API, enabling it to provide current, factual information with proper source citations!
+The AI assistant now has access to the internet through Linkup's search API, enabling it to provide current, factual information with proper source citations and visual content!
 
