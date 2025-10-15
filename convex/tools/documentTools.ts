@@ -151,8 +151,7 @@ ${fileDoc.file.analysis}
 
 File Details:
 - Type: ${(doc as any).fileType || 'unknown'}
-- Size: ${(fileDoc.file.fileSize / (1024 * 1024)).toFixed(2)} MB
-- Analyzed: ${fileDoc.file.analyzedAt ? new Date(fileDoc.file.analyzedAt).toLocaleString() : 'Unknown'}`;
+- Size: ${(fileDoc.file.fileSize / (1024 * 1024)).toFixed(2)} MB`;
         } else {
           return `File "${doc.title}" has not been analyzed yet. You can trigger analysis using the analyzeFile tool.`;
         }
@@ -240,13 +239,21 @@ export const createDocument = createTool({
   
   handler: async (ctx, args): Promise<string> => {
     console.log(`[createDocument] Creating document: "${args.title}"`);
-    
+
+    // Convert content string to array format if provided
+    const contentArray = args.content ? [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: args.content }]
+      }
+    ] : undefined;
+
     const documentId = await ctx.runMutation(api.documents.create, {
       title: args.title,
-      content: args.content,
+      content: contentArray,
       isPublic: args.isPublic,
     });
-    
+
     return `Document created successfully!
 
 Title: "${args.title}"

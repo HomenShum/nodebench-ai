@@ -68,14 +68,9 @@ export const searchMedia = createTool({
     // Web search if requested
     let webResults = '';
     if (args.useWebSearch && args.mediaType !== 'video') {
-      // Use linkupSearch for web images
-      const linkupResults = await ctx.runAction(api.tools.linkupSearch.linkupSearch, {
-        query: args.query,
-        includeImages: true,
-        depth: 'standard',
-      } as any);
-      
-      webResults = `\n\n📡 Web Search Results:\n${linkupResults}`;
+      // Note: Web search integration would require importing linkupSearch directly
+      // For now, suggest using linkupSearch tool separately
+      webResults = `\n\n💡 Tip: Use the linkupSearch tool with includeImages: true to search the web for images.`;
     }
     
     if (results.length === 0 && !args.useWebSearch) {
@@ -129,8 +124,7 @@ ${fileDoc.file.analysis}
 
 File Details:
 - Type: ${fileDoc.document.fileType || 'unknown'}
-- Size: ${(fileDoc.file.fileSize / (1024 * 1024)).toFixed(2)} MB
-- Analyzed: ${fileDoc.file.analyzedAt ? new Date(fileDoc.file.analyzedAt).toLocaleString() : 'Previously'}`;
+- Size: ${(fileDoc.file.fileSize / (1024 * 1024)).toFixed(2)} MB`;
     }
     
     // Trigger new analysis
@@ -198,8 +192,7 @@ File Information:
 - Type: ${fileDoc.document.fileType || 'unknown'}
 - Size: ${fileSizeMB} MB
 - MIME Type: ${fileDoc.document.mimeType || 'unknown'}
-- Created: ${new Date(fileDoc.file._creationTime).toLocaleString()}
-- Last Modified: ${new Date(fileDoc.document.lastModified || fileDoc.file._creationTime).toLocaleString()}
+- Last Modified: ${new Date(fileDoc.document.lastModified || fileDoc.document._creationTime).toLocaleString()}
 
 Preview URL: ${fileDoc.storageUrl || 'Not available'}
 

@@ -15,26 +15,26 @@ export const listTasks = createTool({
   
   args: z.object({
     filter: z.enum(["all", "today", "week", "overdue", "completed"]).default("all").describe("Filter tasks by time period or status"),
-    status: z.enum(["todo", "in-progress", "done", "all"]).default("all").describe("Filter by task status"),
+    status: z.enum(["todo", "in_progress", "done", "all"]).default("all").describe("Filter by task status"),
     priority: z.enum(["low", "medium", "high", "all"]).default("all").describe("Filter by priority level"),
     limit: z.number().default(20).describe("Maximum number of tasks to return"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
     console.log(`[listTasks] Listing tasks with filter: ${args.filter}, status: ${args.status}`);
-    
+
     let tasks: any[] = [];
-    
+
     // Get tasks based on filter
     if (args.filter === "today") {
       tasks = await ctx.runQuery(api.tasks.listTasksDueToday, {});
     } else if (args.filter === "week") {
       tasks = await ctx.runQuery(api.tasks.listTasksDueThisWeek, {});
     } else {
-      // Get all tasks for the user
-      tasks = await ctx.runQuery(api.tasks.listTasks, {});
+      // Get all tasks for the user (using listTasksByUpdatedDesc)
+      tasks = await ctx.runQuery(api.tasks.listTasksByUpdatedDesc, { limit: 100 });
     }
-    
+
     // Apply status filter
     if (args.status !== "all") {
       tasks = tasks.filter((task: any) => task.status === args.status);
@@ -97,12 +97,12 @@ export const createTask = createTool({
     description: z.string().optional().describe("Task description"),
     dueDate: z.string().optional().describe("Due date in ISO format (YYYY-MM-DD) or natural language like 'tomorrow', 'next week'"),
     priority: z.enum(["low", "medium", "high"]).default("medium").describe("Task priority"),
-    status: z.enum(["todo", "in-progress", "done"]).default("todo").describe("Initial task status"),
+    status: z.enum(["todo", "in_progress", "done"]).default("todo").describe("Initial task status"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
     console.log(`[createTask] Creating task: "${args.title}"`);
-    
+
     // Parse due date if provided
     let dueDateMs: number | undefined;
     if (args.dueDate) {
@@ -112,7 +112,7 @@ export const createTask = createTool({
         dueDateMs = date.getTime();
       }
     }
-    
+
     const taskId = await ctx.runMutation(api.tasks.createTask, {
       title: args.title,
       description: args.description,
@@ -144,7 +144,7 @@ export const updateTask = createTool({
     taskId: z.string().describe("The task ID to update"),
     title: z.string().optional().describe("New task title"),
     description: z.string().optional().describe("New task description"),
-    status: z.enum(["todo", "in-progress", "done"]).optional().describe("New task status"),
+    status: z.enum(["todo", "in_progress", "done"]).optional().describe("New task status"),
     priority: z.enum(["low", "medium", "high"]).optional().describe("New task priority"),
     dueDate: z.string().optional().describe("New due date in ISO format"),
   }),
