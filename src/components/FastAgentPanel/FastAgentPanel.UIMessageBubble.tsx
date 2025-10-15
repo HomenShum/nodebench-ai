@@ -15,6 +15,59 @@ interface UIMessageBubbleProps {
 }
 
 /**
+ * Helper to extract and render images from tool output text
+ */
+function ToolOutputRenderer({ output }: { output: unknown }) {
+  const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
+
+  // Extract image URLs from the output (format: "1. https://example.com/image.jpg")
+  const imageUrlRegex = /^\d+\.\s+(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg))/gim;
+  const imageMatches = outputText.matchAll(imageUrlRegex);
+  const imageUrls = Array.from(imageMatches).map(match => match[1]);
+
+  // Split output into sections
+  const sections = outputText.split(/\n\n(?=Images:|Sources:)/);
+
+  return (
+    <div className="text-xs text-gray-600 mt-1 space-y-2">
+      {sections.map((section, idx) => {
+        // Check if this is the Images section
+        if (section.startsWith('Images:')) {
+          return (
+            <div key={idx}>
+              <div className="font-medium text-gray-700 mb-2">Images:</div>
+              <div className="grid grid-cols-2 gap-2">
+                {imageUrls.map((url, imgIdx) => (
+                  <div key={imgIdx} className="rounded overflow-hidden border border-gray-200">
+                    <img
+                      src={url}
+                      alt={`Search result ${imgIdx + 1}`}
+                      className="w-full h-auto object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // Regular text section
+        return (
+          <pre key={idx} className="whitespace-pre-wrap font-mono text-xs">
+            {section}
+          </pre>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * UIMessageBubble - Renders a UIMessage with smooth streaming animation
  * Handles all UIMessage part types: text, reasoning, tool calls, files, etc.
  */
@@ -70,23 +123,19 @@ export function UIMessageBubble({ message }: UIMessageBubbleProps) {
         )}
 
         {/* Tool Calls (if any) */}
-        {toolParts.map((part, idx) => (
-          <div key={idx} className="text-sm px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center gap-2 text-blue-700 font-medium mb-1">
-              <Wrench className="h-3 w-3" />
-              {part.type.replace('tool-', '')}
-            </div>
-            {part.output && (
-              <div className="text-xs text-gray-600 mt-1">
-                <pre className="whitespace-pre-wrap">
-                  {typeof part.output === 'string'
-                    ? part.output
-                    : JSON.stringify(part.output, null, 2)}
-                </pre>
+        {toolParts.map((part, idx) => {
+          const hasOutput = part.output !== undefined && part.output !== null;
+
+          return (
+            <div key={idx} className="text-sm px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 text-blue-700 font-medium mb-1">
+                <Wrench className="h-3 w-3" />
+                {part.type.replace('tool-', '')}
               </div>
-            )}
-          </div>
-        ))}
+              {hasOutput && <ToolOutputRenderer output={part.output} />}
+            </div>
+          );
+        })}
 
         {/* Files (images, etc.) */}
         {fileParts.map((part, idx) => {

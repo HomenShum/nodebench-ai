@@ -15,6 +15,10 @@ interface LinkupSearchResult {
     url: string;
     snippet: string;
   }>;
+  images?: Array<{
+    url: string;
+    description?: string;
+  }>;
 }
 
 /**
@@ -29,18 +33,19 @@ export const linkupSearch = createTool({
   args: z.object({
     query: z.string().describe("The natural language search query. Be specific and detailed for best results."),
     depth: z.enum(["standard", "deep"]).default("standard").describe("Search depth: 'standard' is faster, 'deep' is more comprehensive but slower"),
+    includeImages: z.boolean().default(false).describe("Whether to include images in the search results. Set to true when searching for visual content."),
     includeDomains: z.array(z.string()).optional().describe("Optional: Specific domains to search within (e.g., ['microsoft.com', 'github.com'])"),
     excludeDomains: z.array(z.string()).optional().describe("Optional: Domains to exclude from search (e.g., ['wikipedia.com'])"),
   }),
   
-  handler: async (ctx, args): Promise<string> => {
+  handler: async (_ctx, args): Promise<string> => {
     const apiKey = process.env.LINKUP_API_KEY;
-    
+
     if (!apiKey) {
       throw new Error("LINKUP_API_KEY environment variable is not set. Please add it to your Convex environment variables.");
     }
 
-    console.log(`[linkupSearch] Searching for: "${args.query}" (depth: ${args.depth})`);
+    console.log(`[linkupSearch] Searching for: "${args.query}" (depth: ${args.depth}, images: ${args.includeImages})`);
 
     try {
       const response = await fetch("https://api.linkup.so/v1/search", {
@@ -53,6 +58,7 @@ export const linkupSearch = createTool({
           q: args.query,
           depth: args.depth,
           outputType: "sourcedAnswer",
+          includeImages: args.includeImages,
           includeDomains: args.includeDomains,
           excludeDomains: args.excludeDomains,
         }),
@@ -65,12 +71,26 @@ export const linkupSearch = createTool({
       }
 
       const data: LinkupSearchResult = await response.json();
-      
-      console.log(`[linkupSearch] Found answer with ${data.sources.length} sources`);
 
-      // Format the response with answer and sources
+      console.log(`[linkupSearch] Found answer with ${data.sources.length} sources${data.images ? ` and ${data.images.length} images` : ''}`);
+
+      // Format the response with answer, images, and sources
       let result = `${data.answer}\n\n`;
-      
+
+      // Add images if present
+      if (data.images && data.images.length > 0) {
+        result += "Images:\n";
+        data.images.slice(0, 5).forEach((image, idx) => {
+          result += `${idx + 1}. ${image.url}\n`;
+          if (image.description) {
+            result += `   ${image.description}\n`;
+          }
+          result += "\n";
+        });
+        result += "\n";
+      }
+
+      // Add sources
       if (data.sources && data.sources.length > 0) {
         result += "Sources:\n";
         data.sources.slice(0, 5).forEach((source, idx) => {
