@@ -116,7 +116,7 @@ export function FastAgentPanel({
 
   // Use useUIMessages hook for streaming messages with delta support
   // This hook expects the threadId to be the Agent component's threadId (string), not our chatThreadsStream ID
-  const { results: streamingMessages, status: _streamingStatus } = useUIMessages(
+  const { results: streamingMessages, status: _streamingStatus, error: streamError } = useUIMessages(
     api.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
     streamingThread?.agentThreadId && chatMode === 'agent-streaming'
       ? {
@@ -128,6 +128,17 @@ export function FastAgentPanel({
       stream: true,  // ✅ CRITICAL: Enable streaming deltas!
     }
   );
+
+  // Handle stream errors
+  useEffect(() => {
+    if (streamError) {
+      console.error('[FastAgentPanel] Stream error:', streamError);
+      // Don't show toast for timeout errors - they're handled by SafeImage component
+      if (!streamError.message?.includes('Timeout while downloading')) {
+        toast.error(`Stream error: ${streamError.message}`);
+      }
+    }
+  }, [streamError]);
 
   // Debug: Log when streaming messages update
   useEffect(() => {
