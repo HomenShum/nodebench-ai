@@ -23,105 +23,100 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
   const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
 
   // Check if this output contains multiple images (for gallery layout)
-  const imageCount = (outputText.match(/!\[.*?\]\(.*?\)/g) || []).length;
+  const imageMatches = outputText.match(/!\[.*?\]\(.*?\)/g) || [];
+  const imageCount = imageMatches.length;
   const hasMultipleImages = imageCount > 2;
+
+  // Extract image URLs for gallery
+  const imageUrls = imageMatches.map(match => {
+    const urlMatch = match.match(/\((.*?)\)/);
+    const altMatch = match.match(/!\[(.*?)\]/);
+    return {
+      url: urlMatch?.[1] || '',
+      alt: altMatch?.[1] || 'Image'
+    };
+  });
+
+  // Split content to separate images section from rest
+  const parts = outputText.split(/## Images\s*\n*/);
+  const beforeImages = parts[0];
+  const afterImages = parts[1]?.split(/##/);
+  const restOfContent = afterImages ? '##' + afterImages.slice(1).join('##') : '';
 
   return (
     <div className="text-xs text-gray-600 mt-1 space-y-2">
-      <ReactMarkdown
-        rehypePlugins={[rehypeRaw, rehypeSanitize]}
-        components={{
-          // Custom wrapper for image sections
-          h2: ({ node, children, ...props }) => {
-            const text = String(children);
-            if (text === 'Images' && hasMultipleImages) {
-              return (
-                <h2 {...props} className="text-sm font-semibold text-gray-700 mt-3 mb-2">
-                  {children}
-                  <span className="text-xs font-normal text-gray-500 ml-2">
-                    (scroll to see all)
-                  </span>
-                </h2>
-              );
-            }
-            return <h2 {...props} className="text-sm font-semibold text-gray-700 mt-3 mb-2" />;
-          },
-          // Gallery layout for images
-          img: ({ node, ...props }) => {
-            if (hasMultipleImages) {
-              return (
-                <div className="inline-block mr-3 mb-2 last:mr-0">
-                  <img
-                    {...props}
-                    className="h-48 w-auto rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
-                    loading="lazy"
-                    style={{ objectFit: 'cover' }}
-                    onClick={(e) => {
-                      // Open in new tab on click
-                      window.open(props.src, '_blank');
-                    }}
-                  />
-                </div>
-              );
-            }
-            // Single image - full width
-            return (
-              <img
+      {/* Render content before images */}
+      {beforeImages && (
+        <ReactMarkdown rehypePlugins={[rehypeRaw, rehypeSanitize]}>
+          {beforeImages}
+        </ReactMarkdown>
+      )}
+
+      {/* Render images gallery */}
+      {hasMultipleImages && imageUrls.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-700 mt-3 mb-2">
+            Images
+            <span className="text-xs font-normal text-gray-500 ml-2">
+              (scroll to see all)
+            </span>
+          </h2>
+          <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ scrollbarWidth: 'thin' }}>
+            {imageUrls.map((img, idx) => (
+              <div key={idx} className="flex-shrink-0">
+                <img
+                  src={img.url}
+                  alt={img.alt}
+                  className="h-48 w-auto rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                  loading="lazy"
+                  style={{ objectFit: 'cover' }}
+                  onClick={() => window.open(img.url, '_blank')}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Render rest of content */}
+      {restOfContent && (
+        <ReactMarkdown
+          rehypePlugins={[rehypeRaw, rehypeSanitize]}
+          components={{
+            // Style links
+            a: ({ node, ...props }) => (
+              <a
                 {...props}
-                className="max-w-full h-auto rounded-lg border border-gray-200 my-2 cursor-pointer hover:shadow-lg transition-shadow"
-                loading="lazy"
-                style={{ maxHeight: '400px', objectFit: 'contain' }}
-                onClick={(e) => {
-                  window.open(props.src, '_blank');
-                }}
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
               />
-            );
-          },
-          // Wrapper for multiple images to enable horizontal scroll
-          p: ({ node, children, ...props }) => {
-            // Check if this paragraph contains only images
-            const hasOnlyImages = node?.children?.every(
-              (child: any) => child.tagName === 'img'
-            );
-            
-            if (hasOnlyImages && hasMultipleImages) {
-              return (
-                <div 
-                  className="flex overflow-x-auto gap-0 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-                  style={{ scrollbarWidth: 'thin' }}
-                >
-                  {children}
-                </div>
-              );
-            }
-            
-            return <p {...props} className="text-xs text-gray-600 mb-2">{children}</p>;
-          },
-          // Style links
-          a: ({ node, ...props }) => (
-            <a
-              {...props}
-              className="text-blue-600 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            />
-          ),
-          // Style videos with gallery support
-          video: ({ node, ...props }) => (
-            <video
-              {...props}
-              className="max-w-full h-auto rounded-lg border border-gray-200 my-2"
-              style={{ maxHeight: '300px' }}
-            />
-          ),
-          // Style audio
-          audio: ({ node, ...props }) => (
-            <audio {...props} className="w-full my-2" />
-          ),
-        }}
-      >
-        {outputText}
-      </ReactMarkdown>
+            ),
+            // Style headings
+            h2: ({ node, ...props }) => (
+              <h2 {...props} className="text-sm font-semibold text-gray-700 mt-3 mb-2" />
+            ),
+            // Style paragraphs
+            p: ({ node, ...props }) => (
+              <p {...props} className="text-xs text-gray-600 mb-2" />
+            ),
+            // Style videos
+            video: ({ node, ...props }) => (
+              <video
+                {...props}
+                className="max-w-full h-auto rounded-lg border border-gray-200 my-2"
+                style={{ maxHeight: '300px' }}
+              />
+            ),
+            // Style audio
+            audio: ({ node, ...props }) => (
+              <audio {...props} className="w-full my-2" />
+            ),
+          }}
+        >
+          {restOfContent}
+        </ReactMarkdown>
+      )}
     </div>
   );
 }

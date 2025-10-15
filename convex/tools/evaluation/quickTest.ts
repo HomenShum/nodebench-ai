@@ -26,6 +26,13 @@ export const runQuickTest = action({
     console.log("\n🚀 Running Quick Test Suite\n");
     console.log("Testing key functionality across all tool categories...\n");
 
+    // Get test user ID
+    const testUserId = await ctx.runQuery(internal.tools.evaluation.helpers.getTestUser, {});
+    if (!testUserId) {
+      throw new Error("No test user found. Please create a user account first.");
+    }
+    console.log(`Using test user: ${testUserId}\n`);
+
     // Select one test from each category
     const quickTests = [
       "doc-001",    // findDocument
@@ -56,6 +63,7 @@ export const runQuickTest = action({
       try {
         const result = await ctx.runAction(internal.tools.evaluation.evaluator.runSingleTest, {
           testId,
+          userId: testUserId, // Pass test user ID
         });
 
         results.push(result);

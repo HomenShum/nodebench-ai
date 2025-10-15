@@ -60,6 +60,7 @@ export const runSingleTest = internalAction({
   args: {
     testId: v.string(),
     threadId: v.optional(v.id("threads")),
+    userId: v.optional(v.id("users")), // Optional userId for evaluation tests
   },
   returns: v.any(),
   handler: async (ctx, args): Promise<EvaluationResult> => {
@@ -69,7 +70,7 @@ export const runSingleTest = internalAction({
     }
 
     console.log(`\n🧪 Running test: ${testCase.id} - ${testCase.scenario}`);
-    
+
     const startTime = Date.now();
     let response = "";
     let toolsCalled: string[] = [];
@@ -80,6 +81,7 @@ export const runSingleTest = internalAction({
       const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
         threadId: args.threadId,
         message: testCase.userQuery,
+        userId: args.userId, // Pass userId to agent
       });
 
       response = result.response || "";
