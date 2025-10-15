@@ -4,6 +4,11 @@ import type { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 async function getSafeUserId(ctx: any): Promise<Id<"users">> {
+  // Support evaluation mode where userId is passed in ctx.evaluationUserId
+  if ((ctx as any).evaluationUserId) {
+    return (ctx as any).evaluationUserId as Id<"users">;
+  }
+
   const rawUserId = await getAuthUserId(ctx);
   if (!rawUserId) throw new Error("Not authenticated");
   let userId: Id<"users">;

@@ -4,7 +4,13 @@ import type { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Helper to normalize/validate user id, consistent with folders.ts pattern
+// Supports evaluation mode where userId is passed in ctx.evaluationUserId
 async function getSafeUserId(ctx: any): Promise<Id<"users">> {
+  // Check for evaluation userId first (for testing)
+  if ((ctx as any).evaluationUserId) {
+    return (ctx as any).evaluationUserId as Id<"users">;
+  }
+
   const rawUserId = await getAuthUserId(ctx);
   if (!rawUserId) throw new Error("Not authenticated");
   let userId: Id<"users">;
@@ -21,7 +27,13 @@ async function getSafeUserId(ctx: any): Promise<Id<"users">> {
 }
 
 // Helper that does NOT throw for unauthenticated access; returns null instead.
+// Supports evaluation mode where userId is passed in ctx.evaluationUserId
 async function getOptionalUserId(ctx: any): Promise<Id<"users"> | null> {
+  // Check for evaluation userId first (for testing)
+  if ((ctx as any).evaluationUserId) {
+    return (ctx as any).evaluationUserId as Id<"users">;
+  }
+
   const rawUserId = await getAuthUserId(ctx);
   if (!rawUserId) return null;
   let userId: Id<"users"> | null = null;

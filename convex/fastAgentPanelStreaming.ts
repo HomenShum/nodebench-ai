@@ -61,35 +61,36 @@ CRITICAL BEHAVIOR RULES:
 6. TAKE ACTION IMMEDIATELY - When asked to create, update, or modify something, DO IT without asking for confirmation
 
 IMPORTANT Tool Selection Guidelines:
-- When the user asks to "find images" or "find videos" WITHOUT specifying "web" or "online", ALWAYS use searchMedia to search their internal files first
-- Use linkupSearch ONLY when the user explicitly asks for web/online images or current web information
+- When the user asks to "find images" or "find videos":
+  * First, try searchMedia to search their internal files
+  * If searchMedia returns "No images found" or similar, IMMEDIATELY call linkupSearch with includeImages: true to search the web
+  * CRITICAL: Don't stop after searchMedia fails - automatically try linkupSearch next!
+- Use linkupSearch for web searches and when searchMedia finds no results
 - When they ask about tasks or calendar, use the task and event tools
 - When they want to find or watch YouTube videos, use the youtubeSearch tool
 - For document-related queries, use findDocument or getDocumentContent
 
-Creation & Mutation Actions (ALWAYS EXECUTE IMMEDIATELY - NO EXCEPTIONS):
-- "Create a document" → Call createDocument({title: "...", content: "..."}) IMMEDIATELY
-  Example: User says "Create a new document called 'Q4 Planning' with initial content about planning goals"
-  → You MUST call createDocument({title: "Q4 Planning", content: "Planning goals for Q4..."}) RIGHT NOW
+Image Search Workflow (MANDATORY):
+1. User asks for "cat images" or similar
+2. Call searchMedia(query: "cat", mediaType: "image")
+3. If result contains "No images found", IMMEDIATELY call linkupSearch(query: "cat images", includeImages: true)
+4. Return the web images to the user
 
-- "Create a task" → Call createTask({title: "...", description: "...", dueDate: "...", priority: "medium"}) IMMEDIATELY
-  Example: User says "Create a task to call the client"
-  → You MUST call createTask({title: "Call the client", description: "Follow up call", dueDate: "2025-10-16", priority: "medium"}) RIGHT NOW
+Creation & Mutation Actions (ALWAYS EXECUTE IMMEDIATELY):
+When the user asks to create, update, or modify something, you MUST call the appropriate tool IMMEDIATELY and then provide a confirmation response.
 
-- "Schedule a meeting" or "Create an event" → Call createEvent({title: "...", startTime: "...", endTime: "...", location: "...", description: "..."}) IMMEDIATELY
-  Example: User says "Schedule a team meeting tomorrow at 2pm"
-  → You MUST call createEvent({title: "Team meeting", startTime: "2025-10-16T14:00:00", endTime: "2025-10-16T15:00:00", location: "Conference Room", description: "Team sync"}) RIGHT NOW
-  Use UTC timezone if not specified
+Examples of IMMEDIATE execution:
+- "Create a document" → Call createDocument() NOW → Respond with confirmation
+- "Create a task" → Call createTask() NOW → Respond with confirmation
+- "Schedule a meeting" → Call createEvent() NOW → Respond with confirmation
+- "Update document title" → Call findDocument() then updateDocument() NOW → Respond with confirmation
+- "Mark task complete" → Call listTasks() then updateTask() NOW → Respond with confirmation
+- "Analyze image" → Call analyzeMediaFile() NOW → Respond with analysis
 
-- "Update/Change/Edit document title" → Find document, then call updateDocument({documentId: "...", title: "..."}) IMMEDIATELY
-  Example: User says "Change the Revenue Report Q4 2024 document title to 'Q4 Final Report'"
-  → First call findDocument, get the ID, then IMMEDIATELY call updateDocument({documentId: "xxx", title: "Q4 Final Report"})
-
-- "Mark task as complete/done" → Find task, then call updateTask({taskId: "...", status: "done"}) IMMEDIATELY
-  Example: User says "Mark the 'Review Q4 revenue report' task as done"
-  → First call listTasks to find it, then IMMEDIATELY call updateTask({taskId: "xxx", status: "done"})
-
-CRITICAL: NEVER ask "Would you like me to..." or "Should I..." for mutations - JUST DO IT and confirm after!
+CRITICAL RULES:
+1. NEVER ask "Would you like me to..." or "Should I..." for mutations - JUST DO IT!
+2. ALWAYS provide a text response after calling tools - never leave response empty
+3. After calling ANY tool, you MUST generate a final text response
 
 Context Handling:
 - When asked "What is this document about?" - Use the most recent document from conversation context, or search for the most relevant document
@@ -811,120 +812,18 @@ export const sendMessageInternal = internalAction({
     response: v.string(),
     toolsCalled: v.array(v.string()),
   }),
-  handler: async (ctx, args) => {
-    // For evaluation, we'll use the Agent component directly
-    const agent = createChatAgent("gpt-5-chat-latest");
-
-    // Store userId in context for tools to access
-    if (args.userId) {
-      (ctx as any).evaluationUserId = args.userId;
-    }
-
-    let response = "";
-    const toolsCalled: string[] = [];
-
-    try {
-      let thread;
-      let threadId = args.threadId;
-
-      // Create or continue thread
-      if (threadId) {
-        const result = await agent.continueThread(ctx, { threadId });
-        thread = result.thread;
-      } else {
-        const result = await agent.createThread(ctx, {});
-        thread = result.thread;
-        threadId = result.threadId;
+  handler: async (ctx, args): Promise<{ response: string; toolsCalled: string[] }> => {
+    // Delegate to the OpenAI function-calling implementation
+    // This is in a separate file that can use "use node" directive
+    const result: { response: string; toolsCalled: string[] } = await ctx.runAction(
+      internal.fastAgentPanelStreaming.sendMessageInternal,
+      {
+        message: args.message,
+        threadId: args.threadId,
+        userId: args.userId,
       }
-
-      // Generate response with tools enabled
-      // First generation - may include tool calls
-      let result = await thread.generateText({
-        prompt: args.message,
-      });
-
-      // Check if tools were called by looking at the result
-      // If tools were called, we need to generate again to get the final text response
-      let attempts = 0;
-      const maxAttempts = 10; // Increased from 5 to handle complex workflows better
-
-      while (attempts < maxAttempts) {
-        // Get the latest messages to check for tool calls
-        const messages = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-          threadId,
-          order: "desc",
-          paginationOpts: { numItems: 10, cursor: null },
-        });
-
-        console.log(`[sendMessageInternal] Loop attempt ${attempts + 1}, checking ${messages?.page?.length || 0} messages`);
-
-        // Check ALL assistant messages for tool calls and text responses
-        let hasToolCalls = false;
-        let hasTextResponse = false;
-
-        if (messages && messages.page && messages.page.length > 0) {
-          for (const msg of messages.page) {
-            if (msg.message && typeof msg.message === 'object') {
-              const message = msg.message as any;
-              if (message.role === "assistant" && Array.isArray(message.content)) {
-                for (const part of message.content) {
-                  if (part.type === "tool-call" && part.toolName) {
-                    hasToolCalls = true;
-                    if (!toolsCalled.includes(part.toolName)) {
-                      toolsCalled.push(part.toolName);
-                    }
-                  }
-                  if (part.type === "text" && part.text) {
-                    hasTextResponse = true;
-                    if (!response) {
-                      response = part.text;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        console.log(`[sendMessageInternal] hasToolCalls=${hasToolCalls}, hasTextResponse=${hasTextResponse}`);
-
-        // If we have a text response, we're done
-        if (hasTextResponse) {
-          console.log(`[sendMessageInternal] Found text response, exiting loop`);
-          break;
-        }
-
-        // If we had tool calls but no text response, generate again
-        if (hasToolCalls) {
-          console.log(`[sendMessageInternal] Tool calls detected, generating follow-up response (attempt ${attempts + 1})`);
-          result = await thread.generateText({
-            prompt: "", // Empty prompt to continue from where we left off
-          });
-          attempts++;
-        } else {
-          // No tool calls and no text response - something went wrong
-          console.log(`[sendMessageInternal] No tool calls and no text response, exiting loop`);
-          break;
-        }
-      }
-
-      // Fallback to result.text if no response found in messages
-      if (!response) {
-        response = result.text || "";
-      }
-
-      console.log(`[sendMessageInternal] Final response length: ${response.length} chars`);
-      console.log(`[sendMessageInternal] Tools called: ${toolsCalled.join(', ') || 'none'}`);
-
-    } catch (error: any) {
-      console.error("Error in sendMessageInternal:", error);
-      response = `Error: ${error.message}`;
-    }
-
-    return {
-      response,
-      toolsCalled,
-    };
+    );
+    return result;
   },
 });
 
