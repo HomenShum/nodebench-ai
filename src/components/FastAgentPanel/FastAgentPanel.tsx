@@ -7,6 +7,7 @@ import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { X, Zap, Settings, Plus, Radio } from 'lucide-react';
 import { toast } from 'sonner';
+import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 
 import './FastAgentPanel.animations.css';
 import { ThreadList } from './FastAgentPanel.ThreadList';
@@ -103,33 +104,44 @@ export function FastAgentPanel({
     chatMode === 'agent-streaming' ? {} : "skip"
   );
 
-  // Use standard useQuery for streaming messages - Convex reactivity handles updates
-  const streamingMessagesResult = useQuery(
-    api.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
+  // Get the agent thread ID for streaming mode
+  const streamingThread = useQuery(
+    api.fastAgentPanelStreaming.getThreadByStreamId,
     activeThreadId && chatMode === 'agent-streaming'
-      ? { 
-          threadId: activeThreadId as Id<"chatThreadsStream">,
-          paginationOpts: { numItems: 100, cursor: null }
-        }
+      ? { threadId: activeThreadId as Id<"chatThreadsStream"> }
       : "skip"
   );
-  
+
+  // Use useUIMessages hook for streaming messages with delta support
+  // This hook expects the threadId to be the Agent component's threadId (string), not our chatThreadsStream ID
+  const { results: streamingMessages, status: _streamingStatus } = useUIMessages(
+    api.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
+    streamingThread?.agentThreadId && chatMode === 'agent-streaming'
+      ? {
+          threadId: streamingThread.agentThreadId,
+        }
+      : "skip",
+    {
+      initialNumItems: 100,
+      stream: true,  // ✅ CRITICAL: Enable streaming deltas!
+    }
+  );
+
   // Debug: Log when streaming messages update
   useEffect(() => {
-    if (chatMode === 'agent-streaming' && streamingMessagesResult?.page) {
-      console.log('[FastAgentPanel] Messages updated:', streamingMessagesResult.page.length, 'messages');
-      const lastMessage = streamingMessagesResult.page[streamingMessagesResult.page.length - 1];
+    if (chatMode === 'agent-streaming' && streamingMessages) {
+      console.log('[FastAgentPanel] Messages updated:', streamingMessages.length, 'messages');
+      const lastMessage = streamingMessages[streamingMessages.length - 1];
       if (lastMessage) {
-        const text = lastMessage.message?.text || '';
         console.log('[FastAgentPanel] Last message:', {
-          role: lastMessage.message?.role,
-          textLength: text.length,
-          textPreview: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
+          role: lastMessage.role,
+          textLength: lastMessage.text?.length || 0,
+          textPreview: (lastMessage.text || '').substring(0, 50) + ((lastMessage.text?.length || 0) > 50 ? '...' : ''),
           status: lastMessage.status,
         });
       }
     }
-  }, [streamingMessagesResult, chatMode]);
+  }, [streamingMessages, chatMode]);
 
   const createStreamingThread = useAction(api.fastAgentPanelStreaming.createThread);
   const sendStreamingMessage = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
@@ -137,7 +149,21 @@ export function FastAgentPanel({
 
   // Use the appropriate data based on mode
   const threads = chatMode === 'agent' ? agentThreads : streamingThreads;
-  const messages = chatMode === 'agent' ? agentMessages : streamingMessagesResult?.page;
+
+  // Convert UIMessages to Message format for MessageStream component
+  const convertedStreamingMessages = streamingMessages?.map((uiMsg: any) => ({
+    _id: uiMsg.key || uiMsg._id,
+    _creationTime: uiMsg._creationTime || Date.now(),
+    threadId: activeThreadId as Id<"chatThreadsStream">,
+    userId: '' as Id<"users">,
+    role: uiMsg.role,
+    content: uiMsg.text || '',
+    status: uiMsg.status || 'complete',
+    createdAt: uiMsg._creationTime || Date.now(),
+    updatedAt: uiMsg._creationTime || Date.now(),
+  }));
+
+  const messages = chatMode === 'agent' ? agentMessages : convertedStreamingMessages;
 
   // ========== EFFECTS ==========
 

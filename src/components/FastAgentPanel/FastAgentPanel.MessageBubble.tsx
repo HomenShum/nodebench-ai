@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { User, Bot, Zap, Clock, Loader2 } from 'lucide-react';
+import { useSmoothText } from '@convex-dev/agent/react';
 import { LiveThinking } from './FastAgentPanel.LiveThinking';
 import { MemoryPreview } from './FastAgentPanel.Memory';
 import { StreamingMessage } from './FastAgentPanel.StreamingMessage';
@@ -30,7 +31,7 @@ export function MessageBubble({
   liveSources = [],
 }: MessageBubbleProps) {
   const [showMetadata, setShowMetadata] = useState(false);
-  
+
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
   const hasLiveData = liveThinking.length > 0 || liveToolCalls.length > 0 || liveSources.length > 0;
@@ -49,6 +50,14 @@ export function MessageBubble({
     }
     return raw as string;
   }, [isAssistant, message.content]);
+
+  // Use smooth text streaming for assistant messages
+  const [smoothText] = useSmoothText(contentToRender, {
+    startStreaming: isStreaming && isAssistant,
+  });
+
+  // Use smooth text for streaming, otherwise use the raw content
+  const displayText = isStreaming && isAssistant ? smoothText : contentToRender;
 
   return (
     <div className={`message-bubble-container ${isUser ? 'user' : 'assistant'}`}>
@@ -108,10 +117,10 @@ export function MessageBubble({
                   },
                 }}
               >
-                {contentToRender}
+                {displayText}
               </ReactMarkdown>
               {isStreaming && (
-                <span 
+                <span
                   className="typing-cursor"
                   style={{
                     display: 'inline-block',

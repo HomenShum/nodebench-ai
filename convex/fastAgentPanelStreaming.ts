@@ -9,9 +9,8 @@ import { openai } from "@ai-sdk/openai";
 import { paginationOptsValidator } from "convex/server";
 import type { Id } from "./_generated/dataModel";
 
-// Try importing streaming utilities from @convex-dev/agent
-// These are used in the official example
-import type { vStreamArgs as VStreamArgsType } from "@convex-dev/agent";
+// Import streaming utilities from @convex-dev/agent
+import { vStreamArgs, syncStreams, listUIMessages } from "@convex-dev/agent";
 
 const persistentTextStreaming = new PersistentTextStreaming(
   components.persistentTextStreaming
@@ -223,39 +222,46 @@ export const getThreadMessages = query({
 /**
  * Get messages with streaming support for a thread (using Agent component)
  * This returns messages in a format compatible with useUIMessages hook
+ *
+ * This version accepts the Agent component's threadId (string) directly
  */
 export const getThreadMessagesWithStreaming = query({
   args: {
-    threadId: v.id("chatThreadsStream"),
+    threadId: v.string(),  // Agent component's thread ID
     paginationOpts: paginationOptsValidator,
+    streamArgs: vStreamArgs,
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      return { page: [], continueCursor: null, isDone: true };
+      return { page: [], continueCursor: "", isDone: true, streams: [] };
     }
 
-    // Verify access
-    const thread = await ctx.db.get(args.threadId);
-    if (!thread || thread.userId !== userId) {
-      return { page: [], continueCursor: null, isDone: true };
+    // Verify the user has access to this agent thread
+    const agentThread = await ctx.runQuery(components.agent.threads.getThread, {
+      threadId: args.threadId,
+    });
+
+    if (!agentThread || agentThread.userId !== userId) {
+      return { page: [], continueCursor: "", isDone: true, streams: [] };
     }
 
-    // If thread doesn't have agentThreadId yet, return empty
-    if (!thread.agentThreadId) {
-      return { page: [], continueCursor: null, isDone: true };
-    }
-
-    // Fetch messages directly from agent component
-    // The agent component updates message.text progressively as it streams
-    // Convex reactivity will automatically trigger this query to re-run
-    const result = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-      threadId: thread.agentThreadId,
-      order: "asc",
+    // Fetch UIMessages with streaming support
+    const paginated = await listUIMessages(ctx, components.agent, {
+      threadId: args.threadId,
       paginationOpts: args.paginationOpts,
     });
 
-    return result;
+    // Fetch streaming deltas
+    const streams = await syncStreams(ctx, components.agent, {
+      threadId: args.threadId,
+      streamArgs: args.streamArgs,
+    });
+
+    return {
+      ...paginated,
+      streams,
+    };
   },
 });
 
