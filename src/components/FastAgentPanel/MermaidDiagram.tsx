@@ -40,11 +40,12 @@ async function loadMermaid() {
   
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    script.type = 'module';
+    // Use latest Mermaid from Cloudflare CDN
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.12.0/mermaid.min.js';
     script.onload = () => {
       mermaidLoading = false;
-      resolve(undefined);
+      // Give it a moment to initialize
+      setTimeout(() => resolve(undefined), 100);
     };
     script.onerror = () => {
       mermaidLoading = false;
