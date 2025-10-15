@@ -9,7 +9,7 @@ import { paginationOptsValidator } from "convex/server";
 import type { Id } from "./_generated/dataModel";
 
 // Import streaming utilities from @convex-dev/agent
-import { vStreamArgs, syncStreams, listUIMessages, vProviderMetadata } from "@convex-dev/agent";
+import { vStreamArgs, syncStreams, listUIMessages, vProviderMetadata, storeFile, getFile, saveMessage } from "@convex-dev/agent";
 
 // Import tools
 import { linkupSearch } from "./tools/linkupSearch";
@@ -856,5 +856,161 @@ export const sendMessageInternal = internalAction({
       response,
       toolsCalled,
     };
+  },
+});
+
+/* ================================================================
+ * FILE & IMAGE UPLOAD
+ * ================================================================ */
+
+/**
+ * Upload a file (image, PDF, etc.) for the agent to analyze
+ * Files are automatically stored and deduplicated by hash
+ */
+export const uploadFile = action({
+  args: {
+    filename: v.string(),
+    mimeType: v.string(),
+    bytes: v.bytes(),
+    sha256: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthorized - please sign in to upload files");
+    }
+
+    console.log(`[uploadFile] Uploading ${args.filename} (${args.mimeType}, ${args.bytes.byteLength} bytes)`);
+
+    // Store the file using Convex Agent's file storage
+    // This automatically deduplicates files with the same hash
+    const { file } = await storeFile(
+      ctx,
+      components.agent,
+      new Blob([args.bytes], { type: args.mimeType }),
+      {
+        filename: args.filename,
+        sha256: args.sha256,
+      },
+    );
+
+    console.log(`[uploadFile] ✅ File stored: ${file.fileId}`);
+
+    return {
+      fileId: file.fileId,
+      url: file.url,
+    };
+  },
+});
+
+/**
+ * Submit a question about an uploaded file
+ * Creates a user message with the file attached and triggers agent response
+ */
+export const submitFileQuestion = mutation({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+    fileId: v.string(),
+    question: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    // Verify thread ownership
+    const thread = await ctx.db.get(args.threadId);
+    if (!thread || thread.userId !== userId) {
+      throw new Error("Thread not found or unauthorized");
+    }
+
+    console.log(`[submitFileQuestion] Thread: ${args.threadId}, FileId: ${args.fileId}`);
+
+    // Get the file (could be an image or other file type)
+    const { filePart, imagePart } = await getFile(
+      ctx,
+      components.agent,
+      args.fileId,
+    );
+
+    // Save user message with file attachment
+    const { messageId } = await saveMessage(ctx, components.agent, {
+      threadId: thread.agentThreadId,
+      message: {
+        role: "user",
+        content: [
+          imagePart ?? filePart,
+          { type: "text", text: args.question },
+        ],
+      },
+      // Track file usage for cleanup
+      metadata: { fileIds: [args.fileId] },
+    });
+
+    console.log(`[submitFileQuestion] ✅ Message saved: ${messageId}`);
+
+    // Create streaming message in our table
+    const streamMessageId = await ctx.db.insert("chatMessagesStream", {
+      threadId: args.threadId,
+      role: "user",
+      content: args.question,
+      status: "complete",
+      agentMessageId: messageId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    // Trigger async response generation
+    await ctx.scheduler.runAfter(0, internal.fastAgentPanelStreaming.generateFileResponse, {
+      threadId: thread.agentThreadId,
+      promptMessageId: messageId,
+      streamThreadId: args.threadId,
+      model: thread.model || "gpt-5-chat-latest",
+    });
+
+    return {
+      messageId: streamMessageId,
+      agentMessageId: messageId,
+    };
+  },
+});
+
+/**
+ * Generate response to a file question (internal, async)
+ */
+export const generateFileResponse = internalAction({
+  args: {
+    threadId: v.string(),
+    promptMessageId: v.string(),
+    streamThreadId: v.id("chatThreadsStream"),
+    model: v.string(),
+  },
+  handler: async (ctx, args) => {
+    console.log('[generateFileResponse] Starting generation');
+    const chatAgent = createChatAgent(args.model);
+
+    try {
+      const result = await chatAgent.streamText(
+        ctx,
+        { threadId: args.threadId },
+        { promptMessageId: args.promptMessageId },
+        {
+          saveStreamDeltas: {
+            chunking: "word",
+            throttleMs: 100,
+          },
+        },
+      );
+
+      console.log('[generateFileResponse] Stream started, messageId:', result.messageId);
+
+      await result.consumeStream();
+
+      console.log('[generateFileResponse] ✅ Stream completed');
+    } catch (error) {
+      console.error('[generateFileResponse] Error:', error);
+      throw error;
+    }
   },
 });
