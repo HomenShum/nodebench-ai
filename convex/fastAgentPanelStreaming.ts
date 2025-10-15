@@ -13,6 +13,7 @@ import { vStreamArgs, syncStreams, listUIMessages } from "@convex-dev/agent";
 
 // Import tools
 import { linkupSearch } from "./tools/linkupSearch";
+import { youtubeSearch } from "./tools/youtubeSearch";
 import {
   findDocument,
   getDocumentContent,
@@ -45,20 +46,22 @@ You can help with:
 - Finding and opening documents by title or content
 - Analyzing and summarizing documents
 - Creating and editing documents
-- Searching for images and videos
+- Searching for images and videos (web images via linkupSearch, YouTube videos via youtubeSearch)
 - Managing tasks and calendar events
 - Organizing files in folders
 - Searching the web for current information
 
 When the user asks to find, open, or work with documents, use the document tools.
 When they ask about tasks or calendar, use the task and event tools.
-When they want to find images or videos, use the media tools.
+When they want to find images, use linkupSearch with includeImages: true.
+When they want to find or watch YouTube videos, use the youtubeSearch tool.
 When you need current web information, use the linkupSearch tool.
 
 Always provide clear, helpful responses and confirm actions you take.`,
   tools: {
     // Web search
     linkupSearch,
+    youtubeSearch,
 
     // Document operations
     findDocument,
@@ -622,6 +625,7 @@ export const sendMessageInternal = internalAction({
   args: {
     threadId: v.optional(v.string()),
     message: v.string(),
+    userId: v.optional(v.id("users")), // Optional userId for evaluation tests
   },
   returns: v.object({
     response: v.string(),
