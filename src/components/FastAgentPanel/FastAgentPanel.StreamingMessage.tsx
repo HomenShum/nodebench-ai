@@ -27,18 +27,21 @@ export function StreamingMessage({ message }: StreamingMessageProps) {
   const convexSiteUrl = convexApiUrl?.replace('.convex.cloud', '.convex.site') || window.location.origin;
 
   // Drive the stream when message is actively streaming
-  const isDriven = message.isStreaming === true;
+  const streamId = message.streamId as StreamId | undefined;
+  const isDriven = Boolean(
+    streamId && (message.status === 'streaming' || message.isStreaming === true)
+  );
 
   const { text, status } = useStream(
     api.fastAgentPanelStreaming.getStreamBody,
     new URL(`${convexSiteUrl}/api/chat-stream`),
     isDriven,
-    message.streamId as StreamId
+    streamId
   );
 
   // Prefer streamed text when available; fall back to persisted message content
   const displayText = (text && text.length > 0) ? text : (message.content || "");
-  const isActive = status === "streaming" || message.isStreaming;
+  const isActive = status === "streaming" || message.status === 'streaming';
 
   return (
     <div className="whitespace-pre-wrap break-words">
@@ -71,4 +74,3 @@ export function StreamingMessage({ message }: StreamingMessageProps) {
     </div>
   );
 }
-

@@ -140,7 +140,7 @@ export function Settings({
             Custom instructions that guide the AI's behavior
           </p>
         </div>
-        
+
         <div className="settings-footer">
           <button onClick={onClose} className="btn-primary">
             Done

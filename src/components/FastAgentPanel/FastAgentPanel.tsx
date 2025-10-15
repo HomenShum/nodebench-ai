@@ -5,12 +5,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus } from 'lucide-react';
-import { ConfirmationDialog } from './ConfirmationDialog';
+import { X, Zap, Settings, Plus, Radio } from 'lucide-react';
 import { toast } from 'sonner';
 
 import './FastAgentPanel.animations.css';
-import { ChatStreamManager, createChatStream } from '../../lib/chatStream';
 import { ThreadList } from './FastAgentPanel.ThreadList';
 import { MessageStream } from './FastAgentPanel.MessageStream';
 import { InputBar } from './FastAgentPanel.InputBar';
@@ -34,38 +32,16 @@ interface FastAgentPanelProps {
 }
 
 /**
- * Generate a concise thread title from the first message
- */
-function generateThreadTitle(message: string): string {
-  // Remove extra whitespace
-  const cleaned = message.trim().replace(/\s+/g, ' ');
-
-  // Extract first sentence or first 50 chars
-  const firstSentence = cleaned.match(/^[^.!?]+[.!?]?/)?.[0] || cleaned;
-
-  // Truncate to 50 chars
-  if (firstSentence.length <= 50) {
-    return firstSentence;
-  }
-
-  // Find last complete word within 50 chars
-  const truncated = firstSentence.slice(0, 50);
-  const lastSpace = truncated.lastIndexOf(' ');
-
-  if (lastSpace > 20) {
-    return truncated.slice(0, lastSpace) + '...';
-  }
-
-  return truncated + '...';
-}
-
-/**
  * FastAgentPanel - Next-gen AI chat sidebar with ChatGPT-like UX
  *
+ * Dual-mode architecture:
+ * - Agent Mode: @convex-dev/agent with automatic memory (non-streaming)
+ * - Agent Streaming Mode: @convex-dev/agent + real-time streaming output
+ * 
  * Features:
- * - Real-time streaming responses
- * - Thread-based conversations
- * - Fast mode by default
+ * - Thread-based conversations with automatic memory management
+ * - Real-time streaming responses (agent streaming mode)
+ * - Fast mode toggle
  * - Live thinking/tool visualization
  * - Clean, minimal interface
  */
@@ -75,11 +51,19 @@ export function FastAgentPanel({
   selectedDocumentId: _selectedDocumentId,
 }: FastAgentPanelProps) {
   // ========== STATE ==========
-  const [activeThreadId, setActiveThreadId] = useState<Id<"chatThreads"> | null>(null);
+  // Agent component uses string threadIds, not Id<"chatThreads">
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [exportingThreadId, setExportingThreadId] = useState<Id<"chatThreads"> | null>(null);
+  const [exportingThreadId, setExportingThreadId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Chat mode: 'agent' (non-streaming) or 'agent-streaming' (with streaming output)
+  const [chatMode, setChatMode] = useState<'agent' | 'agent-streaming'>(() => {
+    // Load from localStorage
+    const saved = localStorage.getItem('fastAgentPanel.chatMode');
+    return (saved === 'agent-streaming' || saved === 'agent') ? saved : 'agent';
+  });
 
   // Settings
   const [fastMode, setFastMode] = useState(true);
@@ -94,36 +78,66 @@ export function FastAgentPanel({
   const [liveSources, setLiveSources] = useState<Source[]>([]);
 
   // Refs
-  const streamManagerRef = useRef<ChatStreamManager>(createChatStream());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ========== CONVEX QUERIES & MUTATIONS ==========
-  const threads = useQuery(api.fastAgentPanel.listThreads);
-  const messages = useQuery(
-    api.fastAgentPanel.getMessages,
-    activeThreadId ? { threadId: activeThreadId } : "skip"
+  // Agent mode: Using @convex-dev/agent component
+  const agentThreads = useQuery(api.agentChat.listUserThreads);
+  const agentMessagesResult = useQuery(
+    api.agentChat.getThreadMessages,
+    activeThreadId && chatMode === 'agent' ? {
+      threadId: activeThreadId,
+      paginationOpts: { numItems: 100, cursor: null }
+    } : "skip"
+  );
+  const agentMessages = agentMessagesResult?.page;
+
+  // Agent-based actions
+  const createThreadWithMessage = useAction(api.agentChat.createThreadWithMessage);
+  const continueThreadAction = useAction(api.agentChat.continueThread);
+  const deleteAgentThread = useMutation(api.agentChat.deleteThread);
+  
+  // Agent Streaming mode: Using agent component's native streaming
+  const streamingThreads = useQuery(
+    api.fastAgentPanelStreaming.listThreads,
+    chatMode === 'agent-streaming' ? {} : "skip"
   );
 
-  const createThread = useMutation(api.fastAgentPanel.createThread);
-  const updateThread = useMutation(api.fastAgentPanel.updateThread);
-  const deleteThread = useMutation(api.fastAgentPanel.deleteThread);
-  const sendMessage = useAction(api.fastAgentPanel.sendMessage); // For data operations
-  const sendMessageWithStreaming = useMutation(api.fastAgentPanelStreaming.sendMessageWithStreaming);
+  // Use standard useQuery for streaming messages - Convex reactivity handles updates
+  const streamingMessagesResult = useQuery(
+    api.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
+    activeThreadId && chatMode === 'agent-streaming'
+      ? { 
+          threadId: activeThreadId as Id<"chatThreadsStream">,
+          paginationOpts: { numItems: 100, cursor: null }
+        }
+      : "skip"
+  );
+  
+  // Debug: Log when streaming messages update
+  useEffect(() => {
+    if (chatMode === 'agent-streaming' && streamingMessagesResult?.page) {
+      console.log('[FastAgentPanel] Messages updated:', streamingMessagesResult.page.length, 'messages');
+      const lastMessage = streamingMessagesResult.page[streamingMessagesResult.page.length - 1];
+      if (lastMessage) {
+        const text = lastMessage.message?.text || '';
+        console.log('[FastAgentPanel] Last message:', {
+          role: lastMessage.message?.role,
+          textLength: text.length,
+          textPreview: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
+          status: lastMessage.status,
+        });
+      }
+    }
+  }, [streamingMessagesResult, chatMode]);
 
-  // Data operations
-  const isDataOperation = useAction(api.agents.intentParser.isDataOperationRequest);
-  const parseIntent = useAction(api.agents.intentParser.parseDataOperationIntent);
-  const executeDataOp = useAction(api.agents.dataOperations.executeDataOperation);
+  const createStreamingThread = useAction(api.fastAgentPanelStreaming.createThread);
+  const sendStreamingMessage = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
+  const deleteStreamingThread = useMutation(api.fastAgentPanelStreaming.deleteThread);
 
-
-  // Confirmation dialog state for destructive data operations
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmPrompt, setConfirmPrompt] = useState<string>("");
-  const pendingIntentRef = useRef<{
-    entityType: string;
-    operation: string;
-    params: any;
-  } | null>(null);
+  // Use the appropriate data based on mode
+  const threads = chatMode === 'agent' ? agentThreads : streamingThreads;
+  const messages = chatMode === 'agent' ? agentMessages : streamingMessagesResult?.page;
 
   // ========== EFFECTS ==========
 
@@ -135,56 +149,72 @@ export function FastAgentPanel({
   // Auto-select first thread if none selected
   useEffect(() => {
     if (!activeThreadId && threads && threads.length > 0) {
-      setActiveThreadId(threads[0]._id);
+      // Agent component threads have both _id and threadId
+      const firstThread = threads[0] as any;
+      setActiveThreadId(firstThread.threadId || firstThread._id);
     }
   }, [threads, activeThreadId]);
 
-  // Cleanup stream on unmount
+  // Persist chat mode to localStorage
   useEffect(() => {
-    return () => {
-      streamManagerRef.current.close();
-    };
-  }, []);
+    localStorage.setItem('fastAgentPanel.chatMode', chatMode);
+  }, [chatMode]);
+
+  // Reset active thread when switching chat modes
+  useEffect(() => {
+    setActiveThreadId(null);
+    toast.info(`Switched to ${chatMode === 'agent' ? 'Agent' : 'Agent Streaming'} mode`);
+  }, [chatMode]);
+
+
 
   // ========== HANDLERS ==========
 
   const handleCreateThread = useCallback(async () => {
-    try {
-      const newThreadId = await createThread({
-        title: "New Chat",
-        pinned: false,
-      });
-      setActiveThreadId(newThreadId);
-      toast.success("New chat created");
-    } catch (error) {
-      console.error("Failed to create thread:", error);
-      toast.error("Failed to create chat");
+    if (chatMode === 'agent') {
+      // For Agent-based API, threads are created automatically when sending the first message
+      setActiveThreadId(null);
+      toast.success("Ready to start new chat");
+    } else {
+      // For agent streaming mode, create a new thread immediately
+      try {
+        const threadId = await createStreamingThread({
+          title: "New Chat",
+          model: selectedModel,
+        });
+        setActiveThreadId(threadId);
+        toast.success("New chat created");
+      } catch (error) {
+        console.error('Failed to create thread:', error);
+        toast.error('Failed to create new chat');
+      }
     }
-  }, [createThread]);
+  }, [chatMode, createStreamingThread, selectedModel]);
 
-  const handlePinThread = useCallback(async (threadId: Id<"chatThreads">) => {
+  const handlePinThread = useCallback(async (_threadId: string) => {
+    // Note: Agent API doesn't support pinning yet
+    // This is a future enhancement
+    toast.info('Pinning not yet supported with Agent API');
+  }, []);
+
+  const handleDeleteThread = useCallback(async (threadId: string) => {
     try {
-      const thread = threads?.find(t => t._id === threadId);
-      if (!thread) return;
-
-      await updateThread({
-        threadId,
-        pinned: !thread.pinned,
-      });
-    } catch (error) {
-      console.error('Failed to pin thread:', error);
-      toast.error('Failed to pin conversation');
-    }
-  }, [threads, updateThread]);
-
-  const handleDeleteThread = useCallback(async (threadId: Id<"chatThreads">) => {
-    try {
-      await deleteThread({ threadId });
+      if (chatMode === 'agent') {
+        await deleteAgentThread({ threadId });
+      } else {
+        await deleteStreamingThread({ threadId: threadId as Id<"chatThreadsStream"> });
+      }
 
       // If deleted thread was active, select another
       if (activeThreadId === threadId) {
-        const remainingThreads = threads?.filter(t => t._id !== threadId);
-        setActiveThreadId(remainingThreads?.[0]?._id || null);
+        const remainingThreads = threads?.filter((t: any) => {
+          const tId = chatMode === 'agent' ? t.threadId : t._id;
+          return tId !== threadId;
+        });
+        const nextId = chatMode === 'agent' 
+          ? (remainingThreads?.[0] as any)?.threadId 
+          : (remainingThreads?.[0] as any)?._id;
+        setActiveThreadId(nextId || null);
       }
 
       toast.success('Conversation deleted');
@@ -192,9 +222,9 @@ export function FastAgentPanel({
       console.error('Failed to delete thread:', error);
       toast.error('Failed to delete conversation');
     }
-  }, [activeThreadId, threads, deleteThread]);
+  }, [activeThreadId, threads, chatMode, deleteAgentThread, deleteStreamingThread]);
 
-  const handleExportThread = useCallback((threadId: Id<"chatThreads">) => {
+  const handleExportThread = useCallback((threadId: string) => {
     setExportingThreadId(threadId);
   }, []);
 
@@ -202,30 +232,10 @@ export function FastAgentPanel({
     const text = (content ?? input).trim();
     if (!text || isStreaming) return;
 
-    let threadId = activeThreadId;
-
-    // Create thread if none exists
-    if (!threadId) {
-      try {
-        // Auto-generate meaningful title from first message
-        const autoTitle = generateThreadTitle(text);
-        threadId = await createThread({
-          title: autoTitle,
-          pinned: false,
-        });
-        setActiveThreadId(threadId);
-      } catch (error) {
-        console.error("Failed to create thread:", error);
-        toast.error("Failed to create chat");
-        return;
-      }
-    }
-
     const messageContent = text;
     setInput('');
     setLiveTokens("");
     setLiveAgents([]);
-
     setIsStreaming(true);
 
     // Clear live state
@@ -234,75 +244,54 @@ export function FastAgentPanel({
     setLiveSources([]);
 
     try {
-      // Check if this is a data operation request
-      const isDataOp = await isDataOperation({ userMessage: messageContent });
-
-      if (isDataOp) {
-        // Handle as data operation
-        setLiveThinking([{ type: 'step', content: 'Parsing data operation intent...' }]);
-
-        const intent = await parseIntent({ userMessage: messageContent });
-
-        setLiveThinking((prev) => [
-          ...prev,
-          { type: 'step', content: `Detected: ${intent.operation} ${intent.entityType}` },
-        ]);
-
-        // Execute the operation
-        const opResult = await executeDataOp({
-          entityType: intent.entityType,
-          operation: intent.operation,
-          params: intent.params,
-          threadId,
-        });
-
-        if (opResult.requiresConfirmation) {
-          // Show confirmation dialog with stored intent
-          pendingIntentRef.current = {
-            entityType: intent.entityType,
-            operation: intent.operation,
-            params: { ...intent.params, confirmed: true },
-          };
-          setConfirmPrompt(opResult.confirmationPrompt || 'Confirmation required');
-          setConfirmOpen(true);
-          setIsStreaming(false);
-          setLiveThinking([]);
-          return;
+      if (chatMode === 'agent') {
+        // Agent-based chat flow
+        let result;
+        if (!activeThreadId) {
+          // Create new thread with first message
+          result = await createThreadWithMessage({
+            prompt: messageContent,
+            model: selectedModel,
+            fastMode,
+          });
+          setActiveThreadId(result.threadId);
+          console.log('[FastAgentPanel] New thread created:', result.threadId);
+        } else {
+          // Continue existing thread
+          result = await continueThreadAction({
+            threadId: activeThreadId,
+            prompt: messageContent,
+          });
+          console.log('[FastAgentPanel] Continued thread:', activeThreadId);
         }
 
-        if (opResult.success) {
-          toast.success(opResult.message || 'Operation completed');
+        console.log('[FastAgentPanel] Message sent with messageId:', result.messageId);
+        setIsStreaming(false);
+      } else {
+        // Agent streaming mode chat flow - uses agent component's native streaming
+        let threadId = activeThreadId;
 
-          // Add result message to thread
-          await sendMessage({
-            threadId,
-            content: messageContent,
-            fastMode,
+        // Create thread if needed
+        if (!threadId) {
+          threadId = await createStreamingThread({
+            title: messageContent.substring(0, 50),
             model: selectedModel,
           });
-        } else {
-          toast.error('Operation failed');
+          setActiveThreadId(threadId);
         }
 
+        // Send message with optimistic updates using the mutation
+        if (!threadId) throw new Error("Thread ID is required");
+
+        await sendStreamingMessage({
+          threadId: threadId as Id<"chatThreadsStream">,
+          prompt: messageContent,
+          model: selectedModel,
+        });
+
+        console.log('[FastAgentPanel] Streaming initiated');
         setIsStreaming(false);
-        setLiveThinking([]);
-        setLiveToolCalls([]);
-        setLiveSources([]);
-        return;
       }
-
-      // Normal chat flow with persistent text streaming
-      const result = await sendMessageWithStreaming({
-        threadId,
-        content: messageContent,
-        model: selectedModel,
-        fastMode,
-      });
-
-      console.log('[FastAgentPanel] Message sent with streamId:', result.streamId);
-
-      // The StreamingMessage component will initiate and display the stream via useStream hook
-      setIsStreaming(false);
     } catch (error) {
       console.error("Failed to send message:", error);
       toast.error("Failed to send message");
@@ -314,12 +303,11 @@ export function FastAgentPanel({
     activeThreadId,
     fastMode,
     selectedModel,
-    createThread,
-    sendMessage,
-    sendMessageWithStreaming,
-    isDataOperation,
-    parseIntent,
-    executeDataOp,
+    chatMode,
+    createThreadWithMessage,
+    continueThreadAction,
+    createStreamingThread,
+    sendStreamingMessage,
   ]);
 
 
@@ -328,84 +316,181 @@ export function FastAgentPanel({
 
   if (!isOpen) return null;
 
-  // Convert Convex messages to Message type
-  const displayMessages: Message[] = (messages || []).map((msg) => {
-    const thinkingSteps = Array.isArray((msg as any).thinkingSteps)
-      ? (msg as any).thinkingSteps
-          .map((step: any) => ({
-            type: typeof step?.type === 'string' ? step.type : 'step',
-            content: typeof step?.content === 'string' ? step.content : '',
-            timestamp:
-              typeof step?.timestamp === 'number'
-                ? new Date(step.timestamp)
-                : step?.timestamp instanceof Date
-                ? step.timestamp
-                : step?.timestamp
-                ? new Date(step.timestamp)
-                : undefined,
-          }))
-          .filter((step: any) => step.content.length > 0)
-      : undefined;
+  // Convert messages to Message type based on chat mode
+  const displayMessages: Message[] = (messages || []).map((msg: any) => {
+    if (chatMode === 'agent-streaming') {
+      // Agent streaming mode messages - from agent component
+      // Messages may have nested structure: msg.message.role and msg.message.text
+      const messageData = msg.message || msg;
+      const role = messageData.role || 'assistant';
+      
+      // Extract content and ensure it's a string
+      let content = '';
+      if (typeof messageData.text === 'string') {
+        content = messageData.text;
+      } else if (typeof messageData.content === 'string') {
+        content = messageData.content;
+      } else if (typeof msg.text === 'string') {
+        content = msg.text;
+      } else if (typeof msg.content === 'string') {
+        content = msg.content;
+      } else {
+        // If content is an array or object, try to stringify parts
+        const textParts = messageData.parts?.filter((p: any) => p.type === 'text')?.map((p: any) => p.text) || [];
+        content = textParts.join('');
+      }
+      
+      // Debug logging
+      if (typeof content !== 'string' || content === '') {
+        console.log('[FastAgentPanel] Message structure:', { msg, messageData, role, content, type: typeof content });
+      }
+      
+      return {
+        id: msg._id,
+        threadId: (activeThreadId || '') as any,
+        role: role as 'user' | 'assistant' | 'system',
+        content: String(content || ''), // Ensure it's always a string
+        status: (msg.status || 'complete') as 'sending' | 'streaming' | 'complete' | 'error',
+        timestamp: new Date(msg._creationTime || Date.now()),
+        isStreaming: msg.status === 'streaming',
+        model: selectedModel,
+      };
+    }
 
-    const toolCalls = Array.isArray((msg as any).toolCalls)
-      ? (msg as any).toolCalls.map((call: any, idx: number) => ({
-          callId: String(call?.callId ?? call?.id ?? `call-${idx}`),
-          toolName: typeof call?.toolName === 'string' ? call.toolName : call?.name ?? 'tool',
-          args: call?.args,
-          result: call?.result,
-          error: typeof call?.error === 'string' ? call.error : undefined,
-          status: call?.status,
-          elapsedMs: typeof call?.elapsedMs === 'number' ? call.elapsedMs : undefined,
-          timestamp:
-            typeof call?.timestamp === 'number'
-              ? new Date(call.timestamp)
-              : call?.timestamp instanceof Date
-              ? call.timestamp
-              : call?.timestamp
-              ? new Date(call.timestamp)
-              : undefined,
-        }))
-      : undefined;
+    // Agent mode messages - convert from Agent component format
+    // Extract role from msg.message.role or msg.role
+    const role = msg.message?.role || msg.role || 'assistant';
+    
+    // Extract content - Agent messages have multiple possible structures:
+    // 1. msg.text (flattened text representation)
+    // 2. msg.message.content (can be string or array of parts)
+    let content = '';
+    
+    // Try flattened text first (most reliable)
+    if (msg.text) {
+      content = msg.text;
+    }
+    // Try msg.message.content
+    else if (msg.message?.content) {
+      const msgContent = msg.message.content;
+      if (typeof msgContent === 'string') {
+        content = msgContent;
+      } else if (Array.isArray(msgContent)) {
+        // Extract text from parts array
+        const textParts = msgContent
+          .filter((p: any) => p.type === 'text' || p.type === 'reasoning')
+          .map((p: any) => p.text)
+          .filter((t: any) => t);
+        content = textParts.join('\n');
+      }
+    }
+    // Fallback to msg.content
+    else if (msg.content) {
+      if (typeof msg.content === 'string') {
+        content = msg.content;
+      } else if (Array.isArray(msg.content)) {
+        const textParts = msg.content
+          .filter((p: any) => p.type === 'text' || p.type === 'reasoning')
+          .map((p: any) => p.text)
+          .filter((t: any) => t);
+        content = textParts.join('\n');
+      }
+    }
+    
+    // Extract thinking steps from message content if it's an array
+    const contentArray = Array.isArray(msg.message?.content) ? msg.message.content : [];
+    const thinkingSteps = contentArray
+      .filter((part: any) => part.type === 'reasoning')
+      .map((part: any) => ({
+        type: 'step' as const,
+        content: part.text || '',
+        timestamp: new Date(msg._creationTime),
+      }))
+      .filter((step: any) => step.content.length > 0);
 
-    const sources = Array.isArray((msg as any).sources)
-      ? (msg as any).sources.map((source: any, idx: number) => ({
-          title: typeof source?.title === 'string' ? source.title : `Source ${idx + 1}`,
-          documentId: source?.documentId,
-          url: typeof source?.url === 'string' ? source.url : undefined,
-          snippet: typeof source?.snippet === 'string' ? source.snippet : undefined,
-          score: typeof source?.score === 'number' ? source.score : undefined,
-          datetime: typeof source?.datetime === 'string' ? source.datetime : undefined,
-          publishedDate: typeof source?.publishedDate === 'string' ? source.publishedDate : undefined,
-          type: typeof source?.type === 'string' ? source.type : undefined,
-          thumbnail: typeof source?.thumbnail === 'string' ? source.thumbnail : undefined,
-          mediaUrl: typeof source?.mediaUrl === 'string' ? source.mediaUrl : undefined,
-        }))
-      : undefined;
+    // Extract tool calls from message content
+    const toolCalls = contentArray
+      .filter((part: any) => part.type === 'tool-call' && part.toolName)
+      .map((part: any, idx: number) => ({
+        callId: part.toolCallId || `call-${idx}`,
+        toolName: part.toolName,
+        args: part.args || {},
+        result: undefined,
+        error: undefined,
+        status: 'complete' as const,
+        elapsedMs: undefined,
+        timestamp: new Date(msg._creationTime),
+      }));
+
+    // Map Agent status to our status type
+    let status: 'sending' | 'streaming' | 'complete' | 'error' = 'complete';
+    if (msg.status === 'pending') status = 'streaming';
+    else if (msg.status === 'failed') status = 'error';
+    else if (msg.status === 'success') status = 'complete';
 
     return {
       id: msg._id,
       threadId: msg.threadId,
-      role: msg.role as 'user' | 'assistant' | 'system',
-      content: msg.content,
-      status: msg.status as 'sending' | 'streaming' | 'complete' | 'error',
-      timestamp: new Date(msg.createdAt),
-      runId: msg.runId || undefined,
-      streamId: msg.streamId, // For persistent text streaming
-      isStreaming: msg.isStreaming, // Whether message is actively streaming
+      role: role as 'user' | 'assistant' | 'system',
+      content,
+      status,
+      timestamp: new Date(msg._creationTime),
+      runId: undefined,
+      streamId: undefined, // Don't use StreamingMessage component for Agent messages
+      isStreaming: status === 'streaming',
       model: msg.model,
-      fastMode: msg.fastMode,
-      tokensUsed: msg.tokensUsed,
+      fastMode: undefined,
+      tokensUsed: msg.usage ? {
+        input: msg.usage.promptTokens || 0,
+        output: msg.usage.completionTokens || 0,
+      } : undefined,
       elapsedMs: msg.elapsedMs,
-      thinkingSteps,
-      toolCalls,
-      sources,
+      thinkingSteps: thinkingSteps.length > 0 ? thinkingSteps : undefined,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+      sources: msg.sources,
     };
   });
 
-  // Convert Convex threads to Thread type
-  const displayThreads: Thread[] = (threads || []).map(thread => ({
-    ...thread,
-  }));
+  // Convert threads to Thread type based on chat mode
+  const displayThreads: Thread[] = (threads || []).map((thread: any) => {
+    if (chatMode === 'agent-streaming') {
+      // Agent streaming mode threads - already in correct format
+      return {
+        _id: thread._id,
+        userId: thread.userId as Id<"users">,
+        title: thread.title || 'New Chat',
+        pinned: thread.pinned || false,
+        createdAt: thread.createdAt,
+        updatedAt: thread.updatedAt,
+        _creationTime: thread.createdAt,
+        messageCount: undefined,
+        lastMessage: undefined,
+        lastMessageAt: undefined,
+      };
+    }
+
+    // Agent mode threads - convert from Agent component format
+    // Filter out archived threads for agent mode
+    const threadId = thread.threadId || thread._id;
+    return {
+      _id: threadId,
+      userId: thread.userId as Id<"users">,
+      title: thread.summary || 'New Chat', // Map summary to title
+      pinned: false, // Agent component doesn't have pinned
+      createdAt: thread._creationTime,
+      updatedAt: thread._creationTime,
+      _creationTime: thread._creationTime,
+      messageCount: undefined,
+      lastMessage: undefined,
+      lastMessageAt: undefined,
+    };
+  }).filter((thread: any) => {
+    // Only filter archived for agent mode
+    if (chatMode === 'agent') {
+      return !thread.title?.startsWith('[ARCHIVED]');
+    }
+    return true;
+  });
 
   const streamingMessageId = (() => {
     for (let i = displayMessages.length - 1; i >= 0; i -= 1) {
@@ -429,6 +514,14 @@ export function FastAgentPanel({
           >
             <Zap className="h-4 w-4" />
             {fastMode && <span className="fast-mode-label">Fast</span>}
+          </button>
+          <button
+            onClick={() => setChatMode(chatMode === 'agent' ? 'agent-streaming' : 'agent')}
+            className={`chat-mode-toggle ${chatMode === 'agent-streaming' ? 'active' : ''}`}
+            title={`Mode: ${chatMode === 'agent' ? 'Agent' : 'Agent Streaming'}`}
+          >
+            <Radio className="h-4 w-4" />
+            <span className="chat-mode-label">{chatMode === 'agent' ? 'Agent' : 'Streaming'}</span>
           </button>
         </div>
 
@@ -565,6 +658,32 @@ export function FastAgentPanel({
           font-size: 0.8125rem;
         }
 
+        .chat-mode-toggle {
+          display: flex;
+          align-items: center;
+          gap: 0.375rem;
+          padding: 0.375rem 0.75rem;
+          border-radius: 0.5rem;
+          border: 1px solid var(--border-color);
+          background: transparent;
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 0.875rem;
+          font-weight: 500;
+        }
+
+        .chat-mode-toggle.active {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+          border-color: #10b981;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .chat-mode-label {
+          font-size: 0.8125rem;
+        }
+
         .header-right {
           display: flex;
           gap: 0.5rem;
@@ -598,45 +717,6 @@ export function FastAgentPanel({
           overflow: hidden;
         }
       `}</style>
-
-      {/* Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={confirmOpen}
-        title="Please confirm"
-        message={confirmPrompt}
-        confirmLabel="Confirm"
-        cancelLabel="Cancel"
-        onConfirm={() => {
-          void (async () => {
-            try {
-              const intent = pendingIntentRef.current;
-              if (!intent) { setConfirmOpen(false); return; }
-              setConfirmOpen(false);
-              setIsStreaming(true);
-              const opResult = await executeDataOp({
-                entityType: intent.entityType,
-                operation: intent.operation,
-                params: intent.params,
-                threadId: activeThreadId!,
-              });
-              if (opResult.success) {
-                toast.success(opResult.message || 'Operation completed');
-              } else {
-                toast.error('Operation failed');
-              }
-            } catch (e: any) {
-              toast.error(e?.message || 'Operation failed');
-            } finally {
-              setIsStreaming(false);
-            }
-          })();
-        }}
-        onCancel={() => {
-          setConfirmOpen(false);
-          pendingIntentRef.current = null;
-        }}
-        variant="warning"
-      />
 
       {/* Export Menu */}
       {exportingThreadId && (() => {

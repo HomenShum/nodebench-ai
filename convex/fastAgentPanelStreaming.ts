@@ -1,184 +1,544 @@
-// FastAgentPanel Streaming - Persistent Text Streaming Implementation
-
+// FastAgentPanel Streaming - Backend functions for persistent-text-streaming
 import { v } from "convex/values";
-import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import { query, mutation, internalQuery, internalMutation, action, internalAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { PersistentTextStreaming, StreamId } from "@convex-dev/persistent-text-streaming";
-import { components } from "./_generated/api";
+import { components, internal } from "./_generated/api";
+import { PersistentTextStreaming } from "@convex-dev/persistent-text-streaming";
+import { Agent } from "@convex-dev/agent";
+import { openai } from "@ai-sdk/openai";
+import { paginationOptsValidator } from "convex/server";
+import type { Id } from "./_generated/dataModel";
+
+// Try importing streaming utilities from @convex-dev/agent
+// These are used in the official example
+import type { vStreamArgs as VStreamArgsType } from "@convex-dev/agent";
 
 const persistentTextStreaming = new PersistentTextStreaming(
   components.persistentTextStreaming
 );
 
-/**
- * Get the stream body for a given streamId
- * This is used by the useStream hook on the frontend
- */
-export const getStreamBody = query(async (ctx, args: { streamId: string }) => {
-  return await persistentTextStreaming.getStreamBody(ctx, args.streamId as StreamId);
+// Helper to create agent with specific model for agent streaming mode
+const createChatAgent = (model: string) => new Agent(components.agent, {
+  chat: openai.chat(model),
+  textEmbedding: openai.embedding("text-embedding-3-small"),
+  instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
 });
 
-/**
- * Get message by streamId (internal helper)
- */
-export const getMessageByStreamId = query({
-  args: { streamId: v.string() },
-  returns: v.union(
-    v.object({
-      _id: v.id("chatMessages"),
-      threadId: v.id("chatThreads"),
-      role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
-      content: v.string(),
-      streamId: v.optional(v.string()),
-      isStreaming: v.optional(v.boolean()),
-      createdAt: v.number(),
-    }),
-    v.null()
-  ),
-  handler: async (ctx, args) => {
-    const message = await ctx.db
-      .query("chatMessages")
-      .withIndex("by_streamId", (q) => q.eq("streamId", args.streamId))
-      .first();
-
-    if (!message) return null;
-
-    return {
-      _id: message._id,
-      threadId: message.threadId,
-      role: message.role,
-      content: message.content,
-      streamId: message.streamId,
-      isStreaming: message.isStreaming,
-      createdAt: message.createdAt,
-    };
-  },
-});
+/* ================================================================
+ * THREAD MANAGEMENT
+ * ================================================================ */
 
 /**
- * Mark stream as complete and update message content
+ * List all streaming threads for the current user
  */
-export const markStreamComplete = internalMutation({
-  args: {
-    messageId: v.id("chatMessages"),
-    finalContent: v.string(),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.messageId, {
-      content: args.finalContent,
-      isStreaming: false,
-      status: "complete",
-      updatedAt: Date.now(),
-    });
-    return null;
-  },
-});
+export const listThreads = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
 
-/**
- * Internal helper to list messages for a thread without auth (used by HTTP streaming)
- */
-export const getThreadMessagesForStreaming = internalQuery({
-  args: { threadId: v.id("chatThreads") },
-  returns: v.array(
-    v.object({
-      _id: v.id("chatMessages"),
-      threadId: v.id("chatThreads"),
-      role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
-      content: v.string(),
-      status: v.union(
-        v.literal("sending"),
-        v.literal("streaming"),
-        v.literal("complete"),
-        v.literal("error")
-      ),
-      createdAt: v.number(),
-    })
-  ),
-  handler: async (ctx, args) => {
-    const msgs = await ctx.db
-      .query("chatMessages")
-      .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
-      .order("asc")
+    const threads = await ctx.db
+      .query("chatThreadsStream")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
       .collect();
-    return msgs.map((m) => ({
-      _id: m._id,
-      threadId: m.threadId,
-      role: m.role,
-      content: m.content,
-      status: m.status,
-      createdAt: m.createdAt,
-    }));
+
+    return threads;
   },
 });
 
 /**
- * Send a message and create a streaming response
- * This replaces the old sendMessage action
+ * Get a specific thread (for HTTP streaming endpoint)
  */
-export const sendMessageWithStreaming = mutation({
+export const getThreadByStreamId = query({
   args: {
-    threadId: v.id("chatThreads"),
-    content: v.string(),
-    model: v.optional(v.union(
-      v.literal("gpt-5"),
-      v.literal("gpt-5-mini"),
-      v.literal("gpt-5-nano"),
-      v.literal("gemini")
-    )),
-    fastMode: v.optional(v.boolean()),
+    threadId: v.id("chatThreadsStream"),
   },
-  returns: v.object({
-    userMessageId: v.id("chatMessages"),
-    aiMessageId: v.id("chatMessages"),
-    streamId: v.string(),
-  }),
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.threadId);
+  },
+});
+
+/**
+ * Create a new streaming thread (also creates agent thread for memory management)
+ */
+export const createThread = action({
+  args: {
+    title: v.string(),
+    model: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<Id<"chatThreadsStream">> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const modelName = args.model || "gpt-5-chat-latest";
+    const chatAgent = createChatAgent(modelName);
+
+    // Create agent thread for automatic memory management
+    const { threadId: agentThreadId } = await chatAgent.createThread(ctx, { userId });
+
+    // Update agent thread summary
+    await ctx.runMutation(components.agent.threads.updateThread, {
+      threadId: agentThreadId,
+      patch: {
+        summary: args.title,
+      },
+    });
+
+    // Create streaming thread linked to agent thread
+    const now = Date.now();
+    const threadId = await ctx.runMutation(internal.fastAgentPanelStreaming.createThreadInternal, {
+      userId,
+      title: args.title,
+      model: modelName,
+      agentThreadId,
+      now,
+    });
+
+    return threadId;
+  },
+});
+
+/**
+ * Internal mutation to create streaming thread
+ */
+export const createThreadInternal = internalMutation({
+  args: {
+    userId: v.id("users"),
+    title: v.string(),
+    model: v.optional(v.string()),
+    agentThreadId: v.string(),
+    now: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const threadId = await ctx.db.insert("chatThreadsStream", {
+      userId: args.userId,
+      title: args.title,
+      model: args.model,
+      agentThreadId: args.agentThreadId,
+      pinned: false,
+      createdAt: args.now,
+      updatedAt: args.now,
+    });
+
+    return threadId;
+  },
+});
+
+/**
+ * Update thread title
+ */
+export const updateThreadTitle = mutation({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+    title: v.string(),
+  },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     const thread = await ctx.db.get(args.threadId);
     if (!thread || thread.userId !== userId) {
-      throw new Error("Thread not found or access denied");
+      throw new Error("Thread not found or unauthorized");
     }
 
-    // Insert user message
-    const userMessageId = await ctx.db.insert("chatMessages", {
+    await ctx.db.patch(args.threadId, {
+      title: args.title,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Delete a thread and all its messages
+ */
+export const deleteThread = mutation({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const thread = await ctx.db.get(args.threadId);
+    if (!thread || thread.userId !== userId) {
+      throw new Error("Thread not found or unauthorized");
+    }
+
+    // Delete all messages in the thread
+    const messages = await ctx.db
+      .query("chatMessagesStream")
+      .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
+      .collect();
+
+    for (const message of messages) {
+      await ctx.db.delete(message._id);
+    }
+
+    // Delete the thread
+    await ctx.db.delete(args.threadId);
+  },
+});
+
+/* ================================================================
+ * MESSAGE MANAGEMENT
+ * ================================================================ */
+
+/**
+ * Get messages for a thread with streaming support (using agent component)
+ */
+export const getThreadMessages = query({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return { page: [], continueCursor: null, isDone: true };
+    }
+
+    // Verify access
+    const thread = await ctx.db.get(args.threadId);
+    if (!thread || thread.userId !== userId) {
+      return { page: [], continueCursor: null, isDone: true };
+    }
+
+    // If thread doesn't have agentThreadId yet, return empty (it's being created)
+    if (!thread.agentThreadId) {
+      return { page: [], continueCursor: null, isDone: true };
+    }
+
+    // Fetch messages directly from agent component
+    const result = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+      threadId: thread.agentThreadId,
+      order: "asc",
+      paginationOpts: args.paginationOpts,
+    });
+
+    return result;
+  },
+});
+
+/**
+ * Get messages with streaming support for a thread (using Agent component)
+ * This returns messages in a format compatible with useUIMessages hook
+ */
+export const getThreadMessagesWithStreaming = query({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return { page: [], continueCursor: null, isDone: true };
+    }
+
+    // Verify access
+    const thread = await ctx.db.get(args.threadId);
+    if (!thread || thread.userId !== userId) {
+      return { page: [], continueCursor: null, isDone: true };
+    }
+
+    // If thread doesn't have agentThreadId yet, return empty
+    if (!thread.agentThreadId) {
+      return { page: [], continueCursor: null, isDone: true };
+    }
+
+    // Fetch messages directly from agent component
+    // The agent component updates message.text progressively as it streams
+    // Convex reactivity will automatically trigger this query to re-run
+    const result = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+      threadId: thread.agentThreadId,
+      order: "asc",
+      paginationOpts: args.paginationOpts,
+    });
+
+    return result;
+  },
+});
+
+/**
+ * Create a user message in a thread
+ */
+export const createUserMessage = mutation({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Verify access
+    const thread = await ctx.db.get(args.threadId);
+    if (!thread || thread.userId !== userId) {
+      throw new Error("Thread not found or unauthorized");
+    }
+
+    const now = Date.now();
+    const messageId = await ctx.db.insert("chatMessagesStream", {
       threadId: args.threadId,
+      userId,
       role: "user",
       content: args.content,
       status: "complete",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
     });
 
-    // Create a stream for the AI response
-    const streamId = await persistentTextStreaming.createStream(ctx);
+    // Update thread timestamp
+    await ctx.db.patch(args.threadId, { updatedAt: now });
 
-    // Create the AI message with streaming enabled
-    const aiMessageId = await ctx.db.insert("chatMessages", {
+    return messageId;
+  },
+});
+
+/**
+ * OPTION 2 (RECOMMENDED): Initiate async streaming with optimistic updates
+ * Generate the prompt message first, then asynchronously generate the stream response.
+ */
+export const initiateAsyncStreaming = mutation({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+    prompt: v.string(),
+    model: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    console.log('[initiateAsyncStreaming] Starting for thread:', args.threadId);
+
+    const streamingThread: any = await ctx.db.get(args.threadId);
+    if (!streamingThread || !streamingThread.agentThreadId) {
+      throw new Error("Thread not found or not linked to agent");
+    }
+    if (streamingThread.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const modelName = args.model || "gpt-5-chat-latest";
+    const chatAgent = createChatAgent(modelName);
+
+    console.log('[initiateAsyncStreaming] Saving user message, agentThreadId:', streamingThread.agentThreadId);
+
+    // Save the user message first (enables optimistic updates)
+    const { messageId } = await chatAgent.saveMessage(ctx, {
+      threadId: streamingThread.agentThreadId,
+      prompt: args.prompt,
+      skipEmbeddings: true, // Skip embeddings in mutation, generate lazily when streaming
+    });
+
+    console.log('[initiateAsyncStreaming] User message saved, messageId:', messageId);
+
+    // Schedule async streaming
+    await ctx.scheduler.runAfter(0, internal.fastAgentPanelStreaming.streamAsync, {
+      threadId: streamingThread.agentThreadId,
+      promptMessageId: messageId,
+      model: modelName,
+    });
+
+    console.log('[initiateAsyncStreaming] Stream scheduled');
+
+    return { messageId };
+  },
+});
+
+/**
+ * Internal action to stream text asynchronously
+ */
+export const streamAsync = internalAction({
+  args: {
+    promptMessageId: v.string(),
+    threadId: v.string(),
+    model: v.string(),
+  },
+  handler: async (ctx, args) => {
+    console.log('[streamAsync] Starting stream for message:', args.promptMessageId);
+    const chatAgent = createChatAgent(args.model);
+
+    try {
+      const result = await chatAgent.streamText(
+        ctx,
+        { threadId: args.threadId },
+        { promptMessageId: args.promptMessageId },
+        {
+          saveStreamDeltas: {
+            chunking: "word",
+            throttleMs: 50  // Faster updates for smoother animation
+          }
+        }
+      );
+
+      console.log('[streamAsync] Stream started, messageId:', result.messageId);
+
+      // Consume the stream to ensure it finishes
+      await result.consumeStream();
+      
+      console.log('[streamAsync] Stream completed successfully');
+    } catch (error) {
+      console.error('[streamAsync] Error:', error);
+      throw error;
+    }
+  },
+});
+
+/**
+ * Get thread by ID (internal for agent streaming)
+ */
+export const getThreadByStreamIdInternal = internalQuery({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.threadId);
+  },
+});
+
+/**
+ * Create an assistant message (streaming) with a streamId
+ */
+export const createAssistantMessage = mutation({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+    model: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Verify access
+    const thread = await ctx.db.get(args.threadId);
+    if (!thread || thread.userId !== userId) {
+      throw new Error("Thread not found or unauthorized");
+    }
+
+    // Generate unique streamId using crypto
+    const streamId = crypto.randomUUID();
+
+    const now = Date.now();
+    const messageId = await ctx.db.insert("chatMessagesStream", {
       threadId: args.threadId,
+      userId,
       role: "assistant",
-      content: "", // Start with empty content
-      streamId: streamId,
-      isStreaming: true,
+      content: "",
+      streamId,
       status: "streaming",
       model: args.model,
-      fastMode: args.fastMode,
-      createdAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Update thread timestamp
+    await ctx.db.patch(args.threadId, { updatedAt: now });
+
+    return { messageId, streamId };
+  },
+});
+
+/* ================================================================
+ * STREAMING SUPPORT
+ * ================================================================ */
+
+/**
+ * Get message by streamId (used by streaming endpoint)
+ */
+export const getMessageByStreamId = query({
+  args: {
+    streamId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db
+      .query("chatMessagesStream")
+      .withIndex("by_streamId", (q) => q.eq("streamId", args.streamId))
+      .first();
+
+    return message;
+  },
+});
+
+/**
+ * Get stream body for useStream hook
+ */
+export const getStreamBody = query({
+  args: {
+    streamId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Query the stream text from the persistent-text-streaming component
+    return await ctx.runQuery(
+      components.persistentTextStreaming.lib.getStreamText,
+      { streamId: args.streamId }
+    );
+  },
+});
+
+/**
+ * Get thread messages for streaming (internal, for HTTP action)
+ */
+export const getThreadMessagesForStreaming = internalQuery({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+  },
+  handler: async (ctx, args) => {
+    const messages = await ctx.db
+      .query("chatMessagesStream")
+      .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
+      .order("asc")
+      .collect();
+
+    return messages;
+  },
+});
+
+/**
+ * Mark stream as started and link to agent message (internal)
+ */
+export const markStreamStarted = internalMutation({
+  args: {
+    messageId: v.id("chatMessagesStream"),
+    agentMessageId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) {
+      console.error(`[markStreamStarted] Message not found: ${args.messageId}`);
+      return;
+    }
+
+    await ctx.db.patch(args.messageId, {
+      agentMessageId: args.agentMessageId,
+      status: "streaming",
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Mark stream as complete and update message content (internal)
+ */
+export const markStreamComplete = internalMutation({
+  args: {
+    messageId: v.id("chatMessagesStream"),
+    finalContent: v.string(),
+    status: v.union(v.literal("complete"), v.literal("error")),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) {
+      console.error(`[markStreamComplete] Message not found: ${args.messageId}`);
+      return;
+    }
+
+    await ctx.db.patch(args.messageId, {
+      content: args.finalContent,
+      status: args.status,
       updatedAt: Date.now(),
     });
 
     // Update thread timestamp
-    await ctx.db.patch(args.threadId, {
-      updatedAt: Date.now(),
-    });
-
-    return {
-      userMessageId,
-      aiMessageId,
-      streamId: streamId,
-    };
+    await ctx.db.patch(message.threadId, { updatedAt: Date.now() });
   },
 });

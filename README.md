@@ -45,7 +45,7 @@
 * **Agents Dashboard**: **Tasks**, **Timeline/Gantt**, and **Run History** with real-time progress, metrics badges, and final output panel.
 * **Backend**: Convex (functions, storage, auth, analytics). `convex/router.ts` exposes user HTTP routes separate from auth.
 * **Agents**: Planner/Executor/Verifier loops (standalone CLI + Convex actions). Typed tool I/O and traces.
-* **Multi-agent orchestration**: Supports web search (Linkup with image collection), parallel visual LLM analysis (OpenAI GPT-4o, Anthropic Claude, Google Gemini), code execution, and cross-model comparison.
+* **Multi-agent orchestration**: Supports web search (Linkup with image collection), parallel visual LLM analysis (OpenAI GPT-5, Anthropic Claude, Google Gemini), code execution, and cross-model comparison.
 * **Observation**: JSONL trace emitter → Timeline Gantt visualization; metrics & statuses; real-time execution tracking.
 
 ---

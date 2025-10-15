@@ -52,9 +52,9 @@ Rate on 1-5 scale:
 Provide confidence score 0-1.
 `.trim();
 
-const DEFAULT_VISION_MODELS: Array<'gpt-5-mini' | 'gemini-2.0-flash'> = [
+const DEFAULT_VISION_MODELS: Array<'gpt-5-mini' | 'gemini-2.5-flash'> = [
   'gpt-5-mini',
-  'gemini-2.0-flash',
+  'gemini-2.5-flash',
 ];
 
 type DatasetPayload = {
@@ -76,7 +76,7 @@ type FilterPayload = {
 type VisionPayload = {
   dataset: DatasetPayload | FilterResult;
   analysisPrompt?: string;
-  models?: Array<'gpt-5-mini' | 'gemini-2.0-flash'>;
+  models?: Array<'gpt-5-mini' | 'gemini-2.5-flash'>;
   apiKeys?: { openai?: string; google?: string };
 };
 
@@ -91,8 +91,8 @@ type FilterResult = {
 };
 
 type VisionSummary = {
-  models: Array<'gpt-5-mini' | 'gemini-2.0-flash'>;
-  skippedModels: Array<'gpt-5-mini' | 'gemini-2.0-flash'>;
+  models: Array<'gpt-5-mini' | 'gemini-2.5-flash'>;
+  skippedModels: Array<'gpt-5-mini' | 'gemini-2.5-flash'>;
   results: Record<string, VisualLLMAnalysis[]>;
   errors: Array<{ imageId: string; error: string }>;
   imagesAnalyzed: number;
@@ -252,7 +252,7 @@ const visionParallelTool: Tool = async (args, ctx) => {
     : DEFAULT_VISION_PROMPT;
 
   const requestedModels = Array.isArray(payload?.models) && payload.models.length
-    ? (payload.models as Array<'gpt-5-mini' | 'gemini-2.0-flash'>)
+    ? (payload.models as Array<'gpt-5-mini' | 'gemini-2.5-flash'>)
     : DEFAULT_VISION_MODELS;
 
   const envOpenAI = process.env.OPENAI_API_KEY || process.env.CONVEX_OPENAI_API_KEY;
@@ -263,7 +263,7 @@ const visionParallelTool: Tool = async (args, ctx) => {
 
   const availableModels = requestedModels.filter((model) => {
     if (model === 'gpt-5-mini') return Boolean(openaiKey);
-    if (model === 'gemini-2.0-flash') return Boolean(googleKey);
+    if (model === 'gemini-2.5-flash') return Boolean(googleKey);
     return false;
   });
   const skippedModels = requestedModels.filter((model) => !availableModels.includes(model));

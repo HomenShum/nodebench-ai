@@ -369,7 +369,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   // LLM information for UI transparency
   const llmInfo = useMemo(() => {
     const provider = selectedModel === 'openai' ? 'OpenAI' : 'Google Gemini';
-    const model = selectedModel === 'openai' ? openaiVariant : 'gemini-2.0-flash';
+    const model = selectedModel === 'openai' ? openaiVariant : 'gemini-2.5-flash';
     const fileSupport = selectedModel === 'gemini' ? 'Files (PDF, CSV, images, etc.)' : 'Images';
     const toolCalls = ['proposeNode', 'proposeUpdateNode', 'openDoc', 'editDoc'];
     const mcpServerCount = Array.isArray(servers) ? servers.length : (servers ? 1 : 0);

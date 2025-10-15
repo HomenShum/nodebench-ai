@@ -35,7 +35,7 @@ Provide a concise analysis focusing on what the user wants and how to achieve it
       if (!geminiKey) throw new Error("Gemini API key not configured");
       const ai = new GoogleGenAI({ apiKey: geminiKey ?? undefined });
       const result = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: analysisPrompt }] }],
       });
       try {

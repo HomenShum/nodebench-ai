@@ -332,7 +332,7 @@ The backend should provide APIs for:
 1. User management (creation)
 2. Channel management (creation)
 3. Message operations (sending, listing)
-4. AI response generation using OpenAI's GPT-4
+4. AI response generation using OpenAI's GPT-5
 
 Messages should be stored with their channel, author, and content. The system should maintain message order
 and limit history display to the 10 most recent messages per channel.
@@ -421,7 +421,7 @@ Internal Functions:
 
 5. Background Processing:
 - AI response generation runs asynchronously after each user message
-- Uses OpenAI's GPT-4 to generate contextual responses
+- Uses OpenAI's GPT-5 to generate contextual responses
 - Maintains conversation context using recent message history
 
 
@@ -574,7 +574,7 @@ export const generateResponse = internalAction({
       channelId: args.channelId,
     });
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5",
       messages: context,
     });
     const content = response.choices[0].message.content;

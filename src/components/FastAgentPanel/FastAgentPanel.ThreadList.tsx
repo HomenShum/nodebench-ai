@@ -3,16 +3,15 @@
 
 import React, { useState, useMemo } from 'react';
 import { MessageSquare, Pin, Trash2, Search, X, Download } from 'lucide-react';
-import { Id } from '../../../convex/_generated/dataModel';
 import type { Thread } from './types';
 
 interface ThreadListProps {
   threads: Thread[];
-  activeThreadId: Id<"chatThreads"> | null;
-  onSelectThread: (threadId: Id<"chatThreads">) => void;
-  onPinThread: (threadId: Id<"chatThreads">) => void;
-  onDeleteThread: (threadId: Id<"chatThreads">) => void;
-  onExportThread?: (threadId: Id<"chatThreads">) => void;
+  activeThreadId: string | null; // Agent component uses string threadIds
+  onSelectThread: (threadId: string) => void;
+  onPinThread: (threadId: string) => void;
+  onDeleteThread: (threadId: string) => void;
+  onExportThread?: (threadId: string) => void;
   isCollapsed?: boolean;
 }
 
@@ -29,7 +28,7 @@ export function ThreadList({
   isCollapsed = false,
 }: ThreadListProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [deletingThreadId, setDeletingThreadId] = useState<Id<"chatThreads"> | null>(null);
+  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   
   // Filter and sort threads
   const filteredThreads = useMemo(() => {
@@ -52,7 +51,7 @@ export function ThreadList({
     });
   }, [threads, searchQuery]);
   
-  const handleDelete = (threadId: Id<"chatThreads">, e: React.MouseEvent) => {
+  const handleDelete = (threadId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setDeletingThreadId(threadId);
   };

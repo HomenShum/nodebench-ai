@@ -178,13 +178,13 @@ Provide confidence score 0-1.`;
               img.url,
               img.imageId,
               visionPrompt,
-              ["gpt-5-mini", "gemini-2.0-flash"],
+              ["gpt-5-mini", "gemini-2.5-flash"],
               apiKeys
             );
             return {
               imageId: img.imageId,
               gpt5mini: results["gpt-5-mini"],
-              gemini: results["gemini-2.0-flash"],
+              gemini: results["gemini-2.5-flash"],
             };
           } catch (error) {
             console.error(`❌ Failed to analyze image ${img.imageId}:`, error);
@@ -219,7 +219,7 @@ Provide confidence score 0-1.`;
 
         geminiAnalysis = imageDataset.map((img) => ({
           imageId: img.imageId,
-          modelName: "gemini-2.0-flash",
+          modelName: "gemini-2.5-flash",
           artifacts: { hasRedlines: false, hasDistortions: false, distortionLocations: [] },
           ratings: { movementMotion: 4, visualQuality: 4, emotionalComfort: 4 },
           specificIssues: { feetMovement: false, fingerMovement: false, eyeArtifacts: false, clothingDistortions: false },
@@ -274,7 +274,7 @@ Provide confidence score 0-1.`;
             emotionalComfort: 4.3,
             confidence: 0.85,
           },
-          "gemini-2.0-flash": {
+          "gemini-2.5-flash": {
             movementMotion: 4.0,
             visualQuality: 4.2,
             emotionalComfort: 4.1,
@@ -336,10 +336,10 @@ Provide confidence score 0-1.`;
       });
 
       const modelComparison = {
-        overallBestModel: "gemini-2.0-flash",
+        overallBestModel: "gemini-2.5-flash",
         modelRankings: [
           {
-            modelName: "gemini-2.0-flash",
+            modelName: "gemini-2.5-flash",
             overallScore: 8.7,
             strengths: ["Detailed artifact detection", "High confidence", "Cost-effective"],
             weaknesses: ["Slightly slower inference"],
@@ -352,7 +352,7 @@ Provide confidence score 0-1.`;
           },
         ],
         taskSpecificRecommendations: {
-          redlineDetection: "gemini-2.0-flash (better artifact detection)",
+          redlineDetection: "gemini-2.5-flash (better artifact detection)",
           movementAssessment: "gpt-5-mini (more consistent)",
           emotionalComfort: "tie (both perform well)",
         },
@@ -383,7 +383,7 @@ Provide confidence score 0-1.`;
 
       const enhancedPrompts = {
         "gpt-5-mini": "Enhanced prompt: Focus on specific artifact types (redlines, distortions). Use examples. Request detailed confidence scores.",
-        "gemini-2.0-flash": "Enhanced prompt: Leverage multimodal reasoning. Request spatial artifact locations. Use chain-of-thought for ratings.",
+        "gemini-2.5-flash": "Enhanced prompt: Leverage multimodal reasoning. Request spatial artifact locations. Use chain-of-thought for ratings.",
       };
 
       await ctx.runMutation(api.agentTimelines.updateTaskMetrics, {

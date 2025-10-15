@@ -49,7 +49,7 @@ export function MessageStream({
     
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 100;
       userHasScrolledRef.current = !isAtBottom;
     };
     
@@ -115,7 +115,7 @@ export function MessageStream({
     <div ref={scrollRef} className="message-stream">
       <div className="message-stream-content">
         {messages.map((message, index) => {
-          const isLastMessage = index === messages.length - 1;
+          const isLastMessage = index === messages.length - 1; // Last message is newest (at bottom)
           const isStreamingThisMessage = isStreaming && message.id === streamingMessageId;
           
           return (

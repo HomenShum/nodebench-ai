@@ -332,34 +332,41 @@ const agentRunEvents = defineTable({
   .index("by_run", ["runId", "seq"]);
 
 /* ------------------------------------------------------------------ */
-/* CHAT THREADS - FastAgentPanel conversation threads                 */
+/* CHAT - Now using @convex-dev/agent component                       */
+/* Legacy chatThreads and chatMessages tables removed                 */
 /* ------------------------------------------------------------------ */
-const chatThreads = defineTable({
+
+/* ------------------------------------------------------------------ */
+/* STREAMING CHAT - Persistent Text Streaming for FastAgentPanel     */
+/* ------------------------------------------------------------------ */
+const chatThreadsStream = defineTable({
   userId: v.id("users"),
   title: v.string(),
+  model: v.optional(v.string()),
+  agentThreadId: v.optional(v.string()), // Links to agent component thread for memory management
   pinned: v.optional(v.boolean()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })
   .index("by_user", ["userId"])
-  .index("by_user_updated", ["userId", "updatedAt"])
-  .index("by_user_pinned", ["userId", "pinned"]);
+  .index("by_user_pinned", ["userId", "pinned"])
+  .index("by_updatedAt", ["updatedAt"])
+  .index("by_agentThreadId", ["agentThreadId"]);
 
-const chatMessages = defineTable({
-  threadId: v.id("chatThreads"),
+const chatMessagesStream = defineTable({
+  threadId: v.id("chatThreadsStream"),
+  userId: v.id("users"),
   role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
   content: v.string(),
+  streamId: v.optional(v.string()), // For persistent-text-streaming (legacy)
+  agentMessageId: v.optional(v.string()), // Links to agent component message for stream deltas
   status: v.union(
-    v.literal("sending"),
+    v.literal("pending"),
     v.literal("streaming"),
     v.literal("complete"),
     v.literal("error")
   ),
-  runId: v.optional(v.id("agentRuns")),
-  streamId: v.optional(v.string()), // For persistent text streaming
-  isStreaming: v.optional(v.boolean()), // Whether message is actively streaming
   model: v.optional(v.string()),
-  fastMode: v.optional(v.boolean()),
   tokensUsed: v.optional(v.object({
     input: v.number(),
     output: v.number(),
@@ -369,8 +376,9 @@ const chatMessages = defineTable({
   updatedAt: v.number(),
 })
   .index("by_thread", ["threadId", "createdAt"])
-  .index("by_run", ["runId"])
-  .index("by_streamId", ["streamId"]);
+  .index("by_streamId", ["streamId"])
+  .index("by_agentMessageId", ["agentMessageId"])
+  .index("by_user", ["userId"]);
 
 /* ------------------------------------------------------------------ */
 /* MCP TOOLS - Available tools from connected MCP servers             */
@@ -973,8 +981,9 @@ export default defineSchema({
   mcpSessions,
   agentRuns,
   agentRunEvents,
-  chatThreads,
-  chatMessages,
+  // chatThreads and chatMessages removed - using @convex-dev/agent component
+  chatThreadsStream,
+  chatMessagesStream,
   mcpToolLearning,
   mcpGuidanceExamples,
   mcpToolHistory,

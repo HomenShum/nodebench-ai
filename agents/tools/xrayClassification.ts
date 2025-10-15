@@ -64,7 +64,7 @@ export async function classifyXRayImage(
 
   try {
     // Analyze with both GPT-5-mini and Gemini
-    const models: Array<"gpt-5-mini" | "gemini-2.0-flash"> = ['gpt-5-mini', 'gemini-2.0-flash'];
+    const models: Array<"gpt-5-mini" | "gemini-2.5-flash"> = ['gpt-5-mini', 'gemini-2.5-flash'];
     const apiKeys = {
       openai: process.env.OPENAI_API_KEY,
       google: process.env.GOOGLE_API_KEY,

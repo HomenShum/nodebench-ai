@@ -40,7 +40,7 @@
         "label": "Parallel Vision Analysis (GPT-5-mini + Gemini 2.5 Flash)",
         "payload": {
           "dataset": "{{channel:image_filtering.last}}",
-          "models": ["gpt-5-mini", "gemini-2.0-flash"],
+          "models": ["gpt-5-mini", "gemini-2.5-flash"],
           "analysisPrompt": "Analyze this VR avatar image for quality issues.\n\nDetect:\n1. Visual artifacts (redlines, distortions, glitches)\n2. Movement quality issues (frozen feet, static fingers)\n3. Eye rendering problems (red lines, artifacts)\n4. Clothing distortions\n\nRate on 1-5 scale:\n- movementMotion (1=worst/frozen, 5=best/natural)\n- visualQuality (1=worst/distorted, 5=best/clean)\n- emotionalComfort (1=worst/unsettling, 5=best/comfortable)\n\nProvide confidence score 0-1 and detailed findings."
         }
       },
@@ -48,7 +48,7 @@
         "id": "statistical_analysis",
         "kind": "code.exec",
         "label": "Statistical Analysis & Aggregation",
-        "prompt": "Using Python with pandas, numpy, and scipy:\n\n1. Parse vision analysis results: {{channel:vision_analysis.last}}\n2. Calculate inter-model agreement using Pearson correlation for each rating metric (movementMotion, visualQuality, emotionalComfort)\n3. Compute mean, median, std dev for each metric per model\n4. Calculate average ratings across both models per image\n5. Identify outliers (ratings >2 std dev from mean)\n6. Create correlation matrix between models\n\nReturn JSON with:\n{\n  \"agreement\": {\"movementMotion\": float, \"visualQuality\": float, \"emotionalComfort\": float},\n  \"averages\": {\"gpt-5-mini\": {...}, \"gemini-2.0-flash\": {...}},\n  \"outliers\": [...],\n  \"correlation_matrix\": [[...]],\n  \"summary\": \"...\"\n}"
+        "prompt": "Using Python with pandas, numpy, and scipy:\n\n1. Parse vision analysis results: {{channel:vision_analysis.last}}\n2. Calculate inter-model agreement using Pearson correlation for each rating metric (movementMotion, visualQuality, emotionalComfort)\n3. Compute mean, median, std dev for each metric per model\n4. Calculate average ratings across both models per image\n5. Identify outliers (ratings >2 std dev from mean)\n6. Create correlation matrix between models\n\nReturn JSON with:\n{\n  \"agreement\": {\"movementMotion\": float, \"visualQuality\": float, \"emotionalComfort\": float},\n  \"averages\": {\"gpt-5-mini\": {...}, \"gemini-2.5-flash\": {...}},\n  \"outliers\": [...],\n  \"correlation_matrix\": [[...]],\n  \"summary\": \"...\"\n}"
       },
       {
         "id": "visualization",
@@ -147,7 +147,7 @@
       "Added image_filtering node using image.filter tool",
       "Replaced structured vision nodes with vision.multi tool for REAL vision API calls",
       "Changed kind: 'custom' to kind: 'code.exec' for statistical analysis and visualization",
-      "Updated model name from 'gemini-2.0-flash' to 'gemini-2.5-flash'",
+      "Updated model name from 'gemini-2.5-flash' to 'gemini-2.5-flash'",
       "Added proper payload structure for custom tool nodes",
       "Updated edges to reflect new node structure"
     ]

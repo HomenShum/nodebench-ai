@@ -101,7 +101,7 @@ Provide confidence score 0-1.`;
         testImageUrl,
         testImageId,
         testPrompt,
-        ["gpt-5-mini", "gemini-2.0-flash"],
+        ["gpt-5-mini", "gemini-2.5-flash"],
         apiKeys
       );
       

@@ -46,7 +46,7 @@ const imageFilteringTool = async (payload: any) => {
 const visionParallelTool = async (payload: any) => {
   const dataset = payload?.dataset || [];
   const prompt = payload?.analysisPrompt || "Analyze this image for quality issues.";
-  const models: Array<"gpt-5-mini" | "gemini-2.0-flash"> = ['gpt-5-mini', 'gemini-2.0-flash'];
+  const models: Array<"gpt-5-mini" | "gemini-2.5-flash"> = ['gpt-5-mini', 'gemini-2.5-flash'];
   const apiKeys = {
     openai: process.env.OPENAI_API_KEY,
     google: process.env.GOOGLE_API_KEY,

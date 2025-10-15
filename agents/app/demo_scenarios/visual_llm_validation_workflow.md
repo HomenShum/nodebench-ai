@@ -37,7 +37,7 @@ Orchestrator
 ```
 Orchestrator
 ├── Main: Visual Analysis Coordinator
-│   ├── Leaf: GPT-4o Vision Analysis
+│   ├── Leaf: GPT-5 Vision Analysis
 │   ├── Leaf: Gemini 2.0 Flash Vision Analysis
 │   ├── Leaf: Llama Vision Analysis (via OpenRouter)
 │   ├── Leaf: Claude Vision Analysis (via OpenRouter)
@@ -287,9 +287,9 @@ const visualLLMValidationGraph = {
     
     // Phase 2: Multi-Model Analysis (parallel)
     { 
-      id: "gpt4_vision", 
+      id: "gpt5_vision", 
       kind: "answer", 
-      label: "GPT-4o Vision Analysis",
+      label: "GPT-5 Vision Analysis",
       prompt: "Analyze images for artifacts, distortions, and quality. Use structured output schema. Images: {{channel:dataset_prep.last}}"
     },
     { 

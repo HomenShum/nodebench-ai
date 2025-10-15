@@ -214,7 +214,7 @@ export const extractAndIndexFile = action({
     let response;
     try {
       response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents,
         config: {
           responseMimeType: "application/json",
@@ -229,7 +229,7 @@ export const extractAndIndexFile = action({
           e,
         );
         response = await ai.models.generateContent({
-          model: "gemini-2.0-flash",
+          model: "gemini-2.5-flash",
           contents,
           config: {
             responseMimeType: "application/json",
@@ -416,7 +416,7 @@ export const answerFromCache = action({
       .join("\n\n---\n\n");
 
     const rsp = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: createUserContent([
         { text: `You are answering questions using ONLY the provided cached summaries. If information isn't present, say you don't have enough info.` },
         { text: `Context:\n${contextText}` },
