@@ -35,6 +35,7 @@ import type * as agents_lib_types from "../agents/lib/types.js";
 import type * as agents_orchestrate from "../agents/orchestrate.js";
 import type * as agents_promptPlan from "../agents/promptPlan.js";
 import type * as agents_seedProductionMocks from "../agents/seedProductionMocks.js";
+import type * as agents_specialized from "../agents/specialized.js";
 import type * as agents_timelineMock from "../agents/timelineMock.js";
 import type * as agents_visualLLMValidation from "../agents/visualLLMValidation.js";
 import type * as agents_xrayWorkflow from "../agents/xrayWorkflow.js";
@@ -94,6 +95,7 @@ import type * as orchestrator_planner from "../orchestrator/planner.js";
 import type * as orchestrator_router from "../orchestrator/router.js";
 import type * as orchestrator_subAgents from "../orchestrator/subAgents.js";
 import type * as orchestrator_types from "../orchestrator/types.js";
+import type * as orchestrator_workflows from "../orchestrator/workflows.js";
 import type * as ossStats from "../ossStats.js";
 import type * as polar from "../polar.js";
 import type * as presence from "../presence.js";
@@ -171,6 +173,7 @@ declare const fullApi: ApiFromModules<{
   "agents/orchestrate": typeof agents_orchestrate;
   "agents/promptPlan": typeof agents_promptPlan;
   "agents/seedProductionMocks": typeof agents_seedProductionMocks;
+  "agents/specialized": typeof agents_specialized;
   "agents/timelineMock": typeof agents_timelineMock;
   "agents/visualLLMValidation": typeof agents_visualLLMValidation;
   "agents/xrayWorkflow": typeof agents_xrayWorkflow;
@@ -230,6 +233,7 @@ declare const fullApi: ApiFromModules<{
   "orchestrator/router": typeof orchestrator_router;
   "orchestrator/subAgents": typeof orchestrator_subAgents;
   "orchestrator/types": typeof orchestrator_types;
+  "orchestrator/workflows": typeof orchestrator_workflows;
   ossStats: typeof ossStats;
   polar: typeof polar;
   presence: typeof presence;
@@ -3321,6 +3325,201 @@ export declare const components: {
           | { previousAttempts: number; state: "running" }
           | { state: "finished" }
         >
+      >;
+    };
+  };
+  workflow: {
+    journal: {
+      load: FunctionReference<
+        "query",
+        "internal",
+        { workflowId: string },
+        {
+          journalEntries: Array<{
+            _creationTime: number;
+            _id: string;
+            step: {
+              args: any;
+              argsSize: number;
+              completedAt?: number;
+              functionType: "query" | "mutation" | "action";
+              handle: string;
+              inProgress: boolean;
+              name: string;
+              runResult?:
+                | { kind: "success"; returnValue: any }
+                | { error: string; kind: "failed" }
+                | { kind: "canceled" };
+              startedAt: number;
+              workId?: string;
+            };
+            stepNumber: number;
+            workflowId: string;
+          }>;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+          ok: boolean;
+          workflow: {
+            _creationTime: number;
+            _id: string;
+            args: any;
+            generationNumber: number;
+            logLevel?: any;
+            name?: string;
+            onComplete?: { context?: any; fnHandle: string };
+            runResult?:
+              | { kind: "success"; returnValue: any }
+              | { error: string; kind: "failed" }
+              | { kind: "canceled" };
+            startedAt?: any;
+            state?: any;
+            workflowHandle: string;
+          };
+        }
+      >;
+      startSteps: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          generationNumber: number;
+          steps: Array<{
+            retry?:
+              | boolean
+              | { base: number; initialBackoffMs: number; maxAttempts: number };
+            schedulerOptions?: { runAt?: number } | { runAfter?: number };
+            step: {
+              args: any;
+              argsSize: number;
+              completedAt?: number;
+              functionType: "query" | "mutation" | "action";
+              handle: string;
+              inProgress: boolean;
+              name: string;
+              runResult?:
+                | { kind: "success"; returnValue: any }
+                | { error: string; kind: "failed" }
+                | { kind: "canceled" };
+              startedAt: number;
+              workId?: string;
+            };
+          }>;
+          workflowId: string;
+          workpoolOptions?: {
+            defaultRetryBehavior?: {
+              base: number;
+              initialBackoffMs: number;
+              maxAttempts: number;
+            };
+            logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism?: number;
+            retryActionsByDefault?: boolean;
+          };
+        },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          step: {
+            args: any;
+            argsSize: number;
+            completedAt?: number;
+            functionType: "query" | "mutation" | "action";
+            handle: string;
+            inProgress: boolean;
+            name: string;
+            runResult?:
+              | { kind: "success"; returnValue: any }
+              | { error: string; kind: "failed" }
+              | { kind: "canceled" };
+            startedAt: number;
+            workId?: string;
+          };
+          stepNumber: number;
+          workflowId: string;
+        }>
+      >;
+    };
+    workflow: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        { workflowId: string },
+        null
+      >;
+      cleanup: FunctionReference<
+        "mutation",
+        "internal",
+        { workflowId: string },
+        boolean
+      >;
+      complete: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          generationNumber: number;
+          runResult:
+            | { kind: "success"; returnValue: any }
+            | { error: string; kind: "failed" }
+            | { kind: "canceled" };
+          workflowId: string;
+        },
+        null
+      >;
+      create: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          maxParallelism?: number;
+          onComplete?: { context?: any; fnHandle: string };
+          startAsync?: boolean;
+          workflowArgs: any;
+          workflowHandle: string;
+          workflowName: string;
+        },
+        string
+      >;
+      getStatus: FunctionReference<
+        "query",
+        "internal",
+        { workflowId: string },
+        {
+          inProgress: Array<{
+            _creationTime: number;
+            _id: string;
+            step: {
+              args: any;
+              argsSize: number;
+              completedAt?: number;
+              functionType: "query" | "mutation" | "action";
+              handle: string;
+              inProgress: boolean;
+              name: string;
+              runResult?:
+                | { kind: "success"; returnValue: any }
+                | { error: string; kind: "failed" }
+                | { kind: "canceled" };
+              startedAt: number;
+              workId?: string;
+            };
+            stepNumber: number;
+            workflowId: string;
+          }>;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+          workflow: {
+            _creationTime: number;
+            _id: string;
+            args: any;
+            generationNumber: number;
+            logLevel?: any;
+            name?: string;
+            onComplete?: { context?: any; fnHandle: string };
+            runResult?:
+              | { kind: "success"; returnValue: any }
+              | { error: string; kind: "failed" }
+              | { kind: "canceled" };
+            startedAt?: any;
+            state?: any;
+            workflowHandle: string;
+          };
+        }
       >;
     };
   };

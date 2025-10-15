@@ -2,6 +2,7 @@ import { defineApp } from "convex/server";
 import prosemirrorSync from "@convex-dev/prosemirror-sync/convex.config";
 import presence from "@convex-dev/presence/convex.config";
 import workpool from "@convex-dev/workpool/convex.config";
+import workflow from "@convex-dev/workflow/convex.config";
 import rag from "@convex-dev/rag/convex.config";
 import twilio from "@convex-dev/twilio/convex.config";
 import agent from "@convex-dev/agent/convex.config";
@@ -14,6 +15,7 @@ app.use(prosemirrorSync);
 app.use(presence);
 app.use(agent);
 app.use(workpool);
+app.use(workflow);
 app.use(rag);
 app.use(persistentTextStreaming);
 

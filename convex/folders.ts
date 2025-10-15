@@ -6,8 +6,14 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 /**
  * Utility function to safely extract and validate user ID from authentication
  * Handles malformed user IDs with pipe characters that may come from auth providers
+ * Supports evaluation mode where userId is passed in ctx.evaluationUserId
  */
 async function getSafeUserId(ctx: any): Promise<Id<"users">> {
+  // Support evaluation mode where userId is passed in ctx.evaluationUserId
+  if ((ctx as any).evaluationUserId) {
+    return (ctx as any).evaluationUserId as Id<"users">;
+  }
+
   const rawUserId = await getAuthUserId(ctx);
   if (!rawUserId) {
     throw new Error("Not authenticated");
