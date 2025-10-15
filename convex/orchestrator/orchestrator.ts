@@ -75,12 +75,12 @@ async function executeStep(
     }
 
     // Create or continue thread
-    let thread;
+    let threadId;
     if (context.threadId) {
-      thread = await agent.continueThread(ctx, { threadId: context.threadId });
+      threadId = context.threadId;
     } else {
       const result = await agent.createThread(ctx, {});
-      thread = result.thread;
+      threadId = result.threadId;
       context.threadId = result.threadId;
     }
 
@@ -89,17 +89,18 @@ async function executeStep(
       (ctx as any).evaluationUserId = context.userId;
     }
 
-    // Execute with the agent - use loop to handle multi-step tool calling
+    // Execute with the agent - use streamText and await full result
     let finalResponse = "";
     let attempts = 0;
     const maxAttempts = 5;
 
     while (attempts < maxAttempts) {
-      const response = await thread.generateText({ prompt });
+      const result = await agent.streamText(ctx, { threadId }, { prompt });
+      const response = await result.text;
       attempts++;
 
-      if (response.text && response.text.trim().length > 0) {
-        finalResponse = response.text;
+      if (response && response.trim().length > 0) {
+        finalResponse = response;
         console.log(`[Orchestrator] Step ${step.id} got response on attempt ${attempts}`);
         break;
       }
@@ -244,24 +245,25 @@ export async function executeSimple(
 
   try {
     // Create thread
-    const { thread, threadId } = await agent.createThread(ctx, {});
+    const { threadId } = await agent.createThread(ctx, {});
 
     // Inject userId into context for evaluation
     if (context.userId) {
       (ctx as any).evaluationUserId = context.userId;
     }
 
-    // Execute - use loop to handle multi-step tool calling
+    // Execute - use streamText and await full result
     let finalResponse = "";
     let attempts = 0;
     const maxAttempts = 5;
 
     while (attempts < maxAttempts) {
-      const response = await thread.generateText({ prompt: userQuery });
+      const result = await agent.streamText(ctx, { threadId }, { prompt: userQuery });
+      const response = await result.text;
       attempts++;
 
-      if (response.text && response.text.trim().length > 0) {
-        finalResponse = response.text;
+      if (response && response.trim().length > 0) {
+        finalResponse = response;
         console.log(`[Orchestrator] Simple execution got response on attempt ${attempts}`);
         break;
       }
