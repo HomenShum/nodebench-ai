@@ -1,7 +1,7 @@
 // src/components/FastAgentPanel/FastAgentPanel.UIMessageBubble.tsx
 // Message bubble component optimized for UIMessage format from Agent component
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
@@ -18,7 +18,9 @@ import { CompanySelectionCard, type CompanyOption } from './CompanySelectionCard
 import { PeopleSelectionCard, type PersonOption } from './PeopleSelectionCard';
 import { EventSelectionCard, type EventOption } from './EventSelectionCard';
 import { NewsSelectionCard, type NewsArticleOption } from './NewsSelectionCard';
-import { StepTimeline, toolPartsToTimelineSteps } from './StepTimeline';
+import { CollapsibleAgentProgress } from './CollapsibleAgentProgress';
+import { RichMediaSection } from './RichMediaSection';
+import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaExtractor';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
@@ -471,8 +473,42 @@ export function UIMessageBubble({
     p.type === 'file'
   );
 
-  // Note: Media is displayed in tool results via ToolResultPopover
-  // Final answer text is rendered as-is without media extraction
+  // Extract media from tool results (not from final text, since agent synthesizes new answer)
+  // Tool results are stored in message.parts and contain the raw tool output with media markers
+  const extractedMedia = useMemo(() => {
+    if (isUser) return { youtubeVideos: [], secDocuments: [], images: [] };
+
+    // Extract all tool-result parts from message
+    const toolResultParts = message.parts.filter((p): p is any =>
+      p.type === 'tool-result'
+    );
+
+    // Combine media from all tool results
+    const combinedMedia = toolResultParts.reduce((acc, part) => {
+      const resultText = String(part.result || '');
+      const media = extractMediaFromText(resultText);
+
+      return {
+        youtubeVideos: [...acc.youtubeVideos, ...media.youtubeVideos],
+        secDocuments: [...acc.secDocuments, ...media.secDocuments],
+        images: [...acc.images, ...media.images],
+      };
+    }, { youtubeVideos: [], secDocuments: [], images: [] });
+
+    console.log('[UIMessageBubble] Extracted media from tool results:', {
+      toolResultCount: toolResultParts.length,
+      youtubeCount: combinedMedia.youtubeVideos.length,
+      secCount: combinedMedia.secDocuments.length,
+      imageCount: combinedMedia.images.length,
+    });
+
+    return combinedMedia;
+  }, [message.parts, isUser]);
+
+  // Clean text by removing media markers (for display purposes)
+  const cleanedText = useMemo(() => {
+    return removeMediaMarkersFromText(visibleText || '');
+  }, [visibleText]);
 
   return (
     <div className={cn(
@@ -515,20 +551,18 @@ export function UIMessageBubble({
           </div>
         )}
 
-        {/* IMPROVED HIERARCHY: Process details at top, answer at bottom */}
-
-        {/* 1. Reasoning (if any) - Shows thinking process */}
-        {visibleReasoning && (
-          <div className="text-xs text-gray-500 italic px-3 py-1 bg-gray-50 rounded-lg border border-gray-200">
-            💭 {visibleReasoning}
-          </div>
+        {/* NEW PRESENTATION LAYER: Polished media display FIRST */}
+        {!isUser && (
+          <RichMediaSection media={extractedMedia} showCitations={false} />
         )}
 
-        {/* 2. Tool Calls as Timeline - Shows what actions were taken */}
-        {toolParts.length > 0 && (
-          <StepTimeline
-            steps={toolPartsToTimelineSteps(toolParts)}
+        {/* Collapsible Agent Progress Section - Process details hidden by default */}
+        {!isUser && (
+          <CollapsibleAgentProgress
+            toolParts={toolParts}
+            reasoning={visibleReasoning}
             isStreaming={message.status === 'streaming'}
+            defaultExpanded={false}
             onCompanySelect={onCompanySelect}
             onPersonSelect={onPersonSelect}
             onEventSelect={onEventSelect}
@@ -587,7 +621,8 @@ export function UIMessageBubble({
         })}
 
         {/* 4. Main text content - THE ANSWER (at bottom for natural reading flow) */}
-        {visibleText && (
+        {/* Use cleanedText for assistant messages to remove media markers, visibleText for user messages */}
+        {(cleanedText || visibleText) && (
           <div className={cn(
             "rounded-lg px-4 py-2 shadow-sm whitespace-pre-wrap",
             isUser
@@ -645,7 +680,7 @@ export function UIMessageBubble({
                 },
               }}
             >
-              {visibleText || '...'}
+              {isUser ? (visibleText || '...') : (cleanedText || visibleText || '...')}
             </ReactMarkdown>
           </div>
         )}

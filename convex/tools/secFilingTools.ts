@@ -120,7 +120,21 @@ export const searchSecFilings = createTool({
           return `Failed to look up ticker ${args.ticker}. Please verify the ticker symbol is correct.`;
         }
 
-        const tickerData = await tickerResponse.json();
+        // Check content type to ensure we got JSON, not HTML
+        const contentType = tickerResponse.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          console.error(`[searchSecFilings] Expected JSON but got ${contentType}`);
+          return `SEC API returned unexpected content type. The ticker lookup service may be temporarily unavailable. Please try again in a moment.`;
+        }
+
+        let tickerData;
+        try {
+          tickerData = await tickerResponse.json();
+        } catch (parseError) {
+          console.error(`[searchSecFilings] Failed to parse ticker response:`, parseError);
+          return `Failed to parse SEC API response for ticker ${args.ticker}. The service may be temporarily unavailable.`;
+        }
+
         cik = tickerData?.cik || null;
 
         if (!cik) {
@@ -130,7 +144,7 @@ export const searchSecFilings = createTool({
 
       // Pad CIK to 10 digits
       const paddedCik = cik!.padStart(10, '0');
-      
+
       // Fetch company submissions
       const submissionsUrl = `https://data.sec.gov/submissions/CIK${paddedCik}.json`;
       const response = await fetch(submissionsUrl, {
@@ -141,7 +155,20 @@ export const searchSecFilings = createTool({
         return `Failed to fetch SEC filings for CIK ${paddedCik}. Status: ${response.status}`;
       }
 
-      const data = await response.json();
+      // Check content type to ensure we got JSON, not HTML
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        console.error(`[searchSecFilings] Expected JSON but got ${contentType}`);
+        return `SEC API returned unexpected content type. The service may be temporarily unavailable. Please try again in a moment.`;
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error(`[searchSecFilings] Failed to parse SEC response:`, parseError);
+        return `Failed to parse SEC API response. The service may be temporarily unavailable.`;
+      }
       if (!companyName) {
         companyName = data.name || "Unknown Company";
       }
@@ -330,12 +357,26 @@ export const getCompanyInfo = createTool({
           `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&ticker=${tickerUpper}&output=json`,
           { headers: { "User-Agent": userAgent } }
         );
-        
+
         if (!tickerResponse.ok) {
           return `Failed to look up ticker ${args.ticker}.`;
         }
-        
-        const tickerData = await tickerResponse.json();
+
+        // Check content type
+        const contentType = tickerResponse.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          console.error(`[getCompanyInfo] Expected JSON but got ${contentType}`);
+          return `SEC API returned unexpected content type. Please try again in a moment.`;
+        }
+
+        let tickerData;
+        try {
+          tickerData = await tickerResponse.json();
+        } catch (parseError) {
+          console.error(`[getCompanyInfo] Failed to parse ticker response:`, parseError);
+          return `Failed to parse SEC API response for ticker ${args.ticker}.`;
+        }
+
         cik = tickerData?.cik || null;
       }
 
@@ -344,7 +385,7 @@ export const getCompanyInfo = createTool({
       }
 
       const paddedCik = cik.padStart(10, '0');
-      
+
       // Fetch company data
       const url = `https://data.sec.gov/submissions/CIK${paddedCik}.json`;
       const response = await fetch(url, {
@@ -355,7 +396,20 @@ export const getCompanyInfo = createTool({
         return `Failed to fetch company information. Status: ${response.status}`;
       }
 
-      const data = await response.json();
+      // Check content type
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        console.error(`[getCompanyInfo] Expected JSON but got ${contentType}`);
+        return `SEC API returned unexpected content type. Please try again in a moment.`;
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error(`[getCompanyInfo] Failed to parse response:`, parseError);
+        return `Failed to parse SEC API response.`;
+      }
 
       const result = `Company Information:
 
