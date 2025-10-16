@@ -235,15 +235,25 @@ export const listUserThreads = query({
     const enrichedThreads = await Promise.all(
       threads.page.map(async (thread: any) => {
         try {
+          console.log(`[listUserThreads] Processing thread ${thread._id}, type: ${typeof thread._id}`);
+
           // Get messages for this thread
           const messagesResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
             threadId: thread._id,
             order: "asc",
             paginationOpts: { cursor: null, numItems: 1000 },
           });
-          
-          const messages = messagesResult.page;
+
+          console.log(`[listUserThreads] messagesResult for ${thread._id}:`, {
+            hasPage: !!messagesResult.page,
+            pageLength: messagesResult.page?.length,
+            isDone: messagesResult.isDone,
+          });
+
+          const messages = messagesResult.page || [];
           const messageCount = messages.length;
+
+          console.log(`[listUserThreads] Thread ${thread._id}: Found ${messageCount} messages`);
           
           // Extract unique tools and models from messages
           const toolsUsed = new Set<string>();

@@ -164,6 +164,21 @@ export function FastAgentPanel({
   // Use the appropriate data based on mode
   const threads = chatMode === 'agent' ? agentThreads : streamingThreads;
 
+  // Debug: Log threads data
+  useEffect(() => {
+    if (threads && threads.length > 0) {
+      console.log('[FastAgentPanel] Threads received:', threads.length);
+      console.log('[FastAgentPanel] First thread:', {
+        _id: threads[0]._id,
+        title: threads[0].title,
+        messageCount: threads[0].messageCount,
+        lastMessage: threads[0].lastMessage?.substring(0, 50),
+        toolsUsed: threads[0].toolsUsed,
+        modelsUsed: threads[0].modelsUsed,
+      });
+    }
+  }, [threads]);
+
   // For agent mode, use the regular messages
   // For streaming mode, we use streamingMessages directly (UIMessage format)
   const messages = agentMessages;
