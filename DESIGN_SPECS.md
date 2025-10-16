@@ -326,3 +326,39 @@ FastAgentPanel Streaming Integration (Jan 2025)
   - MessageStream: Unified message display supporting both modes
 - Schema: chatThreadsStream and chatMessagesStream tables with streamId and agentThreadId support (convex/schema.ts)
 - Component registration: persistentTextStreaming and agent registered in convex/convex.config.ts
+
+FastAgentPanel Presentation Layer Enhancement (Jan 2025)
+- **Goal**: Transform raw agent output into a polished, user-friendly interface while maintaining transparency
+- **Architecture**: Separate "polished answer" (default view) from "agent process" (collapsible details)
+- **Components**:
+  - VideoCard.tsx: Reusable video card with thumbnail, play button overlay, and metadata
+  - VideoCarousel: Horizontal scrollable carousel for multiple videos
+  - SourceCard.tsx: Unified source/document preview card with favicon, title, domain, and description
+  - SourceGrid: Responsive grid layout for sources with optional citation numbers
+  - RichMediaSection.tsx: Orchestrates polished media display (videos, sources, images)
+  - CollapsibleAgentProgress.tsx: Wraps agent process details (tools, reasoning) in expandable section
+  - utils/mediaExtractor.ts: Extracts media from text using HTML comment markers
+- **Display Hierarchy** (UIMessageBubble):
+  1. Agent role badge (if specialized agent)
+  2. Rich media section (videos, sources, images) - polished display
+  3. Collapsible agent progress (reasoning, tool timeline) - collapsed by default
+  4. Entity selection cards (companies, people, events, news)
+  5. Main answer text (cleaned of media markers)
+  6. Status indicators and action buttons
+- **Media Extraction**:
+  - YouTube videos: Extracted from `<!-- YOUTUBE_GALLERY_DATA -->` HTML comments
+  - SEC documents: Extracted from `<!-- SEC_GALLERY_DATA -->` HTML comments
+  - Images: Extracted from markdown `![alt](url)` syntax
+  - Media markers removed from final answer text to avoid duplication
+- **User Experience**:
+  - Default view shows polished answer with rich media cards
+  - Agent process details hidden in collapsible section (click to expand)
+  - Videos appear as interactive cards with thumbnails and play buttons
+  - Sources appear as rich preview cards with favicons and metadata
+  - All cards are clickable and open in new tabs
+  - Responsive design for mobile and desktop
+- **Accessibility**:
+  - Keyboard navigation for collapsible sections
+  - Alt text for images
+  - ARIA labels for interactive elements
+  - Screen reader support

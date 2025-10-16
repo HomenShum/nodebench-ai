@@ -17,10 +17,20 @@ Key Paths
   - FastAgentPanel.tsx       # Main container with dual-mode chat (Agent/Streaming toggle)
   - FastAgentPanel.StreamingMessage.tsx # Streaming message component using useStream hook
   - FastAgentPanel.MessageStream.tsx    # Unified message display for both modes
+  - FastAgentPanel.UIMessageBubble.tsx  # Message bubble with presentation layer (polished media + collapsible process)
   - FastAgentPanel.ThreadList.tsx       # Thread sidebar with search/pin/delete
   - FastAgentPanel.InputBar.tsx         # Auto-resizing input with keyboard shortcuts
   - FastAgentPanel.Settings.tsx         # Settings panel for model/mode configuration
+  - VideoCard.tsx            # Reusable video card component with thumbnail and play button
+  - SourceCard.tsx           # Unified source/document preview card with metadata
+  - RichMediaSection.tsx     # Polished media display orchestrator (videos, sources, images)
+  - CollapsibleAgentProgress.tsx # Collapsible section for agent process details
+  - MediaGallery.tsx         # YouTube and SEC document gallery components (legacy)
+  - StepTimeline.tsx         # Timeline component for agent progress visualization
+  - ToolResultPopover.tsx    # Popover for detailed tool result inspection
   - types/                   # TypeScript type definitions (message, thread, stream, agent)
+  - utils/
+    - mediaExtractor.ts      # Extract media from text using HTML comment markers
 - src/components/
   - AIChatPanel.tsx           # AI chat with model selector; now includes an Orchestrator toggle to route send to Convex orchestrator and link to Agents timeline
 
