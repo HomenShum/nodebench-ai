@@ -29,6 +29,7 @@ export interface TimelineStep {
   status: 'pending' | 'running' | 'complete' | 'error';
   agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
   toolName?: string;
+  args?: any; // Tool arguments
   result?: any;
   error?: string;
   elapsedMs?: number;
@@ -184,7 +185,7 @@ export function StepTimeline({
                             setSelectedToolResult({
                               toolName: step.toolName!,
                               result: step.result,
-                              args: step.description,
+                              args: step.args, // Pass actual args, not description
                               error: step.error,
                             });
                           }}
@@ -318,6 +319,7 @@ export function toolPartsToTimelineSteps(toolParts: ToolUIPart[]): TimelineStep[
       description: args ? `Arguments: ${JSON.stringify(args)}` : undefined,
       status,
       toolName,
+      args, // Store args separately for popover
       result,
       error,
     });
