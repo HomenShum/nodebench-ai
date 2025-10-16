@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
 import { YouTubeGallery, SECDocumentGallery, type YouTubeVideo, type SECDocument } from './MediaGallery';
 import { MermaidDiagram } from './MermaidDiagram';
+import { FileViewer, type FileViewerFile } from './FileViewer';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
@@ -86,6 +87,19 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
   const secMatch = outputText.match(/<!-- SEC_GALLERY_DATA\n([\s\S]*?)\n-->/);
   const secDocuments: SECDocument[] = secMatch ? JSON.parse(secMatch[1]) : [];
 
+  // Convert SEC documents to FileViewer format
+  const fileViewerFiles: FileViewerFile[] = secDocuments.map(doc => ({
+    url: doc.viewerUrl || doc.documentUrl,
+    fileType: doc.documentUrl.endsWith('.pdf') ? 'pdf' : 'html' as 'pdf' | 'html' | 'txt',
+    title: doc.title,
+    metadata: {
+      formType: doc.formType,
+      date: doc.filingDate,
+      source: 'SEC EDGAR',
+      accessionNumber: doc.accessionNumber,
+    },
+  }));
+
   // Check if this output contains multiple images (for gallery layout)
   const imageMatches = outputText.match(/!\[.*?\]\(.*?\)/g) || [];
   const imageCount = imageMatches.length;
@@ -117,8 +131,8 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
       {/* Render YouTube gallery */}
       {youtubeVideos.length > 0 && <YouTubeGallery videos={youtubeVideos} />}
 
-      {/* Render SEC documents gallery */}
-      {secDocuments.length > 0 && <SECDocumentGallery documents={secDocuments} />}
+      {/* Render FileViewer for SEC documents (replaces SECDocumentGallery) */}
+      {fileViewerFiles.length > 0 && <FileViewer files={fileViewerFiles} />}
 
       {/* Render content before images */}
       {beforeImages && (
