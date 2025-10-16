@@ -225,12 +225,26 @@ export function ToolResultPopover({
                 )}
 
                 {/* JSON result */}
-                {typeof cleanedResult !== 'string' && (
+                {typeof cleanedResult !== 'string' && cleanedResult !== undefined && cleanedResult !== null && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-700 mb-2">Output</h3>
                     <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto max-h-64">
                       {formattedResult}
                     </pre>
+                  </div>
+                )}
+
+                {/* No result message */}
+                {(cleanedResult === undefined || cleanedResult === null || (typeof cleanedResult === 'string' && !cleanedResult.trim())) &&
+                 extractedMedia.youtubeVideos.length === 0 &&
+                 extractedMedia.secDocuments.length === 0 &&
+                 extractedMedia.images.length === 0 && (
+                  <div className="flex items-center justify-center p-8 text-gray-500">
+                    <div className="text-center">
+                      <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm">No result available</p>
+                      <p className="text-xs mt-1">This tool may still be executing or returned no data</p>
+                    </div>
                   </div>
                 )}
               </div>

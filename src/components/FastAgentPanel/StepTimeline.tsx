@@ -295,8 +295,18 @@ export function toolPartsToTimelineSteps(toolParts: ToolUIPart[]): TimelineStep[
     }
 
     const args = (part as any).args;
-    const result = (part as any).result;
+    const result = (part as any).result || (part as any).output; // Try both 'result' and 'output'
     const error = (part as any).error;
+
+    // Debug logging
+    if (result === undefined && part.type.startsWith('tool-result')) {
+      console.log('[StepTimeline] Tool result is undefined:', {
+        toolName,
+        partType: part.type,
+        partKeys: Object.keys(part),
+        part,
+      });
+    }
 
     // Determine status based on part type
     let status: TimelineStep['status'] = 'pending';
