@@ -540,6 +540,10 @@ export function UIMessageBubble({
           <StepTimeline
             steps={toolPartsToTimelineSteps(toolParts)}
             isStreaming={message.status === 'streaming'}
+            onCompanySelect={onCompanySelect}
+            onPersonSelect={onPersonSelect}
+            onEventSelect={onEventSelect}
+            onNewsSelect={onNewsSelect}
           />
         )}
 

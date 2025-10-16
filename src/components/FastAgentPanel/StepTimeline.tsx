@@ -5,10 +5,19 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle2, Loader2, XCircle, Clock, Wrench, Users, FileText, BarChart3, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ToolUIPart } from 'ai';
+import { ToolResultPopover } from './ToolResultPopover';
+import type { CompanyOption } from './CompanySelectionCard';
+import type { PersonOption } from './PeopleSelectionCard';
+import type { EventOption } from './EventSelectionCard';
+import type { NewsArticleOption } from './NewsSelectionCard';
 
 interface StepTimelineProps {
   steps: TimelineStep[];
   isStreaming?: boolean;
+  onCompanySelect?: (company: CompanyOption) => void;
+  onPersonSelect?: (person: PersonOption) => void;
+  onEventSelect?: (event: EventOption) => void;
+  onNewsSelect?: (article: NewsArticleOption) => void;
 }
 
 export interface TimelineStep {
@@ -54,8 +63,21 @@ const statusColors = {
  * StepTimeline - Vertical timeline showing agent progress
  * Replaces multiple "Step X" cards with a cohesive timeline view
  */
-export function StepTimeline({ steps, isStreaming }: StepTimelineProps) {
+export function StepTimeline({
+  steps,
+  isStreaming,
+  onCompanySelect,
+  onPersonSelect,
+  onEventSelect,
+  onNewsSelect,
+}: StepTimelineProps) {
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+  const [selectedToolResult, setSelectedToolResult] = useState<{
+    toolName: string;
+    result: unknown;
+    args?: unknown;
+    error?: string;
+  } | null>(null);
 
   const toggleStep = (stepId: string) => {
     setExpandedSteps(prev => {
@@ -156,9 +178,20 @@ export function StepTimeline({ steps, isStreaming }: StepTimelineProps) {
                         )}
                       </div>
                       {step.toolName && (
-                        <div className="text-xs text-gray-600 mt-0.5">
-                          Tool: <code className="bg-gray-100 px-1 rounded">{step.toolName}</code>
-                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedToolResult({
+                              toolName: step.toolName!,
+                              result: step.result,
+                              args: step.description,
+                              error: step.error,
+                            });
+                          }}
+                          className="text-xs text-gray-600 mt-0.5 hover:text-blue-600 transition-colors"
+                        >
+                          Tool: <code className="bg-gray-100 px-1 rounded hover:bg-blue-100 cursor-pointer">{step.toolName}</code>
+                        </button>
                       )}
                     </div>
 
@@ -208,6 +241,22 @@ export function StepTimeline({ steps, isStreaming }: StepTimelineProps) {
           })}
         </div>
       </div>
+
+      {/* Tool Result Popover */}
+      {selectedToolResult && (
+        <ToolResultPopover
+          isOpen={!!selectedToolResult}
+          onClose={() => setSelectedToolResult(null)}
+          toolName={selectedToolResult.toolName}
+          result={selectedToolResult.result}
+          args={selectedToolResult.args}
+          error={selectedToolResult.error}
+          onCompanySelect={onCompanySelect}
+          onPersonSelect={onPersonSelect}
+          onEventSelect={onEventSelect}
+          onNewsSelect={onNewsSelect}
+        />
+      )}
     </div>
   );
 }
