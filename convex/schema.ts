@@ -1048,4 +1048,52 @@ export default defineSchema({
     .index("by_thread_and_name", ["threadId", "companyName"])
     .index("by_thread", ["threadId"]),
 
+  /* ------------------------------------------------------------------ */
+  /* CONFIRMED PEOPLE - User-confirmed person selections                */
+  /* ------------------------------------------------------------------ */
+  confirmedPeople: defineTable({
+    threadId: v.string(),                    // Links to conversation thread
+    personName: v.string(),                  // User's original query term (e.g., "Michael Jordan")
+    confirmedId: v.string(),                 // Unique identifier for the person
+    confirmedName: v.string(),               // Full name of the confirmed person
+    confirmedProfession: v.optional(v.string()), // Profession/occupation
+    confirmedOrganization: v.optional(v.string()), // Organization/company
+    confirmedLocation: v.optional(v.string()), // Location
+    createdAt: v.number(),                   // Timestamp of confirmation
+  })
+    .index("by_thread_and_name", ["threadId", "personName"])
+    .index("by_thread", ["threadId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CONFIRMED EVENTS - User-confirmed event selections                 */
+  /* ------------------------------------------------------------------ */
+  confirmedEvents: defineTable({
+    threadId: v.string(),                    // Links to conversation thread
+    eventQuery: v.string(),                  // User's original query term (e.g., "Apple Event")
+    confirmedId: v.string(),                 // Unique identifier for the event
+    confirmedName: v.string(),               // Full name of the confirmed event
+    confirmedDate: v.optional(v.string()),   // Event date
+    confirmedLocation: v.optional(v.string()), // Event location
+    confirmedDescription: v.optional(v.string()), // Event description
+    createdAt: v.number(),                   // Timestamp of confirmation
+  })
+    .index("by_thread_and_query", ["threadId", "eventQuery"])
+    .index("by_thread", ["threadId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CONFIRMED NEWS TOPICS - User-confirmed news article selections     */
+  /* ------------------------------------------------------------------ */
+  confirmedNewsTopics: defineTable({
+    threadId: v.string(),                    // Links to conversation thread
+    newsQuery: v.string(),                   // User's original query term (e.g., "Tesla news")
+    confirmedId: v.string(),                 // Unique identifier for the article
+    confirmedHeadline: v.string(),           // Article headline
+    confirmedSource: v.optional(v.string()), // News source
+    confirmedDate: v.optional(v.string()),   // Publication date
+    confirmedUrl: v.optional(v.string()),    // Article URL
+    createdAt: v.number(),                   // Timestamp of confirmation
+  })
+    .index("by_thread_and_query", ["threadId", "newsQuery"])
+    .index("by_thread", ["threadId"]),
+
 });

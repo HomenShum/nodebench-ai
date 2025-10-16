@@ -467,6 +467,87 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
     }
   }, [chatMode, activeThreadId, sendStreamingMessage, selectedModel]);
 
+  // Handle person selection from people profile disambiguation
+  const handlePersonSelect = useCallback(async (person: any) => {
+    if (chatMode !== 'agent-streaming' || !activeThreadId) {
+      console.warn('[FastAgentPanel] Person selection only works in agent-streaming mode');
+      return;
+    }
+
+    console.log('[FastAgentPanel] Person selected:', person);
+
+    // Create a confirmation message
+    const confirmationMessage = `I confirm: ${person.name}${person.profession ? ` (${person.profession})` : ''}${person.organization ? ` at ${person.organization}` : ''}`;
+
+    // Send the confirmation message
+    try {
+      await sendStreamingMessage({
+        threadId: activeThreadId as Id<"chatThreadsStream">,
+        prompt: confirmationMessage,
+        model: selectedModel,
+      });
+      toast.success('Person selection confirmed');
+      console.log('[FastAgentPanel] Person selection sent');
+    } catch (err) {
+      console.error('[FastAgentPanel] Failed to send person selection:', err);
+      toast.error('Failed to confirm person selection');
+    }
+  }, [chatMode, activeThreadId, sendStreamingMessage, selectedModel]);
+
+  // Handle event selection from recent event disambiguation
+  const handleEventSelect = useCallback(async (event: any) => {
+    if (chatMode !== 'agent-streaming' || !activeThreadId) {
+      console.warn('[FastAgentPanel] Event selection only works in agent-streaming mode');
+      return;
+    }
+
+    console.log('[FastAgentPanel] Event selected:', event);
+
+    // Create a confirmation message
+    const confirmationMessage = `I confirm: ${event.name}${event.date ? ` (${event.date})` : ''}`;
+
+    // Send the confirmation message
+    try {
+      await sendStreamingMessage({
+        threadId: activeThreadId as Id<"chatThreadsStream">,
+        prompt: confirmationMessage,
+        model: selectedModel,
+      });
+      toast.success('Event selection confirmed');
+      console.log('[FastAgentPanel] Event selection sent');
+    } catch (err) {
+      console.error('[FastAgentPanel] Failed to send event selection:', err);
+      toast.error('Failed to confirm event selection');
+    }
+  }, [chatMode, activeThreadId, sendStreamingMessage, selectedModel]);
+
+  // Handle news article selection from recent news disambiguation
+  const handleNewsSelect = useCallback(async (article: any) => {
+    if (chatMode !== 'agent-streaming' || !activeThreadId) {
+      console.warn('[FastAgentPanel] News selection only works in agent-streaming mode');
+      return;
+    }
+
+    console.log('[FastAgentPanel] News article selected:', article);
+
+    // Create a confirmation message
+    const confirmationMessage = `I confirm: ${article.headline}${article.source ? ` (${article.source})` : ''}`;
+
+    // Send the confirmation message
+    try {
+      await sendStreamingMessage({
+        threadId: activeThreadId as Id<"chatThreadsStream">,
+        prompt: confirmationMessage,
+        model: selectedModel,
+      });
+      toast.success('News article selection confirmed');
+      console.log('[FastAgentPanel] News selection sent');
+    } catch (err) {
+      console.error('[FastAgentPanel] Failed to send news selection:', err);
+      toast.error('Failed to confirm news selection');
+    }
+  }, [chatMode, activeThreadId, sendStreamingMessage, selectedModel]);
+
 
 
   // ========== RENDER ==========
@@ -737,6 +818,9 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
               onRegenerateMessage={handleRegenerateMessage}
               onDeleteMessage={handleDeleteMessage}
               onCompanySelect={handleCompanySelect}
+              onPersonSelect={handlePersonSelect}
+              onEventSelect={handleEventSelect}
+              onNewsSelect={handleNewsSelect}
             />
           ) : (
             <MessageStream

@@ -7,7 +7,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
@@ -15,6 +15,9 @@ import { YouTubeGallery, SECDocumentGallery, type YouTubeVideo, type SECDocument
 import { MermaidDiagram } from './MermaidDiagram';
 import { FileViewer, type FileViewerFile } from './FileViewer';
 import { CompanySelectionCard, type CompanyOption } from './CompanySelectionCard';
+import { PeopleSelectionCard, type PersonOption } from './PeopleSelectionCard';
+import { EventSelectionCard, type EventOption } from './EventSelectionCard';
+import { NewsSelectionCard, type NewsArticleOption } from './NewsSelectionCard';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
@@ -22,6 +25,9 @@ interface UIMessageBubbleProps {
   onRegenerateMessage?: () => void;
   onDeleteMessage?: () => void;
   onCompanySelect?: (company: CompanyOption) => void;
+  onPersonSelect?: (person: PersonOption) => void;
+  onEventSelect?: (event: EventOption) => void;
+  onNewsSelect?: (article: NewsArticleOption) => void;
   isParent?: boolean; // Whether this message has child messages
   isChild?: boolean; // Whether this is a child message (specialized agent)
   agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
@@ -78,7 +84,19 @@ function SafeImage({ src, alt, className }: { src: string; alt: string; classNam
 /**
  * Helper to render tool output with markdown support and gallery layout for images, videos, and SEC documents
  */
-function ToolOutputRenderer({ output, onCompanySelect }: { output: unknown; onCompanySelect?: (company: CompanyOption) => void }) {
+function ToolOutputRenderer({
+  output,
+  onCompanySelect,
+  onPersonSelect,
+  onEventSelect,
+  onNewsSelect,
+}: {
+  output: unknown;
+  onCompanySelect?: (company: CompanyOption) => void;
+  onPersonSelect?: (person: PersonOption) => void;
+  onEventSelect?: (event: EventOption) => void;
+  onNewsSelect?: (article: NewsArticleOption) => void;
+}) {
   const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
 
   // Extract YouTube gallery data
@@ -108,6 +126,24 @@ function ToolOutputRenderer({ output, onCompanySelect }: { output: unknown; onCo
     ? JSON.parse(companySelectionMatch[1])
     : null;
 
+  // Extract people selection data
+  const peopleSelectionMatch = outputText.match(/<!-- PEOPLE_SELECTION_DATA\n([\s\S]*?)\n-->/);
+  const peopleSelectionData: { prompt: string; people: PersonOption[] } | null = peopleSelectionMatch
+    ? JSON.parse(peopleSelectionMatch[1])
+    : null;
+
+  // Extract event selection data
+  const eventSelectionMatch = outputText.match(/<!-- EVENT_SELECTION_DATA\n([\s\S]*?)\n-->/);
+  const eventSelectionData: { prompt: string; events: EventOption[] } | null = eventSelectionMatch
+    ? JSON.parse(eventSelectionMatch[1])
+    : null;
+
+  // Extract news selection data
+  const newsSelectionMatch = outputText.match(/<!-- NEWS_SELECTION_DATA\n([\s\S]*?)\n-->/);
+  const newsSelectionData: { prompt: string; articles: NewsArticleOption[] } | null = newsSelectionMatch
+    ? JSON.parse(newsSelectionMatch[1])
+    : null;
+
   // Check if this output contains multiple images (for gallery layout)
   const imageMatches = outputText.match(/!\[.*?\]\(.*?\)/g) || [];
   const imageCount = imageMatches.length;
@@ -123,11 +159,14 @@ function ToolOutputRenderer({ output, onCompanySelect }: { output: unknown; onCo
     };
   });
 
-  // Remove gallery data markers and company selection data from content
+  // Remove gallery data markers and all selection data from content
   const cleanedContent = outputText
     .replace(/<!-- YOUTUBE_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
     .replace(/<!-- SEC_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
-    .replace(/<!-- COMPANY_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '');
+    .replace(/<!-- COMPANY_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
+    .replace(/<!-- PEOPLE_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
+    .replace(/<!-- EVENT_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
+    .replace(/<!-- NEWS_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '');
 
   // Split content to separate images section from rest
   const parts = cleanedContent.split(/## Images\s*\n*/);
@@ -143,6 +182,33 @@ function ToolOutputRenderer({ output, onCompanySelect }: { output: unknown; onCo
           prompt={companySelectionData.prompt}
           companies={companySelectionData.companies}
           onSelect={onCompanySelect}
+        />
+      )}
+
+      {/* Render people selection prompt */}
+      {peopleSelectionData && onPersonSelect && (
+        <PeopleSelectionCard
+          prompt={peopleSelectionData.prompt}
+          people={peopleSelectionData.people}
+          onSelect={onPersonSelect}
+        />
+      )}
+
+      {/* Render event selection prompt */}
+      {eventSelectionData && onEventSelect && (
+        <EventSelectionCard
+          prompt={eventSelectionData.prompt}
+          events={eventSelectionData.events}
+          onSelect={onEventSelect}
+        />
+      )}
+
+      {/* Render news selection prompt */}
+      {newsSelectionData && onNewsSelect && (
+        <NewsSelectionCard
+          prompt={newsSelectionData.prompt}
+          articles={newsSelectionData.articles}
+          onSelect={onNewsSelect}
         />
       )}
 
@@ -235,6 +301,113 @@ const agentRoleConfig = {
 };
 
 /**
+ * CollapsibleToolStep - Renders a single tool call as a collapsible step
+ */
+function CollapsibleToolStep({
+  part,
+  stepNumber,
+  onCompanySelect,
+  onPersonSelect,
+  onEventSelect,
+  onNewsSelect,
+}: {
+  part: ToolUIPart;
+  stepNumber: number;
+  onCompanySelect?: (company: CompanyOption) => void;
+  onPersonSelect?: (person: PersonOption) => void;
+  onEventSelect?: (event: EventOption) => void;
+  onNewsSelect?: (article: NewsArticleOption) => void;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasOutput = part.output !== undefined && part.output !== null;
+  const toolName = part.type.replace('tool-', '');
+  
+  // Determine status based on part type
+  const isComplete = part.type.startsWith('tool-result');
+  const isCall = part.type === 'tool-call';
+  const isError = part.type === 'tool-error';
+  
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+      {/* Collapsed Header - Always Visible */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+      >
+        {/* Expand/Collapse Icon */}
+        {isExpanded ? (
+          <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-gray-500 flex-shrink-0" />
+        )}
+        
+        {/* Status Icon */}
+        <div className="flex-shrink-0">
+          {isComplete ? (
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          ) : isError ? (
+            <XCircle className="h-4 w-4 text-red-600" />
+          ) : (
+            <Clock className="h-4 w-4 text-blue-600 animate-pulse" />
+          )}
+        </div>
+        
+        {/* Tool Name & Step Number */}
+        <div className="flex-1 text-left">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500">Step {stepNumber}</span>
+            <span className="text-xs text-gray-300">•</span>
+            <span className="text-sm font-semibold text-gray-700">{toolName}</span>
+          </div>
+        </div>
+        
+        {/* Tool Icon */}
+        <Wrench className="h-4 w-4 text-blue-600 flex-shrink-0" />
+      </button>
+      
+      {/* Expanded Content - Details */}
+      {isExpanded && (
+        <div className="px-4 pb-4 pt-2 border-t border-gray-100 bg-gray-50">
+          {/* Tool Arguments */}
+          {(part as any).args && (
+            <div className="mb-3">
+              <div className="text-xs font-medium text-gray-600 mb-1">Input:</div>
+              <pre className="text-xs bg-white p-2 rounded border border-gray-200 overflow-x-auto">
+                {JSON.stringify((part as any).args, null, 2)}
+              </pre>
+            </div>
+          )}
+          
+          {/* Tool Output */}
+          {hasOutput && (
+            <div>
+              <div className="text-xs font-medium text-gray-600 mb-1">Output:</div>
+              <div className="bg-white p-3 rounded border border-gray-200">
+                <ToolOutputRenderer
+                  output={part.output}
+                  onCompanySelect={onCompanySelect}
+                  onPersonSelect={onPersonSelect}
+                  onEventSelect={onEventSelect}
+                  onNewsSelect={onNewsSelect}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Error Message */}
+          {isError && (part as any).error && (
+            <div className="bg-red-50 border border-red-200 rounded p-3">
+              <div className="text-xs font-medium text-red-700 mb-1">Error:</div>
+              <div className="text-xs text-red-600">{(part as any).error}</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * UIMessageBubble - Renders a UIMessage with smooth streaming animation
  * Handles all UIMessage part types: text, reasoning, tool calls, files, etc.
  * Supports hierarchical rendering with agent role badges
@@ -245,6 +418,9 @@ export function UIMessageBubble({
   onRegenerateMessage,
   onDeleteMessage,
   onCompanySelect,
+  onPersonSelect,
+  onEventSelect,
+  onNewsSelect,
   isParent,
   isChild,
   agentRole,
@@ -342,20 +518,22 @@ export function UIMessageBubble({
           </div>
         )}
 
-        {/* Tool Calls (if any) */}
-        {toolParts.map((part, idx) => {
-          const hasOutput = part.output !== undefined && part.output !== null;
-
-          return (
-            <div key={idx} className="text-sm px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 text-blue-700 font-medium mb-1">
-                <Wrench className="h-3 w-3" />
-                {part.type.replace('tool-', '')}
-              </div>
-              {hasOutput && <ToolOutputRenderer output={part.output} onCompanySelect={onCompanySelect} />}
-            </div>
-          );
-        })}
+        {/* Tool Calls as Collapsible Steps */}
+        {toolParts.length > 0 && (
+          <div className="space-y-2">
+            {toolParts.map((part, idx) => (
+              <CollapsibleToolStep
+                key={idx}
+                part={part}
+                stepNumber={idx + 1}
+                onCompanySelect={onCompanySelect}
+                onPersonSelect={onPersonSelect}
+                onEventSelect={onEventSelect}
+                onNewsSelect={onNewsSelect}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Files (images, etc.) */}
         {fileParts.map((part, idx) => {
