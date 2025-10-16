@@ -233,16 +233,15 @@ RESPONSE STYLE:
           query: z.string().describe("The user's query about documents"),
         }),
         handler: async (toolCtx, args): Promise<string> => {
-          // Use ctx from closure (the action context passed to createCoordinatorAgent)
           const documentAgent = createDocumentAgent(ctx, userId);
-          // Get threadId from toolCtx (inherited from coordinator's execution context)
           const threadId = (toolCtx as any).threadId;
-          // Pass threadId and userId explicitly
+
           const result = await documentAgent.generateText(
             ctx,
-            { threadId, userId }, // Pass both threadId and userId
+            { threadId, userId },
             { prompt: args.query }
           );
+
           return result.text;
         },
       }),
@@ -252,14 +251,15 @@ RESPONSE STYLE:
           query: z.string().describe("The user's query about media/videos/images"),
         }),
         handler: async (toolCtx, args): Promise<string> => {
-          // Use ctx from closure (the action context passed to createCoordinatorAgent)
           const mediaAgent = createMediaAgent(ctx, userId);
           const threadId = (toolCtx as any).threadId;
+
           const result = await mediaAgent.generateText(
             ctx,
-            { threadId, userId }, // Pass both threadId and userId
+            { threadId, userId },
             { prompt: args.query }
           );
+
           return result.text;
         },
       }),
@@ -269,14 +269,15 @@ RESPONSE STYLE:
           query: z.string().describe("The user's query about SEC filings"),
         }),
         handler: async (toolCtx, args): Promise<string> => {
-          // Use ctx from closure (the action context passed to createCoordinatorAgent)
           const secAgent = createSECAgent(ctx, userId);
           const threadId = (toolCtx as any).threadId;
+
           const result = await secAgent.generateText(
             ctx,
-            { threadId, userId }, // Pass both threadId and userId
+            { threadId, userId },
             { prompt: args.query }
           );
+
           return result.text;
         },
       }),
@@ -286,14 +287,15 @@ RESPONSE STYLE:
           query: z.string().describe("The user's query about web information"),
         }),
         handler: async (toolCtx, args): Promise<string> => {
-          // Use ctx from closure (the action context passed to createCoordinatorAgent)
           const webAgent = createWebAgent(ctx, userId);
           const threadId = (toolCtx as any).threadId;
+
           const result = await webAgent.generateText(
             ctx,
-            { threadId, userId }, // Pass both threadId and userId
+            { threadId, userId },
             { prompt: args.query }
           );
+
           return result.text;
         },
       }),

@@ -19,6 +19,9 @@ interface UIMessageBubbleProps {
   onMermaidRetry?: (error: string, code: string) => void;
   onRegenerateMessage?: () => void;
   onDeleteMessage?: () => void;
+  isParent?: boolean; // Whether this message has child messages
+  isChild?: boolean; // Whether this is a child message (specialized agent)
+  agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
 }
 
 /**
@@ -190,14 +193,35 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
   );
 }
 
+// Agent role icons and labels
+const agentRoleConfig = {
+  coordinator: { icon: '🎯', label: 'Coordinator', color: 'purple' },
+  documentAgent: { icon: '📄', label: 'Document Agent', color: 'blue' },
+  mediaAgent: { icon: '🎥', label: 'Media Agent', color: 'pink' },
+  secAgent: { icon: '📊', label: 'SEC Agent', color: 'green' },
+  webAgent: { icon: '🌐', label: 'Web Agent', color: 'cyan' },
+};
+
 /**
  * UIMessageBubble - Renders a UIMessage with smooth streaming animation
  * Handles all UIMessage part types: text, reasoning, tool calls, files, etc.
+ * Supports hierarchical rendering with agent role badges
  */
-export function UIMessageBubble({ message, onMermaidRetry, onRegenerateMessage, onDeleteMessage }: UIMessageBubbleProps) {
+export function UIMessageBubble({
+  message,
+  onMermaidRetry,
+  onRegenerateMessage,
+  onDeleteMessage,
+  isParent,
+  isChild,
+  agentRole,
+}: UIMessageBubbleProps) {
   const isUser = message.role === 'user';
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Get agent role configuration
+  const roleConfig = agentRole ? agentRoleConfig[agentRole] : null;
 
   const handleRegenerate = () => {
     if (onRegenerateMessage && !isRegenerating) {
@@ -240,12 +264,18 @@ export function UIMessageBubble({ message, onMermaidRetry, onRegenerateMessage, 
   return (
     <div className={cn(
       "flex gap-3 mb-4",
-      isUser ? "justify-end" : "justify-start"
+      isUser ? "justify-end" : "justify-start",
+      isChild && "ml-0" // Child messages already have margin from parent container
     )}>
       {/* Avatar */}
       {!isUser && (
         <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+          <div className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center",
+            roleConfig
+              ? `bg-gradient-to-br from-${roleConfig.color}-400 to-${roleConfig.color}-600`
+              : "bg-gradient-to-br from-purple-500 to-blue-500"
+          )}>
             <Bot className="h-4 w-4 text-white" />
           </div>
         </div>
@@ -256,6 +286,22 @@ export function UIMessageBubble({ message, onMermaidRetry, onRegenerateMessage, 
         "flex flex-col gap-2 max-w-[80%]",
         isUser && "items-end"
       )}>
+        {/* Agent Role Badge (for specialized agents) */}
+        {roleConfig && !isUser && (
+          <div className={cn(
+            "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium",
+            "bg-gradient-to-r shadow-sm",
+            roleConfig.color === 'purple' && "from-purple-100 to-purple-200 text-purple-700",
+            roleConfig.color === 'blue' && "from-blue-100 to-blue-200 text-blue-700",
+            roleConfig.color === 'pink' && "from-pink-100 to-pink-200 text-pink-700",
+            roleConfig.color === 'green' && "from-green-100 to-green-200 text-green-700",
+            roleConfig.color === 'cyan' && "from-cyan-100 to-cyan-200 text-cyan-700"
+          )}>
+            <span className="text-sm">{roleConfig.icon}</span>
+            <span>{roleConfig.label}</span>
+          </div>
+        )}
+
         {/* Reasoning (if any) */}
         {visibleReasoning && (
           <div className="text-xs text-gray-500 italic px-3 py-1 bg-gray-50 rounded-lg border border-gray-200">
