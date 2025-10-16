@@ -214,28 +214,52 @@ export function StepTimeline({ steps, isStreaming }: StepTimelineProps) {
 
 /**
  * Helper function to convert ToolUIPart array to TimelineStep array
+ *
+ * In AI SDK v5, tool parts use typed naming: tool-${toolName}
+ * Examples: 'tool-webSearch', 'tool-secCompanySearch', 'tool-result-webSearch', 'tool-error-webSearch'
  */
 export function toolPartsToTimelineSteps(toolParts: ToolUIPart[]): TimelineStep[] {
   const steps: TimelineStep[] = [];
-  
+
   toolParts.forEach((part, idx) => {
-    const toolName = (part as any).toolName || 'Unknown Tool';
+    // Extract tool name from type field (e.g., 'tool-webSearch' -> 'webSearch')
+    // Handle all variants: tool-call, tool-result-${toolName}, tool-error-${toolName}
+    let toolName = 'Unknown Tool';
+
+    if (part.type.startsWith('tool-')) {
+      // Remove 'tool-' prefix
+      const remainder = part.type.slice(5);
+
+      // Check if it's a result or error type
+      if (remainder.startsWith('result-')) {
+        toolName = remainder.slice(7); // Remove 'result-'
+      } else if (remainder.startsWith('error-')) {
+        toolName = remainder.slice(6); // Remove 'error-'
+      } else if (remainder === 'call') {
+        // For tool-call, try to get toolName from part properties
+        toolName = (part as any).toolName || 'Unknown Tool';
+      } else {
+        // Direct tool name (e.g., 'tool-webSearch')
+        toolName = remainder;
+      }
+    }
+
     const args = (part as any).args;
     const result = (part as any).result;
     const error = (part as any).error;
-    
-    // Determine status
+
+    // Determine status based on part type
     let status: TimelineStep['status'] = 'pending';
-    if (part.type === 'tool-result') status = 'complete';
-    else if (part.type === 'tool-error') status = 'error';
-    else if (part.type === 'tool-call') status = 'running';
-    
-    // Determine type
+    if (part.type.startsWith('tool-result')) status = 'complete';
+    else if (part.type.startsWith('tool-error')) status = 'error';
+    else if (part.type === 'tool-call' || part.type.startsWith('tool-')) status = 'running';
+
+    // Determine step type
     let type: TimelineStep['type'] = 'tool';
     if (toolName.startsWith('delegateTo')) type = 'delegation';
-    else if (part.type === 'tool-result') type = 'result';
-    else if (part.type === 'tool-error') type = 'error';
-    
+    else if (part.type.startsWith('tool-result')) type = 'result';
+    else if (part.type.startsWith('tool-error')) type = 'error';
+
     // Create step
     steps.push({
       id: `step-${idx}`,
@@ -249,7 +273,7 @@ export function toolPartsToTimelineSteps(toolParts: ToolUIPart[]): TimelineStep[
       error,
     });
   });
-  
+
   return steps;
 }
 
