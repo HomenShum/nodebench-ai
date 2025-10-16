@@ -159,6 +159,7 @@ export function FastAgentPanel({
   const createStreamingThread = useAction(api.fastAgentPanelStreaming.createThread);
   const sendStreamingMessage = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
   const deleteStreamingThread = useMutation(api.fastAgentPanelStreaming.deleteThread);
+  const deleteMessage = useMutation(api.fastAgentPanelStreaming.deleteMessage);
 
   // Use the appropriate data based on mode
   const threads = chatMode === 'agent' ? agentThreads : streamingThreads;
@@ -337,6 +338,107 @@ export function FastAgentPanel({
     createStreamingThread,
     sendStreamingMessage,
   ]);
+
+  // Handle message deletion
+  const handleDeleteMessage = useCallback(async (messageKey: string) => {
+    console.log('[FastAgentPanel] User requested deletion for message:', messageKey);
+
+    if (chatMode !== 'agent-streaming' || !activeThreadId) {
+      console.warn('[FastAgentPanel] Cannot delete: not in streaming mode or no active thread');
+      return;
+    }
+
+    try {
+      await deleteMessage({
+        threadId: activeThreadId as Id<"chatThreadsStream">,
+        messageKey: messageKey,
+      });
+      toast.success('Message deleted');
+      console.log('[FastAgentPanel] Message deleted successfully');
+    } catch (err) {
+      console.error('[FastAgentPanel] Failed to delete message:', err);
+      toast.error('Failed to delete message');
+    }
+  }, [chatMode, activeThreadId, deleteMessage]);
+
+  // Handle general message regeneration
+  const handleRegenerateMessage = useCallback(async (messageKey: string) => {
+    console.log('[FastAgentPanel] User requested regeneration for message:', messageKey);
+
+    if (chatMode !== 'agent-streaming' || !activeThreadId || !streamingMessages) {
+      console.warn('[FastAgentPanel] Cannot regenerate: not in streaming mode or no active thread');
+      return;
+    }
+
+    // Find the message being regenerated
+    const messageIndex = streamingMessages.findIndex(m => m.key === messageKey);
+    if (messageIndex === -1) {
+      console.warn('[FastAgentPanel] Message not found:', messageKey);
+      return;
+    }
+
+    // Find the previous user message (the prompt that generated this response)
+    let userPrompt = '';
+    for (let i = messageIndex - 1; i >= 0; i--) {
+      if (streamingMessages[i].role === 'user') {
+        userPrompt = streamingMessages[i].text || '';
+        break;
+      }
+    }
+
+    if (!userPrompt) {
+      console.warn('[FastAgentPanel] No user prompt found before this message');
+      toast.error('Could not find the original prompt to regenerate');
+      return;
+    }
+
+    console.log('[FastAgentPanel] Regenerating with prompt:', userPrompt.substring(0, 100));
+
+    try {
+      await sendStreamingMessage({
+        threadId: activeThreadId as Id<"chatThreadsStream">,
+        prompt: userPrompt,
+        model: selectedModel,
+      });
+      toast.success('Regenerating response...');
+    } catch (err) {
+      console.error('[FastAgentPanel] Failed to regenerate:', err);
+      toast.error('Failed to regenerate response');
+    }
+  }, [chatMode, activeThreadId, streamingMessages, sendStreamingMessage, selectedModel]);
+
+  // Handle manual Mermaid diagram retry
+  const handleMermaidRetry = useCallback(async (error: string, code: string) => {
+    console.log('[FastAgentPanel] User requested Mermaid diagram fix:', error);
+
+    // Send correction request to the agent
+    const correctionPrompt = `[MERMAID_ERROR] The previous Mermaid diagram has a syntax error. Please fix it.
+
+Error: ${error}
+
+Original code:
+\`\`\`mermaid
+${code}
+\`\`\`
+
+Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code block. Fix the syntax error and ensure all edges use proper syntax (-->|Label| or --> not -- or -)`;
+
+    // Send the correction request
+    try {
+      if (chatMode === 'agent-streaming' && activeThreadId) {
+        await sendStreamingMessage({
+          threadId: activeThreadId as Id<"chatThreadsStream">,
+          prompt: correctionPrompt,
+          model: selectedModel,
+        });
+        toast.success('Correction request sent to AI');
+        console.log('[FastAgentPanel] Correction request sent');
+      }
+    } catch (err) {
+      console.error('[FastAgentPanel] Failed to send correction request:', err);
+      toast.error('Failed to send correction request');
+    }
+  }, [chatMode, activeThreadId, sendStreamingMessage, selectedModel]);
 
 
 
@@ -604,6 +706,9 @@ export function FastAgentPanel({
             <UIMessageStream
               messages={streamingMessages || []}
               autoScroll={true}
+              onMermaidRetry={handleMermaidRetry}
+              onRegenerateMessage={handleRegenerateMessage}
+              onDeleteMessage={handleDeleteMessage}
             />
           ) : (
             <MessageStream

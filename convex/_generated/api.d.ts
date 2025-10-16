@@ -36,6 +36,7 @@ import type * as agents_orchestrate from "../agents/orchestrate.js";
 import type * as agents_promptPlan from "../agents/promptPlan.js";
 import type * as agents_seedProductionMocks from "../agents/seedProductionMocks.js";
 import type * as agents_specialized from "../agents/specialized.js";
+import type * as agents_specializedAgents from "../agents/specializedAgents.js";
 import type * as agents_timelineMock from "../agents/timelineMock.js";
 import type * as agents_visualLLMValidation from "../agents/visualLLMValidation.js";
 import type * as agents_xrayWorkflow from "../agents/xrayWorkflow.js";
@@ -58,6 +59,7 @@ import type * as email from "../email.js";
 import type * as events from "../events.js";
 import type * as fastAgentChat from "../fastAgentChat.js";
 import type * as fastAgentChatHelpers from "../fastAgentChatHelpers.js";
+import type * as fastAgentPanelCoordinator from "../fastAgentPanelCoordinator.js";
 import type * as fastAgentPanelStreaming from "../fastAgentPanelStreaming.js";
 import type * as fast_agents_contextAgent from "../fast_agents/contextAgent.js";
 import type * as fast_agents_editingAgent from "../fast_agents/editingAgent.js";
@@ -125,6 +127,7 @@ import type * as tools_evaluation_quickTest from "../tools/evaluation/quickTest.
 import type * as tools_evaluation_testCases from "../tools/evaluation/testCases.js";
 import type * as tools_linkupSearch from "../tools/linkupSearch.js";
 import type * as tools_mediaTools from "../tools/mediaTools.js";
+import type * as tools_secFilingTools from "../tools/secFilingTools.js";
 import type * as tools_youtubeSearch from "../tools/youtubeSearch.js";
 import type * as usage from "../usage.js";
 import type * as userPreferences from "../userPreferences.js";
@@ -174,6 +177,7 @@ declare const fullApi: ApiFromModules<{
   "agents/promptPlan": typeof agents_promptPlan;
   "agents/seedProductionMocks": typeof agents_seedProductionMocks;
   "agents/specialized": typeof agents_specialized;
+  "agents/specializedAgents": typeof agents_specializedAgents;
   "agents/timelineMock": typeof agents_timelineMock;
   "agents/visualLLMValidation": typeof agents_visualLLMValidation;
   "agents/xrayWorkflow": typeof agents_xrayWorkflow;
@@ -196,6 +200,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   fastAgentChat: typeof fastAgentChat;
   fastAgentChatHelpers: typeof fastAgentChatHelpers;
+  fastAgentPanelCoordinator: typeof fastAgentPanelCoordinator;
   fastAgentPanelStreaming: typeof fastAgentPanelStreaming;
   "fast_agents/contextAgent": typeof fast_agents_contextAgent;
   "fast_agents/editingAgent": typeof fast_agents_editingAgent;
@@ -263,6 +268,7 @@ declare const fullApi: ApiFromModules<{
   "tools/evaluation/testCases": typeof tools_evaluation_testCases;
   "tools/linkupSearch": typeof tools_linkupSearch;
   "tools/mediaTools": typeof tools_mediaTools;
+  "tools/secFilingTools": typeof tools_secFilingTools;
   "tools/youtubeSearch": typeof tools_youtubeSearch;
   usage: typeof usage;
   userPreferences: typeof userPreferences;

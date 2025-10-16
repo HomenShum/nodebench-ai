@@ -38,9 +38,67 @@ export const seedAll = internalMutation({
 async function clearTestData(ctx: any) {
   console.log("🗑️  Clearing existing test data...");
 
-  // Note: In production, you'd want to be more selective about what to delete
-  // For now, we'll just log that we're skipping this step
-  console.log("   Skipping clear (keeping existing data)");
+  // Get the test user (same logic as getOrCreateTestUser)
+  const testUser = await ctx.db
+    .query("users")
+    .first();
+
+  if (!testUser) {
+    console.log("   No test user found, skipping clear");
+    return;
+  }
+
+  const testUserId = testUser._id;
+
+  // Delete documents created by test user
+  const docs = await ctx.db
+    .query("documents")
+    .filter((q: any) => q.eq(q.field("createdBy"), testUserId))
+    .collect();
+  for (const doc of docs) {
+    await ctx.db.delete(doc._id);
+  }
+  console.log(`   ✓ Deleted ${docs.length} test documents`);
+
+  // Delete files created by test user
+  const files = await ctx.db
+    .query("files")
+    .filter((q: any) => q.eq(q.field("uploadedBy"), testUserId))
+    .collect();
+  for (const file of files) {
+    await ctx.db.delete(file._id);
+  }
+  console.log(`   ✓ Deleted ${files.length} test files`);
+
+  // Delete tasks created by test user
+  const tasks = await ctx.db
+    .query("tasks")
+    .filter((q: any) => q.eq(q.field("userId"), testUserId))
+    .collect();
+  for (const task of tasks) {
+    await ctx.db.delete(task._id);
+  }
+  console.log(`   ✓ Deleted ${tasks.length} test tasks`);
+
+  // Delete events created by test user
+  const events = await ctx.db
+    .query("events")
+    .filter((q: any) => q.eq(q.field("userId"), testUserId))
+    .collect();
+  for (const event of events) {
+    await ctx.db.delete(event._id);
+  }
+  console.log(`   ✓ Deleted ${events.length} test events`);
+
+  // Delete folders created by test user
+  const folders = await ctx.db
+    .query("folders")
+    .filter((q: any) => q.eq(q.field("userId"), testUserId))
+    .collect();
+  for (const folder of folders) {
+    await ctx.db.delete(folder._id);
+  }
+  console.log(`   ✓ Deleted ${folders.length} test folders`);
 }
 
 /**
@@ -164,7 +222,25 @@ async function seedMedia(ctx: any) {
   ];
 
   for (const media of mediaFiles) {
-    await ctx.db.insert("files", media);
+    // Insert into files table
+    const fileId = await ctx.db.insert("files", media);
+
+    // Also create a document entry (like the real file upload flow does)
+    // This makes the file searchable via documents.getSearch
+    const documentFileType = media.fileType === "image" ? "jpg" : media.fileType === "video" ? "mp4" : media.fileType;
+    await ctx.db.insert("documents", {
+      title: media.fileName,
+      isPublic: false,
+      isArchived: false, // IMPORTANT: Must be false for search to work
+      createdBy: testUser,
+      lastEditedBy: testUser,
+      documentType: "file",
+      fileId: fileId,
+      fileType: documentFileType,
+      mimeType: media.mimeType,
+      lastModified: Date.now(),
+    });
+
     console.log(`   ✓ Created: "${media.fileName}" (${media.mimeType}, ${Math.round(media.fileSize / 1024)}KB)`);
   }
 }

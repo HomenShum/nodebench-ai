@@ -116,32 +116,45 @@ export const youtubeSearch = createTool({
 
       // Format the response with embedded YouTube videos
       let result = `Found ${data.items.length} videos:\n\n`;
-      
+
+      // Prepare structured data for gallery rendering
+      const videos = data.items.map((item) => ({
+        title: item.snippet.title,
+        channel: item.snippet.channelTitle,
+        description: item.snippet.description,
+        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+        videoId: item.id.videoId,
+        thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
+      }));
+
+      // Add structured data marker for frontend gallery rendering
+      result += `<!-- YOUTUBE_GALLERY_DATA\n${JSON.stringify(videos, null, 2)}\n-->\n\n`;
+
       result += "## Videos\n\n";
-      
+
       // Add each video as an embedded iframe
       data.items.forEach((item, idx) => {
         const videoId = item.id.videoId;
         const title = item.snippet.title;
         const channel = item.snippet.channelTitle;
         const description = item.snippet.description;
-        
+
         // Add video embed using iframe (HTML5)
         result += `### ${idx + 1}. ${title}\n\n`;
         result += `**Channel:** ${channel}\n\n`;
-        
+
         // Embed the video
         result += `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>\n\n`;
-        
+
         // Add description
         if (description) {
           const shortDesc = description.substring(0, 150);
           result += `${shortDesc}${description.length > 150 ? '...' : ''}\n\n`;
         }
-        
+
         // Add direct link
         result += `[Watch on YouTube](https://www.youtube.com/watch?v=${videoId}) 🔗\n\n`;
-        
+
         result += "---\n\n";
       });
 

@@ -13,7 +13,7 @@ Successfully built a **production-ready LLM-as-a-Judge evaluation system** for a
 | Component | File | Lines | Purpose |
 |-----------|------|-------|---------|
 | **Test Cases** | `convex/tools/evaluation/testCases.ts` | 300 | 25+ test scenarios across all categories |
-| **Evaluator** | `convex/tools/evaluation/evaluator.ts` | 300 | LLM-as-a-Judge implementation with GPT-4o |
+| **Evaluator** | `convex/tools/evaluation/evaluator.ts` | 300 | LLM-as-a-Judge implementation with GPT-5 |
 | **Quick Tests** | `convex/tools/evaluation/quickTest.ts` | 300 | Rapid validation and category-specific tests |
 | **CLI Runner** | `scripts/runEvaluation.ts` | 180 | Command-line interface for running tests |
 | **Documentation** | `EVALUATION_GUIDE.md` | 300 | Complete user guide and reference |
@@ -74,7 +74,7 @@ TOTAL: 25 comprehensive test cases
    - Captures tool calls and response
    - Measures latency
 
-2. **Evaluation with GPT-4o**
+2. **Evaluation with GPT-5**
    - Compares expected vs actual tool usage
    - Checks all success criteria
    - Scores response quality (0-100)
@@ -192,7 +192,7 @@ nodebench-ai/
 - Voice command simulation
 
 ### ✅ Intelligent Evaluation
-- GPT-4o as impartial judge
+- GPT-5 as impartial judge
 - Automatic scoring (0-100)
 - Detailed reasoning for each test
 - Success criteria validation
@@ -355,7 +355,7 @@ npm run eval all
 
 ✅ **Complete Evaluation System**
 - 25+ comprehensive test cases
-- LLM-as-a-Judge with GPT-4o
+- LLM-as-a-Judge with GPT-5
 - Automatic scoring and validation
 - CLI interface for easy testing
 

@@ -487,6 +487,78 @@ The modern fast agent (`convex/fastAgentChat.ts`) does **NOT** directly call the
 
 ---
 
+## 📊 SEC EDGAR Filing Tools
+
+### 🔍 searchSecFilings - Search SEC Filings
+Search for SEC EDGAR filings by company ticker or CIK.
+
+**Voice Commands:**
+- "Find SEC filings for Apple"
+- "Get 10-K for AAPL"
+- "Show me Tesla's quarterly reports"
+
+**Args:**
+```typescript
+{
+  ticker?: string,        // Company ticker (e.g., "AAPL")
+  cik?: string,          // SEC CIK number
+  formType?: "10-K" | "10-Q" | "8-K" | "DEF 14A" | "S-1" | "ALL",
+  limit?: number         // Max results (1-20, default: 10)
+}
+```
+
+**Returns:**
+```typescript
+string // Formatted list of filings with URLs
+```
+
+---
+
+### 📥 downloadSecFiling - Download SEC Filing
+Download an SEC filing document and save it.
+
+**Voice Commands:**
+- "Download the latest 10-K for Apple"
+- "Save that SEC filing"
+
+**Args:**
+```typescript
+{
+  documentUrl: string,      // SEC document URL
+  title?: string,           // Custom title
+  saveAsDocument?: boolean  // Save to documents (default: true)
+}
+```
+
+**Returns:**
+```typescript
+string // Confirmation with document ID
+```
+
+---
+
+### 🏢 getCompanyInfo - Get Company Information
+Look up company details from SEC EDGAR.
+
+**Voice Commands:**
+- "Get company info for Tesla"
+- "What's the CIK for Microsoft?"
+
+**Args:**
+```typescript
+{
+  ticker?: string,  // Company ticker
+  cik?: string      // SEC CIK number
+}
+```
+
+**Returns:**
+```typescript
+string // Company details (name, CIK, SIC, address, etc.)
+```
+
+---
+
 ## 🔮 Future Tool Integration
 
 To add tool calling to the modern fast agent:
@@ -495,13 +567,13 @@ To add tool calling to the modern fast agent:
    ```typescript
    // Add tool registry
    const tools = {
-     "doc.find": async (args: any) => 
+     "doc.find": async (args: any) =>
        await ctx.runAction(api.fast_agents.tools.docFind, args),
-     "task.add": async (args: any) => 
+     "task.add": async (args: any) =>
        await ctx.runAction(api.fast_agents.tools.taskAdd, args),
      // ... more tools
    };
-   
+
    // Pass to LLM with function calling
    const response = await client.chat.completions.create({
      model: GPT5_MINI,
@@ -532,4 +604,5 @@ To add tool calling to the modern fast agent:
 - [Fast Agents README](../../../convex/fast_agents/README.md)
 - [Migration Guide](./MIGRATION_GUIDE.md)
 - [Quick Reference](./QUICK_REFERENCE.md)
+- [SEC Filing Tools Guide](../../../SEC_FILING_TOOLS_GUIDE.md)
 
