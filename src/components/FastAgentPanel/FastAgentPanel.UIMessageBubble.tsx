@@ -18,6 +18,7 @@ import { CompanySelectionCard, type CompanyOption } from './CompanySelectionCard
 import { PeopleSelectionCard, type PersonOption } from './PeopleSelectionCard';
 import { EventSelectionCard, type EventOption } from './EventSelectionCard';
 import { NewsSelectionCard, type NewsArticleOption } from './NewsSelectionCard';
+import { StepTimeline, toolPartsToTimelineSteps } from './StepTimeline';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
@@ -511,31 +512,41 @@ export function UIMessageBubble({
           </div>
         )}
 
-        {/* Reasoning (if any) */}
+        {/* IMPROVED HIERARCHY: Process details at top, answer at bottom */}
+
+        {/* 1. Reasoning (if any) - Shows thinking process */}
         {visibleReasoning && (
           <div className="text-xs text-gray-500 italic px-3 py-1 bg-gray-50 rounded-lg border border-gray-200">
             💭 {visibleReasoning}
           </div>
         )}
 
-        {/* Tool Calls as Collapsible Steps */}
+        {/* 2. Tool Calls as Timeline - Shows what actions were taken */}
         {toolParts.length > 0 && (
-          <div className="space-y-2">
-            {toolParts.map((part, idx) => (
-              <CollapsibleToolStep
-                key={idx}
-                part={part}
-                stepNumber={idx + 1}
+          <StepTimeline
+            steps={toolPartsToTimelineSteps(toolParts)}
+            isStreaming={message.status === 'streaming'}
+          />
+        )}
+
+        {/* Entity Selection Cards (rendered from tool outputs) */}
+        {toolParts.map((part, idx) => {
+          if (part.type !== 'tool-result') return null;
+
+          return (
+            <div key={idx}>
+              <ToolOutputRenderer
+                output={(part as any).result}
                 onCompanySelect={onCompanySelect}
                 onPersonSelect={onPersonSelect}
                 onEventSelect={onEventSelect}
                 onNewsSelect={onNewsSelect}
               />
-            ))}
-          </div>
-        )}
+            </div>
+          );
+        })}
 
-        {/* Files (images, etc.) */}
+        {/* 3. Files (images, etc.) - Supporting media */}
         {fileParts.map((part, idx) => {
           // FileUIPart has url and mimeType properties
           const fileUrl = (part as any).url || '';
@@ -568,7 +579,7 @@ export function UIMessageBubble({
           );
         })}
 
-        {/* Main text content */}
+        {/* 4. Main text content - THE ANSWER (at bottom for natural reading flow) */}
         {visibleText && (
           <div className={cn(
             "rounded-lg px-4 py-2 shadow-sm whitespace-pre-wrap",
