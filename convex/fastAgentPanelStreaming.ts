@@ -285,12 +285,27 @@ export const listThreads = query({
               for (const message of agentMessages) {
                 const msg = message as any;
                 
-                // Track tools from tool calls in messages
-                if (msg.toolCalls) {
-                  const toolCalls = msg.toolCalls || [];
-                  for (const toolCall of toolCalls) {
-                    if (toolCall.toolName) {
-                      toolsUsed.add(toolCall.toolName);
+                // Track tools - agent component stores tool info in 'tool' field
+                if (msg.tool) {
+                  if (typeof msg.tool === 'string') {
+                    toolsUsed.add(msg.tool);
+                  } else if (msg.tool.name) {
+                    toolsUsed.add(msg.tool.name);
+                  } else if (msg.tool.toolName) {
+                    toolsUsed.add(msg.tool.toolName);
+                  }
+                }
+                
+                // Also check message.message for tool call info
+                if (msg.message && typeof msg.message === 'object') {
+                  if (msg.message.tool) {
+                    const toolName = typeof msg.message.tool === 'string' ? msg.message.tool : msg.message.tool.name;
+                    if (toolName) toolsUsed.add(toolName);
+                  }
+                  if (msg.message.toolCalls && Array.isArray(msg.message.toolCalls)) {
+                    for (const tc of msg.message.toolCalls) {
+                      if (tc.toolName) toolsUsed.add(tc.toolName);
+                      if (tc.name) toolsUsed.add(tc.name);
                     }
                   }
                 }
@@ -298,6 +313,8 @@ export const listThreads = query({
                 // Track model from provider metadata
                 if (msg.providerMetadata?.model) {
                   modelsUsed.add(msg.providerMetadata.model);
+                } else if (msg.message?.model) {
+                  modelsUsed.add(msg.message.model);
                 }
                 
                 // Get last message text for preview
@@ -325,7 +342,7 @@ export const listThreads = query({
             }
           }
           
-          return {
+          const enriched = {
             ...thread,
             messageCount,
             toolsUsed: Array.from(toolsUsed),
@@ -333,8 +350,14 @@ export const listThreads = query({
             lastMessage,
             lastMessageAt,
           };
+          console.log(`[listThreads] Enriched streaming thread ${thread._id}:`, {
+            messageCount: enriched.messageCount,
+            toolsCount: enriched.toolsUsed.length,
+            modelsCount: enriched.modelsUsed.length,
+          });
+          return enriched;
         } catch (error) {
-          console.error("Error enriching streaming thread:", error);
+          console.error("[listThreads] Error enriching streaming thread:", thread._id, error);
           return {
             ...thread,
             messageCount: 0,
@@ -347,6 +370,7 @@ export const listThreads = query({
       })
     );
 
+    console.log('[listThreads] Returning', enrichedThreads.length, 'enriched streaming threads');
     return enrichedThreads;
   },
 });

@@ -245,15 +245,6 @@ export const listUserThreads = query({
           const messages = messagesResult.page;
           const messageCount = messages.length;
           
-          // Log first message structure for debugging
-          if (messages.length > 0) {
-            const firstMsg = messages[0] as any;
-            console.log(`[listUserThreads] First message keys:`, Object.keys(firstMsg));
-            if (firstMsg.toolCalls) {
-              console.log(`[listUserThreads] First message has toolCalls:`, firstMsg.toolCalls);
-            }
-          }
-          
           // Extract unique tools and models from messages
           const toolsUsed = new Set<string>();
           const modelsUsed = new Set<string>();
@@ -263,35 +254,38 @@ export const listUserThreads = query({
           for (const message of messages) {
             const msg = message as any;
             
-            // Track tools from tool calls in messages - check multiple possible locations
-            if (msg.toolCalls && Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0) {
-              for (const toolCall of msg.toolCalls) {
-                if (toolCall.toolName) {
-                  toolsUsed.add(toolCall.toolName);
-                } else if (toolCall.name) {
-                  toolsUsed.add(toolCall.name);
+            // Track tools - agent component stores tool info in 'tool' field
+            if (msg.tool) {
+              // Extract tool name from tool object
+              if (typeof msg.tool === 'string') {
+                toolsUsed.add(msg.tool);
+              } else if (msg.tool.name) {
+                toolsUsed.add(msg.tool.name);
+              } else if (msg.tool.toolName) {
+                toolsUsed.add(msg.tool.toolName);
+              }
+            }
+            
+            // Also check message.message for tool call info
+            if (msg.message && typeof msg.message === 'object') {
+              if (msg.message.tool) {
+                const toolName = typeof msg.message.tool === 'string' ? msg.message.tool : msg.message.tool.name;
+                if (toolName) toolsUsed.add(toolName);
+              }
+              // Check for toolCalls array in message
+              if (msg.message.toolCalls && Array.isArray(msg.message.toolCalls)) {
+                for (const tc of msg.message.toolCalls) {
+                  if (tc.toolName) toolsUsed.add(tc.toolName);
+                  if (tc.name) toolsUsed.add(tc.name);
                 }
               }
             }
             
-            // Also check steps for tool usage
-            if (msg.steps && Array.isArray(msg.steps)) {
-              for (const step of msg.steps) {
-                if (step.toolCalls && Array.isArray(step.toolCalls)) {
-                  for (const toolCall of step.toolCalls) {
-                    if (toolCall.toolName) {
-                      toolsUsed.add(toolCall.toolName);
-                    } else if (toolCall.name) {
-                      toolsUsed.add(toolCall.name);
-                    }
-                  }
-                }
-              }
-            }
-            
-            // Track model from provider metadata
+            // Track model from provider metadata or message
             if (msg.providerMetadata?.model) {
               modelsUsed.add(msg.providerMetadata.model);
+            } else if (msg.message?.model) {
+              modelsUsed.add(msg.message.model);
             }
             
             // Get last message text for preview
