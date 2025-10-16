@@ -1,7 +1,7 @@
 // src/components/FastAgentPanel/FastAgentPanel.UIMessageBubble.tsx
 // Message bubble component optimized for UIMessage format from Agent component
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
@@ -19,6 +19,7 @@ import { PeopleSelectionCard, type PersonOption } from './PeopleSelectionCard';
 import { EventSelectionCard, type EventOption } from './EventSelectionCard';
 import { NewsSelectionCard, type NewsArticleOption } from './NewsSelectionCard';
 import { StepTimeline, toolPartsToTimelineSteps } from './StepTimeline';
+import { extractMediaFromText, removeMediaMarkersFromText, hasMedia } from './utils/mediaExtractor';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
@@ -471,6 +472,19 @@ export function UIMessageBubble({
     p.type === 'file'
   );
 
+  // Extract media from final answer text
+  const extractedMedia = useMemo(() => {
+    return extractMediaFromText(visibleText || '');
+  }, [visibleText]);
+
+  // Clean text by removing media markers
+  const cleanedText = useMemo(() => {
+    return removeMediaMarkersFromText(visibleText || '');
+  }, [visibleText]);
+
+  // Check if we have any media to display
+  const hasMediaContent = hasMedia(extractedMedia);
+
   return (
     <div className={cn(
       "flex gap-3 mb-4",
@@ -581,66 +595,119 @@ export function UIMessageBubble({
 
         {/* 4. Main text content - THE ANSWER (at bottom for natural reading flow) */}
         {visibleText && (
-          <div className={cn(
-            "rounded-lg px-4 py-2 shadow-sm whitespace-pre-wrap",
-            isUser
-              ? "bg-blue-600 text-white"
-              : "bg-white text-gray-800 border border-gray-200",
-            message.status === 'streaming' && !isUser && "bg-green-50 border-green-200",
-            message.status === 'failed' && "bg-red-50 border-red-200"
-          )}>
-            <ReactMarkdown
-              components={{
-                code({ inline, className, children, ...props }: any) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  const language = match ? match[1] : '';
-                  
-                  // Special handling for Mermaid diagrams
-                  if (!inline && language === 'mermaid') {
-                    const mermaidCode = String(children).replace(/\n$/, '');
-                    const isStreaming = message.status === 'streaming';
-                    return (
-                      <MermaidDiagram 
-                        code={mermaidCode}
-                        onRetryRequest={onMermaidRetry}
-                        isStreaming={isStreaming}
-                      />
+          <>
+            {/* Media galleries from final answer - Display BEFORE text */}
+            {!isUser && hasMediaContent && (
+              <div className="space-y-3 mb-3">
+                {/* YouTube Videos */}
+                {extractedMedia.youtubeVideos.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-px flex-1 bg-gray-200"></div>
+                      <span className="text-xs font-medium text-gray-500">Related Videos</span>
+                      <div className="h-px flex-1 bg-gray-200"></div>
+                    </div>
+                    <YouTubeGallery videos={extractedMedia.youtubeVideos} />
+                  </div>
+                )}
+
+                {/* SEC Documents */}
+                {extractedMedia.secDocuments.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-px flex-1 bg-gray-200"></div>
+                      <span className="text-xs font-medium text-gray-500">Related Documents</span>
+                      <div className="h-px flex-1 bg-gray-200"></div>
+                    </div>
+                    <SECDocumentGallery documents={extractedMedia.secDocuments} />
+                  </div>
+                )}
+
+                {/* Images */}
+                {extractedMedia.images.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-px flex-1 bg-gray-200"></div>
+                      <span className="text-xs font-medium text-gray-500">Images</span>
+                      <div className="h-px flex-1 bg-gray-200"></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {extractedMedia.images.map((img, idx) => (
+                        <SafeImage
+                          key={idx}
+                          src={img.url}
+                          alt={img.alt}
+                          className="rounded-lg border border-gray-200 w-full h-auto"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Main answer text */}
+            <div className={cn(
+              "rounded-lg px-4 py-2 shadow-sm whitespace-pre-wrap",
+              isUser
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-800 border border-gray-200",
+              message.status === 'streaming' && !isUser && "bg-green-50 border-green-200",
+              message.status === 'failed' && "bg-red-50 border-red-200"
+            )}>
+              <ReactMarkdown
+                components={{
+                  code({ inline, className, children, ...props }: any) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const language = match ? match[1] : '';
+
+                    // Special handling for Mermaid diagrams
+                    if (!inline && language === 'mermaid') {
+                      const mermaidCode = String(children).replace(/\n$/, '');
+                      const isStreaming = message.status === 'streaming';
+                      return (
+                        <MermaidDiagram
+                          code={mermaidCode}
+                          onRetryRequest={onMermaidRetry}
+                          isStreaming={isStreaming}
+                        />
+                      );
+                    }
+
+                    // Regular code blocks
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={language}
+                        PreTag="div"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code className={cn(
+                        "px-1 py-0.5 rounded text-sm font-mono",
+                        isUser ? "bg-blue-700" : "bg-gray-100"
+                      )} {...props}>
+                        {children}
+                      </code>
                     );
-                  }
-                  
-                  // Regular code blocks
-                  return !inline && match ? (
-                    <SyntaxHighlighter
-                      style={vscDarkPlus}
-                      language={language}
-                      PreTag="div"
-                      {...props}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
-                  ) : (
-                    <code className={cn(
-                      "px-1 py-0.5 rounded text-sm font-mono",
-                      isUser ? "bg-blue-700" : "bg-gray-100"
-                    )} {...props}>
-                      {children}
-                    </code>
-                  );
-                },
-                p({ children }) {
-                  return <p className="mb-2 last:mb-0">{children}</p>;
-                },
-                ul({ children }) {
-                  return <ul className="list-disc list-inside mb-2">{children}</ul>;
-                },
-                ol({ children }) {
-                  return <ol className="list-decimal list-inside mb-2">{children}</ol>;
-                },
-              }}
-            >
-              {visibleText || '...'}
-            </ReactMarkdown>
-          </div>
+                  },
+                  p({ children }) {
+                    return <p className="mb-2 last:mb-0">{children}</p>;
+                  },
+                  ul({ children }) {
+                    return <ul className="list-disc list-inside mb-2">{children}</ul>;
+                  },
+                  ol({ children }) {
+                    return <ol className="list-decimal list-inside mb-2">{children}</ol>;
+                  },
+                }}
+              >
+                {cleanedText || '...'}
+              </ReactMarkdown>
+            </div>
+          </>
         )}
 
         {/* Status indicator and actions */}
