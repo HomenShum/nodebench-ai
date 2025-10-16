@@ -214,7 +214,7 @@ export const getThreadMessages = query({
 });
 
 /**
- * List all threads for the current user
+ * List all threads for the current user with enriched data
  */
 export const listUserThreads = query({
   args: {},
@@ -226,7 +226,123 @@ export const listUserThreads = query({
       userId,
     });
 
-    return threads.page;
+    console.log('[listUserThreads] Raw threads from agent:', threads.page.length);
+    if (threads.page.length > 0) {
+      console.log('[listUserThreads] First thread structure:', JSON.stringify(threads.page[0]));
+    }
+
+    // Enrich each thread with message count, tools used, and last message info
+    const enrichedThreads = await Promise.all(
+      threads.page.map(async (thread: any) => {
+        try {
+          // Get messages for this thread
+          const messagesResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+            threadId: thread._id,
+            order: "asc",
+            paginationOpts: { cursor: null, numItems: 1000 },
+          });
+          
+          const messages = messagesResult.page;
+          const messageCount = messages.length;
+          
+          // Log first message structure for debugging
+          if (messages.length > 0) {
+            const firstMsg = messages[0] as any;
+            console.log(`[listUserThreads] First message keys:`, Object.keys(firstMsg));
+            if (firstMsg.toolCalls) {
+              console.log(`[listUserThreads] First message has toolCalls:`, firstMsg.toolCalls);
+            }
+          }
+          
+          // Extract unique tools and models from messages
+          const toolsUsed = new Set<string>();
+          const modelsUsed = new Set<string>();
+          let lastMessage = "";
+          let lastMessageAt = thread._creationTime;
+          
+          for (const message of messages) {
+            const msg = message as any;
+            
+            // Track tools from tool calls in messages - check multiple possible locations
+            if (msg.toolCalls && Array.isArray(msg.toolCalls) && msg.toolCalls.length > 0) {
+              for (const toolCall of msg.toolCalls) {
+                if (toolCall.toolName) {
+                  toolsUsed.add(toolCall.toolName);
+                } else if (toolCall.name) {
+                  toolsUsed.add(toolCall.name);
+                }
+              }
+            }
+            
+            // Also check steps for tool usage
+            if (msg.steps && Array.isArray(msg.steps)) {
+              for (const step of msg.steps) {
+                if (step.toolCalls && Array.isArray(step.toolCalls)) {
+                  for (const toolCall of step.toolCalls) {
+                    if (toolCall.toolName) {
+                      toolsUsed.add(toolCall.toolName);
+                    } else if (toolCall.name) {
+                      toolsUsed.add(toolCall.name);
+                    }
+                  }
+                }
+              }
+            }
+            
+            // Track model from provider metadata
+            if (msg.providerMetadata?.model) {
+              modelsUsed.add(msg.providerMetadata.model);
+            }
+            
+            // Get last message text for preview
+            if (msg.text) {
+              lastMessage = msg.text.substring(0, 100);
+              lastMessageAt = msg._creationTime;
+            }
+          }
+          
+          const enriched = {
+            _id: thread._id,
+            userId: thread.userId,
+            title: thread.title || thread.summary || "New Chat",
+            pinned: false,
+            createdAt: thread._creationTime,
+            updatedAt: thread._creationTime,
+            _creationTime: thread._creationTime,
+            messageCount,
+            toolsUsed: Array.from(toolsUsed),
+            modelsUsed: Array.from(modelsUsed),
+            lastMessage,
+            lastMessageAt,
+          };
+          console.log(`[listUserThreads] Enriched thread ${thread._id}:`, {
+            messageCount: enriched.messageCount,
+            toolsCount: enriched.toolsUsed.length,
+            modelsCount: enriched.modelsUsed.length,
+          });
+          return enriched;
+        } catch (error) {
+          console.error("[listUserThreads] Error enriching thread:", thread._id, error);
+          return {
+            _id: thread._id,
+            userId: thread.userId,
+            title: thread.title || thread.summary || "New Chat",
+            pinned: false,
+            createdAt: thread._creationTime,
+            updatedAt: thread._creationTime,
+            _creationTime: thread._creationTime,
+            messageCount: 0,
+            toolsUsed: [],
+            modelsUsed: [],
+            lastMessage: "",
+            lastMessageAt: thread._creationTime,
+          };
+        }
+      })
+    );
+
+    console.log('[listUserThreads] Returning', enrichedThreads.length, 'enriched threads');
+    return enrichedThreads;
   },
 });
 

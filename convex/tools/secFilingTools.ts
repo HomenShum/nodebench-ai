@@ -4,35 +4,110 @@
 
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 
 /**
  * Search for SEC filings by company ticker or CIK
  * Voice: "Find SEC filings for Apple" or "Get 10-K for AAPL"
  */
 export const searchSecFilings = createTool({
-  description: "Search for SEC EDGAR filings by company ticker symbol or CIK number. Returns recent filings including 10-K, 10-Q, 8-K, and other forms. Use this when the user wants to find SEC documents, annual reports, quarterly reports, or other regulatory filings.",
-  
+  description: "Search for SEC EDGAR filings by company ticker symbol, CIK number, or company name. Returns recent filings including 10-K, 10-Q, 8-K, and other forms. Use this when the user wants to find SEC documents, annual reports, quarterly reports, or other regulatory filings. If the user provides a company name (not a ticker), this tool will search for matching companies and may prompt for disambiguation if multiple matches are found.",
+
   args: z.object({
     ticker: z.string().optional().describe("Company ticker symbol (e.g., 'AAPL', 'TSLA')"),
     cik: z.string().optional().describe("SEC CIK number (10-digit identifier)"),
+    companyName: z.string().optional().describe("Company name to search for (e.g., 'Apple', 'Tesla', 'Dasher')"),
     formType: z.enum(["10-K", "10-Q", "8-K", "DEF 14A", "S-1", "ALL"]).default("ALL").describe("Type of SEC form to search for"),
     limit: z.number().min(1).max(20).default(10).describe("Maximum number of filings to return"),
+    threadId: z.string().optional().describe("Thread ID for company confirmation persistence"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
     console.log(`[searchSecFilings] Searching SEC filings:`, args);
 
-    if (!args.ticker && !args.cik) {
-      return "Please provide either a ticker symbol or CIK number to search for SEC filings.";
+    if (!args.ticker && !args.cik && !args.companyName) {
+      return "Please provide either a ticker symbol, CIK number, or company name to search for SEC filings.";
     }
 
     try {
       // SEC EDGAR API endpoint
       const userAgent = "NodeBench AI contact@nodebench.ai"; // Required by SEC
-      
+
       let cik = args.cik;
-      
+      let companyName = "";
+
+      // If company name provided, search for matches and check for disambiguation
+      if (args.companyName && !cik && !args.ticker) {
+        console.log(`[searchSecFilings] Searching by company name: ${args.companyName}`);
+
+        // Check if company has been confirmed for this thread
+        if (args.threadId) {
+          const confirmed = await ctx.runQuery(internal.tools.secCompanySearch.getConfirmedCompany, {
+            threadId: args.threadId,
+            companyName: args.companyName,
+          });
+
+          if (confirmed) {
+            console.log(`[searchSecFilings] Using confirmed company: ${confirmed.name} (CIK: ${confirmed.cik})`);
+            cik = confirmed.cik;
+            companyName = confirmed.name;
+          }
+        }
+
+        // If not confirmed, search for companies
+        if (!cik) {
+          const companies = await ctx.runAction(internal.tools.secCompanySearch.searchCompanies, {
+            companyName: args.companyName,
+          });
+
+          if (companies.length === 0) {
+            return `Could not find any companies matching "${args.companyName}". Please verify the company name or try using a ticker symbol.`;
+          }
+
+          // If multiple companies found, validate with LLM
+          if (companies.length > 1) {
+            const validated = await ctx.runAction(internal.tools.secCompanySearch.validateCompanyMatches, {
+              userQuery: args.companyName,
+              companies,
+            });
+
+            const passedCompanies = validated.filter(c => c.validationResult === "PASS");
+
+            if (passedCompanies.length === 0) {
+              return `I found companies matching "${args.companyName}", but none seem to be a good match. Please provide more details or use a ticker symbol.`;
+            }
+
+            if (passedCompanies.length === 1) {
+              // Only one company passed validation, use it automatically
+              cik = passedCompanies[0].cik;
+              companyName = passedCompanies[0].name;
+              console.log(`[searchSecFilings] Auto-selected company: ${companyName} (CIK: ${cik})`);
+            } else {
+              // Multiple companies passed validation, prompt user for selection
+              console.log(`[searchSecFilings] Multiple companies passed validation, prompting user`);
+
+              const companySelectionData = {
+                prompt: `I found multiple companies matching '${args.companyName}'. Which one did you mean?`,
+                companies: passedCompanies.map(c => ({
+                  cik: c.cik,
+                  name: c.name,
+                  ticker: c.ticker,
+                  description: `CIK: ${c.cik}${c.ticker ? ` | Ticker: ${c.ticker}` : ''}`,
+                  validationResult: c.validationResult,
+                })),
+              };
+
+              return `<!-- COMPANY_SELECTION_DATA\n${JSON.stringify(companySelectionData, null, 2)}\n-->\n\nI found multiple companies matching "${args.companyName}". Please select the company you're looking for from the options above.`;
+            }
+          } else {
+            // Only one company found, use it
+            cik = companies[0].cik;
+            companyName = companies[0].name;
+            console.log(`[searchSecFilings] Single company found: ${companyName} (CIK: ${cik})`);
+          }
+        }
+      }
+
       // If ticker provided, look up CIK first
       if (args.ticker && !cik) {
         const tickerUpper = args.ticker.toUpperCase();
@@ -40,14 +115,14 @@ export const searchSecFilings = createTool({
           `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&ticker=${tickerUpper}&output=json`,
           { headers: { "User-Agent": userAgent } }
         );
-        
+
         if (!tickerResponse.ok) {
           return `Failed to look up ticker ${args.ticker}. Please verify the ticker symbol is correct.`;
         }
-        
+
         const tickerData = await tickerResponse.json();
         cik = tickerData?.cik || null;
-        
+
         if (!cik) {
           return `Could not find CIK for ticker ${args.ticker}. Please verify the ticker symbol.`;
         }
@@ -67,7 +142,9 @@ export const searchSecFilings = createTool({
       }
 
       const data = await response.json();
-      const companyName = data.name || "Unknown Company";
+      if (!companyName) {
+        companyName = data.name || "Unknown Company";
+      }
       
       // Filter filings by form type if specified
       const recentFilings = data.filings?.recent || {};

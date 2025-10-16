@@ -118,6 +118,7 @@ import type * as tags from "../tags.js";
 import type * as tags_actions from "../tags_actions.js";
 import type * as tasks from "../tasks.js";
 import type * as testYoutubeSearch from "../testYoutubeSearch.js";
+import type * as tools_confirmCompanySelection from "../tools/confirmCompanySelection.js";
 import type * as tools_dataAccessTools from "../tools/dataAccessTools.js";
 import type * as tools_documentTools from "../tools/documentTools.js";
 import type * as tools_evaluation_comprehensiveTest from "../tools/evaluation/comprehensiveTest.js";
@@ -127,6 +128,7 @@ import type * as tools_evaluation_quickTest from "../tools/evaluation/quickTest.
 import type * as tools_evaluation_testCases from "../tools/evaluation/testCases.js";
 import type * as tools_linkupSearch from "../tools/linkupSearch.js";
 import type * as tools_mediaTools from "../tools/mediaTools.js";
+import type * as tools_secCompanySearch from "../tools/secCompanySearch.js";
 import type * as tools_secFilingTools from "../tools/secFilingTools.js";
 import type * as tools_youtubeSearch from "../tools/youtubeSearch.js";
 import type * as usage from "../usage.js";
@@ -259,6 +261,7 @@ declare const fullApi: ApiFromModules<{
   tags_actions: typeof tags_actions;
   tasks: typeof tasks;
   testYoutubeSearch: typeof testYoutubeSearch;
+  "tools/confirmCompanySelection": typeof tools_confirmCompanySelection;
   "tools/dataAccessTools": typeof tools_dataAccessTools;
   "tools/documentTools": typeof tools_documentTools;
   "tools/evaluation/comprehensiveTest": typeof tools_evaluation_comprehensiveTest;
@@ -268,6 +271,7 @@ declare const fullApi: ApiFromModules<{
   "tools/evaluation/testCases": typeof tools_evaluation_testCases;
   "tools/linkupSearch": typeof tools_linkupSearch;
   "tools/mediaTools": typeof tools_mediaTools;
+  "tools/secCompanySearch": typeof tools_secCompanySearch;
   "tools/secFilingTools": typeof tools_secFilingTools;
   "tools/youtubeSearch": typeof tools_youtubeSearch;
   usage: typeof usage;

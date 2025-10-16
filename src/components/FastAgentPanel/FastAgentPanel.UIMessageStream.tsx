@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { UIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import type { UIMessage } from '@convex-dev/agent/react';
+import type { CompanyOption } from './CompanySelectionCard';
 
 interface UIMessageStreamProps {
   messages: UIMessage[];
@@ -12,6 +13,7 @@ interface UIMessageStreamProps {
   onMermaidRetry?: (error: string, code: string) => void;
   onRegenerateMessage?: (messageKey: string) => void;
   onDeleteMessage?: (messageKey: string) => void;
+  onCompanySelect?: (company: CompanyOption) => void;
 }
 
 // Extended UIMessage type with hierarchical metadata
@@ -40,6 +42,7 @@ export function UIMessageStream({
   onMermaidRetry,
   onRegenerateMessage,
   onDeleteMessage,
+  onCompanySelect,
 }: UIMessageStreamProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -169,6 +172,7 @@ export function UIMessageStream({
                     onMermaidRetry={onMermaidRetry}
                     onRegenerateMessage={onRegenerateMessage ? () => onRegenerateMessage(group.parent.key) : undefined}
                     onDeleteMessage={onDeleteMessage ? () => onDeleteMessage(group.parent.key) : undefined}
+                    onCompanySelect={onCompanySelect}
                     isParent={isParent}
                     agentRole={group.parent.metadata?.agentRole}
                   />
@@ -188,6 +192,7 @@ export function UIMessageStream({
                           onMermaidRetry={onMermaidRetry}
                           onRegenerateMessage={onRegenerateMessage ? () => onRegenerateMessage(child.key) : undefined}
                           onDeleteMessage={onDeleteMessage ? () => onDeleteMessage(child.key) : undefined}
+                          onCompanySelect={onCompanySelect}
                           isChild={true}
                           agentRole={child.metadata?.agentRole}
                         />

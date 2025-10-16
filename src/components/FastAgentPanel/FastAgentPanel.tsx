@@ -440,6 +440,33 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
     }
   }, [chatMode, activeThreadId, sendStreamingMessage, selectedModel]);
 
+  // Handle company selection from SEC filing disambiguation
+  const handleCompanySelect = useCallback(async (company: any) => {
+    if (chatMode !== 'agent-streaming' || !activeThreadId) {
+      console.warn('[FastAgentPanel] Company selection only works in agent-streaming mode');
+      return;
+    }
+
+    console.log('[FastAgentPanel] Company selected:', company);
+
+    // Create a confirmation message
+    const confirmationMessage = `I confirm: ${company.name} (CIK: ${company.cik})`;
+
+    // Send the confirmation message
+    try {
+      await sendStreamingMessage({
+        threadId: activeThreadId as Id<"chatThreadsStream">,
+        prompt: confirmationMessage,
+        model: selectedModel,
+      });
+      toast.success('Company selection confirmed');
+      console.log('[FastAgentPanel] Company selection sent');
+    } catch (err) {
+      console.error('[FastAgentPanel] Failed to send company selection:', err);
+      toast.error('Failed to confirm company selection');
+    }
+  }, [chatMode, activeThreadId, sendStreamingMessage, selectedModel]);
+
 
 
   // ========== RENDER ==========
@@ -709,6 +736,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
               onMermaidRetry={handleMermaidRetry}
               onRegenerateMessage={handleRegenerateMessage}
               onDeleteMessage={handleDeleteMessage}
+              onCompanySelect={handleCompanySelect}
             />
           ) : (
             <MessageStream

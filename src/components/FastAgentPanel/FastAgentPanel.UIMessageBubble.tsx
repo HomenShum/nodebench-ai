@@ -14,12 +14,14 @@ import type { FileUIPart, ToolUIPart } from 'ai';
 import { YouTubeGallery, SECDocumentGallery, type YouTubeVideo, type SECDocument } from './MediaGallery';
 import { MermaidDiagram } from './MermaidDiagram';
 import { FileViewer, type FileViewerFile } from './FileViewer';
+import { CompanySelectionCard, type CompanyOption } from './CompanySelectionCard';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
   onMermaidRetry?: (error: string, code: string) => void;
   onRegenerateMessage?: () => void;
   onDeleteMessage?: () => void;
+  onCompanySelect?: (company: CompanyOption) => void;
   isParent?: boolean; // Whether this message has child messages
   isChild?: boolean; // Whether this is a child message (specialized agent)
   agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
@@ -76,7 +78,7 @@ function SafeImage({ src, alt, className }: { src: string; alt: string; classNam
 /**
  * Helper to render tool output with markdown support and gallery layout for images, videos, and SEC documents
  */
-function ToolOutputRenderer({ output }: { output: unknown }) {
+function ToolOutputRenderer({ output, onCompanySelect }: { output: unknown; onCompanySelect?: (company: CompanyOption) => void }) {
   const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
 
   // Extract YouTube gallery data
@@ -100,6 +102,12 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
     },
   }));
 
+  // Extract company selection data
+  const companySelectionMatch = outputText.match(/<!-- COMPANY_SELECTION_DATA\n([\s\S]*?)\n-->/);
+  const companySelectionData: { prompt: string; companies: CompanyOption[] } | null = companySelectionMatch
+    ? JSON.parse(companySelectionMatch[1])
+    : null;
+
   // Check if this output contains multiple images (for gallery layout)
   const imageMatches = outputText.match(/!\[.*?\]\(.*?\)/g) || [];
   const imageCount = imageMatches.length;
@@ -115,10 +123,11 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
     };
   });
 
-  // Remove gallery data markers from content
-  let cleanedContent = outputText
+  // Remove gallery data markers and company selection data from content
+  const cleanedContent = outputText
     .replace(/<!-- YOUTUBE_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
-    .replace(/<!-- SEC_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '');
+    .replace(/<!-- SEC_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
+    .replace(/<!-- COMPANY_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '');
 
   // Split content to separate images section from rest
   const parts = cleanedContent.split(/## Images\s*\n*/);
@@ -128,6 +137,15 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
 
   return (
     <div className="text-xs text-gray-600 mt-1 space-y-2">
+      {/* Render company selection prompt */}
+      {companySelectionData && onCompanySelect && (
+        <CompanySelectionCard
+          prompt={companySelectionData.prompt}
+          companies={companySelectionData.companies}
+          onSelect={onCompanySelect}
+        />
+      )}
+
       {/* Render YouTube gallery */}
       {youtubeVideos.length > 0 && <YouTubeGallery videos={youtubeVideos} />}
 
@@ -226,6 +244,7 @@ export function UIMessageBubble({
   onMermaidRetry,
   onRegenerateMessage,
   onDeleteMessage,
+  onCompanySelect,
   isParent,
   isChild,
   agentRole,
@@ -333,7 +352,7 @@ export function UIMessageBubble({
                 <Wrench className="h-3 w-3" />
                 {part.type.replace('tool-', '')}
               </div>
-              {hasOutput && <ToolOutputRenderer output={part.output} />}
+              {hasOutput && <ToolOutputRenderer output={part.output} onCompanySelect={onCompanySelect} />}
             </div>
           );
         })}

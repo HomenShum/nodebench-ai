@@ -2,7 +2,7 @@
 // Thread list sidebar with search, pin, and delete functionality
 
 import React, { useState, useMemo } from 'react';
-import { MessageSquare, Pin, Trash2, Search, X, Download } from 'lucide-react';
+import { MessageSquare, Pin, Trash2, Search, X, Download, Wrench, Cpu } from 'lucide-react';
 import type { Thread } from './types';
 
 interface ThreadListProps {
@@ -33,6 +33,17 @@ export function ThreadList({
   // Filter and sort threads
   const filteredThreads = useMemo(() => {
     let filtered = threads;
+    
+    // Debug: Log received threads
+    if (threads.length > 0) {
+      console.log('[ThreadList] Received threads:', threads.length);
+      console.log('[ThreadList] First thread:', {
+        title: threads[0].title,
+        messageCount: threads[0].messageCount,
+        toolsUsed: threads[0].toolsUsed,
+        modelsUsed: threads[0].modelsUsed,
+      });
+    }
     
     // Search filter
     if (searchQuery.trim()) {
@@ -149,6 +160,16 @@ export function ThreadList({
                   <p className="thread-preview">
                     {thread.lastMessage}
                   </p>
+                )}
+                
+                {/* Tools and Models Used */}
+                {(thread.toolsUsed && thread.toolsUsed.length > 0) && (
+                  <div className="thread-badges">
+                    <div className="thread-badge-group">
+                      <Wrench className="badge-icon" />
+                      <span className="badge-count">{thread.toolsUsed.length} {thread.toolsUsed.length === 1 ? 'tool' : 'tools'}</span>
+                    </div>
+                  </div>
                 )}
                 
                 <div className="thread-meta">
@@ -337,6 +358,35 @@ export function ThreadList({
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+        
+        .thread-badges {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+          flex-wrap: wrap;
+        }
+        
+        .thread-badge-group {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.25rem 0.5rem;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+        }
+        
+        .badge-icon {
+          width: 0.875rem;
+          height: 0.875rem;
+          color: #8b5cf6;
+        }
+        
+        .badge-count {
+          font-weight: 500;
         }
         
         .thread-meta {
