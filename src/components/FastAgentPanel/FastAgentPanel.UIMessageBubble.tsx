@@ -7,14 +7,18 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
+import { YouTubeGallery, SECDocumentGallery, type YouTubeVideo, type SECDocument } from './MediaGallery';
 import { MermaidDiagram } from './MermaidDiagram';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
+  onMermaidRetry?: (error: string, code: string) => void;
+  onRegenerateMessage?: () => void;
+  onDeleteMessage?: () => void;
 }
 
 /**
@@ -66,10 +70,18 @@ function SafeImage({ src, alt, className }: { src: string; alt: string; classNam
 }
 
 /**
- * Helper to render tool output with markdown support and gallery layout for images
+ * Helper to render tool output with markdown support and gallery layout for images, videos, and SEC documents
  */
 function ToolOutputRenderer({ output }: { output: unknown }) {
   const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
+
+  // Extract YouTube gallery data
+  const youtubeMatch = outputText.match(/<!-- YOUTUBE_GALLERY_DATA\n([\s\S]*?)\n-->/);
+  const youtubeVideos: YouTubeVideo[] = youtubeMatch ? JSON.parse(youtubeMatch[1]) : [];
+
+  // Extract SEC gallery data
+  const secMatch = outputText.match(/<!-- SEC_GALLERY_DATA\n([\s\S]*?)\n-->/);
+  const secDocuments: SECDocument[] = secMatch ? JSON.parse(secMatch[1]) : [];
 
   // Check if this output contains multiple images (for gallery layout)
   const imageMatches = outputText.match(/!\[.*?\]\(.*?\)/g) || [];
@@ -86,14 +98,25 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
     };
   });
 
+  // Remove gallery data markers from content
+  let cleanedContent = outputText
+    .replace(/<!-- YOUTUBE_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
+    .replace(/<!-- SEC_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '');
+
   // Split content to separate images section from rest
-  const parts = outputText.split(/## Images\s*\n*/);
+  const parts = cleanedContent.split(/## Images\s*\n*/);
   const beforeImages = parts[0];
   const afterImages = parts[1]?.split(/##/);
   const restOfContent = afterImages ? '##' + afterImages.slice(1).join('##') : '';
 
   return (
     <div className="text-xs text-gray-600 mt-1 space-y-2">
+      {/* Render YouTube gallery */}
+      {youtubeVideos.length > 0 && <YouTubeGallery videos={youtubeVideos} />}
+
+      {/* Render SEC documents gallery */}
+      {secDocuments.length > 0 && <SECDocumentGallery documents={secDocuments} />}
+
       {/* Render content before images */}
       {beforeImages && (
         <ReactMarkdown rehypePlugins={[rehypeRaw, rehypeSanitize]}>
@@ -171,8 +194,26 @@ function ToolOutputRenderer({ output }: { output: unknown }) {
  * UIMessageBubble - Renders a UIMessage with smooth streaming animation
  * Handles all UIMessage part types: text, reasoning, tool calls, files, etc.
  */
-export function UIMessageBubble({ message }: UIMessageBubbleProps) {
+export function UIMessageBubble({ message, onMermaidRetry, onRegenerateMessage, onDeleteMessage }: UIMessageBubbleProps) {
   const isUser = message.role === 'user';
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleRegenerate = () => {
+    if (onRegenerateMessage && !isRegenerating) {
+      setIsRegenerating(true);
+      onRegenerateMessage();
+      // Reset after a delay
+      setTimeout(() => setIsRegenerating(false), 2000);
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDeleteMessage) {
+      onDeleteMessage();
+      setShowDeleteConfirm(false);
+    }
+  };
 
   // Use smooth text streaming - matches documentation pattern exactly
   const [visibleText] = useSmoothText(message.text, {
@@ -288,8 +329,14 @@ export function UIMessageBubble({ message }: UIMessageBubbleProps) {
                   
                   // Special handling for Mermaid diagrams
                   if (!inline && language === 'mermaid') {
+                    const mermaidCode = String(children).replace(/\n$/, '');
+                    const isStreaming = message.status === 'streaming';
                     return (
-                      <MermaidDiagram code={String(children).replace(/\n$/, '')} />
+                      <MermaidDiagram 
+                        code={mermaidCode}
+                        onRetryRequest={onMermaidRetry}
+                        isStreaming={isStreaming}
+                      />
                     );
                   }
                   
@@ -328,13 +375,63 @@ export function UIMessageBubble({ message }: UIMessageBubbleProps) {
           </div>
         )}
 
-        {/* Status indicator */}
-        {message.status === 'streaming' && (
-          <div className="text-xs text-gray-400 flex items-center gap-1">
-            <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            Streaming...
-          </div>
-        )}
+        {/* Status indicator and actions */}
+        <div className="flex items-center gap-2">
+          {message.status === 'streaming' && (
+            <div className="text-xs text-gray-400 flex items-center gap-1">
+              <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              Streaming...
+            </div>
+          )}
+          
+          {/* Action buttons for completed messages */}
+          {message.status !== 'streaming' && visibleText && (
+            <div className="flex items-center gap-1">
+              {/* Regenerate button for assistant messages */}
+              {!isUser && onRegenerateMessage && (
+                <button
+                  onClick={handleRegenerate}
+                  disabled={isRegenerating}
+                  className="text-xs text-gray-500 hover:text-gray-700 disabled:text-gray-400 flex items-center gap-1 transition-colors"
+                  title="Regenerate response"
+                >
+                  <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+                  <span className="text-xs">{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
+                </button>
+              )}
+              
+              {/* Delete button */}
+              {onDeleteMessage && (
+                showDeleteConfirm ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handleDelete}
+                      className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors px-2 py-1 bg-red-50 rounded"
+                      title="Confirm delete"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span className="text-xs">Confirm</span>
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-1"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="text-xs text-gray-400 hover:text-red-600 flex items-center gap-1 transition-colors"
+                    title="Delete message"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* User Avatar */}

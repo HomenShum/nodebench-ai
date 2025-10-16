@@ -173,7 +173,7 @@ For complex queries, the planner:
 ### **✅ Implemented**
 
 - [x] Query classifier with domain detection
-- [x] Task planner with GPT-4o-mini
+- [x] Task planner with GPT-5-mini
 - [x] 5 specialized sub-agents
 - [x] Hybrid router
 - [x] Execution orchestrator
@@ -240,7 +240,7 @@ For complex queries, the planner:
 ## 📚 **References**
 
 - **Convex Agent Component**: `@convex-dev/agent`
-- **OpenAI Structured Outputs**: GPT-4o-mini with Zod schemas
+- **OpenAI Structured Outputs**: GPT-5-mini with Zod schemas
 - **Test Suite**: `convex/tools/evaluation/`
 - **Original Agent**: `convex/fastAgentPanelStreaming.ts`
 

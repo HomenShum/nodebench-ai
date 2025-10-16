@@ -8,6 +8,9 @@ import type { UIMessage } from '@convex-dev/agent/react';
 interface UIMessageStreamProps {
   messages: UIMessage[];
   autoScroll?: boolean;
+  onMermaidRetry?: (error: string, code: string) => void;
+  onRegenerateMessage?: (messageKey: string) => void;
+  onDeleteMessage?: (messageKey: string) => void;
 }
 
 /**
@@ -17,6 +20,9 @@ interface UIMessageStreamProps {
 export function UIMessageStream({
   messages,
   autoScroll = true,
+  onMermaidRetry,
+  onRegenerateMessage,
+  onDeleteMessage,
 }: UIMessageStreamProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -42,8 +48,11 @@ export function UIMessageStream({
         <div className="flex flex-col gap-4">
           {messages.map((message) => (
             <UIMessageBubble
-              key={message.key || message._id}
+              key={message.key || (message as any)._id}
               message={message}
+              onMermaidRetry={onMermaidRetry}
+              onRegenerateMessage={onRegenerateMessage ? () => onRegenerateMessage(message.key) : undefined}
+              onDeleteMessage={onDeleteMessage ? () => onDeleteMessage(message.key) : undefined}
             />
           ))}
           <div ref={messagesEndRef} />

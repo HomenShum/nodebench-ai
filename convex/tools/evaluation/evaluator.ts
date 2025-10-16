@@ -77,7 +77,7 @@ export const runSingleTest = internalAction({
     let errors: string[] = [];
 
     try {
-      // Use original agent for evaluation tests (orchestrator not working yet)
+      // Use OpenAI function-calling implementation directly
       const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
         threadId: args.threadId,
         message: testCase.userQuery,

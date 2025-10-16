@@ -2,11 +2,13 @@
 // Renders Mermaid diagrams from code blocks
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Code2, Image as ImageIcon, Copy, Check } from 'lucide-react';
+import { Code2, Image as ImageIcon, Copy, Check, RefreshCw, Maximize2, Download, X, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface MermaidDiagramProps {
   code: string;
   id?: string;
+  onRetryRequest?: (error: string, code: string) => void;
+  isStreaming?: boolean;
 }
 
 // Load Mermaid from CDN
@@ -55,15 +57,37 @@ async function loadMermaid() {
   });
 }
 
-export function MermaidDiagram({ code, id }: MermaidDiagramProps) {
+export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const lastRenderedCode = useRef<string>('');
+  const isRendering = useRef<boolean>(false);
 
   useEffect(() => {
+    // Skip if message is still streaming (wait for complete code)
+    if (isStreaming) {
+      console.log('[MermaidDiagram] ⏸️ Skipping render - message still streaming');
+      return;
+    }
+
+    // Skip if we're already rendering or if this is the same code we just rendered
+    if (isRendering.current || lastRenderedCode.current === code) {
+      return;
+    }
+
+    // Reset retry state when code changes
+    setIsRetrying(false);
+    
     const renderDiagram = async () => {
+      isRendering.current = true;
+      lastRenderedCode.current = code;
       try {
         // Load Mermaid from CDN
         await loadMermaid();
@@ -92,14 +116,18 @@ export function MermaidDiagram({ code, id }: MermaidDiagramProps) {
         const { svg: renderedSvg } = await window.mermaid.render(diagramId, code);
         setSvg(renderedSvg);
         setError('');
+        console.log('[MermaidDiagram] ✅ Successfully rendered diagram');
       } catch (err) {
-        console.error('Mermaid rendering error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to render diagram');
+        console.error('[MermaidDiagram] Rendering error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to render diagram';
+        setError(errorMessage);
+      } finally {
+        isRendering.current = false;
       }
     };
 
     void renderDiagram();
-  }, [code, id]);
+  }, [code, id, isStreaming]);
 
   const handleCopyCode = async () => {
     try {
@@ -111,14 +139,110 @@ export function MermaidDiagram({ code, id }: MermaidDiagramProps) {
     }
   };
 
+  const handleRetry = () => {
+    if (onRetryRequest && !isRetrying) {
+      setIsRetrying(true);
+      onRetryRequest(error, code);
+    }
+  };
+
+  const handleDownload = async (format: 'svg' | 'png') => {
+    if (!svg) return;
+    
+    setIsDownloading(true);
+    try {
+      if (format === 'svg') {
+        // Download as SVG
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `mermaid-diagram-${Date.now()}.svg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Convert SVG to PNG
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Could not get canvas context');
+
+        const img = new Image();
+        const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = () => {
+          // Set canvas size to match image with 2x resolution for better quality
+          canvas.width = img.width * 2;
+          canvas.height = img.height * 2;
+          ctx.scale(2, 2);
+          
+          // White background
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw image
+          ctx.drawImage(img, 0, 0);
+          
+          // Download
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = `mermaid-diagram-${Date.now()}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(link.href);
+            }
+            setIsDownloading(false);
+          }, 'image/png');
+          
+          URL.revokeObjectURL(url);
+        };
+
+        img.onerror = () => {
+          console.error('Failed to load SVG for PNG conversion');
+          setIsDownloading(false);
+          URL.revokeObjectURL(url);
+        };
+
+        img.src = url;
+      }
+      
+      if (format === 'svg') {
+        setIsDownloading(false);
+      }
+    } catch (err) {
+      console.error('Failed to download diagram:', err);
+      setIsDownloading(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="my-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <div className="text-sm font-medium text-red-800 mb-1">
-          Failed to render Mermaid diagram
-        </div>
-        <div className="text-xs text-red-600 font-mono">
-          {error}
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="flex-1">
+            <div className="text-sm font-medium text-red-800 mb-1">
+              Failed to render Mermaid diagram
+            </div>
+            <div className="text-xs text-red-600 font-mono">
+              {error}
+            </div>
+          </div>
+          {onRetryRequest && (
+            <button
+              onClick={handleRetry}
+              disabled={isRetrying}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-xs font-medium rounded transition-colors"
+              title="Ask AI to fix the diagram"
+            >
+              <RefreshCw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
+              {isRetrying ? 'Retrying...' : 'Fix Diagram'}
+            </button>
+          )}
         </div>
         <details className="mt-2">
           <summary className="text-xs text-red-700 cursor-pointer hover:underline">
@@ -145,72 +269,173 @@ export function MermaidDiagram({ code, id }: MermaidDiagramProps) {
 
   return (
     <div className="my-4 bg-white border border-gray-200 rounded-lg overflow-hidden">
-      {/* Header with toggle buttons */}
-      <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <div className="text-xs font-medium text-gray-600 flex items-center gap-1">
-            <ImageIcon className="h-3 w-3" />
-            Mermaid Diagram
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-1">
-          {/* Toggle buttons */}
-          <button
-            onClick={() => setShowCode(false)}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-              !showCode
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            title="Show diagram"
-          >
-            <ImageIcon className="h-3 w-3" />
-          </button>
-          
-          <button
-            onClick={() => setShowCode(true)}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-              showCode
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            title="Show code"
-          >
-            <Code2 className="h-3 w-3" />
-          </button>
-          
-          {/* Copy button */}
-          <button
-            onClick={handleCopyCode}
-            className="px-2 py-1 rounded text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors ml-1"
-            title="Copy code"
-          >
-            {copied ? (
-              <Check className="h-3 w-3 text-green-600" />
-            ) : (
-              <Copy className="h-3 w-3" />
-            )}
-          </button>
-        </div>
+      {/* Minimal header bar */}
+      <div className="absolute top-2 right-2 z-10 flex gap-0.5 opacity-60 hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsZoomed(true);
+          }}
+          className="p-1.5 bg-white/90 backdrop-blur-sm rounded hover:bg-white transition-colors shadow-sm"
+          title="Zoom"
+        >
+          <Maximize2 className="h-3.5 w-3.5 text-gray-600" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDownload('png');
+          }}
+          disabled={isDownloading}
+          className="p-1.5 bg-white/90 backdrop-blur-sm rounded hover:bg-white transition-colors shadow-sm disabled:opacity-50"
+          title="Download PNG"
+        >
+          <Download className="h-3.5 w-3.5 text-gray-600" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowCode(!showCode);
+          }}
+          className="p-1.5 bg-white/90 backdrop-blur-sm rounded hover:bg-white transition-colors shadow-sm"
+          title="Code"
+        >
+          <Code2 className="h-3.5 w-3.5 text-gray-600" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCopyCode();
+          }}
+          className="p-1.5 bg-white/90 backdrop-blur-sm rounded hover:bg-white transition-colors shadow-sm"
+          title="Copy"
+        >
+          {copied ? (
+            <Check className="h-3.5 w-3.5 text-green-600" />
+          ) : (
+            <Copy className="h-3.5 w-3.5 text-gray-600" />
+          )}
+        </button>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        {showCode ? (
-          /* Code view */
-          <pre className="text-xs bg-gray-900 text-gray-100 p-3 rounded overflow-x-auto font-mono">
-            <code>{code}</code>
-          </pre>
-        ) : (
-          /* Diagram view */
-          <div
-            ref={containerRef}
-            className="overflow-x-auto"
-            dangerouslySetInnerHTML={{ __html: svg }}
-          />
-        )}
+      {/* Main diagram - clickable to zoom */}
+      <div 
+        className="relative p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        onClick={() => setIsZoomed(true)}
+        title="Click to zoom"
+      >
+        <div 
+          className="overflow-x-auto"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
       </div>
+
+      {showCode && (
+        <pre className="mt-2 text-xs bg-gray-50 p-3 rounded border border-gray-200 overflow-x-auto">
+          {code}
+        </pre>
+      )}
+
+      {/* Zoom Modal */}
+      {isZoomed && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            setIsZoomed(false);
+            setZoomLevel(100);
+          }}
+        >
+          <div className="relative w-full h-full max-w-7xl flex flex-col">
+            {/* Compact control bar */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomLevel(Math.min(200, zoomLevel + 25));
+                  }}
+                  className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                  title="Zoom in"
+                  disabled={zoomLevel >= 200}
+                >
+                  <ZoomIn className="h-4 w-4 text-gray-700" />
+                </button>
+                <span className="text-xs font-medium text-gray-700 min-w-[3rem] text-center">
+                  {zoomLevel}%
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomLevel(Math.max(50, zoomLevel - 25));
+                  }}
+                  className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                  title="Zoom out"
+                  disabled={zoomLevel <= 50}
+                >
+                  <ZoomOut className="h-4 w-4 text-gray-700" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomLevel(100);
+                  }}
+                  className="p-1.5 hover:bg-gray-100 rounded transition-colors ml-1"
+                  title="Reset zoom"
+                >
+                  <span className="text-xs font-medium text-gray-700">Reset</span>
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload('svg');
+                  }}
+                  disabled={isDownloading}
+                  className="p-1.5 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
+                  title="Download SVG"
+                >
+                  <Download className="h-4 w-4 text-gray-700" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload('png');
+                  }}
+                  disabled={isDownloading}
+                  className="p-1.5 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
+                  title="Download PNG"
+                >
+                  <Download className="h-4 w-4 text-blue-600" />
+                </button>
+                <div className="w-px h-4 bg-gray-300 mx-1" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsZoomed(false);
+                    setZoomLevel(100);
+                  }}
+                  className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                  title="Close"
+                >
+                  <X className="h-4 w-4 text-gray-700" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Zoomed diagram with scroll */}
+            <div className="flex-1 bg-white rounded-lg shadow-2xl overflow-auto">
+              <div 
+                className="p-8 transition-transform duration-200"
+                style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
+                onClick={(e) => e.stopPropagation()}
+                dangerouslySetInnerHTML={{ __html: svg }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

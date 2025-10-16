@@ -33,7 +33,7 @@ export const runQuickTest = action({
     }
     console.log(`Using test user: ${testUserId}\n`);
 
-    // Select one test from each category
+    // Select one test from each category + specialized agent tests
     const quickTests = [
       "doc-001",    // findDocument
       "doc-002",    // getDocumentContent
@@ -41,6 +41,11 @@ export const runQuickTest = action({
       "task-001",   // listTasks
       "cal-001",    // listEvents
       "web-001",    // linkupSearch
+      "sec-001",    // searchSecFilings
+      "youtube-001", // YouTube search
+      "agent-001",  // Coordinator multi-domain
+      "agent-002",  // MediaAgent YouTube
+      "agent-003",  // SECAgent filing search
     ];
 
     const results = [];
@@ -117,6 +122,7 @@ export const testTool = action({
   args: {
     toolName: v.string(),
     userQuery: v.string(),
+    useCoordinator: v.optional(v.boolean()),
   },
   returns: v.object({
     response: v.string(),
@@ -127,11 +133,13 @@ export const testTool = action({
     toolsCalled: string[];
   }> => {
     console.log(`\n🧪 Testing tool: ${args.toolName}`);
-    console.log(`Query: "${args.userQuery}"\n`);
+    console.log(`Query: "${args.userQuery}"`);
+    console.log(`Coordinator: ${args.useCoordinator !== false ? "ENABLED" : "DISABLED"}\n`);
 
     try {
       const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
         message: args.userQuery,
+        useCoordinator: args.useCoordinator,
       });
 
       console.log("Response:", result.response);
@@ -258,6 +266,155 @@ export const testWebSearch = action({
 });
 
 /**
+ * Test coordinator agent with specialized agents
+ */
+export const testCoordinator = action({
+  args: {},
+  returns: v.object({
+    totalTests: v.number(),
+    passed: v.number(),
+    failed: v.number(),
+    results: v.array(v.any()),
+  }),
+  handler: async (ctx): Promise<{
+    totalTests: number;
+    passed: number;
+    failed: number;
+    results: any[];
+  }> => {
+    console.log("\n🎯 Testing Coordinator Agent with Specialized Agents\n");
+
+    const tests = [
+      {
+        name: "Multi-Domain Query (Document + Video)",
+        query: "Find documents and videos about Google",
+        expectedDelegations: ["delegateToDocumentAgent", "delegateToMediaAgent"],
+        expectedTools: ["findDocument", "youtubeSearch"],
+      },
+      {
+        name: "SEC Filing Query",
+        query: "Get Tesla's latest 10-K filing",
+        expectedDelegations: ["delegateToSECAgent"],
+        expectedTools: ["searchSecFilings"],
+      },
+      {
+        name: "YouTube Video Search",
+        query: "Find videos about Python programming",
+        expectedDelegations: ["delegateToMediaAgent"],
+        expectedTools: ["youtubeSearch"],
+      },
+      {
+        name: "Document Search",
+        query: "Find the revenue report",
+        expectedDelegations: ["delegateToDocumentAgent"],
+        expectedTools: ["findDocument"],
+      },
+    ];
+
+    const results = [];
+    let passed = 0;
+    let failed = 0;
+
+    for (const test of tests) {
+      console.log(`\n${"=".repeat(80)}`);
+      console.log(`🧪 Test: ${test.name}`);
+      console.log(`Query: "${test.query}"`);
+      console.log(`Expected Delegations: ${test.expectedDelegations.join(", ")}`);
+      console.log(`Expected Tools: ${test.expectedTools.join(", ")}`);
+      console.log("-".repeat(80));
+
+      try {
+        const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
+          message: test.query,
+          useCoordinator: true, // Enable coordinator
+        });
+
+        console.log(`\nTools Called: ${result.toolsCalled.join(", ")}`);
+        console.log(`Response Preview: ${result.response.substring(0, 200)}...`);
+
+        // Check if expected delegations were called (coordinator level)
+        const allDelegationsFound = test.expectedDelegations.every(delegation =>
+          result.toolsCalled.includes(delegation)
+        );
+
+        // Check if response is not empty
+        const hasResponse = result.response && result.response.length > 0;
+
+        // Check for validation errors in response
+        const hasValidationError = result.response.includes("ArgumentValidationError");
+
+        // For coordinator mode, we check delegations, not the nested tools
+        const testPassed = allDelegationsFound && hasResponse && !hasValidationError;
+
+        if (testPassed) {
+          passed++;
+          console.log(`\n✅ PASSED`);
+          console.log(`✓ All expected delegations called: ${test.expectedDelegations.join(", ")}`);
+          console.log(`✓ Response generated (${result.response.length} chars)`);
+          console.log(`✓ No validation errors`);
+        } else {
+          failed++;
+          console.log(`\n❌ FAILED`);
+          if (!allDelegationsFound) {
+            const missing = test.expectedDelegations.filter(d => !result.toolsCalled.includes(d));
+            console.log(`✗ Missing delegations: ${missing.join(", ")}`);
+            console.log(`✗ Expected: ${test.expectedDelegations.join(", ")}`);
+            console.log(`✗ Got: ${result.toolsCalled.join(", ") || "none"}`);
+          }
+          if (!hasResponse) {
+            console.log(`✗ No response generated`);
+          }
+          if (hasValidationError) {
+            console.log(`✗ Validation error detected`);
+          }
+        }
+
+        results.push({
+          test: test.name,
+          query: test.query,
+          expectedDelegations: test.expectedDelegations,
+          actualDelegations: result.toolsCalled,
+          expectedTools: test.expectedTools,
+          passed: testPassed,
+          responseLength: result.response.length,
+          hasValidationError,
+        });
+
+        // Small delay between tests
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+      } catch (error: any) {
+        failed++;
+        console.log(`\n❌ ERROR: ${error.message}`);
+        results.push({
+          test: test.name,
+          query: test.query,
+          passed: false,
+          error: error.message,
+        });
+      }
+    }
+
+    // Print summary
+    console.log(`\n${"=".repeat(80)}`);
+    console.log("📊 COORDINATOR TEST SUMMARY");
+    console.log("=".repeat(80));
+    console.log(`Total Tests: ${tests.length}`);
+    console.log(`✅ Passed: ${passed}`);
+    console.log(`❌ Failed: ${failed}`);
+    console.log(`Success Rate: ${((passed / tests.length) * 100).toFixed(1)}%`);
+    console.log("=".repeat(80) + "\n");
+
+    return {
+      totalTests: tests.length,
+      passed,
+      failed,
+      results,
+    };
+  },
+});
+
+/**
  * Test multi-step workflow
  */
 export const testWorkflow = action({
@@ -284,11 +441,12 @@ export const testWorkflow = action({
     try {
       const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
         message: workflow,
+        useCoordinator: true, // Enable coordinator
       });
 
       console.log("Tools Called:", result.toolsCalled.join(" → "));
       console.log("\nExpected sequence: findDocument → getDocumentContent → analyzeDocument");
-      
+
       const hasFind = result.toolsCalled.includes("findDocument");
       const hasGet = result.toolsCalled.includes("getDocumentContent");
       const hasAnalyze = result.toolsCalled.includes("analyzeDocument");

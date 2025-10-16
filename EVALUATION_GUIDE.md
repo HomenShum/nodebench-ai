@@ -204,7 +204,7 @@ Each test case includes:
 
 ## LLM-as-a-Judge
 
-The evaluation system uses **GPT-4o** as an impartial judge to:
+The evaluation system uses **GPT-5** as an impartial judge to:
 
 1. **Verify Tool Selection** - Did the AI choose the right tool?
 2. **Check Parameters** - Were the tool arguments correct?

@@ -320,6 +320,73 @@ export const webSearchToolTests: TestCase[] = [
   }
 ];
 
+export const secFilingToolTests: TestCase[] = [
+  {
+    id: "sec-001",
+    category: "SEC Filing Search",
+    tool: "searchSecFilings",
+    scenario: "User wants to find SEC filings by ticker",
+    userQuery: "Find SEC filings for Apple",
+    expectedTool: "searchSecFilings",
+    expectedArgs: { ticker: "AAPL", formType: "ALL", limit: 10 },
+    successCriteria: [
+      "Tool called is searchSecFilings",
+      "Ticker parameter is 'AAPL' or 'Apple'",
+      "Response includes filing information",
+      "Response is helpful and accurate"
+    ],
+    evaluationPrompt: "Evaluate if the AI searched for Apple's SEC filings. Check if the response includes filing types, dates, and document URLs."
+  },
+  {
+    id: "sec-002",
+    category: "SEC Filing Download",
+    tool: "downloadSecFiling",
+    scenario: "User wants to download a specific SEC filing",
+    userQuery: "Download Apple's latest 10-K filing",
+    expectedTool: "searchSecFilings",
+    expectedArgs: { ticker: "AAPL", formType: "10-K" },
+    successCriteria: [
+      "Tool called includes searchSecFilings",
+      "Response attempts to find and download the 10-K",
+      "Response is helpful (either downloads or explains how to)",
+      "Response is accurate"
+    ],
+    evaluationPrompt: "Evaluate if the AI attempted to find and download Apple's 10-K filing. Accept responses that search for the filing and offer to download it."
+  },
+  {
+    id: "sec-003",
+    category: "Company Information",
+    tool: "getCompanyInfo",
+    scenario: "User wants company information from SEC",
+    userQuery: "Get company info for Tesla",
+    expectedTool: "getCompanyInfo",
+    expectedArgs: { ticker: "TSLA" },
+    successCriteria: [
+      "Tool called is getCompanyInfo",
+      "Response includes company details (CIK, SIC, address, etc.)",
+      "Response is helpful and accurate",
+      "Company name is mentioned"
+    ],
+    evaluationPrompt: "Evaluate if the AI retrieved Tesla's company information from SEC. Check if the response includes CIK, business address, and other company details."
+  },
+  {
+    id: "sec-004",
+    category: "SEC Filing Type Filter",
+    tool: "searchSecFilings",
+    scenario: "User wants specific type of SEC filing",
+    userQuery: "Show me Microsoft's quarterly reports",
+    expectedTool: "searchSecFilings",
+    expectedArgs: { ticker: "MSFT", formType: "10-Q" },
+    successCriteria: [
+      "Tool called is searchSecFilings",
+      "Form type is filtered to 10-Q or quarterly",
+      "Response shows quarterly reports",
+      "Response is helpful and accurate"
+    ],
+    evaluationPrompt: "Evaluate if the AI correctly filtered for Microsoft's 10-Q (quarterly) filings. Check if the response focuses on quarterly reports."
+  },
+];
+
 // Multi-step workflow tests
 export const workflowTests: TestCase[] = [
   {
@@ -585,6 +652,106 @@ export const performanceTests: TestCase[] = [
   },
 ];
 
+// Specialized Agent Tests
+export const specializedAgentTests: TestCase[] = [
+  {
+    id: "agent-001",
+    category: "Specialized Agents",
+    tool: "Coordinator Agent",
+    scenario: "Multi-domain query requiring document and video search",
+    userQuery: "Find me documents and videos about Google",
+    expectedTool: "delegateToDocumentAgent, delegateToMediaAgent",
+    expectedArgs: { query: "Google" },
+    successCriteria: [
+      "Coordinator delegates to both DocumentAgent and MediaAgent",
+      "Document search results are returned",
+      "YouTube video gallery is displayed",
+      "Response combines both results coherently",
+    ],
+    evaluationPrompt: "Evaluate if the coordinator correctly identified the need for both document and video search, delegated to appropriate agents, and combined results effectively."
+  },
+  {
+    id: "agent-002",
+    category: "Specialized Agents",
+    tool: "Media Agent",
+    scenario: "YouTube video search",
+    userQuery: "Find videos about Python programming",
+    expectedTool: "youtubeSearch",
+    expectedArgs: { query: "Python programming" },
+    successCriteria: [
+      "MediaAgent is used (directly or via delegation)",
+      "youtubeSearch tool is called",
+      "YouTube gallery with video thumbnails is displayed",
+      "Videos are relevant to Python programming",
+    ],
+    evaluationPrompt: "Evaluate if the agent correctly used youtubeSearch to find Python programming videos and displayed them in a gallery format."
+  },
+  {
+    id: "agent-003",
+    category: "Specialized Agents",
+    tool: "SEC Agent",
+    scenario: "SEC filing search by ticker",
+    userQuery: "Find Apple's SEC filings",
+    expectedTool: "searchSecFilings",
+    expectedArgs: { ticker: "AAPL" },
+    successCriteria: [
+      "SECAgent is used (directly or via delegation)",
+      "searchSecFilings tool is called with ticker AAPL",
+      "SEC document gallery is displayed",
+      "Filings include form types (10-K, 10-Q, etc.)",
+    ],
+    evaluationPrompt: "Evaluate if the agent correctly identified Apple's ticker symbol (AAPL) and used searchSecFilings to retrieve SEC filings."
+  },
+  {
+    id: "agent-004",
+    category: "Specialized Agents",
+    tool: "Document Agent",
+    scenario: "Find and read document workflow",
+    userQuery: "Show me the revenue report",
+    expectedTool: "findDocument, getDocumentContent",
+    expectedArgs: { query: "revenue report" },
+    successCriteria: [
+      "DocumentAgent is used (directly or via delegation)",
+      "findDocument is called first",
+      "getDocumentContent is called with found document ID",
+      "Full document content is displayed",
+    ],
+    evaluationPrompt: "Evaluate if the agent correctly executed the two-step workflow: find document, then retrieve content."
+  },
+  {
+    id: "agent-005",
+    category: "Specialized Agents",
+    tool: "Coordinator Agent",
+    scenario: "Complex multi-agent workflow",
+    userQuery: "Get Tesla's 10-K and find videos about Tesla",
+    expectedTool: "delegateToSECAgent, delegateToMediaAgent",
+    expectedArgs: { query: "Tesla" },
+    successCriteria: [
+      "Coordinator delegates to both SECAgent and MediaAgent",
+      "SEC filing for Tesla (TSLA) is retrieved",
+      "YouTube videos about Tesla are displayed",
+      "Response is well-organized with both results",
+    ],
+    evaluationPrompt: "Evaluate if the coordinator correctly handled a complex query requiring both SEC filings and video search."
+  },
+  {
+    id: "agent-006",
+    category: "Specialized Agents",
+    tool: "Web Agent",
+    scenario: "Current information search",
+    userQuery: "What's the latest news on AI?",
+    expectedTool: "linkupSearch",
+    expectedArgs: { query: "latest news on AI" },
+    successCriteria: [
+      "WebAgent is used (directly or via delegation)",
+      "linkupSearch tool is called",
+      "Current web results with sources are returned",
+      "Information is recent and relevant",
+    ],
+    evaluationPrompt: "Evaluate if the agent correctly used web search to find current AI news with proper source attribution."
+  },
+];
+
 // Combine all test cases
 export const allTestCases: TestCase[] = [
   ...documentToolTests,
@@ -593,10 +760,12 @@ export const allTestCases: TestCase[] = [
   ...calendarToolTests,
   ...organizationToolTests,
   ...webSearchToolTests,
+  ...secFilingToolTests,
   ...workflowTests,
   ...edgeCaseTests,
   ...advancedScenarioTests,
   ...performanceTests,
+  ...specializedAgentTests,
 ];
 
 // Export test case counts
@@ -607,10 +776,12 @@ export const testCaseStats = {
   calendar: calendarToolTests.length,
   organization: organizationToolTests.length,
   webSearch: webSearchToolTests.length,
+  secFilings: secFilingToolTests.length,
   workflows: workflowTests.length,
   edgeCases: edgeCaseTests.length,
   advancedScenarios: advancedScenarioTests.length,
   performance: performanceTests.length,
+  specializedAgents: specializedAgentTests.length,
   total: allTestCases.length,
 };
 

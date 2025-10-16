@@ -25,6 +25,7 @@ export const searchMedia = createTool({
 
     // Get userId from context if available (for evaluation)
     const userId = (ctx as any).evaluationUserId;
+    console.log(`[searchMedia] userId:`, userId);
 
     const results: any[] = [];
 
@@ -34,17 +35,20 @@ export const searchMedia = createTool({
       query: args.query,
       userId, // Pass userId for evaluation
     });
-    
+    console.log(`[searchMedia] getSearch returned ${allDocs.length} documents`);
+    console.log(`[searchMedia] First few docs:`, allDocs.slice(0, 5).map((d: any) => ({ title: d.title, fileType: d.fileType, documentType: d.documentType })));
+
     // Filter for media files
     const mediaFiles = allDocs.filter((doc: any) => {
       const fileType = (doc.fileType || '').toLowerCase();
       const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(fileType);
       const isVideo = ['mp4', 'mov', 'avi', 'webm', 'mkv', 'flv'].includes(fileType);
-      
+
       if (args.mediaType === 'image') return isImage;
       if (args.mediaType === 'video') return isVideo;
       return isImage || isVideo;
     });
+    console.log(`[searchMedia] After filtering, ${mediaFiles.length} media files found`);
     
     // Format internal results
     for (const doc of mediaFiles.slice(0, args.limit)) {
