@@ -218,6 +218,20 @@ export const getThreadMessages = query({
  */
 export const listUserThreads = query({
   args: {},
+  returns: v.array(v.object({
+    _id: v.string(),
+    userId: v.optional(v.string()),
+    title: v.string(),
+    pinned: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    _creationTime: v.number(),
+    messageCount: v.number(),
+    toolsUsed: v.array(v.string()),
+    modelsUsed: v.array(v.string()),
+    lastMessage: v.string(),
+    lastMessageAt: v.number(),
+  })),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");

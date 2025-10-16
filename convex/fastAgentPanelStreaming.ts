@@ -262,15 +262,15 @@ export const listThreads = query({
             .query("chatMessagesStream")
             .withIndex("by_thread", (q) => q.eq("threadId", thread._id))
             .collect();
-          
-          const messageCount = messages.length;
-          
+
+          let messageCount = messages.length;
+
           // Extract unique tools and models from messages
           const toolsUsed = new Set<string>();
           const modelsUsed = new Set<string>();
           let lastMessage = "";
           let lastMessageAt = thread.updatedAt;
-          
+
           // If linked to agent thread, get more detailed info
           if (thread.agentThreadId) {
             try {
@@ -279,8 +279,13 @@ export const listThreads = query({
                 order: "asc",
                 paginationOpts: { cursor: null, numItems: 1000 },
               });
-              
+
               const agentMessages = agentMessagesResult.page;
+
+              // Use agent message count if available (it's the source of truth)
+              if (agentMessages && agentMessages.length > 0) {
+                messageCount = agentMessages.length;
+              }
               
               for (const message of agentMessages) {
                 const msg = message as any;
