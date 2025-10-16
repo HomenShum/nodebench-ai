@@ -4,6 +4,7 @@
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import { UIMessageBubble } from './FastAgentPanel.UIMessageBubble';
+import { TypingIndicator } from './TypingIndicator';
 import type { UIMessage } from '@convex-dev/agent/react';
 import type { CompanyOption } from './CompanySelectionCard';
 import type { PersonOption } from './PeopleSelectionCard';
@@ -63,10 +64,25 @@ export function UIMessageStream({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, autoScroll]);
 
+  // Filter out empty messages before processing
+  const filteredMessages = useMemo(() => {
+    return messages.filter(msg => {
+      // Keep user messages always
+      if (msg.role === 'user') return true;
+
+      // For assistant messages, check if they have meaningful content
+      const hasText = msg.text && msg.text.trim().length > 0;
+      const hasParts = msg.parts && msg.parts.length > 0;
+
+      // Keep if has text or parts (tool calls, reasoning, etc.)
+      return hasText || hasParts;
+    });
+  }, [messages]);
+
   // Infer hierarchy from tool calls (Option 3 approach)
   // When a coordinator message has delegation tool calls, the next N messages are likely children
   const groupedMessages = useMemo(() => {
-    const extendedMessages = messages as ExtendedUIMessage[];
+    const extendedMessages = filteredMessages as ExtendedUIMessage[];
     const groups: MessageGroup[] = [];
     const processedIndices = new Set<number>();
 
@@ -218,6 +234,20 @@ export function UIMessageStream({
               </div>
             );
           })}
+
+          {/* Show typing indicator if last message is streaming and has no text yet */}
+          {(() => {
+            const lastMessage = filteredMessages[filteredMessages.length - 1];
+            if (lastMessage &&
+                lastMessage.role === 'assistant' &&
+                lastMessage.status === 'streaming' &&
+                (!lastMessage.text || lastMessage.text.trim().length === 0) &&
+                (!lastMessage.parts || lastMessage.parts.length === 0)) {
+              return <TypingIndicator message="Thinking..." />;
+            }
+            return null;
+          })()}
+
           <div ref={messagesEndRef} />
         </div>
       )}
