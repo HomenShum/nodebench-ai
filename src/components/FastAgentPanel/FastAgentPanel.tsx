@@ -701,9 +701,11 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         createdAt: thread.createdAt,
         updatedAt: thread.updatedAt,
         _creationTime: thread.createdAt,
-        messageCount: undefined,
-        lastMessage: undefined,
-        lastMessageAt: undefined,
+        messageCount: thread.messageCount,
+        lastMessage: thread.lastMessage,
+        lastMessageAt: thread.lastMessageAt,
+        toolsUsed: thread.toolsUsed,
+        modelsUsed: thread.modelsUsed,
       };
     }
 
@@ -713,14 +715,16 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
     return {
       _id: threadId,
       userId: thread.userId as Id<"users">,
-      title: thread.summary || 'New Chat', // Map summary to title
+      title: thread.title || thread.summary || 'New Chat', // Use title first, then summary
       pinned: false, // Agent component doesn't have pinned
       createdAt: thread._creationTime,
-      updatedAt: thread._creationTime,
+      updatedAt: thread.lastMessageAt || thread._creationTime, // ✅ FIX: Use lastMessageAt for sorting
       _creationTime: thread._creationTime,
-      messageCount: undefined,
-      lastMessage: undefined,
-      lastMessageAt: undefined,
+      messageCount: thread.messageCount,
+      lastMessage: thread.lastMessage,
+      lastMessageAt: thread.lastMessageAt,
+      toolsUsed: thread.toolsUsed,
+      modelsUsed: thread.modelsUsed,
     };
   }).filter((thread: any) => {
     // Only filter archived for agent mode
