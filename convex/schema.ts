@@ -1034,4 +1034,18 @@ export default defineSchema({
     .index("by_user_and_date", ["userId", "date"])
     .index("by_user_api_date", ["userId", "apiName", "date"]),
 
+  /* ------------------------------------------------------------------ */
+  /* CONFIRMED COMPANIES - User-confirmed company selections for SEC    */
+  /* ------------------------------------------------------------------ */
+  confirmedCompanies: defineTable({
+    threadId: v.string(),                    // Links to conversation thread
+    companyName: v.string(),                 // User's original query term (e.g., "Dasher")
+    confirmedCik: v.string(),                // The CIK of the confirmed company
+    confirmedName: v.string(),               // Full legal name of the confirmed company
+    confirmedTicker: v.optional(v.string()), // Ticker symbol if available
+    createdAt: v.number(),                   // Timestamp of confirmation
+  })
+    .index("by_thread_and_name", ["threadId", "companyName"])
+    .index("by_thread", ["threadId"]),
+
 });

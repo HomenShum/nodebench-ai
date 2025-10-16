@@ -15,6 +15,8 @@ export interface Thread {
   messageCount?: number;
   lastMessage?: string;
   lastMessageAt?: number;
+  toolsUsed?: string[];
+  modelsUsed?: string[];
 }
 
 export interface ThreadCreateInput {

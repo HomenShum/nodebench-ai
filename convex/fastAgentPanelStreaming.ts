@@ -239,7 +239,7 @@ Always provide clear, helpful responses and confirm actions you take.`,
  * ================================================================ */
 
 /**
- * List all streaming threads for the current user
+ * List all streaming threads for the current user with enriched data
  */
 export const listThreads = query({
   args: {},
@@ -253,7 +253,101 @@ export const listThreads = query({
       .order("desc")
       .collect();
 
-    return threads;
+    // Enrich each thread with message count, tools used, and models used
+    const enrichedThreads = await Promise.all(
+      threads.map(async (thread) => {
+        try {
+          // Get messages from the chatMessagesStream table
+          const messages = await ctx.db
+            .query("chatMessagesStream")
+            .withIndex("by_thread", (q) => q.eq("threadId", thread._id))
+            .collect();
+          
+          const messageCount = messages.length;
+          
+          // Extract unique tools and models from messages
+          const toolsUsed = new Set<string>();
+          const modelsUsed = new Set<string>();
+          let lastMessage = "";
+          let lastMessageAt = thread.updatedAt;
+          
+          // If linked to agent thread, get more detailed info
+          if (thread.agentThreadId) {
+            try {
+              const agentMessagesResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+                threadId: thread.agentThreadId,
+                order: "asc",
+                paginationOpts: { cursor: null, numItems: 1000 },
+              });
+              
+              const agentMessages = agentMessagesResult.page;
+              
+              for (const message of agentMessages) {
+                const msg = message as any;
+                
+                // Track tools from tool calls in messages
+                if (msg.toolCalls) {
+                  const toolCalls = msg.toolCalls || [];
+                  for (const toolCall of toolCalls) {
+                    if (toolCall.toolName) {
+                      toolsUsed.add(toolCall.toolName);
+                    }
+                  }
+                }
+                
+                // Track model from provider metadata
+                if (msg.providerMetadata?.model) {
+                  modelsUsed.add(msg.providerMetadata.model);
+                }
+                
+                // Get last message text for preview
+                if (msg.text) {
+                  lastMessage = msg.text.substring(0, 100);
+                  lastMessageAt = msg._creationTime;
+                }
+              }
+            } catch (err) {
+              console.error("Error fetching agent messages:", err);
+            }
+          }
+          
+          // Also check the model stored in the thread
+          if (thread.model) {
+            modelsUsed.add(thread.model);
+          }
+          
+          // Get last message from streaming messages if no agent message found
+          if (!lastMessage && messages.length > 0) {
+            const lastMsg = messages[messages.length - 1];
+            if (lastMsg.content) {
+              lastMessage = lastMsg.content.substring(0, 100);
+              lastMessageAt = lastMsg.updatedAt;
+            }
+          }
+          
+          return {
+            ...thread,
+            messageCount,
+            toolsUsed: Array.from(toolsUsed),
+            modelsUsed: Array.from(modelsUsed),
+            lastMessage,
+            lastMessageAt,
+          };
+        } catch (error) {
+          console.error("Error enriching streaming thread:", error);
+          return {
+            ...thread,
+            messageCount: 0,
+            toolsUsed: [],
+            modelsUsed: [],
+            lastMessage: "",
+            lastMessageAt: thread.updatedAt,
+          };
+        }
+      })
+    );
+
+    return enrichedThreads;
   },
 });
 
