@@ -21,6 +21,9 @@ import { NewsSelectionCard, type NewsArticleOption } from './NewsSelectionCard';
 import { CollapsibleAgentProgress } from './CollapsibleAgentProgress';
 import { RichMediaSection } from './RichMediaSection';
 import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaExtractor';
+import { GoalCard, type TaskStatusItem } from './FastAgentPanel.GoalCard';
+import { ThoughtBubble } from './FastAgentPanel.ThoughtBubble';
+import { CitationLink } from './FastAgentPanel.CitationLink';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
@@ -476,7 +479,7 @@ export function UIMessageBubble({
   // Extract media from tool results (not from final text, since agent synthesizes new answer)
   // Tool results are stored in message.parts and contain the raw tool output with media markers
   const extractedMedia = useMemo(() => {
-    if (isUser) return { youtubeVideos: [], secDocuments: [], images: [] };
+    if (isUser) return { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] };
 
     // Extract all tool-result parts from message
     const toolResultParts = message.parts.filter((p): p is any =>
@@ -491,14 +494,18 @@ export function UIMessageBubble({
       return {
         youtubeVideos: [...acc.youtubeVideos, ...media.youtubeVideos],
         secDocuments: [...acc.secDocuments, ...media.secDocuments],
+        webSources: [...acc.webSources, ...media.webSources],
+        profiles: [...acc.profiles, ...media.profiles],
         images: [...acc.images, ...media.images],
       };
-    }, { youtubeVideos: [], secDocuments: [], images: [] });
+    }, { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] });
 
     console.log('[UIMessageBubble] Extracted media from tool results:', {
       toolResultCount: toolResultParts.length,
       youtubeCount: combinedMedia.youtubeVideos.length,
       secCount: combinedMedia.secDocuments.length,
+      webSourceCount: combinedMedia.webSources.length,
+      profileCount: combinedMedia.profiles.length,
       imageCount: combinedMedia.images.length,
     });
 
@@ -551,18 +558,75 @@ export function UIMessageBubble({
           </div>
         )}
 
+        {/* Goal Card - ONLY show for coordinator/parent messages with delegations */}
+        {!isUser && isParent && !isChild && (() => {
+          // Only show GoalCard for coordinator messages that delegate to sub-agents
+          const delegationCalls = toolParts.filter((part: any) =>
+            part.type === 'tool-call' && part.toolName?.startsWith('delegateTo')
+          );
+
+          if (delegationCalls.length === 0) return null;
+
+          // Extract task status from delegation calls
+          const tasks: TaskStatusItem[] = delegationCalls.map((part: any, idx) => {
+            const toolName = part.toolName?.replace('delegateTo', '').replace('Agent', '') || 'Task';
+            
+            // Default status is queued, will be updated by child responses
+            let status: 'queued' | 'active' | 'success' | 'failed' = 'queued';
+            
+            // Check if there's a corresponding result
+            const resultPart = toolParts.find((p: any) => 
+              p.type === 'tool-result' && p.toolCallId === (part as any).toolCallId
+            );
+            
+            if (resultPart) {
+              status = 'success';
+            } else if (part.type === 'tool-call') {
+              status = 'active';
+            }
+            
+            return {
+              id: `delegation-${idx}`,
+              name: toolName,
+              status,
+            };
+          });
+
+          // Extract goal from the actual user query
+          const goal = message.text?.split('\n')[0].substring(0, 150) || 'Processing your request';
+
+          return (
+            <GoalCard
+              goal={goal}
+              tasks={tasks}
+              isStreaming={message.status === 'streaming'}
+            />
+          );
+        })()}
+
+        {/* Thought Bubble - Only show for parent/coordinator reasoning */}
+        {!isUser && !isChild && visibleReasoning && (
+          <ThoughtBubble 
+            thought={visibleReasoning}
+            isStreaming={message.status === 'streaming'}
+          />
+        )}
+
         {/* NEW PRESENTATION LAYER: Polished media display FIRST */}
-        {!isUser && (
-          <RichMediaSection media={extractedMedia} showCitations={false} />
+        {/* Only show for non-coordinator messages (single-tool calls) */}
+        {/* Coordinator messages embed media inside task cards via CollapsibleAgentProgress */}
+        {!isUser && !isParent && (
+          <RichMediaSection media={extractedMedia} showCitations={true} />
         )}
 
         {/* Collapsible Agent Progress Section - Process details hidden by default */}
+        {/* Auto-expand for parent messages with delegations so users see task results */}
         {!isUser && (
           <CollapsibleAgentProgress
             toolParts={toolParts}
             reasoning={visibleReasoning}
             isStreaming={message.status === 'streaming'}
-            defaultExpanded={false}
+            defaultExpanded={isParent && toolParts.some((p: any) => p.toolName?.startsWith('delegateTo'))}
             onCompanySelect={onCompanySelect}
             onPersonSelect={onPersonSelect}
             onEventSelect={onEventSelect}

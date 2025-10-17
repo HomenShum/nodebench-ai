@@ -25,10 +25,10 @@ interface UIMessageStreamProps {
 
 // Extended UIMessage type with hierarchical metadata
 interface ExtendedUIMessage extends UIMessage {
+  _id?: string;
   metadata?: {
     agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
     parentMessageId?: string;
-    [key: string]: any;
   };
 }
 
@@ -64,18 +64,63 @@ export function UIMessageStream({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, autoScroll]);
 
-  // Filter out empty messages before processing
+  // Filter out empty messages and agent-generated sub-query messages before processing
   const filteredMessages = useMemo(() => {
-    return messages.filter(msg => {
-      // Keep user messages always
-      if (msg.role === 'user') return true;
+    // First pass: identify delegation patterns
+    const delegationIndices = new Set<number>();
 
-      // For assistant messages, check if they have meaningful content
-      const hasText = msg.text && msg.text.trim().length > 0;
-      const hasParts = msg.parts && msg.parts.length > 0;
+    messages.forEach((msg, idx) => {
+      // Check if this message has delegation tool calls
+      const hasDelegationTools = msg.parts?.some((p: any) =>
+        p.type === 'tool-call' && p.toolName?.startsWith('delegateTo')
+      );
 
-      // Keep if has text or parts (tool calls, reasoning, etc.)
-      return hasText || hasParts;
+      if (hasDelegationTools) {
+        // Mark the next user messages as agent-generated sub-queries
+        // These are created by specialized agents when they call generateText()
+        for (let i = idx + 1; i < messages.length; i++) {
+          const nextMsg = messages[i];
+
+          // Stop when we hit an assistant message (the response to the delegation)
+          if (nextMsg.role === 'assistant') break;
+
+          // Mark user messages between delegation and response as agent-generated
+          if (nextMsg.role === 'user') {
+            delegationIndices.add(i);
+          }
+        }
+      }
+    });
+
+    return messages.filter((msg, idx) => {
+      // Filter out ONLY agent-generated sub-query messages (between delegation and response)
+      if (delegationIndices.has(idx)) {
+        console.log('[UIMessageStream] Filtering agent-generated sub-query:', msg.text?.substring(0, 50));
+        return false;
+      }
+
+      // CRITICAL: Always keep real user messages (actual user input)
+      if (msg.role === 'user') {
+        console.log('[UIMessageStream] Keeping user message:', msg.text?.substring(0, 50));
+        return true;
+      }
+
+      // For assistant messages, be lenient - keep if has ANY content
+      if (msg.role === 'assistant') {
+        const hasText = msg.text && msg.text.trim().length > 0;
+        const hasParts = msg.parts && msg.parts.length > 0;
+        const hasToolCalls = msg.parts?.some(p => p.type.startsWith('tool-'));
+        
+        // Keep if has text, parts, or tool calls
+        const keep = hasText || hasParts || hasToolCalls;
+        if (!keep) {
+          console.log('[UIMessageStream] Filtering empty assistant message');
+        }
+        return keep;
+      }
+
+      // Keep all other message types (system, etc.)
+      return true;
     });
   }, [messages]);
 
@@ -112,7 +157,7 @@ export function UIMessageStream({
             const toolName = (delegationTool as any).toolName || '';
 
             // Map delegation tool name to agent role
-            let agentRole: ExtendedUIMessage['metadata']['agentRole'] = undefined;
+            let agentRole: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent' | undefined = undefined;
             if (toolName === 'delegateToDocumentAgent') agentRole = 'documentAgent';
             else if (toolName === 'delegateToMediaAgent') agentRole = 'mediaAgent';
             else if (toolName === 'delegateToSECAgent') agentRole = 'secAgent';
@@ -151,25 +196,39 @@ export function UIMessageStream({
     });
 
     return groups;
-  }, [messages]);
+  }, [filteredMessages]);
+
+  // Debug: Log grouped messages
+  console.log('[UIMessageStream] Grouped messages:', {
+    total: messages.length,
+    filtered: filteredMessages.length,
+    grouped: groupedMessages.length,
+  });
 
   // Deduplication: Track seen content to avoid rendering duplicates
-  const seenContent = useMemo(() => new Set<string>(), [messages]);
+  const seenContent = useMemo(() => new Set<string>(), []);
 
   const isDuplicate = (message: ExtendedUIMessage): boolean => {
+    // DISABLED: Deduplication was too aggressive and causing messages to disappear
+    // TODO: Implement smarter deduplication based on message IDs
+    return false;
+    
+    /*
     // Create content hash from tool calls and text
     const toolNames = message.parts
       .filter(p => p.type.startsWith('tool-'))
       .map((p: any) => p.toolName)
       .join(',');
-    const textPreview = message.text.slice(0, 100);
+    const textPreview = (message.text || '').slice(0, 100);
     const contentHash = `${toolNames}-${textPreview}`;
 
     if (seenContent.has(contentHash) && contentHash.length > 5) {
+      console.log('[UIMessageStream] Duplicate detected:', contentHash);
       return true;
     }
     seenContent.add(contentHash);
     return false;
+    */
   };
 
   return (
@@ -184,6 +243,11 @@ export function UIMessageStream({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
+          {groupedMessages.length === 0 && (
+            <div className="text-gray-500 text-center p-4">
+              No messages to display. Check console for filtering details.
+            </div>
+          )}
           {groupedMessages.map((group, groupIdx) => {
             const isParent = group.children.length > 0;
             const parentDuplicate = isDuplicate(group.parent);

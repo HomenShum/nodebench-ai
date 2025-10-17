@@ -251,11 +251,17 @@ RESPONSE STYLE:
           const documentAgent = createDocumentAgent(ctx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          const result = await documentAgent.generateText(
-            ctx,
-            { threadId, userId },
-            { prompt: args.query }
-          );
+          // Inject userId into context for tools to access
+          const contextWithUserId = {
+            ...ctx,
+            evaluationUserId: userId,
+          };
+
+          // Continue the thread with the document agent
+          const { thread } = await documentAgent.continueThread(contextWithUserId as any, { threadId });
+          const result = await thread.generateText({
+            prompt: args.query,
+          });
 
           return result.text;
         },
@@ -269,11 +275,17 @@ RESPONSE STYLE:
           const mediaAgent = createMediaAgent(ctx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          const result = await mediaAgent.generateText(
-            ctx,
-            { threadId, userId },
-            { prompt: args.query }
-          );
+          // Inject userId into context for tools to access
+          const contextWithUserId = {
+            ...ctx,
+            evaluationUserId: userId,
+          };
+
+          // Continue the thread with the media agent
+          const { thread } = await mediaAgent.continueThread(contextWithUserId as any, { threadId });
+          const result = await thread.generateText({
+            prompt: args.query,
+          });
 
           return result.text;
         },
@@ -287,11 +299,17 @@ RESPONSE STYLE:
           const secAgent = createSECAgent(ctx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          const result = await secAgent.generateText(
-            ctx,
-            { threadId, userId },
-            { prompt: args.query }
-          );
+          // Inject userId into context for tools to access
+          const contextWithUserId = {
+            ...ctx,
+            evaluationUserId: userId,
+          };
+
+          // Continue the thread with the SEC agent
+          const { thread } = await secAgent.continueThread(contextWithUserId as any, { threadId });
+          const result = await thread.generateText({
+            prompt: args.query,
+          });
 
           return result.text;
         },
@@ -305,11 +323,17 @@ RESPONSE STYLE:
           const webAgent = createWebAgent(ctx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          const result = await webAgent.generateText(
-            ctx,
-            { threadId, userId },
-            { prompt: args.query }
-          );
+          // Inject userId into context for tools to access
+          const contextWithUserId = {
+            ...ctx,
+            evaluationUserId: userId,
+          };
+
+          // Continue the thread with the web agent
+          const { thread } = await webAgent.continueThread(contextWithUserId as any, { threadId });
+          const result = await thread.generateText({
+            prompt: args.query,
+          });
 
           return result.text;
         },

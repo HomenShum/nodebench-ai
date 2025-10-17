@@ -78,7 +78,7 @@ Created a multi-agent architecture where a coordinator delegates tasks to specia
 ```
 User Request
      ↓
-Coordinator Agent (GPT-4o)
+Coordinator Agent (GPT-5)
      ↓
 ┌────────────┬────────────┬────────────┬────────────┐
 │  Document  │   Media    │    SEC     │    Web     │

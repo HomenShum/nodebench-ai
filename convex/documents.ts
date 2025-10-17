@@ -694,7 +694,7 @@ export const getSidebarWithOptions = query({
 export const getById = query({
   args: {
     documentId: v.id("documents"),
-    userId: v.optional(v.id("users")), // Optional for evaluation/testing
+    userId: v.optional(v.union(v.id("users"), v.string())), // Optional for evaluation/testing - accepts ID or string
   },
   handler: async (ctx, args) => {
     // Use provided userId or fall back to authenticated user
@@ -910,7 +910,7 @@ export const clearTrash = mutation({
 export const getSearch = query({
   args: {
     query: v.string(),
-    userId: v.optional(v.id("users")), // Optional for evaluation/testing
+    userId: v.optional(v.union(v.id("users"), v.string())), // Optional for evaluation/testing - accepts ID or string
   },
   handler: async (ctx, args) => {
     // Use provided userId or fall back to authenticated user
@@ -919,7 +919,7 @@ export const getSearch = query({
     return await ctx.db
       .query("documents")
       .withSearchIndex("search_title", (q) =>
-        q.search("title", args.query).eq("createdBy", userId).eq("isArchived", false)
+        q.search("title", args.query).eq("createdBy", userId as any).eq("isArchived", false)
       )
       .take(50);
   },

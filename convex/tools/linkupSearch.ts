@@ -25,6 +25,18 @@ interface LinkupSearchResult {
 }
 
 /**
+ * Helper to extract domain from URL
+ */
+function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.replace('www.', '');
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Search the web using Linkup's AI-optimized search API
  * 
  * This tool allows the AI to search for current information on the web,
@@ -162,6 +174,18 @@ export const linkupSearch = createTool({
 
       // Add text results if using searchResults output type
       if (textResults.length > 0 && !data.answer) {
+        // Prepare structured data for gallery rendering
+        const sources = textResults.slice(0, 10).map((text) => ({
+          title: text.name,
+          url: text.url,
+          domain: extractDomain(text.url),
+          description: text.content?.substring(0, 200) || '',
+        }));
+
+        // Add structured data marker for frontend gallery rendering
+        result += `<!-- SOURCE_GALLERY_DATA\n${JSON.stringify(sources, null, 2)}\n-->\n\n`;
+
+        // Also add human-readable text for context
         result += "## Search Results\n\n";
         textResults.slice(0, 5).forEach((text, idx) => {
           result += `${idx + 1}. **[${text.name}](${text.url})** 🔗\n\n`;
@@ -173,6 +197,18 @@ export const linkupSearch = createTool({
 
       // Add sources (for sourcedAnswer output type)
       if (data.sources && data.sources.length > 0) {
+        // Prepare structured data for gallery rendering
+        const sources = data.sources.slice(0, 10).map((source) => ({
+          title: source.name,
+          url: source.url,
+          domain: extractDomain(source.url),
+          description: source.snippet?.substring(0, 200) || '',
+        }));
+
+        // Add structured data marker for frontend gallery rendering
+        result += `<!-- SOURCE_GALLERY_DATA\n${JSON.stringify(sources, null, 2)}\n-->\n\n`;
+
+        // Also add human-readable text for context
         result += "## Sources\n\n";
         data.sources.slice(0, 5).forEach((source, idx) => {
           result += `${idx + 1}. **[${source.name}](${source.url})** 🔗\n\n`;

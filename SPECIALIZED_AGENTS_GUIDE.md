@@ -14,14 +14,14 @@ The Fast Agent Panel now supports **specialized agents** that delegate complex t
 ```
 User Request
      ↓
-Coordinator Agent (GPT-4o)
+Coordinator Agent (GPT-5)
      ↓
   Analyzes request and delegates to:
      ↓
 ┌────────────┬────────────┬────────────┬────────────┐
 │  Document  │   Media    │    SEC     │    Web     │
 │   Agent    │   Agent    │   Agent    │   Agent    │
-│ (4o-mini)  │ (4o-mini)  │ (4o-mini)  │ (4o-mini)  │
+│ (5-mini)  │ (5-mini)  │ (5-mini)  │ (5-mini)  │
 └────────────┴────────────┴────────────┴────────────┘
      ↓            ↓            ↓            ↓
   Results combined and returned to user
@@ -258,7 +258,7 @@ Edit `convex/agents/specializedAgents.ts`:
 export function createMediaAgent(ctx: ActionCtx, userId: string) {
   return new Agent(components.agent, {
     name: "MediaAgent",
-    languageModel: openai.chat("gpt-4o-mini"),
+    languageModel: openai.chat("gpt-5-mini"),
     instructions: `Your custom instructions here...`,
     tools: { /* your tools */ },
     maxSteps: 5, // Increase for more complex workflows
@@ -277,7 +277,7 @@ Example:
 export function createTaskAgent(ctx: ActionCtx, userId: string) {
   return new Agent(components.agent, {
     name: "TaskAgent",
-    languageModel: openai.chat("gpt-4o-mini"),
+    languageModel: openai.chat("gpt-5-mini"),
     instructions: `You manage tasks and to-do lists...`,
     tools: {
       createTask,

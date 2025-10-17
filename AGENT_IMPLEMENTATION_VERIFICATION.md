@@ -20,7 +20,7 @@ import { z } from "zod/v3";
 
 const agent = new Agent(components.agent, {
   name: "Agent Name",
-  languageModel: openai.chat("gpt-4o-mini"),
+  languageModel: openai.chat("gpt-5-mini"),
   instructions: "...",
   tools: { ... },
   stopWhen: stepCountIs(5),

@@ -1,9 +1,10 @@
 // src/components/FastAgentPanel/RichMediaSection.tsx
-// Polished media display section for videos, sources, and images
+// Polished media display section for videos, sources, profiles, and images
 
 import React from 'react';
 import { VideoCarousel } from './VideoCard';
 import { SourceGrid, secDocumentToSource } from './SourceCard';
+import { ProfileGrid } from './ProfileCard';
 import type { YouTubeVideo, SECDocument } from './MediaGallery';
 import type { ExtractedMedia } from './utils/mediaExtractor';
 
@@ -14,23 +15,25 @@ interface RichMediaSectionProps {
 
 /**
  * RichMediaSection - Displays extracted media in a polished, product-oriented format
- * 
+ *
  * This component transforms raw agent output into a visually rich interface:
  * - Videos appear as interactive cards in a horizontal carousel
  * - Sources/documents appear as rich preview cards in a grid
+ * - People/entities appear as profile cards in a grid
  * - Images appear in a responsive gallery
- * 
+ *
  * This is the "presentation layer" that sits above the raw agent process.
  */
 export function RichMediaSection({ media, showCitations = false }: RichMediaSectionProps) {
-  const { youtubeVideos, secDocuments, images } = media;
-  
+  const { youtubeVideos = [], secDocuments = [], webSources = [], profiles = [], images = [] } = media;
+
   // Don't render if there's no media
-  const hasMedia = youtubeVideos.length > 0 || secDocuments.length > 0 || images.length > 0;
+  const hasMedia = youtubeVideos.length > 0 || secDocuments.length > 0 || webSources.length > 0 || profiles.length > 0 || images.length > 0;
   if (!hasMedia) return null;
 
-  // Convert SEC documents to unified source format
-  const sources = secDocuments.map(secDocumentToSource);
+  // Convert SEC documents to unified source format and combine with web sources
+  const secSources = secDocuments.map(secDocumentToSource);
+  const allSources = [...secSources, ...webSources];
 
   return (
     <div className="space-y-4 mb-4">
@@ -39,11 +42,20 @@ export function RichMediaSection({ media, showCitations = false }: RichMediaSect
         <VideoCarousel videos={youtubeVideos} />
       )}
 
-      {/* Source/document grid */}
-      {sources.length > 0 && (
-        <SourceGrid 
-          sources={sources} 
+      {/* Source/document grid (includes both SEC documents and web sources) */}
+      {allSources.length > 0 && (
+        <SourceGrid
+          sources={allSources}
           title="Sources & Documents"
+          showCitations={showCitations}
+        />
+      )}
+
+      {/* Profile grid (people/entities) */}
+      {profiles.length > 0 && (
+        <ProfileGrid
+          profiles={profiles}
+          title="People"
           showCitations={showCitations}
         />
       )}

@@ -1,8 +1,8 @@
 // src/components/FastAgentPanel/VideoCard.tsx
 // Reusable video card component for displaying YouTube videos in a polished format
 
-import React from 'react';
-import { Play, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { YouTubeVideo } from './MediaGallery';
 
@@ -75,7 +75,13 @@ interface VideoCarouselProps {
 }
 
 export function VideoCarousel({ videos, title = "Related Videos" }: VideoCarouselProps) {
+  const [showAll, setShowAll] = useState(false);
+  const INITIAL_DISPLAY_COUNT = 6;
+
   if (videos.length === 0) return null;
+
+  const displayedVideos = showAll ? videos : videos.slice(0, INITIAL_DISPLAY_COUNT);
+  const hasMore = videos.length > INITIAL_DISPLAY_COUNT;
 
   return (
     <div className="mb-4">
@@ -85,7 +91,9 @@ export function VideoCarousel({ videos, title = "Related Videos" }: VideoCarouse
         <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
           <Play className="h-4 w-4 text-red-600" />
           {title}
-          <span className="text-xs font-normal text-gray-500">({videos.length})</span>
+          <span className="text-xs font-normal text-gray-500">
+            ({showAll ? videos.length : Math.min(videos.length, INITIAL_DISPLAY_COUNT)}{hasMore && !showAll ? `/${videos.length}` : ''})
+          </span>
         </h3>
         <div className="h-px flex-1 bg-gray-200"></div>
       </div>
@@ -93,7 +101,7 @@ export function VideoCarousel({ videos, title = "Related Videos" }: VideoCarouse
       {/* Horizontal scrollable grid */}
       <div className="overflow-x-auto pb-2 -mx-1">
         <div className="flex gap-3 px-1" style={{ minWidth: 'min-content' }}>
-          {videos.map((video, idx) => (
+          {displayedVideos.map((video, idx) => (
             <VideoCard
               key={idx}
               video={video}
@@ -102,6 +110,28 @@ export function VideoCarousel({ videos, title = "Related Videos" }: VideoCarouse
           ))}
         </div>
       </div>
+
+      {/* Show More/Less button */}
+      {hasMore && (
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+          >
+            {showAll ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Show Less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Show {videos.length - INITIAL_DISPLAY_COUNT} More
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

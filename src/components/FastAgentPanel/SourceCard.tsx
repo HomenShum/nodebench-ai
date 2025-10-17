@@ -1,8 +1,8 @@
 // src/components/FastAgentPanel/SourceCard.tsx
 // Unified source card component for displaying documents, articles, and other sources
 
-import React from 'react';
-import { ExternalLink, FileText, Globe, Building2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExternalLink, FileText, Globe, Building2, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SECDocument } from './MediaGallery';
 
@@ -59,12 +59,13 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
 
   return (
     <a
+      id={citationNumber ? `source-${citationNumber}` : undefined}
       href={url}
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
         "group block rounded-lg border border-gray-200 hover:border-gray-300",
-        "transition-all duration-200 hover:shadow-md bg-white overflow-hidden",
+        "transition-all duration-200 hover:shadow-md bg-white overflow-hidden scroll-mt-4",
         className
       )}
     >
@@ -155,7 +156,13 @@ interface SourceGridProps {
 }
 
 export function SourceGrid({ sources, title = "Sources", showCitations = false }: SourceGridProps) {
+  const [showAll, setShowAll] = useState(false);
+  const INITIAL_DISPLAY_COUNT = 6;
+
   if (sources.length === 0) return null;
+
+  const displayedSources = showAll ? sources : sources.slice(0, INITIAL_DISPLAY_COUNT);
+  const hasMore = sources.length > INITIAL_DISPLAY_COUNT;
 
   return (
     <div className="mb-4">
@@ -165,14 +172,16 @@ export function SourceGrid({ sources, title = "Sources", showCitations = false }
         <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
           <FileText className="h-4 w-4 text-gray-600" />
           {title}
-          <span className="text-xs font-normal text-gray-500">({sources.length})</span>
+          <span className="text-xs font-normal text-gray-500">
+            ({showAll ? sources.length : Math.min(sources.length, INITIAL_DISPLAY_COUNT)}{hasMore && !showAll ? `/${sources.length}` : ''})
+          </span>
         </h3>
         <div className="h-px flex-1 bg-gray-200"></div>
       </div>
 
       {/* Grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {sources.map((source, idx) => (
+        {displayedSources.map((source, idx) => (
           <SourceCard
             key={idx}
             source={source}
@@ -180,6 +189,28 @@ export function SourceGrid({ sources, title = "Sources", showCitations = false }
           />
         ))}
       </div>
+
+      {/* Show More/Less button */}
+      {hasMore && (
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+          >
+            {showAll ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Show Less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Show {sources.length - INITIAL_DISPLAY_COUNT} More
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
