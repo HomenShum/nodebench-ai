@@ -66,6 +66,8 @@ export function UIMessageStream({
 
   // Filter out empty messages and agent-generated sub-query messages before processing
   const filteredMessages = useMemo(() => {
+    console.log('[UIMessageStream] 📥 Input messages:', messages.length);
+
     // First pass: identify delegation patterns
     const delegationIndices = new Set<number>();
 
@@ -92,16 +94,16 @@ export function UIMessageStream({
       }
     });
 
-    return messages.filter((msg, idx) => {
+    const result = messages.filter((msg, idx) => {
       // Filter out ONLY agent-generated sub-query messages (between delegation and response)
       if (delegationIndices.has(idx)) {
-        console.log('[UIMessageStream] Filtering agent-generated sub-query:', msg.text?.substring(0, 50));
+        console.log('[UIMessageStream] ❌ Filtering agent-generated sub-query:', msg.text?.substring(0, 50));
         return false;
       }
 
       // CRITICAL: Always keep real user messages (actual user input)
       if (msg.role === 'user') {
-        console.log('[UIMessageStream] Keeping user message:', msg.text?.substring(0, 50));
+        console.log('[UIMessageStream] ✅ Keeping user message:', msg.text?.substring(0, 50));
         return true;
       }
 
@@ -110,30 +112,48 @@ export function UIMessageStream({
         const hasText = msg.text && msg.text.trim().length > 0;
         const hasParts = msg.parts && msg.parts.length > 0;
         const hasToolCalls = msg.parts?.some(p => p.type.startsWith('tool-'));
-        
+
         // Keep if has text, parts, or tool calls
         const keep = hasText || hasParts || hasToolCalls;
         if (!keep) {
-          console.log('[UIMessageStream] Filtering empty assistant message');
+          console.log('[UIMessageStream] ❌ Filtering empty assistant message');
+        } else {
+          console.log('[UIMessageStream] ✅ Keeping assistant message (hasText:', hasText, 'hasParts:', hasParts, 'hasToolCalls:', hasToolCalls, ')');
         }
         return keep;
       }
 
       // Keep all other message types (system, etc.)
+      console.log('[UIMessageStream] ✅ Keeping other message type:', msg.role);
       return true;
     });
+
+    console.log('[UIMessageStream] 📤 Filtered messages:', result.length);
+    return result;
   }, [messages]);
 
   // Infer hierarchy from tool calls (Option 3 approach)
   // When a coordinator message has delegation tool calls, the next N messages are likely children
   const groupedMessages = useMemo(() => {
+    console.log('[UIMessageStream] 🔄 Grouping', filteredMessages.length, 'filtered messages');
     const extendedMessages = filteredMessages as ExtendedUIMessage[];
     const groups: MessageGroup[] = [];
     const processedIndices = new Set<number>();
+    const seenMessageIds = new Set<string>(); // Track message IDs to prevent duplicates
 
     extendedMessages.forEach((msg, idx) => {
       // Skip if already processed as a child
       if (processedIndices.has(idx)) return;
+
+      // Skip if we've already seen this message ID
+      const messageId = msg._id || msg.key;
+      if (messageId && seenMessageIds.has(messageId)) {
+        console.log('[UIMessageStream] ⚠️ Skipping duplicate message:', messageId, msg.text?.substring(0, 50));
+        return;
+      }
+      if (messageId) {
+        seenMessageIds.add(messageId);
+      }
 
       // Check if this message has delegation tool calls
       const delegationToolCalls = msg.parts?.filter((p: any) =>
@@ -152,6 +172,18 @@ export function UIMessageStream({
 
           // Only include assistant messages (not user messages)
           if (nextMsg.role === 'assistant') {
+            // Skip if we've already seen this child message
+            const childId = nextMsg._id || nextMsg.key;
+            if (childId && seenMessageIds.has(childId)) {
+              console.log('[UIMessageStream] ⚠️ Skipping duplicate child message:', childId, nextMsg.text?.substring(0, 50));
+              processedIndices.add(i);
+              childrenFound++;
+              continue;
+            }
+            if (childId) {
+              seenMessageIds.add(childId);
+            }
+
             // Infer agent role from the corresponding delegation tool call
             const delegationTool = delegationToolCalls[childrenFound];
             const toolName = (delegationTool as any).toolName || '';
@@ -195,40 +227,43 @@ export function UIMessageStream({
       }
     });
 
+    console.log('[UIMessageStream] 📊 Grouped messages:', groups.length, 'groups');
     return groups;
   }, [filteredMessages]);
 
   // Debug: Log grouped messages
-  console.log('[UIMessageStream] Grouped messages:', {
+  console.log('[UIMessageStream] 📊 Pipeline summary:', {
     total: messages.length,
     filtered: filteredMessages.length,
     grouped: groupedMessages.length,
   });
 
-  // Deduplication: Track seen content to avoid rendering duplicates
-  const seenContent = useMemo(() => new Set<string>(), []);
+  // Deduplication: Check if a message appears in a previous group
+  const isDuplicate = (message: ExtendedUIMessage, currentGroupIndex: number): boolean => {
+    // Check if this message appears in a previous group
+    const messageId = message._id || message.key;
+    if (!messageId) return false;
 
-  const isDuplicate = (message: ExtendedUIMessage): boolean => {
-    // DISABLED: Deduplication was too aggressive and causing messages to disappear
-    // TODO: Implement smarter deduplication based on message IDs
-    return false;
-    
-    /*
-    // Create content hash from tool calls and text
-    const toolNames = message.parts
-      .filter(p => p.type.startsWith('tool-'))
-      .map((p: any) => p.toolName)
-      .join(',');
-    const textPreview = (message.text || '').slice(0, 100);
-    const contentHash = `${toolNames}-${textPreview}`;
+    // Check if this message ID appears in any earlier group
+    for (let i = 0; i < currentGroupIndex; i++) {
+      const group = groupedMessages[i];
+      const parentId = group.parent._id || group.parent.key;
+      if (parentId === messageId) {
+        console.log('[UIMessageStream] ⚠️ Duplicate parent message detected:', messageId, message.text?.substring(0, 50));
+        return true;
+      }
 
-    if (seenContent.has(contentHash) && contentHash.length > 5) {
-      console.log('[UIMessageStream] Duplicate detected:', contentHash);
-      return true;
+      const childMatch = group.children.some(child => {
+        const childId = child._id || child.key;
+        return childId === messageId;
+      });
+      if (childMatch) {
+        console.log('[UIMessageStream] ⚠️ Duplicate child message detected:', messageId, message.text?.substring(0, 50));
+        return true;
+      }
     }
-    seenContent.add(contentHash);
+
     return false;
-    */
   };
 
   return (
@@ -241,16 +276,27 @@ export function UIMessageStream({
         <div className="flex items-center justify-center h-full text-gray-500">
           <p>No messages yet. Start a conversation!</p>
         </div>
+      ) : groupedMessages.length === 0 ? (
+        <div className="text-gray-500 text-center p-4">
+          <p>No messages to display. Check console for filtering details.</p>
+          <p className="text-xs mt-2">Raw messages: {messages.length}, Filtered: {filteredMessages.length}, Grouped: {groupedMessages.length}</p>
+          <details className="text-xs mt-4 text-left">
+            <summary>Debug Info</summary>
+            <pre className="bg-gray-100 p-2 rounded mt-2 overflow-auto max-h-40 text-xs">
+              {JSON.stringify({
+                messagesCount: messages.length,
+                filteredCount: filteredMessages.length,
+                groupedCount: groupedMessages.length,
+                firstMessage: messages[0] ? { role: messages[0].role, text: messages[0].text?.substring(0, 50) } : null,
+              }, null, 2)}
+            </pre>
+          </details>
+        </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {groupedMessages.length === 0 && (
-            <div className="text-gray-500 text-center p-4">
-              No messages to display. Check console for filtering details.
-            </div>
-          )}
           {groupedMessages.map((group, groupIdx) => {
             const isParent = group.children.length > 0;
-            const parentDuplicate = isDuplicate(group.parent);
+            const parentDuplicate = isDuplicate(group.parent, groupIdx);
 
             return (
               <div key={group.parent.key || group.parent._id} className="message-group">
@@ -274,7 +320,7 @@ export function UIMessageStream({
                 {group.children.length > 0 && (
                   <div className="ml-8 border-l-2 border-purple-200 pl-4 space-y-3 mt-2">
                     {group.children.map((child) => {
-                      const childDuplicate = isDuplicate(child);
+                      const childDuplicate = isDuplicate(child, groupIdx);
                       if (childDuplicate) return null;
 
                       return (
@@ -299,16 +345,104 @@ export function UIMessageStream({
             );
           })}
 
-          {/* Show typing indicator if last message is streaming and has no text yet */}
+          {/* Show typing indicator in two cases:
+              1. Last message is streaming assistant with no text yet
+              2. Last message is user and no assistant response yet (agent is processing)
+          */}
           {(() => {
             const lastMessage = filteredMessages[filteredMessages.length - 1];
+
+            // Helper function to extract intent from user query
+            const extractIntent = (query: string): string => {
+              const lowerQuery = query.toLowerCase().trim();
+
+              // Multi-entity research patterns
+              if (lowerQuery.includes('compile information') || lowerQuery.includes('research')) {
+                // Extract entities mentioned
+                const entities: string[] = [];
+
+                // Company/product patterns
+                const companyMatch = lowerQuery.match(/(?:about|on|for)\s+([a-z0-9.-]+(?:\.[a-z]{2,})?)/i);
+                if (companyMatch) entities.push(companyMatch[1]);
+
+                // Person patterns
+                const personMatch = lowerQuery.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)(?:\s+(?:the\s+)?founder)?/);
+                if (personMatch) entities.push(personMatch[1]);
+
+                if (entities.length > 0) {
+                  return `researching ${entities.join(', ')}`;
+                }
+                return 'compiling research';
+              }
+
+              // Search patterns
+              if (lowerQuery.startsWith('search') || lowerQuery.startsWith('find')) {
+                const searchMatch = lowerQuery.match(/(?:search|find)\s+(?:for\s+)?(?:me\s+)?(.+)/i);
+                if (searchMatch) {
+                  const subject = searchMatch[1].substring(0, 40);
+                  return `searching for ${subject}`;
+                }
+                return 'searching';
+              }
+
+              // Image/video patterns
+              if (lowerQuery.includes('images') || lowerQuery.includes('pictures') || lowerQuery.includes('photos')) {
+                return 'finding images';
+              }
+              if (lowerQuery.includes('videos')) {
+                return 'finding videos';
+              }
+
+              // Document patterns
+              if (lowerQuery.includes('document') || lowerQuery.includes('file')) {
+                return 'finding documents';
+              }
+
+              // SEC filing patterns
+              if (lowerQuery.includes('10-k') || lowerQuery.includes('10-q') || lowerQuery.includes('sec filing')) {
+                return 'finding SEC filings';
+              }
+
+              // News patterns
+              if (lowerQuery.includes('news')) {
+                return 'finding news';
+              }
+
+              // Default: use first few words
+              const words = query.split(' ').slice(0, 5).join(' ');
+              return words.length > 40 ? words.substring(0, 40) + '...' : words;
+            };
+
+            // Case 1: Streaming assistant message with no content yet
             if (lastMessage &&
                 lastMessage.role === 'assistant' &&
                 lastMessage.status === 'streaming' &&
                 (!lastMessage.text || lastMessage.text.trim().length === 0) &&
                 (!lastMessage.parts || lastMessage.parts.length === 0)) {
-              return <TypingIndicator message="Thinking..." />;
+
+              // Find the most recent user message to extract intent
+              const recentUserMessage = [...filteredMessages].reverse().find(msg => msg.role === 'user');
+              const intent = recentUserMessage?.text ? extractIntent(recentUserMessage.text) : 'your request';
+
+              return <TypingIndicator message={`Helping you with ${intent}...`} />;
             }
+
+            // Case 2: User message with no assistant response yet (agent intercepting)
+            if (lastMessage && lastMessage.role === 'user') {
+              // Check if there's an assistant message after this user message
+              const hasResponse = filteredMessages.some((msg, idx) => {
+                const lastIdx = filteredMessages.findIndex(m =>
+                  m.key === lastMessage.key || (m as ExtendedUIMessage)._id === (lastMessage as ExtendedUIMessage)._id
+                );
+                return idx > lastIdx && msg.role === 'assistant';
+              });
+
+              if (!hasResponse) {
+                const intent = lastMessage.text ? extractIntent(lastMessage.text) : 'your request';
+                return <TypingIndicator message={`Helping you with ${intent}...`} />;
+              }
+            }
+
             return null;
           })()}
 

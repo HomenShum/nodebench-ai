@@ -1,7 +1,7 @@
 // src/components/FastAgentPanel/FastAgentPanel.UIMessageBubble.tsx
 // Message bubble component optimized for UIMessage format from Agent component
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
@@ -297,6 +297,74 @@ function ToolOutputRenderer({
   );
 }
 
+/**
+ * FileTextPreview - Shows a preview of text file contents
+ */
+function FileTextPreview({ fileUrl, fileName }: { fileUrl: string; fileName: string }) {
+  const [content, setContent] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error('Failed to fetch file');
+        const text = await response.text();
+        setContent(text);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load file');
+      } finally {
+        setLoading(false);
+      }
+    };
+    void fetchContent();
+  }, [fileUrl]);
+
+  return (
+    <div className="flex flex-col">
+      {/* Text File Header */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="px-4 py-3 bg-gradient-to-r from-blue-50 to-white flex items-center gap-3 border-b border-gray-200 hover:from-blue-100 transition-colors"
+      >
+        <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+          <ImageIcon className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <div className="text-sm font-medium text-gray-900 truncate">
+            {fileName}
+          </div>
+          <p className="text-xs text-gray-500 mt-0.5">Text File</p>
+        </div>
+        <div className="text-xs text-gray-400">
+          {isExpanded ? 'Collapse' : 'Expand'}
+        </div>
+      </button>
+      {/* Text Preview */}
+      {isExpanded && (
+        <div className="bg-gray-50 p-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading file content...</span>
+            </div>
+          ) : error ? (
+            <div className="text-sm text-red-600">
+              {error}
+            </div>
+          ) : (
+            <pre className="text-xs bg-white p-3 rounded border border-gray-200 overflow-x-auto max-h-96 overflow-y-auto">
+              {content}
+            </pre>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Agent role icons and labels
 const agentRoleConfig = {
   coordinator: { icon: '🎯', label: 'Coordinator', color: 'purple' },
@@ -476,10 +544,19 @@ export function UIMessageBubble({
     p.type === 'file'
   );
 
-  // Extract media from tool results (not from final text, since agent synthesizes new answer)
-  // Tool results are stored in message.parts and contain the raw tool output with media markers
+  // Extract media from BOTH tool results AND final text
+  // Tool results contain raw output with HTML markers, but when agent synthesizes a response,
+  // the media info is in the final text in plain format
   const extractedMedia = useMemo(() => {
     if (isUser) return { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] };
+
+    // Debug: Log all parts to see what we have
+    console.log('[UIMessageBubble] Message parts:', message.parts.map(p => ({
+      type: p.type,
+      hasResult: !!(p as any).result,
+      toolName: (p as any).toolName,
+      resultPreview: typeof (p as any).result === 'string' ? (p as any).result.substring(0, 100) : undefined
+    })));
 
     // Extract all tool-result parts from message
     const toolResultParts = message.parts.filter((p): p is any =>
@@ -487,7 +564,7 @@ export function UIMessageBubble({
     );
 
     // Combine media from all tool results
-    const combinedMedia = toolResultParts.reduce((acc, part) => {
+    const toolMedia = toolResultParts.reduce((acc, part) => {
       const resultText = String(part.result || '');
       const media = extractMediaFromText(resultText);
 
@@ -500,17 +577,45 @@ export function UIMessageBubble({
       };
     }, { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] });
 
-    console.log('[UIMessageBubble] Extracted media from tool results:', {
+    // ALSO extract from final text (for when agent synthesizes response)
+    const textMedia = extractMediaFromText(visibleText || '');
+
+    // Combine both sources
+    const combinedMedia = {
+      youtubeVideos: [...toolMedia.youtubeVideos, ...textMedia.youtubeVideos],
+      secDocuments: [...toolMedia.secDocuments, ...textMedia.secDocuments],
+      webSources: [...toolMedia.webSources, ...textMedia.webSources],
+      profiles: [...toolMedia.profiles, ...textMedia.profiles],
+      images: [...toolMedia.images, ...textMedia.images],
+    };
+
+    console.log('[UIMessageBubble] Extracted media:', {
       toolResultCount: toolResultParts.length,
-      youtubeCount: combinedMedia.youtubeVideos.length,
-      secCount: combinedMedia.secDocuments.length,
-      webSourceCount: combinedMedia.webSources.length,
-      profileCount: combinedMedia.profiles.length,
-      imageCount: combinedMedia.images.length,
+      fromToolResults: {
+        youtubeCount: toolMedia.youtubeVideos.length,
+        secCount: toolMedia.secDocuments.length,
+        webSourceCount: toolMedia.webSources.length,
+        profileCount: toolMedia.profiles.length,
+        imageCount: toolMedia.images.length,
+      },
+      fromFinalText: {
+        youtubeCount: textMedia.youtubeVideos.length,
+        secCount: textMedia.secDocuments.length,
+        webSourceCount: textMedia.webSources.length,
+        profileCount: textMedia.profiles.length,
+        imageCount: textMedia.images.length,
+      },
+      combined: {
+        youtubeCount: combinedMedia.youtubeVideos.length,
+        secCount: combinedMedia.secDocuments.length,
+        webSourceCount: combinedMedia.webSources.length,
+        profileCount: combinedMedia.profiles.length,
+        imageCount: combinedMedia.images.length,
+      },
     });
 
     return combinedMedia;
-  }, [message.parts, isUser]);
+  }, [message.parts, isUser, visibleText]);
 
   // Clean text by removing media markers (for display purposes)
   const cleanedText = useMemo(() => {
@@ -519,7 +624,7 @@ export function UIMessageBubble({
 
   return (
     <div className={cn(
-      "flex gap-3 mb-4",
+      "flex gap-4 mb-6",
       isUser ? "justify-end" : "justify-start",
       isChild && "ml-0" // Child messages already have margin from parent container
     )}>
@@ -527,19 +632,19 @@ export function UIMessageBubble({
       {!isUser && (
         <div className="flex-shrink-0">
           <div className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center",
+            "w-10 h-10 rounded-full flex items-center justify-center shadow-md ring-2 ring-white",
             roleConfig
               ? `bg-gradient-to-br from-${roleConfig.color}-400 to-${roleConfig.color}-600`
               : "bg-gradient-to-br from-purple-500 to-blue-500"
           )}>
-            <Bot className="h-4 w-4 text-white" />
+            <Bot className="h-5 w-5 text-white" />
           </div>
         </div>
       )}
 
       {/* Message Content */}
       <div className={cn(
-        "flex flex-col gap-2 max-w-[80%]",
+        "flex flex-col gap-3 max-w-[80%]",
         isUser && "items-end"
       )}>
         {/* Agent Role Badge (for specialized agents) */}
@@ -613,20 +718,20 @@ export function UIMessageBubble({
         )}
 
         {/* NEW PRESENTATION LAYER: Polished media display FIRST */}
-        {/* Only show for non-coordinator messages (single-tool calls) */}
-        {/* Coordinator messages embed media inside task cards via CollapsibleAgentProgress */}
-        {!isUser && !isParent && (
+        {/* Show media for all assistant messages that have extracted media */}
+        {/* This ensures videos, sources, etc. are always visible inline */}
+        {!isUser && (
           <RichMediaSection media={extractedMedia} showCitations={true} />
         )}
 
         {/* Collapsible Agent Progress Section - Process details hidden by default */}
-        {/* Auto-expand for parent messages with delegations so users see task results */}
+        {/* Keep collapsed so media displays prominently in RichMediaSection above */}
         {!isUser && (
           <CollapsibleAgentProgress
             toolParts={toolParts}
             reasoning={visibleReasoning}
             isStreaming={message.status === 'streaming'}
-            defaultExpanded={isParent && toolParts.some((p: any) => p.toolName?.startsWith('delegateTo'))}
+            defaultExpanded={false}
             onCompanySelect={onCompanySelect}
             onPersonSelect={onPersonSelect}
             onEventSelect={onEventSelect}
@@ -658,26 +763,121 @@ export function UIMessageBubble({
           const mimeType = (part as any).mimeType || '';
           const fileName = (part as any).name || 'File';
           const isImage = mimeType.startsWith('image/');
+          const isPDF = mimeType === 'application/pdf';
+          const isText = mimeType.startsWith('text/');
+          const isVideo = mimeType.startsWith('video/');
+          const isAudio = mimeType.startsWith('audio/');
 
           return (
-            <div key={idx} className="rounded-lg overflow-hidden border border-gray-200">
+            <div key={idx} className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
               {isImage ? (
                 <SafeImage
                   src={fileUrl}
                   alt={fileName}
                   className="max-w-full h-auto"
                 />
+              ) : isPDF ? (
+                <div className="flex flex-col">
+                  {/* PDF Header */}
+                  <div className="px-4 py-3 bg-gradient-to-r from-red-50 to-white flex items-center gap-3 border-b border-gray-200">
+                    <div className="p-2 rounded-lg bg-red-100 text-red-600">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">
+                        {fileName}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">PDF Document</p>
+                    </div>
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Open ↗
+                    </a>
+                  </div>
+                  {/* PDF Preview Embed */}
+                  <div className="bg-gray-100 p-2">
+                    <iframe
+                      src={fileUrl}
+                      className="w-full h-96 border-0 rounded"
+                      title={fileName}
+                    />
+                  </div>
+                </div>
+              ) : isVideo ? (
+                <div className="flex flex-col">
+                  {/* Video Header */}
+                  <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-white flex items-center gap-3 border-b border-gray-200">
+                    <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">
+                        {fileName}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">Video File</p>
+                    </div>
+                  </div>
+                  {/* Video Preview */}
+                  <div className="bg-black">
+                    <video
+                      src={fileUrl}
+                      controls
+                      className="w-full max-h-96"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                </div>
+              ) : isAudio ? (
+                <div className="flex flex-col">
+                  {/* Audio Header */}
+                  <div className="px-4 py-3 bg-gradient-to-r from-green-50 to-white flex items-center gap-3 border-b border-gray-200">
+                    <div className="p-2 rounded-lg bg-green-100 text-green-600">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">
+                        {fileName}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">Audio File</p>
+                    </div>
+                  </div>
+                  {/* Audio Preview */}
+                  <div className="p-4 bg-gray-50">
+                    <audio
+                      src={fileUrl}
+                      controls
+                      className="w-full"
+                    >
+                      Your browser does not support the audio tag.
+                    </audio>
+                  </div>
+                </div>
+              ) : isText ? (
+                <FileTextPreview fileUrl={fileUrl} fileName={fileName} />
               ) : (
-                <div className="px-3 py-2 bg-gray-50 flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-gray-500" />
-                  <a
-                    href={fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline"
-                  >
-                    {fileName}
-                  </a>
+                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white flex items-center gap-3 group hover:from-blue-50 hover:to-white transition-colors">
+                  <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+                    <ImageIcon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors block truncate"
+                    >
+                      {fileName}
+                    </a>
+                    <p className="text-xs text-gray-500 mt-0.5">File Attachment</p>
+                  </div>
+                  <div className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
+                    →
+                  </div>
                 </div>
               )}
             </div>
@@ -688,12 +888,12 @@ export function UIMessageBubble({
         {/* Use cleanedText for assistant messages to remove media markers, visibleText for user messages */}
         {(cleanedText || visibleText) && (
           <div className={cn(
-            "rounded-lg px-4 py-2 shadow-sm whitespace-pre-wrap",
+            "rounded-xl px-5 py-4 shadow-sm",
             isUser
               ? "bg-blue-600 text-white"
               : "bg-white text-gray-800 border border-gray-200",
-            message.status === 'streaming' && !isUser && "bg-green-50 border-green-200",
-            message.status === 'failed' && "bg-red-50 border-red-200"
+            message.status === 'streaming' && !isUser && "bg-gradient-to-br from-green-50 to-white border-green-200 animate-pulse",
+            message.status === 'failed' && "bg-red-50 border-red-300"
           )}>
             <ReactMarkdown
               components={{
@@ -734,13 +934,31 @@ export function UIMessageBubble({
                   );
                 },
                 p({ children }) {
-                  return <p className="mb-2 last:mb-0">{children}</p>;
+                  return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
                 },
                 ul({ children }) {
-                  return <ul className="list-disc list-inside mb-2">{children}</ul>;
+                  return <ul className="list-disc ml-5 mb-3 space-y-1">{children}</ul>;
                 },
                 ol({ children }) {
-                  return <ol className="list-decimal list-inside mb-2">{children}</ol>;
+                  return <ol className="list-decimal ml-5 mb-3 space-y-1">{children}</ol>;
+                },
+                li({ children }) {
+                  return <li className="leading-relaxed">{children}</li>;
+                },
+                h1({ children }) {
+                  return <h1 className="text-2xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>;
+                },
+                h2({ children }) {
+                  return <h2 className="text-xl font-bold mb-2 mt-3 first:mt-0">{children}</h2>;
+                },
+                h3({ children }) {
+                  return <h3 className="text-lg font-semibold mb-2 mt-3 first:mt-0">{children}</h3>;
+                },
+                blockquote({ children }) {
+                  return <blockquote className="border-l-4 border-gray-300 pl-4 italic my-3">{children}</blockquote>;
+                },
+                a({ href, children }) {
+                  return <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>;
                 },
               }}
             >
@@ -811,8 +1029,8 @@ export function UIMessageBubble({
       {/* User Avatar */}
       {isUser && (
         <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-            <User className="h-4 w-4 text-white" />
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md ring-2 ring-white">
+            <User className="h-5 w-5 text-white" />
           </div>
         </div>
       )}

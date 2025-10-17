@@ -142,16 +142,20 @@ export function FastAgentPanel({
 
   // Debug: Log when streaming messages update
   useEffect(() => {
-    if (chatMode === 'agent-streaming' && streamingMessages) {
-      console.log('[FastAgentPanel] Messages updated:', streamingMessages.length, 'messages');
-      const lastMessage = streamingMessages[streamingMessages.length - 1];
-      if (lastMessage) {
-        console.log('[FastAgentPanel] Last message:', {
-          role: lastMessage.role,
-          textLength: lastMessage.text?.length || 0,
-          textPreview: (lastMessage.text || '').substring(0, 50) + ((lastMessage.text?.length || 0) > 50 ? '...' : ''),
-          status: lastMessage.status,
-        });
+    if (chatMode === 'agent-streaming') {
+      console.log('[FastAgentPanel] 🔍 streamingMessages:', streamingMessages);
+      console.log('[FastAgentPanel] 🔍 streamingMessages.length:', streamingMessages?.length);
+      if (streamingMessages && streamingMessages.length > 0) {
+        console.log('[FastAgentPanel] Messages updated:', streamingMessages.length, 'messages');
+        const lastMessage = streamingMessages[streamingMessages.length - 1];
+        if (lastMessage) {
+          console.log('[FastAgentPanel] Last message:', {
+            role: lastMessage.role,
+            textLength: lastMessage.text?.length || 0,
+            textPreview: (lastMessage.text || '').substring(0, 50) + ((lastMessage.text?.length || 0) > 50 ? '...' : ''),
+            status: lastMessage.status,
+          });
+        }
       }
     }
   }, [streamingMessages, chatMode]);

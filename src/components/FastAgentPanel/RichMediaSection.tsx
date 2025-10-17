@@ -60,39 +60,48 @@ export function RichMediaSection({ media, showCitations = false }: RichMediaSect
         />
       )}
 
-      {/* Image gallery */}
+      {/* Image carousel - horizontal scrolling gallery */}
       {images.length > 0 && (
         <div className="mb-4">
           {/* Section header */}
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-px flex-1 bg-gray-200"></div>
             <h3 className="text-sm font-semibold text-gray-700">
               Images
               <span className="text-xs font-normal text-gray-500 ml-2">({images.length})</span>
             </h3>
-            <div className="h-px flex-1 bg-gray-200"></div>
           </div>
 
-          {/* Responsive image grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {images.map((img, idx) => (
-              <a
-                key={idx}
-                href={img.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-all hover:shadow-md"
-              >
-                <img
-                  src={img.url}
-                  alt={img.alt}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-              </a>
-            ))}
+          {/* Horizontal scrolling carousel */}
+          <div className="relative">
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ scrollbarWidth: 'thin' }}>
+              {images.map((img, idx) => (
+                <a
+                  key={idx}
+                  href={img.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 snap-start group relative rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 transition-all hover:shadow-lg"
+                  title={img.alt}
+                >
+                  <img
+                    src={img.url}
+                    alt={img.alt}
+                    className="h-48 w-auto object-cover"
+                    loading="lazy"
+                  />
+                  {/* Hover overlay with alt text */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                    <p className="text-white text-xs line-clamp-2">{img.alt}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+            {/* Scroll hint */}
+            {images.length > 3 && (
+              <div className="text-xs text-gray-400 text-center mt-1">
+                ← Scroll to see all {images.length} images →
+              </div>
+            )}
           </div>
         </div>
       )}
