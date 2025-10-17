@@ -743,7 +743,8 @@ export const initiateAsyncStreaming = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    console.log('[initiateAsyncStreaming] Starting for thread:', args.threadId);
+    const requestId = crypto.randomUUID().substring(0, 8);
+    console.log(`[initiateAsyncStreaming:${requestId}] 🚀 Starting for thread:`, args.threadId, 'prompt:', args.prompt.substring(0, 50));
 
     const streamingThread: any = await ctx.db.get(args.threadId);
     if (!streamingThread || !streamingThread.agentThreadId) {
@@ -756,7 +757,7 @@ export const initiateAsyncStreaming = mutation({
     const modelName = args.model || "gpt-5-chat-latest";
     const chatAgent = createChatAgent(modelName);
 
-    console.log('[initiateAsyncStreaming] Saving user message, agentThreadId:', streamingThread.agentThreadId);
+    console.log(`[initiateAsyncStreaming:${requestId}] 💾 Saving user message, agentThreadId:`, streamingThread.agentThreadId);
 
     // Save the user message first (enables optimistic updates)
     const { messageId } = await chatAgent.saveMessage(ctx, {
@@ -765,7 +766,7 @@ export const initiateAsyncStreaming = mutation({
       skipEmbeddings: true, // Skip embeddings in mutation, generate lazily when streaming
     });
 
-    console.log('[initiateAsyncStreaming] User message saved, messageId:', messageId);
+    console.log(`[initiateAsyncStreaming:${requestId}] ✅ User message saved, messageId:`, messageId);
 
     // Schedule async streaming
     await ctx.scheduler.runAfter(0, internal.fastAgentPanelStreaming.streamAsync, {
@@ -774,7 +775,7 @@ export const initiateAsyncStreaming = mutation({
       model: modelName,
     });
 
-    console.log('[initiateAsyncStreaming] Stream scheduled');
+    console.log(`[initiateAsyncStreaming:${requestId}] ⏰ Stream scheduled for messageId:`, messageId);
 
     return { messageId };
   },
@@ -793,7 +794,8 @@ export const streamAsync = internalAction({
     useCoordinator: v.optional(v.boolean()), // Enable/disable coordinator mode (default: true)
   },
   handler: async (ctx, args) => {
-    console.log('[streamAsync] Starting stream for message:', args.promptMessageId);
+    const executionId = crypto.randomUUID().substring(0, 8);
+    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId);
 
     // Get userId for coordinator agent from thread
     const thread = await ctx.runQuery(components.agent.threads.getThread, {
@@ -803,16 +805,20 @@ export const streamAsync = internalAction({
 
     // Choose agent based on mode
     let agent;
+    let agentType: string;
     if (args.useCoordinator !== false) { // Default to coordinator
-      console.log('[streamAsync] Using COORDINATOR AGENT for intelligent delegation');
+      agentType = 'COORDINATOR';
+      console.log(`[streamAsync:${executionId}] 🎯 Using COORDINATOR AGENT for intelligent delegation`);
       const { createCoordinatorAgent } = await import("./agents/specializedAgents");
       agent = createCoordinatorAgent(ctx, userId);
     } else {
-      console.log('[streamAsync] Using SINGLE AGENT (legacy mode)');
+      agentType = 'SINGLE';
+      console.log(`[streamAsync:${executionId}] 🔧 Using SINGLE AGENT (legacy mode)`);
       agent = createChatAgent(args.model);
     }
 
     try {
+      console.log(`[streamAsync:${executionId}] 📡 Calling ${agentType} agent.streamText...`);
       const result = await agent.streamText(
         ctx,
         { threadId: args.threadId },
@@ -826,16 +832,16 @@ export const streamAsync = internalAction({
         }
       );
 
-      console.log('[streamAsync] Stream started, messageId:', result.messageId);
+      console.log(`[streamAsync:${executionId}] ✅ Stream started, messageId:`, result.messageId);
 
       // Use consumeStream() as recommended in the docs
       await result.consumeStream();
 
-      console.log('[streamAsync] Stream completed successfully');
+      console.log(`[streamAsync:${executionId}] 🏁 Stream completed successfully`);
       // Note: Usage tracking is handled automatically by the agent's usageHandler
 
     } catch (error) {
-      console.error('[streamAsync] Error:', error);
+      console.error(`[streamAsync:${executionId}] ❌ Error:`, error);
       throw error;
     }
   },

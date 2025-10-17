@@ -154,6 +154,27 @@ describe('mediaExtractor', () => {
       const cleaned = removeMediaMarkersFromText(text);
       expect(cleaned).not.toContain('## Images');
     });
+
+    it('should remove "## Images" section header and images on same line', () => {
+      const text = `
+        Text before
+
+        ## Images
+![Image 1](https://example.com/img1.jpg) ![Image 2](https://example.com/img2.jpg)
+
+        ## Other Section
+
+        Text after
+      `;
+
+      const cleaned = removeMediaMarkersFromText(text);
+      expect(cleaned).not.toContain('## Images');
+      expect(cleaned).not.toContain('![Image 1]');
+      expect(cleaned).not.toContain('![Image 2]');
+      expect(cleaned).toContain('Text before');
+      expect(cleaned).toContain('## Other Section');
+      expect(cleaned).toContain('Text after');
+    });
   });
 
   describe('hasMedia', () => {
