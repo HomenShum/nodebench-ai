@@ -12,26 +12,46 @@ import { createCoordinatorAgent } from "./agents/specializedAgents";
  */
 export const sendMessageWithCoordinator = action({
   args: {
-    threadId: v.string(),
+    threadId: v.optional(v.string()),
     prompt: v.string(),
     userId: v.string(),
   },
   returns: v.object({
     response: v.string(),
     agentsUsed: v.array(v.string()),
+    threadId: v.string(),
   }),
   handler: async (ctx, args) => {
     const { threadId, prompt, userId } = args;
 
+    // Validate prompt is not empty
+    if (!prompt || prompt.trim().length === 0) {
+      throw new Error("Prompt cannot be empty. Please provide a valid question or request.");
+    }
+
     // Create the coordinator agent
     const coordinator = createCoordinatorAgent(ctx, userId);
 
+    // Create or continue thread
+    let agentThread;
+    let actualThreadId: string;
+
+    if (threadId) {
+      // Continue existing thread
+      const result = await coordinator.continueThread(ctx, { threadId });
+      agentThread = result.thread;
+      actualThreadId = threadId;
+    } else {
+      // Create new thread
+      const result = await coordinator.createThread(ctx, { userId });
+      agentThread = result.thread;
+      actualThreadId = result.threadId;
+    }
+
     // Generate response using the coordinator
-    const result = await coordinator.generateText(
-      ctx,
-      { threadId },
-      { prompt }
-    );
+    const result = await agentThread.generateText({
+      prompt,
+    });
 
     // Extract which agents were used from the tool calls
     const agentsUsed: string[] = [];
@@ -53,6 +73,7 @@ export const sendMessageWithCoordinator = action({
     return {
       response: result.text,
       agentsUsed,
+      threadId: actualThreadId,
     };
   },
 });

@@ -137,7 +137,7 @@ Return a JSON array with this exact structure:
 IMPORTANT: Return ONLY the JSON array, no other text.`;
 
       const result = await generateText({
-        model: openai.chat("gpt-4o"),
+        model: openai.chat("gpt-5"),
         prompt,
       });
 

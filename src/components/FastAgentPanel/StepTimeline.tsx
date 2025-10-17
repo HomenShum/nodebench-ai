@@ -10,6 +10,10 @@ import type { CompanyOption } from './CompanySelectionCard';
 import type { PersonOption } from './PeopleSelectionCard';
 import type { EventOption } from './EventSelectionCard';
 import type { NewsArticleOption } from './NewsSelectionCard';
+import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaExtractor';
+import { YouTubeGallery } from './MediaGallery';
+import { SourceCard } from './SourceCard';
+import { ProfileCard } from './ProfileCard';
 
 interface StepTimelineProps {
   steps: TimelineStep[];
@@ -218,12 +222,101 @@ export function StepTimeline({
                       )}
                       {step.result && (
                         <div className="text-xs">
-                          <div className="font-medium text-gray-700 mb-1">Result:</div>
-                          <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
-                            {typeof step.result === 'string' 
-                              ? step.result 
-                              : JSON.stringify(step.result, null, 2)}
-                          </pre>
+                          <div className="font-medium text-gray-700 mb-2">Results:</div>
+                          {(() => {
+                            const resultText = typeof step.result === 'string' ? step.result : JSON.stringify(step.result, null, 2);
+                            const media = extractMediaFromText(resultText);
+                            
+                            // Check if we have rich media to display
+                            const hasRichMedia = media.youtubeVideos.length > 0 || 
+                                                 media.webSources.length > 0 || 
+                                                 media.profiles.length > 0 ||
+                                                 media.images.length > 0;
+                            
+                            if (hasRichMedia) {
+                              return (
+                                <div className="space-y-3">
+                                  {/* YouTube Videos */}
+                                  {media.youtubeVideos.length > 0 && (
+                                    <div>
+                                      <div className="text-xs text-gray-600 mb-2">
+                                        Found {media.youtubeVideos.length} videos:
+                                      </div>
+                                      <YouTubeGallery videos={media.youtubeVideos} />
+                                    </div>
+                                  )}
+                                  
+                                  {/* News/Web Sources */}
+                                  {media.webSources.length > 0 && (
+                                    <div>
+                                      <div className="text-xs text-gray-600 mb-2">
+                                        Found {media.webSources.length} articles:
+                                      </div>
+                                      <div className="flex gap-2 overflow-x-auto pb-2">
+                                        {media.webSources.map((source, idx) => (
+                                          <div key={idx} className="flex-shrink-0" style={{ width: '200px' }}>
+                                            <SourceCard source={source} />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* People Profiles */}
+                                  {media.profiles.length > 0 && (
+                                    <div>
+                                      <div className="text-xs text-gray-600 mb-2">
+                                        Found {media.profiles.length} people:
+                                      </div>
+                                      <div className="flex gap-2 overflow-x-auto pb-2">
+                                        {media.profiles.map((profile, idx) => (
+                                          <div key={idx} className="flex-shrink-0" style={{ width: '200px' }}>
+                                            <ProfileCard profile={profile} />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Images */}
+                                  {media.images.length > 0 && (
+                                    <div>
+                                      <div className="text-xs text-gray-600 mb-2">
+                                        Found {media.images.length} images:
+                                      </div>
+                                      <div className="flex gap-2 overflow-x-auto pb-2">
+                                        {media.images.map((img, idx) => (
+                                          <img
+                                            key={idx}
+                                            src={img.url}
+                                            alt={img.alt || `Image ${idx + 1}`}
+                                            className="h-32 w-auto rounded border border-gray-200"
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Text summary (with media markers removed) */}
+                                  <details className="text-xs">
+                                    <summary className="cursor-pointer text-gray-500 hover:text-gray-700">
+                                      View raw text
+                                    </summary>
+                                    <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto mt-2">
+                                      {removeMediaMarkersFromText(resultText)}
+                                    </pre>
+                                  </details>
+                                </div>
+                              );
+                            }
+                            
+                            // No rich media, show text as before
+                            return (
+                              <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+                                {resultText}
+                              </pre>
+                            );
+                          })()}
                         </div>
                       )}
                       {step.error && (
