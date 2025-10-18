@@ -294,7 +294,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
         >
           {/* Left Panel: Media Gallery */}
           <Panel defaultSize={65} minSize={35}>
-            <div className="p-4 h-full min-h-0 overflow-hidden relative">
+            <div className="h-full flex flex-col">
               <DossierMediaGallery
                 videos={extractedMedia.videos}
                 images={extractedMedia.images}
