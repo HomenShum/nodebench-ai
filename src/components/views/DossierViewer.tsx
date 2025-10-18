@@ -1,5 +1,5 @@
 import { useQuery, useAction } from "convex/react";
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
@@ -94,31 +94,21 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   };
 
   // Load default analysis prompt from localStorage
-  useMemo(() => {
+  useEffect(() => {
     try {
       const saved = localStorage.getItem('nb:dossierAnalysisPrompt');
-      if (saved) {
-        setAnalysisPrompt(saved);
-      } else {
-        setAnalysisPrompt('Analyze this content from the dossier and provide key insights, patterns, and actionable recommendations.');
-      }
+      setAnalysisPrompt(
+        saved || 'Analyze this content from the dossier and provide key insights, patterns, and actionable recommendations.'
+      );
     } catch {
       setAnalysisPrompt('Analyze this content from the dossier and provide key insights, patterns, and actionable recommendations.');
     }
   }, []);
 
-  if (!document) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
-      </div>
-    );
-  }
-
   // Parse EditorJS content
   let editorJsContent: any = null;
   try {
-    if (typeof document.content === "string") {
+    if (typeof document?.content === "string") {
       editorJsContent = JSON.parse(document.content);
     }
   } catch (error) {
@@ -265,10 +255,10 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       {/* Header */}
       <DossierHeader
         documentId={documentId}
-        title={document.title}
-        isPublic={document.isPublic}
-        isFavorite={document.isFavorite}
-        tags={(document as any).tags || []}
+        title={document?.title ?? ''}
+        isPublic={!!document?.isPublic}
+        isFavorite={!!document?.isFavorite}
+        tags={(document as any)?.tags || []}
         videoCount={mediaCounts.videos}
         imageCount={mediaCounts.images}
         documentCount={mediaCounts.documents}
