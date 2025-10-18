@@ -27,6 +27,17 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   const linkedAssets = useQuery(api.documents.getLinkedAssets, { dossierId: documentId });
   const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
 
+  // DEBUG: Log document query result
+  console.log('[DossierViewer] Document query result:', {
+    hasDocument: !!document,
+    documentId,
+    hasContent: !!document?.content,
+    contentType: typeof document?.content,
+    contentLength: document?.content?.length,
+    documentType: document?.documentType,
+    dossierType: (document as any)?.dossierType,
+  });
+
   // Panel state - Horizontal (left/right)
   const DEFAULT_H_LAYOUT = [65, 35] as const;
   const hGroupRef = useRef<ImperativePanelGroupHandle>(null);
