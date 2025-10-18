@@ -23,6 +23,7 @@
   --text-secondary: #5f6368;
   --text-muted: #80868b;
   --accent-primary: #1a73e8;
+  --accent-primary-bg: rgba(26, 115, 232, 0.08);
   --accent-secondary: #8430ce;
   --bg-hover: rgba(0,0,0,0.04);
   --border-color: #dadce0;

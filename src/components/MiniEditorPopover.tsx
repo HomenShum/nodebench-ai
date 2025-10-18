@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import UnifiedEditor from "./UnifiedEditor";
 import SpreadsheetMiniEditor from "./editors/mini/SpreadsheetMiniEditor";
+import DossierMiniEditor from "./editors/mini/DossierMiniEditor";
 
 interface MiniEditorPopoverProps {
   isOpen: boolean;
@@ -131,8 +132,10 @@ export default function MiniEditorPopover({ isOpen, documentId, anchorEl, onClos
 }
 
 function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onClose: () => void }) {
+  const document = useQuery(api.documents.getById, { documentId });
   const fileDoc = useQuery(api.fileDocuments.getFileDocument, { documentId });
-  if (fileDoc === undefined) {
+
+  if (document === undefined || fileDoc === undefined) {
     return (
       <div className="space-y-2">
         <div className="animate-pulse h-4 w-24 bg-[var(--bg-primary)] rounded" />
@@ -140,6 +143,16 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
       </div>
     );
   }
+
+  // Check if this is a dossier document
+  if (document?.dossierType === "primary") {
+    return (
+      <div className="min-h-[240px]">
+        <DossierMiniEditor documentId={documentId} onClose={onClose} />
+      </div>
+    );
+  }
+
   if (!fileDoc) {
     // Not a file document or no access: fall back to unified document quick editor
     return (

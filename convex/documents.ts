@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
+import { components } from "./_generated/api";
+import { extractMediaFromMessages } from "./lib/dossierHelpers";
 
 // =================================================================
 // Editor content now defaults to EditorJS JSON for new documents.
@@ -1111,5 +1113,599 @@ export const toggleFavorite = mutation({
     });
 
     return { success: true, isFavorite: !document.isFavorite };
+  },
+});
+
+/**
+ * Get all linked media assets for a dossier
+ */
+export const getLinkedAssets = query({
+  args: {
+    dossierId: v.id("documents"),
+  },
+  returns: v.array(v.object({
+    _id: v.id("documents"),
+    _creationTime: v.number(),
+    title: v.string(),
+    documentType: v.optional(v.union(v.literal("text"), v.literal("file"), v.literal("timeline"), v.literal("dossier"))),
+    fileType: v.optional(v.string()),
+    dossierType: v.optional(v.union(v.literal("primary"), v.literal("media-asset"))),
+    parentDossierId: v.optional(v.id("documents")),
+    assetMetadata: v.optional(v.object({
+      assetType: v.union(
+        v.literal("image"),
+        v.literal("video"),
+        v.literal("youtube"),
+        v.literal("sec-document"),
+        v.literal("pdf"),
+        v.literal("news"),
+        v.literal("file")
+      ),
+      sourceUrl: v.string(),
+      thumbnailUrl: v.optional(v.string()),
+      extractedAt: v.number(),
+      toolName: v.optional(v.string()),
+      metadata: v.optional(v.any()),
+    })),
+  })),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return [];
+    }
+
+    // Get the dossier to verify access
+    const dossier = await ctx.db.get(args.dossierId);
+    if (!dossier) {
+      return [];
+    }
+
+    // Check access (user must be creator or document must be public)
+    if (dossier.createdBy !== userId && !dossier.isPublic) {
+      return [];
+    }
+
+    // Get all linked assets
+    const assets = await ctx.db
+      .query("documents")
+      .withIndex("by_parent_dossier", (q) => q.eq("parentDossierId", args.dossierId))
+      .collect();
+
+    return assets.map(asset => ({
+      _id: asset._id,
+      _creationTime: asset._creationTime,
+      title: asset.title,
+      documentType: asset.documentType,
+      fileType: asset.fileType,
+      dossierType: asset.dossierType,
+      parentDossierId: asset.parentDossierId,
+      assetMetadata: asset.assetMetadata,
+    }));
+  },
+});
+
+/**
+ * Migration: Update old dossier documents to use documentType: "dossier"
+ * This fixes documents that were created before we added the custom DossierViewer
+ */
+export const migrateDossiersToNewType = mutation({
+  args: {},
+  returns: v.object({
+    updated: v.number(),
+  }),
+  handler: async (ctx, _args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // Find all documents with dossierType: "primary" but documentType: "text"
+    const oldDossiers = await ctx.db
+      .query("documents")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("createdBy"), userId),
+          q.eq(q.field("dossierType"), "primary"),
+          q.or(
+            q.eq(q.field("documentType"), "text"),
+            q.eq(q.field("documentType"), undefined)
+          )
+        )
+      )
+      .collect();
+
+    // Update them to documentType: "dossier"
+    for (const doc of oldDossiers) {
+      await ctx.db.patch(doc._id, { documentType: "dossier" });
+    }
+
+    return { updated: oldDossiers.length };
+  },
+});
+
+/**
+ * Save a chat session as a Research Dossier with linked media assets
+ */
+export const saveChatSessionToDossier = mutation({
+  args: {
+    threadId: v.string(),
+    title: v.optional(v.string()),
+  },
+  returns: v.object({
+    dossierId: v.id("documents"),
+    messageCount: v.number(),
+    mediaCount: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    console.log("saveChatSessionToDossier called with threadId:", args.threadId);
+
+    // Fetch all messages from the thread using Agent component
+    // Use listMessagesByThreadId to get full message structure with parts
+    const allMessages: any[] = [];
+    let cursor: string | null = null;
+    let hasMore = true;
+
+    while (hasMore) {
+      const result: any = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+        threadId: args.threadId,
+        order: "asc",
+        paginationOpts: {
+          numItems: 100,
+          cursor: cursor,
+        },
+      });
+
+      console.log(`Fetched ${result.page.length} messages, isDone: ${result.isDone}`);
+      allMessages.push(...result.page);
+      hasMore = !result.isDone;
+      cursor = result.continueCursor || null;
+    }
+
+    console.log(`Total messages fetched: ${allMessages.length}`);
+
+    if (allMessages.length === 0) {
+      throw new Error("No messages found in thread");
+    }
+
+    // Log first message to see structure
+    if (allMessages.length > 0) {
+      console.log("First message structure:", JSON.stringify(allMessages[0], null, 2));
+
+      // Check for messages with tool information
+      const messagesWithTools = allMessages.filter((m: any) => m.tool || m.sources?.length > 0);
+      console.log(`Messages with tool info: ${messagesWithTools.length}`);
+      if (messagesWithTools.length > 0) {
+        console.log("First tool message:", JSON.stringify(messagesWithTools[0], null, 2));
+      }
+
+      // Look for tool-result messages
+      const toolResultMessages = allMessages.filter((m: any) => {
+        if (m.message?.content && Array.isArray(m.message.content)) {
+          return m.message.content.some((c: any) => c.type === "tool-result");
+        }
+        return false;
+      });
+      console.log(`Messages with tool-result: ${toolResultMessages.length}`);
+      if (toolResultMessages.length > 0) {
+        console.log("First tool-result message:", JSON.stringify(toolResultMessages[0], null, 2));
+      }
+    }
+
+    // Extract media assets from tool outputs
+    const extractedAssets = extractMediaFromMessages(allMessages);
+    console.log(`Extracted ${extractedAssets.length} media assets`);
+
+    // Build rich text transcript
+    const transcriptBlocks: any[] = [];
+
+    // Add header
+    transcriptBlocks.push({
+      type: "header",
+      data: {
+        text: args.title || "Chat Session",
+        level: 1,
+      },
+    });
+
+    // Add metadata
+    const messageCount = allMessages.length;
+    const assetCount = extractedAssets.length;
+    const createdAt = new Date().toLocaleString();
+
+    transcriptBlocks.push({
+      type: "paragraph",
+      data: {
+        text: `Saved on ${createdAt} • ${messageCount} messages • ${assetCount} media assets`,
+      },
+    });
+
+    transcriptBlocks.push({
+      type: "delimiter",
+      data: {},
+    });
+
+    // Helper function to strip HTML and markdown from text
+    const stripFormatting = (text: string): string => {
+      if (!text) return '';
+
+      // Remove HTML tags
+      let cleaned = text.replace(/<[^>]*>/g, '');
+
+      // Remove markdown formatting
+      cleaned = cleaned
+        .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold
+        .replace(/\*([^*]+)\*/g, '$1')     // Italic
+        .replace(/`([^`]+)`/g, '$1')       // Inline code
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links
+        .replace(/^#+\s+/gm, '')           // Headers
+        .replace(/^[-*+]\s+/gm, '')        // List items
+        .replace(/^\d+\.\s+/gm, '');       // Numbered lists
+
+      return cleaned.trim();
+    };
+
+    // Add conversation transcript
+    for (const message of allMessages) {
+      const role = message.role === "user" ? "👤 User" : "🤖 Assistant";
+      const timestamp = new Date(message._creationTime).toLocaleTimeString();
+
+      transcriptBlocks.push({
+        type: "header",
+        data: {
+          text: `${role} (${timestamp})`,
+          level: 3,
+        },
+      });
+
+      // Add message text (stripped of formatting)
+      if (message.text) {
+        const cleanText = stripFormatting(message.text);
+        console.log(`Message text length: ${message.text.length}, cleaned length: ${cleanText.length}`);
+        if (cleanText) {
+          transcriptBlocks.push({
+            type: "paragraph",
+            data: {
+              text: cleanText,
+            },
+          });
+        } else {
+          console.log("Warning: Message text was stripped to empty string");
+        }
+      } else {
+        console.log("Warning: Message has no text property");
+      }
+
+      // Add tool calls if present
+      if (message.parts && Array.isArray(message.parts)) {
+        const toolParts = message.parts.filter((p: any) => p.type === "tool-result");
+        if (toolParts.length > 0) {
+          transcriptBlocks.push({
+            type: "paragraph",
+            data: {
+              text: `Tools used: ${toolParts.map((p: any) => p.toolName).join(", ")}`,
+            },
+          });
+        }
+      }
+
+      transcriptBlocks.push({
+        type: "delimiter",
+        data: {},
+      });
+    }
+
+    console.log(`Total transcript blocks created: ${transcriptBlocks.length}`);
+
+    // Add media section if there are any assets
+    if (extractedAssets.length > 0) {
+      transcriptBlocks.push({
+        type: "header",
+        data: {
+          text: "📎 Media & Resources",
+          level: 2,
+        },
+      });
+
+      // Group assets by type
+      const assetsByType: Record<string, typeof extractedAssets> = {};
+      for (const asset of extractedAssets) {
+        if (!assetsByType[asset.type]) {
+          assetsByType[asset.type] = [];
+        }
+        assetsByType[asset.type].push(asset);
+      }
+
+      // Add YouTube videos first (embedded)
+      if (assetsByType["youtube"]) {
+        transcriptBlocks.push({
+          type: "header",
+          data: {
+            text: "🎥 Videos",
+            level: 3,
+          },
+        });
+
+        for (const asset of assetsByType["youtube"]) {
+          // Add title if available
+          if (asset.title) {
+            transcriptBlocks.push({
+              type: "paragraph",
+              data: {
+                text: asset.title,
+              },
+            });
+          }
+
+          // Add embedded YouTube video
+          transcriptBlocks.push({
+            type: "embed",
+            data: {
+              service: "youtube",
+              source: asset.url,
+              embed: asset.url,
+              width: 580,
+              height: 320,
+              caption: asset.title || "",
+            },
+          });
+        }
+      }
+
+      // Add images (embedded)
+      if (assetsByType["image"]) {
+        transcriptBlocks.push({
+          type: "header",
+          data: {
+            text: "🖼️ Images",
+            level: 3,
+          },
+        });
+
+        for (const asset of assetsByType["image"]) {
+          // Add embedded image
+          transcriptBlocks.push({
+            type: "image",
+            data: {
+              file: {
+                url: asset.url,
+              },
+              caption: asset.title || "",
+              withBorder: false,
+              stretched: false,
+              withBackground: false,
+            },
+          });
+        }
+      }
+
+      // Add SEC documents (with rich preview)
+      if (assetsByType["sec-document"]) {
+        transcriptBlocks.push({
+          type: "header",
+          data: {
+            text: "📄 SEC Documents",
+            level: 3,
+          },
+        });
+
+        for (const asset of assetsByType["sec-document"]) {
+          // Add document title
+          transcriptBlocks.push({
+            type: "paragraph",
+            data: {
+              text: `<b>${asset.title || "SEC Document"}</b>`,
+            },
+          });
+
+          // Add metadata if available
+          if (asset.metadata) {
+            const metadataText = [];
+            if (asset.metadata.filingType) metadataText.push(`Type: ${asset.metadata.filingType}`);
+            if (asset.metadata.filingDate) metadataText.push(`Filed: ${asset.metadata.filingDate}`);
+            if (asset.metadata.company) metadataText.push(`Company: ${asset.metadata.company}`);
+
+            if (metadataText.length > 0) {
+              transcriptBlocks.push({
+                type: "paragraph",
+                data: {
+                  text: `<i>${metadataText.join(" • ")}</i>`,
+                },
+              });
+            }
+          }
+
+          // Add link block
+          transcriptBlocks.push({
+            type: "linkTool",
+            data: {
+              link: asset.url,
+              meta: {
+                title: asset.title || "SEC Document",
+                description: asset.metadata?.description || "View on SEC.gov",
+                image: {
+                  url: asset.thumbnail || "",
+                },
+              },
+            },
+          });
+
+          // Add delimiter
+          transcriptBlocks.push({
+            type: "delimiter",
+            data: {},
+          });
+        }
+      }
+
+      // Add news articles (with rich preview)
+      if (assetsByType["news"]) {
+        transcriptBlocks.push({
+          type: "header",
+          data: {
+            text: "📰 News Articles",
+            level: 3,
+          },
+        });
+
+        for (const asset of assetsByType["news"]) {
+          // Add article title
+          transcriptBlocks.push({
+            type: "paragraph",
+            data: {
+              text: `<b>${asset.title || "News Article"}</b>`,
+            },
+          });
+
+          // Add source and metadata
+          const metadataText = [];
+          if (asset.metadata?.source) metadataText.push(`Source: ${asset.metadata.source}`);
+          if (asset.toolName) metadataText.push(`via ${asset.toolName}`);
+
+          if (metadataText.length > 0) {
+            transcriptBlocks.push({
+              type: "paragraph",
+              data: {
+                text: `<i>${metadataText.join(" • ")}</i>`,
+              },
+            });
+          }
+
+          // Add snippet if available
+          if (asset.metadata?.snippet) {
+            transcriptBlocks.push({
+              type: "quote",
+              data: {
+                text: asset.metadata.snippet,
+                caption: "",
+                alignment: "left",
+              },
+            });
+          }
+
+          // Add link block with preview
+          transcriptBlocks.push({
+            type: "linkTool",
+            data: {
+              link: asset.url,
+              meta: {
+                title: asset.title || "News Article",
+                description: asset.metadata?.snippet || "Read full article",
+                image: {
+                  url: asset.thumbnail || "",
+                },
+              },
+            },
+          });
+
+          // Add delimiter
+          transcriptBlocks.push({
+            type: "delimiter",
+            data: {},
+          });
+        }
+      }
+
+      // Add local documents (clickable links to open in app)
+      if (assetsByType["local-document"]) {
+        transcriptBlocks.push({
+          type: "header",
+          data: {
+            text: "📁 Referenced Documents",
+            level: 3,
+          },
+        });
+
+        for (const asset of assetsByType["local-document"]) {
+          // Add document title
+          transcriptBlocks.push({
+            type: "paragraph",
+            data: {
+              text: `<b>${asset.title || "Document"}</b>`,
+            },
+          });
+
+          // Add metadata
+          transcriptBlocks.push({
+            type: "paragraph",
+            data: {
+              text: `<i>Document ID: ${asset.documentId}</i>`,
+            },
+          });
+
+          // Add clickable link
+          transcriptBlocks.push({
+            type: "paragraph",
+            data: {
+              text: `<a href="${asset.url}" data-document-id="${asset.documentId}">📄 Open Document</a>`,
+            },
+          });
+
+          // Add delimiter
+          transcriptBlocks.push({
+            type: "delimiter",
+            data: {},
+          });
+        }
+      }
+
+      // Add any other media types
+      for (const [type, assets] of Object.entries(assetsByType)) {
+        if (type !== "youtube" && type !== "image" && type !== "sec-document" && type !== "news" && type !== "local-document") {
+          transcriptBlocks.push({
+            type: "header",
+            data: {
+              text: `📎 ${type}`,
+              level: 3,
+            },
+          });
+
+          for (const asset of assets) {
+            transcriptBlocks.push({
+              type: "paragraph",
+              data: {
+                text: `${asset.title || "Media"}: ${asset.url}`,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    // Create EditorJS content
+    const editorContent = {
+      time: Date.now(),
+      blocks: transcriptBlocks,
+      version: "2.28.2",
+    };
+
+    console.log(`Creating dossier with ${transcriptBlocks.length} blocks`);
+    console.log(`First 3 blocks:`, JSON.stringify(transcriptBlocks.slice(0, 3), null, 2));
+    console.log(`Content size: ${JSON.stringify(editorContent).length} bytes`);
+
+    // Create single dossier document with everything
+    const dossierId = await ctx.db.insert("documents", {
+      title: args.title || `Chat Session - ${new Date().toLocaleDateString()}`,
+      content: JSON.stringify(editorContent), // EditorJS format for DossierViewer
+      createdBy: userId,
+      isPublic: false,
+      isArchived: false,
+      isFavorite: false,
+      documentType: "dossier", // Use dossier type for custom viewer
+      dossierType: "primary",
+      chatThreadId: args.threadId,
+    });
+
+    console.log(`Created dossier document with ID: ${dossierId}`);
+
+    return {
+      dossierId,
+      messageCount: allMessages.length,
+      mediaCount: extractedAssets.length,
+    };
   },
 });

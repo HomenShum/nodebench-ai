@@ -34,12 +34,39 @@ const documents = defineTable({
     v.union(
       v.literal("text"),
       v.literal("file"),
-      v.literal("timeline")
+      v.literal("timeline"),
+      v.literal("dossier")
     )
-  ), // "text" (default) | "file" | "timeline"
+  ), // "text" (default) | "file" | "timeline" | "dossier"
   fileId:      v.optional(v.id("files")),     // reference to files table for file documents
   fileType:    v.optional(v.string()),        // "csv", "pdf", "image", etc. for file documents
   mimeType:    v.optional(v.string()),        // MIME type for file documents
+
+  // RESEARCH DOSSIER SUPPORT
+  dossierType: v.optional(
+    v.union(
+      v.literal("primary"),      // The main chat transcript/dossier
+      v.literal("media-asset")   // Linked media (video/image/document)
+    )
+  ),
+  parentDossierId: v.optional(v.id("documents")),  // Links media assets to primary dossier
+  chatThreadId:    v.optional(v.string()),         // Source chat thread (Agent component uses string IDs)
+  assetMetadata: v.optional(v.object({
+    assetType: v.union(
+      v.literal("image"),
+      v.literal("video"),
+      v.literal("youtube"),
+      v.literal("sec-document"),
+      v.literal("pdf"),
+      v.literal("news"),
+      v.literal("file")
+    ),
+    sourceUrl:     v.string(),                     // Original URL of the asset
+    thumbnailUrl:  v.optional(v.string()),         // Thumbnail/preview URL
+    extractedAt:   v.number(),                     // Timestamp when found in chat
+    toolName:      v.optional(v.string()),         // Which tool found this asset
+    metadata:      v.optional(v.any()),            // Additional metadata (title, description, etc.)
+  })),
 })
   .index("by_user",           ["createdBy"])
   .index("by_user_archived",  ["createdBy", "isArchived"])
@@ -47,6 +74,10 @@ const documents = defineTable({
   .index("by_public",         ["isPublic"])
   // For calendar integration: query notes by day per-user
   .index("by_user_agendaDate", ["createdBy", "agendaDate"])
+  // For dossier pattern: query linked assets by parent dossier
+  .index("by_parent_dossier", ["parentDossierId"])
+  // For dossier pattern: query all documents from a chat thread
+  .index("by_chat_thread",    ["chatThreadId"])
   .searchIndex("search_title", {
     searchField:  "title",
     filterFields: ["isPublic", "createdBy", "isArchived"],

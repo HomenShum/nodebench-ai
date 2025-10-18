@@ -11,13 +11,15 @@
 
 import { useRef, memo } from "react";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { Calendar, Edit3, Star, Trash2 } from "lucide-react";
+import { Calendar, Edit3, Star, Trash2, Link2 } from "lucide-react";
 import { FileTypeIcon } from "../../FileTypeIcon";
 import MetaPills from "../../MetaPills";
 import { docToPills } from "../../../lib/metaPillMappers";
 import { inferFileType, type FileType } from "../../../lib/fileTypes";
 import { getThemeForFileType } from "../../../lib/documentThemes";
 import type { DocumentCardData } from "../utils/documentHelpers";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 
 export interface DocumentCardProps {
   doc: DocumentCardData;
@@ -96,6 +98,15 @@ export function DocumentCard({
 }: DocumentCardProps) {
   const clickTimerRef = useRef<number | null>(null);
   const clickDelay = 250; // ms to distinguish single vs double click
+
+  // Check if this is a linked asset and get parent dossier info
+  const parentDossier = useQuery(
+    api.documents.getById,
+    (doc as any).parentDossierId ? { documentId: (doc as any).parentDossierId } : "skip"
+  );
+
+  const isLinkedAsset = !!(doc as any).dossierType && (doc as any).dossierType === "media-asset";
+  const isDossier = !!(doc as any).dossierType && (doc as any).dossierType === "primary";
 
   const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -221,6 +232,19 @@ export function DocumentCard({
           />
         </div>
 
+        {/* Linked Asset Badge (top-right) */}
+        {isLinkedAsset && (
+          <div
+            className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-md bg-purple-500/10 border border-purple-500/30 backdrop-blur-sm"
+            title={parentDossier ? `Linked to ${parentDossier.title}` : "Linked to dossier"}
+          >
+            <Link2 className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+            <span className="text-[10px] font-medium text-purple-700 dark:text-purple-300">
+              Linked
+            </span>
+          </div>
+        )}
+
         {/* Decorative background watermark */}
         {isCalendarDoc ? (
           <Calendar className="document-card__bg document-row__bg h-14 w-14 text-amber-400 rotate-12" />
@@ -319,6 +343,22 @@ export function DocumentCard({
             {doc.documentType === "timeline" && (
               <span className="ml-2 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
                 Timeline
+              </span>
+            )}
+
+            {isDossier && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300">
+                Dossier
+              </span>
+            )}
+
+            {isLinkedAsset && parentDossier && (
+              <span
+                className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md border border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300 truncate max-w-[120px]"
+                title={`Linked to ${parentDossier.title}`}
+              >
+                <Link2 className="h-2.5 w-2.5 flex-shrink-0" />
+                <span className="truncate">{parentDossier.title}</span>
               </span>
             )}
           </div>
