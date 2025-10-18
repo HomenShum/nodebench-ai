@@ -119,11 +119,34 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   // If no EditorJS content, proceed with empty blocks so Gallery/Notes still render
   const blocks = Array.isArray(editorJsContent?.blocks) ? editorJsContent.blocks : [];
 
+  // DEBUG: Log block information
+  console.log('[DossierViewer] Total blocks:', blocks.length);
+  if (blocks.length > 0) {
+    const blockTypes = blocks.reduce((acc: Record<string, number>, block: any) => {
+      acc[block.type] = (acc[block.type] || 0) + 1;
+      return acc;
+    }, {});
+    console.log('[DossierViewer] Block types:', blockTypes);
+    console.log('[DossierViewer] First 3 blocks:', blocks.slice(0, 3));
+  }
+
   // Extract media assets from EditorJS blocks
-  const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
+  const extractedMedia = useMemo(() => {
+    const result = extractMediaFromBlocks(blocks);
+    console.log('[DossierViewer] Extracted from EditorJS:', {
+      videos: result.videos.length,
+      images: result.images.length,
+      documents: result.documents.length,
+    });
+    if (result.videos.length > 0) console.log('[DossierViewer] Sample video:', result.videos[0]);
+    if (result.images.length > 0) console.log('[DossierViewer] Sample image:', result.images[0]);
+    if (result.documents.length > 0) console.log('[DossierViewer] Sample document:', result.documents[0]);
+    return result;
+  }, [blocks]);
 
   // Also extract linked assets from Convex (child docs under this dossier)
   const linkedMedia = useMemo(() => {
+    console.log('[DossierViewer] Linked assets from Convex:', linkedAssets?.length ?? 0);
     const videos: VideoAsset[] = [];
     const images: ImageAsset[] = [];
     const documents: DocumentAsset[] = [];
@@ -167,15 +190,29 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       }
     });
 
+    console.log('[DossierViewer] Extracted from Convex:', {
+      videos: videos.length,
+      images: images.length,
+      documents: documents.length,
+    });
     return { videos, images, documents };
   }, [linkedAssets]);
 
   // Merge both sources
-  const mergedMedia = useMemo(() => ({
-    videos: [...extractedMedia.videos, ...linkedMedia.videos],
-    images: [...extractedMedia.images, ...linkedMedia.images],
-    documents: [...extractedMedia.documents, ...linkedMedia.documents],
-  }), [extractedMedia, linkedMedia]);
+  const mergedMedia = useMemo(() => {
+    const merged = {
+      videos: [...extractedMedia.videos, ...linkedMedia.videos],
+      images: [...extractedMedia.images, ...linkedMedia.images],
+      documents: [...extractedMedia.documents, ...linkedMedia.documents],
+    };
+    console.log('[DossierViewer] FINAL MERGED MEDIA:', {
+      videos: merged.videos.length,
+      images: merged.images.length,
+      documents: merged.documents.length,
+      total: merged.videos.length + merged.images.length + merged.documents.length,
+    });
+    return merged;
+  }, [extractedMedia, linkedMedia]);
 
   const mediaCounts = useMemo(() => countMediaAssets(mergedMedia), [mergedMedia]);
 
