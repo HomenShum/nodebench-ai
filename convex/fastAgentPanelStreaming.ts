@@ -1118,8 +1118,9 @@ export const sendMessageInternal = internalAction({
     response: v.string(),
     toolsCalled: v.array(v.string()),
     threadId: v.string(),
+    toolResults: v.array(v.any()),
   }),
-  handler: async (ctx, args): Promise<{ response: string; toolsCalled: string[]; threadId: string }> => {
+  handler: async (ctx, args): Promise<{ response: string; toolsCalled: string[]; threadId: string; toolResults: any[] }> => {
     console.log('[sendMessageInternal] Starting with message:', args.message);
     const modelName = "gpt-5-chat-latest";
 
@@ -1314,6 +1315,7 @@ export const sendMessageInternal = internalAction({
       response: responseText,
       toolsCalled,
       threadId,
+      toolResults: toolResults ?? [],
     };
   },
 });
