@@ -4,7 +4,14 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
-const ONBOARDING_AGENT_CONTEXT = `You are the CafeCorner Onboarding Assistant. Your job is to help new users understand the workspace, seed sample data, create documents, manage tasks, and explore AI capabilities. Provide step-by-step guidance using the actual product UI: mention the Documents tab, the Seed Onboarding button in the toolbar, planner modes (List, Calendar, Kanban), and the AI chat tools. When appropriate, call available tools to create or update content directly (documents, tasks, events). Always include a fallback path users can follow manually if an automated tool fails.`;
+const ONBOARDING_AGENT_CONTEXT = `You are the CafeCorner Onboarding Assistant. Your job is to help new users understand the workspace, seed sample data, create documents, manage tasks, and explore AI capabilities.
+
+CRITICAL BEHAVIOR:
+- When the user asks to create or transform content, immediately call the appropriate tool (createDocument, updateDocument, createTask, etc.) instead of only giving instructions.
+- After using a tool, summarize what you executed (include document IDs, task titles, etc.) so the UI can reflect progress.
+- If a tool fails, provide a clear fallback path with manual steps and mention the "lightning" Fast Agent icon in the top-right app toolbar as an alternative.
+- Reference real UI affordances: Documents tab, "+ New Document", Seed Onboarding button near the View menu, planner modes (List, Calendar, Kanban).
+- Keep responses concise, action oriented, and celebrate completed milestones.`;
 
 // Define onboarding content here for maintainability
 const ONBOARDING_DOCS: Array<{
@@ -213,11 +220,19 @@ export const askOnboardingAssistant = action({
     response: v.string(),
     toolsCalled: v.array(v.string()),
     threadId: v.string(),
+    toolResults: v.array(v.any()),
+    error: v.optional(v.string()),
   }),
   handler: async (
     ctx,
     args,
-  ): Promise<{ response: string; toolsCalled: string[]; threadId: string }> => {
+  ): Promise<{
+    response: string;
+    toolsCalled: string[];
+    threadId: string;
+    toolResults: any[];
+    error?: string;
+  }> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Not authenticated");
@@ -225,18 +240,37 @@ export const askOnboardingAssistant = action({
 
     const context = args.threadId ? undefined : ONBOARDING_AGENT_CONTEXT;
 
-    const result = await ctx.runAction(
-      internal.fastAgentPanelStreaming.sendMessageInternal,
-      {
-        message: args.message,
-        threadId: args.threadId,
-        userId,
-        useCoordinator: true,
-        context,
-      },
-    );
+    try {
+      const result = await ctx.runAction(
+        internal.fastAgentPanelStreaming.sendMessageInternal,
+        {
+          message: args.message,
+          threadId: args.threadId,
+          userId,
+          useCoordinator: true,
+          context,
+        },
+      );
 
-    return result;
+      return result;
+    } catch (error) {
+      console.error("[askOnboardingAssistant] Error delegating to fast agent:", error);
+      const fallbackResponse = `I hit an issue completing that automatically. You can continue by using the manual steps:
+
+1. Open the Documents page from the left sidebar.
+2. Click "+ New Document" and choose a template or start blank.
+3. Use the lightning icon in the top-right toolbar to open the Fast Agent for advanced help.
+
+Let me know what you'd like to try next!`;
+
+      return {
+        response: fallbackResponse,
+        toolsCalled: [],
+        toolResults: [],
+        threadId: args.threadId ?? "",
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
   },
 });
 

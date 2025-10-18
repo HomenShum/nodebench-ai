@@ -68,6 +68,47 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
 
   const askOnboardingAssistant = useAction(api.onboarding.askOnboardingAssistant);
 
+  const extractDocumentFromToolResults = (
+    toolResults: any[],
+    fallbackText: string,
+  ): { id: Id<"documents">; title: string } | null => {
+    for (const entry of toolResults) {
+      if (typeof entry === 'string') {
+        const idMatch = entry.match(/ID:\s*([a-z0-9_-]{8,})/i);
+        if (idMatch) {
+          const titleMatch = entry.match(/Title:\s*"([^"]+)"|Title:\s*([^\n]+)/i);
+          const titleValue = titleMatch?.[1] ?? titleMatch?.[2] ?? 'Created document';
+          return {
+            id: idMatch[1] as Id<"documents">,
+            title: titleValue.replace(/"$/, '').trim(),
+          };
+        }
+      } else if (entry && typeof entry === 'object') {
+        const docId = (entry as any).documentId ?? (entry as any).id;
+        if (typeof docId === 'string') {
+          const titleValue = typeof (entry as any).title === 'string'
+            ? (entry as any).title
+            : 'Created document';
+          return {
+            id: docId as Id<"documents">,
+            title: titleValue,
+          };
+        }
+      }
+    }
+
+    const fallbackId = fallbackText.match(/ID:\s*([a-z0-9_-]{8,})/i);
+    if (fallbackId) {
+      const fallbackTitle = fallbackText.match(/Title:\s*"([^"]+)"|Title:\s*([^\n]+)/i);
+      return {
+        id: fallbackId[1] as Id<"documents">,
+        title: (fallbackTitle?.[1] ?? fallbackTitle?.[2] ?? 'Created document').trim(),
+      };
+    }
+
+    return null;
+  };
+
   const [onboardingSteps, setOnboardingSteps] = useState<OnboardingStep[]>([
     {
       id: 'welcome',
@@ -166,7 +207,9 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
         threadId: agentThreadId ?? undefined,
       });
 
-      setAgentThreadId(result.threadId);
+      if (result.threadId) {
+        setAgentThreadId(result.threadId);
+      }
 
       setMessages((prev) =>
         prev.map((m) =>
@@ -182,23 +225,22 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
       if (result.toolsCalled.includes('createDocument')) {
         completeStep('create-first-doc');
 
-        const titleMatch = result.response.match(/Title:\s*"([^"]+)"/i);
-        const idMatch = result.response.match(/ID:\s*([a-z0-9_-]{8,})/i);
-        if (titleMatch && idMatch) {
-          const documentId = idMatch[1] as Id<"documents">;
+        const createdDoc = extractDocumentFromToolResults(result.toolResults, result.response);
+        if (createdDoc) {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMessageId
                 ? {
                     ...m,
                     documentCreated: {
-                      id: documentId,
-                      title: titleMatch[1],
+                      id: createdDoc.id,
+                      title: createdDoc.title,
                     },
                   }
                 : m
             )
           );
+          onDocumentSelect(createdDoc.id);
         }
       }
 
@@ -225,6 +267,10 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
         lowerResponse.includes('collaboration')
       ) {
         completeStep('collaboration');
+      }
+
+      if (result.error) {
+        console.warn('Onboarding assistant reported error:', result.error);
       }
     } catch (error) {
       console.error('Error contacting onboarding assistant:', error);
