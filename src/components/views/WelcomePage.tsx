@@ -161,62 +161,76 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
     setMessages((prev) => [...prev, assistantPlaceholder]);
 
     try {
-      // Fixed: Remove messageHistory parameter
-      const response = await generateAIResponse({
-        userMessage: messageContent,
+      const result = await askOnboardingAssistant({
+        message: messageContent,
+        threadId: agentThreadId ?? undefined,
       });
+
+      setAgentThreadId(result.threadId);
 
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantMessageId
-            ? { ...m, content: response.message, isProcessing: false }
+            ? { ...m, content: result.response, isProcessing: false }
             : m
         )
       );
 
-      for (const action of response.actions) {
-        if (action.type === 'createDocument' && action.title) {
-          const newDocId = await createDocument({
-            title: action.title,
-            content: action.content,
-          });
+      const lowerMessage = messageContent.toLowerCase();
+      const lowerResponse = result.response.toLowerCase();
 
+      if (result.toolsCalled.includes('createDocument')) {
+        completeStep('create-first-doc');
+
+        const titleMatch = result.response.match(/Title:\s*"([^"]+)"/i);
+        const idMatch = result.response.match(/ID:\s*([a-z0-9_-]{8,})/i);
+        if (titleMatch && idMatch) {
+          const documentId = idMatch[1] as Id<"documents">;
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMessageId
                 ? {
                     ...m,
                     documentCreated: {
-                      id: newDocId,
-                      title: action.title!,
+                      id: documentId,
+                      title: titleMatch[1],
                     },
                   }
                 : m
             )
           );
-          completeStep('create-first-doc');
-
-          if (action.select) {
-            onDocumentSelect(newDocId);
-          }
         }
       }
 
-      if (messageContent.toLowerCase().includes('ai features') ||
-          messageContent.toLowerCase().includes('what can you do')) {
+      if (
+        lowerMessage.includes('ai features') ||
+        lowerMessage.includes('what can you do') ||
+        lowerResponse.includes('ai features')
+      ) {
         completeStep('ai-features');
-      } else if (messageContent.toLowerCase().includes('organization') ||
-                  messageContent.toLowerCase().includes('organize')) {
+      }
+
+      if (
+        lowerMessage.includes('organization') ||
+        lowerMessage.includes('organize') ||
+        result.toolsCalled.includes('findDocument') ||
+        result.toolsCalled.includes('delegateToDocumentAgent')
+      ) {
         completeStep('organize-workspace');
-      } else if (messageContent.toLowerCase().includes('collaboration') ||
-                  messageContent.toLowerCase().includes('sharing')) {
+      }
+
+      if (
+        lowerMessage.includes('collaboration') ||
+        lowerMessage.includes('sharing') ||
+        lowerResponse.includes('collaboration')
+      ) {
         completeStep('collaboration');
       }
     } catch (error) {
-      console.error('Error generating AI response:', error);
-      const errorMessage = error instanceof Error ?
-        `Sorry, I encountered an error: ${error.message}. Please try again.` :
-        'Sorry, I encountered an unexpected error. Please try again.';
+      console.error('Error contacting onboarding assistant:', error);
+      const errorMessage = error instanceof Error
+        ? `The onboarding assistant hit an error: ${error.message}. You can try again or open the Fast Agent panel from the lightning icon to continue.`
+        : 'The onboarding assistant is unavailable right now. Please try again or open the Fast Agent panel from the lightning icon to continue.';
 
       setMessages((prev) =>
         prev.map((m) =>
