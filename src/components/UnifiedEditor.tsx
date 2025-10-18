@@ -45,6 +45,42 @@ const blocksAreTriviallyEmpty = (blocks: any[]): boolean => {
   return plain.replace(/\s+/g, '').length === 0;
 };
 
+/**
+ * Sanitize ProseMirror content to remove unsupported node types
+ * Converts unsupported nodes (like horizontalRule) to supported alternatives
+ */
+const sanitizeProseMirrorContent = (content: any): any => {
+  if (!content) return content;
+
+  if (Array.isArray(content)) {
+    return content
+      .map(node => sanitizeProseMirrorContent(node))
+      .filter(node => node !== null);
+  }
+
+  if (typeof content === 'object' && content.type) {
+    // Remove unsupported node types
+    const unsupportedTypes = ['horizontalRule'];
+    if (unsupportedTypes.includes(content.type)) {
+      return null; // Filter out
+    }
+
+    // Recursively sanitize nested content
+    if (content.content && Array.isArray(content.content)) {
+      const sanitized = content.content
+        .map(node => sanitizeProseMirrorContent(node))
+        .filter(node => node !== null);
+
+      return {
+        ...content,
+        content: sanitized.length > 0 ? sanitized : undefined,
+      };
+    }
+  }
+
+  return content;
+};
+
 export type EditorMode = "quickEdit" | "quickNote" | "full";
 
 export interface UnifiedEditorProps {
@@ -111,6 +147,21 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       console.warn("[UnifiedEditor] sync error:", error?.message || String(error));
     },
   });
+
+  // Sanitize the loaded content to remove unsupported node types
+  useEffect(() => {
+    if (sync.initialContent) {
+      try {
+        const sanitized = sanitizeProseMirrorContent(sync.initialContent);
+        if (sanitized !== sync.initialContent) {
+          // Content was modified, we may need to handle this
+          console.log("[UnifiedEditor] Sanitized content to remove unsupported node types");
+        }
+      } catch (err) {
+        console.error("[UnifiedEditor] Error sanitizing content:", err);
+      }
+    }
+  }, [sync.initialContent]);
 
   // --- AI proposal/apply wiring (parity with NB3, minimal overlay) ---
   type AIToolAction = {
@@ -688,26 +739,40 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     return (
       <div style={{ display: 'none' }} aria-hidden>
         {(() => {
-          const json = syncTT.initialContent as any;
-          const containsBN = JSON.stringify(json).includes('blockContainer') || JSON.stringify(json).includes('blockGroup');
-          const extractText = (node: any): string => {
-            if (!node) return '';
+          try {
+            let json = syncTT.initialContent as any;
 
-            if (typeof node === 'string') return node;
-            if (Array.isArray(node)) return node.map(extractText).join(' ');
-            const type = node.type;
-            if (type === 'text' && typeof node.text === 'string') return node.text;
-            const content = Array.isArray(node.content) ? node.content : [];
-            return content.map(extractText).join(' ');
-          };
-          const safeContent = containsBN
-            ? { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: extractText(json) }] }] }
-            : json;
-          return (
-            <EditorProvider content={safeContent as any} extensions={[StarterKit, syncTT.extension]}>
-              <PmBridge documentId={documentId} />
-            </EditorProvider>
-          );
+            // Sanitize content to remove unsupported node types
+            json = sanitizeProseMirrorContent(json);
+
+            const containsBN = JSON.stringify(json).includes('blockContainer') || JSON.stringify(json).includes('blockGroup');
+            const extractText = (node: any): string => {
+              if (!node) return '';
+
+              if (typeof node === 'string') return node;
+              if (Array.isArray(node)) return node.map(extractText).join(' ');
+              const type = node.type;
+              if (type === 'text' && typeof node.text === 'string') return node.text;
+              const content = Array.isArray(node.content) ? node.content : [];
+              return content.map(extractText).join(' ');
+            };
+            const safeContent = containsBN
+              ? { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: extractText(json) }] }] }
+              : json;
+            return (
+              <EditorProvider content={safeContent as any} extensions={[StarterKit, syncTT.extension]}>
+                <PmBridge documentId={documentId} />
+              </EditorProvider>
+            );
+          } catch (err) {
+            console.error("[UnifiedEditor] Error rendering ShadowTiptap:", err);
+            // Return empty editor on error
+            return (
+              <EditorProvider content={{ type: 'doc', content: [] }} extensions={[StarterKit, syncTT.extension]}>
+                <PmBridge documentId={documentId} />
+              </EditorProvider>
+            );
+          }
         })()}
       </div>
     );
@@ -1164,6 +1229,25 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
 
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-primary)]" />
           Loading editor…
+        </div>
+      </div>
+    );
+  }
+
+  // Check if sync has an error (e.g., unsupported node types)
+  if (sync.error) {
+    console.error("[UnifiedEditor] Sync error:", sync.error);
+    return (
+      <div className="flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
+          <p className="text-[var(--text-secondary)] mb-4">Unable to load document</p>
+          <p className="text-xs text-[var(--text-tertiary)] mb-4">{String(sync.error)}</p>
+          <button
+            className="px-3 py-1.5 text-sm rounded bg-[var(--accent-primary)] text-white"
+            onClick={() => window.location.reload()}
+          >
+            Reload Page
+          </button>
         </div>
       </div>
     );

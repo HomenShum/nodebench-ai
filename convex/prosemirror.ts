@@ -6,6 +6,53 @@ import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 
+/**
+ * Sanitize ProseMirror content to remove unsupported node types
+ */
+const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
+  try {
+    const content = JSON.parse(snapshot);
+
+    const sanitize = (node: any): any => {
+      if (!node) return node;
+
+      if (Array.isArray(node)) {
+        return node
+          .map(n => sanitize(n))
+          .filter(n => n !== null);
+      }
+
+      if (typeof node === 'object' && node.type) {
+        // Remove unsupported node types
+        const unsupportedTypes = ['horizontalRule'];
+        if (unsupportedTypes.includes(node.type)) {
+          return null; // Filter out
+        }
+
+        // Recursively sanitize nested content
+        if (node.content && Array.isArray(node.content)) {
+          const sanitized = node.content
+            .map(n => sanitize(n))
+            .filter(n => n !== null);
+
+          return {
+            ...node,
+            content: sanitized.length > 0 ? sanitized : undefined,
+          };
+        }
+      }
+
+      return node;
+    };
+
+    const sanitized = sanitize(content);
+    return JSON.stringify(sanitized);
+  } catch (err) {
+    console.error("[prosemirror] Error sanitizing snapshot:", err);
+    return snapshot; // Return original if sanitization fails
+  }
+};
+
 const prosemirrorSync = new ProsemirrorSync(components.prosemirrorSync);
 
 export const {
@@ -44,9 +91,12 @@ export const {
     if (!userId || document.createdBy !== userId) throw new Error("Unauthorized");
   },
   async onSnapshot(ctx, id, snapshot, version) {
+    // Sanitize the snapshot to remove unsupported node types before storing
+    const sanitized = sanitizeProseMirrorSnapshot(snapshot);
+
     // Update the document content when a new snapshot is available
     await ctx.db.patch(id as any, {
-      content: snapshot,
+      content: sanitized,
     });
   },
 });

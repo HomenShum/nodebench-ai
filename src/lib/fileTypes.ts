@@ -11,6 +11,7 @@ export type FileType =
   | "json"
   | "web"
   | "document"
+  | "dossier"
   | "unknown";
 
 export const FILE_TYPE_COLORS: Record<FileType, string> = {
@@ -26,6 +27,7 @@ export const FILE_TYPE_COLORS: Record<FileType, string> = {
   json: "#0ea5e9", // sky-500
   web: "#6366f1", // indigo-500
   document: "#6b7280", // gray-500
+  dossier: "#9333ea", // purple-600
   unknown: "#9ca3af", // gray-400
 };
 

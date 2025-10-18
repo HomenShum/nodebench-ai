@@ -121,6 +121,19 @@ export function FileTypeIcon({ type, className }: { type: FileType; className?: 
         </BaseSvg>
       );
 
+    case "dossier":
+      // Stack of documents with chat bubble overlay
+      return (
+        <BaseSvg className={className}>
+          {/* Stack of documents */}
+          <rect x="5" y="6" width="10" height="12" rx="1" />
+          <rect x="7" y="4" width="10" height="12" rx="1" opacity="0.5" />
+          <rect x="9" y="2" width="10" height="12" rx="1" opacity="0.3" />
+          {/* Chat bubble overlay */}
+          <path d="M14 10h6v4l-2 2v-2h-4z" fill="currentColor" />
+        </BaseSvg>
+      );
+
     case "unknown":
     default:
       return (

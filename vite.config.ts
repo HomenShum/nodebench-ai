@@ -42,7 +42,15 @@ window.addEventListener('message', async (message) => {
     },
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "wx-react-gantt"],
+    include: [
+      "react",
+      "react-dom",
+      "wx-react-gantt",
+      "rehype-raw",
+      "rehype-sanitize",
+      "rehype-parse",
+      "hast-util-raw",
+    ],
   },
   test: {
     globals: true,

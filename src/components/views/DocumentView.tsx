@@ -8,6 +8,7 @@ import { Editor } from "@/components/Editor/Editor";
 import UnifiedEditor from "@/components/UnifiedEditor";
 import { FileViewer } from "@/components/views/FileViewer";
 import { SpreadsheetView } from "@/components/views/SpreadsheetView";
+import { DossierViewer } from "@/components/views/DossierViewer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { isValidConvexId } from "@/lib/ids";
 
@@ -149,6 +150,8 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
                   <div className="h-full w-full flex items-center justify-center">
                     <div className="text-[var(--text-secondary)] text-sm">Timeline view is not available.</div>
                   </div>
+                ) : document.documentType === "dossier" ? (
+                  <DossierViewer documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
                 ) : document.documentType === "file" ? (
                   document.fileType === "csv" ? (
                     <SpreadsheetView documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />

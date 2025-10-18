@@ -81,6 +81,7 @@ import type * as holidays_actions from "../holidays_actions.js";
 import type * as http from "../http.js";
 import type * as integrations from "../integrations.js";
 import type * as lib_crypto from "../lib/crypto.js";
+import type * as lib_dossierHelpers from "../lib/dossierHelpers.js";
 import type * as lib_markdown from "../lib/markdown.js";
 import type * as lib_mcpClient from "../lib/mcpClient.js";
 import type * as mcp from "../mcp.js";
@@ -230,6 +231,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   integrations: typeof integrations;
   "lib/crypto": typeof lib_crypto;
+  "lib/dossierHelpers": typeof lib_dossierHelpers;
   "lib/markdown": typeof lib_markdown;
   "lib/mcpClient": typeof lib_mcpClient;
   mcp: typeof mcp;

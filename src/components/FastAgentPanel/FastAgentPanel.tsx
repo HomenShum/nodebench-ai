@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus, Radio } from 'lucide-react';
+import { X, Zap, Settings, Plus, Radio, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 
@@ -164,6 +164,7 @@ export function FastAgentPanel({
   const sendStreamingMessage = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
   const deleteStreamingThread = useMutation(api.fastAgentPanelStreaming.deleteThread);
   const deleteMessage = useMutation(api.fastAgentPanelStreaming.deleteMessage);
+  const saveChatSessionToDossier = useMutation(api.documents.saveChatSessionToDossier);
 
   // Use the appropriate data based on mode
   const threads = chatMode === 'agent' ? agentThreads : streamingThreads;
@@ -275,6 +276,44 @@ export function FastAgentPanel({
   const handleExportThread = useCallback((threadId: string) => {
     setExportingThreadId(threadId);
   }, []);
+
+  const handleSaveSession = useCallback(async () => {
+    if (!activeThreadId) {
+      toast.error("No active chat session to save");
+      return;
+    }
+
+    try {
+      // Get the agent thread ID for streaming mode
+      const threadIdToSave = chatMode === 'agent-streaming' && streamingThread?.agentThreadId
+        ? streamingThread.agentThreadId
+        : activeThreadId;
+
+      // Get the thread title
+      const currentThread = threads?.find((t: any) => {
+        const tId = chatMode === 'agent' ? t.threadId : t._id;
+        return tId === activeThreadId;
+      });
+      const threadTitle = currentThread?.title || "Chat Session";
+
+      const result = await saveChatSessionToDossier({
+        threadId: threadIdToSave,
+        title: threadTitle,
+      });
+
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <div className="font-medium">Session saved!</div>
+          <div className="text-xs text-[var(--text-secondary)]">
+            {result.assetCount} media assets linked
+          </div>
+        </div>
+      );
+    } catch (error) {
+      console.error("Failed to save session:", error);
+      toast.error("Failed to save chat session");
+    }
+  }, [activeThreadId, chatMode, streamingThread, threads, saveChatSessionToDossier]);
 
   const handleSendMessage = useCallback(async (content?: string) => {
     const text = (content ?? input).trim();
@@ -787,6 +826,14 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         </div>
 
         <div className="header-right">
+          <button
+            onClick={() => { void handleSaveSession(); }}
+            className="icon-button"
+            title="Save Chat Session to Documents"
+            disabled={!activeThreadId}
+          >
+            <Save className="h-4 w-4" />
+          </button>
           <button
             onClick={() => { void handleCreateThread(); }}
             className="icon-button"

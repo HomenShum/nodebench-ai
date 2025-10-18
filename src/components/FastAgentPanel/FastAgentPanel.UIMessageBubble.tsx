@@ -7,7 +7,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
@@ -502,6 +502,7 @@ export function UIMessageBubble({
   const isUser = message.role === 'user';
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Get agent role configuration
   const roleConfig = agentRole ? agentRoleConfig[agentRole] : null;
@@ -519,6 +520,70 @@ export function UIMessageBubble({
     if (onDeleteMessage) {
       onDeleteMessage();
       setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      // Helper function to strip all HTML and markdown formatting
+      const stripFormatting = (text: string): string => {
+        if (!text) return '';
+
+        // First, decode HTML entities using DOM
+        const temp = document.createElement('div');
+        temp.innerHTML = text;
+        let cleaned = temp.textContent || temp.innerText || '';
+
+        // Remove markdown formatting
+        cleaned = cleaned
+          .replace(/\*\*([^*]+)\*\*/g, '$1')      // Bold **text**
+          .replace(/\*([^*]+)\*/g, '$1')          // Italic *text*
+          .replace(/__([^_]+)__/g, '$1')          // Bold __text__
+          .replace(/_([^_]+)_/g, '$1')            // Italic _text_
+          .replace(/~~([^~]+)~~/g, '$1')          // Strikethrough ~~text~~
+          .replace(/`([^`]+)`/g, '$1')            // Inline code `code`
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links [text](url)
+          .replace(/^#{1,6}\s+/gm, '')            // Headers # Header
+          .replace(/^[-*+]\s+/gm, '')             // Unordered list items
+          .replace(/^\d+\.\s+/gm, '')             // Ordered list items
+          .replace(/^>\s+/gm, '')                 // Blockquotes
+          .replace(/```[\s\S]*?```/g, '')         // Code blocks
+          .replace(/`{3,}/g, '');                 // Fence markers
+
+        return cleaned.trim();
+      };
+
+      // Extract and clean text
+      let copyText = stripFormatting(message.text || '');
+
+      // Add media references if present
+      const mediaParts = message.parts?.filter((p: any) =>
+        p.type === 'tool-result' &&
+        (p.toolName === 'youtubeSearch' || p.toolName === 'searchSecFilings' || p.toolName === 'linkupSearch')
+      );
+
+      if (mediaParts && mediaParts.length > 0) {
+        copyText += '\n\n--- Media References ---\n';
+        for (const part of mediaParts) {
+          const toolName = (part as ToolUIPart).toolName;
+          copyText += `\n${toolName}:\n`;
+
+          // Try to extract URLs from output
+          const output = (part as ToolUIPart).output;
+          if (output && typeof output === 'object' && 'value' in output) {
+            const value = (output as any).value;
+            if (typeof value === 'string') {
+              copyText += stripFormatting(value) + '\n';
+            }
+          }
+        }
+      }
+
+      await navigator.clipboard.writeText(copyText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
     }
   };
 
@@ -887,14 +952,17 @@ export function UIMessageBubble({
         {/* 4. Main text content - THE ANSWER (at bottom for natural reading flow) */}
         {/* Use cleanedText for assistant messages to remove media markers, visibleText for user messages */}
         {(cleanedText || visibleText) && (
-          <div className={cn(
-            "rounded-xl px-5 py-4 shadow-sm",
-            isUser
-              ? "bg-blue-600 text-white"
-              : "bg-white text-gray-800 border border-gray-200",
-            message.status === 'streaming' && !isUser && "bg-gradient-to-br from-green-50 to-white border-green-200 animate-pulse",
-            message.status === 'failed' && "bg-red-50 border-red-300"
-          )}>
+          <div
+            className={cn(
+              "rounded-xl px-5 py-4 shadow-sm",
+              isUser
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-800 border border-gray-200",
+              message.status === 'streaming' && !isUser && "bg-gradient-to-br from-green-50 to-white border-green-200 animate-pulse",
+              message.status === 'failed' && "bg-red-50 border-red-300"
+            )}
+            title={!isUser && message.status !== 'streaming' ? "Use the Copy button below to copy this message" : undefined}
+          >
             <ReactMarkdown
               components={{
                 code({ inline, className, children, ...props }: any) {
@@ -979,6 +1047,25 @@ export function UIMessageBubble({
           {/* Action buttons for completed messages */}
           {message.status !== 'streaming' && visibleText && (
             <div className="flex items-center gap-1">
+              {/* Copy button */}
+              <button
+                onClick={() => { void handleCopy(); }}
+                className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
+                title="Copy response"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3 w-3 text-green-600" />
+                    <span className="text-xs text-green-600">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    <span className="text-xs">Copy</span>
+                  </>
+                )}
+              </button>
+
               {/* Regenerate button for assistant messages */}
               {!isUser && onRegenerateMessage && (
                 <button
@@ -991,7 +1078,7 @@ export function UIMessageBubble({
                   <span className="text-xs">{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
                 </button>
               )}
-              
+
               {/* Delete button */}
               {onDeleteMessage && (
                 showDeleteConfirm ? (

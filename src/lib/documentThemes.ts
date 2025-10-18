@@ -93,6 +93,14 @@ export function getThemeForFileType(type: FileType): DocumentCardTheme {
         label: "bg-indigo-500/10 border-indigo-500/30 text-indigo-700",
         watermarkText: "text-indigo-500",
       } as const;
+    case "dossier":
+      return {
+        ring: "ring-1 ring-purple-400/30",
+        gradient: "bg-gradient-to-br from-purple-50/15 to-indigo-50/10",
+        iconBg: "bg-gradient-to-br from-purple-500 to-indigo-600",
+        label: "bg-purple-500/10 border-purple-500/30 text-purple-700",
+        watermarkText: "text-purple-400",
+      } as const;
     case "unknown":
     default:
       return {
