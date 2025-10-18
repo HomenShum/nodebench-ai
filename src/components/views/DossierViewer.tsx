@@ -125,17 +125,8 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     console.error("Failed to parse dossier content:", error);
   }
 
-  if (!editorJsContent || !Array.isArray(editorJsContent.blocks)) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <p className="text-[var(--text-secondary)]">No content available</p>
-        </div>
-      </div>
-    );
-  }
-
-  const blocks = editorJsContent.blocks;
+  // If no EditorJS content, proceed with empty blocks so Gallery/Notes still render
+  const blocks = Array.isArray(editorJsContent?.blocks) ? editorJsContent.blocks : [];
 
   // Extract media assets
   const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
