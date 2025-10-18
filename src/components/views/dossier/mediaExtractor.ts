@@ -43,24 +43,82 @@ export function extractMediaFromBlocks(blocks: any[]): ExtractedMedia {
 
   for (const block of blocks) {
     switch (block.type) {
-      case 'embed':
+      case 'embed': {
         const video = extractVideoFromEmbed(block);
         if (video) videos.push(video);
         break;
-
-      case 'image':
+      }
+      case 'image': {
         const image = extractImageFromBlock(block);
         if (image) images.push(image);
         break;
-
-      case 'linkTool':
+      }
+      case 'linkTool': {
         const doc = extractDocumentFromLink(block);
         if (doc) documents.push(doc);
         break;
+      }
+      case 'paragraph': {
+        const docs = extractDocumentsFromParagraph(block);
+        if (docs.length) documents.push(...docs);
+        break;
+      }
     }
   }
 
   return { videos, images, documents };
+}
+
+/**
+ * Extract document links from paragraph blocks (fallback for plain URLs or <a href="...">)
+ */
+function extractDocumentsFromParagraph(block: any): DocumentAsset[] {
+  const text: string = block.data?.text || '';
+  if (!text) return [];
+
+  const results: DocumentAsset[] = [];
+
+  // 1) Extract from anchor tags href
+  const anchorHrefRegex = /href=\"([^\"]+)\"/g;
+  let match: RegExpExecArray | null;
+  while ((match = anchorHrefRegex.exec(text)) !== null) {
+    const url = match[1];
+    if (isHttpUrl(url)) {
+      results.push({ type: 'document', url, title: url });
+    }
+  }
+
+  // 2) Extract raw http(s) URLs in text
+  const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
+  while ((match = urlRegex.exec(text)) !== null) {
+    const url = match[1];
+    if (isHttpUrl(url)) {
+      results.push({ type: 'document', url, title: url });
+    }
+  }
+
+  return dedupeDocuments(results);
+}
+
+function isHttpUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function dedupeDocuments(docs: DocumentAsset[]): DocumentAsset[] {
+  const seen = new Set<string>();
+  const out: DocumentAsset[] = [];
+  for (const d of docs) {
+    if (!seen.has(d.url)) {
+      seen.add(d.url);
+      out.push(d);
+    }
+  }
+  return out;
 }
 
 /**
