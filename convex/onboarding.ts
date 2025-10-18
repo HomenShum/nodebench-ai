@@ -1,8 +1,10 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, action } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+
+const ONBOARDING_AGENT_CONTEXT = `You are the CafeCorner Onboarding Assistant. Your job is to help new users understand the workspace, seed sample data, create documents, manage tasks, and explore AI capabilities. Provide step-by-step guidance using the actual product UI: mention the Documents tab, the Seed Onboarding button in the toolbar, planner modes (List, Calendar, Kanban), and the AI chat tools. When appropriate, call available tools to create or update content directly (documents, tasks, events). Always include a fallback path users can follow manually if an automated tool fails.`;
 
 // Define onboarding content here for maintainability
 const ONBOARDING_DOCS: Array<{
@@ -199,6 +201,36 @@ export const seedOnboardingContent = mutation({
       documentIds,
       taskIds,
     };
+  },
+});
+
+export const askOnboardingAssistant = action({
+  args: {
+    message: v.string(),
+    threadId: v.optional(v.string()),
+  },
+  returns: v.object({
+    response: v.string(),
+    toolsCalled: v.array(v.string()),
+    threadId: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const context = args.threadId ? undefined : ONBOARDING_AGENT_CONTEXT;
+
+    const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
+      message: args.message,
+      threadId: args.threadId,
+      userId,
+      useCoordinator: true,
+      context,
+    });
+
+    return result;
   },
 });
 

@@ -1129,7 +1129,7 @@ export const getLinkedAssets = query({
     title: v.string(),
     documentType: v.optional(v.union(v.literal("text"), v.literal("file"), v.literal("timeline"), v.literal("dossier"))),
     fileType: v.optional(v.string()),
-    dossierType: v.optional(v.union(v.literal("primary"), v.literal("media-asset"))),
+    dossierType: v.optional(v.union(v.literal("primary"), v.literal("media-asset"), v.literal("quick-notes"))),
     parentDossierId: v.optional(v.id("documents")),
     assetMetadata: v.optional(v.object({
       assetType: v.union(
@@ -1181,6 +1181,45 @@ export const getLinkedAssets = query({
       parentDossierId: asset.parentDossierId,
       assetMetadata: asset.assetMetadata,
     }));
+  },
+});
+
+/**
+ * Get or create a Quick Notes document linked to a dossier
+ * This prevents ProseMirror from overwriting the dossier's EditorJS content
+ */
+export const getOrCreateQuickNotes = mutation({
+  args: {
+    dossierId: v.id("documents"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Check if Quick Notes document already exists
+    const existing = await ctx.db
+      .query("documents")
+      .withIndex("by_parent_dossier", (q) => q.eq("parentDossierId", args.dossierId))
+      .filter((q) => q.eq(q.field("dossierType"), "quick-notes"))
+      .first();
+
+    if (existing) {
+      return existing;
+    }
+
+    // Create new Quick Notes document
+    const quickNotesId = await ctx.db.insert("documents", {
+      title: "Quick Notes",
+      createdBy: userId,
+      isPublic: false,
+      isArchived: false,
+      isFavorite: false,
+      documentType: "text", // Use text type for ProseMirror
+      dossierType: "quick-notes",
+      parentDossierId: args.dossierId,
+    });
+
+    return await ctx.db.get(quickNotesId);
   },
 });
 

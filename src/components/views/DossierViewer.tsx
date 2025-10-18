@@ -27,6 +27,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   const linkedAssets = useQuery(api.documents.getLinkedAssets, { dossierId: documentId });
   const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
 
+  // Get or create a separate Quick Notes document linked to this dossier
+  const quickNotesDoc = useQuery(api.documents.getOrCreateQuickNotes, { dossierId: documentId });
+
   // DEBUG: Log document query result
   console.log('[DossierViewer] Document query result:', {
     hasDocument: !!document,
@@ -36,6 +39,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     contentLength: document?.content?.length,
     documentType: document?.documentType,
     dossierType: (document as any)?.dossierType,
+    quickNotesDocId: quickNotesDoc?._id,
   });
 
   // Panel state - Horizontal (left/right)
@@ -465,7 +469,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                         </button>
                       </div>
                       <div className="min-h-[240px]">
-                        <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+                        {quickNotesDoc?._id && (
+                          <UnifiedEditor documentId={quickNotesDoc._id} mode="quickNote" autoCreateIfEmpty />
+                        )}
                       </div>
                     </div>
                   </Panel>

@@ -46,7 +46,8 @@ const documents = defineTable({
   dossierType: v.optional(
     v.union(
       v.literal("primary"),      // The main chat transcript/dossier
-      v.literal("media-asset")   // Linked media (video/image/document)
+      v.literal("media-asset"),  // Linked media (video/image/document)
+      v.literal("quick-notes")   // Quick notes linked to a dossier
     )
   ),
   parentDossierId: v.optional(v.id("documents")),  // Links media assets to primary dossier
