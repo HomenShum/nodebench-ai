@@ -121,14 +121,6 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     }
   };
 
-  if (!document) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
-      </div>
-    );
-  }
-
   // Parse EditorJS content
   let editorJsContent: any = null;
   try {
@@ -137,6 +129,21 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     }
   } catch (error) {
     console.error("Failed to parse dossier content:", error);
+  }
+
+  const blocks = editorJsContent?.blocks || [];
+
+  // Extract media assets (must be called before any early returns)
+  const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
+  const mediaCounts = useMemo(() => countMediaAssets(extractedMedia), [extractedMedia]);
+
+  // Early returns after all hooks
+  if (!document) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
+      </div>
+    );
   }
 
   if (!editorJsContent || !Array.isArray(editorJsContent.blocks)) {
@@ -148,12 +155,6 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       </div>
     );
   }
-
-  const blocks = editorJsContent.blocks;
-
-  // Extract media assets
-  const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
-  const mediaCounts = useMemo(() => countMediaAssets(extractedMedia), [extractedMedia]);
 
   // Handle media reference clicks
   const handleMediaClick = (type: 'video' | 'image' | 'document') => {
