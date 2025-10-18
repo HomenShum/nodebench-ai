@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useAction, useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import ReactMarkdown from 'react-markdown';
 import {
@@ -63,10 +63,10 @@ export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [agentThreadId, setAgentThreadId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const createDocument = useMutation(api.documents.create);
-  const generateAIResponse = useAction(api.ai.generateResponse);
+  const askOnboardingAssistant = useAction(api.onboarding.askOnboardingAssistant);
 
   const [onboardingSteps, setOnboardingSteps] = useState<OnboardingStep[]>([
     {

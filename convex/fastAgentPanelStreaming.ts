@@ -1112,12 +1112,14 @@ export const sendMessageInternal = internalAction({
     message: v.string(),
     userId: v.optional(v.id("users")), // Optional userId for evaluation tests
     useCoordinator: v.optional(v.boolean()), // Enable/disable coordinator mode (default: true)
+    context: v.optional(v.string()), // Optional system/context prefix for first message
   },
   returns: v.object({
     response: v.string(),
     toolsCalled: v.array(v.string()),
+    threadId: v.string(),
   }),
-  handler: async (ctx, args): Promise<{ response: string; toolsCalled: string[] }> => {
+  handler: async (ctx, args): Promise<{ response: string; toolsCalled: string[]; threadId: string }> => {
     console.log('[sendMessageInternal] Starting with message:', args.message);
     const modelName = "gpt-5-chat-latest";
 
@@ -1153,13 +1155,17 @@ export const sendMessageInternal = internalAction({
       console.log('[sendMessageInternal] Thread continued');
     }
 
+    const prompt = args.context
+      ? `${args.context.trim()}\n\n${args.message}`
+      : args.message;
+
     // Use streamText and await result.text to get the final response
     // Based on official documentation: https://docs.convex.dev/agents/messages
     console.log('[sendMessageInternal] Starting stream...');
     const streamResult = await chatAgent.streamText(
       contextWithUserId as any,
       { threadId },
-      { prompt: args.message }
+      { prompt }
       // Note: saveStreamDeltas disabled to avoid race conditions in evaluation tests
     );
 
@@ -1307,6 +1313,7 @@ export const sendMessageInternal = internalAction({
     return {
       response: responseText,
       toolsCalled,
+      threadId,
     };
   },
 });
