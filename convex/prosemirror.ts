@@ -13,32 +13,43 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
   try {
     const content = JSON.parse(snapshot);
 
-    const sanitize = (node: any): any => {
-      if (!node) return node;
+    type PMLikeNode = {
+      type?: unknown;
+      content?: unknown;
+      [key: string]: unknown;
+    };
+
+    const sanitize = (node: unknown): unknown => {
+      if (node === null || node === undefined) {
+        return node;
+      }
 
       if (Array.isArray(node)) {
         return node
-          .map(n => sanitize(n))
-          .filter(n => n !== null);
+          .map((child: unknown) => sanitize(child))
+          .filter((child: unknown) => child !== null);
       }
 
-      if (typeof node === 'object' && node.type) {
-        // Remove unsupported node types
-        const unsupportedTypes = ['horizontalRule'];
-        if (unsupportedTypes.includes(node.type)) {
-          return null; // Filter out
-        }
+      if (typeof node === "object") {
+        const pmNode = node as PMLikeNode;
+        const nodeType = typeof pmNode.type === "string" ? pmNode.type : undefined;
+        if (nodeType) {
+          // Remove unsupported node types
+          const unsupportedTypes = ["horizontalRule"];
+          if (unsupportedTypes.includes(nodeType)) {
+            return null;
+          }
 
-        // Recursively sanitize nested content
-        if (node.content && Array.isArray(node.content)) {
-          const sanitized = node.content
-            .map(n => sanitize(n))
-            .filter(n => n !== null);
+          if (Array.isArray(pmNode.content)) {
+            const sanitizedContent = pmNode.content
+              .map((child: unknown) => sanitize(child))
+              .filter((child: unknown) => child !== null);
 
-          return {
-            ...node,
-            content: sanitized.length > 0 ? sanitized : undefined,
-          };
+            return {
+              ...pmNode,
+              content: sanitizedContent.length > 0 ? sanitizedContent : undefined,
+            };
+          }
         }
       }
 
