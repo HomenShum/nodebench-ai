@@ -3,12 +3,13 @@ import { useRef, useState, useMemo } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
-import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from "lucide-react";
-import UnifiedEditor from "@/components/UnifiedEditor";
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sparkles, Loader2, Video, Image as ImageIcon, FileText } from "lucide-react";
 import { DossierHeader } from "./dossier/DossierHeader";
 import { DossierTranscript } from "./dossier/DossierTranscript";
 import { DossierMediaGallery } from "./dossier/DossierMediaGallery";
 import { extractMediaFromBlocks, countMediaAssets } from "./dossier/mediaExtractor";
+import UnifiedEditor from "@/components/UnifiedEditor";
+import type { VideoAsset, ImageAsset, DocumentAsset } from "./dossier/mediaExtractor";
 
 interface DossierViewerProps {
   documentId: Id<"documents">;
@@ -18,132 +19,94 @@ interface DossierViewerProps {
 
 /**
  * DossierViewer - Split-panel viewer for chat session dossiers
- * Left panel: Chat transcript with lightweight media references
- * Right panel: Dedicated media gallery with videos, images, and documents
+ * Left panel (65%): Media gallery with videos, images, and documents
+ * Right panel (35%): Research panel with vertical split (transcript + quick notes)
  */
 export function DossierViewer({ documentId, isGridMode = false, isFullscreen = false }: DossierViewerProps) {
   const document = useQuery(api.documents.getById, { documentId });
-  const analyzeWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
+  const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
 
-  // File analysis state
-  const DEFAULT_ANALYSIS_PROMPT = `Analyze this dossier to extract structured tags and context.
-- Domain/Subject area (e.g., finance, AI research)
-- Key topics/themes (bullet list)
-- Key people and organizations (with roles)
-- Important entities (products, projects, places)
-- Relationships between entities (who/what is related to whom/what, how)
-- Timeline or phases if present
-Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
-  const [analysisPrompt, setAnalysisPrompt] = useState<string>(() =>
-    localStorage.getItem('nb:dossierAnalysisPrompt') || DEFAULT_ANALYSIS_PROMPT
-  );
-  const [savePromptDefault, setSavePromptDefault] = useState(false);
-  const [showPromptPopover, setShowPromptPopover] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  // Horizontal panel state (left/right split)
+  // Panel state - Horizontal (left/right)
   const DEFAULT_H_LAYOUT = [65, 35] as const;
   const hGroupRef = useRef<ImperativePanelGroupHandle>(null);
-  const rightPanelRef = useRef<ImperativePanelHandle>(null);
-  const lastRightSizeRef = useRef<number>(DEFAULT_H_LAYOUT[1]);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const researchPanelRef = useRef<ImperativePanelHandle>(null);
+  const lastResearchSizeRef = useRef<number>(DEFAULT_H_LAYOUT[1]);
+  const [researchCollapsed, setResearchCollapsed] = useState(false);
 
-  // Vertical panel state (media gallery / quick notes split in right panel)
+  // Panel state - Vertical (transcript/notes)
   const DEFAULT_V_LAYOUT = [50, 50] as const;
   const vGroupRef = useRef<ImperativePanelGroupHandle>(null);
-  const galleryPanelRef = useRef<ImperativePanelHandle>(null);
-  const lastGallerySizeRef = useRef<number>(DEFAULT_V_LAYOUT[0]);
-  const [galleryCollapsed, setGalleryCollapsed] = useState(false);
+  const notesPanelRef = useRef<ImperativePanelHandle>(null);
+  const lastNotesSizeRef = useRef<number>(DEFAULT_V_LAYOUT[1]);
+  const [notesCollapsed, setNotesCollapsed] = useState(false);
+
+  // Media highlighting
   const [highlightedSection, setHighlightedSection] = useState<'videos' | 'images' | 'documents' | null>(null);
 
-  // Horizontal layout (left/right split)
+  // Analysis state
+  const [showAnalysisPopover, setShowAnalysisPopover] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [analysisPrompt, setAnalysisPrompt] = useState('');
+  const [savePromptDefault, setSavePromptDefault] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
+
   const onHorizontalLayout = (sizes: number[]) => {
-    lastRightSizeRef.current = sizes[1] ?? lastRightSizeRef.current;
-    setRightPanelCollapsed((sizes[1] ?? 0) < 5);
+    lastResearchSizeRef.current = sizes[1] ?? lastResearchSizeRef.current;
+    setResearchCollapsed((sizes[1] ?? 0) < 5);
+  };
+
+  const onVerticalLayout = (sizes: number[]) => {
+    lastNotesSizeRef.current = sizes[1] ?? lastNotesSizeRef.current;
+    setNotesCollapsed((sizes[1] ?? 0) < 5);
   };
 
   const resetHorizontal = () => {
     hGroupRef.current?.setLayout?.([...DEFAULT_H_LAYOUT]);
   };
 
-  const toggleRightPanel = () => {
-    const size = rightPanelRef.current?.getSize?.() ?? 0;
-    if (size < 5) {
-      const target = lastRightSizeRef.current || DEFAULT_H_LAYOUT[1];
-      hGroupRef.current?.setLayout?.([Math.max(0, 100 - target), Math.min(100, target)]);
-      rightPanelRef.current?.expand?.();
-    } else {
-      lastRightSizeRef.current = size;
-      rightPanelRef.current?.collapse?.();
-    }
-  };
-
-  // Vertical layout (media gallery / quick notes split)
-  const onVerticalLayout = (sizes: number[]) => {
-    lastGallerySizeRef.current = sizes[0] ?? lastGallerySizeRef.current;
-    setGalleryCollapsed((sizes[0] ?? 0) < 5);
-  };
-
   const resetVertical = () => {
     vGroupRef.current?.setLayout?.([...DEFAULT_V_LAYOUT]);
   };
 
-  const toggleGallery = () => {
-    const size = galleryPanelRef.current?.getSize?.() ?? 0;
+  const toggleResearch = () => {
+    const size = researchPanelRef.current?.getSize?.() ?? 0;
     if (size < 5) {
-      const target = lastGallerySizeRef.current || DEFAULT_V_LAYOUT[0];
-      vGroupRef.current?.setLayout?.([Math.min(100, target), Math.max(0, 100 - target)]);
-      galleryPanelRef.current?.expand?.();
+      const target = lastResearchSizeRef.current || DEFAULT_H_LAYOUT[1];
+      hGroupRef.current?.setLayout?.([Math.max(0, 100 - target), Math.min(100, target)]);
+      researchPanelRef.current?.expand?.();
     } else {
-      lastGallerySizeRef.current = size;
-      galleryPanelRef.current?.collapse?.();
+      lastResearchSizeRef.current = size;
+      researchPanelRef.current?.collapse?.();
     }
   };
 
-  // Parse EditorJS content (must happen before hooks to maintain consistent hook order)
-  // Use empty array as fallback to ensure hooks are always called
-  const editorJsContent = useMemo(() => {
-    if (!document?.content) return null;
-    try {
-      if (typeof document.content === "string") {
-        return JSON.parse(document.content);
-      }
-    } catch (error) {
-      console.error("Failed to parse dossier content:", error);
-    }
-    return null;
-  }, [document?.content]);
-
-  const blocks = useMemo(() => {
-    return (editorJsContent && Array.isArray(editorJsContent.blocks)) ? editorJsContent.blocks : [];
-  }, [editorJsContent]);
-
-  // Extract media assets (hooks must be called unconditionally)
-  const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
-  const mediaCounts = useMemo(() => countMediaAssets(extractedMedia), [extractedMedia]);
-
-  // File analysis handler
-  const handleRunAnalysis = async () => {
-    if (!document) return;
-    setIsAnalyzing(true);
-    try {
-      if (savePromptDefault) {
-        localStorage.setItem('nb:dossierAnalysisPrompt', analysisPrompt);
-      }
-      // Analyze the dossier content
-      const result = await analyzeWithGenAI({
-        documentId,
-        analysisPrompt,
-      });
-      setShowPromptPopover(false);
-    } catch (error) {
-      console.error('Analysis failed:', error);
-    } finally {
-      setIsAnalyzing(false);
+  const toggleNotes = () => {
+    const size = notesPanelRef.current?.getSize?.() ?? 0;
+    if (size < 5) {
+      const target = lastNotesSizeRef.current || DEFAULT_V_LAYOUT[1];
+      vGroupRef.current?.setLayout?.([Math.max(0, 100 - target), Math.min(100, target)]);
+      notesPanelRef.current?.expand?.();
+    } else {
+      lastNotesSizeRef.current = size;
+      notesPanelRef.current?.collapse?.();
     }
   };
 
-  // NOW we can do early returns after all hooks are called
+  // Load default analysis prompt from localStorage
+  useMemo(() => {
+    try {
+      const saved = localStorage.getItem('nb:dossierAnalysisPrompt');
+      if (saved) {
+        setAnalysisPrompt(saved);
+      } else {
+        setAnalysisPrompt('Analyze this content from the dossier and provide key insights, patterns, and actionable recommendations.');
+      }
+    } catch {
+      setAnalysisPrompt('Analyze this content from the dossier and provide key insights, patterns, and actionable recommendations.');
+    }
+  }, []);
+
   if (!document) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -152,7 +115,17 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     );
   }
 
-  if (!editorJsContent || !Array.isArray(editorJsContent.blocks) || blocks.length === 0) {
+  // Parse EditorJS content
+  let editorJsContent: any = null;
+  try {
+    if (typeof document.content === "string") {
+      editorJsContent = JSON.parse(document.content);
+    }
+  } catch (error) {
+    console.error("Failed to parse dossier content:", error);
+  }
+
+  if (!editorJsContent || !Array.isArray(editorJsContent.blocks)) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -162,15 +135,48 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     );
   }
 
+  const blocks = editorJsContent.blocks;
+
+  // Extract media assets
+  const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
+  const mediaCounts = useMemo(() => countMediaAssets(extractedMedia), [extractedMedia]);
+
+  // Build selectable file list
+  const selectableFiles = useMemo(() => {
+    const files: Array<{ id: string; type: 'video' | 'image' | 'document'; title: string; asset: VideoAsset | ImageAsset | DocumentAsset }> = [];
+
+    extractedMedia.videos.forEach((video, idx) => {
+      files.push({
+        id: `video-${idx}`,
+        type: 'video',
+        title: video.caption || `Video ${idx + 1}`,
+        asset: video,
+      });
+    });
+
+    extractedMedia.images.forEach((image, idx) => {
+      files.push({
+        id: `image-${idx}`,
+        type: 'image',
+        title: image.caption || image.alt || `Image ${idx + 1}`,
+        asset: image,
+      });
+    });
+
+    extractedMedia.documents.forEach((doc, idx) => {
+      files.push({
+        id: `document-${idx}`,
+        type: 'document',
+        title: doc.title || `Document ${idx + 1}`,
+        asset: doc,
+      });
+    });
+
+    return files;
+  }, [extractedMedia]);
+
   // Handle media reference clicks
   const handleMediaClick = (type: 'video' | 'image' | 'document') => {
-    // Expand gallery if collapsed
-    if (galleryCollapsed) {
-      const target = lastGallerySizeRef.current || DEFAULT_H_LAYOUT[1];
-      hGroupRef.current?.setLayout?.([Math.max(0, 100 - target), Math.min(100, target)]);
-      galleryPanelRef.current?.expand?.();
-    }
-
     // Highlight the section
     const sectionMap = {
       video: 'videos' as const,
@@ -181,6 +187,86 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
 
     // Clear highlight after 2 seconds
     setTimeout(() => setHighlightedSection(null), 2000);
+  };
+
+  // Handle analysis
+  const handleAnalyze = async () => {
+    if (selectedFiles.size === 0) {
+      alert('Please select at least one file to analyze');
+      return;
+    }
+
+    // Save prompt if requested
+    if (savePromptDefault) {
+      try {
+        localStorage.setItem('nb:dossierAnalysisPrompt', analysisPrompt);
+      } catch (error) {
+        console.error('Failed to save prompt:', error);
+      }
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisProgress({ current: 0, total: selectedFiles.size });
+
+    const results: Array<{ file: string; analysis: string }> = [];
+    let current = 0;
+
+    // Analyze files in parallel
+    const selectedFilesList = Array.from(selectedFiles).map(id =>
+      selectableFiles.find(f => f.id === id)!
+    );
+
+    try {
+      await Promise.all(
+        selectedFilesList.map(async (file) => {
+          try {
+            // For URLs (videos and documents), use url parameter
+            const isUrl = file.type === 'video' || file.type === 'document';
+            const result = await analyzeFileWithGenAI({
+              url: isUrl ? (file.asset as VideoAsset | DocumentAsset).url : undefined,
+              analysisPrompt,
+              analysisType: file.type,
+            });
+
+            if ((result as any)?.success) {
+              results.push({
+                file: file.title,
+                analysis: (result as any).analysis,
+              });
+            }
+          } catch (error) {
+            console.error(`Failed to analyze ${file.title}:`, error);
+            results.push({
+              file: file.title,
+              analysis: `Error: ${error instanceof Error ? error.message : 'Analysis failed'}`,
+            });
+          } finally {
+            current++;
+            setAnalysisProgress({ current, total: selectedFiles.size });
+          }
+        })
+      );
+
+      // TODO: Perform final synthesis with LLM
+      // For now, just append results to notes
+
+      setShowAnalysisPopover(false);
+      setSelectedFiles(new Set());
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      alert('Analysis failed. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+      setAnalysisProgress({ current: 0, total: 0 });
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedFiles.size === selectableFiles.length) {
+      setSelectedFiles(new Set());
+    } else {
+      setSelectedFiles(new Set(selectableFiles.map(f => f.id)));
+    }
   };
 
   return (
@@ -206,17 +292,15 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
           autoSaveId="dossierViewer:h"
           onLayout={onHorizontalLayout}
         >
-          {/* Left Panel: Transcript */}
+          {/* Left Panel: Media Gallery */}
           <Panel defaultSize={65} minSize={35}>
             <div className="p-4 h-full min-h-0 overflow-hidden relative">
-              <div className="h-full overflow-y-auto">
-                <div className="max-w-4xl mx-auto">
-                  <DossierTranscript
-                    blocks={blocks}
-                    onMediaClick={handleMediaClick}
-                  />
-                </div>
-              </div>
+              <DossierMediaGallery
+                videos={extractedMedia.videos}
+                images={extractedMedia.images}
+                documents={extractedMedia.documents}
+                highlightedSection={highlightedSection}
+              />
             </div>
           </Panel>
 
@@ -227,94 +311,74 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
             title="Double-click to reset layout"
           />
 
-          {/* Right Panel: Media Gallery + Quick Notes (Vertical Split) */}
-          <Panel ref={rightPanelRef} defaultSize={35} minSize={0} collapsible>
-            <div className="h-full border-l border-[var(--border-color)] bg-[var(--bg-primary)] flex flex-col">
-              {/* Right Panel Header with Analysis Button */}
-              <div className="flex-shrink-0 border-b border-[var(--border-color)] p-4 flex items-center justify-between">
+          {/* Right Panel: Research Panel with Vertical Split */}
+          <Panel ref={researchPanelRef} defaultSize={35} minSize={0} collapsible>
+            <div className="h-full border-l border-[var(--border-color)] flex flex-col">
+              {/* Research Panel Header */}
+              <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
                 <h4 className="text-sm font-medium text-[var(--text-primary)]">Research Panel</h4>
                 <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowPromptPopover(!showPromptPopover)}
-                      disabled={isAnalyzing}
-                      className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-60"
-                      title="Analyze dossier with AI"
-                    >
-                      {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    </button>
-                    {showPromptPopover && (
-                      <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3">
-                        <div className="text-sm font-medium mb-2 text-[var(--text-primary)]">Dossier analysis prompt</div>
-                        <textarea
-                          className="w-full h-28 text-xs p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
-                          value={analysisPrompt}
-                          onChange={(e) => setAnalysisPrompt(e.target.value)}
-                        />
-                        <div className="mt-2 flex items-center justify-between">
-                          <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                            <input type="checkbox" checked={savePromptDefault} onChange={(e) => setSavePromptDefault(e.target.checked)} />
-                            Remember as default
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setShowPromptPopover(false)} className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]">Cancel</button>
-                            <button onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                   <button
-                    onClick={toggleRightPanel}
-                    className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
-                    title={rightPanelCollapsed ? 'Expand Research Panel' : 'Collapse Research Panel'}
+                    onClick={() => setShowAnalysisPopover(!showAnalysisPopover)}
+                    disabled={isAnalyzing || selectableFiles.length === 0}
+                    className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Analyze files"
                   >
-                    {rightPanelCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    {isAnalyzing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" />
+                    )}
+                  </button>
+                  <button
+                    onClick={toggleResearch}
+                    className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+                    title={researchCollapsed ? 'Expand Research Panel' : 'Collapse Research Panel'}
+                  >
+                    {researchCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
-              {/* Vertical Split: Media Gallery (top) / Quick Notes (bottom) */}
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <PanelGroup ref={vGroupRef} direction="vertical" autoSaveId="dossierViewer:v" onLayout={onVerticalLayout}>
-                  {/* Media Gallery Panel */}
-                  <Panel ref={galleryPanelRef} defaultSize={50} minSize={0} collapsible>
-                    <div className="h-full overflow-y-auto border-b border-[var(--border-color)]">
-                      <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                        <h5 className="text-xs font-medium text-[var(--text-primary)]">Media Gallery</h5>
-                        <button
-                          onClick={toggleGallery}
-                          className="p-1 rounded hover:bg-[var(--bg-hover)]"
-                          title={galleryCollapsed ? 'Expand' : 'Collapse'}
-                        >
-                          {galleryCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronRight className="h-3 w-3 rotate-90" />}
-                        </button>
-                      </div>
-                      <div className="p-3">
-                        <DossierMediaGallery
-                          videos={extractedMedia.videos}
-                          images={extractedMedia.images}
-                          documents={extractedMedia.documents}
-                          highlightedSection={highlightedSection}
-                        />
-                      </div>
+              {/* Vertical Split: Transcript + Notes */}
+              <div className="flex-1 min-h-0">
+                <PanelGroup
+                  ref={vGroupRef}
+                  direction="vertical"
+                  autoSaveId="dossierViewer:v"
+                  onLayout={onVerticalLayout}
+                >
+                  {/* Top: Transcript */}
+                  <Panel defaultSize={50} minSize={20}>
+                    <div className="h-full overflow-y-auto p-4">
+                      <DossierTranscript
+                        blocks={blocks}
+                        onMediaClick={handleMediaClick}
+                      />
                     </div>
                   </Panel>
 
-                  {/* Resize Handle */}
+                  {/* Vertical Resize Handle */}
                   <PanelResizeHandle
                     className="h-1 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] transition-colors cursor-row-resize"
                     onDoubleClick={resetVertical}
                     title="Double-click to reset layout"
                   />
 
-                  {/* Quick Notes Panel */}
-                  <Panel defaultSize={50} minSize={0} collapsible>
-                    <div className="h-full overflow-y-auto flex flex-col">
-                      <div className="flex-shrink-0 p-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                        <h5 className="text-xs font-medium text-[var(--text-primary)]">Quick Notes</h5>
+                  {/* Bottom: Quick Notes */}
+                  <Panel ref={notesPanelRef} defaultSize={50} minSize={0} collapsible>
+                    <div className="h-full border-t border-[var(--border-color)] p-4 overflow-auto">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-[var(--text-primary)]">Quick Notes</h4>
+                        <button
+                          onClick={toggleNotes}
+                          className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+                          title={notesCollapsed ? 'Expand Quick Notes' : 'Collapse Quick Notes'}
+                        >
+                          {notesCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </button>
                       </div>
-                      <div className="flex-1 min-h-0 overflow-hidden p-3">
+                      <div className="min-h-[240px]">
                         <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
                       </div>
                     </div>
@@ -325,7 +389,211 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
           </Panel>
         </PanelGroup>
       </div>
+
+      {/* Analysis Popover */}
+      {showAnalysisPopover && (
+        <AnalysisPopover
+          files={selectableFiles}
+          selectedFiles={selectedFiles}
+          onToggleFile={(id) => {
+            const newSet = new Set(selectedFiles);
+            if (newSet.has(id)) {
+              newSet.delete(id);
+            } else {
+              newSet.add(id);
+            }
+            setSelectedFiles(newSet);
+          }}
+          onToggleAll={toggleSelectAll}
+          analysisPrompt={analysisPrompt}
+          onPromptChange={setAnalysisPrompt}
+          savePromptDefault={savePromptDefault}
+          onSaveDefaultChange={setSavePromptDefault}
+          onAnalyze={handleAnalyze}
+          onClose={() => setShowAnalysisPopover(false)}
+          isAnalyzing={isAnalyzing}
+          progress={analysisProgress}
+        />
+      )}
     </div>
   );
 }
 
+/**
+ * Analysis Popover Component
+ */
+interface AnalysisPopoverProps {
+  files: Array<{ id: string; type: 'video' | 'image' | 'document'; title: string; asset: any }>;
+  selectedFiles: Set<string>;
+  onToggleFile: (id: string) => void;
+  onToggleAll: () => void;
+  analysisPrompt: string;
+  onPromptChange: (prompt: string) => void;
+  savePromptDefault: boolean;
+  onSaveDefaultChange: (save: boolean) => void;
+  onAnalyze: () => void;
+  onClose: () => void;
+  isAnalyzing: boolean;
+  progress: { current: number; total: number };
+}
+
+function AnalysisPopover({
+  files,
+  selectedFiles,
+  onToggleFile,
+  onToggleAll,
+  analysisPrompt,
+  onPromptChange,
+  savePromptDefault,
+  onSaveDefaultChange,
+  onAnalyze,
+  onClose,
+  isAnalyzing,
+  progress,
+}: AnalysisPopoverProps) {
+  const allSelected = selectedFiles.size === files.length && files.length > 0;
+
+  const getFileIcon = (type: string) => {
+    switch (type) {
+      case 'video':
+        return <Video className="h-4 w-4 text-red-600" />;
+      case 'image':
+        return <ImageIcon className="h-4 w-4 text-blue-600" />;
+      case 'document':
+        return <FileText className="h-4 w-4 text-green-600" />;
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-[var(--bg-primary)] rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border border-[var(--border-color)]">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+          <h3 className="font-semibold text-[var(--text-primary)]">Analyze Dossier Files</h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+            title="Close"
+          >
+            <ChevronRight className="h-5 w-5 rotate-45" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* File Selection */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-[var(--text-primary)]">
+                Select Files ({selectedFiles.size} of {files.length})
+              </label>
+              <button
+                onClick={onToggleAll}
+                className="text-xs text-[var(--accent-primary)] hover:underline"
+              >
+                {allSelected ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto border border-[var(--border-color)] rounded-lg p-2">
+              {files.map((file) => (
+                <label
+                  key={file.id}
+                  className="flex items-center gap-2 p-2 hover:bg-[var(--bg-hover)] rounded cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedFiles.has(file.id)}
+                    onChange={() => onToggleFile(file.id)}
+                    className="flex-shrink-0"
+                  />
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {getFileIcon(file.type)}
+                    <span className="text-sm text-[var(--text-primary)] truncate">{file.title}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded-full flex-shrink-0">
+                      {file.type}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Analysis Prompt */}
+          <div>
+            <label className="text-sm font-medium text-[var(--text-primary)] block mb-2">
+              Analysis Prompt
+            </label>
+            <textarea
+              value={analysisPrompt}
+              onChange={(e) => onPromptChange(e.target.value)}
+              className="w-full h-32 p-3 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+              placeholder="Enter your analysis prompt..."
+            />
+          </div>
+
+          {/* Save Default Checkbox */}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={savePromptDefault}
+              onChange={(e) => onSaveDefaultChange(e.target.checked)}
+              className="flex-shrink-0"
+            />
+            <span className="text-sm text-[var(--text-secondary)]">
+              Remember as default prompt
+            </span>
+          </label>
+
+          {/* Progress */}
+          {isAnalyzing && (
+            <div className="p-3 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
+              <div className="flex items-center gap-2 mb-2">
+                <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-primary)]" />
+                <span className="text-sm text-[var(--text-primary)]">
+                  Analyzing {progress.current} of {progress.total} files...
+                </span>
+              </div>
+              <div className="w-full bg-[var(--bg-primary)] rounded-full h-2">
+                <div
+                  className="bg-[var(--accent-primary)] h-2 rounded-full transition-all"
+                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--border-color)]">
+          <button
+            onClick={onClose}
+            disabled={isAnalyzing}
+            className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onAnalyze}
+            disabled={isAnalyzing || selectedFiles.size === 0}
+            className="px-4 py-2 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Analyze
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
