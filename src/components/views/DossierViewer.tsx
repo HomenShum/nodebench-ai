@@ -24,6 +24,7 @@ interface DossierViewerProps {
  */
 export function DossierViewer({ documentId, isGridMode = false, isFullscreen = false }: DossierViewerProps) {
   const document = useQuery(api.documents.getById, { documentId });
+  const linkedAssets = useQuery(api.documents.getLinkedAssets, { dossierId: documentId });
   const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
 
   // Panel state - Horizontal (left/right)
@@ -118,24 +119,80 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   // If no EditorJS content, proceed with empty blocks so Gallery/Notes still render
   const blocks = Array.isArray(editorJsContent?.blocks) ? editorJsContent.blocks : [];
 
-  // Extract media assets
+  // Extract media assets from EditorJS blocks
   const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
-  const mediaCounts = useMemo(() => countMediaAssets(extractedMedia), [extractedMedia]);
 
-  // Build selectable file list
+  // Also extract linked assets from Convex (child docs under this dossier)
+  const linkedMedia = useMemo(() => {
+    const videos: VideoAsset[] = [];
+    const images: ImageAsset[] = [];
+    const documents: DocumentAsset[] = [];
+
+    (linkedAssets ?? []).forEach((asset: any) => {
+      const md = asset?.assetMetadata;
+      const title: string = asset?.title || '';
+      if (!md || !md.sourceUrl) return;
+
+      const url: string = md.sourceUrl;
+      switch (md.assetType) {
+        case 'youtube': {
+          // Parse videoId similar to mediaExtractor
+          let videoId = '';
+          if (url.includes('youtube.com/watch?v=')) {
+            videoId = url.split('v=')[1]?.split('&')[0] || '';
+          } else if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1]?.split('?')[0] || '';
+          } else if (url.includes('youtube.com/embed/')) {
+            videoId = url.split('embed/')[1]?.split('?')[0] || '';
+          }
+          if (videoId) {
+            videos.push({
+              type: 'youtube',
+              videoId,
+              url: `https://www.youtube.com/watch?v=${videoId}`,
+              thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+              title,
+            });
+          }
+          break;
+        }
+        case 'image': {
+          images.push({ type: 'image', url, caption: title, alt: title });
+          break;
+        }
+        default: {
+          // Treat other asset types as document links (pdf, sec-document, news, file, video)
+          documents.push({ type: 'document', url, title: title || url, thumbnail: md.thumbnailUrl });
+        }
+      }
+    });
+
+    return { videos, images, documents };
+  }, [linkedAssets]);
+
+  // Merge both sources
+  const mergedMedia = useMemo(() => ({
+    videos: [...extractedMedia.videos, ...linkedMedia.videos],
+    images: [...extractedMedia.images, ...linkedMedia.images],
+    documents: [...extractedMedia.documents, ...linkedMedia.documents],
+  }), [extractedMedia, linkedMedia]);
+
+  const mediaCounts = useMemo(() => countMediaAssets(mergedMedia), [mergedMedia]);
+
+  // Build selectable file list from merged media
   const selectableFiles = useMemo(() => {
     const files: Array<{ id: string; type: 'video' | 'image' | 'document'; title: string; asset: VideoAsset | ImageAsset | DocumentAsset }> = [];
 
-    extractedMedia.videos.forEach((video, idx) => {
+    mergedMedia.videos.forEach((video, idx) => {
       files.push({
         id: `video-${idx}`,
         type: 'video',
-        title: video.caption || `Video ${idx + 1}`,
+        title: video.title || video.caption || `Video ${idx + 1}`,
         asset: video,
       });
     });
 
-    extractedMedia.images.forEach((image, idx) => {
+    mergedMedia.images.forEach((image, idx) => {
       files.push({
         id: `image-${idx}`,
         type: 'image',
@@ -144,7 +201,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       });
     });
 
-    extractedMedia.documents.forEach((doc, idx) => {
+    mergedMedia.documents.forEach((doc, idx) => {
       files.push({
         id: `document-${idx}`,
         type: 'document',
@@ -154,7 +211,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     });
 
     return files;
-  }, [extractedMedia]);
+  }, [mergedMedia]);
 
   // Handle media reference clicks
   const handleMediaClick = (type: 'video' | 'image' | 'document') => {
@@ -277,9 +334,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           <Panel defaultSize={65} minSize={35}>
             <div className="h-full flex flex-col">
               <DossierMediaGallery
-                videos={extractedMedia.videos}
-                images={extractedMedia.images}
-                documents={extractedMedia.documents}
+                videos={mergedMedia.videos}
+                images={mergedMedia.images}
+                documents={mergedMedia.documents}
                 highlightedSection={highlightedSection}
               />
             </div>
