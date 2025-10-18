@@ -100,6 +100,28 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     }
   };
 
+  // Parse EditorJS content (must happen before hooks to maintain consistent hook order)
+  // Use empty array as fallback to ensure hooks are always called
+  const editorJsContent = useMemo(() => {
+    if (!document?.content) return null;
+    try {
+      if (typeof document.content === "string") {
+        return JSON.parse(document.content);
+      }
+    } catch (error) {
+      console.error("Failed to parse dossier content:", error);
+    }
+    return null;
+  }, [document?.content]);
+
+  const blocks = useMemo(() => {
+    return (editorJsContent && Array.isArray(editorJsContent.blocks)) ? editorJsContent.blocks : [];
+  }, [editorJsContent]);
+
+  // Extract media assets (hooks must be called unconditionally)
+  const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
+  const mediaCounts = useMemo(() => countMediaAssets(extractedMedia), [extractedMedia]);
+
   // File analysis handler
   const handleRunAnalysis = async () => {
     if (!document) return;
@@ -121,7 +143,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     }
   };
 
-  // Early return if document is still loading
+  // NOW we can do early returns after all hooks are called
   if (!document) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -130,23 +152,6 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     );
   }
 
-  // Parse EditorJS content
-  let editorJsContent: any = null;
-  try {
-    if (typeof document.content === "string") {
-      editorJsContent = JSON.parse(document.content);
-    }
-  } catch (error) {
-    console.error("Failed to parse dossier content:", error);
-  }
-
-  const blocks = (editorJsContent && Array.isArray(editorJsContent.blocks)) ? editorJsContent.blocks : [];
-
-  // Extract media assets (must be called before any early returns)
-  const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
-  const mediaCounts = useMemo(() => countMediaAssets(extractedMedia), [extractedMedia]);
-
-  // Show error if no valid content
   if (!editorJsContent || !Array.isArray(editorJsContent.blocks) || blocks.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
