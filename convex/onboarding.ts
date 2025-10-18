@@ -214,7 +214,10 @@ export const askOnboardingAssistant = action({
     toolsCalled: v.array(v.string()),
     threadId: v.string(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ response: string; toolsCalled: string[]; threadId: string }> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Not authenticated");
@@ -222,13 +225,16 @@ export const askOnboardingAssistant = action({
 
     const context = args.threadId ? undefined : ONBOARDING_AGENT_CONTEXT;
 
-    const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
-      message: args.message,
-      threadId: args.threadId,
-      userId,
-      useCoordinator: true,
-      context,
-    });
+    const result = await ctx.runAction(
+      internal.fastAgentPanelStreaming.sendMessageInternal,
+      {
+        message: args.message,
+        threadId: args.threadId,
+        userId,
+        useCoordinator: true,
+        context,
+      },
+    );
 
     return result;
   },

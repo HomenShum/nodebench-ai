@@ -41,50 +41,30 @@ export function extractMediaFromBlocks(blocks: any[]): ExtractedMedia {
   const images: ImageAsset[] = [];
   const documents: DocumentAsset[] = [];
 
-  console.log('[mediaExtractor] Processing', blocks.length, 'blocks');
-
   for (const block of blocks) {
     switch (block.type) {
       case 'embed': {
         const video = extractVideoFromEmbed(block);
-        if (video) {
-          console.log('[mediaExtractor] Found embed video:', video.videoId);
-          videos.push(video);
-        }
+        if (video) videos.push(video);
         break;
       }
       case 'image': {
         const image = extractImageFromBlock(block);
-        if (image) {
-          console.log('[mediaExtractor] Found image:', image.url.substring(0, 50));
-          images.push(image);
-        }
+        if (image) images.push(image);
         break;
       }
       case 'linkTool': {
         const doc = extractDocumentFromLink(block);
-        if (doc) {
-          console.log('[mediaExtractor] Found linkTool doc:', doc.title);
-          documents.push(doc);
-        }
+        if (doc) documents.push(doc);
         break;
       }
       case 'paragraph': {
         const docs = extractDocumentsFromParagraph(block);
-        if (docs.length) {
-          console.log('[mediaExtractor] Found', docs.length, 'URLs in paragraph');
-          documents.push(...docs);
-        }
+        if (docs.length) documents.push(...docs);
         break;
       }
     }
   }
-
-  console.log('[mediaExtractor] Extraction complete:', {
-    videos: videos.length,
-    images: images.length,
-    documents: documents.length,
-  });
 
   return { videos, images, documents };
 }
