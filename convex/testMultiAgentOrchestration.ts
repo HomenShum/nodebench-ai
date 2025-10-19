@@ -2,7 +2,7 @@
 // Test multi-agent orchestration performance against complex queries
 
 import { internalAction } from "./_generated/server";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 
 interface CriteriaSearchResult {
   query: string;
@@ -302,8 +302,8 @@ export const runAllOrchestrationTests = internalAction({
     console.log("🚀 MULTI-AGENT ORCHESTRATION TEST SUITE");
     console.log("=".repeat(80));
 
-    const test1: CriteriaSearchResult = await ctx.runAction(api.testMultiAgentOrchestration.testCriteriaBasedSearch);
-    const test2: NamedCompanyListResult = await ctx.runAction(api.testMultiAgentOrchestration.testNamedCompanyListCRM);
+    const test1: CriteriaSearchResult = await ctx.runAction(internal.testMultiAgentOrchestration.testCriteriaBasedSearch);
+    const test2: NamedCompanyListResult = await ctx.runAction(internal.testMultiAgentOrchestration.testNamedCompanyListCRM);
 
     console.log("\n" + "=".repeat(80));
     console.log("📊 COMPREHENSIVE TEST SUMMARY");
