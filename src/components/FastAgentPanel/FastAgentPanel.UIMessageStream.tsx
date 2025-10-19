@@ -345,9 +345,12 @@ export function UIMessageStream({
             );
           })}
 
-          {/* Show typing indicator in two cases:
-              1. Last message is streaming assistant with no text yet
-              2. Last message is user and no assistant response yet (agent is processing)
+          {/* Show typing indicator ONLY when:
+              1. Last message is user and no assistant response yet (agent intercepting)
+              2. Last message is streaming assistant with NO parts/tools yet (truly empty)
+
+              NOTE: If streaming message has ANY parts (tool calls, reasoning), render the message bubble
+              so user can see agent progress in real-time
           */}
           {(() => {
             const lastMessage = filteredMessages[filteredMessages.length - 1];
@@ -413,21 +416,7 @@ export function UIMessageStream({
               return words.length > 40 ? words.substring(0, 40) + '...' : words;
             };
 
-            // Case 1: Streaming assistant message with no content yet
-            if (lastMessage &&
-                lastMessage.role === 'assistant' &&
-                lastMessage.status === 'streaming' &&
-                (!lastMessage.text || lastMessage.text.trim().length === 0) &&
-                (!lastMessage.parts || lastMessage.parts.length === 0)) {
-
-              // Find the most recent user message to extract intent
-              const recentUserMessage = [...filteredMessages].reverse().find(msg => msg.role === 'user');
-              const intent = recentUserMessage?.text ? extractIntent(recentUserMessage.text) : 'your request';
-
-              return <TypingIndicator message={`Helping you with ${intent}...`} />;
-            }
-
-            // Case 2: User message with no assistant response yet (agent intercepting)
+            // Case 1: User message with no assistant response yet (agent intercepting)
             if (lastMessage && lastMessage.role === 'user') {
               // Check if there's an assistant message after this user message
               const hasResponse = filteredMessages.some((msg, idx) => {
@@ -441,6 +430,21 @@ export function UIMessageStream({
                 const intent = lastMessage.text ? extractIntent(lastMessage.text) : 'your request';
                 return <TypingIndicator message={`Helping you with ${intent}...`} />;
               }
+            }
+
+            // Case 2: Streaming assistant message with NO parts/tools yet (truly empty)
+            // If it has parts (tool calls, reasoning), the message bubble will show them
+            if (lastMessage &&
+                lastMessage.role === 'assistant' &&
+                lastMessage.status === 'streaming' &&
+                (!lastMessage.text || lastMessage.text.trim().length === 0) &&
+                (!lastMessage.parts || lastMessage.parts.length === 0)) {
+
+              // Find the most recent user message to extract intent
+              const recentUserMessage = [...filteredMessages].reverse().find(msg => msg.role === 'user');
+              const intent = recentUserMessage?.text ? extractIntent(recentUserMessage.text) : 'your request';
+
+              return <TypingIndicator message={`Helping you with ${intent}...`} />;
             }
 
             return null;

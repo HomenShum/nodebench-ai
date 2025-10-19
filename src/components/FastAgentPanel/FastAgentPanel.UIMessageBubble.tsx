@@ -789,14 +789,15 @@ export function UIMessageBubble({
           <RichMediaSection media={extractedMedia} showCitations={true} />
         )}
 
-        {/* Collapsible Agent Progress Section - Process details hidden by default */}
-        {/* Keep collapsed so media displays prominently in RichMediaSection above */}
+        {/* Collapsible Agent Progress Section */}
+        {/* Expanded by default when streaming so user can see agent progress in real-time */}
+        {/* Collapsed by default when complete so media displays prominently */}
         {!isUser && (
           <CollapsibleAgentProgress
             toolParts={toolParts}
             reasoning={visibleReasoning}
             isStreaming={message.status === 'streaming'}
-            defaultExpanded={false}
+            defaultExpanded={message.status === 'streaming'}
             onCompanySelect={onCompanySelect}
             onPersonSelect={onPersonSelect}
             onEventSelect={onEventSelect}
