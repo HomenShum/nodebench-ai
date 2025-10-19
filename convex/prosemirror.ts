@@ -105,6 +105,16 @@ export const {
     // Sanitize the snapshot to remove unsupported node types before storing
     const sanitized = sanitizeProseMirrorSnapshot(snapshot);
 
+    // Avoid overwriting EditorJS-based dossier content with ProseMirror snapshots
+    const document = await ctx.db.get(id as Id<"documents">);
+    if (!document) {
+      return;
+    }
+
+    if (document.documentType === "dossier" || (document as any).dossierType === "primary") {
+      return;
+    }
+
     // Update the document content when a new snapshot is available
     await ctx.db.patch(id as any, {
       content: sanitized,
