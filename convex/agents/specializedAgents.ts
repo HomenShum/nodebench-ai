@@ -267,7 +267,101 @@ RESPONSE STYLE:
 }
 
 /**
- * Entity Research Agent - Researches companies and people with caching
+ * Self-evaluation: Check data completeness and determine if retry is needed
+ */
+interface DataCompletenessScore {
+  totalFields: number;
+  populatedFields: number;
+  emptyFields: number;
+  completenessPercentage: number;
+  criticalFieldsMissing: string[];
+  isPassing: boolean;
+}
+
+function evaluateCompanyDataCompleteness(data: any, companyName: string): DataCompletenessScore {
+  const criticalFields = ['summary', 'headline', 'location', 'website', 'companyType'];
+  const allFields = [
+    'summary', 'headline', 'location', 'website', 'companyType',
+    'businessModel', 'competitiveLandscape', 'financials', 'swotAnalysis'
+  ];
+
+  let populatedCount = 0;
+  let emptyCount = 0;
+  const missingCritical: string[] = [];
+
+  for (const field of allFields) {
+    const value = data[field];
+    const isPopulated = value &&
+      (typeof value === 'string' ? value.trim() !== '' : true) &&
+      value !== 'N/A' &&
+      value !== 'Not specified';
+
+    if (isPopulated) {
+      populatedCount++;
+    } else {
+      emptyCount++;
+      if (criticalFields.includes(field)) {
+        missingCritical.push(field);
+      }
+    }
+  }
+
+  const completenessPercentage = Math.round((populatedCount / allFields.length) * 100);
+  const isPassing = completenessPercentage >= 60 && missingCritical.length === 0;
+
+  return {
+    totalFields: allFields.length,
+    populatedFields: populatedCount,
+    emptyFields: emptyCount,
+    completenessPercentage,
+    criticalFieldsMissing: missingCritical,
+    isPassing,
+  };
+}
+
+function evaluatePersonDataCompleteness(data: any, personName: string): DataCompletenessScore {
+  const criticalFields = ['summary', 'headline', 'fullName'];
+  const allFields = [
+    'summary', 'headline', 'fullName', 'location',
+    'workExperience', 'education', 'skills'
+  ];
+
+  let populatedCount = 0;
+  let emptyCount = 0;
+  const missingCritical: string[] = [];
+
+  for (const field of allFields) {
+    const value = data[field];
+    const isPopulated = value &&
+      (typeof value === 'string' ? value.trim() !== '' :
+       Array.isArray(value) ? value.length > 0 : true) &&
+      value !== 'N/A';
+
+    if (isPopulated) {
+      populatedCount++;
+    } else {
+      emptyCount++;
+      if (criticalFields.includes(field)) {
+        missingCritical.push(field);
+      }
+    }
+  }
+
+  const completenessPercentage = Math.round((populatedCount / allFields.length) * 100);
+  const isPassing = completenessPercentage >= 60 && missingCritical.length === 0;
+
+  return {
+    totalFields: allFields.length,
+    populatedFields: populatedCount,
+    emptyFields: emptyCount,
+    completenessPercentage,
+    criticalFieldsMissing: missingCritical,
+    isPassing,
+  };
+}
+
+/**
+ * Entity Research Agent - Researches companies and people with caching and self-evaluation
  */
 export function createEntityResearchAgent(ctx: ActionCtx, userId: Id<"users">) {
   const researchCompanyArgs = z.object({
@@ -319,6 +413,7 @@ CAPABILITIES:
 - Research people (work history, skills, compensation, role suitability)
 - All research is cached for 7 days for instant follow-up questions
 - Compare multiple entities side-by-side
+- **SELF-EVALUATION**: Automatically evaluates data completeness and retries if incomplete
 
 RESEARCH DEPTH:
 - Company: 20+ fields including SWOT analysis, competitive landscape, financials, business model
@@ -328,21 +423,33 @@ RESEARCH DEPTH:
 WORKFLOW:
 1. Check cache first (instant if available and fresh)
 2. Call LinkUp API if not cached or stale (> 7 days)
-3. Store structured data in cache
-4. Return comprehensive analysis with sources
+3. **SELF-EVALUATE**: Check data completeness (pass/fail)
+4. **AUTO-RETRY**: If data incomplete or missing critical fields, retry with enhanced query
+5. Store structured data in cache
+6. Return comprehensive analysis with quality badge (✅ VERIFIED or ⚠️ PARTIAL)
+
+DATA QUALITY STANDARDS:
+- **PASS**: ≥60% fields populated AND all critical fields present
+- **CRITICAL FIELDS (Company)**: summary, headline, location, website, companyType
+- **CRITICAL FIELDS (Person)**: summary, headline, fullName
+- **AUTO-RETRY**: Triggered if <60% complete or missing critical fields
+- **MAX ATTEMPTS**: 2 (initial + 1 retry with enhanced query)
 
 CRITICAL RULES:
 1. ALWAYS check cache before calling LinkUp API
 2. When answering follow-up questions, use cached data
 3. Provide sources for all information
 4. Indicate cache age when using cached data
-5. Offer to refresh stale data (> 7 days old)`,
+5. Offer to refresh stale data (> 7 days old)
+6. **NEW**: Trust the self-evaluation system - quality badges indicate data reliability`,
 
     tools: {
       researchCompany: createTool({
-        description: "Research a company with comprehensive structured data. Checks cache first, then calls LinkUp API if needed.",
+        description: "Research a company with comprehensive structured data. Checks cache first, then calls LinkUp API if needed. Automatically retries if data is incomplete.",
         args: researchCompanyArgs,
         handler: async (_toolCtx: ActionCtx, args: ResearchCompanyArgs): Promise<string> => {
+          console.log(`[researchCompany] Starting research for: ${args.companyName}`);
+
           // 1. Check cache
           const cached = await ctx.runQuery(api.entityContexts.getEntityContext, {
             entityName: args.companyName,
@@ -355,6 +462,7 @@ CRITICAL RULES:
               id: cached._id,
             });
 
+            console.log(`[researchCompany] Using cached data (${cached.ageInDays} days old)`);
             return `[CACHED - ${cached.ageInDays} days old, ${cached.accessCount + 1} cache hits]
 
 **${args.companyName}**
@@ -370,12 +478,50 @@ ${cached.sources.slice(0, 5).map((s: any, i: number) => `${i + 1}. [${s.name}]($
 (Using cached research from ${new Date(cached.researchedAt).toLocaleDateString()})`;
           }
 
-          // 2. Call LinkUp API
+          // 2. Call LinkUp API with self-evaluation and retry
           const { linkupCompanyProfile } = await import("../../agents/services/linkup");
-          const result = await linkupCompanyProfile(args.companyName);
+          const maxAttempts = 2;
+          let result: any = null;
+          let completenessScore: DataCompletenessScore | null = null;
 
-          if (!result || (result as any).error) {
-            return `Failed to research ${args.companyName}: ${(result as any)?.error || 'Unknown error'}`;
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            console.log(`[researchCompany] Attempt ${attempt}/${maxAttempts}`);
+
+            // Use more specific query on retry
+            const query = attempt === 1
+              ? args.companyName
+              : `${args.companyName} company profile funding investors competitors business model`;
+
+            result = await linkupCompanyProfile(query);
+
+            if (!result || (result as any).error) {
+              console.log(`[researchCompany] API error on attempt ${attempt}: ${(result as any)?.error}`);
+              if (attempt === maxAttempts) {
+                return `Failed to research ${args.companyName} after ${maxAttempts} attempts: ${(result as any)?.error || 'Unknown error'}`;
+              }
+              continue;
+            }
+
+            // Evaluate data completeness
+            completenessScore = evaluateCompanyDataCompleteness(result, args.companyName);
+            console.log(`[researchCompany] Attempt ${attempt} completeness: ${completenessScore.completenessPercentage}% (${completenessScore.populatedFields}/${completenessScore.totalFields} fields)`);
+
+            if (completenessScore.criticalFieldsMissing.length > 0) {
+              console.log(`[researchCompany] Missing critical fields: ${completenessScore.criticalFieldsMissing.join(', ')}`);
+            }
+
+            // If passing or last attempt, break
+            if (completenessScore.isPassing || attempt === maxAttempts) {
+              if (completenessScore.isPassing) {
+                console.log(`[researchCompany] ✅ PASS - Data quality acceptable`);
+              } else {
+                console.log(`[researchCompany] ⚠️ FAIL - Max attempts reached, accepting incomplete data`);
+              }
+              break;
+            }
+
+            // Retry needed
+            console.log(`[researchCompany] 🔄 RETRY - Completeness below threshold or missing critical fields`);
           }
 
           // Extract key facts from structured data
@@ -404,7 +550,11 @@ ${cached.sources.slice(0, 5).map((s: any, i: number) => `${i + 1}. [${s.name}]($
             researchedBy: userId,
           });
 
-          return `[FRESH RESEARCH]
+          const qualityBadge = completenessScore
+            ? `[${completenessScore.isPassing ? '✅ VERIFIED' : '⚠️ PARTIAL'} - ${completenessScore.completenessPercentage}% complete]`
+            : '';
+
+          return `[FRESH RESEARCH] ${qualityBadge}
 
 **${args.companyName}**
 
@@ -427,9 +577,10 @@ ${((result as any).allLinks || []).slice(0, 5).map((url: string, i: number) => `
       }),
 
       researchPerson: createTool({
-        description: "Research a person with comprehensive structured data. Checks cache first, then calls LinkUp API if needed.",
+        description: "Research a person with comprehensive structured data. Checks cache first, then calls LinkUp API if needed. Automatically retries if data is incomplete.",
         args: researchPersonArgs,
         handler: async (_toolCtx: ActionCtx, args: ResearchPersonArgs): Promise<string> => {
+          console.log(`[researchPerson] Starting research for: ${args.fullName}`);
           const searchName = args.company ? `${args.fullName} ${args.company}` : args.fullName;
 
           // 1. Check cache
@@ -444,6 +595,7 @@ ${((result as any).allLinks || []).slice(0, 5).map((url: string, i: number) => `
               id: cached._id,
             });
 
+            console.log(`[researchPerson] Using cached data (${cached.ageInDays} days old)`);
             return `[CACHED - ${cached.ageInDays} days old, ${cached.accessCount + 1} cache hits]
 
 **${args.fullName}**
@@ -459,12 +611,50 @@ ${cached.sources.slice(0, 5).map((s: any, i: number) => `${i + 1}. [${s.name}]($
 (Using cached research from ${new Date(cached.researchedAt).toLocaleDateString()})`;
           }
 
-          // 2. Call LinkUp API
+          // 2. Call LinkUp API with self-evaluation and retry
           const { linkupPersonProfile } = await import("../../agents/services/linkup");
-          const result = await linkupPersonProfile(searchName);
+          const maxAttempts = 2;
+          let result: any = null;
+          let completenessScore: DataCompletenessScore | null = null;
 
-          if (!result || (result as any).error) {
-            return `Failed to research ${args.fullName}: ${(result as any)?.error || 'Unknown error'}`;
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            console.log(`[researchPerson] Attempt ${attempt}/${maxAttempts}`);
+
+            // Use more specific query on retry
+            const query = attempt === 1
+              ? searchName
+              : `${searchName} professional profile work experience education skills`;
+
+            result = await linkupPersonProfile(query);
+
+            if (!result || (result as any).error) {
+              console.log(`[researchPerson] API error on attempt ${attempt}: ${(result as any)?.error}`);
+              if (attempt === maxAttempts) {
+                return `Failed to research ${args.fullName} after ${maxAttempts} attempts: ${(result as any)?.error || 'Unknown error'}`;
+              }
+              continue;
+            }
+
+            // Evaluate data completeness
+            completenessScore = evaluatePersonDataCompleteness(result, args.fullName);
+            console.log(`[researchPerson] Attempt ${attempt} completeness: ${completenessScore.completenessPercentage}% (${completenessScore.populatedFields}/${completenessScore.totalFields} fields)`);
+
+            if (completenessScore.criticalFieldsMissing.length > 0) {
+              console.log(`[researchPerson] Missing critical fields: ${completenessScore.criticalFieldsMissing.join(', ')}`);
+            }
+
+            // If passing or last attempt, break
+            if (completenessScore.isPassing || attempt === maxAttempts) {
+              if (completenessScore.isPassing) {
+                console.log(`[researchPerson] ✅ PASS - Data quality acceptable`);
+              } else {
+                console.log(`[researchPerson] ⚠️ FAIL - Max attempts reached, accepting incomplete data`);
+              }
+              break;
+            }
+
+            // Retry needed
+            console.log(`[researchPerson] 🔄 RETRY - Completeness below threshold or missing critical fields`);
           }
 
           // Extract key facts
@@ -494,7 +684,11 @@ ${cached.sources.slice(0, 5).map((s: any, i: number) => `${i + 1}. [${s.name}]($
             researchedBy: userId,
           });
 
-          return `[FRESH RESEARCH]
+          const qualityBadge = completenessScore
+            ? `[${completenessScore.isPassing ? '✅ VERIFIED' : '⚠️ PARTIAL'} - ${completenessScore.completenessPercentage}% complete]`
+            : '';
+
+          return `[FRESH RESEARCH] ${qualityBadge}
 
 **${args.fullName}**
 

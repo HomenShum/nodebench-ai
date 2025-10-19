@@ -4,7 +4,7 @@
  */
 
 import { action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
 interface TestResult {
@@ -243,10 +243,11 @@ export const testBulkCSVWithSpreadsheet = action({
         };
       }
       const userId = users[0]._id as Id<"users">;
-      
-      // Create test spreadsheet
-      const spreadsheetId = await ctx.runMutation(api.documents.create, {
+
+      // Create test spreadsheet using internal helper (bypasses auth)
+      const spreadsheetId = await ctx.runMutation(internal.testHelpers.createTestDocument, {
         title: "Bulk Research Test Spreadsheet",
+        userId,
       });
       
       console.log(`Created test spreadsheet: ${spreadsheetId}`);

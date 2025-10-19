@@ -129,6 +129,10 @@ import type * as testEntityResearchCritical from "../testEntityResearchCritical.
 import type * as testEntityResearchCritical2 from "../testEntityResearchCritical2.js";
 import type * as testEntityResearchDirect from "../testEntityResearchDirect.js";
 import type * as testEntityResearchValidation from "../testEntityResearchValidation.js";
+import type * as testHelpers from "../testHelpers.js";
+import type * as testParallelResearch from "../testParallelResearch.js";
+import type * as testSelfEvaluatingResearch from "../testSelfEvaluatingResearch.js";
+import type * as testSelfEvaluationIntegration from "../testSelfEvaluationIntegration.js";
 import type * as testYoutubeSearch from "../testYoutubeSearch.js";
 import type * as tools_confirmCompanySelection from "../tools/confirmCompanySelection.js";
 import type * as tools_confirmEventSelection from "../tools/confirmEventSelection.js";
@@ -290,6 +294,10 @@ declare const fullApi: ApiFromModules<{
   testEntityResearchCritical2: typeof testEntityResearchCritical2;
   testEntityResearchDirect: typeof testEntityResearchDirect;
   testEntityResearchValidation: typeof testEntityResearchValidation;
+  testHelpers: typeof testHelpers;
+  testParallelResearch: typeof testParallelResearch;
+  testSelfEvaluatingResearch: typeof testSelfEvaluatingResearch;
+  testSelfEvaluationIntegration: typeof testSelfEvaluationIntegration;
   testYoutubeSearch: typeof testYoutubeSearch;
   "tools/confirmCompanySelection": typeof tools_confirmCompanySelection;
   "tools/confirmEventSelection": typeof tools_confirmEventSelection;
