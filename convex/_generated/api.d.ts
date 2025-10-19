@@ -130,6 +130,7 @@ import type * as testEntityResearchCritical2 from "../testEntityResearchCritical
 import type * as testEntityResearchDirect from "../testEntityResearchDirect.js";
 import type * as testEntityResearchValidation from "../testEntityResearchValidation.js";
 import type * as testHelpers from "../testHelpers.js";
+import type * as testMultiAgentOrchestration from "../testMultiAgentOrchestration.js";
 import type * as testParallelResearch from "../testParallelResearch.js";
 import type * as testSelfEvaluatingResearch from "../testSelfEvaluatingResearch.js";
 import type * as testSelfEvaluationIntegration from "../testSelfEvaluationIntegration.js";
@@ -295,6 +296,7 @@ declare const fullApi: ApiFromModules<{
   testEntityResearchDirect: typeof testEntityResearchDirect;
   testEntityResearchValidation: typeof testEntityResearchValidation;
   testHelpers: typeof testHelpers;
+  testMultiAgentOrchestration: typeof testMultiAgentOrchestration;
   testParallelResearch: typeof testParallelResearch;
   testSelfEvaluatingResearch: typeof testSelfEvaluatingResearch;
   testSelfEvaluationIntegration: typeof testSelfEvaluationIntegration;
