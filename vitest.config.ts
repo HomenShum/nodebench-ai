@@ -29,10 +29,25 @@ export default defineConfig({
     hookTimeout: 60000, // 60 seconds for hooks
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@convex': path.resolve(__dirname, './convex'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      { find: '@convex', replacement: path.resolve(__dirname, './convex') },
+      {
+        find: /^@blocknote\/core$/,
+        replacement: path.resolve(__dirname, './src/test/mocks/blocknote/core/index.ts'),
+      },
+      {
+        find: /^@blocknote\/core\//,
+        replacement: path.resolve(__dirname, './src/test/mocks/blocknote/core/') + '/',
+      },
+      {
+        find: /^@blocknote\/mantine$/,
+        replacement: path.resolve(__dirname, './src/test/mocks/blocknote/mantine/index.tsx'),
+      },
+      {
+        find: /^@blocknote\/mantine\//,
+        replacement: path.resolve(__dirname, './src/test/mocks/blocknote/mantine/') + '/',
+      },
+    ],
   },
 });
-

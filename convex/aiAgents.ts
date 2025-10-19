@@ -734,6 +734,72 @@ const agentTools: any = {
     },
   }),
 
+  bulkUpdateSpreadsheet: createTool({
+    description: `
+      Bulk update spreadsheet rows or columns with safety controls.
+
+      **Dry-run mode is ON by default** - set dryRun=false AND confirm=true to commit.
+
+      Supports:
+      - Update entire column with scalar value
+      - Update column with vector of values (one per row)
+      - Update specific row with new values
+
+      Examples:
+      1. Set all values in "Status" column to "Pending":
+         { documentId: "...", operations: [{ type: "updateColumn", columnName: "Status", value: "Pending" }] }
+
+      2. Update "Price" column with calculated values:
+         { documentId: "...", operations: [{ type: "updateColumn", columnName: "Price", values: [10.99, 12.50, 8.75] }] }
+
+      3. Update row 5 with new data:
+         { documentId: "...", operations: [{ type: "updateRow", rowIndex: 5, values: ["John", "Doe", "john@example.com"] }] }
+    `,
+    args: z.object({
+      documentId: z.string().describe("The document ID of the spreadsheet to update"),
+      operations: z.array(
+        z.discriminatedUnion("type", [
+          z.object({
+            type: z.literal("updateColumn"),
+            columnIndex: z.number().int().min(0).optional(),
+            columnName: z.string().optional(),
+            value: z.union([z.string(), z.number(), z.null()]).optional(),
+            values: z.array(z.union([z.string(), z.number(), z.null()])).optional(),
+          }),
+          z.object({
+            type: z.literal("updateRow"),
+            rowIndex: z.number().int().min(0),
+            values: z.array(z.union([z.string(), z.number(), z.null()])),
+          }),
+        ])
+      ).min(1),
+      dryRun: z.boolean().default(true).optional(),
+      confirm: z.boolean().default(false).optional(),
+    }),
+    handler: async (ctx, args) => {
+      try {
+        const result = await ctx.runAction(api.actions.spreadsheetActions.bulkUpdateSpreadsheet, {
+          documentId: args.documentId as any,
+          operations: args.operations as any,
+          dryRun: args.dryRun,
+          confirm: args.confirm,
+        });
+
+        if (result.dryRun) {
+          return `**DRY-RUN PREVIEW**\n\n${result.message}\n\n**Summary:**\n- Affected rows: ${result.affectedRows}\n- Changed cells: ${result.changedCells}\n- Execution time: ${result.executionTime}ms\n\n**Sample changes (first 10):**\n${result.preview?.map((c: any) => `  Row ${c.row}, Col ${c.col}: "${c.old}" → "${c.new}"`).join('\n') || 'None'}\n\n**To commit these changes, re-run with dryRun=false AND confirm=true.**`;
+        } else {
+          return `**CHANGES COMMITTED**\n\n${result.message}\n\n**Summary:**\n- Affected rows: ${result.affectedRows}\n- Changed cells: ${result.changedCells}\n- New storage ID: ${result.newStorageId}\n- Execution time: ${result.executionTime}ms\n\nThe spreadsheet has been successfully updated.`;
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        if (errorMsg.includes("CommitNotConfirmed")) {
+          return `❌ **Commit Refused**: You must set both \`dryRun=false\` AND \`confirm=true\` to commit changes.\n\nCurrent settings: dryRun=${args.dryRun ?? true}, confirm=${args.confirm ?? false}\n\nRun a dry-run first to preview changes, then confirm if the changes look correct.`;
+        }
+        throw new Error(`Spreadsheet update failed: ${errorMsg}`);
+      }
+    },
+  }),
+
   runCsvLeadWorkflow: createTool({
     description: "Run the CSV AI lead scoring workflow on a specific CSV file.",
     args: CsvLeadWorkflowSchema,

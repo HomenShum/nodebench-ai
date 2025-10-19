@@ -98,7 +98,7 @@ ${results.length > 1 ? `\nNote: Found ${results.length} matching documents. Show
     }
 
     // Otherwise, just return the list of documents
-    const formattedResults = results.slice(0, args.limit).map((doc, idx) => {
+    const formattedResults = results.slice(0, args.limit).map((doc: any, idx: number) => {
       const lastModified = (doc as any).lastModified || doc._creationTime;
       const date = new Date(lastModified).toLocaleDateString();
       const docType = (doc as any).documentType || 'text';

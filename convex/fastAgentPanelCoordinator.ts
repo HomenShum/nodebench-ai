@@ -14,7 +14,7 @@ export const sendMessageWithCoordinator = action({
   args: {
     threadId: v.optional(v.string()),
     prompt: v.string(),
-    userId: v.string(),
+    userId: v.id("users"),
   },
   returns: v.object({
     response: v.string(),
@@ -86,7 +86,7 @@ export const streamMessageWithCoordinator = internalAction({
   args: {
     threadId: v.string(),
     promptMessageId: v.string(),
-    userId: v.string(),
+    userId: v.id("users"),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -114,7 +114,7 @@ export const sendMessageToSpecializedAgent = action({
   args: {
     threadId: v.string(),
     prompt: v.string(),
-    userId: v.string(),
+    userId: v.id("users"),
     agentType: v.union(
       v.literal("document"),
       v.literal("media"),
@@ -161,4 +161,3 @@ export const sendMessageToSpecializedAgent = action({
     return result.text;
   },
 });
-

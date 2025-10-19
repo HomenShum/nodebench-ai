@@ -71,7 +71,7 @@ export const searchSecFilings = createTool({
               companies,
             });
 
-            const passedCompanies = validated.filter(c => c.validationResult === "PASS");
+            const passedCompanies = validated.filter((c: any) => c.validationResult === "PASS");
 
             if (passedCompanies.length === 0) {
               return `I found companies matching "${args.companyName}", but none seem to be a good match. Please provide more details or use a ticker symbol.`;
@@ -88,7 +88,7 @@ export const searchSecFilings = createTool({
 
               const companySelectionData = {
                 prompt: `I found multiple companies matching '${args.companyName}'. Which one did you mean?`,
-                companies: passedCompanies.map(c => ({
+                companies: passedCompanies.map((c: any) => ({
                   cik: c.cik,
                   name: c.name,
                   ticker: c.ticker,
