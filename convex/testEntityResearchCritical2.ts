@@ -3,8 +3,8 @@
  * Error handling and high priority tests
  */
 
-import { action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { action, internalAction } from "./_generated/server";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
 interface TestResult {
@@ -328,10 +328,11 @@ export const testSpreadsheetLinking = action({
         };
       }
       const userId = users[0]._id as Id<"users">;
-      
-      // Create a test document to act as spreadsheet
-      const spreadsheetId = await ctx.runMutation(api.documents.create, {
+
+      // Create a test document using internal helper (bypasses auth)
+      const spreadsheetId = await ctx.runMutation(internal.testHelpers.createTestDocument, {
         title: "Test Spreadsheet for Entity Research",
+        userId,
       });
       
       console.log(`Created test spreadsheet: ${spreadsheetId}`);
