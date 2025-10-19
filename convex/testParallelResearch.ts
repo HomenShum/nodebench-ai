@@ -523,7 +523,7 @@ async function researchCompanyDetailed(companyName: string): Promise<CompanyRese
  */
 export const exportResearchToCSV = action({
   args: {},
-  handler: async (ctx): Promise<string> => {
+  handler: async (ctx): Promise<{ filename: string; csv: string; stats: any }> => {
     console.log("📥 Exporting research results to CSV...");
 
     // Run the parallel research

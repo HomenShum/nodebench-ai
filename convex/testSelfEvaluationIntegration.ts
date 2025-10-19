@@ -4,7 +4,7 @@
  */
 
 import { action } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
 interface TestResult {
@@ -227,7 +227,7 @@ export const runAllSelfEvaluationTests = action({
     
     // Test 1: Direct agent
     try {
-      const result1 = await ctx.runAction(internal.testSelfEvaluationIntegration.testDirectAgentSelfEvaluation, {});
+      const result1 = await ctx.runAction(api.testSelfEvaluationIntegration.testDirectAgentSelfEvaluation, {});
       results.push(result1);
     } catch (error: any) {
       console.log(`❌ TEST 1 FAILED: ${error.message}`);
@@ -242,10 +242,10 @@ export const runAllSelfEvaluationTests = action({
         details: `Error: ${error.message}`,
       });
     }
-    
+
     // Test 2: Coordinator delegation
     try {
-      const result2 = await ctx.runAction(internal.testSelfEvaluationIntegration.testCoordinatorDelegationSelfEvaluation, {});
+      const result2 = await ctx.runAction(api.testSelfEvaluationIntegration.testCoordinatorDelegationSelfEvaluation, {});
       results.push(result2);
     } catch (error: any) {
       console.log(`❌ TEST 2 FAILED: ${error.message}`);
@@ -260,10 +260,10 @@ export const runAllSelfEvaluationTests = action({
         details: `Error: ${error.message}`,
       });
     }
-    
+
     // Test 3: Multiple entities
     try {
-      const result3 = await ctx.runAction(internal.testSelfEvaluationIntegration.testMultipleEntitiesSelfEvaluation, {});
+      const result3 = await ctx.runAction(api.testSelfEvaluationIntegration.testMultipleEntitiesSelfEvaluation, {});
       results.push(result3);
     } catch (error: any) {
       console.log(`❌ TEST 3 FAILED: ${error.message}`);
