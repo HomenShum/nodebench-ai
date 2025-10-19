@@ -539,6 +539,10 @@ ${cached.sources.slice(0, 5).map((s: any, i: number) => `${i + 1}. [${s.name}]($
             keyFacts.push(`Competitors: ${(result as any).competitiveLandscape.primaryCompetitors.slice(0, 3).join(', ')}`);
           }
 
+          // Extract CRM fields
+          const { extractCRMFields } = await import("./crmExtraction");
+          const crmFields = extractCRMFields(result, args.companyName);
+
           // 3. Store in cache
           await ctx.runMutation(api.entityContexts.storeEntityContext, {
             entityName: args.companyName,
@@ -547,6 +551,7 @@ ${cached.sources.slice(0, 5).map((s: any, i: number) => `${i + 1}. [${s.name}]($
             summary: (result as any).summary || `Research data for ${args.companyName}`,
             keyFacts,
             sources: ((result as any).allLinks || []).slice(0, 10).map((url: string) => ({ name: url, url })),
+            crmFields,
             researchedBy: userId,
           });
 
@@ -902,6 +907,170 @@ ${context.sources.length > 0 ? `**Sources:** ${context.sources.slice(0, 3).map((
           report += `\n✅ All data cached for instant follow-up questions!`;
 
           return report;
+        },
+      }),
+      searchCompaniesByCriteria: createTool({
+        description: "Search for companies matching specific criteria (funding, industry, founding year, founder experience)",
+        args: z.object({
+          minFunding: z.string().optional().describe("Minimum funding amount (e.g., '$2M', '$500K')"),
+          maxFunding: z.string().optional().describe("Maximum funding amount (e.g., '$100M')"),
+          industry: z.string().optional().describe("Industry/sector (e.g., 'healthcare', 'fintech')"),
+          minFoundingYear: z.number().optional().describe("Minimum founding year (e.g., 2022)"),
+          maxFoundingYear: z.number().optional().describe("Maximum founding year (e.g., 2024)"),
+          requireFounderExperience: z.boolean().optional().describe("Require founders to have previous founding experience"),
+          maxResults: z.number().optional().describe("Maximum number of results to return (default: 10)"),
+        }),
+        handler: async (_toolCtx: ActionCtx, args): Promise<string> => {
+          console.log(`[searchCompaniesByCriteria] Starting criteria search:`, args);
+
+          const { matchesCriteria } = await import("./criteriaSearch");
+          const { linkupStructuredSearch, comprehensiveCompanySchema } = await import("../../agents/services/linkup");
+          const { extractCRMFields } = await import("./crmExtraction");
+
+          // Build search query based on criteria
+          const queryParts: string[] = [];
+          if (args.industry) queryParts.push(args.industry);
+          if (args.minFoundingYear) queryParts.push(`founded after ${args.minFoundingYear}`);
+          if (args.minFunding) queryParts.push(`funded ${args.minFunding} or more`);
+
+          const searchQuery = queryParts.length > 0
+            ? `${queryParts.join(' ')} companies`
+            : 'companies';
+
+          console.log(`[searchCompaniesByCriteria] Search query: ${searchQuery}`);
+
+          try {
+            // Search for companies using structured output
+            const searchResults = await linkupStructuredSearch(searchQuery, comprehensiveCompanySchema, "deep");
+
+            if (!searchResults || (searchResults as any).error) {
+              return `Failed to search companies: ${(searchResults as any)?.error || 'Unknown error'}`;
+            }
+
+            // Handle both single result and array of results
+            let companies = Array.isArray(searchResults) ? searchResults : [searchResults];
+
+            // Filter out error responses and ensure they have companyName
+            companies = companies.filter((c: any) => !c.error && c.companyName && typeof c.companyName === 'string');
+
+            // Filter results by criteria
+            const matchedCompanies = companies.filter((company: any) =>
+              matchesCriteria(company, args)
+            ).slice(0, args.maxResults || 10);
+
+            if (matchedCompanies.length === 0) {
+              return `No companies found matching criteria:\n${JSON.stringify(args, null, 2)}`;
+            }
+
+            // Extract CRM fields and store in cache
+            const results: string[] = [];
+            for (const company of matchedCompanies) {
+              try {
+                // Type the company data safely
+                const companyData = company as any;
+                const companyName = (companyData?.companyName || 'Unknown') as string;
+                const crmFields = extractCRMFields(companyData, companyName);
+
+                // Store in cache
+                await ctx.runMutation(api.entityContexts.storeEntityContext, {
+                  entityName: companyName,
+                  entityType: "company",
+                  linkupData: companyData,
+                  summary: (companyData?.summary as string) || `Research data for ${companyName}`,
+                  keyFacts: [
+                    (companyData?.headline as string) || '',
+                    `Industry: ${crmFields.industry}`,
+                    `Funding: ${crmFields.totalFunding}`,
+                    `Founded: ${crmFields.foundingYear || 'Unknown'}`,
+                  ].filter(Boolean),
+                  sources: ((companyData?.allLinks as string[]) || []).slice(0, 5).map((url: string) => ({ name: url, url })),
+                  crmFields,
+                  researchedBy: userId,
+                });
+
+                results.push(`✅ **${companyName}**
+- Industry: ${crmFields.industry}
+- Founded: ${crmFields.foundingYear || 'Unknown'}
+- Funding: ${crmFields.totalFunding}
+- Founders: ${crmFields.founders.join(', ') || 'Unknown'}
+- Location: ${crmFields.hqLocation}
+- Product: ${crmFields.product}`);
+              } catch (error) {
+                console.error(`[searchCompaniesByCriteria] Error processing company:`, error);
+                results.push(`⚠️ **Unknown Company** - Error processing data`);
+              }
+            }
+
+            return `**Criteria Search Results** (${matchedCompanies.length} companies found)\n\n${results.join('\n\n')}\n\n✅ All companies cached for instant follow-up questions!`;
+          } catch (error) {
+            console.error(`[searchCompaniesByCriteria] Error:`, error);
+            return `Search failed: ${String(error)}`;
+          }
+        },
+      }),
+      exportToCSV: createTool({
+        description: "Export researched companies to CSV format with all CRM fields",
+        args: z.object({
+          companyNames: z.array(z.string()).describe("List of company names to export"),
+          format: z.enum(['csv', 'json']).optional().describe("Export format (default: csv)"),
+        }),
+        handler: async (_toolCtx: ActionCtx, args): Promise<string> => {
+          console.log(`[exportToCSV] Exporting ${args.companyNames.length} companies`);
+
+          const { generateCSVWithMetadata, generateJSON, generateSummaryReport } = await import("./csvExport");
+
+          try {
+            // Fetch CRM fields for each company from cache
+            const crmFieldsArray = [];
+            const notFound = [];
+
+            for (const companyName of args.companyNames) {
+              const cached = await ctx.runQuery(api.entityContexts.getEntityContext, {
+                entityName: companyName,
+                entityType: "company",
+              });
+
+              if (cached?.crmFields) {
+                crmFieldsArray.push(cached.crmFields);
+              } else {
+                notFound.push(companyName);
+              }
+            }
+
+            if (crmFieldsArray.length === 0) {
+              return `No cached research found for companies: ${args.companyNames.join(', ')}`;
+            }
+
+            // Generate export
+            let exportData: string;
+            // Type cast to ensure proper CRMFields array type
+            const typedCrmArray = crmFieldsArray as any[];
+            if (args.format === 'json') {
+              exportData = generateJSON(typedCrmArray);
+            } else {
+              exportData = generateCSVWithMetadata(typedCrmArray, {
+                title: 'Company Research Export',
+                description: `Research data for ${typedCrmArray.length} companies`,
+                generatedAt: new Date(),
+              });
+            }
+
+            // Generate summary
+            const summary = generateSummaryReport(typedCrmArray);
+
+            let response = `**Export Complete**\n\n`;
+            response += `✅ Exported: ${crmFieldsArray.length} companies\n`;
+            if (notFound.length > 0) {
+              response += `⚠️ Not found: ${notFound.join(', ')}\n`;
+            }
+            response += `\n${summary}\n\n`;
+            response += `**Export Data (${args.format || 'csv'}):**\n\`\`\`\n${exportData.substring(0, 500)}...\n\`\`\``;
+
+            return response;
+          } catch (error) {
+            console.error(`[exportToCSV] Error:`, error);
+            return `Export failed: ${String(error)}`;
+          }
         },
       }),
     },

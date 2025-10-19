@@ -226,5 +226,37 @@ describe('CollapsibleAgentProgress', () => {
     const { container } = render(<CollapsibleAgentProgress toolParts={[]} />);
     expect(container.firstChild).toBeNull();
   });
+
+  it('expands by default when streaming to show agent progress in real-time', () => {
+    render(
+      <CollapsibleAgentProgress
+        toolParts={mockToolParts}
+        isStreaming={true}
+        defaultExpanded={true}
+      />
+    );
+
+    // When streaming and expanded, the timeline should be visible
+    expect(screen.getByText('Agent Working...')).toBeInTheDocument();
+    // The expandable content should be visible (not collapsed)
+    const timeline = screen.getByText(/Tool Call/i);
+    expect(timeline).toBeInTheDocument();
+  });
+
+  it('collapses by default when not streaming to show media prominently', () => {
+    const { container } = render(
+      <CollapsibleAgentProgress
+        toolParts={mockToolParts}
+        isStreaming={false}
+        defaultExpanded={false}
+      />
+    );
+
+    // When not streaming and collapsed, the toggle button should be visible
+    expect(screen.getByText('Agent Progress')).toBeInTheDocument();
+    // But the expandable content should NOT be visible
+    const expandedContent = container.querySelector('.animate-in');
+    expect(expandedContent).not.toBeInTheDocument();
+  });
 });
 

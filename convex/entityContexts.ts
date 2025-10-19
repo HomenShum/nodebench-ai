@@ -21,13 +21,14 @@ export const storeEntityContext = mutation({
       url: v.string(),
       snippet: v.optional(v.string()),
     })),
+    crmFields: v.optional(v.any()), // NEW: CRM fields
     spreadsheetId: v.optional(v.id("documents")),
     rowIndex: v.optional(v.number()),
     researchedBy: v.id("users"),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     // Check if entity context already exists
     const existing = await ctx.db
       .query("entityContexts")
@@ -35,7 +36,7 @@ export const storeEntityContext = mutation({
         q.eq("entityName", args.entityName).eq("entityType", args.entityType)
       )
       .first();
-    
+
     if (existing) {
       // Update existing context
       await ctx.db.patch(existing._id, {
@@ -43,6 +44,7 @@ export const storeEntityContext = mutation({
         summary: args.summary,
         keyFacts: args.keyFacts,
         sources: args.sources,
+        crmFields: args.crmFields, // NEW
         spreadsheetId: args.spreadsheetId,
         rowIndex: args.rowIndex,
         researchedAt: now,
@@ -51,7 +53,7 @@ export const storeEntityContext = mutation({
         version: existing.version + 1,
         isStale: false,
       });
-      
+
       console.log(`[entityContexts] Updated context for ${args.entityType}: ${args.entityName}`);
       return existing._id;
     } else {
@@ -63,6 +65,7 @@ export const storeEntityContext = mutation({
         summary: args.summary,
         keyFacts: args.keyFacts,
         sources: args.sources,
+        crmFields: args.crmFields, // NEW
         spreadsheetId: args.spreadsheetId,
         rowIndex: args.rowIndex,
         researchedAt: now,
@@ -72,7 +75,7 @@ export const storeEntityContext = mutation({
         version: 1,
         isStale: false,
       });
-      
+
       console.log(`[entityContexts] Created context for ${args.entityType}: ${args.entityName}`);
       return id;
     }
