@@ -790,14 +790,14 @@ export function UIMessageBubble({
         )}
 
         {/* Collapsible Agent Progress Section */}
-        {/* Expanded by default when streaming so user can see agent progress in real-time */}
-        {/* Collapsed by default when complete so media displays prominently */}
+        {/* Collapsed by default so final answer is visible first */}
+        {/* User can expand to see detailed agent progress and tool executions */}
         {!isUser && (
           <CollapsibleAgentProgress
             toolParts={toolParts}
             reasoning={visibleReasoning}
             isStreaming={message.status === 'streaming'}
-            defaultExpanded={message.status === 'streaming'}
+            defaultExpanded={false}
             onCompanySelect={onCompanySelect}
             onPersonSelect={onPersonSelect}
             onEventSelect={onEventSelect}
@@ -952,7 +952,8 @@ export function UIMessageBubble({
 
         {/* 4. Main text content - THE ANSWER (at bottom for natural reading flow) */}
         {/* Use cleanedText for assistant messages to remove media markers, visibleText for user messages */}
-        {(cleanedText || visibleText) && (
+        {/* ALWAYS show answer section for assistant messages, even if streaming (show placeholder) */}
+        {!isUser || (cleanedText || visibleText) ? (
           <div
             className={cn(
               "rounded-xl px-5 py-4 shadow-sm",
@@ -964,77 +965,85 @@ export function UIMessageBubble({
             )}
             title={!isUser && message.status !== 'streaming' ? "Use the Copy button below to copy this message" : undefined}
           >
-            <ReactMarkdown
-              components={{
-                code({ inline, className, children, ...props }: any) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  const language = match ? match[1] : '';
+            {/* Show placeholder while streaming and no text yet */}
+            {!isUser && message.status === 'streaming' && !cleanedText && !visibleText ? (
+              <div className="flex items-center gap-2 text-gray-600">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Generating answer...</span>
+              </div>
+            ) : (
+              <ReactMarkdown
+                components={{
+                  code({ inline, className, children, ...props }: any) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const language = match ? match[1] : '';
 
-                  // Special handling for Mermaid diagrams
-                  if (!inline && language === 'mermaid') {
-                    const mermaidCode = String(children).replace(/\n$/, '');
-                    const isStreaming = message.status === 'streaming';
-                    return (
-                      <MermaidDiagram
-                        code={mermaidCode}
-                        onRetryRequest={onMermaidRetry}
-                        isStreaming={isStreaming}
-                      />
+                    // Special handling for Mermaid diagrams
+                    if (!inline && language === 'mermaid') {
+                      const mermaidCode = String(children).replace(/\n$/, '');
+                      const isStreaming = message.status === 'streaming';
+                      return (
+                        <MermaidDiagram
+                          code={mermaidCode}
+                          onRetryRequest={onMermaidRetry}
+                          isStreaming={isStreaming}
+                        />
+                      );
+                    }
+
+                    // Regular code blocks
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={language}
+                        PreTag="div"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code className={cn(
+                        "px-1 py-0.5 rounded text-sm font-mono",
+                        isUser ? "bg-blue-700" : "bg-gray-100"
+                      )} {...props}>
+                        {children}
+                      </code>
                     );
-                  }
-
-                  // Regular code blocks
-                  return !inline && match ? (
-                    <SyntaxHighlighter
-                      style={vscDarkPlus}
-                      language={language}
-                      PreTag="div"
-                      {...props}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
-                  ) : (
-                    <code className={cn(
-                      "px-1 py-0.5 rounded text-sm font-mono",
-                      isUser ? "bg-blue-700" : "bg-gray-100"
-                    )} {...props}>
-                      {children}
-                    </code>
-                  );
-                },
-                p({ children }) {
-                  return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
-                },
-                ul({ children }) {
-                  return <ul className="list-disc ml-5 mb-3 space-y-1">{children}</ul>;
-                },
-                ol({ children }) {
-                  return <ol className="list-decimal ml-5 mb-3 space-y-1">{children}</ol>;
-                },
-                li({ children }) {
-                  return <li className="leading-relaxed">{children}</li>;
-                },
-                h1({ children }) {
-                  return <h1 className="text-2xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>;
-                },
-                h2({ children }) {
-                  return <h2 className="text-xl font-bold mb-2 mt-3 first:mt-0">{children}</h2>;
-                },
-                h3({ children }) {
-                  return <h3 className="text-lg font-semibold mb-2 mt-3 first:mt-0">{children}</h3>;
-                },
-                blockquote({ children }) {
-                  return <blockquote className="border-l-4 border-gray-300 pl-4 italic my-3">{children}</blockquote>;
-                },
-                a({ href, children }) {
-                  return <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>;
-                },
-              }}
-            >
-              {isUser ? (visibleText || '...') : (cleanedText || visibleText || '...')}
-            </ReactMarkdown>
+                  },
+                  p({ children }) {
+                    return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
+                  },
+                  ul({ children }) {
+                    return <ul className="list-disc ml-5 mb-3 space-y-1">{children}</ul>;
+                  },
+                  ol({ children }) {
+                    return <ol className="list-decimal ml-5 mb-3 space-y-1">{children}</ol>;
+                  },
+                  li({ children }) {
+                    return <li className="leading-relaxed">{children}</li>;
+                  },
+                  h1({ children }) {
+                    return <h1 className="text-2xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>;
+                  },
+                  h2({ children }) {
+                    return <h2 className="text-xl font-bold mb-2 mt-3 first:mt-0">{children}</h2>;
+                  },
+                  h3({ children }) {
+                    return <h3 className="text-lg font-semibold mb-2 mt-3 first:mt-0">{children}</h3>;
+                  },
+                  blockquote({ children }) {
+                    return <blockquote className="border-l-4 border-gray-300 pl-4 italic my-3">{children}</blockquote>;
+                  },
+                  a({ href, children }) {
+                    return <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>;
+                  },
+                }}
+              >
+                {isUser ? (visibleText || '...') : (cleanedText || visibleText || '...')}
+              </ReactMarkdown>
+            )}
           </div>
-        )}
+        ) : null}
 
         {/* Status indicator and actions */}
         <div className="flex items-center gap-2">
