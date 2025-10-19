@@ -801,12 +801,15 @@ export const streamAsync = internalAction({
     const thread = await ctx.runQuery(components.agent.threads.getThread, {
       threadId: args.threadId
     });
-    const userId = thread?.userId || "unknown-user";
+    const userId = (thread?.userId ?? null) as Id<"users"> | null;
 
     // Choose agent based on mode
     let agent;
     let agentType: string;
     if (args.useCoordinator !== false) { // Default to coordinator
+      if (!userId) {
+        throw new Error("Coordinator agent requires a thread userId");
+      }
       agentType = 'COORDINATOR';
       console.log(`[streamAsync:${executionId}] 🎯 Using COORDINATOR AGENT for intelligent delegation`);
       const { createCoordinatorAgent } = await import("./agents/specializedAgents");
@@ -1133,9 +1136,12 @@ export const sendMessageInternal = internalAction({
     // Choose agent based on mode
     let chatAgent;
     if (args.useCoordinator !== false) { // Default to coordinator
+      if (!args.userId) {
+        throw new Error("Coordinator agent requires a userId when coordinator mode is enabled");
+      }
       console.log('[sendMessageInternal] Using COORDINATOR AGENT for intelligent delegation');
       const { createCoordinatorAgent } = await import("./agents/specializedAgents");
-      chatAgent = createCoordinatorAgent(contextWithUserId as any, args.userId || "test-user");
+      chatAgent = createCoordinatorAgent(contextWithUserId as any, args.userId);
     } else {
       console.log('[sendMessageInternal] Using SINGLE AGENT (legacy mode)');
       chatAgent = createChatAgent(modelName);
@@ -1145,9 +1151,10 @@ export const sendMessageInternal = internalAction({
     let threadId: string;
     if (!args.threadId) {
       console.log('[sendMessageInternal] Creating new thread');
-      const result = await chatAgent.createThread(contextWithUserId as any, {
-        userId: args.userId || ("test-user" as any)
-      });
+      const result = await chatAgent.createThread(
+        contextWithUserId as any,
+        args.userId ? { userId: args.userId } : {},
+      );
       threadId = result.threadId;
       console.log('[sendMessageInternal] Thread created:', threadId);
     } else {
@@ -1480,3 +1487,6 @@ export const generateFileResponse = internalAction({
     }
   },
 });
+
+
+

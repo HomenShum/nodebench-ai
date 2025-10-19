@@ -1128,4 +1128,39 @@ export default defineSchema({
     .index("by_thread_and_query", ["threadId", "newsQuery"])
     .index("by_thread", ["threadId"]),
 
+  /* ------------------------------------------------------------------ */
+  /* ENTITY CONTEXTS - Cached entity research data (companies, people)  */
+  /* ------------------------------------------------------------------ */
+  entityContexts: defineTable({
+    entityName: v.string(),                  // Name of the entity (company/person)
+    entityType: v.union(
+      v.literal("company"),
+      v.literal("person")
+    ),
+    linkupData: v.optional(v.any()),         // Raw LinkUp API response
+    summary: v.string(),                     // Brief summary of the entity
+    keyFacts: v.array(v.string()),           // Array of key facts/highlights
+    sources: v.array(v.object({
+      name: v.string(),
+      url: v.string(),
+      snippet: v.optional(v.string()),
+    })),
+    spreadsheetId: v.optional(v.id("documents")), // Optional link to source spreadsheet
+    rowIndex: v.optional(v.number()),        // Optional row index in spreadsheet
+    researchedAt: v.number(),                // Timestamp when researched
+    researchedBy: v.id("users"),            // User who triggered the research
+    lastAccessedAt: v.number(),              // Last time this context was accessed
+    accessCount: v.number(),                 // Number of times accessed (cache hits)
+    version: v.number(),                     // Version number for cache invalidation
+    isStale: v.optional(v.boolean()),        // Flag for stale data (> 7 days)
+  })
+    .index("by_entity", ["entityName", "entityType"])
+    .index("by_spreadsheet", ["spreadsheetId", "rowIndex"])
+    .index("by_user", ["researchedBy"])
+    .index("by_researched_at", ["researchedAt"])
+    .searchIndex("search_entity", {
+      searchField: "entityName",
+      filterFields: ["entityType", "researchedBy"],
+    }),
+
 });

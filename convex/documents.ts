@@ -1196,7 +1196,15 @@ export const getOrCreateQuickNotes = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    // Check if Quick Notes document already exists
+    const dossier = await ctx.db.get(args.dossierId);
+    if (!dossier) {
+      throw new Error("Dossier not found");
+    }
+
+    if (dossier.createdBy !== userId) {
+      throw new Error("Not authorized to manage quick notes for this dossier");
+    }
+
     const existing = await ctx.db
       .query("documents")
       .withIndex("by_parent_dossier", (q) => q.eq("parentDossierId", args.dossierId))

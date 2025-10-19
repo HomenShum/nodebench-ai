@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ConvexClient } from 'convex/browser';
 import { api } from '../../_generated/api';
+import type { Id } from '../../_generated/dataModel';
 import OpenAI from 'openai';
 
 /**
@@ -46,7 +47,7 @@ interface EvaluationResult {
 describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('LLM Quality Evaluation', () => {
   let client: ConvexClient;
   let openai: OpenAI;
-  const testUserId = 'quality-eval-user-' + Date.now();
+  const testUserId = ('quality-eval-user-' + Date.now()) as Id<"users">;
 
   beforeAll(() => {
     const deploymentUrl = process.env.CONVEX_DEPLOYMENT_URL;

@@ -9,6 +9,7 @@
  */
 
 import type * as account from "../account.js";
+import type * as actions_spreadsheetActions from "../actions/spreadsheetActions.js";
 import type * as agentChat from "../agentChat.js";
 import type * as agentEditor from "../agentEditor.js";
 import type * as agentImageResults from "../agentImageResults.js";
@@ -56,6 +57,7 @@ import type * as crons from "../crons.js";
 import type * as documentVersions from "../documentVersions.js";
 import type * as documents from "../documents.js";
 import type * as email from "../email.js";
+import type * as entityContexts from "../entityContexts.js";
 import type * as events from "../events.js";
 import type * as fastAgentChat from "../fastAgentChat.js";
 import type * as fastAgentChatHelpers from "../fastAgentChatHelpers.js";
@@ -80,6 +82,9 @@ import type * as holidays from "../holidays.js";
 import type * as holidays_actions from "../holidays_actions.js";
 import type * as http from "../http.js";
 import type * as integrations from "../integrations.js";
+import type * as legacy_agentRuns from "../legacy/agentRuns.js";
+import type * as legacy_common from "../legacy/common.js";
+import type * as legacy_documents from "../legacy/documents.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_dossierHelpers from "../lib/dossierHelpers.js";
 import type * as lib_markdown from "../lib/markdown.js";
@@ -118,6 +123,8 @@ import type * as sync_mutations from "../sync_mutations.js";
 import type * as tags from "../tags.js";
 import type * as tags_actions from "../tags_actions.js";
 import type * as tasks from "../tasks.js";
+import type * as testEntityResearch from "../testEntityResearch.js";
+import type * as testEntityResearchDirect from "../testEntityResearchDirect.js";
 import type * as testYoutubeSearch from "../testYoutubeSearch.js";
 import type * as tools_confirmCompanySelection from "../tools/confirmCompanySelection.js";
 import type * as tools_confirmEventSelection from "../tools/confirmEventSelection.js";
@@ -159,6 +166,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   account: typeof account;
+  "actions/spreadsheetActions": typeof actions_spreadsheetActions;
   agentChat: typeof agentChat;
   agentEditor: typeof agentEditor;
   agentImageResults: typeof agentImageResults;
@@ -206,6 +214,7 @@ declare const fullApi: ApiFromModules<{
   documentVersions: typeof documentVersions;
   documents: typeof documents;
   email: typeof email;
+  entityContexts: typeof entityContexts;
   events: typeof events;
   fastAgentChat: typeof fastAgentChat;
   fastAgentChatHelpers: typeof fastAgentChatHelpers;
@@ -230,6 +239,9 @@ declare const fullApi: ApiFromModules<{
   holidays_actions: typeof holidays_actions;
   http: typeof http;
   integrations: typeof integrations;
+  "legacy/agentRuns": typeof legacy_agentRuns;
+  "legacy/common": typeof legacy_common;
+  "legacy/documents": typeof legacy_documents;
   "lib/crypto": typeof lib_crypto;
   "lib/dossierHelpers": typeof lib_dossierHelpers;
   "lib/markdown": typeof lib_markdown;
@@ -268,6 +280,8 @@ declare const fullApi: ApiFromModules<{
   tags: typeof tags;
   tags_actions: typeof tags_actions;
   tasks: typeof tasks;
+  testEntityResearch: typeof testEntityResearch;
+  testEntityResearchDirect: typeof testEntityResearchDirect;
   testYoutubeSearch: typeof testYoutubeSearch;
   "tools/confirmCompanySelection": typeof tools_confirmCompanySelection;
   "tools/confirmEventSelection": typeof tools_confirmEventSelection;

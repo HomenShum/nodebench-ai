@@ -3,8 +3,9 @@
 
 import { Agent, createTool, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
-import { components } from "../_generated/api";
+import { api, components } from "../_generated/api";
 import type { ActionCtx } from "../_generated/server";
+import type { Id } from "../_generated/dataModel";
 import { z } from "zod/v3";
 
 // Import tools for each specialized agent
@@ -266,9 +267,458 @@ RESPONSE STYLE:
 }
 
 /**
+ * Entity Research Agent - Researches companies and people with caching
+ */
+export function createEntityResearchAgent(ctx: ActionCtx, userId: Id<"users">) {
+  const researchCompanyArgs = z.object({
+    companyName: z.string().describe("Name of the company to research"),
+    forceRefresh: z.boolean().optional().describe("Force refresh even if cached data exists"),
+  });
+  const researchPersonArgs = z.object({
+    fullName: z.string().describe("Full name of the person to research"),
+    company: z.string().optional().describe("Company name to help disambiguate (optional)"),
+    forceRefresh: z.boolean().optional().describe("Force refresh even if cached data exists"),
+  });
+  const askAboutEntityArgs = z.object({
+    entityName: z.string().describe("Name of the entity"),
+    entityType: z.enum(["company", "person"]).describe("Type of entity"),
+    question: z.string().describe("Specific question about the entity"),
+  });
+  const bulkResearchFromCsvArgs = z.object({
+    documentId: z.string().describe("Document ID of the CSV file"),
+    entityType: z.enum(["company", "person"]).describe("Type of entities in the CSV"),
+    columnName: z.string().describe("Name of the column containing entity names"),
+    maxEntities: z.number().optional().describe("Maximum number of entities to research (default: 50)"),
+  });
+  type ResearchCompanyArgs = z.infer<typeof researchCompanyArgs>;
+  type ResearchPersonArgs = z.infer<typeof researchPersonArgs>;
+  type AskAboutEntityArgs = z.infer<typeof askAboutEntityArgs>;
+  type BulkResearchFromCsvArgs = z.infer<typeof bulkResearchFromCsvArgs>;
+  type BulkResearchResult =
+    | { entityName: string; status: "cached"; ageInDays: number; summary: string }
+    | { entityName: string; status: "researched"; summary: string; keyFacts: string[] }
+    | { entityName: string; status: "failed"; error: string };
+
+  const isCachedResult = (
+    result: BulkResearchResult,
+  ): result is Extract<BulkResearchResult, { status: "cached" }> => result.status === "cached";
+  const isResearchedResult = (
+    result: BulkResearchResult,
+  ): result is Extract<BulkResearchResult, { status: "researched" }> => result.status === "researched";
+  const isFailedResult = (
+    result: BulkResearchResult,
+  ): result is Extract<BulkResearchResult, { status: "failed" }> => result.status === "failed";
+
+  return new Agent(components.agent, {
+    name: "EntityResearchAgent",
+    languageModel: openai.chat("gpt-5"),
+    instructions: `You are an entity research specialist with access to comprehensive company and person data.
+
+CAPABILITIES:
+- Research companies (funding, competitors, SWOT, financials, key personnel, tech stack)
+- Research people (work history, skills, compensation, role suitability)
+- All research is cached for 7 days for instant follow-up questions
+- Compare multiple entities side-by-side
+
+RESEARCH DEPTH:
+- Company: 20+ fields including SWOT analysis, competitive landscape, financials, business model
+- Person: 15+ fields including work experience, education, skills, compensation analysis
+- All data is sourced from LinkUp API with citations
+
+WORKFLOW:
+1. Check cache first (instant if available and fresh)
+2. Call LinkUp API if not cached or stale (> 7 days)
+3. Store structured data in cache
+4. Return comprehensive analysis with sources
+
+CRITICAL RULES:
+1. ALWAYS check cache before calling LinkUp API
+2. When answering follow-up questions, use cached data
+3. Provide sources for all information
+4. Indicate cache age when using cached data
+5. Offer to refresh stale data (> 7 days old)`,
+
+    tools: {
+      researchCompany: createTool({
+        description: "Research a company with comprehensive structured data. Checks cache first, then calls LinkUp API if needed.",
+        args: researchCompanyArgs,
+        handler: async (_toolCtx: ActionCtx, args: ResearchCompanyArgs): Promise<string> => {
+          // 1. Check cache
+          const cached = await ctx.runQuery(api.entityContexts.getEntityContext, {
+            entityName: args.companyName,
+            entityType: "company",
+          });
+
+          if (cached && !cached.isStale && !args.forceRefresh) {
+            // Update access count
+            await ctx.runMutation(api.entityContexts.updateAccessCount, {
+              id: cached._id,
+            });
+
+            return `[CACHED - ${cached.ageInDays} days old, ${cached.accessCount + 1} cache hits]
+
+**${args.companyName}**
+
+${cached.summary}
+
+**Key Facts:**
+${cached.keyFacts.map((fact: string, i: number) => `${i + 1}. ${fact}`).join('\n')}
+
+**Sources:**
+${cached.sources.slice(0, 5).map((s: any, i: number) => `${i + 1}. [${s.name}](${s.url})`).join('\n')}
+
+(Using cached research from ${new Date(cached.researchedAt).toLocaleDateString()})`;
+          }
+
+          // 2. Call LinkUp API
+          const { linkupCompanyProfile } = await import("../../agents/services/linkup");
+          const result = await linkupCompanyProfile(args.companyName);
+
+          if (!result || (result as any).error) {
+            return `Failed to research ${args.companyName}: ${(result as any)?.error || 'Unknown error'}`;
+          }
+
+          // Extract key facts from structured data
+          const keyFacts: string[] = [];
+          if ((result as any).headline) keyFacts.push((result as any).headline);
+          if ((result as any).companyType) keyFacts.push(`Type: ${(result as any).companyType}`);
+          if ((result as any).location) keyFacts.push(`Location: ${(result as any).location}`);
+          if ((result as any).website) keyFacts.push(`Website: ${(result as any).website}`);
+          if ((result as any).financials?.marketCap) keyFacts.push(`Market Cap: ${(result as any).financials.marketCap}`);
+          if ((result as any).financials?.fundingRounds?.length > 0) {
+            const latestRound = (result as any).financials.fundingRounds[0];
+            keyFacts.push(`Latest Funding: ${latestRound.roundName} - ${latestRound.amount}`);
+          }
+          if ((result as any).competitiveLandscape?.primaryCompetitors?.length > 0) {
+            keyFacts.push(`Competitors: ${(result as any).competitiveLandscape.primaryCompetitors.slice(0, 3).join(', ')}`);
+          }
+
+          // 3. Store in cache
+          await ctx.runMutation(api.entityContexts.storeEntityContext, {
+            entityName: args.companyName,
+            entityType: "company",
+            linkupData: result,
+            summary: (result as any).summary || `Research data for ${args.companyName}`,
+            keyFacts,
+            sources: ((result as any).allLinks || []).slice(0, 10).map((url: string) => ({ name: url, url })),
+            researchedBy: userId,
+          });
+
+          return `[FRESH RESEARCH]
+
+**${args.companyName}**
+
+${(result as any).summary || ''}
+
+**Key Facts:**
+${keyFacts.map((fact, i) => `${i + 1}. ${fact}`).join('\n')}
+
+**Business Model:**
+${(result as any).businessModel?.monetizationStrategy || 'N/A'}
+
+**Competitive Landscape:**
+${(result as any).competitiveLandscape?.primaryCompetitors?.slice(0, 5).join(', ') || 'N/A'}
+
+**Sources:**
+${((result as any).allLinks || []).slice(0, 5).map((url: string, i: number) => `${i + 1}. ${url}`).join('\n')}
+
+(Research cached for future queries)`;
+        },
+      }),
+
+      researchPerson: createTool({
+        description: "Research a person with comprehensive structured data. Checks cache first, then calls LinkUp API if needed.",
+        args: researchPersonArgs,
+        handler: async (_toolCtx: ActionCtx, args: ResearchPersonArgs): Promise<string> => {
+          const searchName = args.company ? `${args.fullName} ${args.company}` : args.fullName;
+
+          // 1. Check cache
+          const cached = await ctx.runQuery(api.entityContexts.getEntityContext, {
+            entityName: args.fullName,
+            entityType: "person",
+          });
+
+          if (cached && !cached.isStale && !args.forceRefresh) {
+            // Update access count
+            await ctx.runMutation(api.entityContexts.updateAccessCount, {
+              id: cached._id,
+            });
+
+            return `[CACHED - ${cached.ageInDays} days old, ${cached.accessCount + 1} cache hits]
+
+**${args.fullName}**
+
+${cached.summary}
+
+**Key Facts:**
+${cached.keyFacts.map((fact: string, i: number) => `${i + 1}. ${fact}`).join('\n')}
+
+**Sources:**
+${cached.sources.slice(0, 5).map((s: any, i: number) => `${i + 1}. [${s.name}](${s.url})`).join('\n')}
+
+(Using cached research from ${new Date(cached.researchedAt).toLocaleDateString()})`;
+          }
+
+          // 2. Call LinkUp API
+          const { linkupPersonProfile } = await import("../../agents/services/linkup");
+          const result = await linkupPersonProfile(searchName);
+
+          if (!result || (result as any).error) {
+            return `Failed to research ${args.fullName}: ${(result as any)?.error || 'Unknown error'}`;
+          }
+
+          // Extract key facts
+          const keyFacts: string[] = [];
+          if ((result as any).headline) keyFacts.push((result as any).headline);
+          if ((result as any).location?.city) keyFacts.push(`Location: ${(result as any).location.city}, ${(result as any).location.state || (result as any).location.country}`);
+          if ((result as any).workExperience?.length > 0) {
+            const currentJob = (result as any).workExperience[0];
+            keyFacts.push(`Current: ${currentJob.jobTitle} at ${currentJob.companyName}`);
+          }
+          if ((result as any).education?.length > 0) {
+            const edu = (result as any).education[0];
+            keyFacts.push(`Education: ${edu.degree || ''} ${edu.fieldOfStudy || ''} from ${edu.institution}`);
+          }
+          if ((result as any).skills?.technicalSkills?.length > 0) {
+            keyFacts.push(`Skills: ${(result as any).skills.technicalSkills.slice(0, 5).join(', ')}`);
+          }
+
+          // 3. Store in cache
+          await ctx.runMutation(api.entityContexts.storeEntityContext, {
+            entityName: args.fullName,
+            entityType: "person",
+            linkupData: result,
+            summary: (result as any).summary || `Research data for ${args.fullName}`,
+            keyFacts,
+            sources: [], // Person profiles don't have allLinks
+            researchedBy: userId,
+          });
+
+          return `[FRESH RESEARCH]
+
+**${args.fullName}**
+
+${(result as any).summary || ''}
+
+**Key Facts:**
+${keyFacts.map((fact, i) => `${i + 1}. ${fact}`).join('\n')}
+
+**Work Experience:**
+${(result as any).workExperience?.slice(0, 3).map((job: any) => `- ${job.jobTitle} at ${job.companyName} (${job.startDate || ''} - ${job.endDate || 'Present'})`).join('\n') || 'N/A'}
+
+**Skills:**
+${(result as any).skills?.technicalSkills?.slice(0, 10).join(', ') || 'N/A'}
+
+(Research cached for future queries)`;
+        },
+      }),
+
+      askAboutEntity: createTool({
+        description: "Answer questions about a previously researched entity using cached data. Much faster than re-researching.",
+        args: askAboutEntityArgs,
+        handler: async (_toolCtx: ActionCtx, args: AskAboutEntityArgs): Promise<string> => {
+          const context = await ctx.runQuery(api.entityContexts.getEntityContext, {
+            entityName: args.entityName,
+            entityType: args.entityType,
+          });
+
+          if (!context) {
+            return `No cached data for ${args.entityName}. Would you like me to research this ${args.entityType}?`;
+          }
+
+          // Update access count
+          await ctx.runMutation(api.entityContexts.updateAccessCount, {
+            id: context._id,
+          });
+
+          // Find relevant facts based on question keywords
+          const questionLower = args.question.toLowerCase();
+          const relevantFacts = context.keyFacts.filter((fact: string) =>
+            questionLower.split(' ').some((word: string) => fact.toLowerCase().includes(word))
+          );
+
+          const answer = relevantFacts.length > 0
+            ? relevantFacts.join('\n')
+            : context.summary;
+
+          return `Based on my research on ${args.entityName} (cached ${context.ageInDays} days ago):
+
+${answer}
+
+${context.sources.length > 0 ? `**Sources:** ${context.sources.slice(0, 3).map((s: any) => s.url).join(', ')}` : ''}
+
+(Cache hit #${context.accessCount + 1}${context.isStale ? ' - Data is stale, consider refreshing' : ''})`;
+        },
+      }),
+
+      bulkResearchFromCSV: createTool({
+        description: "Research multiple entities from a CSV file in parallel. Supports companies and people.",
+        args: bulkResearchFromCsvArgs,
+        handler: async (_toolCtx: ActionCtx, args: BulkResearchFromCsvArgs): Promise<string> => {
+          const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
+            documentId: args.documentId as Id<"documents">,
+          });
+
+          if (!fileDoc?.storageUrl) {
+            return "File not found or no storage URL";
+          }
+
+          const response = await fetch(fileDoc.storageUrl);
+          const csvText = await response.text();
+
+          const lines = csvText.split("\n").filter((line) => line.trim().length > 0);
+          if (lines.length < 2) {
+            return "CSV file is empty or has no data rows";
+          }
+
+          const headers = lines[0]
+            .split(",")
+            .map((header) => header.trim().replace(/^"|"$/g, ""));
+          const rows = lines.slice(1).map((line) =>
+            line.split(",").map((cell) => cell.trim().replace(/^"|"$/g, "")),
+          );
+
+          const columnIndex = headers.indexOf(args.columnName);
+          if (columnIndex === -1) {
+            return `Column "${args.columnName}" not found. Available columns: ${headers.join(', ')}`;
+          }
+
+          const entityNames = rows
+            .map((row) => row[columnIndex] ?? "")
+            .filter((name) => name.trim().length > 0)
+            .slice(0, args.maxEntities ?? 50);
+
+          if (entityNames.length === 0) {
+            return `No entities found in column "${args.columnName}"`;
+          }
+
+          console.log(`[bulkResearchFromCSV] Researching ${entityNames.length} ${args.entityType}s in parallel...`);
+
+          const { linkupCompanyProfile, linkupPersonProfile } = await import("../../agents/services/linkup");
+
+          const researchPromises: Promise<BulkResearchResult>[] = entityNames.map(async (entityName, index) => {
+            try {
+              const cached = await ctx.runQuery(api.entityContexts.getEntityContext, {
+                entityName,
+                entityType: args.entityType,
+              });
+
+              if (cached && !cached.isStale) {
+                await ctx.runMutation(api.entityContexts.updateAccessCount, {
+                  id: cached._id,
+                });
+                return {
+                  entityName,
+                  status: "cached",
+                  ageInDays: cached.ageInDays,
+                  summary: cached.summary,
+                } as BulkResearchResult;
+              }
+
+              const result = args.entityType === "company"
+                ? await linkupCompanyProfile(entityName)
+                : await linkupPersonProfile(entityName);
+              const data = result as Record<string, any> | null;
+
+              if (!data || data.error) {
+                return {
+                  entityName,
+                  status: "failed",
+                  error: String(data?.error ?? "Unknown error"),
+                } as BulkResearchResult;
+              }
+
+              const keyFacts: string[] = [];
+              if (data.headline) keyFacts.push(String(data.headline));
+              if (args.entityType === "company") {
+                if (data.companyType) keyFacts.push(`Type: ${String(data.companyType)}`);
+                if (data.location) keyFacts.push(`Location: ${String(data.location)}`);
+                if (data.financials?.marketCap) keyFacts.push(`Market Cap: ${String(data.financials.marketCap)}`);
+              } else {
+                if (data.location?.city) keyFacts.push(`Location: ${String(data.location.city)}`);
+                if (Array.isArray(data.workExperience) && data.workExperience[0]) {
+                  const job = data.workExperience[0] as Record<string, any>;
+                  keyFacts.push(`Current: ${String(job.jobTitle)} at ${String(job.companyName)}`);
+                }
+              }
+
+              await ctx.runMutation(api.entityContexts.storeEntityContext, {
+                entityName,
+                entityType: args.entityType,
+                linkupData: data,
+                summary: String(data.summary ?? `Research data for ${entityName}`),
+                keyFacts,
+                sources: ((data.allLinks as string[] | undefined) ?? []).slice(0, 10).map((url) => ({ name: url, url })),
+                spreadsheetId: args.documentId as Id<"documents">,
+                rowIndex: index,
+                researchedBy: userId,
+              });
+
+              return {
+                entityName,
+                status: "researched",
+                summary: String(data.summary ?? ""),
+                keyFacts: keyFacts.slice(0, 3),
+              } as BulkResearchResult;
+            } catch (error) {
+              return {
+                entityName,
+                status: "failed",
+                error: String(error),
+              } as BulkResearchResult;
+            }
+          });
+
+          const results = await Promise.all(researchPromises);
+
+          // 4. Generate summary report
+          const cachedResults = results.filter(isCachedResult);
+          const researchedResults = results.filter(isResearchedResult);
+          const failedResults = results.filter(isFailedResult);
+
+          let report = `**Bulk Research Complete**\n\n`;
+          report += `📊 **Summary:**\n`;
+          report += `- Total entities: ${entityNames.length}\n`;
+          report += `- ✅ Researched: ${researchedResults.length}\n`;
+          report += `- 💾 From cache: ${cachedResults.length}\n`;
+          report += `- ❌ Failed: ${failedResults.length}\n\n`;
+
+          if (researchedResults.length > 0) {
+            report += `**Newly Researched ${args.entityType}s:**\n`;
+            researchedResults
+              .slice(0, 10)
+              .forEach((item) => {
+                report += `\n**${item.entityName}**\n`;
+                report += `${item.summary.substring(0, 150)}...\n`;
+              });
+
+            if (researchedResults.length > 10) {
+              report += `\n... and ${researchedResults.length - 10} more\n`;
+            }
+          }
+
+          if (failedResults.length > 0) {
+            report += `\n**Failed:**\n`;
+            failedResults
+              .forEach((item) => {
+                report += `- ${item.entityName}: ${item.error}\n`;
+              });
+          }
+
+          report += `\n✅ All data cached for instant follow-up questions!`;
+
+          return report;
+        },
+      }),
+    },
+    stopWhen: stepCountIs(10),
+  });
+}
+
+/**
  * Coordinator Agent - Routes requests to specialized agents
  */
-export function createCoordinatorAgent(ctx: ActionCtx, userId: string) {
+export function createCoordinatorAgent(ctx: ActionCtx, userId: Id<"users">) {
   return new Agent(components.agent, {
     name: "CoordinatorAgent",
     languageModel: openai.chat("gpt-5"),
@@ -281,6 +731,7 @@ AVAILABLE SPECIALIZED AGENTS:
 2. MediaAgent - For YouTube videos, images, and media search
 3. SECAgent - For SEC filings and financial documents
 4. WebAgent - For web search and general information
+5. EntityResearchAgent - For researching companies and people (funding, competitors, work history, etc.)
 
 IMMEDIATE DELEGATION RULES:
 1. Analyze the user's request
@@ -298,6 +749,10 @@ EXAMPLES - IMMEDIATE DELEGATION:
 - "Find YouTube videos about Python programming" → IMMEDIATELY call delegateToMediaAgent("Find YouTube videos about Python programming")
 - "Find videos about Python" → IMMEDIATELY call delegateToMediaAgent("Find videos about Python")
 - "Find the revenue report" → IMMEDIATELY call delegateToDocumentAgent("Find the revenue report")
+- "Research Anthropic" → IMMEDIATELY call delegateToEntityResearchAgent("Research Anthropic")
+- "Tell me about Sam Altman" → IMMEDIATELY call delegateToEntityResearchAgent("Tell me about Sam Altman")
+- "Compare Anthropic and OpenAI" → IMMEDIATELY call delegateToEntityResearchAgent("Compare Anthropic and OpenAI")
+- "What's Anthropic's funding?" → IMMEDIATELY call delegateToEntityResearchAgent("What's Anthropic's funding?")
 
 CRITICAL RULES:
 1. NEVER ask clarifying questions - delegate immediately
@@ -443,8 +898,42 @@ RESPONSE STYLE:
           return text;
         },
       }),
+      delegateToEntityResearchAgent: createTool({
+        description: "Delegate entity research queries (companies, people) to the Entity Research Agent",
+        args: z.object({
+          query: z.string().describe("The user's query about companies or people"),
+        }),
+        handler: async (toolCtx, args): Promise<string> => {
+          console.log('[delegateToEntityResearchAgent] Delegating query:', args.query);
+          const entityResearchAgent = createEntityResearchAgent(ctx, userId);
+          const threadId = (toolCtx as any).threadId;
+
+          // Inject userId into context for tools to access
+          const contextWithUserId = {
+            ...ctx,
+            evaluationUserId: userId,
+          };
+
+          // Continue the thread with the entity research agent
+          // This reuses the existing thread context without creating a new user message
+          const { thread } = await entityResearchAgent.continueThread(contextWithUserId as any, { threadId });
+
+          // Use streamText to process within the current thread context
+          // The agent will see the conversation history and use tools to answer
+          const result = await thread.streamText({
+            system: `Process this delegated query: "${args.query}". Use your available tools to research entities and return comprehensive information.`,
+          });
+
+          await result.consumeStream();
+          const text = await result.text;
+          console.log('[delegateToEntityResearchAgent] Delegation complete, response length:', text.length);
+
+          return text;
+        },
+      }),
     },
     stopWhen: stepCountIs(10), // Allow multiple delegations
   });
 }
+
 

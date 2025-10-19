@@ -1,4 +1,4 @@
-import { useQuery, useAction } from "convex/react";
+import { useQuery, useAction, useMutation } from "convex/react";
 import { useRef, useState, useMemo, useEffect } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -10,6 +10,13 @@ import { DossierMediaGallery } from "./dossier/DossierMediaGallery";
 import { extractMediaFromBlocks, countMediaAssets } from "./dossier/mediaExtractor";
 import UnifiedEditor from "@/components/UnifiedEditor";
 import type { VideoAsset, ImageAsset, DocumentAsset } from "./dossier/mediaExtractor";
+
+type QuickNotesDocument = {
+  _id: Id<"documents">;
+  content?: string | null;
+  title?: string | null;
+  parentDossierId?: Id<"documents"> | null;
+};
 
 interface DossierViewerProps {
   documentId: Id<"documents">;
@@ -26,9 +33,56 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   const document = useQuery(api.documents.getById, { documentId });
   const linkedAssets = useQuery(api.documents.getLinkedAssets, { dossierId: documentId });
   const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
+  const ensureQuickNotesDoc = useMutation(api.documents.getOrCreateQuickNotes);
 
-  // Get or create a separate Quick Notes document linked to this dossier
-  const quickNotesDoc = useQuery(api.documents.getOrCreateQuickNotes, { dossierId: documentId });
+  const [quickNotesDoc, setQuickNotesDoc] = useState<QuickNotesDocument | null>(null);
+  const quickNotesRequestRef = useRef<Promise<QuickNotesDocument | null> | null>(null);
+  const quickNotesAttemptedRef = useRef(false);
+
+  // Reset cached quick notes when switching dossiers
+  useEffect(() => {
+    setQuickNotesDoc(null);
+    quickNotesRequestRef.current = null;
+    quickNotesAttemptedRef.current = false;
+  }, [documentId]);
+
+  // Ensure a dedicated quick notes document exists for this dossier
+  useEffect(() => {
+    if (document === undefined || document === null) {
+      return;
+    }
+
+    if (quickNotesDoc || quickNotesRequestRef.current || quickNotesAttemptedRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+    quickNotesAttemptedRef.current = true;
+    const promise = ensureQuickNotesDoc({ dossierId: documentId }) as Promise<QuickNotesDocument | null>;
+    quickNotesRequestRef.current = promise;
+
+    promise
+      .then((doc) => {
+        if (!cancelled && doc && doc._id) {
+          setQuickNotesDoc(doc);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error("[DossierViewer] Failed to load quick notes document:", error);
+          quickNotesAttemptedRef.current = false;
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          quickNotesRequestRef.current = null;
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [document, documentId, ensureQuickNotesDoc, quickNotesDoc]);
 
   // Panel state - Horizontal (left/right)
   const DEFAULT_H_LAYOUT = [65, 35] as const;

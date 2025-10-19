@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ConvexClient } from 'convex/browser';
 import { api } from '../../_generated/api';
+import type { Id } from '../../_generated/dataModel';
 
 /**
  * E2E Tests for Coordinator Agent
@@ -19,7 +20,7 @@ import { api } from '../../_generated/api';
 describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Coordinator Agent E2E Tests', () => {
   let client: ConvexClient;
   let testThreadId: string;
-  const testUserId = 'test-user-' + Date.now();
+  const testUserId = ('test-user-' + Date.now()) as Id<"users">;;
 
   beforeAll(() => {
     // Initialize Convex client with deployment URL from env
@@ -194,7 +195,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Coordinator Agent E2E Tests
       // Should not have malformed JSON in markers
       const galleryMatches = result.response.match(/<!-- .*?_GALLERY_DATA\n([\s\S]*?)\n-->/g);
       if (galleryMatches) {
-        galleryMatches.forEach((match) => {
+        galleryMatches.forEach((match: string) => {
           const jsonMatch = match.match(/<!-- .*?_GALLERY_DATA\n([\s\S]*?)\n-->/);
           if (jsonMatch) {
             expect(() => JSON.parse(jsonMatch[1])).not.toThrow();
@@ -265,7 +266,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Coordinator Agent E2E Tests
 
       // Valid agent names
       const validAgents = ['Document', 'Media', 'SEC', 'Web'];
-      result.agentsUsed.forEach((agent) => {
+      result.agentsUsed.forEach((agent: string) => {
         expect(validAgents).toContain(agent);
       });
     }, 1200000); // 1200 second timeout for real API calls
