@@ -24,6 +24,7 @@ import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaE
 import { GoalCard, type TaskStatusItem } from './FastAgentPanel.GoalCard';
 import { ThoughtBubble } from './FastAgentPanel.ThoughtBubble';
 import { CitationLink } from './FastAgentPanel.CitationLink';
+import { DocumentActionGrid, extractDocumentActions, removeDocumentActionMarkers } from './DocumentActionCard';
 
 interface UIMessageBubbleProps {
   message: UIMessage;
@@ -34,6 +35,7 @@ interface UIMessageBubbleProps {
   onPersonSelect?: (person: PersonOption) => void;
   onEventSelect?: (event: EventOption) => void;
   onNewsSelect?: (article: NewsArticleOption) => void;
+  onDocumentSelect?: (documentId: string) => void;
   isParent?: boolean; // Whether this message has child messages
   isChild?: boolean; // Whether this is a child message (specialized agent)
   agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
@@ -495,6 +497,7 @@ export function UIMessageBubble({
   onPersonSelect,
   onEventSelect,
   onNewsSelect,
+  onDocumentSelect,
   isParent,
   isChild,
   agentRole,
@@ -682,9 +685,33 @@ export function UIMessageBubble({
     return combinedMedia;
   }, [message.parts, isUser, visibleText]);
 
-  // Clean text by removing media markers (for display purposes)
+  // Extract document actions from tool results
+  const extractedDocuments = useMemo(() => {
+    if (isUser) return [];
+
+    // Extract all tool-result parts from message
+    const toolResultParts = message.parts.filter((p): p is any =>
+      p.type === 'tool-result'
+    );
+
+    // Combine documents from all tool results
+    const documents = toolResultParts.reduce((acc, part) => {
+      const resultText = String(part.result || '');
+      const docs = extractDocumentActions(resultText);
+      return [...acc, ...docs];
+    }, [] as any[]);
+
+    // ALSO extract from final text
+    const textDocs = extractDocumentActions(visibleText || '');
+
+    return [...documents, ...textDocs];
+  }, [isUser, message.parts, visibleText]);
+
+  // Clean text by removing media markers and document action markers (for display purposes)
   const cleanedText = useMemo(() => {
-    return removeMediaMarkersFromText(visibleText || '');
+    let cleaned = removeMediaMarkersFromText(visibleText || '');
+    cleaned = removeDocumentActionMarkers(cleaned);
+    return cleaned;
   }, [visibleText]);
 
   return (
@@ -787,6 +814,15 @@ export function UIMessageBubble({
         {/* This ensures videos, sources, etc. are always visible inline */}
         {!isUser && (
           <RichMediaSection media={extractedMedia} showCitations={true} />
+        )}
+
+        {/* Document Actions - Show created/updated documents */}
+        {!isUser && extractedDocuments.length > 0 && (
+          <DocumentActionGrid
+            documents={extractedDocuments}
+            title="Documents"
+            onDocumentSelect={onDocumentSelect}
+          />
         )}
 
         {/* Collapsible Agent Progress Section */}

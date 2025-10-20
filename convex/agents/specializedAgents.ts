@@ -27,7 +27,7 @@ import {
 /**
  * Document Agent - Specializes in document operations
  */
-export function createDocumentAgent(_ctx: ActionCtx, _userId: string) {
+export function createDocumentAgent(ctx: ActionCtx, userId: string) {
   return new Agent(components.agent, {
     name: "DocumentAgent",
     languageModel: openai.chat("gpt-5-mini"),
@@ -47,11 +47,22 @@ CRITICAL RULES - BEST-EFFORT EXECUTION:
    - First call findDocument to locate it
    - Then IMMEDIATELY call getDocumentContent to retrieve the full content
    - Display the content to the user
-3. When creating documents, use clear titles and organize them properly
-4. Always provide the document ID when referencing documents
-5. If multiple documents match, show the most relevant one first
-6. If query is ambiguous, make a reasonable assumption and search immediately
-7. Include a brief note at the END if you made assumptions
+3. When user asks to CREATE, MAKE, or NEW document:
+   - IMMEDIATELY call createDocument with a clear title
+   - If no specific title given, use a descriptive default like "New Document" or infer from context
+   - Do NOT ask for clarification - just create it
+4. When creating documents, use clear titles and organize them properly
+5. Always provide the document ID when referencing documents
+6. If multiple documents match, show the most relevant one first
+7. If query is ambiguous, make a reasonable assumption and execute immediately
+8. Include a brief note at the END if you made assumptions
+
+DOCUMENT CREATION EXAMPLES:
+- "Make new document" → createDocument with title "New Document"
+- "Create a document" → createDocument with title "New Document"
+- "Create a document about AI" → createDocument with title "AI Document"
+- "Make a new investment thesis" → createDocument with title "Investment Thesis"
+- "Create document for Q4 planning" → createDocument with title "Q4 Planning"
 
 BEST-EFFORT DOCUMENT RESOLUTION:
 - For partial titles: Search for the most likely match based on keywords
@@ -79,7 +90,7 @@ RESPONSE STYLE:
 /**
  * Media Agent - Specializes in YouTube videos, images, and media search
  */
-export function createMediaAgent(_ctx: ActionCtx, _userId: string) {
+export function createMediaAgent(ctx: ActionCtx, userId: string) {
   return new Agent(components.agent, {
     name: "MediaAgent",
     languageModel: openai.chat("gpt-5-mini"),
@@ -129,7 +140,7 @@ RESPONSE STYLE:
 /**
  * SEC Agent - Specializes in SEC filings and financial documents
  */
-export function createSECAgent(_ctx: ActionCtx, _userId: string) {
+export function createSECAgent(ctx: ActionCtx, userId: string) {
   return new Agent(components.agent, {
     name: "SECAgent",
     languageModel: openai.chat("gpt-5-mini"),
@@ -198,7 +209,7 @@ RESPONSE STYLE:
 /**
  * Web Agent - Specializes in web search and general information
  */
-export function createWebAgent(_ctx: ActionCtx, _userId: string) {
+export function createWebAgent(ctx: ActionCtx, userId: string) {
   return new Agent(components.agent, {
     name: "WebAgent",
     languageModel: openai.chat("gpt-5-mini"),
@@ -1079,9 +1090,51 @@ ${context.sources.length > 0 ? `**Sources:** ${context.sources.slice(0, 3).map((
 }
 
 /**
+ * Document Generation Agent - Generates document content without using tools
+ * Returns structured content that the UI can extract and save
+ */
+export function createDocumentGenerationAgent(_ctx: ActionCtx, _userId: Id<"users"> | null) {
+  return new Agent(components.agent, {
+    name: "DocumentGenerationAgent",
+    languageModel: openai.chat("gpt-5-chat-latest"),
+    instructions: `You are a document content generator. When the user asks you to create a document, you should:
+
+1. Generate comprehensive, well-structured content about the requested topic
+2. Format the content using markdown with clear headings and sections
+3. Return the content in this EXACT format:
+
+<!-- DOCUMENT_METADATA
+{
+  "title": "Document Title Here",
+  "summary": "Brief summary of the document"
+}
+-->
+
+# Main Title
+
+## Section 1
+Content for section 1...
+
+## Section 2
+Content for section 2...
+
+The UI will extract the metadata and content to create the actual document.
+
+IMPORTANT:
+- Always include the <!-- DOCUMENT_METADATA --> comment at the start
+- Use markdown formatting (# for h1, ## for h2, etc.)
+- Generate substantial, useful content (not just placeholders)
+- Be comprehensive and detailed
+- DO NOT use any tools - just generate the content as text`,
+    tools: {}, // No tools - just generate text
+    stopWhen: stepCountIs(3),
+  });
+}
+
+/**
  * Coordinator Agent - Routes requests to specialized agents
  */
-export function createCoordinatorAgent(ctx: ActionCtx, userId: Id<"users">) {
+export function createCoordinatorAgent(_ctx: ActionCtx, userId: Id<"users">) {
   return new Agent(components.agent, {
     name: "CoordinatorAgent",
     languageModel: openai.chat("gpt-5"),
@@ -1112,6 +1165,9 @@ EXAMPLES - IMMEDIATE DELEGATION:
 - "Find YouTube videos about Python programming" → IMMEDIATELY call delegateToMediaAgent("Find YouTube videos about Python programming")
 - "Find videos about Python" → IMMEDIATELY call delegateToMediaAgent("Find videos about Python")
 - "Find the revenue report" → IMMEDIATELY call delegateToDocumentAgent("Find the revenue report")
+- "Make new document" → IMMEDIATELY call delegateToDocumentAgent("Make new document")
+- "Create a document" → IMMEDIATELY call delegateToDocumentAgent("Create a document")
+- "Create a new document about X" → IMMEDIATELY call delegateToDocumentAgent("Create a new document about X")
 - "Research Anthropic" → IMMEDIATELY call delegateToEntityResearchAgent("Research Anthropic")
 - "Tell me about Sam Altman" → IMMEDIATELY call delegateToEntityResearchAgent("Tell me about Sam Altman")
 - "Compare Anthropic and OpenAI" → IMMEDIATELY call delegateToEntityResearchAgent("Compare Anthropic and OpenAI")
@@ -1136,24 +1192,18 @@ RESPONSE STYLE:
         }),
         handler: async (toolCtx, args): Promise<string> => {
           console.log('[delegateToDocumentAgent] Delegating query:', args.query);
-          const documentAgent = createDocumentAgent(ctx, userId);
+          console.log('[delegateToDocumentAgent] toolCtx.evaluationUserId:', (toolCtx as any).evaluationUserId);
+
+          const documentAgent = createDocumentAgent(toolCtx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          // Inject userId into context for tools to access
-          const contextWithUserId = {
-            ...ctx,
-            evaluationUserId: userId,
-          };
-
-          // Continue the thread with the document agent
-          // This reuses the existing thread context without creating a new user message
-          const { thread } = await documentAgent.continueThread(contextWithUserId as any, { threadId });
-
-          // Use streamText to process within the current thread context
-          // The agent will see the conversation history and use tools to answer
-          const result = await thread.streamText({
-            system: `Process this delegated query: "${args.query}". Use your available tools to find and return the requested information.`,
-          });
+          // toolCtx should already have evaluationUserId from parent agent's streamText call
+          // Just pass it through directly to the specialized agent
+          const result = await documentAgent.streamText(
+            toolCtx,
+            { threadId },
+            { prompt: args.query }
+          );
 
           await result.consumeStream();
           const text = await result.text;
@@ -1169,24 +1219,15 @@ RESPONSE STYLE:
         }),
         handler: async (toolCtx, args): Promise<string> => {
           console.log('[delegateToMediaAgent] Delegating query:', args.query);
-          const mediaAgent = createMediaAgent(ctx, userId);
+          const mediaAgent = createMediaAgent(toolCtx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          // Inject userId into context for tools to access
-          const contextWithUserId = {
-            ...ctx,
-            evaluationUserId: userId,
-          };
-
-          // Continue the thread with the media agent
-          // This reuses the existing thread context without creating a new user message
-          const { thread } = await mediaAgent.continueThread(contextWithUserId as any, { threadId });
-
-          // Use streamText to process within the current thread context
-          // The agent will see the conversation history and use tools to answer
-          const result = await thread.streamText({
-            system: `Process this delegated query: "${args.query}". Use your available tools to find and return the requested information.`,
-          });
+          // toolCtx should already have evaluationUserId from parent agent's streamText call
+          const result = await mediaAgent.streamText(
+            toolCtx,
+            { threadId },
+            { prompt: args.query }
+          );
 
           await result.consumeStream();
           const text = await result.text;
@@ -1202,24 +1243,15 @@ RESPONSE STYLE:
         }),
         handler: async (toolCtx, args): Promise<string> => {
           console.log('[delegateToSECAgent] Delegating query:', args.query);
-          const secAgent = createSECAgent(ctx, userId);
+          const secAgent = createSECAgent(toolCtx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          // Inject userId into context for tools to access
-          const contextWithUserId = {
-            ...ctx,
-            evaluationUserId: userId,
-          };
-
-          // Continue the thread with the SEC agent
-          // This reuses the existing thread context without creating a new user message
-          const { thread } = await secAgent.continueThread(contextWithUserId as any, { threadId });
-
-          // Use streamText to process within the current thread context
-          // The agent will see the conversation history and use tools to answer
-          const result = await thread.streamText({
-            system: `Process this delegated query: "${args.query}". Use your available tools to find and return the requested information.`,
-          });
+          // toolCtx should already have evaluationUserId from parent agent's streamText call
+          const result = await secAgent.streamText(
+            toolCtx,
+            { threadId },
+            { prompt: args.query }
+          );
 
           await result.consumeStream();
           const text = await result.text;
@@ -1235,24 +1267,15 @@ RESPONSE STYLE:
         }),
         handler: async (toolCtx, args): Promise<string> => {
           console.log('[delegateToWebAgent] Delegating query:', args.query);
-          const webAgent = createWebAgent(ctx, userId);
+          const webAgent = createWebAgent(toolCtx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          // Inject userId into context for tools to access
-          const contextWithUserId = {
-            ...ctx,
-            evaluationUserId: userId,
-          };
-
-          // Continue the thread with the web agent
-          // This reuses the existing thread context without creating a new user message
-          const { thread } = await webAgent.continueThread(contextWithUserId as any, { threadId });
-
-          // Use streamText to process within the current thread context
-          // The agent will see the conversation history and use tools to answer
-          const result = await thread.streamText({
-            system: `Process this delegated query: "${args.query}". Use your available tools to find and return the requested information.`,
-          });
+          // toolCtx should already have evaluationUserId from parent agent's streamText call
+          const result = await webAgent.streamText(
+            toolCtx,
+            { threadId },
+            { prompt: args.query }
+          );
 
           await result.consumeStream();
           const text = await result.text;
@@ -1268,24 +1291,15 @@ RESPONSE STYLE:
         }),
         handler: async (toolCtx, args): Promise<string> => {
           console.log('[delegateToEntityResearchAgent] Delegating query:', args.query);
-          const entityResearchAgent = createEntityResearchAgent(ctx, userId);
+          const entityResearchAgent = createEntityResearchAgent(toolCtx, userId);
           const threadId = (toolCtx as any).threadId;
 
-          // Inject userId into context for tools to access
-          const contextWithUserId = {
-            ...ctx,
-            evaluationUserId: userId,
-          };
-
-          // Continue the thread with the entity research agent
-          // This reuses the existing thread context without creating a new user message
-          const { thread } = await entityResearchAgent.continueThread(contextWithUserId as any, { threadId });
-
-          // Use streamText to process within the current thread context
-          // The agent will see the conversation history and use tools to answer
-          const result = await thread.streamText({
-            system: `Process this delegated query: "${args.query}". Use your available tools to research entities and return comprehensive information.`,
-          });
+          // toolCtx should already have evaluationUserId from parent agent's streamText call
+          const result = await entityResearchAgent.streamText(
+            toolCtx,
+            { threadId },
+            { prompt: args.query }
+          );
 
           await result.consumeStream();
           const text = await result.text;

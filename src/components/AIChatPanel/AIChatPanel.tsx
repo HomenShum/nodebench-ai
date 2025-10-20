@@ -443,7 +443,7 @@ export function AIChatPanel({ isOpen, onClose, onDocumentSelect: _onDocumentSele
   const _createNode = useMutation(api.nodes_extras.create);
   const _updateNode = useMutation(api.nodes.update);
   const _archiveNode = useMutation(api.nodes_extras.archive);
-  const _createDocument = useMutation(api.documents.create);
+  const _createDocument = useMutation(api.prosemirror.createDocumentWithInitialSnapshot);
   const _updateDocument = useMutation(api.documents.update);
   const _archiveDocument = useMutation(api.documents.archive);
   const _renameFile = useMutation(api.files.renameFile);

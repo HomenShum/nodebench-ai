@@ -301,20 +301,20 @@ function extractLinkupMedia(output: any, timestamp: number, toolName: string): E
 
   try {
     let data = output;
-    
+
     if (typeof output === "string") {
       try {
         data = JSON.parse(output);
       } catch {
-        // If not JSON, try to extract image URLs from markdown
-        // Format: ![alt text](url) or ![Image](url)
+        // If not JSON, try to extract from markdown format
+        console.log(`[extractLinkupMedia] Parsing markdown format...`);
+
+        // Extract images from markdown: ![alt text](url)
         const markdownImageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-        const matches = output.matchAll(markdownImageRegex);
+        const imageMatches = output.matchAll(markdownImageRegex);
 
-        console.log(`[extractLinkupMedia] Parsing markdown for images...`);
         let imageCount = 0;
-
-        for (const match of matches) {
+        for (const match of imageMatches) {
           const altText = match[1];
           const url = match[2];
 
@@ -335,8 +335,41 @@ function extractLinkupMedia(output: any, timestamp: number, toolName: string): E
             metadata: {},
           });
         }
-
         console.log(`[extractLinkupMedia] Extracted ${imageCount} images from markdown`);
+
+        // Extract news articles from SOURCE_GALLERY_DATA JSON comment
+        const sourceGalleryRegex = /<!--\s*SOURCE_GALLERY_DATA\s*\n([\s\S]*?)\n-->/;
+        const galleryMatch = output.match(sourceGalleryRegex);
+
+        if (galleryMatch && galleryMatch[1]) {
+          try {
+            const galleryData = JSON.parse(galleryMatch[1]);
+            console.log(`[extractLinkupMedia] Found SOURCE_GALLERY_DATA with ${galleryData.length} items`);
+
+            if (Array.isArray(galleryData)) {
+              for (const item of galleryData) {
+                if (item.url && item.title) {
+                  assets.push({
+                    type: "news",
+                    url: item.url,
+                    title: item.title,
+                    thumbnail: undefined,
+                    timestamp,
+                    toolName,
+                    metadata: {
+                      snippet: item.description,
+                      source: item.domain,
+                    },
+                  });
+                }
+              }
+              console.log(`[extractLinkupMedia] Extracted ${galleryData.length} news articles from SOURCE_GALLERY_DATA`);
+            }
+          } catch (error) {
+            console.log(`[extractLinkupMedia] Failed to parse SOURCE_GALLERY_DATA:`, error);
+          }
+        }
+
         return assets;
       }
     }

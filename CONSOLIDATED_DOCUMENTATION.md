@@ -672,7 +672,7 @@
 
 # Source: .\IMPLEMENTATION_COMPLETE.md
 
-- Preview: # SEC Entity Disambiguation - Implementation Complete ✅ ## Summary Successfully implemented a comprehensive entity disambiguation system for SEC filing searches with LLM validation and Human-in-the-Loop (HITL) confirmation. The system intelligently detects ambiguous company names, validates matches using GPT-4o, and prompts users for explicit confirmation when needed. ## What Was Built ### Backend
+- Preview: # SEC Entity Disambiguation - Implementation Complete ✅ ## Summary Successfully implemented a comprehensive entity disambiguation system for SEC filing searches with LLM validation and Human-in-the-Loop (HITL) confirmation. The system intelligently detects ambiguous company names, validates matches using GPT-5, and prompts users for explicit confirmation when needed. ## What Was Built ### Backend
 - Lines: 297
 - Characters: 8493
 

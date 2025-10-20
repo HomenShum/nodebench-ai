@@ -1161,6 +1161,8 @@ export function DocumentsHomeHub({
 
   const createDocument = useMutation(api.documents.create);
 
+  const createWithSnapshot = useMutation(api.prosemirror.createDocumentWithInitialSnapshot);
+
   const setDocumentType = useMutation(api.documents.setDocumentType);
 
   const createTimelineForDoc = useMutation(
@@ -3664,7 +3666,10 @@ export function DocumentsHomeHub({
   const handleCreateDocument = async (type: "text" | "calendar") => {
     const title = type === "calendar" ? "New Calendar" : "Untitled Document";
 
-    const newDoc = await createDocument({ title });
+    const newDoc = await createWithSnapshot({
+      title,
+      initialContent: { type: "doc", content: [] },
+    } as any);
 
     handleSelectDocument(newDoc);
   };

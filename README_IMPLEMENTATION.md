@@ -1,15 +1,69 @@
-# Multi-Agent Orchestration: Query Patterns Implementation
+# NodeBench AI - Feature Implementation Guide
 
 ## 🎯 Overview
 
-This implementation provides **100% support** for both multi-agent orchestration query patterns:
+NodeBench AI is an AI-powered document management and research platform with advanced features:
 
-1. **Criteria-Based Search**: Find companies matching specific criteria
-2. **Named Company List + CRM**: Research specific companies with comprehensive CRM fields
+1. **Multi-Agent Orchestration**: Criteria-based search and company research
+2. **Smart Document Linking**: Hashtag-based dossier creation with hybrid search
+3. **Intelligent Context**: @mentions and #hashtags with semantic search
+4. **Fast Agent Panel**: Streaming AI responses with tool execution
+
+---
+
+## ✨ New Features
+
+### 🔗 Hashtag Dossier System
+
+Create intelligent dossiers by typing hashtags in any document. The system automatically searches and links related documents using hybrid search (exact + semantic).
+
+**How to Use**:
+1. Type `#` followed by a keyword (e.g., `#LLMagents`)
+2. Select "Search for 'LLMagents' and create dossier"
+3. System searches all documents using:
+   - **Exact title match** (fast index search)
+   - **Exact content match** (full-text search)
+   - **Semantic match** (RAG vector search)
+4. Creates a dossier with clickable links to all matching documents
+5. Click the hashtag to view the dossier
+
+**Features**:
+- ⏳ **Immediate feedback**: Loading indicator appears instantly
+- 🎯 **Match type badges**: Shows how each document was found
+  - 🎯 Hybrid (Exact + Semantic)
+  - 📍 Exact (Title + Content)
+  - 📄 Exact Content Match
+  - 🔍 Semantic Match
+- 📊 **Match scores**: Shows relevance percentage for each document
+- 🔗 **Smart links**: Single-click for preview, double-click to open
+- 📝 **Snippets**: Shows relevant text excerpts
+
+**Technical Details**:
+- Uses TipTap JSON format for dossier content
+- Combines Convex search indexes with RAG semantic search
+- Deduplicates results across search methods
+- Caches results for performance
 
 ---
 
 ## 📋 Quick Start
+
+### Hashtag Dossiers
+
+```
+1. Open any document in UnifiedEditor
+2. Type: #MachineLearning
+3. Select: "Search for 'MachineLearning' and create dossier"
+4. Wait for loading indicator (⏳)
+5. Click the hashtag to view dossier with all related documents
+
+Result: Dossier with 12 documents
+- 🎯 "Building ML Pipelines" (100%)
+- 📍 "ML Best Practices" (95%)
+- 📄 "Neural Networks Guide" (90%)
+- 🔍 "AI Research Papers" (75%)
+...
+```
 
 ### Query Pattern 1: Criteria-Based Search
 
@@ -146,6 +200,28 @@ Entity Contexts Cache (7-day TTL)
 ---
 
 ## 🛠️ Implementation Files
+
+### Hashtag Dossier System (3 files)
+
+1. **`convex/hashtagDossiers.ts`**
+   - `searchForHashtag` action: Hybrid search (exact + RAG)
+   - `createHashtagDossier` mutation: Creates dossier with links
+   - `getRecentHashtags` query: Recent hashtag suggestions
+
+2. **`src/components/UnifiedEditor.tsx`**
+   - Hashtag inline content spec with click handlers
+   - Suggestion menu with search preview
+   - Loading indicator UX
+
+3. **`src/components/HashtagQuickNotePopover.tsx`**
+   - Mini popover for hashtag preview
+   - TipTap content parsing
+   - Document link extraction
+
+4. **`src/components/views/DossierViewer.tsx`**
+   - Renders dossier content with clickable links
+   - Single-click → Mini editor popover
+   - Double-click → Full document
 
 ### Core Implementation (5 files)
 

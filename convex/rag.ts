@@ -96,8 +96,20 @@ export const addDocumentToRag = internalAction({
   handler: async (ctx, { documentId }) => {
     const doc = await ctx.runQuery(api.documents.getById, { documentId });
     if (!doc) throw new Error("document not found");
-    // Use title + content plain text as chunks (very naïve)
-    const text = `${doc.title}\n\n${doc.content ?? ""}`;
+
+    // Attempt to extract plain text from TipTap JSON; fallback to raw content
+    let plain = "";
+    try {
+      const contentStr = String((doc as any).content ?? "");
+      const maybeJson = JSON.parse(contentStr);
+      // Lazy import to avoid cyclic deps during build
+      const { extractTextFromTipTap } = await import("./lib/markdownToTipTap");
+      plain = extractTextFromTipTap(maybeJson as any) || contentStr;
+    } catch {
+      plain = String((doc as any).content ?? "");
+    }
+
+    const text = `${(doc as any).title}\n\n${plain}`;
     await rag.add(ctx, {
       namespace: "global",
       key: documentId, // unique key

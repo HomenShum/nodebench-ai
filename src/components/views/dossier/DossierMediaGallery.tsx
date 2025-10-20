@@ -1,9 +1,11 @@
 // src/components/views/dossier/DossierMediaGallery.tsx
 // Right panel media gallery with collapsible sections for videos, images, and documents
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Video, Image as ImageIcon, FileText, Play, ExternalLink, X, Download } from 'lucide-react';
 import type { VideoAsset, ImageAsset, DocumentAsset } from './mediaExtractor';
+import MiniEditorPopover from '../../MiniEditorPopover';
+import type { Id } from '../../../../convex/_generated/dataModel';
 
 interface DossierMediaGalleryProps {
   videos: VideoAsset[];
@@ -24,6 +26,10 @@ export function DossierMediaGallery({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['videos', 'images', 'documents'])
   );
+
+  // State for document popover
+  const [openDocumentId, setOpenDocumentId] = useState<Id<"documents"> | null>(null);
+  const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoAsset | null>(null);
   const [selectedImage, setSelectedImage] = useState<{ asset: ImageAsset; index: number } | null>(null);
 
@@ -37,6 +43,16 @@ export function DossierMediaGallery({
       }
       return next;
     });
+  };
+
+  const handleDocumentClick = (documentId: Id<"documents">, anchorEl: HTMLElement) => {
+    setOpenDocumentId(documentId);
+    setPopoverAnchor(anchorEl);
+  };
+
+  const closeDocumentPopover = () => {
+    setOpenDocumentId(null);
+    setPopoverAnchor(null);
   };
 
   const hasMedia = videos.length > 0 || images.length > 0 || documents.length > 0;
@@ -110,7 +126,7 @@ export function DossierMediaGallery({
         >
           <div className="space-y-2 p-3">
             {documents.map((doc, idx) => (
-              <DocumentCard key={idx} document={doc} />
+              <DocumentCard key={idx} document={doc} onDocumentClick={handleDocumentClick} />
             ))}
           </div>
         </MediaSection>
@@ -131,6 +147,16 @@ export function DossierMediaGallery({
           currentIndex={selectedImage.index}
           onClose={() => setSelectedImage(null)}
           onNavigate={(newIndex) => setSelectedImage({ asset: images[newIndex], index: newIndex })}
+        />
+      )}
+
+      {/* Document Popover */}
+      {openDocumentId && popoverAnchor && (
+        <MiniEditorPopover
+          isOpen={true}
+          documentId={openDocumentId}
+          anchorEl={popoverAnchor}
+          onClose={closeDocumentPopover}
         />
       )}
     </div>
@@ -256,16 +282,77 @@ function ImageThumbnail({ image, onClick }: ImageThumbnailProps) {
  */
 interface DocumentCardProps {
   document: DocumentAsset;
+  onDocumentClick?: (documentId: Id<"documents">, anchorEl: HTMLElement) => void;
 }
 
-function DocumentCard({ document }: DocumentCardProps) {
+function DocumentCard({ document, onDocumentClick }: DocumentCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const clickCountRef = useRef(0);
+
+  // Check if this is a local document (internal app URL)
+  const isLocalDocument = document.url.startsWith('/documents/');
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (!isLocalDocument) {
+      // For external URLs, let the default <a> behavior handle it
+      return;
+    }
+
+    e.preventDefault();
+
+    // Extract document ID from URL: /documents/{id}
+    const docId = document.url.split('/documents/')[1] as Id<"documents">;
+    if (!docId) return;
+
+    clickCountRef.current += 1;
+
+    // Clear existing timer
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+    }
+
+    // Set new timer to distinguish single vs double click
+    clickTimerRef.current = setTimeout(() => {
+      if (clickCountRef.current === 1) {
+        // Single click - open popover
+        if (onDocumentClick && cardRef.current) {
+          onDocumentClick(docId, cardRef.current);
+        }
+      } else if (clickCountRef.current >= 2) {
+        // Double click - navigate to full document
+        try {
+          window.dispatchEvent(
+            new CustomEvent('nodebench:openDocument', {
+              detail: { documentId: docId }
+            })
+          );
+        } catch (err) {
+          console.error('[DocumentCard] Failed to navigate to document:', err);
+        }
+      }
+      clickCountRef.current = 0;
+    }, 250); // 250ms delay to detect double click
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <a
-      href={document.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:shadow-sm transition-all group"
-    >
+    <div ref={cardRef}>
+      <a
+        href={document.url}
+        target={isLocalDocument ? undefined : "_blank"}
+        rel={isLocalDocument ? undefined : "noopener noreferrer"}
+        onClick={handleClick}
+        className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:shadow-sm transition-all group cursor-pointer"
+      >
       <div className="flex gap-3">
         {document.thumbnail && (
           <img
@@ -293,6 +380,7 @@ function DocumentCard({ document }: DocumentCardProps) {
         </div>
       </div>
     </a>
+    </div>
   );
 }
 

@@ -147,30 +147,122 @@ async function handleDocumentEdit(
 ): Promise<string> {
   const { message, documentId, userId, runId, model, fastMode } = args;
 
-  // TODO: Implement fast_agents orchestrator integration
-  // For now, return a placeholder response
-  // This will be implemented in the fast_agents directory
+  try {
+    // Emit thinking event
+    if (runId) {
+      await emitEvent(ctx, runId, "thinking", "Analyzing document edit request...");
+    }
 
-  // Emit thinking event
-  if (runId) {
-    await emitEvent(ctx, runId, "thinking", "Analyzing document edit request...");
+    // Get document context
+    const doc = await ctx.runQuery(api.documents.getById, { documentId });
+    if (!doc) throw new Error("Document not found");
+
+    // Emit thinking event
+    if (runId) {
+      await emitEvent(ctx, runId, "thinking", `Working on document: ${doc.title}`);
+    }
+
+    // Import editing and validation agents
+    const { generateEdits } = await import("./fast_agents/editingAgent");
+    const { validateEdits } = await import("./fast_agents/validationAgent");
+
+    // Generate edit proposals
+    if (runId) {
+      await emitEvent(ctx, runId, "thinking", "Generating edit proposals...");
+    }
+
+    const editOutput = await generateEdits(ctx, {
+      message,
+      documentId,
+      currentContent: doc.content || "",
+      currentTitle: doc.title,
+    });
+
+    // Validate proposals
+    if (runId) {
+      await emitEvent(ctx, runId, "thinking", "Validating edit proposals...");
+    }
+
+    const validationOutput = await validateEdits(ctx, {
+      proposals: editOutput.proposals,
+      documentId: String(documentId),
+      currentContent: doc.content || "",
+      currentTitle: doc.title,
+    });
+
+    if (!validationOutput.valid) {
+      const errorMsg = validationOutput.errors.join("; ");
+      return `I encountered issues with the edit proposals: ${errorMsg}. Please try again with a clearer request.`;
+    }
+
+    // Apply approved proposals
+    if (runId) {
+      await emitEvent(ctx, runId, "thinking", "Applying edits...");
+    }
+
+    let appliedCount = 0;
+    for (const proposal of validationOutput.approvedProposals) {
+      try {
+        if (proposal.type === "title") {
+          await ctx.runMutation(api.documents.update, {
+            id: documentId,
+            title: proposal.newValue,
+          });
+          appliedCount++;
+        } else if (proposal.type === "content") {
+          await ctx.runMutation(api.documents.update, {
+            id: documentId,
+            content: proposal.newValue,
+          });
+          appliedCount++;
+        } else if (proposal.type === "append") {
+          // Append to existing content
+          const newContent = (doc.content || "") + "\n\n" + proposal.newValue;
+          await ctx.runMutation(api.documents.update, {
+            id: documentId,
+            content: newContent,
+          });
+          appliedCount++;
+        } else if (proposal.type === "replace") {
+          // Replace specific section (if target is provided)
+          if (proposal.target) {
+            const newContent = (doc.content || "").replace(
+              new RegExp(proposal.target, "gi"),
+              proposal.newValue
+            );
+            await ctx.runMutation(api.documents.update, {
+              id: documentId,
+              content: newContent,
+            });
+          }
+          appliedCount++;
+        }
+      } catch (error) {
+        console.error("[handleDocumentEdit] Error applying proposal:", error);
+      }
+    }
+
+    // Build response
+    let response = `✅ Successfully edited "${doc.title}"!\n\n`;
+    response += `Applied ${appliedCount} edit(s):\n`;
+    for (const proposal of validationOutput.approvedProposals) {
+      response += `• ${proposal.type}: ${proposal.reason}\n`;
+    }
+
+    if (validationOutput.warnings.length > 0) {
+      response += `\n⚠️ Warnings:\n`;
+      for (const warning of validationOutput.warnings) {
+        response += `• ${warning}\n`;
+      }
+    }
+
+    response += `\n${editOutput.explanation}`;
+
+    return response;
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return `❌ Error editing document: ${errorMsg}. Please try again.`;
   }
-
-  // Get document context
-  const doc = await ctx.runQuery(api.documents.getById, { documentId });
-  if (!doc) throw new Error("Document not found");
-
-  // Emit thinking event
-  if (runId) {
-    await emitEvent(ctx, runId, "thinking", `Working on document: ${doc.title}`);
-  }
-
-  // For now, return a simple response
-  // TODO: Replace with actual fast_agents orchestrator call
-  const response = `I understand you want to edit the document "${doc.title}". ` +
-    `The fast_agents orchestrator will be integrated here to handle: ${message}`;
-
-  return response;
 }
 
 /**
