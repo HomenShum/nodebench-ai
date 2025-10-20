@@ -17,6 +17,8 @@ const documents = defineTable({
   coverImage:  v.optional(v.id("_storage")),
   // LEGACY: holds ProseMirror JSON blob; retained temporarily for migration
   content:     v.optional(v.string()),
+  summary:    v.optional(v.string()),
+
   icon:        v.optional(v.string()),
   isArchived:  v.optional(v.boolean()),
   isFavorite:  v.optional(v.boolean()),
@@ -68,6 +70,9 @@ const documents = defineTable({
     toolName:      v.optional(v.string()),         // Which tool found this asset
     metadata:      v.optional(v.any()),            // Additional metadata (title, description, etc.)
   })),
+  // Idempotency key for creation (threadId + title + content hash)
+  creationKey: v.optional(v.string()),
+
 })
   .index("by_user",           ["createdBy"])
   .index("by_user_archived",  ["createdBy", "isArchived"])
@@ -75,6 +80,8 @@ const documents = defineTable({
   .index("by_public",         ["isPublic"])
   // For calendar integration: query notes by day per-user
   .index("by_user_agendaDate", ["createdBy", "agendaDate"])
+  // Fast idempotency lookup
+  .index("by_creation_key", ["creationKey"])
   // For dossier pattern: query linked assets by parent dossier
   .index("by_parent_dossier", ["parentDossierId"])
   // For dossier pattern: query all documents from a chat thread

@@ -2,9 +2,10 @@
 // Scrollable message container for UIMessages from Agent component
 // Supports hierarchical rendering for coordinator/specialized agent delegation
 
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useTransition, useDeferredValue } from 'react';
 import { UIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import { TypingIndicator } from './TypingIndicator';
+import { useSmartAutoScroll } from './hooks/useSmartAutoScroll';
 import type { UIMessage } from '@convex-dev/agent/react';
 import type { CompanyOption } from './CompanySelectionCard';
 import type { PersonOption } from './PeopleSelectionCard';
@@ -16,15 +17,17 @@ interface UIMessageStreamProps {
   autoScroll?: boolean;
   onMermaidRetry?: (error: string, code: string) => void;
   onRegenerateMessage?: (messageKey: string) => void;
-  onDeleteMessage?: (messageKey: string) => void;
+  onDeleteMessage?: (messageId: string) => void;
   onCompanySelect?: (company: CompanyOption) => void;
   onPersonSelect?: (person: PersonOption) => void;
   onEventSelect?: (event: EventOption) => void;
   onNewsSelect?: (article: NewsArticleOption) => void;
+  onDocumentSelect?: (documentId: string) => void;
 }
 
 // Extended UIMessage type with hierarchical metadata
 interface ExtendedUIMessage extends UIMessage {
+  id?: string;
   _id?: string;
   metadata?: {
     agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
@@ -53,25 +56,41 @@ export function UIMessageStream({
   onPersonSelect,
   onEventSelect,
   onNewsSelect,
+  onDocumentSelect,
 }: UIMessageStreamProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [_isPending, startTransition] = useTransition();
 
-  // Auto-scroll to bottom when new messages arrive or content updates
+  // Use smart auto-scroll that respects user scroll position
+  const { autoScroll: smartAutoScroll, reset: resetScroll } = useSmartAutoScroll(
+    scrollRef as React.RefObject<HTMLDivElement>,
+    { nearBottomThreshold: 80, enableLogging: false }
+  );
+
+  // Defer heavy message filtering/grouping to prevent blocking UI
+  const deferredMessages = useDeferredValue(messages);
+
+  // Smart auto-scroll when new messages arrive
   useEffect(() => {
     if (!autoScroll) return;
+    smartAutoScroll();
+  }, [messages.length, autoScroll, smartAutoScroll]);
 
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, autoScroll]);
+  // Reset scroll state when starting new conversation
+  useEffect(() => {
+    resetScroll();
+  }, [resetScroll]);
 
   // Filter out empty messages and agent-generated sub-query messages before processing
+  // Use deferredMessages to prevent blocking UI during heavy filtering
   const filteredMessages = useMemo(() => {
-    console.log('[UIMessageStream] 📥 Input messages:', messages.length);
+    console.log('[UIMessageStream] 📥 Input messages:', deferredMessages.length);
 
     // First pass: identify delegation patterns
     const delegationIndices = new Set<number>();
 
-    messages.forEach((msg, idx) => {
+    deferredMessages.forEach((msg, idx) => {
       // Check if this message has delegation tool calls
       const hasDelegationTools = msg.parts?.some((p: any) =>
         p.type === 'tool-call' && p.toolName?.startsWith('delegateTo')
@@ -80,8 +99,8 @@ export function UIMessageStream({
       if (hasDelegationTools) {
         // Mark the next user messages as agent-generated sub-queries
         // These are created by specialized agents when they call generateText()
-        for (let i = idx + 1; i < messages.length; i++) {
-          const nextMsg = messages[i];
+        for (let i = idx + 1; i < deferredMessages.length; i++) {
+          const nextMsg = deferredMessages[i];
 
           // Stop when we hit an assistant message (the response to the delegation)
           if (nextMsg.role === 'assistant') break;
@@ -94,7 +113,7 @@ export function UIMessageStream({
       }
     });
 
-    const result = messages.filter((msg, idx) => {
+    const result = deferredMessages.filter((msg, idx) => {
       // Filter out ONLY agent-generated sub-query messages (between delegation and response)
       if (delegationIndices.has(idx)) {
         console.log('[UIMessageStream] ❌ Filtering agent-generated sub-query:', msg.text?.substring(0, 50));
@@ -130,7 +149,7 @@ export function UIMessageStream({
 
     console.log('[UIMessageStream] 📤 Filtered messages:', result.length);
     return result;
-  }, [messages]);
+  }, [deferredMessages]);
 
   // Infer hierarchy from tool calls (Option 3 approach)
   // When a coordinator message has delegation tool calls, the next N messages are likely children
@@ -306,11 +325,16 @@ export function UIMessageStream({
                     message={group.parent}
                     onMermaidRetry={onMermaidRetry}
                     onRegenerateMessage={onRegenerateMessage ? () => onRegenerateMessage(group.parent.key) : undefined}
-                    onDeleteMessage={onDeleteMessage ? () => onDeleteMessage(group.parent.key) : undefined}
+                    onDeleteMessage={
+                      onDeleteMessage && group.parent.id
+                        ? () => onDeleteMessage(group.parent.id)
+                        : undefined
+                    }
                     onCompanySelect={onCompanySelect}
                     onPersonSelect={onPersonSelect}
                     onEventSelect={onEventSelect}
                     onNewsSelect={onNewsSelect}
+                    onDocumentSelect={onDocumentSelect}
                     isParent={isParent}
                     agentRole={group.parent.metadata?.agentRole}
                   />
@@ -329,11 +353,16 @@ export function UIMessageStream({
                           message={child}
                           onMermaidRetry={onMermaidRetry}
                           onRegenerateMessage={onRegenerateMessage ? () => onRegenerateMessage(child.key) : undefined}
-                          onDeleteMessage={onDeleteMessage ? () => onDeleteMessage(child.key) : undefined}
+                          onDeleteMessage={
+                            onDeleteMessage && child.id
+                              ? () => onDeleteMessage(child.id)
+                              : undefined
+                          }
                           onCompanySelect={onCompanySelect}
                           onPersonSelect={onPersonSelect}
                           onEventSelect={onEventSelect}
                           onNewsSelect={onNewsSelect}
+                          onDocumentSelect={onDocumentSelect}
                           isChild={true}
                           agentRole={child.metadata?.agentRole}
                         />
@@ -344,6 +373,9 @@ export function UIMessageStream({
               </div>
             );
           })}
+
+          {/* Scroll anchor for smooth scroll anchoring */}
+          <div ref={messagesEndRef} className="h-0" />
 
           {/* Show typing indicator ONLY when:
               1. Last message is user and no assistant response yet (agent intercepting)
@@ -456,4 +488,3 @@ export function UIMessageStream({
     </div>
   );
 }
-

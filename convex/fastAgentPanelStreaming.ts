@@ -18,8 +18,11 @@ import {
   findDocument,
   getDocumentContent,
   analyzeDocument,
+  analyzeMultipleDocuments,
   updateDocument,
-  createDocument
+  createDocument,
+  generateEditProposals,
+  createDocumentFromAgentContentTool,
 } from "./tools/documentTools";
 import {
   searchMedia,
@@ -70,6 +73,11 @@ CRITICAL BEHAVIOR RULES:
    - First call findDocument to get the document ID
    - Then IMMEDIATELY call getDocumentContent with that ID (use the first result if multiple documents found)
    - DO NOT ask which version to open - just open the first one
+8. MULTI-DOCUMENT CONTEXT - When user has selected multiple documents (indicated by [CONTEXT: Analyzing N document(s): ...]):
+   - Use analyzeMultipleDocuments with ALL provided document IDs
+   - Choose appropriate analysisType: "comparison" for side-by-side, "synthesis" for combined insights, "aggregation" for data collection, "themes" for patterns, "relationships" for connections
+   - Provide comprehensive analysis that leverages all documents together
+   - Highlight connections and patterns across documents
 
 IMPORTANT Tool Selection Guidelines:
 - When the user asks to "find images" or "find videos":
@@ -82,6 +90,13 @@ IMPORTANT Tool Selection Guidelines:
 - For document-related queries:
   * Use findDocument to SEARCH for documents by title or content
   * Use getDocumentContent to READ/SHOW the actual content of a specific document
+  * Use analyzeMultipleDocuments when the user wants to:
+    - Compare multiple documents
+    - Synthesize information across documents
+    - Find common themes or patterns
+    - Aggregate data from multiple sources
+    - Analyze relationships between documents
+  * MULTI-DOCUMENT WORKFLOW: If user asks to compare/analyze multiple docs, first use findDocument to locate them, then call analyzeMultipleDocuments with all the IDs
   * CRITICAL: When user asks to "show", "read", "open", or "display" document content, you MUST call getDocumentContent after findDocument
   * Example workflow: User says "Show me the Revenue Report" → Call findDocument("Revenue Report") → Call getDocumentContent(documentId) → Return the content
 
@@ -123,6 +138,10 @@ Examples of IMMEDIATE execution:
 - "Update document title" → Call findDocument() then updateDocument() NOW → Respond with confirmation
 - "Mark task complete" → Call listTasks() then updateTask() NOW → Respond with confirmation
 - "Analyze image" → Call analyzeMediaFile() NOW → Respond with analysis
+
+Document Generation Save Workflow:
+- If your assistant text includes a DOCUMENT_METADATA block followed by markdown content, you MUST immediately call createDocumentFromAgentContentTool with the parsed title and the full markdown content (excluding the comment block). After the tool call, provide a short confirmation text mentioning the created document title. This ensures the timeline displays the creation as a tool call.
+
 
 CRITICAL RULES:
 1. NEVER ask "Would you like me to..." or "Should I..." for mutations - JUST DO IT!
@@ -189,7 +208,7 @@ Always provide clear, helpful responses and confirm actions you take.`,
       console.debug("[usageHandler] No userId, skipping tracking");
       return;
     }
-    
+
     await ctx.runMutation(internal.fastAgentPanelStreaming.insertApiUsage, {
       userId: args.userId,
       apiName: "openai",
@@ -209,8 +228,11 @@ Always provide clear, helpful responses and confirm actions you take.`,
     findDocument,
     getDocumentContent,
     analyzeDocument,
+    analyzeMultipleDocuments,
     updateDocument,
     createDocument,
+    generateEditProposals,
+    createDocumentFromAgentContentTool,
 
     // Media operations
     searchMedia,
@@ -286,10 +308,10 @@ export const listThreads = query({
               if (agentMessages && agentMessages.length > 0) {
                 messageCount = agentMessages.length;
               }
-              
+
               for (const message of agentMessages) {
                 const msg = message as any;
-                
+
                 // Track tools - agent component stores tool info in 'tool' field
                 if (msg.tool) {
                   if (typeof msg.tool === 'string') {
@@ -300,7 +322,7 @@ export const listThreads = query({
                     toolsUsed.add(msg.tool.toolName);
                   }
                 }
-                
+
                 // Also check message.message for tool call info
                 if (msg.message && typeof msg.message === 'object') {
                   if (msg.message.tool) {
@@ -314,14 +336,14 @@ export const listThreads = query({
                     }
                   }
                 }
-                
+
                 // Track model from provider metadata
                 if (msg.providerMetadata?.model) {
                   modelsUsed.add(msg.providerMetadata.model);
                 } else if (msg.message?.model) {
                   modelsUsed.add(msg.message.model);
                 }
-                
+
                 // Get last message text for preview
                 if (msg.text) {
                   lastMessage = msg.text.substring(0, 100);
@@ -332,12 +354,12 @@ export const listThreads = query({
               console.error("Error fetching agent messages:", err);
             }
           }
-          
+
           // Also check the model stored in the thread
           if (thread.model) {
             modelsUsed.add(thread.model);
           }
-          
+
           // Get last message from streaming messages if no agent message found
           if (!lastMessage && messages.length > 0) {
             const lastMsg = messages[messages.length - 1];
@@ -346,7 +368,7 @@ export const listThreads = query({
               lastMessageAt = lastMsg.updatedAt;
             }
           }
-          
+
           const enriched = {
             ...thread,
             messageCount,
@@ -515,17 +537,19 @@ export const deleteThread = mutation({
 
 /**
  * Delete a specific message from a thread
+ * Accepts either:
+ * - chatMessagesStream _id (stringified) OR
+ * - Agent component messageId (string)
  */
 export const deleteMessage = mutation({
   args: {
     threadId: v.id("chatThreadsStream"),
-    messageKey: v.string(),
+    messageId: v.string(), // flexible: supports stream _id or agent message id
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    // Verify thread ownership
     const thread = await ctx.db.get(args.threadId);
     if (!thread || thread.userId !== userId) {
       throw new Error("Thread not found or unauthorized");
@@ -535,74 +559,75 @@ export const deleteMessage = mutation({
       throw new Error("Thread does not have an associated agent thread");
     }
 
-    console.log(`[deleteMessage] Deleting message with key: ${args.messageKey} from agent thread: ${thread.agentThreadId}`);
+    console.log(`[deleteMessage] Deleting message: ${args.messageId}`);
+
+    // Helper to delete agent message safely (verifies thread)
+    const deleteAgentMessageIfOwned = async (agentMessageId: string) => {
+      try {
+        const [agentMsg] = await ctx.runQuery(components.agent.messages.getMessagesByIds, {
+          messageIds: [agentMessageId],
+        });
+        if (agentMsg && agentMsg.threadId === thread.agentThreadId) {
+          await ctx.runMutation(components.agent.messages.deleteByIds, {
+            messageIds: [agentMessageId],
+          });
+          console.log(`[deleteMessage] ✅ Deleted from agent messages`);
+        }
+      } catch (agentError) {
+        console.warn(`[deleteMessage] Could not delete from agent messages:`, agentError);
+      }
+    };
 
     try {
-      // Parse the UIMessage key format: `${threadId}-${order}-${stepOrder}`
-      const keyParts = String(args.messageKey).split("-");
-      const stepOrderStr = keyParts.pop();
-      const orderStr = keyParts.pop();
-      const order = Number(orderStr);
-      const stepOrder = Number(stepOrderStr);
+      // Try interpreting messageId as chatMessagesStream _id first
+      const streamMessage = await ctx.db.get(args.messageId as any);
 
-      if (!Number.isInteger(order)) {
-        console.warn(`[deleteMessage] Invalid key format, could not parse order from key: ${args.messageKey}`);
-        throw new Error("Invalid UIMessage key format (order)");
-      }
-
-      // First, try to locate the specific MessageDoc by (order, stepOrder)
-      const docs = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-        threadId: thread.agentThreadId,
-        order: "asc",
-        paginationOpts: { cursor: null, numItems: 1000 },
-      });
-
-      let target = docs.page.find((m: any) => m.order === order && Number.isInteger(stepOrder) ? m.stepOrder === stepOrder : m.stepOrder === 0);
-
-      // If not found with strict match, try a looser match on order only and pick the last step
-      if (!target) {
-        const sameOrder = docs.page.filter((m: any) => m.order === order);
-        if (sameOrder.length > 0) {
-          sameOrder.sort((a: any, b: any) => (a.stepOrder ?? 0) - (b.stepOrder ?? 0));
-          target = sameOrder[sameOrder.length - 1];
+      if (streamMessage) {
+        // Type guard: ensure it has expected fields
+        if (!("threadId" in streamMessage)) {
+          throw new Error("Invalid message type");
         }
-      }
+        // Verify belongs to thread
+        if ((streamMessage as any).threadId !== args.threadId) {
+          throw new Error("Message does not belong to this thread");
+        }
 
-      const agent = new Agent(components.agent, {
-        name: "DeleteAgent",
-        languageModel: openai.chat("gpt-5-mini"),
-      });
+        // Delete stream message
+        await ctx.db.delete((streamMessage as any)._id);
+        console.log(`[deleteMessage] ✅ Deleted from chatMessagesStream by _id`);
 
-      if (target?._id) {
-        console.log(`[deleteMessage] Deleting by messageId: ${target._id} (order=${target.order}, stepOrder=${target.stepOrder})`);
-        await agent.deleteMessage(ctx, { messageId: target._id });
-        console.log(`[deleteMessage] ✅ Message deleted successfully (by id)`);
+        // Cascade delete agent message if linked
+        const agentMessageId = (streamMessage as any).agentMessageId as string | undefined;
+        if (agentMessageId) {
+          console.log(`[deleteMessage] Deleting linked agent message: ${agentMessageId}`);
+          await deleteAgentMessageIfOwned(agentMessageId);
+        }
+
+        console.log(`[deleteMessage] ✅ Message deleted successfully`);
         return;
       }
 
-      // Fallback: delete by range using order/stepOrder
-      if (Number.isInteger(stepOrder)) {
-        console.log(`[deleteMessage] Fallback to range: order=${order}, stepOrder=${stepOrder}`);
-        await agent.deleteMessageRange(ctx, {
-          threadId: thread.agentThreadId,
-          startOrder: order,
-          startStepOrder: stepOrder,
-          endOrder: order,
-          endStepOrder: stepOrder + 1,
-        });
-      } else {
-        console.log(`[deleteMessage] Fallback to range: delete all messages at order=${order}`);
-        await agent.deleteMessageRange(ctx, {
-          threadId: thread.agentThreadId,
-          startOrder: order,
-          endOrder: order + 1,
-        });
-      }
+      // Otherwise, interpret messageId as Agent component message id
+      console.log(`[deleteMessage] Treating messageId as agent message id`);
+      await deleteAgentMessageIfOwned(args.messageId);
 
-      console.log(`[deleteMessage] ✅ Message deleted successfully (by range)`);
+      // Delete any corresponding stream messages linked to this agent message id
+      const linked = await ctx.db
+        .query("chatMessagesStream")
+        .withIndex("by_agentMessageId", (q) => q.eq("agentMessageId", args.messageId))
+        .collect();
+
+      for (const m of linked) {
+        if (m.threadId === args.threadId) {
+          await ctx.db.delete(m._id);
+        }
+      }
+      console.log(`[deleteMessage] ✅ Deleted ${linked.length} linked stream message(s)`);
+
+      console.log(`[deleteMessage] ✅ Message deleted successfully`);
     } catch (error) {
       console.error(`[deleteMessage] Error deleting message:`, error);
-      throw new Error(`Failed to delete message: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to delete message: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   },
 });
@@ -801,7 +826,10 @@ export const streamAsync = internalAction({
     const thread = await ctx.runQuery(components.agent.threads.getThread, {
       threadId: args.threadId
     });
+    console.log(`[streamAsync:${executionId}] Thread retrieved:`, { threadId: args.threadId, hasUserId: !!thread?.userId });
+
     const userId = (thread?.userId ?? null) as Id<"users"> | null;
+    console.log(`[streamAsync:${executionId}] userId from thread:`, userId);
 
     // Choose agent based on mode
     let agent;
@@ -822,31 +850,181 @@ export const streamAsync = internalAction({
 
     try {
       console.log(`[streamAsync:${executionId}] 📡 Calling ${agentType} agent.streamText...`);
+
+      // Create a context with userId for tools to access
+      // This allows tools like createDocument to authenticate properly
+      const contextWithUserId = {
+        ...ctx,
+        evaluationUserId: userId,
+      };
+
       const result = await agent.streamText(
-        ctx,
+        contextWithUserId as any,
         { threadId: args.threadId },
-        { promptMessageId: args.promptMessageId },
-        {
-          // Match the documentation's recommended settings
-          saveStreamDeltas: {
-            chunking: "word",   // Same as docs
-            throttleMs: 100     // Same as docs
-          }
-        }
+        { promptMessageId: args.promptMessageId }
+        // IMPORTANT: Do NOT use saveStreamDeltas here
+        // When tools are called, the agent needs to save tool result messages
+        // saveStreamDeltas only saves text deltas, not tool result messages
+        // This causes the error: "tool_call_ids did not have response messages"
+        // The agent will automatically save the complete message with all tool results
       );
 
       console.log(`[streamAsync:${executionId}] ✅ Stream started, messageId:`, result.messageId);
 
-      // Use consumeStream() as recommended in the docs
+      // Use consumeStream() to ensure all tool calls are executed and results are captured
+      // This waits for the entire stream to complete, including tool execution
       await result.consumeStream();
 
       console.log(`[streamAsync:${executionId}] 🏁 Stream completed successfully`);
+
+      // Get tool calls and results to verify they were captured
+      const toolCalls = await result.toolCalls;
+      const toolResults = await result.toolResults;
+      console.log(`[streamAsync:${executionId}] Tool calls: ${toolCalls?.length || 0}, Tool results: ${toolResults?.length || 0}`);
+
       // Note: Usage tracking is handled automatically by the agent's usageHandler
 
     } catch (error) {
       console.error(`[streamAsync:${executionId}] ❌ Error:`, error);
       throw error;
     }
+  },
+});
+
+/**
+ * Generate document content using the Document Generation Agent
+ * This action generates content and returns it to the UI for manual document creation
+ */
+export const generateDocumentContent = action({
+  args: {
+    prompt: v.string(),
+    threadId: v.string(),
+  },
+  returns: v.object({
+    title: v.string(),
+    content: v.string(),
+    summary: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    console.log(`[generateDocumentContent] Generating content for prompt: "${args.prompt}"`);
+
+    // Get userId from thread
+    const thread = await ctx.runQuery(components.agent.threads.getThread, {
+      threadId: args.threadId
+    });
+    const userId = (thread?.userId ?? null) as Id<"users"> | null;
+
+    // Create document generation agent
+    const { createDocumentGenerationAgent } = await import("./agents/specializedAgents");
+    const agent = createDocumentGenerationAgent(ctx, userId);
+
+    // Generate content
+    const result = await agent.streamText(
+      ctx,
+      { threadId: args.threadId },
+      { prompt: args.prompt }
+    );
+
+    await result.consumeStream();
+    const text = await result.text;
+
+    console.log(`[generateDocumentContent] Generated ${text.length} characters`);
+
+    // Extract metadata from the response
+    const metadataMatch = text.match(/<!-- DOCUMENT_METADATA\s*\n([\s\S]*?)\n-->/);
+    let title = "Untitled Document";
+    let summary = undefined;
+
+    if (metadataMatch) {
+      try {
+        const metadata = JSON.parse(metadataMatch[1]);
+        title = metadata.title || title;
+        summary = metadata.summary;
+      } catch (e) {
+        console.warn("[generateDocumentContent] Failed to parse metadata:", e);
+      }
+    }
+
+    // Extract content (remove metadata comment)
+    const content = text.replace(/<!-- DOCUMENT_METADATA[\s\S]*?-->\s*/, '').trim();
+
+    return { title, content, summary };
+  },
+});
+
+/**
+ * Create a document from agent-generated content
+ * This bypasses the agent tool mechanism and creates the document directly
+ * with proper authentication from the UI
+ */
+export const createDocumentFromAgentContent = mutation({
+  args: {
+    title: v.string(),
+    content: v.string(),
+    threadId: v.optional(v.string()), // Optional: link to the chat thread
+  },
+  returns: v.id("documents"),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    console.log(`[createDocumentFromAgentContent] Creating document: "${args.title}"`);
+
+    // Convert markdown/text content to EditorJS blocks
+    const contentBlocks = args.content.split('\n\n').map(paragraph => {
+      const trimmed = paragraph.trim();
+      if (!trimmed) return null;
+
+      // Check if it's a heading
+      if (trimmed.startsWith('# ')) {
+        return {
+          type: "heading",
+          level: 1,
+          text: trimmed.substring(2).trim(),
+        };
+      } else if (trimmed.startsWith('## ')) {
+        return {
+          type: "heading",
+          level: 2,
+          text: trimmed.substring(3).trim(),
+        };
+      } else if (trimmed.startsWith('### ')) {
+        return {
+          type: "heading",
+          level: 3,
+          text: trimmed.substring(4).trim(),
+        };
+      } else {
+        return {
+          type: "paragraph",
+          text: trimmed,
+        };
+      }
+    }).filter(Boolean);
+
+    // Build EditorJS format
+    const editorContent = {
+      type: "doc",
+      content: contentBlocks.length > 0 ? contentBlocks : [
+        { type: "paragraph", text: args.content }
+      ],
+    };
+
+    const documentId = await ctx.db.insert("documents", {
+      title: args.title,
+      content: JSON.stringify(editorContent),
+      createdBy: userId,
+      isPublic: false,
+      isArchived: false,
+      lastModified: Date.now(),
+      chatThreadId: args.threadId, // Link to chat thread if provided
+    });
+
+    console.log(`[createDocumentFromAgentContent] Document created: ${documentId}`);
+
+    return documentId;
   },
 });
 
@@ -1035,21 +1213,21 @@ export const insertApiUsage = internalMutation({
   handler: async (ctx, args) => {
     const timestamp = Date.now();
     const date = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD
-    
+
     // Transform usage format and calculate cost
     // From Convex Agent: inputTokens, outputTokens, totalTokens
     // GPT-5 Standard: $1.25/1M input, $10/1M output
     const inputTokens = args.usage.inputTokens ?? 0;
     const outputTokens = args.usage.outputTokens ?? 0;
     const totalTokens = args.usage.totalTokens ?? (inputTokens + outputTokens);
-    
+
     const inputCostPer1K = 0.00125;  // $1.25 per 1M
     const outputCostPer1K = 0.01;    // $10 per 1M
-    
+
     const estimatedCostCents = Math.round(
       (inputTokens / 1000 * inputCostPer1K + outputTokens / 1000 * outputCostPer1K) * 100
     );
-    
+
     // Insert usage record
     await ctx.db.insert("apiUsage", {
       userId: args.userId as Id<"users">,
@@ -1068,7 +1246,7 @@ export const insertApiUsage = internalMutation({
       success: true,
       responseTime: undefined,
     });
-    
+
     // Update daily aggregate
     const existing = await ctx.db
       .query("apiUsageDaily")
@@ -1464,8 +1642,16 @@ export const generateFileResponse = internalAction({
     const chatAgent = createChatAgent(args.model);
 
     try {
+      // Ensure tools receive a userId for authentication
+      const agentThread = await ctx.runQuery(components.agent.threads.getThread, { threadId: args.threadId });
+      const userId = (agentThread?.userId ?? null) as Id<"users"> | null;
+      const contextWithUserId = {
+        ...ctx,
+        evaluationUserId: userId,
+      };
+
       const result = await chatAgent.streamText(
-        ctx,
+        contextWithUserId as any,
         { threadId: args.threadId },
         { promptMessageId: args.promptMessageId },
         {
@@ -1487,6 +1673,5 @@ export const generateFileResponse = internalAction({
     }
   },
 });
-
 
 

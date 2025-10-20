@@ -32,6 +32,7 @@ interface FastAgentPanelProps {
   isOpen: boolean;
   onClose: () => void;
   selectedDocumentId?: Id<"documents">;
+  selectedDocumentIds?: Id<"documents">[];
 }
 
 /**
@@ -40,7 +41,7 @@ interface FastAgentPanelProps {
  * Dual-mode architecture:
  * - Agent Mode: @convex-dev/agent with automatic memory (non-streaming)
  * - Agent Streaming Mode: @convex-dev/agent + real-time streaming output
- * 
+ *
  * Features:
  * - Thread-based conversations with automatic memory management
  * - Real-time streaming responses (agent streaming mode)
@@ -52,6 +53,7 @@ export function FastAgentPanel({
   isOpen,
   onClose,
   selectedDocumentId: _selectedDocumentId,
+  selectedDocumentIds: _selectedDocumentIds,
 }: FastAgentPanelProps) {
   // ========== STATE ==========
   // Agent component uses string threadIds, not Id<"chatThreads">
@@ -60,6 +62,12 @@ export function FastAgentPanel({
   const [isStreaming, setIsStreaming] = useState(false);
   const [exportingThreadId, setExportingThreadId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Multi-document selection
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(
+    _selectedDocumentIds ? new Set(_selectedDocumentIds.map(id => String(id))) : new Set()
+  );
+  const [showDocumentSelector, setShowDocumentSelector] = useState(false);
 
   // Chat mode: 'agent' (non-streaming) or 'agent-streaming' (with streaming output)
   const [chatMode, setChatMode] = useState<'agent' | 'agent-streaming'>(() => {
@@ -83,6 +91,10 @@ export function FastAgentPanel({
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Track auto-created documents to avoid duplicates (by agentThreadId) and processed message IDs
+  const autoDocCreatedThreadIdsRef = useRef<Set<string>>(new Set());
+  const processedDocMessageIdsRef = useRef<Set<string>>(new Set());
+
   // ========== CONVEX QUERIES & MUTATIONS ==========
   // Agent mode: Using @convex-dev/agent component
   const agentThreads = useQuery(api.agentChat.listUserThreads);
@@ -99,7 +111,7 @@ export function FastAgentPanel({
   const createThreadWithMessage = useAction(api.agentChat.createThreadWithMessage);
   const continueThreadAction = useAction(api.agentChat.continueThread);
   const deleteAgentThread = useMutation(api.agentChat.deleteThread);
-  
+
   // Agent Streaming mode: Using agent component's native streaming
   const streamingThreads = useQuery(
     api.fastAgentPanelStreaming.listThreads,
@@ -155,6 +167,7 @@ export function FastAgentPanel({
             textPreview: (lastMessage.text || '').substring(0, 50) + ((lastMessage.text?.length || 0) > 50 ? '...' : ''),
             status: lastMessage.status,
           });
+
         }
       }
     }
@@ -165,6 +178,8 @@ export function FastAgentPanel({
   const deleteStreamingThread = useMutation(api.fastAgentPanelStreaming.deleteThread);
   const deleteMessage = useMutation(api.fastAgentPanelStreaming.deleteMessage);
   const saveChatSessionToDossier = useMutation(api.documents.saveChatSessionToDossier);
+  // NEW: Unified document generation and creation action
+  const generateAndCreateDocument = useAction(api.fastAgentDocumentCreation.generateAndCreateDocument);
 
   // Use the appropriate data based on mode
   const threads = chatMode === 'agent' ? agentThreads : streamingThreads;
@@ -214,6 +229,10 @@ export function FastAgentPanel({
     setActiveThreadId(null);
     toast.info(`Switched to ${chatMode === 'agent' ? 'Agent' : 'Agent Streaming'} mode`);
   }, [chatMode]);
+  // NOTE: Auto-create document logic has been moved to the unified generateAndCreateDocument action
+  // The action now handles both generation and creation atomically on the server
+  // This simplifies the UI and ensures consistency
+
 
 
 
@@ -260,8 +279,8 @@ export function FastAgentPanel({
           const tId = chatMode === 'agent' ? t.threadId : t._id;
           return tId !== threadId;
         });
-        const nextId = chatMode === 'agent' 
-          ? (remainingThreads?.[0] as any)?.threadId 
+        const nextId = chatMode === 'agent'
+          ? (remainingThreads?.[0] as any)?.threadId
           : (remainingThreads?.[0] as any)?._id;
         setActiveThreadId(nextId || null);
       }
@@ -319,7 +338,75 @@ export function FastAgentPanel({
     const text = (content ?? input).trim();
     if (!text || isStreaming) return;
 
-    const messageContent = text;
+    // Check if this is a document creation request
+    const docCreationMatch = text.match(/^(?:make|create)\s+(?:new\s+)?document\s+(?:about|on|for)\s+(.+)$/i);
+
+    if (docCreationMatch && chatMode === 'agent-streaming') {
+      const topic = docCreationMatch[1];
+      console.log('[FastAgentPanel] Document creation request detected for topic:', topic);
+
+      setInput('');
+      setIsStreaming(true);
+
+      try {
+        // Get or create thread
+        let threadId = activeThreadId;
+        if (!threadId) {
+          const streamingThread = await createStreamingThread({
+            title: `Create document about ${topic}`,
+            model: selectedModel,
+          });
+          threadId = streamingThread;
+          setActiveThreadId(threadId);
+        }
+
+        // Get the agent thread ID
+        const streamingThread = streamingThreads?.find((t: any) => t._id === threadId);
+        const agentThreadId = streamingThread?.agentThreadId;
+
+        if (!agentThreadId) {
+          throw new Error("Agent thread ID not found");
+        }
+
+        toast.info("Generating and creating document...");
+
+        // NEW: Use unified action for generation and creation
+        const result = await generateAndCreateDocument({
+          prompt: text,
+          threadId: agentThreadId,
+          isPublic: false,
+        });
+
+        console.log('[FastAgentPanel] Document created:', result.documentId);
+        // Mark this thread as having created a document to prevent duplicate auto-create
+        autoDocCreatedThreadIdsRef.current.add(agentThreadId);
+
+        toast.success(
+          <div className="flex flex-col gap-1">
+            <div className="font-medium">Document created!</div>
+            <div className="text-xs text-[var(--text-secondary)]">
+              {result.title}
+            </div>
+          </div>
+        );
+
+        setIsStreaming(false);
+        return;
+      } catch (error) {
+        console.error("Failed to create document:", error);
+        toast.error("Failed to create document");
+        setIsStreaming(false);
+        return;
+      }
+    }
+
+    // Build message with document context if documents are selected
+    let messageContent = text;
+    if (selectedDocumentIds.size > 0) {
+      const docIdArray = Array.from(selectedDocumentIds);
+      messageContent = `[CONTEXT: Analyzing ${docIdArray.length} document(s): ${docIdArray.join(', ')}]\n\n${text}`;
+    }
+
     setInput('');
     setLiveTokens("");
     setLiveAgents([]);
@@ -391,15 +478,18 @@ export function FastAgentPanel({
     fastMode,
     selectedModel,
     chatMode,
+    selectedDocumentIds,
     createThreadWithMessage,
     continueThreadAction,
     createStreamingThread,
     sendStreamingMessage,
+    generateAndCreateDocument,
+    streamingThreads,
   ]);
 
   // Handle message deletion
-  const handleDeleteMessage = useCallback(async (messageKey: string) => {
-    console.log('[FastAgentPanel] User requested deletion for message:', messageKey);
+  const handleDeleteMessage = useCallback(async (messageId: string) => {
+    console.log('[FastAgentPanel] User requested deletion for messageId:', messageId);
 
     if (chatMode !== 'agent-streaming' || !activeThreadId) {
       console.warn('[FastAgentPanel] Cannot delete: not in streaming mode or no active thread');
@@ -409,7 +499,7 @@ export function FastAgentPanel({
     try {
       await deleteMessage({
         threadId: activeThreadId as Id<"chatThreadsStream">,
-        messageKey: messageKey,
+        messageId,
       });
       toast.success('Message deleted');
       console.log('[FastAgentPanel] Message deleted successfully');
@@ -606,7 +696,22 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
     }
   }, [chatMode, activeThreadId, sendStreamingMessage, selectedModel]);
 
+  // Handle document selection from document action cards
+  const handleDocumentSelect = useCallback((documentId: string) => {
+    console.log('[FastAgentPanel] Document selected:', documentId);
 
+    // Dispatch custom event to navigate to the document
+    try {
+      window.dispatchEvent(
+        new CustomEvent('nodebench:openDocument', {
+          detail: { documentId }
+        })
+      );
+    } catch (err) {
+      console.error('[FastAgentPanel] Failed to navigate to document:', err);
+      toast.error('Failed to open document');
+    }
+  }, []);
 
   // ========== RENDER ==========
 
@@ -619,7 +724,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
       // Messages may have nested structure: msg.message.role and msg.message.text
       const messageData = msg.message || msg;
       const role = messageData.role || 'assistant';
-      
+
       // Extract content and ensure it's a string
       let content = '';
       if (typeof messageData.text === 'string') {
@@ -635,12 +740,12 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         const textParts = messageData.parts?.filter((p: any) => p.type === 'text')?.map((p: any) => p.text) || [];
         content = textParts.join('');
       }
-      
+
       // Debug logging
       if (typeof content !== 'string' || content === '') {
         console.log('[FastAgentPanel] Message structure:', { msg, messageData, role, content, type: typeof content });
       }
-      
+
       return {
         id: msg._id,
         threadId: (activeThreadId || '') as any,
@@ -656,12 +761,12 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
     // Agent mode messages - convert from Agent component format
     // Extract role from msg.message.role or msg.role
     const role = msg.message?.role || msg.role || 'assistant';
-    
+
     // Extract content - Agent messages have multiple possible structures:
     // 1. msg.text (flattened text representation)
     // 2. msg.message.content (can be string or array of parts)
     let content = '';
-    
+
     // Try flattened text first (most reliable)
     if (msg.text) {
       content = msg.text;
@@ -692,7 +797,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         content = textParts.join('\n');
       }
     }
-    
+
     // Extract thinking steps from message content if it's an array
     const contentArray = Array.isArray(msg.message?.content) ? msg.message.content : [];
     const thinkingSteps = contentArray
@@ -823,9 +928,24 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
             <Radio className="h-4 w-4" />
             <span className="chat-mode-label">{chatMode === 'agent' ? 'Agent' : 'Streaming'}</span>
           </button>
+
+          {/* Multi-document selector indicator */}
+          {selectedDocumentIds.size > 0 && (
+            <div className="document-context-indicator" title={`${selectedDocumentIds.size} document(s) selected`}>
+              <span className="doc-count-badge">{selectedDocumentIds.size}</span>
+              <span className="doc-label">docs</span>
+            </div>
+          )}
         </div>
 
         <div className="header-right">
+          <button
+            onClick={() => setShowDocumentSelector(!showDocumentSelector)}
+            className={`icon-button ${selectedDocumentIds.size > 0 ? 'active' : ''}`}
+            title={`Select documents for context (${selectedDocumentIds.size} selected)`}
+          >
+            📄
+          </button>
           <button
             onClick={() => { void handleSaveSession(); }}
             className="icon-button"
@@ -857,6 +977,61 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
           </button>
         </div>
       </div>
+
+      {/* Document Selector Panel */}
+      {showDocumentSelector && (
+        <div className="document-selector-panel">
+          <div className="selector-header">
+            <h3>Select Documents for Context</h3>
+            <button
+              onClick={() => setShowDocumentSelector(false)}
+              className="close-button"
+              title="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="selector-content">
+            <p className="selector-hint">
+              {selectedDocumentIds.size > 0
+                ? `${selectedDocumentIds.size} document(s) selected. Use these in your queries for multi-document analysis.`
+                : 'No documents selected. Click the document icon in the header to select documents.'}
+            </p>
+            {selectedDocumentIds.size > 0 && (
+              <div className="selected-docs-list">
+                <div className="list-label">Selected Documents:</div>
+                <div className="doc-ids">
+                  {Array.from(selectedDocumentIds).map((docId) => (
+                    <div key={docId} className="doc-id-item">
+                      <span className="doc-id">{docId}</span>
+                      <button
+                        onClick={() => {
+                          const newSet = new Set(selectedDocumentIds);
+                          newSet.delete(docId);
+                          setSelectedDocumentIds(newSet);
+                        }}
+                        className="remove-button"
+                        title="Remove"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="selector-actions">
+              <button
+                onClick={() => setSelectedDocumentIds(new Set())}
+                className="clear-button"
+                disabled={selectedDocumentIds.size === 0}
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content Area */}
       <div className="fast-agent-panel-content">
@@ -891,6 +1066,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
               onPersonSelect={handlePersonSelect}
               onEventSelect={handleEventSelect}
               onNewsSelect={handleNewsSelect}
+              onDocumentSelect={handleDocumentSelect}
             />
           ) : (
             <MessageStream

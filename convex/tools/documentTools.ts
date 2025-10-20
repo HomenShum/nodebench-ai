@@ -121,11 +121,11 @@ ${results.length > 1 ? `\nNote: Found ${results.length} matching documents. Show
  */
 export const getDocumentContent = createTool({
   description: "Retrieve full document content and metadata by document ID. Returns the complete document including title, content, type, and metadata. ALWAYS use this tool when the user asks to 'show', 'read', 'open', 'display', or 'view' a document's content. Call findDocument first to get the document ID, then call this tool with that ID.",
-  
+
   args: z.object({
     documentId: z.string().describe("The document ID (from findDocument results)"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
     console.log(`[getDocumentContent] Loading document: ${args.documentId}`);
 
@@ -136,23 +136,23 @@ export const getDocumentContent = createTool({
       documentId: args.documentId as any,
       userId, // Pass userId for evaluation
     });
-    
+
     if (!doc) {
       return `Document not found or you don't have permission to access it.`;
     }
-    
+
     const docType = (doc as any).documentType || 'text';
     const lastModified = new Date((doc as any).lastModified || doc._creationTime).toLocaleString();
-    
+
     let contentPreview = '';
-    
+
     if (docType === 'file') {
       // For file documents, get file details
       const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
         documentId: args.documentId as any,
         userId, // Pass userId for evaluation
       });
-      
+
       if (fileDoc && fileDoc.file) {
         const fileSizeMB = (fileDoc.file.fileSize / (1024 * 1024)).toFixed(2);
         contentPreview = `File: ${fileDoc.file.fileName}
@@ -170,7 +170,7 @@ ${fileDoc.file.analysis ? `\nAnalysis:\n${fileDoc.file.analysis.substring(0, 500
         contentPreview = JSON.stringify(content).substring(0, 1000);
       }
     }
-    
+
     return `Document: "${doc.title}"
 ID: ${doc._id}
 Type: ${docType}
@@ -189,12 +189,12 @@ ${contentPreview}${contentPreview.length >= 1000 ? '...' : ''}`;
  */
 export const analyzeDocument = createTool({
   description: "Analyze and summarize a document's content. For text documents, provides a summary of the content. For file documents, returns existing analysis or indicates if analysis is needed. Use this when the user wants to understand what a document is about.",
-  
+
   args: z.object({
     documentId: z.string().describe("The document ID to analyze"),
     analysisType: z.enum(["summary", "detailed", "keywords"]).default("summary").describe("Type of analysis: summary (brief overview), detailed (comprehensive analysis), or keywords (extract key topics)"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
     console.log(`[analyzeDocument] Analyzing document: ${args.documentId}`);
 
@@ -205,20 +205,20 @@ export const analyzeDocument = createTool({
       documentId: args.documentId as any,
       userId, // Pass userId for evaluation
     });
-    
+
     if (!doc) {
       return `Document not found.`;
     }
-    
+
     const docType = (doc as any).documentType || 'text';
-    
+
     if (docType === 'file') {
       // For file documents, check if analysis exists
       const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
         documentId: args.documentId as any,
         userId, // Pass userId for evaluation
       });
-      
+
       if (fileDoc && fileDoc.file) {
         if (fileDoc.file.analysis) {
           return `Analysis of "${doc.title}":
@@ -233,21 +233,21 @@ File Details:
         }
       }
     }
-    
+
     // For text documents, provide content-based analysis
     const content = doc.content || '';
     let textContent = '';
-    
+
     if (typeof content === 'string') {
       textContent = content;
     } else {
       // Extract text from rich content
       textContent = JSON.stringify(content);
     }
-    
+
     const wordCount = textContent.split(/\s+/).length;
     const charCount = textContent.length;
-    
+
     return `Document Analysis: "${doc.title}"
 
 Type: Text Document
@@ -268,7 +268,7 @@ Note: For detailed AI-powered analysis, the content can be processed further.`;
  */
 export const updateDocument = createTool({
   description: "Update a document's title, content, or metadata. Use this when the user wants to edit or modify a document. Returns confirmation of the update.",
-  
+
   args: z.object({
     documentId: z.string().describe("The document ID to update"),
     title: z.string().optional().describe("New title for the document"),
@@ -276,27 +276,156 @@ export const updateDocument = createTool({
     isPublic: z.boolean().optional().describe("Whether the document should be public"),
     isFavorite: z.boolean().optional().describe("Whether to mark as favorite"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
     console.log(`[updateDocument] Updating document: ${args.documentId}`);
-    
+
     const updates: any = {};
     if (args.title !== undefined) updates.title = args.title;
     if (args.content !== undefined) updates.content = args.content;
     if (args.isPublic !== undefined) updates.isPublic = args.isPublic;
     if (args.isFavorite !== undefined) updates.isFavorite = args.isFavorite;
-    
+
     await ctx.runMutation(api.documents.update, {
       id: args.documentId as any,
       ...updates,
     });
-    
+
     const updatedFields = Object.keys(updates).join(', ');
-    
-    return `Document updated successfully!
+
+    // Get document title for response
+    const doc = await ctx.runQuery(api.documents.getById, {
+      documentId: args.documentId as any,
+    });
+
+    // Return structured data with HTML marker for UI extraction
+    const response = `Document updated successfully!
 Updated fields: ${updatedFields}
 
-The document has been saved with your changes.`;
+The document has been saved with your changes.
+
+<!-- DOCUMENT_ACTION_DATA
+${JSON.stringify({
+  action: 'updated',
+  documentId: args.documentId,
+  title: doc?.title || 'Document',
+  updatedFields: Object.keys(updates)
+})}
+-->`;
+
+    return response;
+  },
+});
+
+/**
+ * Analyze and compare multiple documents
+ * Voice: "Compare these documents" or "Analyze documents together"
+ */
+export const analyzeMultipleDocuments = createTool({
+  description: "Analyze and compare multiple documents at once. Can synthesize information across documents, identify common themes, extract relationships, or aggregate data. Use this when the user wants to compare, combine, or analyze multiple documents together.",
+
+  args: z.object({
+    documentIds: z.array(z.string()).min(2).max(10).describe("Array of document IDs to analyze (minimum 2, maximum 10)"),
+    analysisType: z.enum(["comparison", "synthesis", "aggregation", "themes", "relationships"]).default("synthesis").describe("Type of analysis: comparison (side-by-side), synthesis (combined insights), aggregation (data collection), themes (common topics), relationships (connections between docs)"),
+    focusArea: z.string().optional().describe("Optional specific area to focus on (e.g., 'revenue', 'timeline', 'key findings')"),
+  }),
+
+  handler: async (ctx, args): Promise<string> => {
+    console.log(`[analyzeMultipleDocuments] Analyzing ${args.documentIds.length} documents`);
+
+    // Get userId from context if available
+    const userId = (ctx as any).evaluationUserId;
+
+    // Fetch all documents
+    const documents = await Promise.all(
+      args.documentIds.map(docId =>
+        ctx.runQuery(api.documents.getById, {
+          documentId: docId as any,
+          userId,
+        })
+      )
+    );
+
+    // Filter out null/missing documents
+    const validDocs = documents.filter(doc => doc !== null);
+
+    if (validDocs.length === 0) {
+      return `No documents found or you don't have permission to access them.`;
+    }
+
+    if (validDocs.length < 2) {
+      return `Only ${validDocs.length} document(s) found. Need at least 2 documents for multi-document analysis.`;
+    }
+
+    // Extract content from all documents
+    const docContents = validDocs.map((doc, idx) => {
+      let content = '';
+
+      if (typeof doc.content === 'string') {
+        content = doc.content;
+      } else if (doc.content) {
+        content = JSON.stringify(doc.content);
+      }
+
+      return {
+        title: doc.title,
+        id: doc._id,
+        type: (doc as any).documentType || 'text',
+        content: content.substring(0, 2000), // Limit per document for token efficiency
+        lastModified: new Date((doc as any).lastModified || doc._creationTime).toLocaleDateString(),
+      };
+    });
+
+    // Build analysis summary based on type
+    let analysisHeader = '';
+    switch (args.analysisType) {
+      case 'comparison':
+        analysisHeader = `Side-by-side Comparison of ${validDocs.length} Documents`;
+        break;
+      case 'synthesis':
+        analysisHeader = `Synthesized Analysis of ${validDocs.length} Documents`;
+        break;
+      case 'aggregation':
+        analysisHeader = `Data Aggregation from ${validDocs.length} Documents`;
+        break;
+      case 'themes':
+        analysisHeader = `Common Themes Across ${validDocs.length} Documents`;
+        break;
+      case 'relationships':
+        analysisHeader = `Relationships Between ${validDocs.length} Documents`;
+        break;
+    }
+
+    // Format document list
+    const docList = docContents.map((doc, idx) =>
+      `${idx + 1}. "${doc.title}" (${doc.type}, ${doc.lastModified})\n   ID: ${doc.id}`
+    ).join('\n');
+
+    // Build response with document contents for LLM analysis
+    let response = `${analysisHeader}
+
+Documents Analyzed:
+${docList}
+
+${args.focusArea ? `Focus Area: ${args.focusArea}\n` : ''}
+
+Document Contents:
+${'='.repeat(60)}
+`;
+
+    docContents.forEach((doc, idx) => {
+      response += `\n\nDocument ${idx + 1}: "${doc.title}"
+${'-'.repeat(40)}
+${doc.content}
+`;
+    });
+
+    response += `\n${'='.repeat(60)}
+
+Analysis Type: ${args.analysisType}
+Ready for detailed analysis. The LLM will now analyze these documents according to the specified analysis type.`;
+
+    return response;
   },
 });
 
@@ -306,44 +435,153 @@ The document has been saved with your changes.`;
  */
 export const createDocument = createTool({
   description: "Create a new document with a title and optional initial content. Returns the new document ID. Use this when the user wants to create a new document.",
-  
+
   args: z.object({
     title: z.string().describe("Title for the new document"),
     content: z.string().optional().describe("Initial content for the document"),
     isPublic: z.boolean().default(false).describe("Whether the document should be public"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
-    console.log(`[createDocument] Creating document: "${args.title}"`);
+    try {
+      console.log(`[createDocument] Creating document: "${args.title}"`);
 
-    // Convert content string to array format if provided
-    const contentArray = args.content ? [
-      {
-        type: "paragraph",
-        content: [{ type: "text", text: args.content }]
-      }
-    ] : undefined;
+      // Convert content string to array format if provided
+      const contentArray = args.content ? [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: args.content }]
+        }
+      ] : undefined;
 
-    const documentId = await ctx.runMutation(api.documents.create, {
-      title: args.title,
-      content: contentArray,
-    });
-
-    // If user wants it public, update it
-    if (args.isPublic) {
-      await ctx.runMutation(api.documents.update, {
-        id: documentId,
-        isPublic: true,
+      console.log(`[createDocument] Calling mutation with title: "${args.title}"`);
+      const documentId = await ctx.runMutation(api.documents.create, {
+        title: args.title,
+        content: contentArray,
       });
-    }
 
-    return `Document created successfully!
+      console.log(`[createDocument] Document created with ID: ${documentId}`);
+
+      // If user wants it public, update it
+      if (args.isPublic) {
+        console.log(`[createDocument] Setting document to public`);
+        await ctx.runMutation(api.documents.update, {
+          id: documentId,
+          isPublic: true,
+        });
+      }
+
+      // Return structured data with HTML marker for UI extraction
+      const response = `Document created successfully!
 
 Title: "${args.title}"
 ID: ${documentId}
 Public: ${args.isPublic ? 'Yes' : 'No'}
 
-The document is ready to edit.`;
+The document is ready to edit.
+
+<!-- DOCUMENT_ACTION_DATA
+${JSON.stringify({
+  action: 'created',
+  documentId: String(documentId),
+  title: args.title,
+  isPublic: args.isPublic
+})}
+-->`;
+
+      console.log(`[createDocument] Returning response with document ID: ${documentId}`);
+      return response;
+    } catch (error) {
+      console.error(`[createDocument] Error creating document:`, error);
+      throw error;
+    }
   },
 });
 
+/**
+ * Generate edit proposals for a document
+ * Voice: "Suggest edits to add a section about..." or "What changes would improve this document?"
+ */
+export const generateEditProposals = createTool({
+  description: "Generate AI-powered edit proposals for a document based on user request. Returns structured proposals that can be reviewed before applying. Use this when the user wants suggestions for improving or modifying a document.",
+
+  args: z.object({
+    documentId: z.string().describe("The document ID to generate proposals for"),
+    request: z.string().describe("The user's request for edits (e.g., 'Add a section about pricing', 'Improve the introduction')"),
+    proposalType: z.enum(["title", "content", "append", "replace"]).default("content").describe("Type of edit proposal to generate"),
+  }),
+
+  handler: async (ctx, args): Promise<string> => {
+    console.log(`[generateEditProposals] Generating proposals for: ${args.documentId}`);
+
+    try {
+      // Get the document
+      const doc = await ctx.runQuery(api.documents.getById, { documentId: args.documentId as any });
+      if (!doc) {
+        return `Document not found: ${args.documentId}`;
+      }
+
+      // Import the editing agent
+      const { generateEdits } = await import("../fast_agents/editingAgent");
+
+      // Generate proposals
+      const proposals = await generateEdits(ctx, {
+        message: args.request,
+        documentId: args.documentId as any,
+        currentContent: doc.content || "",
+        currentTitle: doc.title,
+      });
+
+      // Format response
+      let response = `📝 Edit Proposals for "${doc.title}":\n\n`;
+      response += `${proposals.explanation}\n\n`;
+      response += `Proposals (${proposals.proposals.length}):\n`;
+
+      for (let i = 0; i < proposals.proposals.length; i++) {
+        const p = proposals.proposals[i];
+        response += `\n${i + 1}. **${p.type.toUpperCase()}**\n`;
+        response += `   Reason: ${p.reason}\n`;
+        response += `   Preview: ${p.newValue.slice(0, 100)}${p.newValue.length > 100 ? "..." : ""}\n`;
+      }
+
+      response += `\nConfidence: ${(proposals.confidence * 100).toFixed(0)}%`;
+
+      return response;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      return `Error generating proposals: ${errorMsg}`;
+    }
+  },
+});
+
+
+/**
+ * Create a document from agent-generated content (DOCUMENT_METADATA + markdown)
+ * Use this after generating content to persist the document and surface a tool call in the timeline.
+ */
+export const createDocumentFromAgentContentTool = createTool({
+  description:
+    "Persist agent-generated document content. Pass the parsed title and the markdown content (without the DOCUMENT_METADATA comment). Returns the created document ID and a structured marker for UI extraction.",
+  args: z.object({
+    title: z.string().describe("Document title (parsed from DOCUMENT_METADATA.title)"),
+    content: z.string().describe("Markdown content without the DOCUMENT_METADATA block"),
+    threadId: z.string().optional().describe("Optional agent thread id to link the document to the chat")
+  }),
+  handler: async (ctx, args): Promise<string> => {
+    console.log(`[createDocumentFromAgentContentTool] Creating doc: "${args.title}"`);
+    const documentId = await ctx.runMutation(api.fastAgentPanelStreaming.createDocumentFromAgentContent, {
+      title: args.title,
+      content: args.content,
+      threadId: args.threadId,
+    });
+
+    const response = `Document created successfully!\n\nTitle: "${args.title}"\nID: ${documentId}\n\n<!-- DOCUMENT_ACTION_DATA\n${JSON.stringify({
+      action: 'created',
+      documentId: String(documentId),
+      title: args.title,
+      via: 'createDocumentFromAgentContentTool',
+    })}\n-->`;
+
+    return response;
+  },
+});

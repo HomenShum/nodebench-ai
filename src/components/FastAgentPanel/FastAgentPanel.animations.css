@@ -268,3 +268,339 @@ button:disabled {
   }
 }
 
+/* Streaming UI Optimizations */
+
+/* Smooth fade-in for streaming items */
+@keyframes fadeInSmooth {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeInSmooth 0.2s ease-out;
+}
+
+/* GPU-accelerated expand/collapse */
+@keyframes expandHeight {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.animate-expandHeight {
+  animation: expandHeight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth step counter increment */
+@keyframes stepCountPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-stepCountPulse {
+  animation: stepCountPulse 0.3s ease-out;
+}
+
+/* Streaming message container - minimal layout thrash */
+.streaming-message-container {
+  contain: layout style paint;
+  will-change: contents;
+}
+
+/* Timeline item smooth transitions */
+.timeline-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateZ(0); /* Enable GPU acceleration */
+}
+
+.timeline-item:hover {
+  transform: translateX(2px) translateZ(0);
+}
+
+/* Tool result popover smooth appearance */
+.tool-result-popover {
+  animation: fadeInSmooth 0.2s ease-out;
+  transform-origin: top center;
+}
+
+/* Processing indicator smooth animation */
+.processing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeInSmooth 0.2s ease-out;
+}
+
+.processing-indicator-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Smooth scroll behavior */
+.smooth-scroll-container {
+  scroll-behavior: smooth;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Prevent layout shift during streaming */
+.streaming-content {
+  contain: content;
+}
+
+/* Optimize message bubble rendering */
+.message-bubble {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+.message-bubble.streaming {
+  will-change: contents;
+}
+
+/* Step timeline line - smooth animation */
+.timeline-line {
+  transition: background-color 0.3s ease-out;
+}
+
+/* Typing indicator smooth animation */
+@keyframes typingDot {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-8px);
+  }
+}
+
+.typing-dot {
+  animation: typingDot 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Document Selector Panel Styles */
+.document-context-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--accent-primary-bg, rgba(59, 130, 246, 0.1));
+  border: 1px solid var(--accent-primary, #3b82f6);
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary, #3b82f6);
+  animation: scaleIn 0.2s ease-out;
+}
+
+.doc-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--accent-primary, #3b82f6);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.doc-label {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.document-selector-panel {
+  position: absolute;
+  top: 3.5rem;
+  right: 0;
+  width: 320px;
+  max-height: 400px;
+  background: var(--bg-secondary, #f5f5f5);
+  border: 1px solid var(--border-color, #e5e5e5);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.2s ease-out;
+}
+
+.selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color, #e5e5e5);
+}
+
+.selector-header h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #000);
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.close-button:hover {
+  background-color: var(--bg-hover, #e5e5e5);
+  color: var(--text-primary, #000);
+}
+
+.selector-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.selector-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  line-height: 1.4;
+}
+
+.selected-docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.list-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.doc-ids {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.doc-id-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e5e5e5);
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--text-primary, #000);
+  animation: slideInRight 0.2s ease-out;
+}
+
+.doc-id {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.25rem;
+  margin-left: 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.remove-button:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.selector-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color, #e5e5e5);
+}
+
+.clear-button {
+  flex: 1;
+  padding: 0.5rem;
+  background: var(--bg-hover, #e5e5e5);
+  border: 1px solid var(--border-color, #d5d5d5);
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary, #000);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.clear-button:hover:not(:disabled) {
+  background: var(--accent-primary-bg, rgba(59, 130, 246, 0.1));
+  border-color: var(--accent-primary, #3b82f6);
+  color: var(--accent-primary, #3b82f6);
+}
+
+.clear-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Header indicator for active document selection */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+

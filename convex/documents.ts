@@ -4,6 +4,12 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 import { components } from "./_generated/api";
 import { extractMediaFromMessages } from "./lib/dossierHelpers";
+import {
+  type TipTapNode,
+  type MediaAsset,
+  convertMediaAssetsToTipTap,
+  parseInlineMarks
+} from "./lib/markdownToTipTap";
 
 // =================================================================
 // Editor content now defaults to EditorJS JSON for new documents.
@@ -192,8 +198,15 @@ const parseMarkdownText = (text: string): any[] => {
 };
 
 /**
- * Build a minimal EditorJS JSON string from our simple array-of-blocks.
- * This ensures new documents start with EditorJS content by default.
+ * DEPRECATED: Build a minimal EditorJS JSON string from our simple array-of-blocks.
+ *
+ * ⚠️ DEPRECATION NOTICE (2025-10-20):
+ * EditorJS format is being phased out in favor of TipTap/ProseMirror JSON.
+ * New documents should use the unified generateAndCreateDocument action in fastAgentDocumentCreation.ts
+ * which standardizes on TipTap JSON format.
+ *
+ * This function is kept for backward compatibility with existing documents only.
+ * Do not use for new document creation.
  */
 const buildEditorJSFromBlocks = (blocks: any[]): string => {
   type EJBlock = { type: string; data?: Record<string, any> };
@@ -428,6 +441,16 @@ const _buildEditorJSON = (blocks: any[]): string => {
 };
 
 
+/**
+ * DEPRECATED: Create a new document with EditorJS content.
+ *
+ * ⚠️ DEPRECATION NOTICE (2025-10-20):
+ * This mutation uses EditorJS format which is being phased out.
+ * For agent-driven document creation, use generateAndCreateDocument action in fastAgentDocumentCreation.ts
+ * which standardizes on TipTap JSON format.
+ *
+ * This mutation is kept for backward compatibility with existing UI flows only.
+ */
 export const create = mutation({
   args: {
     title: v.string(),
@@ -447,7 +470,8 @@ export const create = mutation({
       throw new Error("Not authenticated");
     }
 
-    // Seed with EditorJS JSON by default
+    // NOTE: Still using EditorJS for backward compatibility
+    // New documents should use TipTap format via generateAndCreateDocument
     const initialContent = buildEditorJSFromBlocks(args.content || []);
 
     const document = await ctx.db.insert("documents", {
@@ -1347,16 +1371,14 @@ export const saveChatSessionToDossier = mutation({
     const extractedAssets = extractMediaFromMessages(allMessages);
     console.log(`Extracted ${extractedAssets.length} media assets`);
 
-    // Build rich text transcript
-    const transcriptBlocks: any[] = [];
+    // Build TipTap transcript nodes
+    const transcriptNodes: TipTapNode[] = [];
 
     // Add header
-    transcriptBlocks.push({
-      type: "header",
-      data: {
-        text: args.title || "Chat Session",
-        level: 1,
-      },
+    transcriptNodes.push({
+      type: "heading",
+      attrs: { level: 1, textAlignment: "left" },
+      content: [{ type: "text", text: args.title || "Chat Session" }],
     });
 
     // Add metadata
@@ -1364,64 +1386,40 @@ export const saveChatSessionToDossier = mutation({
     const assetCount = extractedAssets.length;
     const createdAt = new Date().toLocaleString();
 
-    transcriptBlocks.push({
+    transcriptNodes.push({
       type: "paragraph",
-      data: {
-        text: `Saved on ${createdAt} • ${messageCount} messages • ${assetCount} media assets`,
-      },
+      attrs: { textAlignment: "left" },
+      content: [
+        {
+          type: "text",
+          text: `Saved on ${createdAt} • ${messageCount} messages • ${assetCount} media assets`,
+        },
+      ],
     });
-
-    transcriptBlocks.push({
-      type: "delimiter",
-      data: {},
-    });
-
-    // Helper function to strip HTML and markdown from text
-    const stripFormatting = (text: string): string => {
-      if (!text) return '';
-
-      // Remove HTML tags
-      let cleaned = text.replace(/<[^>]*>/g, '');
-
-      // Remove markdown formatting
-      cleaned = cleaned
-        .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold
-        .replace(/\*([^*]+)\*/g, '$1')     // Italic
-        .replace(/`([^`]+)`/g, '$1')       // Inline code
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links
-        .replace(/^#+\s+/gm, '')           // Headers
-        .replace(/^[-*+]\s+/gm, '')        // List items
-        .replace(/^\d+\.\s+/gm, '');       // Numbered lists
-
-      return cleaned.trim();
-    };
 
     // Add conversation transcript
     for (const message of allMessages) {
       const role = message.role === "user" ? "👤 User" : "🤖 Assistant";
       const timestamp = new Date(message._creationTime).toLocaleTimeString();
 
-      transcriptBlocks.push({
-        type: "header",
-        data: {
-          text: `${role} (${timestamp})`,
-          level: 3,
-        },
+      // Add message header
+      transcriptNodes.push({
+        type: "heading",
+        attrs: { level: 3, textAlignment: "left" },
+        content: [{ type: "text", text: `${role} (${timestamp})` }],
       });
 
-      // Add message text (stripped of formatting)
+      // Add message text (preserve markdown formatting via parseInlineMarks)
       if (message.text) {
-        const cleanText = stripFormatting(message.text);
-        console.log(`Message text length: ${message.text.length}, cleaned length: ${cleanText.length}`);
-        if (cleanText) {
-          transcriptBlocks.push({
+        console.log(`Message text length: ${message.text.length}`);
+        if (message.text.trim()) {
+          transcriptNodes.push({
             type: "paragraph",
-            data: {
-              text: cleanText,
-            },
+            attrs: { textAlignment: "left" },
+            content: parseInlineMarks(message.text),
           });
         } else {
-          console.log("Warning: Message text was stripped to empty string");
+          console.log("Warning: Message text is empty");
         }
       } else {
         console.log("Warning: Message has no text property");
@@ -1431,313 +1429,52 @@ export const saveChatSessionToDossier = mutation({
       if (message.parts && Array.isArray(message.parts)) {
         const toolParts = message.parts.filter((p: any) => p.type === "tool-result");
         if (toolParts.length > 0) {
-          transcriptBlocks.push({
+          transcriptNodes.push({
             type: "paragraph",
-            data: {
-              text: `Tools used: ${toolParts.map((p: any) => p.toolName).join(", ")}`,
-            },
+            attrs: { textAlignment: "left" },
+            content: [
+              {
+                type: "text",
+                text: `Tools used: ${toolParts.map((p: any) => p.toolName).join(", ")}`,
+                marks: [{ type: "italic" }],
+              },
+            ],
           });
         }
       }
-
-      transcriptBlocks.push({
-        type: "delimiter",
-        data: {},
-      });
     }
 
-    console.log(`Total transcript blocks created: ${transcriptBlocks.length}`);
+    console.log(`Total transcript nodes created: ${transcriptNodes.length}`);
 
     // Add media section if there are any assets
+    // Convert extracted assets to MediaAsset format and use helper function
     if (extractedAssets.length > 0) {
-      transcriptBlocks.push({
-        type: "header",
-        data: {
-          text: "📎 Media & Resources",
-          level: 2,
-        },
-      });
+      const mediaAssets: MediaAsset[] = extractedAssets.map((asset) => ({
+        type: asset.type as any,
+        url: asset.url,
+        title: asset.title,
+        thumbnail: asset.thumbnail,
+        metadata: asset.metadata,
+      }));
 
-      // Group assets by type
-      const assetsByType: Record<string, typeof extractedAssets> = {};
-      for (const asset of extractedAssets) {
-        if (!assetsByType[asset.type]) {
-          assetsByType[asset.type] = [];
-        }
-        assetsByType[asset.type].push(asset);
-      }
-
-      // Add YouTube videos first (embedded)
-      if (assetsByType["youtube"]) {
-        transcriptBlocks.push({
-          type: "header",
-          data: {
-            text: "🎥 Videos",
-            level: 3,
-          },
-        });
-
-        for (const asset of assetsByType["youtube"]) {
-          // Add title if available
-          if (asset.title) {
-            transcriptBlocks.push({
-              type: "paragraph",
-              data: {
-                text: asset.title,
-              },
-            });
-          }
-
-          // Add embedded YouTube video
-          transcriptBlocks.push({
-            type: "embed",
-            data: {
-              service: "youtube",
-              source: asset.url,
-              embed: asset.url,
-              width: 580,
-              height: 320,
-              caption: asset.title || "",
-            },
-          });
-        }
-      }
-
-      // Add images (embedded)
-      if (assetsByType["image"]) {
-        transcriptBlocks.push({
-          type: "header",
-          data: {
-            text: "🖼️ Images",
-            level: 3,
-          },
-        });
-
-        for (const asset of assetsByType["image"]) {
-          // Add embedded image
-          transcriptBlocks.push({
-            type: "image",
-            data: {
-              file: {
-                url: asset.url,
-              },
-              caption: asset.title || "",
-              withBorder: false,
-              stretched: false,
-              withBackground: false,
-            },
-          });
-        }
-      }
-
-      // Add SEC documents (with rich preview)
-      if (assetsByType["sec-document"]) {
-        transcriptBlocks.push({
-          type: "header",
-          data: {
-            text: "📄 SEC Documents",
-            level: 3,
-          },
-        });
-
-        for (const asset of assetsByType["sec-document"]) {
-          // Add document title
-          transcriptBlocks.push({
-            type: "paragraph",
-            data: {
-              text: `<b>${asset.title || "SEC Document"}</b>`,
-            },
-          });
-
-          // Add metadata if available
-          if (asset.metadata) {
-            const metadataText = [];
-            if (asset.metadata.filingType) metadataText.push(`Type: ${asset.metadata.filingType}`);
-            if (asset.metadata.filingDate) metadataText.push(`Filed: ${asset.metadata.filingDate}`);
-            if (asset.metadata.company) metadataText.push(`Company: ${asset.metadata.company}`);
-
-            if (metadataText.length > 0) {
-              transcriptBlocks.push({
-                type: "paragraph",
-                data: {
-                  text: `<i>${metadataText.join(" • ")}</i>`,
-                },
-              });
-            }
-          }
-
-          // Add link block
-          transcriptBlocks.push({
-            type: "linkTool",
-            data: {
-              link: asset.url,
-              meta: {
-                title: asset.title || "SEC Document",
-                description: asset.metadata?.description || "View on SEC.gov",
-                image: {
-                  url: asset.thumbnail || "",
-                },
-              },
-            },
-          });
-
-          // Add delimiter
-          transcriptBlocks.push({
-            type: "delimiter",
-            data: {},
-          });
-        }
-      }
-
-      // Add news articles (with rich preview)
-      if (assetsByType["news"]) {
-        transcriptBlocks.push({
-          type: "header",
-          data: {
-            text: "📰 News Articles",
-            level: 3,
-          },
-        });
-
-        for (const asset of assetsByType["news"]) {
-          // Add article title
-          transcriptBlocks.push({
-            type: "paragraph",
-            data: {
-              text: `<b>${asset.title || "News Article"}</b>`,
-            },
-          });
-
-          // Add source and metadata
-          const metadataText = [];
-          if (asset.metadata?.source) metadataText.push(`Source: ${asset.metadata.source}`);
-          if (asset.toolName) metadataText.push(`via ${asset.toolName}`);
-
-          if (metadataText.length > 0) {
-            transcriptBlocks.push({
-              type: "paragraph",
-              data: {
-                text: `<i>${metadataText.join(" • ")}</i>`,
-              },
-            });
-          }
-
-          // Add snippet if available
-          if (asset.metadata?.snippet) {
-            transcriptBlocks.push({
-              type: "quote",
-              data: {
-                text: asset.metadata.snippet,
-                caption: "",
-                alignment: "left",
-              },
-            });
-          }
-
-          // Add link block with preview
-          transcriptBlocks.push({
-            type: "linkTool",
-            data: {
-              link: asset.url,
-              meta: {
-                title: asset.title || "News Article",
-                description: asset.metadata?.snippet || "Read full article",
-                image: {
-                  url: asset.thumbnail || "",
-                },
-              },
-            },
-          });
-
-          // Add delimiter
-          transcriptBlocks.push({
-            type: "delimiter",
-            data: {},
-          });
-        }
-      }
-
-      // Add local documents (clickable links to open in app)
-      if (assetsByType["local-document"]) {
-        transcriptBlocks.push({
-          type: "header",
-          data: {
-            text: "📁 Referenced Documents",
-            level: 3,
-          },
-        });
-
-        for (const asset of assetsByType["local-document"]) {
-          // Add document title
-          transcriptBlocks.push({
-            type: "paragraph",
-            data: {
-              text: `<b>${asset.title || "Document"}</b>`,
-            },
-          });
-
-          // Add metadata
-          transcriptBlocks.push({
-            type: "paragraph",
-            data: {
-              text: `<i>Document ID: ${asset.documentId}</i>`,
-            },
-          });
-
-          // Add clickable link
-          transcriptBlocks.push({
-            type: "paragraph",
-            data: {
-              text: `<a href="${asset.url}" data-document-id="${asset.documentId}">📄 Open Document</a>`,
-            },
-          });
-
-          // Add delimiter
-          transcriptBlocks.push({
-            type: "delimiter",
-            data: {},
-          });
-        }
-      }
-
-      // Add any other media types
-      for (const [type, assets] of Object.entries(assetsByType)) {
-        if (type !== "youtube" && type !== "image" && type !== "sec-document" && type !== "news" && type !== "local-document") {
-          transcriptBlocks.push({
-            type: "header",
-            data: {
-              text: `📎 ${type}`,
-              level: 3,
-            },
-          });
-
-          for (const asset of assets) {
-            transcriptBlocks.push({
-              type: "paragraph",
-              data: {
-                text: `${asset.title || "Media"}: ${asset.url}`,
-              },
-            });
-          }
-        }
-      }
+      const mediaNodes = convertMediaAssetsToTipTap(mediaAssets);
+      transcriptNodes.push(...mediaNodes);
     }
 
-    // Create EditorJS content
-    const editorContent = {
-      time: Date.now(),
-      blocks: transcriptBlocks,
-      version: "2.28.2",
+    // Create TipTap document
+    const tipTapDocument = {
+      type: "doc",
+      content: transcriptNodes,
     };
 
-    console.log(`Creating dossier with ${transcriptBlocks.length} blocks`);
-    console.log(`First 3 blocks:`, JSON.stringify(transcriptBlocks.slice(0, 3), null, 2));
-    console.log(`Content size: ${JSON.stringify(editorContent).length} bytes`);
+    console.log(`Creating dossier with ${transcriptNodes.length} TipTap nodes`);
+    console.log(`First 3 nodes:`, JSON.stringify(transcriptNodes.slice(0, 3), null, 2));
+    console.log(`Content size: ${JSON.stringify(tipTapDocument).length} bytes`);
 
     // Create single dossier document with everything
     const dossierId = await ctx.db.insert("documents", {
       title: args.title || `Chat Session - ${new Date().toLocaleDateString()}`,
-      content: JSON.stringify(editorContent), // EditorJS format for DossierViewer
+      content: JSON.stringify(tipTapDocument), // TipTap JSON format
       createdBy: userId,
       isPublic: false,
       isArchived: false,

@@ -6,7 +6,6 @@ import InlineRichEditor from "../common/InlineRichEditor";
 import { MentionHoverPreview } from "../MentionHoverPreview";
 import { TagHoverPreview } from "../TagHoverPreview";
 import UnifiedEditor, { type EditorMode } from "../UnifiedEditor";
-import { Editor as EditorNB3 } from "./Editor_nb3";
 import "./editor-blocks.css";
 
 interface EditorProps {
@@ -14,7 +13,7 @@ interface EditorProps {
   isGridMode?: boolean;
   isFullscreen?: boolean;
   // Optional: select which editor engine to render. Defaults to env flag or Unified.
-  engine?: "unified" | "nb3" | "legacy";
+  engine?: "unified" | "legacy";
   // Optional: editing mode for UnifiedEditor
   mode?: EditorMode;
   // Whether editing is allowed (owner or public-edit). Defaults to true.
@@ -253,19 +252,12 @@ export function Editor({ documentId, isGridMode, isFullscreen, engine, mode, edi
 
   // Engine selection: prop > env > default
   const envEngine = String((import.meta as any)?.env?.VITE_EDITOR_ENGINE ?? "unified").toLowerCase();
-  const selectedEngine = (engine ?? (envEngine as any)) as "unified" | "nb3" | "legacy";
+  const selectedEngine = (engine ?? (envEngine as any)) as "unified" | "legacy";
 
   // Render UnifiedEditor directly when selected; hydrate-only, no mount-time mutations
   if (selectedEngine === "unified") {
     return (
       <UnifiedEditor documentId={documentId as any} mode={mode} isGridMode={isGridMode} isFullscreen={isFullscreen} editable={editable} />
-    );
-  }
-
-  // Render legacy NB3 editor when selected
-  if (selectedEngine === "nb3") {
-    return (
-      <EditorNB3 documentId={documentId as any} isGridMode={!!isGridMode} isFullscreen={!!isFullscreen} />
     );
   }
 

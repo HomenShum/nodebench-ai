@@ -16,6 +16,8 @@ import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadma
 import { HelpCircle, Sun, Moon, MessageSquare, Settings as SettingsIcon, Link as LinkIcon, Send, Zap } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
+import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
+import MiniEditorPopover from "./MiniEditorPopover";
 
 interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
@@ -31,6 +33,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const [isGridMode, setIsGridMode] = useState(false);
   // File selection state for AI chat context
   const [selectedFileIds, setSelectedFileIds] = useState<Id<"files">[]>([]);
+  // Multi-document selection for Fast Agent
+  const [selectedDocumentIdsForAgent, setSelectedDocumentIdsForAgent] = useState<Id<"documents">[]>([]);
   // Top-bar quick AI chat input
   const [quickChatInput, setQuickChatInput] = useState("");
   // Reliable quick prompt handoff to AIChatPanel
@@ -45,6 +49,17 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   });
   // MCP panel visibility (inside AIChatPanel)
   const [showMcpPanel, setShowMcpPanel] = useState(false);
+  // Hashtag quick note popover state
+  const [hashtagPopover, setHashtagPopover] = useState<{
+    dossierId: Id<"documents">;
+    hashtag: string;
+    anchorEl: HTMLElement;
+  } | null>(null);
+  // Mention mini editor popover state
+  const [mentionPopover, setMentionPopover] = useState<{
+    documentId: Id<"documents">;
+    anchorEl: HTMLElement;
+  } | null>(null);
   // Restore persisted MCP panel visibility
   useEffect(() => {
     try {
@@ -408,6 +423,59 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     };
   }, [onDocumentSelect, setIsGridMode, setCurrentView]);
 
+  // Listen for mention popover events
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      try {
+        const e = evt as CustomEvent<{ documentId?: string }>;
+        const documentId = e.detail?.documentId as Id<"documents"> | undefined;
+
+        if (!documentId) return;
+
+        // Find the mention element that triggered the event
+        const mentionElements = document.querySelectorAll(`[data-document-id="${documentId}"]`);
+        const anchorEl = mentionElements[0] as HTMLElement;
+
+        if (anchorEl) {
+          setMentionPopover({ documentId, anchorEl });
+        }
+      } catch (err) {
+        console.warn('Failed to handle nodebench:showMentionPopover event', err);
+      }
+    };
+    window.addEventListener('nodebench:showMentionPopover', handler as EventListener);
+    return () => {
+      window.removeEventListener('nodebench:showMentionPopover', handler as EventListener);
+    };
+  }, []);
+
+  // Listen for hashtag quick note popover events
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      try {
+        const e = evt as CustomEvent<{ dossierId?: string; hashtag?: string }>;
+        const dossierId = e.detail?.dossierId as Id<"documents"> | undefined;
+        const hashtag = e.detail?.hashtag;
+
+        if (!dossierId || !hashtag) return;
+
+        // Find the hashtag element that triggered the event
+        const hashtagElements = document.querySelectorAll(`[data-dossier-id="${dossierId}"]`);
+        const anchorEl = hashtagElements[0] as HTMLElement;
+
+        if (anchorEl) {
+          setHashtagPopover({ dossierId, hashtag, anchorEl });
+        }
+      } catch (err) {
+        console.warn('Failed to handle nodebench:showHashtagQuickNote event', err);
+      }
+    };
+    window.addEventListener('nodebench:showHashtagQuickNote', handler as EventListener);
+    return () => {
+      window.removeEventListener('nodebench:showHashtagQuickNote', handler as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     const toCalendar = () => setCurrentView('calendar');
     const toTimeline = () => setCurrentView('documents'); // legacy
@@ -768,6 +836,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         isOpen={showFastAgent}
         onClose={() => setShowFastAgent(false)}
         selectedDocumentId={selectedDocumentId || undefined}
+        selectedDocumentIds={selectedDocumentIdsForAgent}
       />
 
       {/* Central Settings Modal */}
@@ -778,6 +847,23 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           initialTab={settingsInitialTab}
         />
       )}
+
+      {/* Mention Mini Editor Popover */}
+      <MiniEditorPopover
+        isOpen={!!mentionPopover}
+        documentId={mentionPopover?.documentId || null}
+        anchorEl={mentionPopover?.anchorEl || null}
+        onClose={() => setMentionPopover(null)}
+      />
+
+      {/* Hashtag Quick Note Popover */}
+      <HashtagQuickNotePopover
+        isOpen={!!hashtagPopover}
+        dossierId={hashtagPopover?.dossierId || null}
+        hashtag={hashtagPopover?.hashtag || null}
+        anchorEl={hashtagPopover?.anchorEl || null}
+        onClose={() => setHashtagPopover(null)}
+      />
     </div>
   );
 }

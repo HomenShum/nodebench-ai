@@ -993,13 +993,13 @@ export function Sidebar({
             onSmsReceived("File Analysis", result.analysis);
           }
           // Create an Editor-compatible document using blocks (heading/paragraph with text fields)
-          const docId = await createDocument({ 
+          const docId = await createWithSnapshot({
             title: `Analysis: ${file.name}`,
-            content: [
+            initialContent: [
               { type: 'heading', level: 2, text: `Analysis for ${file.name}` },
               { type: 'paragraph', text: result.analysis }
             ]
-          });
+          } as any);
           onDocumentSelect(docId);
         }
       } else {
@@ -1068,13 +1068,13 @@ export function Sidebar({
           }
         })();
 
-        const docId = await createDocument({
+        const docId = await createWithSnapshot({
           title: `Analysis: ${host}`,
-          content: [
+          initialContent: [
             { type: 'heading', level: 2, text: `Analysis for ${host}` },
             { type: 'paragraph', text: result.analysis }
           ]
-        });
+        } as any);
         onDocumentSelect(docId);
       }
     } catch (error) {
@@ -1293,7 +1293,10 @@ export function Sidebar({
   const handleCreateDocument = async (defaultTitle?: string) => {
     try {
       const title = defaultTitle || "Untitled Document";
-      const documentId: Id<"documents"> = await createDocument({ title, content: [] });
+      const documentId: Id<"documents"> = await createWithSnapshot({
+        title,
+        initialContent: { type: "doc", content: [] },
+      } as any);
       onDocumentSelect(documentId);
       toast.success(`Created: ${title}`);
     } catch (error) {
@@ -1318,10 +1321,10 @@ export function Sidebar({
       setActiveFlows(prev => [newFlow, ...prev]);
       
       const designDocContent = generateFlowDesignDoc(command, flowId);
-      const designDocId = await createDocument({
+      const designDocId = await createWithSnapshot({
         title: `Flow Design: ${command.substring(0, 50)}...`,
-        content: designDocContent
-      });
+        initialContent: designDocContent
+      } as any);
       
       setActiveFlows(prev => prev.map(f => 
         f.id === flowId ? { ...f, designDocId, status: 'completed' } : f
@@ -1773,13 +1776,13 @@ export function Sidebar({
                                 // Find a friendly name for the file
                                 const f = (userFilesAll ?? []).find((x: any) => String(x._id) === String(fid));
                                 const fileName = f?.fileName || String(fid);
-                                const docId = await createDocument({
+                                const docId = await createWithSnapshot({
                                   title: `Analysis: ${fileName}`,
-                                  content: [
+                                  initialContent: [
                                     { type: 'heading', level: 2, text: `Analysis for ${fileName}` },
                                     { type: 'paragraph', text: res.analysis }
                                   ]
-                                });
+                                } as any);
                                 // Optionally open the latest created doc
                                 try { onDocumentSelect(docId); } catch { /* noop */ }
                               }

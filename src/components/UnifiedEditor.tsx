@@ -11,9 +11,21 @@ import "@blocknote/mantine/style.css";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useBlockNoteSync } from "@convex-dev/prosemirror-sync/blocknote";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvex } from "convex/react";
 
-import { BlockNoteEditor, type PartialBlock } from "@blocknote/core";
+import {
+  BlockNoteEditor,
+  BlockNoteSchema,
+  defaultInlineContentSpecs,
+  filterSuggestionItems,
+  type PartialBlock,
+} from "@blocknote/core";
+import {
+  DefaultReactSuggestionItem,
+  SuggestionMenuController,
+  createReactInlineContentSpec,
+  getDefaultReactSlashMenuItems,
+} from "@blocknote/react";
 
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
@@ -21,14 +33,156 @@ import BulletList from "@tiptap/extension-bullet-list";
 import OrderedList from "@tiptap/extension-ordered-list";
 import ListItem from "@tiptap/extension-list-item";
 
-
 import { ProposalProvider, useProposal } from "./proposals/ProposalProvider";
 import { ProposalBar } from "./proposals/ProposalBar";
+import { useInlineFastAgent } from "./UnifiedEditor/useInlineFastAgent";
 
 import { computeStructuredOps, prismHighlight, detectFenceLang, diffWords, annotateMoves, type AnnotatedOp, type MovePair } from "./proposals/diffUtils";
 
 const seededDocCache = new Map<string, string>();
 const restoreCache = new Map<string, { seed: string; signal: number }>();
+
+// Custom Mention inline content for @mentions
+const Mention = createReactInlineContentSpec(
+  {
+    type: "mention",
+    propSchema: {
+      documentId: {
+        default: "",
+      },
+      label: {
+        default: "Unknown",
+      },
+    },
+    content: "none",
+  },
+  {
+    render: (props) => (
+      <span
+        style={{
+          backgroundColor: "#8400ff33",
+          cursor: "pointer",
+          color: "#8400ff",
+          padding: "2px 6px",
+          borderRadius: "6px",
+          fontWeight: 500,
+          border: "1px solid transparent",
+          transition: "all 0.2s",
+        }}
+        data-document-id={props.inlineContent.props.documentId}
+        className="mention"
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = "var(--accent-primary)";
+          e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = "transparent";
+          e.currentTarget.style.boxShadow = "none";
+        }}
+        onClick={(e: React.MouseEvent) => {
+          e.preventDefault();
+          const docId = props.inlineContent.props.documentId;
+
+          if (!docId) return;
+
+          if (e.detail === 2) {
+            // Double click - open full document
+            window.dispatchEvent(
+              new CustomEvent('nodebench:openDocument', {
+                detail: { documentId: docId }
+              })
+            );
+          } else {
+            // Single click - show mini editor popover
+            window.dispatchEvent(
+              new CustomEvent('nodebench:showMentionPopover', {
+                detail: { documentId: docId }
+              })
+            );
+          }
+        }}
+      >
+        @{props.inlineContent.props.label}
+      </span>
+    ),
+  }
+);
+
+// Custom Hashtag inline content for #hashtags
+const Hashtag = createReactInlineContentSpec(
+  {
+    type: "hashtag",
+    propSchema: {
+      dossierId: {
+        default: "",
+      },
+      hashtag: {
+        default: "",
+      },
+    },
+    content: "none",
+  },
+  {
+    render: (props) => (
+      <span
+        style={{
+          backgroundColor: "#0ea5e933",
+          cursor: "pointer",
+          color: "#0ea5e9",
+          padding: "2px 6px",
+          borderRadius: "6px",
+          fontWeight: 500,
+          border: "1px solid transparent",
+          transition: "all 0.2s",
+        }}
+        data-dossier-id={props.inlineContent.props.dossierId}
+        className="hashtag"
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = "var(--accent-primary)";
+          e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = "transparent";
+          e.currentTarget.style.boxShadow = "none";
+        }}
+        onClick={(e: React.MouseEvent) => {
+          e.preventDefault();
+          const dossierId = props.inlineContent.props.dossierId;
+          const hashtag = props.inlineContent.props.hashtag;
+
+          if (e.detail === 2) {
+            // Double click - open full dossier
+            if (dossierId) {
+              window.dispatchEvent(
+                new CustomEvent('nodebench:openDocument', {
+                  detail: { documentId: dossierId }
+                })
+              );
+            }
+          } else {
+            // Single click - show quick note popover
+            window.dispatchEvent(
+              new CustomEvent('nodebench:showHashtagQuickNote', {
+                detail: { dossierId, hashtag }
+              })
+            );
+          }
+        }}
+      >
+        #{props.inlineContent.props.hashtag}
+      </span>
+    ),
+  }
+);
+
+// Custom schema with mention and hashtag support
+const schema = BlockNoteSchema.create({
+  inlineContentSpecs: {
+    ...defaultInlineContentSpecs,
+    mention: Mention,
+    hashtag: Hashtag,
+  },
+});
 
 const extractPlainText = (node: any): string => {
   if (!node) return '';
@@ -47,7 +201,7 @@ const blocksAreTriviallyEmpty = (blocks: any[]): boolean => {
 
 /**
  * Sanitize ProseMirror content to remove unsupported node types
- * Converts unsupported nodes (like horizontalRule) to supported alternatives
+ * Converts unsupported nodes (like horizontalRule, mention, hashtag) to supported alternatives
  */
 const sanitizeProseMirrorContent = (content: any): any => {
   if (!content) return content;
@@ -59,7 +213,26 @@ const sanitizeProseMirrorContent = (content: any): any => {
   }
 
   if (typeof content === 'object' && content.type) {
-    // Remove unsupported node types
+    // Convert mentions and hashtags to plain text
+    if (content.type === 'mention') {
+      const label = content.attrs?.label || content.attrs?.id || '';
+      return {
+        type: 'text',
+        text: `@${label}`,
+        marks: content.marks || [],
+      };
+    }
+
+    if (content.type === 'hashtag') {
+      const name = content.attrs?.name || content.attrs?.label || '';
+      return {
+        type: 'text',
+        text: `#${name}`,
+        marks: content.marks || [],
+      };
+    }
+
+    // Remove unsupported block types
     const unsupportedTypes = ['horizontalRule'];
     if (unsupportedTypes.includes(content.type)) {
       return null; // Filter out
@@ -112,6 +285,8 @@ export interface UnifiedEditorProps {
  */
 export default function UnifiedEditor({ documentId, mode = "full", isGridMode, isFullscreen, editable = true, autoCreateIfEmpty = false, seedMarkdown, restoreSignal, restoreMarkdown, registerExporter }: UnifiedEditorProps) {
 
+  const convex = useConvex();
+  const currentUser = useQuery(api.auth.loggedInUser);
 
   // Explicit Convex refs required by the sync hook
   const pmRefs = useMemo(() => ({
@@ -127,6 +302,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   const disableSlashMenu = mode === "quickNote" || !editable; // keep super light or when view-only
 
   const editorOptions = useMemo(() => ({
+    schema,
     _tiptapOptions: {
       extensions: [
         // Task/checklist support
@@ -140,6 +316,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     },
   }), []);
 
+  // Initialize sync hook
   const sync = useBlockNoteSync(pmRefs as any, documentId, {
     editorOptions,
     snapshotDebounceMs: 2000,
@@ -147,6 +324,261 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       console.warn("[UnifiedEditor] sync error:", error?.message || String(error));
     },
   });
+
+  // Initialize inline Fast Agent with streaming support
+  const { askFastAgent, isStreaming: isAIStreaming } = useInlineFastAgent({
+    editor: sync.editor,
+    userId: currentUser?._id,
+    documentId,
+  });
+
+  // Function to get mention menu items (documents to suggest)
+  const getMentionMenuItems = useCallback(
+    async (query: string): Promise<DefaultReactSuggestionItem[]> => {
+      try {
+        const trimmed = (query ?? '').trim();
+        let documents: any[] = [];
+
+        if (trimmed.length < 1) {
+          // Show recent documents
+          documents = await convex.query(api.documents.getRecentForMentions, { limit: 8 });
+        } else {
+          // Search documents
+          documents = await convex.query(api.documents.getSearch, { query: trimmed });
+        }
+
+        return (documents || []).map((doc: any) => ({
+          title: doc.title || 'Untitled',
+          onItemClick: () => {
+            if (sync.editor) {
+              sync.editor.insertInlineContent([
+                {
+                  type: "mention",
+                  props: {
+                    documentId: doc._id,
+                    label: doc.title || 'Untitled',
+                  },
+                },
+                " ", // add a space after the mention
+              ]);
+            }
+          },
+        }));
+      } catch (error) {
+        console.error("[UnifiedEditor] Error fetching mention items:", error);
+        return [];
+      }
+    },
+    [convex, sync.editor]
+  );
+
+  // Function to get hashtag menu items (shows matching documents preview + create new)
+  const getHashtagMenuItems = useCallback(
+    async (query: string): Promise<DefaultReactSuggestionItem[]> => {
+      try {
+        const trimmed = (query ?? '').trim().toLowerCase();
+        const items: DefaultReactSuggestionItem[] = [];
+
+        if (trimmed.length === 0) {
+          // Show recent hashtags when no query
+          const recentHashtags = await convex.query(api.hashtagDossiers.getRecentHashtags, { limit: 5 });
+
+          recentHashtags.forEach((h: any) => {
+            items.push({
+              title: `#${h.hashtag}`,
+              subtext: 'Existing hashtag dossier',
+              onItemClick: () => {
+                if (sync.editor) {
+                  sync.editor.insertInlineContent([
+                    {
+                      type: "hashtag",
+                      props: {
+                        dossierId: h._id,
+                        hashtag: h.hashtag,
+                      },
+                    },
+                    " ",
+                  ]);
+                }
+              },
+            });
+          });
+
+          return items;
+        }
+
+        // Check if hashtag dossier already exists
+        const existingHashtags = await convex.query(api.hashtagDossiers.getRecentHashtags, { limit: 50 });
+        const existingDossier = existingHashtags.find((h: any) => h.hashtag.toLowerCase() === trimmed);
+
+        if (existingDossier) {
+          // Show existing hashtag dossier
+          items.push({
+            title: `#${trimmed}`,
+            subtext: 'Existing hashtag dossier - click to insert',
+            onItemClick: () => {
+              if (sync.editor) {
+                sync.editor.insertInlineContent([
+                  {
+                    type: "hashtag",
+                    props: {
+                      dossierId: existingDossier._id,
+                      hashtag: trimmed,
+                    },
+                  },
+                  " ",
+                ]);
+              }
+            },
+          });
+        } else {
+          // Show "Search and create dossier" option
+          items.push({
+            title: `Search for "${trimmed}" and create dossier`,
+            subtext: 'Will search documents and create a new hashtag dossier',
+            onItemClick: async () => {
+              if (!sync.editor) return;
+
+              // Show immediate visual feedback with a loading placeholder
+              sync.editor.insertInlineContent([
+                {
+                  type: "text",
+                  text: `#${trimmed}`,
+                  styles: {
+                    textColor: "#94a3b8",
+                    backgroundColor: "#f1f5f933",
+                  },
+                },
+                {
+                  type: "text",
+                  text: " ⏳",
+                  styles: { textColor: "#94a3b8" },
+                },
+                " ",
+              ]);
+
+              try {
+                console.log(`[UnifiedEditor] Searching for documents matching: ${trimmed}`);
+
+                // Search for matching documents
+                const searchResult = await convex.action(api.hashtagDossiers.searchForHashtag, {
+                  hashtag: trimmed,
+                });
+
+                console.log(`[UnifiedEditor] Found ${searchResult.totalCount} matching documents`);
+
+                // Create dossier with the matched documents
+                const dossierId = await convex.mutation(api.hashtagDossiers.createHashtagDossier, {
+                  hashtag: trimmed,
+                  matchedDocuments: searchResult.matches,
+                });
+
+                // Get current cursor position and block
+                const cursorPos = sync.editor.getTextCursorPosition();
+                const block = cursorPos.block;
+
+                // Remove the loading placeholder and insert the actual hashtag
+                // Find the last text items (our placeholder)
+                const content = [...(block.content || [])];
+
+                // Remove last 3 items (the placeholder we just inserted)
+                content.splice(-3, 3);
+
+                // Add the actual hashtag
+                content.push({
+                  type: "hashtag",
+                  props: {
+                    dossierId,
+                    hashtag: trimmed,
+                  },
+                });
+                content.push(" ");
+
+                // Update the block
+                (sync.editor as any).updateBlock(block, { content });
+
+                console.log(`[UnifiedEditor] ✅ Created hashtag dossier #${trimmed} with ${searchResult.totalCount} documents`);
+              } catch (error) {
+                console.error("[UnifiedEditor] Error creating hashtag dossier:", error);
+
+                // Get current block and remove the loading placeholder
+                const cursorPos = sync.editor.getTextCursorPosition();
+                const block = cursorPos.block;
+                const content = [...(block.content || [])];
+
+                // Remove last 3 items (the placeholder)
+                content.splice(-3, 3);
+
+                // Add error indicator
+                content.push({
+                  type: "text",
+                  text: `#${trimmed} ❌`,
+                  styles: { textColor: "#ef4444" },
+                });
+                content.push(" ");
+
+                (sync.editor as any).updateBlock(block, { content });
+
+                alert("Failed to create hashtag dossier. Please try again.");
+              }
+            },
+          });
+        }
+
+        return items;
+      } catch (error) {
+        console.error("[UnifiedEditor] Error fetching hashtag items:", error);
+        return [];
+      }
+    },
+    [convex, sync.editor, documentId]
+  );
+
+  // Custom slash menu items for Fast Agent integration with streaming
+  const getCustomSlashMenuItems = useCallback((editor: BlockNoteEditor) => {
+    const defaultItems = getDefaultReactSlashMenuItems(editor);
+
+    // Add custom Fast Agent item to the slash menu
+    return [
+      ...defaultItems,
+      {
+        title: "Ask Fast Agent",
+        onItemClick: () => {
+          // Get selected text or current block content
+          const selection = editor.getSelection();
+          let context = "";
+
+          if (selection) {
+            const blocks = selection.blocks;
+            context = blocks.map((block: any) => {
+              if (block.content && Array.isArray(block.content)) {
+                return block.content.map((c: any) => c.text || "").join("");
+              }
+              return "";
+            }).join("\n");
+          }
+
+          // Prompt user for their question
+          const question = window.prompt(
+            "What would you like Fast Agent to help with?" +
+            (context ? `\n\nContext: ${context.substring(0, 100)}...` : "")
+          );
+
+          if (!question) return;
+
+          // Call Fast Agent with streaming
+          askFastAgent(question, context).catch((error) => {
+            console.error("[UnifiedEditor] Fast Agent error:", error);
+            alert("Failed to get response from Fast Agent");
+          });
+        },
+        aliases: ["ai", "agent", "ask"],
+        group: "AI",
+        icon: "🤖",
+        subtext: "Get help from Fast Agent (streaming)",
+      },
+    ];
+  }, [askFastAgent]);
 
   // Sanitize the loaded content to remove unsupported node types
   useEffect(() => {
@@ -190,6 +622,10 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       await setAgentsPrefs({ prefs: { [`doc.hasContent.${String(documentId)}`]: '1' } as any });
     } catch {}
   }, [setAgentsPrefs, documentId]);
+  // ProseMirror latest version preflight (to avoid creating when snapshots exist)
+  const latestVersion = useQuery((api as any).prosemirror.latestVersion as any, { id: String(documentId) } as any) as number | null;
+  const safeLatestVersion: number = typeof latestVersion === 'number' ? latestVersion : 0;
+
 
   const [pendingProposal, setPendingProposal] = useState<null | { message: string; actions: AIToolAction[]; anchorBlockId: string | null }>(null);
   const attemptedAutoCreateRef = useRef(false);
@@ -199,7 +635,13 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
 
   // Ensure file/doc notes exist without requiring a manual click
   useEffect(() => {
-    if (autoCreateIfEmpty && !sync.editor && !attemptedAutoCreateRef.current) {
+    if (
+      autoCreateIfEmpty &&
+      !serverHadContent &&
+      safeLatestVersion <= 0 &&
+      !sync.editor &&
+      !attemptedAutoCreateRef.current
+    ) {
       attemptedAutoCreateRef.current = true;
       try {
         void sync.create?.({ type: "doc", content: [] } as any);
@@ -207,7 +649,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         console.warn("[UnifiedEditor] autoCreateIfEmpty failed", e);
       }
     }
-  }, [autoCreateIfEmpty, sync]);
+  }, [autoCreateIfEmpty, serverHadContent, safeLatestVersion, sync]);
 
   // Helper: get current or last block as a reasonable default target
   const getCurrentOrLastBlock = useCallback((): any | null => {
@@ -1319,13 +1761,57 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       )}
       {editable && pendingProposal && <ProposalInlineDecorations />}
 
+      {/* AI Streaming Indicator */}
+      {isAIStreaming && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            padding: '12px 20px',
+            background: 'var(--accent-primary)',
+            color: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            zIndex: 1000,
+            fontSize: '14px',
+            fontWeight: 500,
+          }}
+        >
+          <span className="animate-pulse">🤖</span>
+          <span>Fast Agent is thinking...</span>
+        </div>
+      )}
+
           <BlockNoteView
             editor={sync.editor}
             theme={document?.documentElement?.classList?.contains?.("dark") ? "dark" : "light"}
             slashMenu={!disableSlashMenu}
             editable={editable as any}
             data-block-id-attribute="data-block-id"
-          />
+            slashMenuItems={sync.editor ? getCustomSlashMenuItems(sync.editor) : undefined}
+          >
+            {/* Adds a mentions menu which opens with the "@" key */}
+            <SuggestionMenuController
+              triggerCharacter={"@"}
+              getItems={async (query) =>
+                filterSuggestionItems(await getMentionMenuItems(query), query)
+              }
+            />
+
+            {/* Adds a hashtags menu which opens with the "#" key */}
+            <SuggestionMenuController
+              triggerCharacter={"#"}
+              getItems={async (query) =>
+                filterSuggestionItems(await getHashtagMenuItems(query), query)
+              }
+            />
+          </BlockNoteView>
+
+
         </div>
       </ProposalProvider>
     );

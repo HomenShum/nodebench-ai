@@ -1,22 +1,15 @@
-import { useQuery, useAction, useMutation } from "convex/react";
-import { useRef, useState, useMemo, useEffect } from "react";
+import { useQuery, useAction } from "convex/react";
+import { useRef, useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sparkles, Loader2, Video, Image as ImageIcon, FileText } from "lucide-react";
-import { DossierHeader } from "./dossier/DossierHeader";
-import { DossierTranscript } from "./dossier/DossierTranscript";
+import { ChevronLeft, ChevronRight, Sparkles, Loader2, Video, Image as ImageIcon, FileText, Maximize2, Edit3 } from "lucide-react";
 import { DossierMediaGallery } from "./dossier/DossierMediaGallery";
-import { extractMediaFromBlocks, countMediaAssets } from "./dossier/mediaExtractor";
+import { extractMediaFromTipTap, countMediaAssets, type TipTapDocument } from "./dossier/tipTapMediaExtractor";
 import UnifiedEditor from "@/components/UnifiedEditor";
 import type { VideoAsset, ImageAsset, DocumentAsset } from "./dossier/mediaExtractor";
 
-type QuickNotesDocument = {
-  _id: Id<"documents">;
-  content?: string | null;
-  title?: string | null;
-  parentDossierId?: Id<"documents"> | null;
-};
+type ViewMode = 'split' | 'unified';
 
 interface DossierViewerProps {
   documentId: Id<"documents">;
@@ -25,64 +18,19 @@ interface DossierViewerProps {
 }
 
 /**
- * DossierViewer - Split-panel viewer for chat session dossiers
- * Left panel (65%): Media gallery with videos, images, and documents
- * Right panel (35%): Research panel with vertical split (transcript + quick notes)
+ * DossierViewer - Flexible viewer for dossier documents with rich media
+ *
+ * Two view modes:
+ * - Split Panel Mode (default): Left panel shows media gallery (65%), right panel shows transcript (35%)
+ * - Unified Editor Mode: Full-width editable UnifiedEditor for direct content editing
  */
 export function DossierViewer({ documentId, isGridMode = false, isFullscreen = false }: DossierViewerProps) {
   const document = useQuery(api.documents.getById, { documentId });
   const linkedAssets = useQuery(api.documents.getLinkedAssets, { dossierId: documentId });
   const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
-  const ensureQuickNotesDoc = useMutation(api.documents.getOrCreateQuickNotes);
 
-  const [quickNotesDoc, setQuickNotesDoc] = useState<QuickNotesDocument | null>(null);
-  const quickNotesRequestRef = useRef<Promise<QuickNotesDocument | null> | null>(null);
-  const quickNotesAttemptedRef = useRef(false);
-
-  // Reset cached quick notes when switching dossiers
-  useEffect(() => {
-    setQuickNotesDoc(null);
-    quickNotesRequestRef.current = null;
-    quickNotesAttemptedRef.current = false;
-  }, [documentId]);
-
-  // Ensure a dedicated quick notes document exists for this dossier
-  useEffect(() => {
-    if (document === undefined || document === null) {
-      return;
-    }
-
-    if (quickNotesDoc || quickNotesRequestRef.current || quickNotesAttemptedRef.current) {
-      return;
-    }
-
-    let cancelled = false;
-    quickNotesAttemptedRef.current = true;
-    const promise = ensureQuickNotesDoc({ dossierId: documentId }) as Promise<QuickNotesDocument | null>;
-    quickNotesRequestRef.current = promise;
-
-    promise
-      .then((doc) => {
-        if (!cancelled && doc && doc._id) {
-          setQuickNotesDoc(doc);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error("[DossierViewer] Failed to load quick notes document:", error);
-          quickNotesAttemptedRef.current = false;
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          quickNotesRequestRef.current = null;
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [document, documentId, ensureQuickNotesDoc, quickNotesDoc]);
+  // View mode state
+  const [viewMode, setViewMode] = useState<ViewMode>('split');
 
   // Panel state - Horizontal (left/right)
   const DEFAULT_H_LAYOUT = [65, 35] as const;
@@ -90,13 +38,6 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   const researchPanelRef = useRef<ImperativePanelHandle>(null);
   const lastResearchSizeRef = useRef<number>(DEFAULT_H_LAYOUT[1]);
   const [researchCollapsed, setResearchCollapsed] = useState(false);
-
-  // Panel state - Vertical (transcript/notes)
-  const DEFAULT_V_LAYOUT = [50, 50] as const;
-  const vGroupRef = useRef<ImperativePanelGroupHandle>(null);
-  const notesPanelRef = useRef<ImperativePanelHandle>(null);
-  const lastNotesSizeRef = useRef<number>(DEFAULT_V_LAYOUT[1]);
-  const [notesCollapsed, setNotesCollapsed] = useState(false);
 
   // Media highlighting
   const [highlightedSection, setHighlightedSection] = useState<'videos' | 'images' | 'documents' | null>(null);
@@ -114,17 +55,8 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     setResearchCollapsed((sizes[1] ?? 0) < 5);
   };
 
-  const onVerticalLayout = (sizes: number[]) => {
-    lastNotesSizeRef.current = sizes[1] ?? lastNotesSizeRef.current;
-    setNotesCollapsed((sizes[1] ?? 0) < 5);
-  };
-
   const resetHorizontal = () => {
     hGroupRef.current?.setLayout?.([...DEFAULT_H_LAYOUT]);
-  };
-
-  const resetVertical = () => {
-    vGroupRef.current?.setLayout?.([...DEFAULT_V_LAYOUT]);
   };
 
   const toggleResearch = () => {
@@ -136,18 +68,6 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     } else {
       lastResearchSizeRef.current = size;
       researchPanelRef.current?.collapse?.();
-    }
-  };
-
-  const toggleNotes = () => {
-    const size = notesPanelRef.current?.getSize?.() ?? 0;
-    if (size < 5) {
-      const target = lastNotesSizeRef.current || DEFAULT_V_LAYOUT[1];
-      vGroupRef.current?.setLayout?.([Math.max(0, 100 - target), Math.min(100, target)]);
-      notesPanelRef.current?.expand?.();
-    } else {
-      lastNotesSizeRef.current = size;
-      notesPanelRef.current?.collapse?.();
     }
   };
 
@@ -163,21 +83,22 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     }
   }, []);
 
-  // Parse EditorJS content
-  let editorJsContent: any = null;
+  // Parse TipTap content
+  let tipTapContent: TipTapDocument | null = null;
   try {
     if (typeof document?.content === "string") {
-      editorJsContent = JSON.parse(document.content);
+      const parsed = JSON.parse(document.content);
+      // Check if it's TipTap format (has type: "doc")
+      if (parsed.type === "doc" && Array.isArray(parsed.content)) {
+        tipTapContent = parsed as TipTapDocument;
+      }
     }
   } catch (error) {
     console.error("Failed to parse dossier content:", error);
   }
 
-  // If no EditorJS content, proceed with empty blocks so Gallery/Notes still render
-  const blocks = Array.isArray(editorJsContent?.blocks) ? editorJsContent.blocks : [];
-
-  // Extract media assets from EditorJS blocks
-  const extractedMedia = useMemo(() => extractMediaFromBlocks(blocks), [blocks]);
+  // Extract media assets from TipTap document
+  const extractedMedia = useMemo(() => extractMediaFromTipTap(tipTapContent), [tipTapContent]);
 
   // Also extract linked assets from Convex (child docs under this dossier)
   const linkedMedia = useMemo(() => {
@@ -270,20 +191,6 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     return files;
   }, [mergedMedia]);
 
-  // Handle media reference clicks
-  const handleMediaClick = (type: 'video' | 'image' | 'document') => {
-    // Highlight the section
-    const sectionMap = {
-      video: 'videos' as const,
-      image: 'images' as const,
-      document: 'documents' as const,
-    };
-    setHighlightedSection(sectionMap[type]);
-
-    // Clear highlight after 2 seconds
-    setTimeout(() => setHighlightedSection(null), 2000);
-  };
-
   // Handle analysis
   const handleAnalyze = async () => {
     if (selectedFiles.size === 0) {
@@ -364,20 +271,205 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     }
   };
 
+  // Helper function to render TipTap nodes as read-only content
+  const renderTipTapNode = (node: any): React.ReactNode => {
+    switch (node.type) {
+      case 'heading': {
+        const level = node.attrs?.level || 1;
+        const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
+        return <HeadingTag className={`text-${4 - level}xl font-bold mb-2`}>{renderContent(node.content)}</HeadingTag>;
+      }
+
+      case 'paragraph':
+        return <p className="mb-2">{renderContent(node.content)}</p>;
+
+      case 'blockquote':
+        return <blockquote className="border-l-4 border-[var(--accent-primary)] pl-4 italic my-4">{renderContent(node.content)}</blockquote>;
+
+      case 'codeBlock':
+        return <pre className="bg-[var(--bg-secondary)] p-4 rounded my-4 overflow-x-auto"><code>{renderContent(node.content)}</code></pre>;
+
+      case 'video': {
+        const videoUrl = node.attrs?.url;
+        if (videoUrl && videoUrl.includes('youtube')) {
+          const videoId = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1];
+          if (videoId) {
+            return (
+              <div className="my-4 aspect-video">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={`https://www.youtube.com/embed/${videoId}`}
+                  title="YouTube video"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            );
+          }
+        }
+        return <div className="text-[var(--text-muted)] my-2">Video: {videoUrl}</div>;
+      }
+
+      case 'image':
+        return <img src={node.attrs?.url} alt={node.attrs?.caption || 'Image'} className="max-w-full h-auto my-4 rounded" />;
+
+      case 'file':
+        return (
+          <a href={node.attrs?.url} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline my-2 block">
+            📄 {node.attrs?.name || node.attrs?.caption || 'Download file'}
+          </a>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // Click handler for document links with single/double click detection
+  const handleDocumentLinkClick = useCallback((docId: Id<"documents">, e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+
+    const target = e.currentTarget;
+    const clickCount = (e.detail || 1);
+
+    if (clickCount === 1) {
+      // Single click - show mini popover
+      // Use the existing nodebench:showMentionPopover event that MainLayout listens to
+      // Add data attribute so MainLayout can find the anchor element
+      target.setAttribute('data-document-id', docId);
+
+      window.dispatchEvent(
+        new CustomEvent('nodebench:showMentionPopover', {
+          detail: {
+            documentId: docId
+          }
+        })
+      );
+    } else if (clickCount >= 2) {
+      // Double click - open full document
+      window.dispatchEvent(
+        new CustomEvent('nodebench:openDocument', {
+          detail: { documentId: docId }
+        })
+      );
+    }
+  }, []);
+
+  const renderContent = (content: any[] | undefined): React.ReactNode => {
+    if (!content) return null;
+    return content.map((node, idx) => {
+      if (node.type === 'text') {
+        let text = node.text || '';
+        if (node.marks) {
+          for (const mark of node.marks) {
+            if (mark.type === 'bold') text = <strong key={idx}>{text}</strong>;
+            if (mark.type === 'italic') text = <em key={idx}>{text}</em>;
+            if (mark.type === 'code') text = <code key={idx} className="bg-[var(--bg-secondary)] px-1 rounded">{text}</code>;
+            if (mark.type === 'link') {
+              const href = mark.attrs?.href;
+              const isLocalDocument = href?.startsWith('/documents/');
+
+              if (isLocalDocument) {
+                // Local document link - handle with single/double click
+                const docId = href.split('/documents/')[1] as Id<"documents">;
+                text = (
+                  <a
+                    key={idx}
+                    href={href}
+                    className="text-[var(--accent-primary)] hover:underline cursor-pointer"
+                    onClick={(e) => handleDocumentLinkClick(docId, e)}
+                  >
+                    {text}
+                  </a>
+                );
+              } else {
+                // External link - open in new tab
+                text = (
+                  <a
+                    key={idx}
+                    href={href}
+                    className="text-[var(--accent-primary)] hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {text}
+                  </a>
+                );
+              }
+            }
+          }
+        }
+        return text;
+      }
+      return renderTipTapNode(node);
+    });
+  };
+
+  // If in unified editor mode, render full-width editor
+  if (viewMode === 'unified') {
+    return (
+      <div className="h-full flex flex-col bg-[var(--bg-primary)]">
+        {/* Header with view mode toggle */}
+        <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+                {document?.title || 'Untitled Dossier'}
+              </h2>
+              <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                <span>{mediaCounts.total} media assets</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setViewMode('split')}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+              title="Switch to split panel view"
+            >
+              <Maximize2 className="h-4 w-4" />
+              <span>Split View</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Full-width Unified Editor */}
+        <div className="flex-1 overflow-hidden">
+          <UnifiedEditor documentId={documentId} />
+        </div>
+      </div>
+    );
+  }
+
+  // Default: Split panel mode
   return (
     <div className="h-full flex flex-col bg-[var(--bg-primary)]">
-      {/* Header */}
-      <DossierHeader
-        documentId={documentId}
-        title={document?.title ?? ''}
-        isPublic={!!document?.isPublic}
-        isFavorite={!!document?.isFavorite}
-        tags={(document as any)?.tags || []}
-        videoCount={mediaCounts.videos}
-        imageCount={mediaCounts.images}
-        documentCount={mediaCounts.documents}
-        messageCount={blocks.length}
-      />
+      {/* Header with view mode toggle */}
+      <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+              {document?.title || 'Untitled Dossier'}
+            </h2>
+            <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+              <Video className="h-3 w-3" />
+              <span>{mediaCounts.videos}</span>
+              <ImageIcon className="h-3 w-3 ml-2" />
+              <span>{mediaCounts.images}</span>
+              <FileText className="h-3 w-3 ml-2" />
+              <span>{mediaCounts.documents}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setViewMode('unified')}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+            title="Switch to unified editor view"
+          >
+            <Edit3 className="h-4 w-4" />
+            <span>Edit Mode</span>
+          </button>
+        </div>
+      </div>
 
       {/* Split Panel Layout */}
       <div className="flex-1 min-h-0 overflow-hidden">
@@ -435,52 +527,24 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 </div>
               </div>
 
-              {/* Vertical Split: Transcript + Notes */}
-              <div className="flex-1 min-h-0">
-                <PanelGroup
-                  ref={vGroupRef}
-                  direction="vertical"
-                  autoSaveId="dossierViewer:v"
-                  onLayout={onVerticalLayout}
-                >
-                  {/* Top: Transcript */}
-                  <Panel defaultSize={50} minSize={20}>
-                    <div className="h-full overflow-y-auto p-4">
-                      <DossierTranscript
-                        blocks={blocks}
-                        onMediaClick={handleMediaClick}
-                      />
+              {/* Transcript Panel - Full height, no quick notes */}
+              <div className="flex-1 min-h-0 overflow-y-auto p-4">
+                {tipTapContent ? (
+                  <div className="prose prose-lg max-w-none">
+                    <div className="text-[var(--text-primary)]">
+                      {/* Render TipTap content as read-only text */}
+                      {tipTapContent.content.map((node, idx) => (
+                        <div key={idx} className="mb-4">
+                          {renderTipTapNode(node)}
+                        </div>
+                      ))}
                     </div>
-                  </Panel>
-
-                  {/* Vertical Resize Handle */}
-                  <PanelResizeHandle
-                    className="h-1 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] transition-colors cursor-row-resize"
-                    onDoubleClick={resetVertical}
-                    title="Double-click to reset layout"
-                  />
-
-                  {/* Bottom: Quick Notes */}
-                  <Panel ref={notesPanelRef} defaultSize={50} minSize={0} collapsible>
-                    <div className="h-full border-t border-[var(--border-color)] p-4 overflow-auto">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-medium text-[var(--text-primary)]">Quick Notes</h4>
-                        <button
-                          onClick={toggleNotes}
-                          className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
-                          title={notesCollapsed ? 'Expand Quick Notes' : 'Collapse Quick Notes'}
-                        >
-                          {notesCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      <div className="min-h-[240px]">
-                        {quickNotesDoc?._id && (
-                          <UnifiedEditor documentId={quickNotesDoc._id} mode="quickNote" autoCreateIfEmpty />
-                        )}
-                      </div>
-                    </div>
-                  </Panel>
-                </PanelGroup>
+                  </div>
+                ) : (
+                  <div className="text-center text-[var(--text-muted)] py-8">
+                    No transcript available
+                  </div>
+                )}
               </div>
             </div>
           </Panel>
