@@ -1,6 +1,6 @@
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
-import * as api from "../_generated/api";
+import { api, internal } from "../_generated/api";
 
 // Integration-style internal actions to validate deleteMessage behavior
 // Run with:
@@ -11,7 +11,7 @@ export const testDeleteByStreamId = internalMutation({
   args: {},
   returns: v.object({ ok: v.boolean(), info: v.string() }),
   handler: async (ctx) => {
-    const userId = await (ctx as any).runMutation((api as any).testHelpers.createTestUser, {});
+    const userId = await (ctx as any).runMutation((internal as any).testHelpers.createTestUser, {});
 
     // Create a streaming thread linked to a dummy agent thread
     const now = Date.now();
@@ -67,7 +67,7 @@ export const testDeleteByAgentId = internalMutation({
   args: {},
   returns: v.object({ ok: v.boolean(), info: v.string() }),
   handler: async (ctx) => {
-    const userId = await (ctx as any).runMutation((api as any).testHelpers.createTestUser, {});
+    const userId = await (ctx as any).runMutation((internal as any).testHelpers.createTestUser, {});
 
     // Create a streaming thread linked to a dummy agent thread
     const now = Date.now();
