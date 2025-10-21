@@ -147,14 +147,35 @@ function extractProfiles(text: string): PersonProfile[] {
 }
 
 /**
- * Extract images from markdown syntax
- * Format: ![alt text](url)
+ * Extract images from HTML comment markers, markdown syntax, AND plain text URLs
+ * Format 1: <!-- IMAGE_DATA\n[...]\n-->
+ * Format 2: ![alt text](url)
+ * Format 3: Plain text with image URLs (e.g., "Paris skyline — https://example.com/image.jpg")
  */
 function extractImages(text: string): Array<{ url: string; alt: string }> {
+  const images: Array<{ url: string; alt: string }> = [];
+
+  // Try HTML comment marker first (highest priority - structured data from tool)
+  const imageDataMatch = text.match(/<!-- IMAGE_DATA\s*([\s\S]*?)\s*-->/);
+  if (imageDataMatch) {
+    try {
+      const imageData = JSON.parse(imageDataMatch[1]);
+      if (Array.isArray(imageData)) {
+        images.push(...imageData.map((img: any) => ({
+          url: img.url || '',
+          alt: img.alt || img.name || 'Image'
+        })));
+        console.log('[mediaExtractor] Extracted', images.length, 'images from IMAGE_DATA marker');
+        return images; // Return early if we have structured data
+      }
+    } catch (error) {
+      console.warn('Failed to parse IMAGE_DATA:', error);
+    }
+  }
+
   // Extract markdown images: ![alt](url)
   const imageMatches = text.match(/!\[.*?\]\(.*?\)/g) || [];
-
-  const images = imageMatches
+  const markdownImages = imageMatches
     .map(match => {
       const urlMatch = match.match(/\((.*?)\)/);
       const altMatch = match.match(/!\[(.*?)\]/);
@@ -163,10 +184,44 @@ function extractImages(text: string): Array<{ url: string; alt: string }> {
         alt: altMatch?.[1] || 'Image'
       };
     })
-    .filter(img => img.url && img.url.trim().length > 0); // Remove invalid entries
+    .filter(img => img.url && img.url.trim().length > 0);
+
+  images.push(...markdownImages);
+
+  // Extract plain text image URLs from list items
+  // Pattern: "- Description — https://example.com/image.jpg"
+  // Common image extensions: jpg, jpeg, png, gif, webp, svg
+  const imageUrlPattern = /[-•]\s*([^—\n]+?)\s*[—–-]\s*(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?)/gi;
+  let match;
+  while ((match = imageUrlPattern.exec(text)) !== null) {
+    const [, description, url] = match;
+    const cleanUrl = url.trim();
+    // Avoid duplicates
+    if (!images.some(img => img.url === cleanUrl)) {
+      images.push({
+        url: cleanUrl,
+        alt: description.trim() || 'Image'
+      });
+    }
+  }
+
+  // Also extract standalone image URLs (not in lists)
+  // Pattern: "https://example.com/image.jpg" on its own line or after text
+  const standaloneUrlPattern = /(?:^|\s)(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?)/gi;
+  const standaloneMatches = text.match(standaloneUrlPattern) || [];
+  for (const urlMatch of standaloneMatches) {
+    const url = urlMatch.trim();
+    // Avoid duplicates
+    if (!images.some(img => img.url === url)) {
+      images.push({
+        url,
+        alt: 'Image'
+      });
+    }
+  }
 
   if (images.length > 0) {
-    console.log('[mediaExtractor] Extracted', images.length, 'images from markdown');
+    console.log('[mediaExtractor] Extracted', images.length, 'images (markdown + plain URLs)');
   }
 
   return images;
@@ -174,7 +229,7 @@ function extractImages(text: string): Array<{ url: string; alt: string }> {
 
 /**
  * Remove media markers from text to avoid duplicate display
- * Removes HTML comment markers, "## Images" headers, and image markdown
+ * Removes HTML comment markers, "## Images" headers, image markdown, and plain image URL lists
  */
 export function removeMediaMarkersFromText(text: string): string {
   let cleaned = text
@@ -194,6 +249,13 @@ export function removeMediaMarkersFromText(text: string): string {
 
   // Also remove any standalone "## Images" headers that might remain
   cleaned = cleaned.replace(/## Images\s*\n*/g, '');
+
+  // Remove "Images (examples)" section with plain URL lists
+  // Pattern: "Images (examples)" followed by list items with image URLs
+  cleaned = cleaned.replace(/Images\s*\(examples\)\s*\n+(?:[-•]\s*[^—\n]+?[—–-]\s*https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?\s*\n*)+/gi, '');
+
+  // Remove individual list items with image URLs
+  cleaned = cleaned.replace(/[-•]\s*[^—\n]+?[—–-]\s*https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?\s*\n*/gi, '');
 
   return cleaned;
 }

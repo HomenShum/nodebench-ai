@@ -60,6 +60,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     documentId: Id<"documents">;
     anchorEl: HTMLElement;
   } | null>(null);
+  // Fast Agent thread navigation (for inline agent "View in Panel" link)
+  const [fastAgentThreadId, setFastAgentThreadId] = useState<string | null>(null);
   // Restore persisted MCP panel visibility
   useEffect(() => {
     try {
@@ -90,6 +92,17 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [showMcpPanel, showAIChat]);
+
+  // Global event listener for inline agent "View in Panel" navigation
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ threadId: string }>) => {
+      console.log('[MainLayout] Navigating to Fast Agent thread:', e.detail.threadId);
+      setFastAgentThreadId(e.detail.threadId);
+      setShowFastAgent(true);
+    };
+    window.addEventListener('navigate:fastAgentThread' as any, handler as any);
+    return () => window.removeEventListener('navigate:fastAgentThread' as any, handler as any);
+  }, []);
 
   // Listen for quick prompts emitted by other components
   useEffect(() => {
@@ -837,6 +850,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         onClose={() => setShowFastAgent(false)}
         selectedDocumentId={selectedDocumentId || undefined}
         selectedDocumentIds={selectedDocumentIdsForAgent}
+        initialThreadId={fastAgentThreadId}
       />
 
       {/* Central Settings Modal */}

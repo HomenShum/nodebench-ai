@@ -129,8 +129,19 @@ export const linkupSearch = createTool({
       // Add images if present
       if (imageResults.length > 0) {
         imageCount = imageResults.length;
+
+        // Prepare structured data for gallery rendering
+        const images = imageResults.slice(0, 10).map((image) => ({
+          url: image.url,
+          alt: image.name || "Image",
+          thumbnail: image.thumbnail,
+        }));
+
+        // Add structured data marker for frontend gallery rendering
+        result += `<!-- IMAGE_DATA\n${JSON.stringify(images, null, 2)}\n-->\n\n`;
+
+        // Also add markdown images for text-based rendering
         result += "## Images\n\n";
-        // Put all images in a single paragraph for horizontal gallery layout
         imageResults.slice(0, 10).forEach((image) => {
           const altText = image.name || "Image";
           result += `![${altText}](${image.url}) `;

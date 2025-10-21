@@ -12,6 +12,25 @@
   }
 }
 
+/* Thread list collapse/expand animation */
+@keyframes collapseWidth {
+  from {
+    width: 280px;
+  }
+  to {
+    width: 60px;
+  }
+}
+
+@keyframes expandWidth {
+  from {
+    width: 60px;
+  }
+  to {
+    width: 280px;
+  }
+}
+
 /* Fade-in animation */
 @keyframes fadeIn {
   from {

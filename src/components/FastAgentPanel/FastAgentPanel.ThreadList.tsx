@@ -2,7 +2,7 @@
 // Thread list sidebar with search, pin, and delete functionality
 
 import React, { useState, useMemo } from 'react';
-import { MessageSquare, Pin, Trash2, Search, X, Download, Wrench, Cpu } from 'lucide-react';
+import { MessageSquare, Pin, Trash2, Search, X, Download, Wrench, Cpu, PanelLeftClose, PanelLeft } from 'lucide-react';
 import type { Thread } from './types';
 
 interface ThreadListProps {
@@ -81,110 +81,114 @@ export function ThreadList({
   if (isCollapsed) {
     return null;
   }
-  
+
   return (
-    <div className="thread-list">
-      {/* Search bar */}
-      <div className="thread-search">
-        <Search className="search-icon" />
-        <input
-          type="text"
-          placeholder="Search conversations..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="search-clear"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-      
-      {/* Thread list */}
-      <div className="thread-list-scroll">
-        {filteredThreads.length === 0 ? (
-          <div className="thread-list-empty">
-            <MessageSquare className="h-8 w-8 text-gray-400" />
-            <p className="text-sm text-gray-500">
-              {searchQuery ? 'No conversations found' : 'No conversations yet'}
-            </p>
+    <div className={`thread-list ${isCollapsed ? 'collapsed' : ''}`}>
+      {!isCollapsed && (
+        <>
+          {/* Search bar */}
+          <div className="thread-search">
+            <Search className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="search-clear"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-        ) : (
-          filteredThreads.map((thread) => (
-            <div
-              key={thread._id}
-              className={`thread-item ${activeThreadId === thread._id ? 'active' : ''}`}
-              onClick={() => onSelectThread(thread._id)}
-            >
-              <div className="thread-item-content">
-                <div className="thread-item-header">
-                  <h3 className="thread-title">{thread.title}</h3>
-                  <div className="thread-actions">
-                    {onExportThread && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onExportThread(thread._id);
-                        }}
-                        className="thread-action-btn"
-                        title="Export"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                      </button>
+
+          {/* Thread list */}
+          <div className="thread-list-scroll">
+            {filteredThreads.length === 0 ? (
+              <div className="thread-list-empty">
+                <MessageSquare className="h-8 w-8 text-gray-400" />
+                <p className="text-sm text-gray-500">
+                  {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                </p>
+              </div>
+            ) : (
+              filteredThreads.map((thread) => (
+                <div
+                  key={thread._id}
+                  className={`thread-item ${activeThreadId === thread._id ? 'active' : ''}`}
+                  onClick={() => onSelectThread(thread._id)}
+                >
+                  <div className="thread-item-content">
+                    <div className="thread-item-header">
+                      <h3 className="thread-title">{thread.title}</h3>
+                      <div className="thread-actions">
+                        {onExportThread && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onExportThread(thread._id);
+                            }}
+                            className="thread-action-btn"
+                            title="Export"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPinThread(thread._id);
+                          }}
+                          className={`thread-action-btn ${thread.pinned ? 'pinned' : ''}`}
+                          title={thread.pinned ? 'Unpin' : 'Pin'}
+                        >
+                          <Pin className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(thread._id, e)}
+                          className="thread-action-btn delete"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {thread.lastMessage && (
+                      <p className="thread-preview">
+                        {thread.lastMessage}
+                      </p>
                     )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPinThread(thread._id);
-                      }}
-                      className={`thread-action-btn ${thread.pinned ? 'pinned' : ''}`}
-                      title={thread.pinned ? 'Unpin' : 'Pin'}
-                    >
-                      <Pin className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(thread._id, e)}
-                      className="thread-action-btn delete"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-                
-                {thread.lastMessage && (
-                  <p className="thread-preview">
-                    {thread.lastMessage}
-                  </p>
-                )}
-                
-                {/* Tools and Models Used */}
-                {(thread.toolsUsed && thread.toolsUsed.length > 0) && (
-                  <div className="thread-badges">
-                    <div className="thread-badge-group">
-                      <Wrench className="badge-icon" />
-                      <span className="badge-count">{thread.toolsUsed.length} {thread.toolsUsed.length === 1 ? 'tool' : 'tools'}</span>
+
+                    {/* Tools and Models Used */}
+                    {(thread.toolsUsed && thread.toolsUsed.length > 0) && (
+                      <div className="thread-badges">
+                        <div className="thread-badge-group">
+                          <Wrench className="badge-icon" />
+                          <span className="badge-count">{thread.toolsUsed.length} {thread.toolsUsed.length === 1 ? 'tool' : 'tools'}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="thread-meta">
+                      <span className="thread-message-count">
+                        {thread.messageCount || 0} messages
+                      </span>
+                      <span className="thread-time">
+                        {formatRelativeTime(thread.lastMessageAt || thread.updatedAt)}
+                      </span>
                     </div>
                   </div>
-                )}
-                
-                <div className="thread-meta">
-                  <span className="thread-message-count">
-                    {thread.messageCount || 0} messages
-                  </span>
-                  <span className="thread-time">
-                    {formatRelativeTime(thread.lastMessageAt || thread.updatedAt)}
-                  </span>
                 </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
       
       {/* Delete confirmation modal */}
       {deletingThreadId && (
@@ -214,8 +218,18 @@ export function ThreadList({
           display: flex;
           flex-direction: column;
           background: var(--bg-primary);
+          position: relative;
+          transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
         }
-        
+
+        .thread-list.collapsed {
+          width: 0;
+          min-width: 0;
+          border-right: none;
+        }
+
+
         .thread-search {
           padding: 1rem;
           border-bottom: 1px solid var(--border-color);

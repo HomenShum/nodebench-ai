@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus, Radio, Save } from 'lucide-react';
+import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 
@@ -33,6 +33,7 @@ interface FastAgentPanelProps {
   onClose: () => void;
   selectedDocumentId?: Id<"documents">;
   selectedDocumentIds?: Id<"documents">[];
+  initialThreadId?: string | null; // Allow external components to set the active thread
 }
 
 /**
@@ -54,10 +55,11 @@ export function FastAgentPanel({
   onClose,
   selectedDocumentId: _selectedDocumentId,
   selectedDocumentIds: _selectedDocumentIds,
+  initialThreadId,
 }: FastAgentPanelProps) {
   // ========== STATE ==========
   // Agent component uses string threadIds, not Id<"chatThreads">
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(initialThreadId || null);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [exportingThreadId, setExportingThreadId] = useState<string | null>(null);
@@ -80,6 +82,9 @@ export function FastAgentPanel({
   const [fastMode, setFastMode] = useState(true);
   const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gemini'>('gpt-5');
 
+  // Thread list collapse state
+  const [isThreadListCollapsed, setIsThreadListCollapsed] = useState(false);
+
   // Live streaming state
   const [liveThinking, setLiveThinking] = useState<ThinkingStep[]>([]);
   const [liveTokens, setLiveTokens] = useState<string>("");
@@ -94,6 +99,14 @@ export function FastAgentPanel({
   // Track auto-created documents to avoid duplicates (by agentThreadId) and processed message IDs
   const autoDocCreatedThreadIdsRef = useRef<Set<string>>(new Set());
   const processedDocMessageIdsRef = useRef<Set<string>>(new Set());
+
+  // Update active thread when initialThreadId changes (for external navigation)
+  useEffect(() => {
+    if (initialThreadId && initialThreadId !== activeThreadId) {
+      console.log('[FastAgentPanel] Setting active thread from external source:', initialThreadId);
+      setActiveThreadId(initialThreadId);
+    }
+  }, [initialThreadId, activeThreadId]);
 
   // ========== CONVEX QUERIES & MUTATIONS ==========
   // Agent mode: Using @convex-dev/agent component
@@ -1035,6 +1048,16 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
 
       {/* Content Area */}
       <div className="fast-agent-panel-content">
+        {/* Thread List Collapse Toggle - Always Visible */}
+        <button
+          onClick={() => setIsThreadListCollapsed(!isThreadListCollapsed)}
+          className="thread-list-collapse-toggle"
+          title={isThreadListCollapsed ? 'Expand thread list' : 'Collapse thread list'}
+          aria-label={isThreadListCollapsed ? 'Expand thread list' : 'Collapse thread list'}
+        >
+          {isThreadListCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        </button>
+
         {/* Thread List */}
         <ThreadList
           threads={displayThreads}
@@ -1047,6 +1070,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
             void handleDeleteThread(threadId);
           }}
           onExportThread={handleExportThread}
+          isCollapsed={isThreadListCollapsed}
         />
 
         {/* Main Chat Area */}
@@ -1218,6 +1242,35 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
           flex: 1;
           display: flex;
           overflow: hidden;
+          position: relative;
+        }
+
+        .thread-list-collapse-toggle {
+          position: absolute;
+          left: 0;
+          top: 0;
+          z-index: 100;
+          width: 40px;
+          height: 40px;
+          padding: 0.5rem;
+          background: transparent;
+          border: none;
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0.6;
+        }
+
+        .thread-list-collapse-toggle:hover {
+          opacity: 1;
+          color: var(--text-primary);
+        }
+
+        .thread-list-collapse-toggle:active {
+          transform: scale(0.9);
         }
 
         .chat-area {

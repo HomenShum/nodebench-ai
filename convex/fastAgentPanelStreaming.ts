@@ -403,6 +403,24 @@ export const listThreads = query({
 });
 
 /**
+ * Get a specific thread by ID
+ */
+export const getThread = query({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const thread = await ctx.db.get(args.threadId);
+    if (!thread || thread.userId !== userId) return null;
+
+    return thread;
+  },
+});
+
+/**
  * Get a specific thread (for HTTP streaming endpoint)
  */
 export const getThreadByStreamId = query({
@@ -783,6 +801,7 @@ export const initiateAsyncStreaming = mutation({
     const chatAgent = createChatAgent(modelName);
 
     console.log(`[initiateAsyncStreaming:${requestId}] 💾 Saving user message, agentThreadId:`, streamingThread.agentThreadId);
+    console.log(`[initiateAsyncStreaming:${requestId}] 📝 Prompt:`, args.prompt);
 
     // Save the user message first (enables optimistic updates)
     const { messageId } = await chatAgent.saveMessage(ctx, {
@@ -792,6 +811,7 @@ export const initiateAsyncStreaming = mutation({
     });
 
     console.log(`[initiateAsyncStreaming:${requestId}] ✅ User message saved, messageId:`, messageId);
+    console.log(`[initiateAsyncStreaming:${requestId}] 🔍 This should be the ONLY user message created for this prompt`);
 
     // Schedule async streaming
     await ctx.scheduler.runAfter(0, internal.fastAgentPanelStreaming.streamAsync, {
@@ -850,6 +870,8 @@ export const streamAsync = internalAction({
 
     try {
       console.log(`[streamAsync:${executionId}] 📡 Calling ${agentType} agent.streamText...`);
+      console.log(`[streamAsync:${executionId}] 🔑 Using promptMessageId:`, args.promptMessageId);
+      console.log(`[streamAsync:${executionId}] 🧵 ThreadId:`, args.threadId);
 
       // Create a context with userId for tools to access
       // This allows tools like createDocument to authenticate properly
@@ -870,6 +892,7 @@ export const streamAsync = internalAction({
       );
 
       console.log(`[streamAsync:${executionId}] ✅ Stream started, messageId:`, result.messageId);
+      console.log(`[streamAsync:${executionId}] 🔍 streamText should NOT create a new user message, it should use promptMessageId:`, args.promptMessageId);
 
       // Use consumeStream() to ensure all tool calls are executed and results are captured
       // This waits for the entire stream to complete, including tool execution

@@ -538,6 +538,59 @@ export const listNotesInRange = query({
   },
 });
 
+// List documents filtered by tag
+export const listDocumentsByTag = query({
+  args: {
+    tag: v.string(),
+    start: v.optional(v.number()),
+    end: v.optional(v.number()),
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    // Find all tagRefs for this tag name
+    const tagRecords = await ctx.db
+      .query("tags")
+      .withIndex("by_name", (q) => q.eq("name", args.tag))
+      .collect();
+
+    if (tagRecords.length === 0) return [];
+
+    // Get all tagRefs pointing to documents with this tag
+    const allTagRefs: any[] = [];
+    for (const tag of tagRecords) {
+      const refs = await ctx.db
+        .query("tagRefs")
+        .withIndex("by_tag", (q) => q.eq("tagId", tag._id))
+        .filter((q) => q.eq(q.field("targetType"), "documents"))
+        .collect();
+      allTagRefs.push(...refs);
+    }
+
+    // Get unique document IDs
+    const docIds = new Set(allTagRefs.map(ref => ref.targetId));
+
+    // Fetch documents
+    const documents: any[] = [];
+    for (const docIdStr of docIds) {
+      try {
+        const doc = await ctx.db.get(docIdStr as Id<"documents">);
+        if (!doc) continue;
+        if ((doc as any).isArchived) continue;
+        if ((doc as any).createdBy !== userId) continue;
+        documents.push(doc);
+      } catch {
+        // Skip invalid IDs
+        continue;
+      }
+    }
+
+    return documents;
+  },
+});
+
 // Tiny resolvers for document titles (for references UI)
 export const getTitle = query({
   args: { documentId: v.id("documents") },

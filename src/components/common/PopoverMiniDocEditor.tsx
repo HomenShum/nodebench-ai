@@ -10,6 +10,7 @@ export type PopoverMiniDocEditorProps = {
   title?: string;
   saveLabel?: string;
   cancelLabel?: string;
+  enableCtrlEnter?: boolean; // Phase 2: Enable Ctrl+Enter to save
 };
 
 export default function PopoverMiniDocEditor({
@@ -20,6 +21,7 @@ export default function PopoverMiniDocEditor({
   title = "",
   saveLabel = "Save",
   cancelLabel = "Close",
+  enableCtrlEnter = false,
 }: PopoverMiniDocEditorProps) {
   const [text, setText] = useState<string>(initialValue ?? "");
   const [saving, setSaving] = useState(false);
@@ -66,15 +68,22 @@ export default function PopoverMiniDocEditor({
         e.preventDefault();
         void handleSave();
       }
+      // Phase 2: Ctrl+Enter to save
+      if (enableCtrlEnter && (e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        void handleSave();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [handleSave, onCancel]);
+  }, [handleSave, onCancel, enableCtrlEnter]);
 
   return (
     <div className="mt-2 rounded-lg p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 transition-all relative z-10 pointer-events-auto" data-inline-editor="true">
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-[11px] text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
+        <div className="text-[11px] text-[var(--text-muted)]">
+          Press Esc to close · Ctrl/Cmd+S to save{enableCtrlEnter ? " · Ctrl/Cmd+Enter to save" : ""}
+        </div>
         <div className="flex items-center gap-2">
           {title ? <div className="text-[11px] text-[var(--text-muted)]">{title}</div> : null}
           <button

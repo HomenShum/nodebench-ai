@@ -7557,7 +7557,7 @@ export function DocumentsHomeHub({
 
                   {/* Widget 2: Upcoming (Tasks & Events) */}
 
-                  <SidebarUpcoming upcoming={upcoming} />
+                  <SidebarUpcoming upcoming={upcoming} onOpenDocument={handleSelectDocument} />
                 </div>
               )}
             </aside>

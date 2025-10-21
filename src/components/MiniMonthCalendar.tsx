@@ -8,8 +8,7 @@ import MiniAgendaEditorPanel from "./agenda/MiniAgendaEditorPanel";
 import DualCreateMiniPanel from "./editors/mini/DualCreateMiniPanel";
 import DualEditMiniPanel from "./editors/mini/DualEditMiniPanel";
 import PopoverMiniEditor from "./editors/mini/PopoverMiniEditor";
-import PopoverMiniDocEditor from "./common/PopoverMiniDocEditor";
-import DocumentMiniEditor from "./editors/mini/DocumentMiniEditor";
+import MiniEditorPopover from "./MiniEditorPopover";
 import { toast } from "sonner";
 type DayInfo = {
   date: Date;
@@ -113,10 +112,11 @@ export interface MiniMonthCalendarProps {
   onWeeklyReview?: (weekAnchorMs: number) => void; // Optional: trigger weekly review
   onAddTask?: (dateMs: number) => void; // Optional: open New Task modal for this date
   onAddEvent?: (dateMs: number) => void; // Optional: open New Event dialog for this date
+  onOpenDocument?: (docId: Id<"documents">) => void; // Optional: open document handler
   constrainToSidebar?: boolean; // If true, keep previews within sidebar width
 }
 
-export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate, onViewDay: _onViewDay, onViewWeek: _onViewWeek, onWeeklyReview: _onWeeklyReview, onAddTask: _onAddTask, onAddEvent: _onAddEvent, constrainToSidebar = false }: MiniMonthCalendarProps) {
+export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate, onViewDay: _onViewDay, onViewWeek: _onViewWeek, onWeeklyReview: _onWeeklyReview, onAddTask: _onAddTask, onAddEvent: _onAddEvent, onOpenDocument, constrainToSidebar = false }: MiniMonthCalendarProps) {
   // Clock state (ticks every second)
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
@@ -391,7 +391,12 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     return d.getTime() - offsetAtDateMs; // convert back to UTC for backend queries
   }, [activeInfo, selectedTz]);
   const [showQuickNote, setShowQuickNote] = useState(false);
-  const createDocument = useMutation(api.documents.create);
+  const [quickNoteAnchorEl, setQuickNoteAnchorEl] = useState<HTMLElement | null>(null);
+  const [editAnchorEl, setEditAnchorEl] = useState<HTMLElement | null>(null);
+
+  // Track double-click state for events/tasks/notes
+  const [lastClickedId, setLastClickedId] = useState<string | null>(null);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const activeEndUtc = useMemo(() => (activeStartUtc !== null ? (activeStartUtc + 24 * 60 * 60 * 1000 - 1) : null), [activeStartUtc]);
   // Use dateKey for holiday range to hit 00:00:00Z on that local day
   const previewHolidayRange = useMemo(() => {
@@ -711,12 +716,6 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                     {/* Content lists or editor */}
                     {editTarget ? (
                       <div className="mt-2">
-                        {editTarget.kind === "task" && (
-                          <PopoverMiniEditor kind="task" taskId={editTarget.id as Id<"tasks">} onClose={() => setEditTarget(null)} />
-                        )}
-                        {editTarget.kind === "event" && (
-                          <PopoverMiniEditor kind="event" eventId={editTarget.id as Id<"events">} onClose={() => setEditTarget(null)} />
-                        )}
                         {editTarget.kind === "create" && (
                           <DualCreateMiniPanel
                             dateMs={editTarget.dateMs}
@@ -734,7 +733,15 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                           />
                         )}
                         {editTarget.kind === "note" && (
-                          <DocumentMiniEditor documentId={editTarget.id as Id<"documents">} onClose={() => setEditTarget(null)} />
+                          <MiniEditorPopover
+                            isOpen={true}
+                            documentId={editTarget.id as Id<"documents">}
+                            anchorEl={editAnchorEl}
+                            onClose={() => {
+                              setEditTarget(null);
+                              setEditAnchorEl(null);
+                            }}
+                          />
                         )}
                         {editTarget.kind === "holiday" && (
                           <div className="p-2 border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)]">
@@ -789,13 +796,94 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                               </div>
                             ))}
                             {(previewAgenda?.events ?? []).slice(0, 3).map((ev: any, idx: number) => (
-                              <AgendaMiniRow key={`pev_${idx}`} item={ev} kind="event" onSelect={(id) => setEditTarget({ kind: "event", id: String(id) })} />
+                              <AgendaMiniRow
+                                key={`pev_${idx}`}
+                                item={ev}
+                                kind="event"
+                                onSelect={(id) => {
+                                  const idStr = String(id);
+                                  if (lastClickedId === `event_${idStr}`) {
+                                    // Double-click: navigate to document
+                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+                                    setLastClickedId(null);
+                                    setEditTarget(null);
+                                    setEditAnchorEl(null);
+                                    // Events now have documentId set to the document's _id
+                                    if (ev.documentId) {
+                                      onOpenDocument?.(ev.documentId as Id<"documents">);
+                                    }
+                                  } else {
+                                    // First click: show popover
+                                    setLastClickedId(`event_${idStr}`);
+                                    const el = document.querySelector(`[data-agenda-mini-row][data-event-id="${idStr}"]`);
+                                    setEditAnchorEl(el as HTMLElement);
+                                    setEditTarget({ kind: "event", id: idStr });
+                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+                                    clickTimeoutRef.current = setTimeout(() => setLastClickedId(null), 300);
+                                  }
+                                }}
+                              />
                             ))}
                             {(previewAgenda?.tasks ?? []).slice(0, 3).map((t: any, idx: number) => (
-                              <AgendaMiniRow key={`pt_${idx}`} item={t} kind="task" onSelect={(id) => setEditTarget({ kind: "task", id: String(id) })} />
+                              <AgendaMiniRow
+                                key={`pt_${idx}`}
+                                item={t}
+                                kind="task"
+                                onSelect={(id) => {
+                                  const idStr = String(id);
+                                  if (lastClickedId === `task_${idStr}`) {
+                                    // Double-click: navigate to document
+                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+                                    setLastClickedId(null);
+                                    setEditTarget(null);
+                                    setEditAnchorEl(null);
+                                    // Tasks now have documentId set to the document's _id
+                                    if (t.documentId) {
+                                      onOpenDocument?.(t.documentId as Id<"documents">);
+                                    }
+                                  } else {
+                                    // First click: show popover
+                                    setLastClickedId(`task_${idStr}`);
+                                    const el = document.querySelector(`[data-agenda-mini-row][data-task-id="${idStr}"]`);
+                                    setEditAnchorEl(el as HTMLElement);
+                                    setEditTarget({ kind: "task", id: idStr });
+                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+                                    clickTimeoutRef.current = setTimeout(() => setLastClickedId(null), 300);
+                                  }
+                                }}
+                              />
                             ))}
                             {(previewAgenda?.notes ?? []).slice(0, 3).map((n: any, idx: number) => (
-                              <AgendaMiniRow key={`pn_${idx}`} item={n} kind="note" onSelect={(id) => setEditTarget({ kind: "note", id: String(id) })} />
+                              <AgendaMiniRow
+                                key={`pn_${idx}`}
+                                item={n}
+                                kind="note"
+                                onSelect={(id) => {
+                                  const idStr = String(id);
+
+                                  // Check if this is a double-click (same ID clicked twice within 300ms)
+                                  if (lastClickedId === idStr) {
+                                    // Double-click: navigate to full document
+                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+                                    setLastClickedId(null);
+                                    setEditTarget(null);
+                                    setEditAnchorEl(null);
+                                    onOpenDocument?.(idStr as Id<"documents">);
+                                  } else {
+                                    // First click: open popover
+                                    setLastClickedId(idStr);
+                                    const el = document.querySelector(`[data-agenda-mini-row][data-note-id="${idStr}"]`);
+                                    setEditAnchorEl(el as HTMLElement);
+                                    setEditTarget({ kind: "note", id: idStr });
+
+                                    // Reset after 300ms if no second click
+                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+                                    clickTimeoutRef.current = setTimeout(() => {
+                                      setLastClickedId(null);
+                                    }, 300);
+                                  }
+                                }}
+                              />
                             ))}
                             {/* Add agenda + Quick Note buttons */}
                             {activeInfo && (
@@ -822,7 +910,11 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                                 <button
                                   type="button"
                                   className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[11px]"
-                                  onClick={(e) => { e.stopPropagation(); setShowQuickNote((v) => !v); }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setQuickNoteAnchorEl(e.currentTarget);
+                                    setShowQuickNote((v) => !v);
+                                  }}
                                   aria-label="Quick note"
                                   title="Quick note"
                                 >
@@ -873,26 +965,20 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                               </div>
                             )}
 
-                            {showQuickNote && activeInfo && (
-                              <div className="mt-2">
-                                <PopoverMiniDocEditor
-                                  initialValue=""
-                                  initialJson={null}
-                                  title={`Quick note for ${activeInfo.date.toLocaleDateString()}`}
-                                  saveLabel="Create note"
-                                  cancelLabel="Close"
-                                  onCancel={() => setShowQuickNote(false)}
-                                  onSave={async ({ text }) => {
-                                    const title = `Note ${activeInfo.date.toLocaleDateString()}`;
-                                    const content = [{ type: "paragraph", text }];
-                                    try {
-                                      await createDocument({ title, content, agendaDate: activeStartUtc ?? undefined } as any);
-                                      toast.success("Note created");
-                                      setShowQuickNote(false);
-                                    } catch (e) {
-                                      console.error(e);
-                                      toast.error("Failed to create note");
-                                    }
+                            {/* Quick note editor using existing MiniEditorPopover */}
+                            {showQuickNote && activeInfo && activeStartUtc !== null && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                              >
+                                <QuickNoteInitializer
+                                  isOpen={showQuickNote}
+                                  activeInfo={activeInfo}
+                                  activeStartUtc={activeStartUtc}
+                                  anchorEl={quickNoteAnchorEl}
+                                  onClose={() => {
+                                    setShowQuickNote(false);
+                                    setQuickNoteAnchorEl(null);
                                   }}
                                 />
                               </div>
@@ -916,5 +1002,68 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Helper component to create daily notes document and render editor
+ */
+function QuickNoteInitializer({
+  isOpen,
+  activeInfo,
+  activeStartUtc,
+  anchorEl,
+  onClose,
+}: {
+  isOpen: boolean;
+  activeInfo: any;
+  activeStartUtc: number;
+  anchorEl: HTMLElement | null;
+  onClose: () => void;
+}) {
+  const [docId, setDocId] = React.useState<Id<"documents"> | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const getOrCreateDailyNotes = useMutation(api.dailyNotes.getOrCreateDailyNotes);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setDocId(null);
+      return;
+    }
+
+    const init = async () => {
+      setLoading(true);
+      try {
+        const newDocId = await getOrCreateDailyNotes({
+          agendaDate: activeStartUtc,
+          dateLabel: activeInfo.date.toLocaleDateString(),
+        });
+        setDocId(newDocId);
+      } catch (e) {
+        console.error("Failed to create daily notes:", e);
+        toast.error("Failed to create daily notes");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void init();
+  }, [isOpen, activeStartUtc, activeInfo, getOrCreateDailyNotes]);
+
+  if (loading) {
+    return null; // Show nothing while loading
+  }
+
+  if (!docId) {
+    return null;
+  }
+
+  return (
+    <MiniEditorPopover
+      isOpen={isOpen}
+      documentId={docId}
+      anchorEl={anchorEl}
+      onClose={onClose}
+    />
   );
 }

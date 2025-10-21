@@ -648,13 +648,12 @@ export function UIMessageBubble({
     // ALSO extract from final text (for when agent synthesizes response)
     const textMedia = extractMediaFromText(visibleText || '');
 
-    // Combine both sources
-    const combinedMedia = {
-      youtubeVideos: [...toolMedia.youtubeVideos, ...textMedia.youtubeVideos],
-      secDocuments: [...toolMedia.secDocuments, ...textMedia.secDocuments],
-      webSources: [...toolMedia.webSources, ...textMedia.webSources],
-      profiles: [...toolMedia.profiles, ...textMedia.profiles],
-      images: [...toolMedia.images, ...textMedia.images],
+    // Keep tool media and text media separate for better UX
+    // Tool media = comprehensive results from search tools
+    // Text media = what the agent chose to mention in the answer
+    const separatedMedia = {
+      toolMedia,
+      textMedia,
     };
 
     console.log('[UIMessageBubble] Extracted media:', {
@@ -673,16 +672,9 @@ export function UIMessageBubble({
         profileCount: textMedia.profiles.length,
         imageCount: textMedia.images.length,
       },
-      combined: {
-        youtubeCount: combinedMedia.youtubeVideos.length,
-        secCount: combinedMedia.secDocuments.length,
-        webSourceCount: combinedMedia.webSources.length,
-        profileCount: combinedMedia.profiles.length,
-        imageCount: combinedMedia.images.length,
-      },
     });
 
-    return combinedMedia;
+    return separatedMedia;
   }, [message.parts, isUser, visibleText]);
 
   // Extract document actions from tool results
