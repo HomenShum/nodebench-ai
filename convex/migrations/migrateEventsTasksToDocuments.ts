@@ -10,7 +10,7 @@
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "../_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 
 export const migrateEventsToDocuments = internalMutation({
   args: {
