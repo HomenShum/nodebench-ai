@@ -173,6 +173,9 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
     <div
       ref={anchorRef}
       data-agenda-mini-row
+      data-note-id={kind === 'note' ? id : undefined}
+      data-event-id={kind === 'event' ? id : undefined}
+      data-task-id={kind === 'task' ? id : undefined}
       className={`relative overflow-visible pl-2 py-1 pr-1 rounded-sm cursor-pointer border ${
         kind === 'event'
           ? eventContainerClasses(item?.color)

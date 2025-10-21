@@ -11,11 +11,17 @@ import { Id } from "./_generated/dataModel";
 
 /**
  * Search for documents matching a hashtag phrase
- * Returns both exact matches and semantic matches
+ * Returns both exact matches and semantic matches with LLM validation
+ *
+ * ENHANCED: Now uses ragEnhanced for better search with:
+ * - User-scoped namespaces
+ * - LLM-powered validation and re-ranking
+ * - Relevance reasoning
  */
 export const searchForHashtag = action({
   args: {
     hashtag: v.string(),
+    enableLLMValidation: v.optional(v.boolean()),
   },
   returns: v.object({
     matches: v.array(
@@ -25,108 +31,163 @@ export const searchForHashtag = action({
         matchType: v.string(),
         score: v.number(),
         snippet: v.optional(v.string()),
+        isRelevant: v.optional(v.boolean()),
+        relevanceReason: v.optional(v.string()),
       })
     ),
     totalCount: v.number(),
+    summary: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     const normalizedHashtag = args.hashtag.toLowerCase().trim();
+    const enableLLMValidation = args.enableLLMValidation ?? true;
 
-    // 1. Exact match search in document titles
-    const exactTitleMatches = await ctx.runQuery(api.documents.getSearch, {
-      query: normalizedHashtag,
-      userId,
-    });
-
-    // 2. Exact match search in document content (via nodes)
-    const exactContentMatches = await ctx.runQuery(api.rag_queries.keywordSearch, {
-      query: normalizedHashtag,
-      limit: 10,
-    });
-
-    // 3. Semantic search using RAG
-    let semanticMatches: any[] = [];
+    // 1. Use enhanced hybrid search with LLM validation
+    let enhancedResults: any = null;
     try {
-      const ragResult = await ctx.runAction(internal.rag.answerQuestionViaRAG, {
-        prompt: normalizedHashtag,
+      enhancedResults = await ctx.runAction(internal.ragEnhanced.hybridSearchWithValidation, {
+        query: normalizedHashtag,
+        userId,
+        limit: 20,
       });
-      semanticMatches = ragResult.candidateDocs || [];
     } catch (error) {
-      console.error("[searchForHashtag] RAG search failed:", error);
+      console.error("[searchForHashtag] Enhanced RAG search failed:", error);
     }
 
-    // 4. Combine and deduplicate results
-    const contextMap = new Map<string, any>();
+    // 2. Fallback to legacy search if enhanced fails
+    if (!enhancedResults || enhancedResults.results.length === 0) {
+      console.log("[searchForHashtag] Using fallback legacy search");
 
-    // Add exact title matches
-    exactTitleMatches.forEach((doc) => {
-      contextMap.set(doc._id, {
-        _id: doc._id,
-        title: doc.title,
-        matchType: "exact-title",
-        score: 1.0,
+      // Exact match search in document titles
+      const exactTitleMatches = await ctx.runQuery(api.documents.getSearch, {
+        query: normalizedHashtag,
+        userId,
       });
-    });
 
-    // Add exact content matches
-    exactContentMatches.forEach((match) => {
-      const docId = String(match.documentId);
-      const existing = contextMap.get(docId);
-      if (existing) {
-        contextMap.set(docId, {
-          ...existing,
-          matchType: "exact-hybrid",
+      // Exact match search in document content (via nodes)
+      const exactContentMatches = await ctx.runQuery(api.rag_queries.keywordSearch, {
+        query: normalizedHashtag,
+        limit: 10,
+      });
+
+      // Semantic search using legacy RAG
+      let semanticMatches: any[] = [];
+      try {
+        const ragResult = await ctx.runAction(internal.rag.answerQuestionViaRAG, {
+          prompt: normalizedHashtag,
+        });
+        semanticMatches = ragResult.candidateDocs || [];
+      } catch (error) {
+        console.error("[searchForHashtag] Legacy RAG search failed:", error);
+      }
+
+      // Combine and deduplicate results
+      const contextMap = new Map<string, any>();
+
+      // Add exact title matches
+      exactTitleMatches.forEach((doc: any) => {
+        contextMap.set(doc._id, {
+          _id: doc._id,
+          title: doc.title,
+          matchType: "exact-title",
           score: 1.0,
-          snippet: match.text?.slice(0, 320),
         });
-      } else {
-        contextMap.set(docId, {
-          _id: match.documentId,
-          title: "Untitled",
-          matchType: "exact-content",
-          score: 0.95,
-          snippet: match.text?.slice(0, 320),
-        });
-      }
-    });
+      });
 
-    // Add semantic matches
-    semanticMatches.forEach((match) => {
-      const docId = String(match.documentId);
-      const existing = contextMap.get(docId);
-      if (existing) {
-        const isExact = existing.matchType.startsWith("exact");
-        contextMap.set(docId, {
-          ...existing,
-          matchType: isExact ? "hybrid" : "semantic",
-          score: Math.max(existing.score, match.score || 0.5),
-          snippet: existing.snippet || match.snippet,
-        });
-      } else {
-        contextMap.set(docId, {
-          _id: match.documentId,
-          title: match.title || "Untitled",
-          matchType: "semantic",
-          score: match.score || 0.5,
-          snippet: match.snippet,
-        });
-      }
-    });
+      // Add exact content matches
+      exactContentMatches.forEach((match: any) => {
+        const docId = String(match.documentId);
+        const existing = contextMap.get(docId);
+        if (existing) {
+          contextMap.set(docId, {
+            ...existing,
+            matchType: "exact-hybrid",
+            score: 1.0,
+            snippet: match.text?.slice(0, 320),
+          });
+        } else {
+          contextMap.set(docId, {
+            _id: match.documentId,
+            title: "Untitled",
+            matchType: "exact-content",
+            score: 0.95,
+            snippet: match.text?.slice(0, 320),
+          });
+        }
+      });
 
-    const matches = Array.from(contextMap.values()).sort((a, b) => b.score - a.score);
+      // Add semantic matches
+      semanticMatches.forEach((match) => {
+        const docId = String(match.documentId);
+        const existing = contextMap.get(docId);
+        if (existing) {
+          const isExact = existing.matchType.startsWith("exact");
+          contextMap.set(docId, {
+            ...existing,
+            matchType: isExact ? "hybrid" : "semantic",
+            score: Math.max(existing.score, match.score || 0.5),
+            snippet: existing.snippet || match.snippet,
+          });
+        } else {
+          contextMap.set(docId, {
+            _id: match.documentId,
+            title: match.title || "Untitled",
+            matchType: "semantic",
+            score: match.score || 0.5,
+            snippet: match.snippet,
+          });
+        }
+      });
+
+      const matches = Array.from(contextMap.values()).sort((a, b) => b.score - a.score);
+
+      return {
+        matches,
+        totalCount: matches.length,
+      };
+    }
+
+    // 3. Use enhanced results with LLM validation
+    // IMPORTANT: Filter out documents marked as NOT relevant by LLM
+    const allResults = enhancedResults.results.map((r: any) => ({
+      _id: r.documentId,
+      title: r.title,
+      matchType: r.source,
+      score: r.reRankedScore || r.score || 0.5,
+      snippet: r.snippet,
+      isRelevant: r.isRelevant,
+      relevanceReason: r.relevanceReason,
+    }));
+
+    // Filter to only include relevant documents
+    const matches = allResults.filter((r: any) => r.isRelevant !== false);
+
+    console.log(`[searchForHashtag] LLM validation: ${allResults.length} total results, ${matches.length} marked as relevant`);
+
+    if (matches.length < allResults.length) {
+      const filtered = allResults.length - matches.length;
+      console.log(`[searchForHashtag] Filtered out ${filtered} non-relevant documents based on LLM validation`);
+
+      // Log which documents were filtered
+      allResults.filter((r: any) => r.isRelevant === false).forEach((r: any) => {
+        console.log(`[searchForHashtag] Filtered: "${r.title}" - Reason: ${r.relevanceReason}`);
+      });
+    }
 
     return {
       matches,
       totalCount: matches.length,
+      summary: enhancedResults.summary,
     };
   },
 });
 
 /**
  * Create a dossier for a hashtag and populate it with document references
+ * Now includes LLM relevance reasoning for each document
  */
 export const createHashtagDossier = mutation({
   args: {
@@ -138,6 +199,8 @@ export const createHashtagDossier = mutation({
         matchType: v.string(),
         score: v.number(),
         snippet: v.optional(v.string()),
+        isRelevant: v.optional(v.boolean()),
+        relevanceReason: v.optional(v.string()),
       })
     ),
   },
@@ -147,6 +210,8 @@ export const createHashtagDossier = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     const normalizedHashtag = args.hashtag.toLowerCase().trim();
+
+    console.log(`[createHashtagDossier] Creating dossier for "${normalizedHashtag}" with ${args.matchedDocuments.length} documents`);
 
     // Build TipTap content with document references using @mentions
     const contentNodes: any[] = [
@@ -178,7 +243,9 @@ export const createHashtagDossier = mutation({
       // Add each document as a paragraph with @mention
       args.matchedDocuments.forEach((doc) => {
         const matchBadge =
-          doc.matchType === "hybrid"
+          doc.matchType === "hybrid-validated"
+            ? "✅"
+            : doc.matchType === "hybrid"
             ? "🎯"
             : doc.matchType === "exact-hybrid"
             ? "📍"
@@ -186,7 +253,9 @@ export const createHashtagDossier = mutation({
             ? "📍"
             : doc.matchType === "exact-content"
             ? "📄"
-            : "🔍";
+            : doc.matchType === "vector"
+            ? "🔍"
+            : "📄";
 
         // Create paragraph with inline mention
         // Note: BlockNote uses inline content, not attrs
@@ -222,8 +291,26 @@ export const createHashtagDossier = mutation({
           ],
         });
 
-        // Add snippet if available
-        if (doc.snippet) {
+        // Add LLM relevance reasoning if available
+        if (doc.relevanceReason) {
+          contentNodes.push({
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: "💡 ",
+              },
+              {
+                type: "text",
+                text: doc.relevanceReason,
+                marks: [{ type: "italic" }],
+              },
+            ],
+          });
+        }
+
+        // Add snippet if available (and no relevance reason, to avoid duplication)
+        if (doc.snippet && !doc.relevanceReason) {
           contentNodes.push({
             type: "paragraph",
             content: [

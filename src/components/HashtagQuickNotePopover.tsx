@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom";
 import { Id } from "../../convex/_generated/dataModel";
 import { X, ExternalLink } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { toast } from "react-hot-toast";
 
 interface HashtagQuickNotePopoverProps {
   isOpen: boolean;
@@ -128,6 +129,22 @@ function HashtagContent({
   hashtag: string;
   onClose: () => void;
 }) {
+  const reindexMyDocuments = useAction(api.ragEnhancedBatchIndex.reindexMyDocuments);
+  const [isReindexing, setIsReindexing] = React.useState(false);
+
+  const handleReindex = async () => {
+    try {
+      setIsReindexing(true);
+      const res: any = await reindexMyDocuments({});
+      toast.success(`Re-indexed ${res?.totalSuccess ?? 0}/${res?.totalProcessed ?? 0} documents`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Re-index failed: ${msg}`);
+    } finally {
+      setIsReindexing(false);
+    }
+  };
+
   const document = useQuery(api.documents.getById, { documentId: dossierId });
 
   const handleOpenFullDossier = () => {
@@ -218,7 +235,8 @@ function HashtagContent({
             }
           }
         }
-      });
+
+    });
     }
   } catch (error) {
     console.error("[HashtagQuickNotePopover] Error parsing content:", error);
@@ -235,6 +253,14 @@ function HashtagContent({
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleReindex}
+            disabled={isReindexing}
+            className="px-2 py-1 text-xs border rounded-md hover:bg-[var(--bg-hover)] disabled:opacity-60"
+            title="Re-index your documents into Enhanced RAG so hashtag search uses LLM validation"
+          >
+            {isReindexing ? "Re-indexing…" : "Re-index RAG"}
+          </button>
           <button
             onClick={handleOpenFullDossier}
             className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors"

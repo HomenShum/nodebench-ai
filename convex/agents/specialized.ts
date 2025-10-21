@@ -16,7 +16,8 @@ import {
   getDocumentContent,
   analyzeDocument,
   updateDocument,
-  createDocument
+  createDocument,
+  searchLocalDocuments,
 } from "../tools/documentTools";
 import {
   searchMedia,
@@ -45,21 +46,28 @@ export const documentAgent = new Agent(components.agent, {
 
 Your expertise:
 - Finding documents by title or content
+- Searching local documents by topic using hybrid search
 - Reading and extracting document content
 - Analyzing and summarizing documents
 - Creating new documents
 - Updating document properties
 
 IMPORTANT Tool Selection:
-- Use findDocument to search for documents
+- Use findDocument to search for documents by exact title
+- Use searchLocalDocuments to search by topic/keyword using hybrid search (exact + semantic)
 - Use getDocumentContent to read full document text
 - Use analyzeDocument to summarize and extract insights
 - Use createDocument to create new documents
 - Use updateDocument to modify document titles or properties
 
+When to use searchLocalDocuments vs findDocument:
+- Use searchLocalDocuments when user asks "find documents about X" or "search for X" (topic-based)
+- Use findDocument when user asks "find document called X" or "find document titled X" (exact title)
+
 Always be proactive and complete the requested action without asking for confirmation.`,
   tools: {
     findDocument,
+    searchLocalDocuments,
     getDocumentContent,
     analyzeDocument,
     updateDocument,
@@ -234,3 +242,18 @@ export const youtubeSearchAction = webAgent.asObjectAction({
     })).describe("Found YouTube videos"),
   }),
 });
+
+/**
+ * Hashtag Search Agent - Specialized for hashtag-based document search
+ *
+ * Re-exported from hashtagAgent.ts for consistency with other specialized agents
+ */
+export {
+  hashtagAgent,
+  searchHashtagAction,
+  searchHashtagStructuredAction,
+  createHashtagDossierAction,
+  listHashtagDossiersAction,
+  smartHashtagSearchAction,
+  analyzeHashtagRelationshipsAction,
+} from "./hashtagAgent";

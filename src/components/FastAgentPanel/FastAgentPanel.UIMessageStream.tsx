@@ -167,11 +167,14 @@ export function UIMessageStream({
       // Skip if we've already seen this message ID
       const messageId = msg._id || msg.key;
       if (messageId && seenMessageIds.has(messageId)) {
-        console.log('[UIMessageStream] ⚠️ Skipping duplicate message:', messageId, msg.text?.substring(0, 50));
+        console.log('[UIMessageStream] ⚠️ DUPLICATE DETECTED - Skipping duplicate message:', messageId, 'role:', msg.role, 'text:', msg.text?.substring(0, 50));
         return;
       }
       if (messageId) {
+        console.log('[UIMessageStream] ✅ Adding message to seen set:', messageId, 'role:', msg.role, 'text:', msg.text?.substring(0, 50));
         seenMessageIds.add(messageId);
+      } else {
+        console.log('[UIMessageStream] ⚠️ Message has no ID:', 'role:', msg.role, 'text:', msg.text?.substring(0, 50));
       }
 
       // Check if this message has delegation tool calls

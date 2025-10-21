@@ -15,7 +15,7 @@ interface CalendarHomeHubProps {
 }
 
 export function CalendarHomeHub({
-  onDocumentSelect: _onDocumentSelect,
+  onDocumentSelect,
   onGridModeToggle: _onGridModeToggle,
 }: CalendarHomeHubProps) {
   // Shared planner state
@@ -138,7 +138,7 @@ export function CalendarHomeHub({
                   onViewWeek={(ms) => handleViewWeek(ms)}
                   showViewFullCalendarLink
                 />
-                <SidebarUpcoming upcoming={upcoming} />
+                <SidebarUpcoming upcoming={upcoming} onOpenDocument={onDocumentSelect} />
               </div>
             )}
           </aside>

@@ -347,7 +347,7 @@ export const analyzeMultipleDocuments = createTool({
     );
 
     // Filter out null/missing documents
-    const validDocs = documents.filter(doc => doc !== null);
+    const validDocs = documents.filter((doc: any) => doc !== null);
 
     if (validDocs.length === 0) {
       return `No documents found or you don't have permission to access them.`;
@@ -358,7 +358,7 @@ export const analyzeMultipleDocuments = createTool({
     }
 
     // Extract content from all documents
-    const docContents = validDocs.map((doc, idx) => {
+    const docContents = validDocs.map((doc: any, idx: number) => {
       let content = '';
 
       if (typeof doc.content === 'string') {
@@ -397,7 +397,7 @@ export const analyzeMultipleDocuments = createTool({
     }
 
     // Format document list
-    const docList = docContents.map((doc, idx) =>
+    const docList = docContents.map((doc: any, idx: number) =>
       `${idx + 1}. "${doc.title}" (${doc.type}, ${doc.lastModified})\n   ID: ${doc.id}`
     ).join('\n');
 
@@ -413,7 +413,7 @@ Document Contents:
 ${'='.repeat(60)}
 `;
 
-    docContents.forEach((doc, idx) => {
+    docContents.forEach((doc: any, idx: number) => {
       response += `\n\nDocument ${idx + 1}: "${doc.title}"
 ${'-'.repeat(40)}
 ${doc.content}
@@ -581,6 +581,94 @@ export const createDocumentFromAgentContentTool = createTool({
       title: args.title,
       via: 'createDocumentFromAgentContentTool',
     })}\n-->`;
+
+    return response;
+  },
+});
+
+/**
+ * Search local documents by hashtag keyword
+ * Uses hybrid search: exact title + exact content + semantic RAG
+ * Voice: "Search for documents about biotech" or "Find all documents related to AI"
+ */
+export const searchLocalDocuments = createTool({
+  description: `Search for documents in the user's local document library using hybrid search.
+
+  This tool performs three types of search in parallel:
+  1. Exact title match - finds documents with the keyword in the title
+  2. Exact content match - finds documents with the keyword in the content (BM25)
+  3. Semantic search - finds documents semantically related to the keyword (RAG)
+
+  Results are deduplicated and ranked by relevance with match type labels.
+  Use this when the user asks to search their documents, find documents about a topic, or wants to see what documents they have on a subject.
+
+  This is different from web search - this searches ONLY the user's local documents.`,
+
+  args: z.object({
+    query: z.string().describe("Search query - the topic or keyword to search for"),
+    limit: z.number().optional().default(10).describe("Maximum number of results to return (default: 10)"),
+    createDossier: z.boolean().optional().default(false).describe("Whether to automatically create a hashtag dossier with the results"),
+  }),
+
+  handler: async (ctx, args): Promise<string> => {
+    console.log(`[searchLocalDocuments] Searching for: "${args.query}"`);
+
+    // Call the existing searchForHashtag action
+    const searchResult: any = await ctx.runAction(api.hashtagDossiers.searchForHashtag, {
+      hashtag: args.query,
+    });
+
+    if (searchResult.totalCount === 0) {
+      return `No local documents found matching "${args.query}".`;
+    }
+
+    // Limit results
+    const matches: any[] = searchResult.matches.slice(0, args.limit);
+
+    // Format for AI consumption
+    const formatted = matches.map((m: any, idx: number) => {
+      const badge =
+        m.matchType === "hybrid" ? "🎯" :
+        m.matchType === "exact-hybrid" ? "🎯" :
+        m.matchType === "exact-title" ? "📍" :
+        m.matchType === "exact-content" ? "📄" :
+        "🔍";
+
+      return `${idx + 1}. ${badge} "${m.title}"
+   ID: ${m._id}
+   Match: ${m.matchType}
+   Relevance: ${(m.score * 100).toFixed(0)}%${m.snippet ? `\n   Snippet: ${m.snippet.slice(0, 150)}...` : ''}`;
+    }).join('\n\n');
+
+    let response = `Found ${searchResult.totalCount} local document${searchResult.totalCount === 1 ? '' : 's'} matching "${args.query}":
+
+${formatted}
+
+Match types:
+🎯 Hybrid - Found in both exact and semantic search (highest relevance)
+📍 Exact-title - Found in document title
+📄 Exact-content - Found in document content
+🔍 Semantic - Found via AI semantic understanding`;
+
+    // Optionally create dossier
+    if (args.createDossier && searchResult.totalCount > 0) {
+      const dossierId: any = await ctx.runMutation(api.hashtagDossiers.createHashtagDossier, {
+        hashtag: args.query,
+        matchedDocuments: searchResult.matches,
+      });
+
+      response += `\n\n✅ Created hashtag dossier "#${args.query}" with all ${searchResult.totalCount} results.
+Dossier ID: ${dossierId}
+
+<!-- DOCUMENT_ACTION_DATA
+${JSON.stringify({
+  action: 'created',
+  documentId: String(dossierId),
+  title: `#${args.query}`,
+  via: 'searchLocalDocuments',
+})}
+-->`;
+    }
 
     return response;
   },

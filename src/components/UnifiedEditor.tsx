@@ -36,6 +36,7 @@ import ListItem from "@tiptap/extension-list-item";
 import { ProposalProvider, useProposal } from "./proposals/ProposalProvider";
 import { ProposalBar } from "./proposals/ProposalBar";
 import { useInlineFastAgent } from "./UnifiedEditor/useInlineFastAgent";
+import { InlineAgentProgress } from "./UnifiedEditor/InlineAgentProgress";
 
 import { computeStructuredOps, prismHighlight, detectFenceLang, diffWords, annotateMoves, type AnnotatedOp, type MovePair } from "./proposals/diffUtils";
 
@@ -301,8 +302,53 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   const isCompact = mode === "quickEdit" || mode === "quickNote";
   const disableSlashMenu = mode === "quickNote" || !editable; // keep super light or when view-only
 
+  // File upload handler for BlockNote
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const createFileRecord = useMutation(api.files.createFile);
+
+  const uploadFile = useCallback(async (file: File): Promise<string> => {
+    try {
+      console.log('[UnifiedEditor] Uploading file:', file.name, file.type, file.size);
+
+      // Generate upload URL from Convex
+      const uploadUrl = await generateUploadUrl();
+
+      // Upload file to Convex storage
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      const { storageId } = await response.json() as { storageId: string };
+
+      // Create file record in database
+      await createFileRecord({
+        storageId,
+        fileName: file.name,
+        fileType: file.type.startsWith('image/') ? 'image' : 'document',
+        mimeType: file.type,
+        fileSize: file.size,
+      });
+
+      // Get the public URL for the uploaded file
+      const fileUrl = await convex.query(api.files.getUrl, { storageId });
+
+      console.log('[UnifiedEditor] File uploaded successfully:', fileUrl);
+      return fileUrl || '';
+    } catch (error) {
+      console.error('[UnifiedEditor] File upload error:', error);
+      throw error;
+    }
+  }, [generateUploadUrl, createFileRecord, convex]);
+
   const editorOptions = useMemo(() => ({
     schema,
+    uploadFile, // Add file upload handler
     _tiptapOptions: {
       extensions: [
         // Task/checklist support
@@ -314,7 +360,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         OrderedList,
       ],
     },
-  }), []);
+  }), [uploadFile]);
 
   // Initialize sync hook
   const sync = useBlockNoteSync(pmRefs as any, documentId, {
@@ -326,11 +372,101 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   });
 
   // Initialize inline Fast Agent with streaming support
-  const { askFastAgent, isStreaming: isAIStreaming } = useInlineFastAgent({
+  const {
+    askFastAgent,
+    isStreaming: isAIStreaming,
+    streamingMessages,
+    threadId: inlineAgentThreadId,
+  } = useInlineFastAgent({
     editor: sync.editor,
     userId: currentUser?._id,
     documentId,
   });
+
+  // Add keyboard handler for /ai {question} pattern and prefix replacement
+  useEffect(() => {
+    if (!sync.editor) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      try {
+        const editor = sync.editor;
+        if (!editor) return;
+        const currentBlock = editor.getTextCursorPosition().block;
+        if (!(currentBlock?.content && Array.isArray(currentBlock.content))) return;
+
+        const rawText = currentBlock.content.map((c: any) => c.text || "").join("");
+        const blockText = rawText.trim();
+
+        // 1) SPACE: If user typed exactly "/ai" then pressing space converts it to "🤖 "
+        if (event.key === ' ' || event.code === 'Space') {
+          if (/^\/ai$/i.test(blockText)) {
+            console.log('[UnifiedEditor] Replacing "/ai" with "🤖 " on space');
+            event.preventDefault();
+            event.stopPropagation();
+            editor.updateBlock(currentBlock, {
+              type: 'paragraph',
+              content: [
+                { type: 'text', text: '🤖 ', styles: {} },
+              ],
+            });
+            editor.setTextCursorPosition(currentBlock, 'end');
+            return;
+          }
+        }
+
+        // 2) ENTER: If line starts with "/ai " OR "🤖 ", treat the rest as the question
+        if (event.key === 'Enter') {
+          console.log('[UnifiedEditor] Enter pressed, block text:', rawText);
+
+          const aiSlash = rawText.match(/^\s*\/ai\s+(.+)$/i);
+          const aiRobot = rawText.match(/^\s*🤖\s+(.+)$/);
+          const match = aiSlash || aiRobot;
+
+          if (match) {
+            const question = match[1].trim();
+            if (!question) return; // nothing to ask yet
+            console.log('[UnifiedEditor] ✅ Detected AI inline question:', question);
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Replace the input line with a visible "User asked:" block
+            editor.updateBlock(currentBlock, {
+              type: 'paragraph',
+              content: [
+                { type: 'text', text: '💬 You: ', styles: { bold: true, textColor: 'blue' } },
+                { type: 'text', text: question, styles: { italic: true } },
+              ],
+            });
+
+            // Trigger Fast Agent (it will insert its own "Thinking..." block below)
+            askFastAgent(question, '').catch((error) => {
+              console.error('[UnifiedEditor] Fast Agent error:', error);
+              // Insert error block
+              editor.insertBlocks([
+                {
+                  type: 'paragraph',
+                  content: [
+                    { type: 'text', text: '❌ Failed to get response from Fast Agent. Please try again.', styles: { bold: true, textColor: 'red' } },
+                  ],
+                },
+              ], currentBlock, 'after');
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('[UnifiedEditor] Error in /ai keyboard handler:', error);
+      }
+    };
+
+    console.log('[UnifiedEditor] Adding /ai keyboard handler');
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => {
+      console.log('[UnifiedEditor] Removing /ai keyboard handler');
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
+    };
+  }, [sync.editor, askFastAgent]);
 
   // Function to get mention menu items (documents to suggest)
   const getMentionMenuItems = useCallback(
@@ -544,7 +680,44 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       {
         title: "Ask Fast Agent",
         onItemClick: () => {
-          // Get selected text or current block content
+          // Get current block to check if user typed inline prompt
+          const currentBlock = editor.getTextCursorPosition().block;
+          let inlinePrompt = "";
+
+          // Extract text from current block
+          if (currentBlock.content && Array.isArray(currentBlock.content)) {
+            const blockText = currentBlock.content
+              .map((c: any) => c.text || "")
+              .join("")
+              .trim();
+
+            // Check if user typed "/ai " followed by text
+            const aiMatch = blockText.match(/^\/ai\s+(.+)$/i);
+            if (aiMatch) {
+              inlinePrompt = aiMatch[1].trim();
+            }
+          }
+
+          // If no inline prompt, just clear the /ai text and let user continue typing
+          if (!inlinePrompt) {
+            // Clear the current block (remove the "/ai" text)
+            editor.updateBlock(currentBlock, {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "🤖 ",
+                  styles: {},
+                },
+              ],
+            });
+
+            // Set cursor at the end so user can continue typing
+            editor.setTextCursorPosition(currentBlock, "end");
+            return;
+          }
+
+          // Get selected text as context (if any)
           const selection = editor.getSelection();
           let context = "";
 
@@ -558,24 +731,38 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             }).join("\n");
           }
 
-          // Prompt user for their question
-          const question = window.prompt(
-            "What would you like Fast Agent to help with?" +
-            (context ? `\n\nContext: ${context.substring(0, 100)}...` : "")
-          );
-
-          if (!question) return;
+          // Clear the current block before inserting response
+          editor.updateBlock(currentBlock, {
+            type: "paragraph",
+            content: [],
+          });
 
           // Call Fast Agent with streaming
-          askFastAgent(question, context).catch((error) => {
+          askFastAgent(inlinePrompt, context).catch((error) => {
             console.error("[UnifiedEditor] Fast Agent error:", error);
-            alert("Failed to get response from Fast Agent");
+            // Insert error message inline instead of alert
+            editor.insertBlocks(
+              [
+                {
+                  type: "paragraph",
+                  content: [
+                    {
+                      type: "text",
+                      text: "❌ Failed to get response from Fast Agent. Please try again.",
+                      styles: { bold: true, textColor: "red" },
+                    },
+                  ],
+                },
+              ],
+              currentBlock,
+              "after"
+            );
           });
         },
         aliases: ["ai", "agent", "ask"],
         group: "AI",
         icon: "🤖",
-        subtext: "Get help from Fast Agent (streaming)",
+        subtext: "Type '/ai {your question}' for instant response",
       },
     ];
   }, [askFastAgent]);
@@ -1768,32 +1955,48 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             position: 'fixed',
             bottom: '20px',
             right: '20px',
-            padding: '12px 20px',
-            background: 'var(--accent-primary)',
-            color: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            maxWidth: '400px',
             zIndex: 1000,
-            fontSize: '14px',
-            fontWeight: 500,
           }}
         >
-          <span className="animate-pulse">🤖</span>
-          <span>Fast Agent is thinking...</span>
+          <InlineAgentProgress
+            messages={streamingMessages}
+            isStreaming={isAIStreaming}
+            threadId={inlineAgentThreadId}
+            onViewInPanel={() => {
+              if (inlineAgentThreadId) {
+                console.log('[UnifiedEditor] Dispatching navigate:fastAgentThread event for:', inlineAgentThreadId);
+                window.dispatchEvent(
+                  new CustomEvent('navigate:fastAgentThread', {
+                    detail: { threadId: inlineAgentThreadId },
+                  })
+                );
+              }
+            }}
+          />
         </div>
       )}
 
           <BlockNoteView
             editor={sync.editor}
             theme={document?.documentElement?.classList?.contains?.("dark") ? "dark" : "light"}
-            slashMenu={!disableSlashMenu}
+            slashMenu={false}
             editable={editable as any}
             data-block-id-attribute="data-block-id"
-            slashMenuItems={sync.editor ? getCustomSlashMenuItems(sync.editor) : undefined}
           >
+            {/* Custom slash menu with Fast Agent integration */}
+            {!disableSlashMenu && (
+              <SuggestionMenuController
+                triggerCharacter={"/"}
+                getItems={async (query) =>
+                  filterSuggestionItems(
+                    sync.editor ? getCustomSlashMenuItems(sync.editor) : [],
+                    query
+                  )
+                }
+              />
+            )}
+
             {/* Adds a mentions menu which opens with the "@" key */}
             <SuggestionMenuController
               triggerCharacter={"@"}

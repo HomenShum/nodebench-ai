@@ -468,8 +468,9 @@ export const createInitialSnapshot = internalMutation({
  * Internal action: Index document and create snapshot
  *
  * This runs asynchronously after document creation to:
- * 1. Add document to RAG index for semantic search
- * 2. Create initial snapshot for version control
+ * 1. Add document to ENHANCED RAG index for semantic search with LLM validation
+ * 2. Add to legacy RAG for backward compatibility
+ * 3. Create initial snapshot for version control
  *
  * Failures here don't block document creation - they're logged but not thrown
  */
@@ -481,23 +482,38 @@ export const indexAndSnapshot = internalAction({
   },
   handler: async (ctx, args) => {
     try {
-      // 1. Index for RAG (semantic search)
-      console.log(`[indexAndSnapshot] Indexing document: ${args.documentId}`);
+      // 1. Index for ENHANCED RAG (with metadata, filters, and LLM validation)
+      console.log(`[indexAndSnapshot] Indexing document with enhanced RAG: ${args.documentId}`);
       const doc = await ctx.runQuery(api.documents.getById, { documentId: args.documentId });
       if (doc) {
-        // Extract plain text from TipTap JSON for indexing
-        const tiptapDoc = JSON.parse(args.content);
-        const plainText = extractTextFromTipTap(tiptapDoc);
-        const textContent = `${doc.title}\n\n${plainText}`;
+        // Add to enhanced RAG with user namespace and metadata
+        try {
+          const enhancedResult = await ctx.runAction(internal.ragEnhanced.addDocumentToEnhancedRag, {
+            documentId: args.documentId,
+            userId: args.userId,
+          });
 
-        // Add to RAG with user namespace for personalized search
-        await ctx.runAction(internal.rag.addDocumentToRag, { documentId: args.documentId });
-        console.log(`[indexAndSnapshot] Document indexed successfully: ${args.documentId}`);
+          if (enhancedResult.success) {
+            console.log(`[indexAndSnapshot] Enhanced RAG indexing successful: ${args.documentId} (${enhancedResult.chunksCount} chunks)`);
+          } else {
+            console.warn(`[indexAndSnapshot] Enhanced RAG indexing failed for: ${args.documentId}`);
+          }
+        } catch (enhancedError) {
+          console.error(`[indexAndSnapshot] Enhanced RAG error:`, enhancedError);
+        }
+
+        // 2. Also add to legacy RAG for backward compatibility
+        try {
+          await ctx.runAction(internal.rag.addDocumentToRag, { documentId: args.documentId });
+          console.log(`[indexAndSnapshot] Legacy RAG indexing successful: ${args.documentId}`);
+        } catch (legacyError) {
+          console.error(`[indexAndSnapshot] Legacy RAG error:`, legacyError);
+        }
       } else {
         console.warn(`[indexAndSnapshot] Document not found for indexing: ${args.documentId}`);
       }
 
-      // 2. Create initial snapshot for version control
+      // 3. Create initial snapshot for version control
       console.log(`[indexAndSnapshot] Creating snapshot for: ${args.documentId}`);
       const snapshotId = await ctx.runMutation(internal.fastAgentDocumentCreation.createInitialSnapshot, {
         documentId: args.documentId,
