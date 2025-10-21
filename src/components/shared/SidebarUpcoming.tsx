@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import AgendaMiniRow from "@/components/agenda/AgendaMiniRow";
+import MiniEditorPopover from "@/components/MiniEditorPopover";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 export interface SidebarUpcomingProps {
@@ -11,6 +12,12 @@ export interface SidebarUpcomingProps {
 export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingProps) {
   const [lastClickedId, setLastClickedId] = useState<string | null>(null);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [editTarget, setEditTarget] = useState<
+    | { kind: "event"; id: string }
+    | { kind: "task"; id: string }
+    | null
+  >(null);
+  const [editAnchorEl, setEditAnchorEl] = useState<HTMLElement | null>(null);
 
   const handleOpenDocument = (documentId: Id<"documents">) => {
     if (onOpenDocument) {
@@ -38,23 +45,22 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
               onSelect={(id) => {
                 const idStr = String(id);
                 if (lastClickedId === `event_${idStr}`) {
-                  // Double-click: navigate to document
+                  // Double-click: navigate to full document
                   if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
                   setLastClickedId(null);
+                  setEditTarget(null);
+                  setEditAnchorEl(null);
                   if (e.documentId) {
                     handleOpenDocument(e.documentId as Id<"documents">);
                   }
                 } else {
-                  // First click: set for potential double-click
+                  // First click: show mini popover
                   setLastClickedId(`event_${idStr}`);
+                  const el = document.querySelector(`[data-agenda-mini-row][data-event-id="${idStr}"]`);
+                  setEditAnchorEl(el as HTMLElement);
+                  setEditTarget({ kind: "event", id: idStr });
                   if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                  clickTimeoutRef.current = setTimeout(() => {
-                    setLastClickedId(null);
-                    // Single click: also navigate to document
-                    if (e.documentId) {
-                      handleOpenDocument(e.documentId as Id<"documents">);
-                    }
-                  }, 300);
+                  clickTimeoutRef.current = setTimeout(() => setLastClickedId(null), 300);
                 }
               }}
             />
@@ -68,23 +74,22 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
               onSelect={(id) => {
                 const idStr = String(id);
                 if (lastClickedId === `task_${idStr}`) {
-                  // Double-click: navigate to document
+                  // Double-click: navigate to full document
                   if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
                   setLastClickedId(null);
+                  setEditTarget(null);
+                  setEditAnchorEl(null);
                   if (t.documentId) {
                     handleOpenDocument(t.documentId as Id<"documents">);
                   }
                 } else {
-                  // First click: set for potential double-click
+                  // First click: show mini popover
                   setLastClickedId(`task_${idStr}`);
+                  const el = document.querySelector(`[data-agenda-mini-row][data-task-id="${idStr}"]`);
+                  setEditAnchorEl(el as HTMLElement);
+                  setEditTarget({ kind: "task", id: idStr });
                   if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                  clickTimeoutRef.current = setTimeout(() => {
-                    setLastClickedId(null);
-                    // Single click: also navigate to document
-                    if (t.documentId) {
-                      handleOpenDocument(t.documentId as Id<"documents">);
-                    }
-                  }, 300);
+                  clickTimeoutRef.current = setTimeout(() => setLastClickedId(null), 300);
                 }
               }}
             />
@@ -113,23 +118,22 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
               onSelect={(id) => {
                 const idStr = String(id);
                 if (lastClickedId === `event_${idStr}`) {
-                  // Double-click: navigate to document
+                  // Double-click: navigate to full document
                   if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
                   setLastClickedId(null);
+                  setEditTarget(null);
+                  setEditAnchorEl(null);
                   if (e.documentId) {
                     handleOpenDocument(e.documentId as Id<"documents">);
                   }
                 } else {
-                  // First click: set for potential double-click
+                  // First click: show mini popover
                   setLastClickedId(`event_${idStr}`);
+                  const el = document.querySelector(`[data-agenda-mini-row][data-event-id="${idStr}"]`);
+                  setEditAnchorEl(el as HTMLElement);
+                  setEditTarget({ kind: "event", id: idStr });
                   if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                  clickTimeoutRef.current = setTimeout(() => {
-                    setLastClickedId(null);
-                    // Single click: also navigate to document
-                    if (e.documentId) {
-                      handleOpenDocument(e.documentId as Id<"documents">);
-                    }
-                  }, 300);
+                  clickTimeoutRef.current = setTimeout(() => setLastClickedId(null), 300);
                 }
               }}
             />
@@ -143,23 +147,22 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
               onSelect={(id) => {
                 const idStr = String(id);
                 if (lastClickedId === `task_${idStr}`) {
-                  // Double-click: navigate to document
+                  // Double-click: navigate to full document
                   if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
                   setLastClickedId(null);
+                  setEditTarget(null);
+                  setEditAnchorEl(null);
                   if (t.documentId) {
                     handleOpenDocument(t.documentId as Id<"documents">);
                   }
                 } else {
-                  // First click: set for potential double-click
+                  // First click: show mini popover
                   setLastClickedId(`task_${idStr}`);
+                  const el = document.querySelector(`[data-agenda-mini-row][data-task-id="${idStr}"]`);
+                  setEditAnchorEl(el as HTMLElement);
+                  setEditTarget({ kind: "task", id: idStr });
                   if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                  clickTimeoutRef.current = setTimeout(() => {
-                    setLastClickedId(null);
-                    // Single click: also navigate to document
-                    if (t.documentId) {
-                      handleOpenDocument(t.documentId as Id<"documents">);
-                    }
-                  }, 300);
+                  clickTimeoutRef.current = setTimeout(() => setLastClickedId(null), 300);
                 }
               }}
             />
@@ -169,6 +172,30 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
           )}
         </div>
       </div>
+
+      {/* Mini Editor Popover for events/tasks */}
+      {editTarget && editTarget.kind === "event" && (
+        <MiniEditorPopover
+          isOpen={true}
+          documentId={editTarget.id as Id<"documents">}
+          anchorEl={editAnchorEl}
+          onClose={() => {
+            setEditTarget(null);
+            setEditAnchorEl(null);
+          }}
+        />
+      )}
+      {editTarget && editTarget.kind === "task" && (
+        <MiniEditorPopover
+          isOpen={true}
+          documentId={editTarget.id as Id<"documents">}
+          anchorEl={editAnchorEl}
+          onClose={() => {
+            setEditTarget(null);
+            setEditAnchorEl(null);
+          }}
+        />
+      )}
     </div>
   );
 }
