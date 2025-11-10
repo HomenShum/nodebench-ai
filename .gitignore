@@ -37,6 +37,8 @@ RELEASE_NOTES_*.md
 # Test artifacts
 coverage/
 .nyc_output/
+test-results/
+playwright-report/
 
 # Temporary files
 temp_*.txt
