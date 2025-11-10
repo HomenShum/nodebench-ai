@@ -901,6 +901,13 @@ export const streamAsync = internalAction({
     const controller = new AbortController();
     streamCancellationControllers.set(args.threadId, controller);
 
+    // Set timeout for streaming (30 seconds default)
+    const STREAM_TIMEOUT_MS = 30000;
+    const timeoutId = setTimeout(() => {
+      console.warn(`[streamAsync:${executionId}] ⏱️ Stream timeout after ${STREAM_TIMEOUT_MS}ms, aborting...`);
+      controller.abort();
+    }, STREAM_TIMEOUT_MS);
+
     try {
       console.log(`[streamAsync:${executionId}] 📡 Calling ${agentType} agent.streamText...`);
       console.log(`[streamAsync:${executionId}] 🔑 Using promptMessageId:`, args.promptMessageId);
@@ -944,6 +951,7 @@ export const streamAsync = internalAction({
       console.error(`[streamAsync:${executionId}] ❌ Error:`, error);
       throw error;
     } finally {
+      clearTimeout(timeoutId);
       streamCancellationControllers.delete(args.threadId);
       // Reset cancel flag via mutation (actions can't use ctx.db directly)
       if (customThread?._id) {

@@ -69,10 +69,10 @@ export function WelcomeLanding({ onDocumentSelect }: WelcomeLandingProps) {
 
 
       {/* Hero Section - Centered, minimal, animated */}
-      <div className="relative max-w-5xl mx-auto w-full px-4 sm:px-6 pt-6 sm:pt-10 pb-3 sm:pb-4">
+      <div className="relative max-w-5xl mx-auto w-full px-4 sm:px-6 pt-6 sm:pt-10 pb-3 sm:pb-4 pointer-events-none">
         {/* Subtle radial gradient backdrop inspired by Vercel/Stripe */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(600px_280px_at_50%_0%,rgba(26,115,232,0.18)_0%,rgba(26,115,232,0)_70%)]" />
-        <div className="text-center space-y-4 sm:space-y-6">
+        <div className="text-center space-y-4 sm:space-y-6 pointer-events-none">
           {/* Icon with subtle animation */}
           <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-[var(--accent-primary)]/5 rounded-2xl transition-transform hover:scale-105 duration-300 opacity-0 animate-[scaleIn_0.8s_ease-out_forwards] reveal-visible">
             <Bot className="h-7 w-7 sm:h-8 sm:w-8 text-[var(--accent-primary)]" />

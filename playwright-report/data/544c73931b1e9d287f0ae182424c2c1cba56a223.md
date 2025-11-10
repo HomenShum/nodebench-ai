@@ -1,0 +1,93 @@
+# Page snapshot
+
+```yaml
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - img [ref=e8]
+      - generic [ref=e11]:
+        - heading "Your AI research assistant for dossiers & newsletters" [level=1] [ref=e12]:
+          - generic [ref=e13]: Your
+          - generic [ref=e14]: AI
+          - generic [ref=e15]: research
+          - generic [ref=e16]: assistant
+          - generic [ref=e17]:
+            - generic [ref=e18]: for
+            - generic [ref=e19]: dossiers
+            - generic [ref=e20]: "&"
+            - generic [ref=e21]: newsletters
+        - paragraph [ref=e22]:
+          - text: Capture notes, search knowledge, and curate personalized digests.
+          - text: No sign-in required to start.
+      - generic [ref=e23]:
+        - button "Continue with Google" [ref=e24] [cursor=pointer]
+        - generic [ref=e25]: or try as guest — no account needed
+      - generic [ref=e26]:
+        - paragraph [ref=e27]: Built for
+        - generic [ref=e28]:
+          - button "Investors" [ref=e29] [cursor=pointer]:
+            - generic [ref=e30]:
+              - img [ref=e32]
+              - generic [ref=e35]: Investors
+          - button "Bankers" [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]:
+              - img [ref=e39]
+              - generic [ref=e41]: Bankers
+          - button "Marketing" [ref=e42] [cursor=pointer]:
+            - generic [ref=e43]:
+              - img [ref=e45]
+              - generic [ref=e48]: Marketing
+          - button "Researchers" [ref=e49] [cursor=pointer]:
+            - generic [ref=e50]:
+              - img [ref=e52]
+              - generic [ref=e56]: Researchers
+          - button "Healthcare" [ref=e57] [cursor=pointer]:
+            - generic [ref=e58]:
+              - img [ref=e60]
+              - generic [ref=e64]: Healthcare
+          - button "Founders" [ref=e65] [cursor=pointer]:
+            - generic [ref=e66]:
+              - img [ref=e68]
+              - generic [ref=e71]: Founders
+    - generic [ref=e72]:
+      - generic [ref=e73]:
+        - button "Dossier Preview" [ref=e74] [cursor=pointer]:
+          - paragraph [ref=e78]: Dossier Preview
+        - button "Newsletter Digest" [ref=e79] [cursor=pointer]:
+          - paragraph [ref=e83]: Newsletter Digest
+        - button "Media Collage" [ref=e84] [cursor=pointer]:
+          - paragraph [ref=e88]: Media Collage
+      - generic [ref=e89]:
+        - generic:
+          - generic [ref=e91]:
+            - img [ref=e93]
+            - generic [ref=e96]: Start a conversation
+            - generic [ref=e97]: Ask anything. I can help research, summarize, and draft dossiers.
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - textbox "Send a message… (Ctrl/Cmd + Enter to send)" [ref=e100]
+              - button "Send (sign in)" [disabled] [ref=e101]
+            - generic [ref=e102]: Shift+Enter for new line.
+    - generic [ref=e104]:
+      - paragraph [ref=e105]: Trusted by professionals at
+      - generic [ref=e106]:
+        - generic [ref=e107]: Mercor
+        - generic [ref=e108]: Cognition
+        - generic [ref=e109]: SevenAI
+        - generic [ref=e110]: Greylock
+        - generic [ref=e111]: Turing
+        - generic [ref=e112]: Augment
+        - generic [ref=e113]: Vercel
+        - generic [ref=e114]: Stripe
+        - generic [ref=e115]: Linear
+        - generic [ref=e116]: Mercor
+        - generic [ref=e117]: Cognition
+        - generic [ref=e118]: SevenAI
+        - generic [ref=e119]: Greylock
+        - generic [ref=e120]: Turing
+        - generic [ref=e121]: Augment
+        - generic [ref=e122]: Vercel
+        - generic [ref=e123]: Stripe
+        - generic [ref=e124]: Linear
+    - button "Sign in later and start a guest session" [ref=e126] [cursor=pointer]: Sign in later
+```
