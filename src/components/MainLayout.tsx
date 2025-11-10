@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Sidebar } from "./Sidebar";
-import { AIChatPanel } from "./AIChatPanel/AIChatPanel";
+// Agent Chat Panel removed
 import { FastAgentPanel } from "./FastAgentPanel";
 import { PublicDocuments } from "@/components/views/PublicDocuments";
 import { TabManager } from "./TabManager";
@@ -26,7 +26,7 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome }: MainLayoutProps) {
-  const [showAIChat, setShowAIChat] = useState(false);
+  // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
   const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public'>('documents');
   const [smsMessage, setSmsMessage] = useState<{from: string, message: string} | null>(null);
@@ -37,8 +37,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const [selectedDocumentIdsForAgent, setSelectedDocumentIdsForAgent] = useState<Id<"documents">[]>([]);
   // Top-bar quick AI chat input
   const [quickChatInput, setQuickChatInput] = useState("");
-  // Reliable quick prompt handoff to AIChatPanel
-  const [pendingQuickPrompt, setPendingQuickPrompt] = useState<string | undefined>(undefined);
+  // Removed AIChatPanel quick prompt handoff
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Check localStorage for saved theme preference
     if (typeof window !== 'undefined') {
@@ -47,8 +46,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     }
     return false;
   });
-  // MCP panel visibility (inside AIChatPanel)
-  const [showMcpPanel, setShowMcpPanel] = useState(false);
+  // Removed MCP panel state (was used inside AIChatPanel)
   // Hashtag quick note popover state
   const [hashtagPopover, setHashtagPopover] = useState<{
     dossierId: Id<"documents">;
@@ -62,36 +60,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   } | null>(null);
   // Fast Agent thread navigation (for inline agent "View in Panel" link)
   const [fastAgentThreadId, setFastAgentThreadId] = useState<string | null>(null);
-  // Restore persisted MCP panel visibility
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('showMcpPanel');
-        if (saved === 'true') setShowMcpPanel(true);
-      }
-    } catch (e) { void e; }
-  }, []);
-  // Persist MCP panel visibility
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('showMcpPanel', showMcpPanel ? 'true' : 'false');
-      }
-    } catch (e) { void e; }
-  }, [showMcpPanel]);
-  // Keyboard shortcut: Ctrl/Cmd + M toggles MCP panel (and opens AI chat if enabling)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
-        e.preventDefault();
-        const next = !showMcpPanel;
-        setShowMcpPanel(next);
-        if (next && !showAIChat) setShowAIChat(true);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [showMcpPanel, showAIChat]);
+  // Removed MCP panel persistence and shortcut (no AIChatPanel)
+
+  // Removed quick prompt handoff (AIChatPanel removed)
 
   // Global event listener for inline agent "View in Panel" navigation
   useEffect(() => {
@@ -104,53 +75,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     return () => window.removeEventListener('navigate:fastAgentThread' as any, handler as any);
   }, []);
 
-  // Listen for quick prompts emitted by other components
-  useEffect(() => {
-    const onQuickPrompt = (evt: Event) => {
-      try {
-        const e = evt as CustomEvent<{ prompt?: string; documentId?: string }>;
-        const text = e.detail?.prompt?.trim();
-        if (!text) return;
-        if (!showAIChat) {
-          // If closed, optionally select the document context first, then open and hand off the prompt
-          const docIdStr = e.detail?.documentId;
-          if (docIdStr) {
-            try {
-              onDocumentSelect(docIdStr as Id<"documents">);
-            } catch (err) {
-              // best effort
-              void err;
-            }
-            setTimeout(() => {
-              setShowAIChat(true);
-              setPendingQuickPrompt(text);
-            }, 75);
-          } else {
-            setShowAIChat(true);
-            setPendingQuickPrompt(text);
-          }
-        }
-        // If already open, AIChatPanel handles the event directly
-      } catch {
-        // ignore
-      }
-    };
-    window.addEventListener('ai:quickPrompt', onQuickPrompt as EventListener);
-    return () => {
-      window.removeEventListener('ai:quickPrompt', onQuickPrompt as EventListener);
-    };
-  }, [showAIChat, onDocumentSelect]);
+  // Removed global quick prompt listener (AIChatPanel removed)
 
-  // Listen for explicit requests to open the AI chat panel
-  useEffect(() => {
-    const onOpenPanel = (_evt: Event) => {
-      setShowAIChat(true);
-    };
-    window.addEventListener('ai:openPanel', onOpenPanel as EventListener);
-    return () => {
-      window.removeEventListener('ai:openPanel', onOpenPanel as EventListener);
-    };
-  }, []);
+  // Removed open panel listener (AIChatPanel removed)
 
   // Lightweight global help handler: open Settings as placeholder for Help
   useEffect(() => {
@@ -165,13 +92,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   // Resizable panel state
   const [sidebarWidth, setSidebarWidth] = useState(256); // pixels
-  const [mainPanelWidth, setMainPanelWidth] = useState(65); // percentage
-  const [aiPanelWidth, setAiPanelWidth] = useState(35); // percentage
-  const resizingRef = useRef(false);
+  // Removed AIChatPanel resize state; main panel occupies full width
   const sidebarResizingRef = useRef(false);
   const startXRef = useRef(0);
-  const startMainWidthRef = useRef(0);
-  const startAiWidthRef = useRef(0);
+  // Removed AIChatPanel resize refs
   const startSidebarWidthRef = useRef(0);
   // Centralized task selection for inline editor
   const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
@@ -260,44 +184,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   };
 
   // Resizable panel handlers
-  const startResizing = (e: React.MouseEvent) => {
-    e.preventDefault();
-    resizingRef.current = true;
-    startXRef.current = e.clientX;
-    startMainWidthRef.current = mainPanelWidth;
-    startAiWidthRef.current = aiPanelWidth;
-
-    document.addEventListener('mousemove', resize);
-    document.addEventListener('mouseup', stopResizing);
-  };
-
-  const resize = (e: MouseEvent) => {
-    if (!resizingRef.current) return;
-
-    const containerWidth = window.innerWidth - sidebarWidth - 8; // Subtract sidebar width and resize handles
-    const diff = e.clientX - startXRef.current;
-    const diffPercentage = (diff / containerWidth) * 100;
-
-    const newMainWidth = Math.min(Math.max(startMainWidthRef.current + diffPercentage, 30), 85);
-    const newAiWidth = Math.min(Math.max(startAiWidthRef.current - diffPercentage, 15), 70);
-
-    // Ensure the percentages add up to 100
-    const total = newMainWidth + newAiWidth;
-    if (total !== 100) {
-      const adjustment = (100 - total) / 2;
-      setMainPanelWidth(newMainWidth + adjustment);
-      setAiPanelWidth(newAiWidth + adjustment);
-    } else {
-      setMainPanelWidth(newMainWidth);
-      setAiPanelWidth(newAiWidth);
-    }
-  };
-
-  const stopResizing = () => {
-    resizingRef.current = false;
-    document.removeEventListener('mousemove', resize);
-    document.removeEventListener('mouseup', stopResizing);
-  };
+  // Removed AIChatPanel resize handlers
 
   // Sidebar resizable handlers
   const startSidebarResizing = (e: React.MouseEvent) => {
@@ -540,8 +427,6 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           selectedDocumentId={selectedDocumentId}
           currentView={currentView === 'calendar' || currentView === 'timeline' || currentView === 'roadmap' ? 'documents' : currentView}
           onViewChange={(view) => setCurrentView(view)}
-          showAIChat={showAIChat}
-          onToggleAIChat={() => setShowAIChat(!showAIChat)}
           onSmsReceived={handleSmsReceived}
           isGridMode={isGridMode}
           selectedFileIds={selectedFileIds}
@@ -561,7 +446,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         {/* Main Content Area */}
         <div
           className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
-          style={{ width: showAIChat ? `${mainPanelWidth}%` : '100%' }}
+            style={{ width: '100%' }}
         >
           {/* Top Bar */}
           <div className="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-6 py-3 flex items-center transition-colors duration-200 relative">
@@ -605,14 +490,6 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                       Files: {selectedFileIds.length}
                     </span>
                   )}
-                  {showMcpPanel && (
-                    <span
-                      className="px-2 py-0.5 text-xs rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 text-[var(--accent-primary)]"
-                      title="MCP panel is visible"
-                    >
-                      MCP On
-                    </span>
-                  )}
                 </div>
                 <div className="relative flex-1">
                   <input
@@ -623,9 +500,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                         e.preventDefault();
                         const text = quickChatInput.trim();
                         if (!text) return;
-                        // Open AIChat and hand off prompt via prop
-                        if (!showAIChat) setShowAIChat(true);
-                        setPendingQuickPrompt(text);
+                        // Open Fast Agent overlay (Agent Chat Panel removed)
+                        if (!showFastAgent) setShowFastAgent(true);
                         setQuickChatInput("");
                       }
                     }}
@@ -639,8 +515,13 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   onClick={() => {
                     const text = quickChatInput.trim();
                     if (!text) return;
-                    if (!showAIChat) setShowAIChat(true);
-                    setPendingQuickPrompt(text);
+                    // Send prompt to welcome page inline chat
+                    try {
+                      window.dispatchEvent(new CustomEvent("welcome:quickPrompt", { detail: { prompt: text } }));
+                    } catch {
+                      // Fallback: open Fast Agent if not on welcome page
+                      if (!showFastAgent) setShowFastAgent(true);
+                    }
                     setQuickChatInput("");
                   }}
                   className="inline-flex items-center justify-center h-10 w-10 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] shadow-sm"
@@ -809,39 +690,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
 
           {/* Floating Context Pills */}
-          {/* ContextPills now rendered inline in AIChatPanel's Context section */}
+            {/* Context pills rendered inline in views */}
         </div>
 
         {/* Resize Handle between Main and AI Chat Panel */}
-        {showAIChat && (
-          <div
-            className="w-2 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] cursor-col-resize transition-colors duration-200 flex-shrink-0"
-            onMouseDown={startResizing}
-          />
-        )}
+        {/* Removed AIChatPanel resize handle */}
 
         {/* AI Chat Panel - Right Side Push-out */}
-        {showAIChat && (
-          <div
-            className="bg-[var(--bg-primary)] border-l border-[var(--border-color)] shadow-2xl transition-all duration-300 ease-in-out flex-shrink-0"
-            style={{ width: `${aiPanelWidth}%` }}
-          >
-            <AIChatPanel
-              isOpen={showAIChat}
-              onClose={() => setShowAIChat(false)}
-              onDocumentSelect={handleDocumentSelect}
-              selectedDocumentId={selectedDocumentId || undefined}
-              smsMessage={smsMessage ? `SMS from ${smsMessage?.from}: ${smsMessage?.message}` : undefined}
-              onSmsMessageProcessed={handleSmsMessageProcessed}
-              selectedFileIds={selectedFileIds}
-              showMcpPanel={showMcpPanel}
-              onToggleMcpPanel={() => setShowMcpPanel(!showMcpPanel)}
-              pendingQuickPrompt={pendingQuickPrompt}
-              onQuickPromptConsumed={() => setPendingQuickPrompt(undefined)}
-              variant="minimal"
-            />
-          </div>
-        )}
+        {/* Removed AIChatPanel */}
       </div>
 
       {/* Fast Agent Panel - Overlay */}

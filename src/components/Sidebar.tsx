@@ -133,8 +133,6 @@ interface SidebarProps {
   selectedDocumentId: Id<"documents"> | null;
   currentView: 'documents' | 'public';
   onViewChange: (view: 'documents' | 'public') => void;
-  showAIChat: boolean;
-  onToggleAIChat: () => void;
   onSmsReceived?: (from: string, message: string) => void;
   openDocumentIds?: Id<"documents">[];
   isGridMode?: boolean;
@@ -150,8 +148,6 @@ export function Sidebar({
   selectedDocumentId,
   currentView,
   onViewChange,
-  showAIChat,
-  onToggleAIChat,
   onSmsReceived,
   onOpenSettings
 }: SidebarProps) {
@@ -1661,25 +1657,7 @@ export function Sidebar({
             <div className="text-[11px] font-medium text-[var(--text-secondary)]/70">Integration Panel</div>
           </div>
           
-          {/* AI Chat Toggle Button */}
-          <button
-            onClick={() => onToggleAIChat && onToggleAIChat()}
-            className={`w-full flex items-center justify-center gap-2.5 px-3 py-2 mb-2 text-xs font-semibold rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 ${
-              showAIChat
-                ? "bg-[var(--bg-active)] text-[var(--text-primary)] border border-[var(--border-color)]"
-                : "text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-            }`}
-            title="Toggle AI Chat Assistant"
-          >
-            <Bot className="h-4 w-4" />
-            <span>AI Chat Assistant</span>
-            {showAIChat && (
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-primary)]/40"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-primary)]"></span>
-              </span>
-            )}
-          </button>
+          {/* AI Chat Assistant removed */}
           
           <SortableList
             items={iconOrder}

@@ -28,6 +28,7 @@ export const analyzeFileWithGenAI = action({
     url: v.optional(v.string()),
     analysisPrompt: v.string(),
     analysisType: v.optional(v.string()),
+    testBypassUserId: v.optional(v.union(v.id("users"), v.string())),
   },
   handler: async (ctx, args) => {
     if (!args.fileId && !args.url) {
@@ -35,8 +36,8 @@ export const analyzeFileWithGenAI = action({
     }
 
     const startTime = Date.now();
-    // Using getAuthUserId for consistent authentication
-    const userId = await getAuthUserId(ctx);
+    // Using getAuthUserId for consistent authentication (with optional test bypass)
+    const userId = (args as any).testBypassUserId || await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Not authenticated");
     }

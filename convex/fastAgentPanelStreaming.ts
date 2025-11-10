@@ -44,6 +44,8 @@ import {
   getCompanyInfo
 } from "./tools/secFilingTools";
 
+const streamCancellationControllers = new Map<string, AbortController>();
+
 // Helper to create agent with specific model for agent streaming mode
 const createChatAgent = (model: string) => new Agent(components.agent, {
   name: "FastChatAgent",
@@ -826,6 +828,24 @@ export const initiateAsyncStreaming = mutation({
   },
 });
 
+export const requestStreamCancel = mutation({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+  },
+  handler: async (ctx, { threadId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const thread = await ctx.db.get(threadId);
+    if (!thread || thread.userId !== userId) throw new Error("Thread not found or unauthorized");
+    await ctx.db.patch(threadId, { cancelRequested: true, cancelRequestedAt: Date.now(), updatedAt: Date.now() });
+    const controller = streamCancellationControllers.get(String(threadId));
+    if (controller) {
+      controller.abort();
+    }
+    return { success: true } as const;
+  },
+});
+
 /**
  * Internal action to stream text asynchronously
  *
@@ -868,6 +888,14 @@ export const streamAsync = internalAction({
       agent = createChatAgent(args.model);
     }
 
+    if (thread?.cancelRequested) {
+      console.log(`[streamAsync:${executionId}] ❌ Stream already cancelled before start`);
+      throw new Error("Stream cancelled");
+    }
+
+    const controller = new AbortController();
+    streamCancellationControllers.set(args.threadId, controller);
+
     try {
       console.log(`[streamAsync:${executionId}] 📡 Calling ${agentType} agent.streamText...`);
       console.log(`[streamAsync:${executionId}] 🔑 Using promptMessageId:`, args.promptMessageId);
@@ -883,13 +911,13 @@ export const streamAsync = internalAction({
       const result = await agent.streamText(
         contextWithUserId as any,
         { threadId: args.threadId },
-        { promptMessageId: args.promptMessageId }
-        // IMPORTANT: Do NOT use saveStreamDeltas here
-        // When tools are called, the agent needs to save tool result messages
-        // saveStreamDeltas only saves text deltas, not tool result messages
-        // This causes the error: "tool_call_ids did not have response messages"
-        // The agent will automatically save the complete message with all tool results
-      );
+        { promptMessageId: args.promptMessageId, abortSignal: controller.signal }
+      // IMPORTANT: Do NOT use saveStreamDeltas here
+      // When tools are called, the agent needs to save tool result messages
+      // saveStreamDeltas only saves text deltas, not tool result messages
+      // This causes the error: "tool_call_ids did not have response messages"
+      // The agent will automatically save the complete message with all tool results
+    );
 
       console.log(`[streamAsync:${executionId}] ✅ Stream started, messageId:`, result.messageId);
       console.log(`[streamAsync:${executionId}] 🔍 streamText should NOT create a new user message, it should use promptMessageId:`, args.promptMessageId);
@@ -910,6 +938,17 @@ export const streamAsync = internalAction({
     } catch (error) {
       console.error(`[streamAsync:${executionId}] ❌ Error:`, error);
       throw error;
+    } finally {
+      streamCancellationControllers.delete(args.threadId);
+      try {
+        await ctx.db.patch(args.threadId, {
+          cancelRequested: false,
+          cancelRequestedAt: null,
+          updatedAt: Date.now(),
+        });
+      } catch (patchErr) {
+        console.warn(`[streamAsync:${executionId}] Failed to reset cancel flag`, patchErr);
+      }
     }
   },
 });
@@ -1696,5 +1735,3 @@ export const generateFileResponse = internalAction({
     }
   },
 });
-
-

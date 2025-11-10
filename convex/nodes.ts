@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 import { detectNodeType, createBlockJson, extractPlainText, coerceToBlockJson } from "./lib/markdown";
@@ -227,5 +227,71 @@ export const remove = mutation({
       await ctx.db.delete(id);
     }
     return null;
+  },
+});
+
+/* ------------------------------------------------------------------ */
+/* Internal: Upsert Metadata Section at Top                          */
+/* ------------------------------------------------------------------ */
+export const upsertMetadataSection = internalMutation({
+  args: {
+    documentId: v.id("documents"),
+    contentLines: v.array(v.string()),
+    authorId: v.optional(v.union(v.id("users"), v.string())),
+  },
+  handler: async (ctx, { documentId, contentLines, authorId }) => {
+    const nodes = await ctx.db
+      .query("nodes")
+      .withIndex("by_document", (q) => q.eq("documentId", documentId))
+      .collect();
+
+    // Remove previous system-generated metadata nodes
+    const toDelete = nodes.filter((n: any) => n.isUserNode === false && (n.text?.includes("📊 Metadata (Auto-Generated)") || n.text?.includes("Analyzed Files")));
+    for (const n of toDelete) {
+      await ctx.db.delete(n._id);
+    }
+
+    const minOrder = nodes.length ? Math.min(...nodes.map((n: any) => n.order ?? 0)) : 0;
+    const orderTop = minOrder - 1000;
+
+    const now = Date.now();
+    const userId = authorId || await getAuthUserId(ctx);
+    const headingText = `📊 Metadata (Auto-Generated) — ${new Date(now).toLocaleString()}`;
+
+    // Heading node
+    await ctx.db.insert("nodes", {
+      documentId,
+      parentId: undefined,
+      order: orderTop,
+      type: "heading",
+      json: { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: headingText }] },
+      text: headingText,
+      authorId: userId as Id<"users">,
+      createdAt: now,
+      updatedAt: now,
+      isUserNode: false,
+    });
+
+    // Body nodes as paragraphs
+    let idx = 1;
+    for (const line of contentLines) {
+      const text = String(line || "").trim();
+      if (!text) continue;
+      await ctx.db.insert("nodes", {
+        documentId,
+        parentId: undefined,
+        order: orderTop + idx,
+        type: "paragraph",
+        json: { type: "paragraph", content: [{ type: "text", text }] },
+        text,
+        authorId: userId as Id<"users">,
+        createdAt: now,
+        updatedAt: now,
+        isUserNode: false,
+      });
+      idx++;
+    }
+
+    return { inserted: idx };
   },
 });

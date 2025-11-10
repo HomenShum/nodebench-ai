@@ -1,12 +1,12 @@
 /**
  * Enhanced RAG Implementation with Metadata, Filters, and LLM Validation
- * 
+ *
  * Based on Convex RAG best practices:
  * - https://docs.convex.dev/search/vector-search
  * - https://docs.convex.dev/agents/rag/
  * - https://github.com/get-convex/rag/blob/main/example/convex/getText.ts
  * - https://github.com/get-convex/rag/blob/main/example/convex/example.ts
- * 
+ *
  * Features:
  * - Document metadata (type, category, userId) for filtering
  * - User-scoped namespaces for privacy
@@ -16,10 +16,12 @@
  */
 
 "use node";
-import { internalAction, internalMutation } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { RAG, defaultChunker } from "@convex-dev/rag";
 import { components, api, internal } from "./_generated/api";
+
+
 import { openai } from "@ai-sdk/openai";
 import OpenAI from "openai";
 import type { Id } from "./_generated/dataModel";
@@ -68,22 +70,22 @@ function smartChunker(text: string, options?: {
 
   // Use default chunker as base
   const baseChunks = defaultChunker(text);
-  
+
   // Add overlap between chunks for better context
   const chunksWithOverlap: string[] = [];
   for (let i = 0; i < baseChunks.length; i++) {
     let chunk = baseChunks[i];
-    
+
     // Add overlap from previous chunk
     if (i > 0 && overlapSize > 0) {
       const prevChunk = baseChunks[i - 1];
       const overlap = prevChunk.slice(-overlapSize);
       chunk = overlap + "\n...\n" + chunk;
     }
-    
+
     chunksWithOverlap.push(chunk);
   }
-  
+
   return chunksWithOverlap;
 }
 
@@ -121,8 +123,39 @@ export const addDocumentToEnhancedRag = internalAction({
         plainText = String((doc as any).content ?? "");
       }
 
-      // Combine title and content
-      const fullText = `${(doc as any).title}\n\n${plainText}`;
+      // Gather additional text sources: nodes content, quick notes metadata, file analysis summaries
+      let nodesText = "";
+      const docNodes = await ctx.runQuery(api.nodes.by_document, { docId: documentId });
+      if (docNodes.length > 0) {
+        nodesText = docNodes.map((n: any) => n.text || "").filter(Boolean).join("\n");
+      }
+
+      // If this is a primary dossier, include associated quick-notes content
+      let quickNotesText = "";
+      if ((doc as any).documentType === "dossier" && (doc as any).dossierType === "primary") {
+        const quickNotes: any = await ctx.runMutation(api.documents.getOrCreateQuickNotes, { dossierId: documentId });
+        if (quickNotes) {
+          const qnNodes = await ctx.runQuery(api.nodes.by_document, { docId: quickNotes._id });
+          if (qnNodes.length > 0) {
+            quickNotesText = qnNodes.map((n: any) => n.text || "").filter(Boolean).join("\n");
+          }
+        }
+      }
+
+      // If this is a file document, include extracted file summaries/analysis if available
+      let fileMetaText = "";
+      if ((doc as any).documentType === "file" && (doc as any).fileId) {
+        const file = await ctx.runQuery(internal.files.getFile, { fileId: (doc as any).fileId });
+
+        if (file) {
+          fileMetaText = [file.contentSummary, file.textPreview, file.analysis]
+            .filter(Boolean)
+            .join("\n");
+        }
+      }
+
+      // Combine all textual signals
+      const fullText = `${(doc as any).title}\n\n${plainText}\n\n${nodesText}\n\n${quickNotesText}\n\n${fileMetaText}`.trim();
 
       // Smart chunking with overlap
       const chunks = smartChunker(fullText, {
@@ -154,12 +187,18 @@ export const addDocumentToEnhancedRag = internalAction({
       });
 
       console.log(`[addDocumentToEnhancedRag] Added document ${documentId} with ${chunks.length} chunks`);
-      
+
+      // Mark document as indexed for lazy indexing
+      await ctx.runMutation(internal.documents.markRagIndexed, { documentId, timestamp: Date.now() });
+
+
       return {
         success: true,
         entryId: result.entryId,
         chunksCount: chunks.length,
       };
+
+
     } catch (error) {
       console.error(`[addDocumentToEnhancedRag] Error:`, error);
       return { success: false };
@@ -407,7 +446,7 @@ export const enhancedSearch = internalAction({
     const documentResults = results.map((r: any) => {
       const entry = entries.find((e: any) => e.entryId === r.entryId);
       const metadata = entry?.metadata as DocumentMetadata | undefined;
-      
+
       return {
         documentId: metadata?.documentId || entry?.key,
         title: entry?.title || "Untitled",
