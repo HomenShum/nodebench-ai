@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import React from 'react';
 
-// Re-export components from AIChatPanel directory
-export { AIChatPanelInput as Input } from '../../components/AIChatPanel/AIChatPanel.Input';
-export { AIChatPanelMessages as Messages } from '../../components/AIChatPanel/AIChatPanel.Messages';
-export { ContextPill } from '../../components/AIChatPanel/AIChatPanel.ContextPill';
+// AIChatPanel components removed. Keep hooks/utility exports for compatibility.
 
 // Thinking mode hook - persists state to localStorage
 export function useThinkingMode() {

@@ -23,6 +23,7 @@
   --text-secondary: #5f6368;
   --text-muted: #80868b;
   --accent-primary: #1a73e8;
+  --accent-primary-rgb: 26, 115, 232;
   --accent-primary-bg: rgba(26, 115, 232, 0.08);
   --accent-secondary: #8430ce;
   --bg-hover: rgba(0,0,0,0.04);
@@ -89,6 +90,292 @@ html, body {
 }
 
 /* ---------- Global Layout Styles End ---------- */
+
+/* ---------- Simple landing animations ---------- */
+.fadeIn {
+  animation: fadeIn 700ms ease-out both;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade up animation for landing page */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale in animation */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation delay utility classes for staggered reveals */
+.anim-delay-0 { animation-delay: 0.8s; }
+.anim-delay-1 { animation-delay: 0.9s; }
+.anim-delay-2 { animation-delay: 1.0s; }
+.anim-delay-3 { animation-delay: 1.1s; }
+.anim-delay-4 { animation-delay: 1.2s; }
+.anim-delay-5 { animation-delay: 1.3s; }
+.anim-delay-6 { animation-delay: 1.4s; }
+.anim-delay-7 { animation-delay: 1.5s; }
+.anim-delay-8 { animation-delay: 1.6s; }
+.anim-delay-9 { animation-delay: 1.7s; }
+
+/* Hero word-by-word reveal (Linear-style) */
+.hero-word { opacity: 0; display: inline-block; animation: fadeUp 0.7s ease-out forwards; will-change: transform, opacity; }
+.wdelay-0 { animation-delay: 0.20s; }
+.wdelay-1 { animation-delay: 0.28s; }
+.wdelay-2 { animation-delay: 0.36s; }
+.wdelay-3 { animation-delay: 0.44s; }
+.wdelay-4 { animation-delay: 0.52s; }
+.wdelay-5 { animation-delay: 0.60s; }
+.wdelay-6 { animation-delay: 0.68s; }
+.wdelay-7 { animation-delay: 0.76s; }
+.wdelay-8 { animation-delay: 0.84s; }
+.wdelay-9 { animation-delay: 0.92s; }
+.wdelay-10 { animation-delay: 1.00s; }
+.wdelay-11 { animation-delay: 1.08s; }
+
+
+
+/* Continuous horizontal marquee for trust row */
+.animate-marquee {
+  display: flex;
+  gap: 2.5rem;
+  animation: marquee var(--marquee-duration, 28s) linear infinite;
+  will-change: transform;
+}
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+/* Micro-interactions */
+.pressable { transition: transform 150ms ease; }
+.pressable:active { transform: scale(0.98); }
+
+.focus-bloom:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 6px;
+  transition: outline-offset 150ms ease;
+}
+
+.magnet-hover { transition: transform 180ms ease, box-shadow 180ms ease; will-change: transform; }
+.magnet-hover:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 6px 14px rgba(0,0,0,0.06); }
+
+/* Accent shimmer on headline accent words */
+.accent-shimmer {
+  background: linear-gradient(90deg,
+    var(--accent-primary) 0%,
+    var(--accent-primary) 30%,
+    rgba(255,255,255,0.25) 50%,
+    var(--accent-primary) 70%,
+    var(--accent-primary) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  animation: accent-shimmer 2.6s linear infinite;
+}
+@keyframes accent-shimmer {
+  from { background-position: 0% 0; }
+  to { background-position: 200% 0; }
+}
+
+/* Collage parallax (JS sets --tx/--ty on container) */
+.parallax-container { --tx: 0px; --ty: 0px; }
+.parallax-card { transform: translate3d(calc(var(--tx) * var(--parallax-d, 0.5)), calc(var(--ty) * var(--parallax-d, 0.5)), 0); transition: transform 120ms ease-out; will-change: transform; }
+
+/* Marquee hover pause */
+.marquee-container:hover .animate-marquee { animation-play-state: paused; }
+
+/* Marquee duration utility */
+.marquee-32s { --marquee-duration: 32s; }
+.marquee-40s { --marquee-duration: 40s; }
+
+/* Parallax depth utility classes (avoid inline styles) */
+.parallax-d-06 { --parallax-d: 0.6; }
+.parallax-d-08 { --parallax-d: 0.8; }
+.parallax-d-10 { --parallax-d: 1; }
+
+/* Collage card background images */
+.collage-card-dossier {
+  background-image: url(/assets/landing/product-hunt-example.png);
+  background-size: cover;
+  background-position: center;
+}
+.collage-card-newsletter {
+  background-image: url(/assets/landing/substack-example.png);
+  background-size: cover;
+  background-position: center;
+}
+.collage-card-media {
+  background-image: url(/assets/landing/theverge-example.png);
+  background-size: cover;
+  background-position: center;
+}
+
+/* ========== Landing Page Visual Enhancements ========== */
+
+/* 1. Animated Gradient Mesh Background */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.landing-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    rgba(var(--accent-primary-rgb), 0.08) 25%,
+    var(--bg-primary) 50%,
+    rgba(var(--accent-primary-rgb), 0.05) 75%,
+    var(--bg-primary) 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* 2. Gradient Text Effects */
+.gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary) 0%,
+    rgba(var(--accent-primary-rgb), 0.7) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 3. Glow Effects */
+.glow-accent {
+  box-shadow: 0 0 20px rgba(var(--accent-primary-rgb), 0.3);
+  transition: box-shadow 300ms ease;
+}
+
+.glow-accent:hover {
+  box-shadow: 0 0 30px rgba(var(--accent-primary-rgb), 0.5);
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(var(--accent-primary-rgb), 0.2);
+}
+
+/* 4. Floating Accent Shapes */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.05;
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+    opacity: 0.08;
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.04;
+  }
+  50% {
+    transform: translateY(-15px) translateX(10px) rotate(90deg);
+    opacity: 0.07;
+  }
+}
+
+@keyframes float-fast {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.06;
+  }
+  50% {
+    transform: translateY(-25px) translateX(-10px) rotate(-180deg);
+    opacity: 0.09;
+  }
+}
+
+.floating-shape {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.floating-shape-1 {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.floating-shape-2 {
+  animation: float-medium 6s ease-in-out infinite 1s;
+}
+
+.floating-shape-3 {
+  animation: float-fast 7s ease-in-out infinite 2s;
+}
+
+/* Floating shape positioning */
+.floating-shape-pos-1 {
+  top: 10%;
+  left: 15%;
+}
+
+.floating-shape-pos-2 {
+  top: 60%;
+  right: 20%;
+}
+
+.floating-shape-pos-3 {
+  bottom: 15%;
+  left: 70%;
+}
+
+/* Reduced motion fallbacks for landing enhancements */
+@media (prefers-reduced-motion: reduce) {
+  .landing-gradient-bg {
+    animation: none;
+    background-position: 0% 50%;
+  }
+
+  .floating-shape {
+    display: none;
+  }
+}
+
+/* ========== End Landing Page Visual Enhancements ========== */
+
+/* marquee edge fades */
+.marquee-fade-left,
+.marquee-fade-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 56px;
+  pointer-events: none;
+  z-index: 5;
+}
+.marquee-fade-left {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-primary), transparent);
+}
+.marquee-fade-right {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-primary), transparent);
+}
 
 /* ---------- New Tree View Styles Start ---------- */
 
@@ -278,6 +565,7 @@ html, body {
   --text-secondary: #b8b8b8;
   --text-muted: #808080;
   --accent-primary: #4A90E2;
+  --accent-primary-rgb: 74, 144, 226;
   --accent-primary-hover: #5AA0F2;
   --accent-primary-bg: rgba(74, 144, 226, 0.12);
   --accent-secondary: #343434;
@@ -592,6 +880,16 @@ button:not([class*="hover:text-"]):hover,
     transition: none !important;
     scroll-behavior: auto !important;
   }
+  /* Ensure reveal/word animations fall back to visible */
+  .hero-word { opacity: 1 !important; transform: none !important; }
+  .reveal-visible { opacity: 1 !important; transform: none !important; }
+  .reveal-children-visible > * { opacity: 1 !important; transform: none !important; }
+
+  /* Disable micro-interactions when reduced motion */
+  .accent-shimmer { animation: none !important; background: none !important; color: var(--accent-primary) !important; -webkit-background-clip: initial !important; background-clip: initial !important; }
+  .parallax-card { transform: none !important; }
+  .magnet-hover:hover { transform: none !important; }
+  .pressable, .magnet-hover { transition: none !important; }
 }
 
 /* React Flow Controls - Light Theme */

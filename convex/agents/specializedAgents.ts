@@ -19,10 +19,8 @@ import {
   createDocument,
   updateDocument,
 } from "../tools/documentTools";
-import {
-  searchMedia,
-  analyzeMediaFile,
-} from "../tools/mediaTools";
+import { searchMedia, analyzeMediaFile } from "../tools/mediaTools";
+import { trackTopic, buildDossierMetadataTool, sendNewsletter } from "../tools/newsletterTools";
 
 /**
  * Document Agent - Specializes in document operations
@@ -1308,9 +1306,12 @@ RESPONSE STYLE:
           return text;
         },
       }),
+      // Dossier/newsletter utilities available without delegation
+      trackTopic,
+      buildDossierMetadata: buildDossierMetadataTool,
+      sendNewsletter,
     },
     stopWhen: stepCountIs(10), // Allow multiple delegations
   });
 }
-
 

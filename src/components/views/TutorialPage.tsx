@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAction } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../convex/_generated/api";
 import ReactMarkdown from 'react-markdown';
 import {
@@ -14,7 +15,13 @@ import {
   Sparkles,
   Users,
   Brain,
-  Terminal
+  Terminal,
+  Briefcase,
+  Landmark,
+  Microscope,
+  LineChart,
+  Megaphone,
+  Stethoscope,
 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -45,7 +52,8 @@ interface WelcomePageProps {
   onDocumentSelect: (documentId: Id<"documents">) => void;
 }
 
-export function WelcomePage({ onGetStarted, onDocumentSelect }: WelcomePageProps) {
+export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProps) {
+  const { signIn } = useAuthActions();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',

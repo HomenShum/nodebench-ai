@@ -104,6 +104,7 @@ import type * as lib_mcpClient from "../lib/mcpClient.js";
 import type * as mcp from "../mcp.js";
 import type * as mcpClient from "../mcpClient.js";
 import type * as mcpLearning from "../mcpLearning.js";
+import type * as metadataAnalyzer from "../metadataAnalyzer.js";
 import type * as migrations_migrateEventsTasksToDocuments from "../migrations/migrateEventsTasksToDocuments.js";
 import type * as migrations from "../migrations.js";
 import type * as nodes from "../nodes.js";
@@ -168,6 +169,7 @@ import type * as tools_evaluation_testCases from "../tools/evaluation/testCases.
 import type * as tools_hashtagSearchTools from "../tools/hashtagSearchTools.js";
 import type * as tools_linkupSearch from "../tools/linkupSearch.js";
 import type * as tools_mediaTools from "../tools/mediaTools.js";
+import type * as tools_newsletterTools from "../tools/newsletterTools.js";
 import type * as tools_peopleProfileSearch from "../tools/peopleProfileSearch.js";
 import type * as tools_recentEventSearch from "../tools/recentEventSearch.js";
 import type * as tools_recentNewsSearch from "../tools/recentNewsSearch.js";
@@ -290,6 +292,7 @@ declare const fullApi: ApiFromModules<{
   mcp: typeof mcp;
   mcpClient: typeof mcpClient;
   mcpLearning: typeof mcpLearning;
+  metadataAnalyzer: typeof metadataAnalyzer;
   "migrations/migrateEventsTasksToDocuments": typeof migrations_migrateEventsTasksToDocuments;
   migrations: typeof migrations;
   nodes: typeof nodes;
@@ -354,6 +357,7 @@ declare const fullApi: ApiFromModules<{
   "tools/hashtagSearchTools": typeof tools_hashtagSearchTools;
   "tools/linkupSearch": typeof tools_linkupSearch;
   "tools/mediaTools": typeof tools_mediaTools;
+  "tools/newsletterTools": typeof tools_newsletterTools;
   "tools/peopleProfileSearch": typeof tools_peopleProfileSearch;
   "tools/recentEventSearch": typeof tools_recentEventSearch;
   "tools/recentNewsSearch": typeof tools_recentNewsSearch;

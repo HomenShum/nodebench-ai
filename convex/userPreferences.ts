@@ -57,6 +57,7 @@ export const getUserPreferences = query({
         ] as const,
         docOrderByGroup: {},
         linkReminderOptOut: false,
+        trackedHashtags: [],
       };
     }
 
@@ -79,6 +80,7 @@ export const getUserPreferences = query({
         ] as const,
         docOrderByGroup: {},
         linkReminderOptOut: false,
+        trackedHashtags: [],
       };
     }
 
@@ -94,6 +96,7 @@ export const getUserPreferences = query({
           ],
       docOrderByGroup: preferences.docOrderByGroup ?? {},
       linkReminderOptOut: preferences.linkReminderOptOut ?? false,
+      trackedHashtags: preferences.trackedHashtags ?? [],
     };
   },
 });
@@ -227,6 +230,7 @@ export const updateUserPreferences = mutation({
     iconOrder: v.optional(v.array(v.string())),
     docOrderByGroup: v.optional(v.record(v.string(), v.array(v.id("documents")))),
     linkReminderOptOut: v.optional(v.boolean()),
+    trackedHashtags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
@@ -264,6 +268,9 @@ export const updateUserPreferences = mutation({
       if (args.linkReminderOptOut !== undefined) {
         updates.linkReminderOptOut = args.linkReminderOptOut;
       }
+      if (args.trackedHashtags !== undefined) {
+        updates.trackedHashtags = args.trackedHashtags.map((h: string) => h.trim().replace(/^#/, '').toLowerCase());
+      }
 
       await ctx.db.patch(existingPreferences._id, updates);
     } else {
@@ -282,6 +289,7 @@ export const updateUserPreferences = mutation({
 
 
         linkReminderOptOut: args.linkReminderOptOut ?? false,
+        trackedHashtags: (args.trackedHashtags ?? []).map((h: string) => h.trim().replace(/^#/, '').toLowerCase()),
         createdAt: now,
         updatedAt: now,
       });

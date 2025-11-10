@@ -27,7 +27,7 @@ interface DossierViewerProps {
 export function DossierViewer({ documentId, isGridMode = false, isFullscreen = false }: DossierViewerProps) {
   const document = useQuery(api.documents.getById, { documentId });
   const linkedAssets = useQuery(api.documents.getLinkedAssets, { dossierId: documentId });
-  const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
+  const analyzeSelectedFilesIntoDossier = useAction(api.metadataAnalyzer.analyzeSelectedFilesIntoDossier);
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>('split');
@@ -148,6 +148,16 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     return { videos, images, documents };
   }, [linkedAssets]);
 
+  // Map asset sourceUrl -> linked asset documentId for server action
+  const assetDocIdByUrl = useMemo(() => {
+    const m = new Map<string, Id<"documents">>();
+    (linkedAssets ?? []).forEach((asset: any) => {
+      const url = asset?.assetMetadata?.sourceUrl;
+      if (url) m.set(url, asset._id as Id<"documents">);
+    });
+    return m;
+  }, [linkedAssets]);
+
   // Merge both sources
   const mergedMedia = useMemo(() => ({
     videos: [...extractedMedia.videos, ...linkedMedia.videos],
@@ -210,50 +220,35 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     setIsAnalyzing(true);
     setAnalysisProgress({ current: 0, total: selectedFiles.size });
 
-    const results: Array<{ file: string; analysis: string }> = [];
-    let current = 0;
-
-    // Analyze files in parallel
+    // Build selected list and map to linked asset documentIds via sourceUrl
     const selectedFilesList = Array.from(selectedFiles).map(id =>
       selectableFiles.find(f => f.id === id)!
     );
 
+    const docIds = selectedFilesList
+      .map(f => {
+        const url = (f.asset as any)?.url;
+        const docId = url ? assetDocIdByUrl.get(url) : undefined;
+        return docId;
+      })
+      .filter((x): x is Id<'documents'> => Boolean(x));
+
+    if (docIds.length === 0) {
+      alert('No linked assets with document references to analyze.');
+      setIsAnalyzing(false);
+      return;
+    }
+
     try {
-      await Promise.all(
-        selectedFilesList.map(async (file) => {
-          try {
-            // For URLs (videos and documents), use url parameter
-            const isUrl = file.type === 'video' || file.type === 'document';
-            const result = await analyzeFileWithGenAI({
-              url: isUrl ? (file.asset as VideoAsset | DocumentAsset).url : undefined,
-              analysisPrompt,
-              analysisType: file.type,
-            });
-
-            if ((result as any)?.success) {
-              results.push({
-                file: file.title,
-                analysis: (result as any).analysis,
-              });
-            }
-          } catch (error) {
-            console.error(`Failed to analyze ${file.title}:`, error);
-            results.push({
-              file: file.title,
-              analysis: `Error: ${error instanceof Error ? error.message : 'Analysis failed'}`,
-            });
-          } finally {
-            current++;
-            setAnalysisProgress({ current, total: selectedFiles.size });
-          }
-        })
-      );
-
-      // TODO: Perform final synthesis with LLM
-      // For now, just append results to notes
+      await analyzeSelectedFilesIntoDossier({
+        dossierId: documentId,
+        documentIds: docIds,
+        maxParallel: 5,
+      });
 
       setShowAnalysisPopover(false);
       setSelectedFiles(new Set());
+      setAnalysisProgress({ current: docIds.length, total: docIds.length });
     } catch (error) {
       console.error('Analysis failed:', error);
       alert('Analysis failed. Please try again.');

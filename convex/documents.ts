@@ -1,9 +1,19 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 import { components } from "./_generated/api";
 import { extractMediaFromMessages } from "./lib/dossierHelpers";
+
+// Internal: mark document as RAG-indexed
+export const markRagIndexed = internalMutation({
+  args: { documentId: v.id("documents"), timestamp: v.number() },
+  handler: async (ctx, { documentId, timestamp }) => {
+    await ctx.db.patch(documentId, { ragIndexedAt: timestamp });
+    return null;
+  },
+});
+
 import {
   type TipTapNode,
   type MediaAsset,
@@ -1268,9 +1278,10 @@ export const getLinkedAssets = query({
 export const getOrCreateQuickNotes = mutation({
   args: {
     dossierId: v.id("documents"),
+    userId: v.optional(v.union(v.id("users"), v.string())),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = (args as any).userId || await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
     const dossier = await ctx.db.get(args.dossierId);

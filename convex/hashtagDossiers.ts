@@ -29,7 +29,7 @@ export const searchForHashtag = action({
         _id: v.id("documents"),
         title: v.string(),
         matchType: v.string(),
-        score: v.number(),
+        score: v.optional(v.number()),
         snippet: v.optional(v.string()),
         isRelevant: v.optional(v.boolean()),
         relevanceReason: v.optional(v.string()),
@@ -44,6 +44,14 @@ export const searchForHashtag = action({
 
     const normalizedHashtag = args.hashtag.toLowerCase().trim();
     const enableLLMValidation = args.enableLLMValidation ?? true;
+
+
+    // Ensure enhanced RAG index is up to date (lazy indexing)
+    try {
+      await ctx.runAction(internal.ragEnhancedBatchIndex.ensureUpToDateIndexForUser, { userId });
+    } catch (e) {
+      console.warn("[searchForHashtag] Lazy indexing skipped due to error:", e);
+    }
 
     // 1. Use enhanced hybrid search with LLM validation
     let enhancedResults: any = null;
@@ -128,7 +136,7 @@ export const searchForHashtag = action({
           contextMap.set(docId, {
             ...existing,
             matchType: isExact ? "hybrid" : "semantic",
-            score: Math.max(existing.score, match.score || 0.5),
+            score: Math.max(existing.score ?? 0, (match.score ?? 0.5)),
             snippet: existing.snippet || match.snippet,
           });
         } else {
@@ -142,7 +150,7 @@ export const searchForHashtag = action({
         }
       });
 
-      const matches = Array.from(contextMap.values()).sort((a, b) => b.score - a.score);
+      const matches = Array.from(contextMap.values()).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 
       return {
         matches,
@@ -197,7 +205,7 @@ export const createHashtagDossier = mutation({
         _id: v.id("documents"),
         title: v.string(),
         matchType: v.string(),
-        score: v.number(),
+        score: v.optional(v.number()),
         snippet: v.optional(v.string()),
         isRelevant: v.optional(v.boolean()),
         relevanceReason: v.optional(v.string()),
@@ -286,7 +294,7 @@ export const createHashtagDossier = mutation({
             },
             {
               type: "text",
-              text: ` (${(doc.score * 100).toFixed(0)}%)`,
+              text: doc.score !== undefined ? ` (${(doc.score * 100).toFixed(0)}%)` : "",
             },
           ],
         });

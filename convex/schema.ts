@@ -31,6 +31,9 @@ const documents = defineTable({
   // Rolling count of snapshots for this document (maintained on insert/delete)
   snapshotCount: v.optional(v.number()),
 
+  // Lazy indexing marker for RAG
+  ragIndexedAt: v.optional(v.number()),
+
   // FILE & SPECIAL DOCUMENT SUPPORT
   documentType: v.optional(
     v.union(
@@ -86,6 +89,7 @@ const documents = defineTable({
   .index("by_parent_dossier", ["parentDossierId"])
   // For dossier pattern: query all documents from a chat thread
   .index("by_chat_thread",    ["chatThreadId"])
+
   .searchIndex("search_title", {
     searchField:  "title",
     filterFields: ["isPublic", "createdBy", "isArchived"],
@@ -384,6 +388,8 @@ const chatThreadsStream = defineTable({
   model: v.optional(v.string()),
   agentThreadId: v.optional(v.string()), // Links to agent component thread for memory management
   pinned: v.optional(v.boolean()),
+  cancelRequested: v.optional(v.boolean()),
+  cancelRequestedAt: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -531,6 +537,8 @@ const userPreferences = defineTable({
   upcomingListOrder: v.optional(v.array(v.string())),
   // Agents module preferences (generic key/value store)
   agentsPrefs: v.optional(v.record(v.string(), v.string())),
+  // Tracked hashtags/topics for daily dossier/newsletter
+  trackedHashtags: v.optional(v.array(v.string())),
   // Onboarding status
   onboardingSeededAt: v.optional(v.number()),
   // Future: more UI preferences can be added here
