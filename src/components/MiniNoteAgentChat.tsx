@@ -41,6 +41,30 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // Prevent duplicate auto-sends when pendingPrompt is provided
   const lastAutoSentKeyRef = useRef<string | null>(null);
+  // Optimistic message display
+  const [optimisticUserMessage, setOptimisticUserMessage] = useState<string | null>(null);
+  // Track if we're waiting for agent response (after send completes but before agent responds)
+  const [waitingForAgent, setWaitingForAgent] = useState(false);
+  // Cross-remount/Tab dedupe for auto-send
+  const DEDUPE_TTL_MS = 4000;
+  const canAutoSend = (text: string) => {
+    try {
+      const now = Date.now();
+      const rec = JSON.parse(sessionStorage.getItem('miniNote:lastAutoSend') || 'null');
+      if (rec && rec.text === text && now - rec.at < DEDUPE_TTL_MS) return false;
+      sessionStorage.setItem('miniNote:lastAutoSend', JSON.stringify({ text, at: now }));
+      return true;
+    } catch {
+      return true;
+    }
+  };
+
+  // Mount diagnostics
+  useEffect(() => {
+    console.log('[MiniNoteAgentChat] mount');
+    return () => console.log('[MiniNoteAgentChat] unmount');
+  }, []);
+
 
   const createThread = useAction(api.fastAgentPanelStreaming.createThread);
   const sendStreaming = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
@@ -61,11 +85,25 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
 
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastMessageCountRef = useRef(0);
 
   // Auto-scroll on new messages
   useEffect(() => {
     if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [uiMessages?.length]);
+  }, [uiMessages?.length, optimisticUserMessage, waitingForAgent]);
+
+  // Detect when agent has responded (clear waiting state)
+  useEffect(() => {
+    if (!waitingForAgent) return;
+
+    const currentCount = uiMessages?.length || 0;
+    // If we have more messages than before, agent has responded
+    if (currentCount > lastMessageCountRef.current) {
+      console.log('[MiniNoteAgentChat] Agent responded, clearing waiting state');
+      setWaitingForAgent(false);
+    }
+    lastMessageCountRef.current = currentCount;
+  }, [uiMessages?.length, waitingForAgent]);
 
   // Consume pending prompt from parent (auto-send) with de-duplication
   useEffect(() => {
@@ -85,6 +123,11 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     // Guard against duplicate triggers from re-renders/user changes
     if (lastAutoSentKeyRef.current === text) {
       console.log('[MiniNoteAgentChat] Duplicate detected, skipping send');
+      return;
+    }
+    // Cross-remount dedupe (sessionStorage, short TTL)
+    if (!canAutoSend(text)) {
+      console.log('[MiniNoteAgentChat] Session dedupe blocked auto-send');
       return;
     }
     lastAutoSentKeyRef.current = text;
@@ -116,6 +159,15 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     const msg = text.trim();
     if (!msg) return;
 
+    // Prevent duplicate sends (global guard across mounts) + waiting state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (creating || sending || waitingForAgent || (window as any).__miniNoteSendLock) {
+      console.log('[MiniNoteAgentChat] Already sending or locked, ignoring duplicate send');
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__miniNoteSendLock = true;
+
     // If no user, trigger sign-in first
     if (!user) {
       if (onSignInRequired) {
@@ -136,6 +188,10 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
 
     console.log('[MiniNoteAgentChat] send() called with:', msg.substring(0, 50));
 
+    // Immediately show optimistic user message
+    setOptimisticUserMessage(msg);
+    setInput('');
+
     try {
       if (!threadId) {
         console.log('[MiniNoteAgentChat] Creating new thread...');
@@ -148,19 +204,33 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         console.log('[MiniNoteAgentChat] Sending message to new thread...');
         await sendStreaming({ threadId: newId as Id<'chatThreadsStream'>, prompt: msg });
         setSending(false);
+        // Clear optimistic message once backend confirms
+        setOptimisticUserMessage(null);
+        // Now waiting for agent to respond
+        setWaitingForAgent(true);
       } else {
         console.log('[MiniNoteAgentChat] Sending message to existing thread:', threadId);
         setSending(true);
         await sendStreaming({ threadId, prompt: msg });
         setSending(false);
+        // Clear optimistic message once backend confirms
+        setOptimisticUserMessage(null);
+        // Now waiting for agent to respond
+        setWaitingForAgent(true);
       }
-      setInput('');
     } catch (e) {
       console.error('MiniNoteAgentChat send failed:', e);
       setSending(false);
       setCreating(false);
+      setOptimisticUserMessage(null);
+      setWaitingForAgent(false);
+      // Restore the message to input on error
+      setInput(msg);
       const errorMsg = e instanceof Error ? e.message : 'Failed to send message';
       toast.error(errorMsg);
+    } finally {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setTimeout(() => { (window as any).__miniNoteSendLock = false; }, 1200);
     }
   };
 
@@ -180,7 +250,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     <div className="flex flex-col h-full min-h-0 bg-transparent">
       {/* Messages area */}
       <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {(!uiMessages || uiMessages.length === 0) && !sending && (
+        {(!uiMessages || uiMessages.length === 0) && !sending && !optimisticUserMessage && (
           <div className="h-full flex items-center justify-center text-center">
             <div>
               <div className="inline-flex items-center justify-center w-12 h-12 bg-[var(--accent-primary)]/10 rounded-full mb-3">
@@ -204,8 +274,21 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
           />
         ))}
 
-        {/* Streaming indicator */}
-        {sending && (
+        {/* Optimistic user message (shown immediately while sending) */}
+        {optimisticUserMessage && (
+          <div className="flex justify-end">
+            <div className="max-w-[85%] bg-[var(--accent-primary)] text-white rounded-2xl overflow-hidden shadow-sm">
+              <div className="px-4 py-3">
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <p>{optimisticUserMessage}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Agent thinking indicator - show while sending OR waiting for agent response */}
+        {(sending || waitingForAgent) && (
           <div className="flex justify-start">
             <div className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-2xl px-4 py-3 flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-primary)]" />
@@ -237,13 +320,13 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
           <button
             type="button"
             onClick={() => void send(input)}
-            disabled={creating || sending || !input.trim()}
+            disabled={creating || sending || waitingForAgent || !input.trim()}
             className="h-10 px-3 py-2 mt-[2px] rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 transition-colors"
             title={!user ? 'Click to sign in and send' : 'Send message'}
           >
-            {sending ? 'Sending…' : !user ? 'Send (sign in)' : 'Send'}
+            {sending ? 'Sending…' : waitingForAgent ? 'Processing…' : !user ? 'Send (sign in)' : 'Send'}
           </button>
-          {sending && (
+          {(sending || waitingForAgent) && (
             <button
               type="button"
               onClick={handleStop}
