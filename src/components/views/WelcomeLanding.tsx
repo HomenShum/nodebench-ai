@@ -215,29 +215,17 @@ export function WelcomeLanding({ onDocumentSelect }: WelcomeLandingProps) {
 
         {/* Chat Panel - Borderless, modern, fills remaining space */}
         <div className="flex-1 min-h-0 bg-[var(--bg-secondary)]/30 rounded-2xl shadow-sm backdrop-blur-sm overflow-hidden border border-[var(--border-color)]/30">
-          {user ? (
-            <MiniNoteAgentChat
-              user={user}
-              pendingPrompt={pendingInlinePrompt}
-              onPromptConsumed={() => setPendingInlinePrompt(undefined)}
-              prefillInput={prefillInput}
-              onPrefillConsumed={() => setPrefillInput(undefined)}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center p-8">
-              <div className="text-center space-y-3">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-[var(--bg-secondary)] rounded-full mb-2">
-                  <Bot className="h-6 w-6 text-[var(--text-secondary)]" />
-                </div>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  Start a conversation
-                </p>
-                <p className="text-xs text-[var(--text-muted)] max-w-xs mx-auto">
-                  Ask anything. I can help research, summarize, and draft dossiers.
-                </p>
-              </div>
-            </div>
-          )}
+          <MiniNoteAgentChat
+            user={user}
+            pendingPrompt={pendingInlinePrompt}
+            onPromptConsumed={() => setPendingInlinePrompt(undefined)}
+            prefillInput={prefillInput}
+            onPrefillConsumed={() => setPrefillInput(undefined)}
+            onSignInRequired={async () => {
+              await signIn('anonymous');
+              setGuestActive(true);
+            }}
+          />
         </div>
       </div>
 
