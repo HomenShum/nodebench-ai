@@ -868,6 +868,11 @@ export const streamAsync = internalAction({
     });
     console.log(`[streamAsync:${executionId}] Thread retrieved:`, { threadId: args.threadId, hasUserId: !!thread?.userId });
 
+    // Get our custom thread data for cancel flag
+    const customThread = await ctx.runQuery(internal.fastAgentPanelStreaming.getThreadByAgentId, {
+      agentThreadId: args.threadId
+    });
+
     const userId = (thread?.userId ?? null) as Id<"users"> | null;
     console.log(`[streamAsync:${executionId}] userId from thread:`, userId);
 
@@ -888,7 +893,7 @@ export const streamAsync = internalAction({
       agent = createChatAgent(args.model);
     }
 
-    if (thread?.cancelRequested) {
+    if (customThread?.cancelRequested) {
       console.log(`[streamAsync:${executionId}] ❌ Stream already cancelled before start`);
       throw new Error("Stream cancelled");
     }
@@ -940,14 +945,15 @@ export const streamAsync = internalAction({
       throw error;
     } finally {
       streamCancellationControllers.delete(args.threadId);
-      try {
-        await ctx.db.patch(args.threadId, {
-          cancelRequested: false,
-          cancelRequestedAt: null,
-          updatedAt: Date.now(),
-        });
-      } catch (patchErr) {
-        console.warn(`[streamAsync:${executionId}] Failed to reset cancel flag`, patchErr);
+      // Reset cancel flag via mutation (actions can't use ctx.db directly)
+      if (customThread?._id) {
+        try {
+          await ctx.runMutation(internal.fastAgentPanelStreaming.resetCancelFlag, {
+            threadId: customThread._id
+          });
+        } catch (patchErr) {
+          console.warn(`[streamAsync:${executionId}] Failed to reset cancel flag`, patchErr);
+        }
       }
     }
   },
@@ -1099,6 +1105,37 @@ export const getThreadByStreamIdInternal = internalQuery({
   },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.threadId);
+  },
+});
+
+/**
+ * Get thread by agent thread ID (internal for cancel flag checking)
+ */
+export const getThreadByAgentId = internalQuery({
+  args: {
+    agentThreadId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("chatThreadsStream")
+      .withIndex("by_agentThreadId", (q) => q.eq("agentThreadId", args.agentThreadId))
+      .first();
+  },
+});
+
+/**
+ * Reset cancel flag (internal mutation for actions)
+ */
+export const resetCancelFlag = internalMutation({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.threadId, {
+      cancelRequested: false,
+      cancelRequestedAt: undefined,
+      updatedAt: Date.now(),
+    });
   },
 });
 
