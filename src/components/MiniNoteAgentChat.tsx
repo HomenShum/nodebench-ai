@@ -6,9 +6,10 @@ import { useUIMessages, useSmoothText } from '@convex-dev/agent/react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Bot, User, Loader2, ChevronDown, ChevronRight, Wrench } from 'lucide-react';
+import { Bot, User, Loader2, ChevronDown, ChevronRight, Wrench, AlertCircle } from 'lucide-react';
 import type { ToolUIPart } from 'ai';
 import { extractMediaFromText, removeMediaMarkersFromText } from './FastAgentPanel/utils/mediaExtractor';
+import { toast } from 'sonner';
 import { RichMediaSection } from './FastAgentPanel/RichMediaSection';
 import { StepTimeline, toolPartsToTimelineSteps } from './FastAgentPanel/StepTimeline';
 
@@ -118,11 +119,17 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     // If no user, trigger sign-in first
     if (!user) {
       if (onSignInRequired) {
-        await onSignInRequired();
-        // After sign-in completes, component will re-render with user
-        // We need to preserve the message and retry
-        setInput(msg); // Keep the message in input
-        return;
+        try {
+          await onSignInRequired();
+          // After sign-in completes, component will re-render with user
+          // We need to preserve the message and retry
+          setInput(msg); // Keep the message in input
+          return;
+        } catch (err) {
+          console.error('[MiniNoteAgentChat] Sign-in failed:', err);
+          toast.error('Sign-in failed. Please try again.');
+          return;
+        }
       }
       return;
     }
@@ -152,6 +159,8 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
       console.error('MiniNoteAgentChat send failed:', e);
       setSending(false);
       setCreating(false);
+      const errorMsg = e instanceof Error ? e.message : 'Failed to send message';
+      toast.error(errorMsg);
     }
   };
 
@@ -230,6 +239,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
             onClick={() => void send(input)}
             disabled={creating || sending || !input.trim()}
             className="h-10 px-3 py-2 mt-[2px] rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 transition-colors"
+            title={!user ? 'Click to sign in and send' : 'Send message'}
           >
             {sending ? 'Sending…' : !user ? 'Send (sign in)' : 'Send'}
           </button>
