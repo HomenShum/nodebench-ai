@@ -802,6 +802,31 @@ export const initiateAsyncStreaming = mutation({
     const modelName = args.model || "gpt-5-chat-latest";
     const chatAgent = createChatAgent(modelName);
 
+    // Idempotency guard: skip if an identical user message was created moments ago
+    const IDEMPOTENCY_WINDOW_MS = 4000; // keep in sync with client-side short TTL
+    const normalizedPrompt = args.prompt.trim();
+    try {
+      const recentResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+        threadId: streamingThread.agentThreadId,
+        order: "desc",
+        paginationOpts: { cursor: null, numItems: 8 },
+      });
+      const now = Date.now();
+      const recentPage: any[] = (recentResult as any)?.page ?? (recentResult as any) ?? [];
+      const dup = recentPage.find((m: any) => {
+        const text = typeof m.text === "string" ? m.text.trim() : "";
+        const created = typeof m._creationTime === "number" ? m._creationTime : 0;
+        return text === normalizedPrompt && now - created < IDEMPOTENCY_WINDOW_MS;
+      });
+      if (dup) {
+        const existingId = (dup as any).messageId ?? (dup as any).id ?? (dup as any)._id ?? `dedup-${requestId}`;
+        console.log(`[initiateAsyncStreaming:${requestId}] 🛑 Idempotency: Found recent identical user message, skipping save/schedule. Using messageId:`, existingId);
+        return { messageId: String(existingId) };
+      }
+    } catch (dedupeErr) {
+      console.warn(`[initiateAsyncStreaming:${requestId}] Idempotency check failed, proceeding normally:`, dedupeErr);
+    }
+
     console.log(`[initiateAsyncStreaming:${requestId}] 💾 Saving user message, agentThreadId:`, streamingThread.agentThreadId);
     console.log(`[initiateAsyncStreaming:${requestId}] 📝 Prompt:`, args.prompt);
 

@@ -19,6 +19,18 @@ export function WelcomeLanding({ onDocumentSelect }: WelcomeLandingProps) {
   const [prefillInput, setPrefillInput] = useState<string | undefined>(undefined);
   const [guestActive, setGuestActive] = useState(false);
 
+  // Keep latest user in a ref for stable event handler
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
+  const lastQuickPromptRef = useRef<{ text: string; at: number } | null>(null);
+
+  // Seamless: pre-authenticate as anonymous on mount if no user
+  useEffect(() => {
+    if (user === null) {
+      void signIn('anonymous').then(() => setGuestActive(true)).catch(() => {});
+    }
+  }, [user, signIn]);
+
   // Micro-interactions: collage parallax & marquee slow resume
   const collageRef = useRef<HTMLDivElement>(null);
   const handleCollageMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -37,20 +49,32 @@ export function WelcomeLanding({ onDocumentSelect }: WelcomeLandingProps) {
   };
 
 
-  // Listen for quick prompt from top bar (auto-send)
+  // Listen for quick prompt from top bar (auto-send). Register once; dedupe repeats briefly.
   useEffect(() => {
     const handleTopBarPrompt = async (e: Event) => {
       const customEvent = e as CustomEvent<{ prompt: string }>;
       const text = customEvent.detail?.prompt?.trim();
       if (!text) return;
-      if (!user) {
-        await signIn('anonymous');
+      const now = Date.now();
+      const last = lastQuickPromptRef.current;
+      if (last && last.text === text && now - last.at < 4000) {
+        console.log('[WelcomeLanding] Dedupe quickPrompt', text);
+        return;
+      }
+      lastQuickPromptRef.current = { text, at: now };
+      if (!userRef.current) {
+        try {
+          await signIn('anonymous');
+          setGuestActive(true);
+        } catch (err) {
+          console.warn('[WelcomeLanding] anonymous sign-in failed', err);
+        }
       }
       setPendingInlinePrompt(text);
     };
     window.addEventListener('welcome:quickPrompt', handleTopBarPrompt as EventListener);
     return () => window.removeEventListener('welcome:quickPrompt', handleTopBarPrompt as EventListener);
-  }, [user, signIn]);
+  }, [signIn]);
 
   const benefitCards = [
     { icon: <Briefcase className='h-3.5 w-3.5' />, title: 'Investors', prompt: 'Summarize today\'s seed and Series A funding in healthcare, life sciences, and tech. Include sources.' },
@@ -99,7 +123,7 @@ export function WelcomeLanding({ onDocumentSelect }: WelcomeLandingProps) {
           </div>
 
           {/* CTA Button - Clean, prominent with glow effect */}
-          <div className="flex flex-col items-center justify-center gap-2 opacity-0 animate-[fadeUp_0.8s_ease-out_0.4s_forwards] reveal-visible">
+          <div className="flex flex-col items-center justify-center gap-2 opacity-0 animate-[fadeUp_0.8s_ease-out_0.4s_forwards] reveal-visible pointer-events-auto">
             <button
               type="button"
               onClick={() => void signIn("google", { redirectTo: typeof window !== 'undefined' ? window.location.href : '/' })}
@@ -113,7 +137,7 @@ export function WelcomeLanding({ onDocumentSelect }: WelcomeLandingProps) {
           </div>
 
           {/* Who benefits - Pill-style tags */}
-          <div className="pt-2 sm:pt-3 opacity-0 animate-[fadeUp_0.8s_ease-out_0.6s_forwards] reveal-visible">
+          <div className="pt-2 sm:pt-3 opacity-0 animate-[fadeUp_0.8s_ease-out_0.6s_forwards] reveal-visible pointer-events-auto">
             <p className="text-xs sm:text-sm font-medium text-[var(--text-secondary)] mb-3 sm:mb-4">
               Built for
             </p>
@@ -144,7 +168,7 @@ export function WelcomeLanding({ onDocumentSelect }: WelcomeLandingProps) {
       </div>
 
       {/* Collage + Chat Section - resides in 1fr row */}
-      <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 pb-4 sm:pb-6 opacity-0 animate-[fadeUp_0.8s_ease-out_1s_forwards] min-h-0 h-full flex flex-col gap-2 md:gap-3 reveal-visible">
+      <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 pb-4 sm:pb-6 opacity-0 animate-[fadeUp_0.8s_ease-out_1s_forwards] min-h-0 h-full flex flex-col gap-2 md:gap-3 reveal-visible pointer-events-auto">
         {/* Simple collage preview (click to prefill prompt) */}
         <div
           ref={collageRef}
