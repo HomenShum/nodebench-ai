@@ -18,6 +18,7 @@ interface MiniNoteAgentChatProps {
   onPromptConsumed?: () => void;
   prefillInput?: string;
   onPrefillConsumed?: () => void;
+  onSignInRequired?: () => Promise<void>;
 }
 
 /**
@@ -29,7 +30,7 @@ interface MiniNoteAgentChatProps {
  * - Syntax highlighting for code blocks
  * - Better visual hierarchy and feedback
  */
-export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsumed, prefillInput, onPrefillConsumed }: MiniNoteAgentChatProps) {
+export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsumed, prefillInput, onPrefillConsumed, onSignInRequired }: MiniNoteAgentChatProps) {
   const [input, setInput] = useState('');
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
@@ -112,7 +113,19 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
 
   const send = async (text: string) => {
     const msg = text.trim();
-    if (!msg || !user) return;
+    if (!msg) return;
+
+    // If no user, trigger sign-in first
+    if (!user) {
+      if (onSignInRequired) {
+        await onSignInRequired();
+        // After sign-in completes, component will re-render with user
+        // We need to preserve the message and retry
+        setInput(msg); // Keep the message in input
+        return;
+      }
+      return;
+    }
 
     console.log('[MiniNoteAgentChat] send() called with:', msg.substring(0, 50));
 
@@ -215,10 +228,10 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
           <button
             type="button"
             onClick={() => void send(input)}
-            disabled={!user || creating || sending || !input.trim()}
+            disabled={creating || sending || !input.trim()}
             className="h-10 px-3 py-2 mt-[2px] rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 transition-colors"
           >
-            {sending ? 'Sending…' : 'Send'}
+            {sending ? 'Sending…' : !user ? 'Send (sign in)' : 'Send'}
           </button>
           {sending && (
             <button
