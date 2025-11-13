@@ -227,26 +227,34 @@ function VideoCard({ video, onClick }: VideoCardProps) {
   return (
     <div
       onClick={onClick}
-      className="group cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:shadow-md transition-all"
+      className="group cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+      style={{ willChange: 'transform, box-shadow' }}
     >
       {/* Thumbnail */}
       <div className="relative aspect-video bg-gray-100">
         <img
           src={video.thumbnail}
           alt={video.caption || 'Video'}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-          <div className="w-10 h-10 rounded-full bg-red-600 group-hover:bg-red-700 flex items-center justify-center shadow-lg transition-colors">
-            <Play className="h-5 w-5 text-white ml-0.5" fill="white" />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-200">
+          <div className="w-12 h-12 rounded-full bg-red-600 group-hover:bg-red-700 group-hover:scale-110 flex items-center justify-center shadow-lg transition-all duration-200">
+            <Play className="h-6 w-6 text-white ml-0.5" fill="white" />
+          </div>
+        </div>
+        {/* Hover overlay with metadata */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="flex items-center gap-2 text-white text-xs">
+            <Video className="h-3 w-3" />
+            <span>YouTube Video</span>
           </div>
         </div>
       </div>
       {/* Caption */}
       {video.caption && (
-        <div className="p-2">
-          <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{video.caption}</p>
+        <div className="p-2 bg-[var(--bg-primary)]">
+          <p className="text-xs text-[var(--text-secondary)] line-clamp-2 group-hover:text-[var(--text-primary)] transition-colors">{video.caption}</p>
         </div>
       )}
     </div>
@@ -265,14 +273,22 @@ function ImageThumbnail({ image, onClick }: ImageThumbnailProps) {
   return (
     <div
       onClick={onClick}
-      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:shadow-md transition-all group"
+      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group relative"
     >
       <img
         src={image.url}
         alt={image.alt || 'Image'}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         loading="lazy"
       />
+      {/* Hover overlay */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+            <ImageIcon className="h-5 w-5 text-gray-800" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -351,19 +367,19 @@ function DocumentCard({ document, onDocumentClick }: DocumentCardProps) {
         target={isLocalDocument ? undefined : "_blank"}
         rel={isLocalDocument ? undefined : "noopener noreferrer"}
         onClick={handleClick}
-        className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:shadow-sm transition-all group cursor-pointer"
+        className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group cursor-pointer bg-[var(--bg-primary)]"
       >
       <div className="flex gap-3">
         {document.thumbnail && (
           <img
             src={document.thumbnail}
             alt={document.title}
-            className="w-16 h-16 object-cover rounded flex-shrink-0"
+            className="w-16 h-16 object-cover rounded flex-shrink-0 group-hover:scale-105 transition-transform duration-200"
             loading="lazy"
           />
         )}
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent-primary)] transition-colors">
+          <h4 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent-primary)] transition-colors duration-200">
             {document.title}
           </h4>
           {document.description && (

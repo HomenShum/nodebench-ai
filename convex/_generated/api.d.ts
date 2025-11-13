@@ -15,13 +15,17 @@ import type * as agentEditor from "../agentEditor.js";
 import type * as agentImageResults from "../agentImageResults.js";
 import type * as agentMemory from "../agentMemory.js";
 import type * as agentTimelines from "../agentTimelines.js";
+import type * as agents_advancedAgentTools from "../agents/advancedAgentTools.js";
+import type * as agents_agentComposition from "../agents/agentComposition.js";
 import type * as agents_agentDispatcher from "../agents/agentDispatcher.js";
 import type * as agents_agentTools from "../agents/agentTools.js";
 import type * as agents_criteriaSearch from "../agents/criteriaSearch.js";
 import type * as agents_crmExtraction from "../agents/crmExtraction.js";
 import type * as agents_csvExport from "../agents/csvExport.js";
 import type * as agents_dataOperations from "../agents/dataOperations.js";
+import type * as agents_dynamicAgents from "../agents/dynamicAgents.js";
 import type * as agents_hashtagAgent from "../agents/hashtagAgent.js";
+import type * as agents_humanInTheLoop from "../agents/humanInTheLoop.js";
 import type * as agents_index from "../agents/index.js";
 import type * as agents_intentParser from "../agents/intentParser.js";
 import type * as agents_lib_agentContext from "../agents/lib/agentContext.js";
@@ -64,6 +68,8 @@ import type * as documentMetadataParser from "../documentMetadataParser.js";
 import type * as documentTasks from "../documentTasks.js";
 import type * as documentVersions from "../documentVersions.js";
 import type * as documents from "../documents.js";
+import type * as email_dossierEmailExample from "../email/dossierEmailExample.js";
+import type * as email_dossierEmailTemplate from "../email/dossierEmailTemplate.js";
 import type * as email from "../email.js";
 import type * as entityContexts from "../entityContexts.js";
 import type * as eventTaskDocuments from "../eventTaskDocuments.js";
@@ -166,6 +172,7 @@ import type * as tools_evaluation_evaluator from "../tools/evaluation/evaluator.
 import type * as tools_evaluation_helpers from "../tools/evaluation/helpers.js";
 import type * as tools_evaluation_quickTest from "../tools/evaluation/quickTest.js";
 import type * as tools_evaluation_testCases from "../tools/evaluation/testCases.js";
+import type * as tools_fundingResearchTools from "../tools/fundingResearchTools.js";
 import type * as tools_hashtagSearchTools from "../tools/hashtagSearchTools.js";
 import type * as tools_linkupSearch from "../tools/linkupSearch.js";
 import type * as tools_mediaTools from "../tools/mediaTools.js";
@@ -180,6 +187,7 @@ import type * as usage from "../usage.js";
 import type * as userPreferences from "../userPreferences.js";
 import type * as users from "../users.js";
 import type * as work from "../work.js";
+import type * as workflows_agentWorkflows from "../workflows/agentWorkflows.js";
 
 import type {
   ApiFromModules,
@@ -203,13 +211,17 @@ declare const fullApi: ApiFromModules<{
   agentImageResults: typeof agentImageResults;
   agentMemory: typeof agentMemory;
   agentTimelines: typeof agentTimelines;
+  "agents/advancedAgentTools": typeof agents_advancedAgentTools;
+  "agents/agentComposition": typeof agents_agentComposition;
   "agents/agentDispatcher": typeof agents_agentDispatcher;
   "agents/agentTools": typeof agents_agentTools;
   "agents/criteriaSearch": typeof agents_criteriaSearch;
   "agents/crmExtraction": typeof agents_crmExtraction;
   "agents/csvExport": typeof agents_csvExport;
   "agents/dataOperations": typeof agents_dataOperations;
+  "agents/dynamicAgents": typeof agents_dynamicAgents;
   "agents/hashtagAgent": typeof agents_hashtagAgent;
+  "agents/humanInTheLoop": typeof agents_humanInTheLoop;
   "agents/index": typeof agents_index;
   "agents/intentParser": typeof agents_intentParser;
   "agents/lib/agentContext": typeof agents_lib_agentContext;
@@ -252,6 +264,8 @@ declare const fullApi: ApiFromModules<{
   documentTasks: typeof documentTasks;
   documentVersions: typeof documentVersions;
   documents: typeof documents;
+  "email/dossierEmailExample": typeof email_dossierEmailExample;
+  "email/dossierEmailTemplate": typeof email_dossierEmailTemplate;
   email: typeof email;
   entityContexts: typeof entityContexts;
   eventTaskDocuments: typeof eventTaskDocuments;
@@ -354,6 +368,7 @@ declare const fullApi: ApiFromModules<{
   "tools/evaluation/helpers": typeof tools_evaluation_helpers;
   "tools/evaluation/quickTest": typeof tools_evaluation_quickTest;
   "tools/evaluation/testCases": typeof tools_evaluation_testCases;
+  "tools/fundingResearchTools": typeof tools_fundingResearchTools;
   "tools/hashtagSearchTools": typeof tools_hashtagSearchTools;
   "tools/linkupSearch": typeof tools_linkupSearch;
   "tools/mediaTools": typeof tools_mediaTools;
@@ -368,6 +383,7 @@ declare const fullApi: ApiFromModules<{
   userPreferences: typeof userPreferences;
   users: typeof users;
   work: typeof work;
+  "workflows/agentWorkflows": typeof workflows_agentWorkflows;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

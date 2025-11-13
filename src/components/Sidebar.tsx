@@ -1635,7 +1635,7 @@ export function Sidebar({
           <SignOutButton />
         </div>
         
-        {/* Home Page Button */}
+        {/* Documents Home Button */}
         <div className="mt-2 pt-2 border-t border-[var(--border-color)]/30">
           <button
             onClick={() => onDocumentSelect(null)}
@@ -1644,10 +1644,10 @@ export function Sidebar({
                 ? "bg-[var(--bg-active)] text-[var(--text-primary)] border border-[var(--border-color)]"
                 : "text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             }`}
-            title="Navigate to Home Page"
+            title="Navigate to Documents Home"
           >
             <Home className="h-4 w-4" />
-            <span>Home Page</span>
+            <span>Documents Home</span>
           </button>
         </div>
 
@@ -2458,13 +2458,15 @@ export function Sidebar({
                   
                   {/* Documents and Tasks sections */}
                   {currentView === 'documents' && (
-                    <div className="mb-3 space-y-3">
+                    <div className="mb-3 space-y-4">
                       {/* Documents Section (sticky header) */}
                       <div className="sticky top-0 z-10">
-                        <div className="sidebar-section-header bg-[var(--bg-secondary)]/80 backdrop-blur">
-                          <FileText className="h-3 w-3" />
+                        <div className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--bg-secondary)]/90 backdrop-blur">
+                          <FileText className="h-3.5 w-3.5" />
                           <span>Documents</span>
-                          <span className="text-[10px]">{filteredDocuments ? filteredDocuments.length : 0}</span>
+                          <span className="ml-auto text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-[var(--bg-hover)] text-[var(--text-secondary)]">
+                            {filteredDocuments ? filteredDocuments.length : 0}
+                          </span>
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -2482,10 +2484,15 @@ export function Sidebar({
                             const isCollapsed = collapsedDocGroups.has(groupName);
                             return (
                               <div key={`docs-${groupName}`}>
-                                <button onClick={() => toggleDocGroup(groupName)} className="sidebar-section-header w-full">
+                                <button
+                                  onClick={() => toggleDocGroup(groupName)}
+                                  className="flex items-center gap-2 w-full px-4 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                                >
+                                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
                                   <span className="flex-1 text-left truncate">{groupName}</span>
-                                  <span className="text-[10px]">{docsInGroup.length}</span>
-                                  <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
+                                    {docsInGroup.length}
+                                  </span>
                                 </button>
                                 {!isCollapsed && (
                                   <div
@@ -2645,10 +2652,12 @@ export function Sidebar({
 
                       {/* Tasks Section (sticky header) */}
                       <div className="sticky top-0 z-10">
-                        <div className="sidebar-section-header bg-[var(--bg-secondary)]/80 backdrop-blur">
-                          <CheckSquare className="h-3 w-3" />
+                        <div className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--bg-secondary)]/90 backdrop-blur">
+                          <CheckSquare className="h-3.5 w-3.5" />
                           <span>Tasks</span>
-                          <span className="text-[10px]">{sortedTasks ? sortedTasks.length : 0}</span>
+                          <span className="ml-auto text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-[var(--bg-hover)] text-[var(--text-secondary)]">
+                            {sortedTasks ? sortedTasks.length : 0}
+                          </span>
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -2666,10 +2675,15 @@ export function Sidebar({
                             const isCollapsed = collapsedTaskGroups.has(groupName);
                             return (
                               <div key={`tasks-${groupName}`}>
-                                <button onClick={() => toggleTaskGroup(groupName)} className="sidebar-section-header w-full">
+                                <button
+                                  onClick={() => toggleTaskGroup(groupName)}
+                                  className="flex items-center gap-2 w-full px-4 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                                >
+                                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
                                   <span className="flex-1 text-left truncate">{groupName}</span>
-                                  <span className="text-[10px]">{tasksInGroup.length}</span>
-                                  <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
+                                    {tasksInGroup.length}
+                                  </span>
                                 </button>
                                 {!isCollapsed && (
                                   <div className="space-y-1">

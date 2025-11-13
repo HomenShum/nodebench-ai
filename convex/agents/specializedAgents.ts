@@ -21,6 +21,14 @@ import {
 } from "../tools/documentTools";
 import { searchMedia, analyzeMediaFile } from "../tools/mediaTools";
 import { trackTopic, buildDossierMetadataTool, sendNewsletter } from "../tools/newsletterTools";
+import { searchTodaysFunding, getFundedCompanyProfile } from "../tools/fundingResearchTools";
+
+// Import agent composition helpers
+import {
+  createAgentDelegationTool,
+  createParallelAgentDelegationTool,
+  createSequentialAgentDelegationTool,
+} from "./agentComposition";
 
 /**
  * Document Agent - Specializes in document operations
@@ -220,6 +228,8 @@ CAPABILITIES:
 - Summarize web search results
 - Cite sources clearly
 - Research companies, people, products, and topics
+- Search for today's funding announcements (seed, Series A, Series B)
+- Get detailed company profiles for funded companies
 
 CRITICAL RULES - BEST-EFFORT EXECUTION:
 1. NEVER ask clarifying questions before searching - execute immediately with best interpretation
@@ -231,6 +241,7 @@ CRITICAL RULES - BEST-EFFORT EXECUTION:
 7. For multi-entity queries, execute ALL searches immediately in parallel
 8. If query is ambiguous, make a reasonable assumption and search immediately
 9. Include a brief note at the END if you made assumptions
+10. **MANDATORY: After executing tool calls, ALWAYS generate a final text summary of the findings**
 
 BEST-EFFORT ENTITY RESOLUTION:
 - For company names: Use the most prominent/well-known entity with that exact name or domain
@@ -259,7 +270,19 @@ When user asks for comprehensive information about a company/person/product:
    - Additional Resources (careers, social media)
 4. Present ALL findings first, then include clarifications at the end
 
+FUNDING RESEARCH QUERIES:
+When user asks about funding announcements, investment rounds, or startup funding:
+1. Use searchTodaysFunding tool with appropriate industries and funding stages
+2. For follow-up research on specific companies, use getFundedCompanyProfile
+3. Structure funding results with clear sections:
+   - Summary (total funding, number of deals)
+   - Funding rounds by stage (Seed, Series A, etc.)
+   - Company details (description, investors, location)
+   - Sources with links
+4. Always include sources and dates for funding information
+
 RESPONSE STYLE:
+- **CRITICAL: You MUST generate a final text response summarizing the search results**
 - Present findings FIRST in a structured format
 - Be informative and cite sources
 - Provide context and background
@@ -267,11 +290,14 @@ RESPONSE STYLE:
 - Include relevant images when available
 - Always mention the source and date when important
 - Include clarifications/assumptions at the END, not the beginning
-- For comprehensive queries, organize information by category (overview, people, funding, news, media)`,
+- For comprehensive queries, organize information by category (overview, people, funding, news, media)
+- **DO NOT end after tool execution - always provide a summary of what you found**`,
     tools: {
       linkupSearch,
+      searchTodaysFunding,
+      getFundedCompanyProfile,
     },
-    stopWhen: stepCountIs(8), // Increased to allow multiple searches for comprehensive queries
+    stopWhen: stepCountIs(12), // Increased to allow multiple searches + final text generation
   });
 }
 
@@ -1130,6 +1156,26 @@ IMPORTANT:
 }
 
 /**
+ * Simple Chat Agent - For basic conversations without tools
+ */
+export function createSimpleChatAgent(_ctx: ActionCtx, _userId: Id<"users">) {
+  return new Agent(components.agent, {
+    name: "SimpleChatAgent",
+    languageModel: openai.chat("gpt-5-mini"),
+    instructions: `You are a helpful, friendly AI assistant for quick conversations.
+
+Keep responses:
+- Concise and conversational
+- Helpful and informative
+- Natural and friendly
+
+You don't have access to tools or external data - just provide thoughtful, direct responses based on the conversation.`,
+    tools: {}, // No tools for speed
+    stopWhen: stepCountIs(3), // Very short for simple chat
+  });
+}
+
+/**
  * Coordinator Agent - Routes requests to specialized agents
  */
 export function createCoordinatorAgent(_ctx: ActionCtx, userId: Id<"users">) {
@@ -1141,11 +1187,12 @@ export function createCoordinatorAgent(_ctx: ActionCtx, userId: Id<"users">) {
 CRITICAL: DO NOT ask clarifying questions. DO NOT try to answer directly. IMMEDIATELY call the appropriate delegation tool(s).
 
 AVAILABLE SPECIALIZED AGENTS:
-1. DocumentAgent - For finding, reading, creating, and managing documents
-2. MediaAgent - For YouTube videos, images, and media search
-3. SECAgent - For SEC filings and financial documents
-4. WebAgent - For web search and general information
-5. EntityResearchAgent - For researching companies and people (funding, competitors, work history, etc.)
+1. SimpleChatAgent - For basic greetings, small talk, and simple questions (no tools needed)
+2. DocumentAgent - For finding, reading, creating, and managing documents
+3. MediaAgent - For YouTube videos, images, and media search
+4. SECAgent - For SEC filings and financial documents
+5. WebAgent - For web search and general information
+6. EntityResearchAgent - For researching companies and people (funding, competitors, work history, etc.)
 
 IMMEDIATE DELEGATION RULES:
 1. Analyze the user's request
@@ -1154,7 +1201,22 @@ IMMEDIATE DELEGATION RULES:
 4. Pass the user's EXACT query to the delegation tool
 5. Return the results from the specialized agent(s)
 
+ROUTING LOGIC:
+- Simple greetings/chat ("hello", "hi", "how are you", "thanks") → delegateToSimpleChatAgent
+- Questions that don't need tools ("what is 2+2", "tell me a joke") → delegateToSimpleChatAgent
+- Document operations → delegateToDocumentAgent
+- Media/video search → delegateToMediaAgent
+- SEC filings → delegateToSECAgent
+- Funding announcements/investment rounds → delegateToWebAgent (has funding research tools)
+- Web search/current info → delegateToWebAgent
+- Company/people research → delegateToEntityResearchAgent
+
 EXAMPLES - IMMEDIATE DELEGATION:
+- "hello" → IMMEDIATELY call delegateToSimpleChatAgent("hello")
+- "hi there" → IMMEDIATELY call delegateToSimpleChatAgent("hi there")
+- "how are you?" → IMMEDIATELY call delegateToSimpleChatAgent("how are you?")
+- "thanks" → IMMEDIATELY call delegateToSimpleChatAgent("thanks")
+- "what is 2+2?" → IMMEDIATELY call delegateToSimpleChatAgent("what is 2+2?")
 - "Find me documents and videos about Google" → IMMEDIATELY call delegateToDocumentAgent("Find me documents about Google") AND delegateToMediaAgent("Find me videos about Google")
 - "Get Apple's 10-K filing" → IMMEDIATELY call delegateToSECAgent("Get Apple's 10-K filing")
 - "Search for cat images" → IMMEDIATELY call delegateToMediaAgent("Search for cat images")
@@ -1170,6 +1232,9 @@ EXAMPLES - IMMEDIATE DELEGATION:
 - "Tell me about Sam Altman" → IMMEDIATELY call delegateToEntityResearchAgent("Tell me about Sam Altman")
 - "Compare Anthropic and OpenAI" → IMMEDIATELY call delegateToEntityResearchAgent("Compare Anthropic and OpenAI")
 - "What's Anthropic's funding?" → IMMEDIATELY call delegateToEntityResearchAgent("What's Anthropic's funding?")
+- "Summarize today's seed and Series A funding" → IMMEDIATELY call delegateToWebAgent("Summarize today's seed and Series A funding in healthcare, life sciences, and tech")
+- "Show me recent funding announcements" → IMMEDIATELY call delegateToWebAgent("Show me recent funding announcements")
+- "What companies raised funding today?" → IMMEDIATELY call delegateToWebAgent("What companies raised funding today?")
 
 CRITICAL RULES:
 1. NEVER ask clarifying questions - delegate immediately
@@ -1183,6 +1248,29 @@ RESPONSE STYLE:
 - If multiple agents were called, combine their responses
 - Don't mention the delegation process to the user`,
     tools: {
+      delegateToSimpleChatAgent: createTool({
+        description: "Delegate simple greetings, small talk, and basic questions to the Simple Chat Agent (no tools needed)",
+        args: z.object({
+          query: z.string().describe("The user's simple query or greeting"),
+        }),
+        handler: async (toolCtx, args): Promise<string> => {
+          console.log('[delegateToSimpleChatAgent] Delegating query:', args.query);
+          const simpleChatAgent = createSimpleChatAgent(toolCtx, userId);
+          const threadId = (toolCtx as any).threadId;
+
+          const result = await simpleChatAgent.streamText(
+            toolCtx,
+            { threadId },
+            { prompt: args.query }
+          );
+
+          await result.consumeStream();
+          const text = await result.text;
+          console.log('[delegateToSimpleChatAgent] Delegation complete, response length:', text.length);
+
+          return text;
+        },
+      }),
       delegateToDocumentAgent: createTool({
         description: "Delegate document-related queries to the Document Agent",
         args: z.object({
@@ -1312,6 +1400,118 @@ RESPONSE STYLE:
       sendNewsletter,
     },
     stopWhen: stepCountIs(10), // Allow multiple delegations
+  });
+}
+
+/**
+ * Comprehensive Research Agent - Uses agent composition to coordinate multiple specialized agents
+ *
+ * This agent demonstrates the agent composition pattern by delegating to specialized agents
+ * and synthesizing their results into a comprehensive research report.
+ */
+export function createComprehensiveResearchAgent(ctx: ActionCtx, userId: Id<"users">) {
+  // Create delegation tools for each specialized agent
+  const delegateToWeb = createAgentDelegationTool(
+    createWebAgent,
+    "delegateToWebAgent",
+    "Delegate web search to the Web Agent specialist"
+  );
+
+  const delegateToDocument = createAgentDelegationTool(
+    createDocumentAgent,
+    "delegateToDocumentAgent",
+    "Delegate document search to the Document Agent specialist"
+  );
+
+  const delegateToMedia = createAgentDelegationTool(
+    createMediaAgent,
+    "delegateToMediaAgent",
+    "Delegate media search to the Media Agent specialist"
+  );
+
+  const delegateToSEC = createAgentDelegationTool(
+    createSECAgent,
+    "delegateToSECAgent",
+    "Delegate SEC filings search to the SEC Agent specialist"
+  );
+
+  // Create a parallel delegation tool for comprehensive research
+  const comprehensiveSearch = createParallelAgentDelegationTool(
+    [
+      { factory: createWebAgent, name: "Web Search" },
+      { factory: createDocumentAgent, name: "Document Search" },
+      { factory: createMediaAgent, name: "Media Search" },
+    ],
+    "comprehensiveSearch",
+    "Search across web, documents, and media simultaneously for comprehensive results"
+  );
+
+  // Create a sequential delegation tool for deep analysis
+  const deepAnalysisPipeline = createSequentialAgentDelegationTool(
+    [
+      { factory: createWebAgent, name: "Initial Research" },
+      { factory: createDocumentAgent, name: "Document Analysis" },
+      { factory: createEntityResearchAgent, name: "Entity Deep Dive" },
+    ],
+    "deepAnalysisPipeline",
+    "Perform deep analysis by passing results through multiple specialized agents"
+  );
+
+  return new Agent(components.agent, {
+    name: "ComprehensiveResearchAgent",
+    languageModel: openai.chat("gpt-5"),
+    instructions: `You are a comprehensive research coordinator that orchestrates multiple specialized agents.
+
+Your role:
+1. Analyze the user's research query
+2. Decide which specialized agents to call (web, documents, media, SEC)
+3. You can call agents individually, in parallel, or in sequence
+4. Synthesize results into a well-structured research report
+
+Available delegation tools:
+- delegateToWebAgent: For web search
+- delegateToDocumentAgent: For searching user's documents
+- delegateToMediaAgent: For finding videos and media
+- delegateToSECAgent: For SEC filings and financial data
+- comprehensiveSearch: Search web, documents, and media in parallel
+- deepAnalysisPipeline: Sequential deep analysis through multiple agents
+
+Guidelines:
+- For broad research questions, use comprehensiveSearch to gather information from all sources
+- For focused questions, call specific agents individually
+- For deep analysis, use deepAnalysisPipeline to build on previous results
+- Always synthesize results into a coherent final answer
+- Cite sources from each agent
+- If agents provide conflicting information, note the discrepancies
+
+Output format:
+## Executive Summary
+[Brief overview of findings]
+
+## Detailed Findings
+### [Source 1]
+[Information from first agent]
+
+### [Source 2]
+[Information from second agent]
+
+## Synthesis
+[Your analysis combining all sources]
+
+## Sources
+[List all sources cited by sub-agents]`,
+    tools: {
+      delegateToWebAgent: delegateToWeb,
+      delegateToDocumentAgent: delegateToDocument,
+      delegateToMediaAgent: delegateToMedia,
+      delegateToSECAgent: delegateToSEC,
+      comprehensiveSearch,
+      deepAnalysisPipeline,
+      // Also include direct tools for creating final output
+      createDocument,
+      updateDocument,
+    },
+    stopWhen: stepCountIs(15), // Allow multiple delegations and synthesis
   });
 }
 

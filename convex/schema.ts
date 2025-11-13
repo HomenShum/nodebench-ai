@@ -1096,6 +1096,30 @@ export default defineSchema({
     .index("by_thread", ["threadId"]),
 
   /* ------------------------------------------------------------------ */
+  /* HUMAN-IN-THE-LOOP - Agent requests for human input                */
+  /* ------------------------------------------------------------------ */
+  humanRequests: defineTable({
+    userId: v.id("users"),                       // User who owns this request (for security)
+    threadId: v.string(),                        // Agent thread ID
+    messageId: v.string(),                       // Message ID where request was made
+    toolCallId: v.string(),                      // Tool call ID for askHuman
+    question: v.string(),                        // Question to ask human
+    context: v.optional(v.string()),             // Context about why asking
+    options: v.optional(v.array(v.string())),    // Suggested options
+    status: v.union(
+      v.literal("pending"),
+      v.literal("answered"),
+      v.literal("cancelled")
+    ),
+    response: v.optional(v.string()),            // Human's response
+    respondedAt: v.optional(v.number()),         // When human responded
+  })
+    .index("by_user", ["userId"])
+    .index("by_thread", ["threadId"])
+    .index("by_status", ["status"])
+    .index("by_thread_and_status", ["threadId", "status"]),
+
+  /* ------------------------------------------------------------------ */
   /* CONFIRMED PEOPLE - User-confirmed person selections                */
   /* ------------------------------------------------------------------ */
   confirmedPeople: defineTable({

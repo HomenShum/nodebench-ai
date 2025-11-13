@@ -1,9 +1,9 @@
-import { useQuery, useAction } from "convex/react";
+import { useQuery, useAction, useMutation } from "convex/react";
 import { useRef, useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
-import { ChevronLeft, ChevronRight, Sparkles, Loader2, Video, Image as ImageIcon, FileText, Maximize2, Edit3 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Loader2, Video, Image as ImageIcon, FileText, Maximize2, Edit3, LayoutList, Search, Home, ChevronDown, Filter, SortAsc } from "lucide-react";
 import { DossierMediaGallery } from "./dossier/DossierMediaGallery";
 import { extractMediaFromTipTap, countMediaAssets, type TipTapDocument } from "./dossier/tipTapMediaExtractor";
 import UnifiedEditor from "@/components/UnifiedEditor";
@@ -29,8 +29,46 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   const linkedAssets = useQuery(api.documents.getLinkedAssets, { dossierId: documentId });
   const analyzeSelectedFilesIntoDossier = useAction(api.metadataAnalyzer.analyzeSelectedFilesIntoDossier);
 
-  // View mode state
-  const [viewMode, setViewMode] = useState<ViewMode>('split');
+  // Get or create Quick Notes document (separate from main dossier)
+  const [quickNotesDocId, setQuickNotesDocId] = useState<Id<"documents"> | null>(null);
+  const getOrCreateQuickNotes = useMutation(api.documents.getOrCreateQuickNotes);
+
+  // Fetch or create quick notes on mount
+  useEffect(() => {
+    if (documentId && !quickNotesDocId) {
+      getOrCreateQuickNotes({ dossierId: documentId })
+        .then((doc) => {
+          if (doc) {
+            setQuickNotesDocId(doc._id);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to get or create quick notes:', error);
+        });
+    }
+  }, [documentId, quickNotesDocId, getOrCreateQuickNotes]);
+
+  // View mode state - default to split for classic UX, with localStorage persistence
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('nb:dossierViewMode');
+      if (saved && ['split', 'unified'].includes(saved)) {
+        return saved as ViewMode;
+      }
+    } catch (error) {
+      console.error('Failed to load view mode:', error);
+    }
+    return 'split';
+  });
+
+  // Save view mode to localStorage when it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('nb:dossierViewMode', viewMode);
+    } catch (error) {
+      console.error('Failed to save view mode:', error);
+    }
+  }, [viewMode]);
 
   // Panel state - Horizontal (left/right)
   const DEFAULT_H_LAYOUT = [65, 35] as const;
@@ -50,9 +88,18 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
 
+  // Filter and search state for Classic view
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'videos' | 'images' | 'documents'>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'type'>('newest');
+
   const onHorizontalLayout = (sizes: number[]) => {
-    lastResearchSizeRef.current = sizes[1] ?? lastResearchSizeRef.current;
-    setResearchCollapsed((sizes[1] ?? 0) < 5);
+    const rightPanelSize = sizes[1] ?? 0;
+    // Only save the size if panel is NOT collapsed (so we can restore to it later)
+    if (rightPanelSize >= 5) {
+      lastResearchSizeRef.current = rightPanelSize;
+    }
+    setResearchCollapsed(rightPanelSize < 5);
   };
 
   const resetHorizontal = () => {
@@ -417,14 +464,17 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 <span>{mediaCounts.total} media assets</span>
               </div>
             </div>
-            <button
-              onClick={() => setViewMode('split')}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
-              title="Switch to split panel view"
-            >
-              <Maximize2 className="h-4 w-4" />
-              <span>Split View</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setViewMode('split')}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title="Switch to classic split panel view"
+              >
+                <LayoutList className="h-4 w-4" />
+                <span>Classic</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -436,114 +486,297 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     );
   }
 
-  // Default: Split panel mode
+  // Default: Split panel mode (classic view) - Clean style without gradients
   return (
-    <div className="h-full flex flex-col bg-[var(--bg-primary)]">
-      {/* Header with view mode toggle */}
-      <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+    <div className="h-full flex flex-col bg-[var(--bg-secondary)] relative overflow-hidden">
+
+      {/* Modern Compact Header with Breadcrumbs */}
+      <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)] shadow-sm">
+        {/* Top Row: Breadcrumbs + View Toggles */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--border-color)]">
+          {/* Breadcrumbs */}
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--text-secondary)]">
+            <Home className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+            <ChevronRight className="h-3 w-3 text-[var(--text-muted)]" />
+            <span className="text-[var(--text-muted)] hidden sm:inline">Dossiers</span>
+            <ChevronRight className="h-3 w-3 text-[var(--text-muted)] hidden sm:inline" />
+            <span className="text-[var(--text-primary)] font-semibold truncate max-w-[200px] sm:max-w-xs">
               {document?.title || 'Untitled Dossier'}
-            </h2>
-            <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-              <Video className="h-3 w-3" />
-              <span>{mediaCounts.videos}</span>
-              <ImageIcon className="h-3 w-3 ml-2" />
-              <span>{mediaCounts.images}</span>
-              <FileText className="h-3 w-3 ml-2" />
-              <span>{mediaCounts.documents}</span>
+            </span>
+          </div>
+
+          {/* View Mode Toggles */}
+          <div className="flex items-center gap-0.5 bg-[var(--bg-secondary)] rounded-lg p-0.5 border border-[var(--border-color)]">
+            <button
+              type="button"
+              onClick={() => setViewMode('split')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${
+                viewMode === 'split'
+                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+              }`}
+              title="Classic view"
+              aria-label="Switch to classic view"
+            >
+              <LayoutList className="h-3.5 w-3.5" />
+              <span className="font-medium hidden sm:inline">Classic</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('unified')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${
+                viewMode === 'unified'
+                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+              }`}
+              title="Edit mode"
+              aria-label="Switch to edit mode"
+            >
+              <Edit3 className="h-3.5 w-3.5" />
+              <span className="font-medium hidden sm:inline">Edit</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Row: Search + Filters + Stats */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-[var(--bg-secondary)]/30">
+          {/* Search Bar */}
+          <div className="flex items-center gap-2 flex-1 sm:max-w-md">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
+              <input
+                type="text"
+                placeholder="Search media..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent transition-all placeholder:text-[var(--text-muted)]"
+                aria-label="Search media"
+              />
+            </div>
+
+            {/* Filter Dropdown */}
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] whitespace-nowrap"
+                title="Filter by type"
+                aria-label={`Filter by ${filterType}`}
+              >
+                <Filter className="h-4 w-4 text-[var(--text-secondary)]" />
+                <span className="capitalize text-[var(--text-secondary)]">{filterType}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+              </button>
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] whitespace-nowrap"
+                title="Sort by"
+                aria-label={`Sort by ${sortBy}`}
+              >
+                <SortAsc className="h-4 w-4 text-[var(--text-secondary)]" />
+                <span className="capitalize text-[var(--text-secondary)]">{sortBy}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+              </button>
             </div>
           </div>
-          <button
-            onClick={() => setViewMode('unified')}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
-            title="Switch to unified editor view"
-          >
-            <Edit3 className="h-4 w-4" />
-            <span>Edit Mode</span>
-          </button>
+
+          {/* Media Stats - Improved badges */}
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+              <Video className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <span className="font-semibold text-red-700 dark:text-red-300">{mediaCounts.videos}</span>
+              <span className="text-red-600 dark:text-red-400 hidden sm:inline">videos</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg">
+              <ImageIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <span className="font-semibold text-blue-700 dark:text-blue-300">{mediaCounts.images}</span>
+              <span className="text-blue-600 dark:text-blue-400 hidden sm:inline">images</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-lg">
+              <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="font-semibold text-green-700 dark:text-green-300">{mediaCounts.documents}</span>
+              <span className="text-green-600 dark:text-green-400 hidden sm:inline">docs</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Split Panel Layout */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <PanelGroup
-          ref={hGroupRef}
-          direction="horizontal"
-          autoSaveId="dossierViewer:h"
-          onLayout={onHorizontalLayout}
-        >
-          {/* Left Panel: Media Gallery */}
-          <Panel defaultSize={65} minSize={35}>
-            <div className="h-full flex flex-col">
-              <DossierMediaGallery
-                videos={mergedMedia.videos}
-                images={mergedMedia.images}
-                documents={mergedMedia.documents}
-                highlightedSection={highlightedSection}
-              />
-            </div>
-          </Panel>
-
-          {/* Resize Handle */}
-          <PanelResizeHandle
-            className="w-1 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] transition-colors cursor-col-resize"
-            onDoubleClick={resetHorizontal}
-            title="Double-click to reset layout"
-          />
-
-          {/* Right Panel: Research Panel with Vertical Split */}
-          <Panel ref={researchPanelRef} defaultSize={35} minSize={0} collapsible>
-            <div className="h-full border-l border-[var(--border-color)] flex flex-col">
-              {/* Research Panel Header */}
-              <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
-                <h4 className="text-sm font-medium text-[var(--text-primary)]">Research Panel</h4>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowAnalysisPopover(!showAnalysisPopover)}
-                    disabled={isAnalyzing || selectableFiles.length === 0}
-                    className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Analyze files"
-                  >
-                    {isAnalyzing ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" />
-                    )}
-                  </button>
-                  <button
-                    onClick={toggleResearch}
-                    className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
-                    title={researchCollapsed ? 'Expand Research Panel' : 'Collapse Research Panel'}
-                  >
-                    {researchCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </button>
+      {/* Modern 2x2 Grid Layout - WelcomeLanding Style */}
+      <div className="flex-1 min-h-0 overflow-hidden p-3 sm:p-4 lg:p-6">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">
+          {/* Top Left: Videos */}
+          <div className="border border-[var(--border-color)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
+              <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-red-500/10">
+                  <Video className="h-4 w-4 text-red-500" />
                 </div>
-              </div>
-
-              {/* Transcript Panel - Full height, no quick notes */}
-              <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                {tipTapContent ? (
-                  <div className="prose prose-lg max-w-none">
-                    <div className="text-[var(--text-primary)]">
-                      {/* Render TipTap content as read-only text */}
-                      {tipTapContent.content.map((node, idx) => (
-                        <div key={idx} className="mb-4">
-                          {renderTipTapNode(node)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center text-[var(--text-muted)] py-8">
-                    No transcript available
-                  </div>
-                )}
+                <span>Videos</span>
+              </h4>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 font-medium border border-red-200 dark:border-red-500/20">
+                  {mediaCounts.videos} <span className="hidden sm:inline">videos</span>
+                </span>
               </div>
             </div>
-          </Panel>
-        </PanelGroup>
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* Videos */}
+              {mergedMedia.videos.length > 0 ? (
+                <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {mergedMedia.videos.map((video, idx) => (
+                      <div
+                        key={idx}
+                        className="group cursor-pointer rounded-xl overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 pressable"
+                      >
+                        <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-50">
+                          <img
+                            src={video.thumbnail}
+                            alt={video.title || 'Video'}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-br from-black/30 to-black/10 group-hover:from-black/40 group-hover:to-black/20 transition-all duration-300" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-14 h-14 rounded-full bg-red-500/90 group-hover:bg-red-500 group-hover:scale-110 flex items-center justify-center transition-all duration-300">
+                              <svg className="h-6 w-6 text-white ml-0.5" fill="white" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                        {video.title && (
+                          <div className="p-3 bg-gradient-to-r from-[var(--bg-primary)]/80 to-[var(--bg-secondary)]/60 backdrop-blur-sm">
+                            <p className="text-xs font-medium text-[var(--text-secondary)] line-clamp-2">{video.title}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                  No videos available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Top Right: Images */}
+          <div className="border border-[var(--border-color)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
+              <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-500/10">
+                  <ImageIcon className="h-4 w-4 text-blue-500" />
+                </div>
+                <span>Images</span>
+              </h4>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 font-medium border border-blue-200 dark:border-blue-500/20">
+                  {mediaCounts.images} <span className="hidden sm:inline">images</span>
+                </span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* Images */}
+              {mergedMedia.images.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {mergedMedia.images.map((image, idx) => (
+                    <div
+                      key={idx}
+                      className="aspect-square cursor-pointer rounded-xl overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 group relative pressable"
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.alt || 'Image'}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-br from-black/0 to-black/20 group-hover:from-black/10 group-hover:to-black/30 transition-all duration-300" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                  No images available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Left: AI Chat Transcript (Read-only Main Dossier Content) */}
+          <div className="border border-[var(--border-color)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
+              <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-purple-500/10">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                </div>
+                <span>AI Chat Transcript</span>
+              </h4>
+              <button
+                type="button"
+                onClick={() => setShowAnalysisPopover(!showAnalysisPopover)}
+                disabled={isAnalyzing || selectableFiles.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium"
+                title="Analyze files"
+                aria-label="Analyze files with AI"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-primary)]" />
+                    <span className="hidden sm:inline text-[var(--text-secondary)]">Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" />
+                    <span className="hidden sm:inline text-[var(--text-secondary)]">Analyze</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {tipTapContent ? (
+                <div className="prose prose-sm max-w-none">
+                  <div className="text-[var(--text-primary)]">
+                    {tipTapContent.content.map((node, idx) => (
+                      <div key={idx} className="mb-3">
+                        {renderTipTapNode(node)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                  No transcript available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Right: Quick Notes (Editable Separate Document) */}
+          <div className="border border-[var(--border-color)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
+              <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-500/10">
+                  <Edit3 className="h-4 w-4 text-blue-500" />
+                </div>
+                <span>Quick Notes</span>
+              </h4>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {quickNotesDocId ? (
+                <UnifiedEditor documentId={quickNotesDocId} mode="quickNote" editable={true} autoCreateIfEmpty={true} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                  Loading quick notes...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Analysis Popover */}
@@ -564,15 +797,134 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           analysisPrompt={analysisPrompt}
           onPromptChange={setAnalysisPrompt}
           savePromptDefault={savePromptDefault}
-          onSaveDefaultChange={setSavePromptDefault}
-          onAnalyze={handleAnalyze}
-          onClose={() => setShowAnalysisPopover(false)}
+          onSavePromptDefaultChange={setSavePromptDefault}
           isAnalyzing={isAnalyzing}
           progress={analysisProgress}
+          onAnalyze={handleAnalyze}
+          onClose={() => setShowAnalysisPopover(false)}
         />
+      )}
+
+      {/* Unified Editor Mode */}
+      {viewMode === 'unified' && (
+        <div className="h-full overflow-y-auto opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">
+          <div className="max-w-4xl mx-auto px-6 py-8">
+            <UnifiedEditor documentId={documentId} mode="full" editable={true} autoCreateIfEmpty={true} />
+          </div>
+        </div>
       )}
     </div>
   );
+}
+
+/**
+ * Helper function to render TipTap nodes as React elements
+ */
+function renderTipTapNode(node: any): React.ReactNode {
+  if (!node) return null;
+
+  switch (node.type) {
+    case "paragraph":
+      return (
+        <p className="leading-relaxed mb-2">
+          {node.content?.map((child: any, idx: number) => (
+            <span key={idx}>{renderTipTapNode(child)}</span>
+          ))}
+        </p>
+      );
+    case "heading":
+      const level = node.attrs?.level || 1;
+      const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
+      const headingClasses = {
+        1: "text-2xl font-bold mb-3 mt-4",
+        2: "text-xl font-semibold mb-2 mt-3",
+        3: "text-lg font-semibold mb-2 mt-2",
+        4: "text-base font-semibold mb-1 mt-2",
+        5: "text-sm font-semibold mb-1 mt-1",
+        6: "text-xs font-semibold mb-1 mt-1",
+      };
+      return (
+        <HeadingTag className={headingClasses[level as keyof typeof headingClasses] || headingClasses[1]}>
+          {node.content?.map((child: any, idx: number) => (
+            <span key={idx}>{renderTipTapNode(child)}</span>
+          ))}
+        </HeadingTag>
+      );
+    case "text":
+      let text: React.ReactNode = node.text || "";
+      if (node.marks) {
+        node.marks.forEach((mark: any) => {
+          if (mark.type === "bold") {
+            text = <strong key="bold">{text}</strong>;
+          } else if (mark.type === "italic") {
+            text = <em key="italic">{text}</em>;
+          } else if (mark.type === "code") {
+            text = <code key="code" className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-xs font-mono">{text}</code>;
+          } else if (mark.type === "link") {
+            text = <a key="link" href={mark.attrs?.href} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">{text}</a>;
+          }
+        });
+      }
+      return text;
+    case "bulletList":
+      return (
+        <ul className="list-disc list-inside space-y-1 ml-4 mb-2">
+          {node.content?.map((child: any, idx: number) => (
+            <div key={idx}>{renderTipTapNode(child)}</div>
+          ))}
+        </ul>
+      );
+    case "orderedList":
+      return (
+        <ol className="list-decimal list-inside space-y-1 ml-4 mb-2">
+          {node.content?.map((child: any, idx: number) => (
+            <div key={idx}>{renderTipTapNode(child)}</div>
+          ))}
+        </ol>
+      );
+    case "listItem":
+      return (
+        <li>
+          {node.content?.map((child: any, idx: number) => (
+            <span key={idx}>{renderTipTapNode(child)}</span>
+          ))}
+        </li>
+      );
+    case "codeBlock":
+      return (
+        <pre className="bg-[var(--bg-secondary)] p-3 rounded-lg overflow-x-auto mb-2 border border-[var(--border-color)]">
+          <code className="text-xs font-mono">
+            {node.content?.map((child: any, idx: number) => (
+              <span key={idx}>{renderTipTapNode(child)}</span>
+            ))}
+          </code>
+        </pre>
+      );
+    case "blockquote":
+      return (
+        <blockquote className="border-l-4 border-[var(--accent-primary)] pl-4 italic text-[var(--text-secondary)] mb-2">
+          {node.content?.map((child: any, idx: number) => (
+            <div key={idx}>{renderTipTapNode(child)}</div>
+          ))}
+        </blockquote>
+      );
+    case "horizontalRule":
+      return <hr className="my-4 border-[var(--border-color)]" />;
+    case "hardBreak":
+      return <br />;
+    default:
+      // For unknown node types, try to render content if it exists
+      if (node.content) {
+        return (
+          <div className="mb-2">
+            {node.content.map((child: any, idx: number) => (
+              <span key={idx}>{renderTipTapNode(child)}</span>
+            ))}
+          </div>
+        );
+      }
+      return null;
+  }
 }
 
 /**
