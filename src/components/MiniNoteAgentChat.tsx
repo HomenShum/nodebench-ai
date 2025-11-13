@@ -12,6 +12,7 @@ import { extractMediaFromText, removeMediaMarkersFromText } from './FastAgentPan
 import { toast } from 'sonner';
 import { RichMediaSection } from './FastAgentPanel/RichMediaSection';
 import { StepTimeline, toolPartsToTimelineSteps } from './FastAgentPanel/StepTimeline';
+import { HumanRequestList } from './FastAgentPanel/HumanRequestCard';
 
 interface MiniNoteAgentChatProps {
   user: any | null | undefined;
@@ -81,6 +82,12 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     api.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
     agentThreadId ? { threadId: agentThreadId } : 'skip',
     { initialNumItems: 100, stream: true }
+  );
+
+  // Query for human-in-the-loop requests
+  const humanRequests = useQuery(
+    api.agents.humanInTheLoop.getPendingHumanRequests,
+    agentThreadId ? { threadId: agentThreadId } : 'skip'
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -202,7 +209,11 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         setCreating(false);
         setSending(true);
         console.log('[MiniNoteAgentChat] Sending message to new thread...');
-        await sendStreaming({ threadId: newId as Id<'chatThreadsStream'>, prompt: msg });
+        await sendStreaming({
+          threadId: newId as Id<'chatThreadsStream'>,
+          prompt: msg,
+          useCoordinator: true  // Enable smart routing via coordinator
+        });
         setSending(false);
         // Clear optimistic message once backend confirms
         setOptimisticUserMessage(null);
@@ -211,7 +222,11 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
       } else {
         console.log('[MiniNoteAgentChat] Sending message to existing thread:', threadId);
         setSending(true);
-        await sendStreaming({ threadId, prompt: msg });
+        await sendStreaming({
+          threadId,
+          prompt: msg,
+          useCoordinator: true  // Enable smart routing via coordinator
+        });
         setSending(false);
         // Clear optimistic message once backend confirms
         setOptimisticUserMessage(null);
@@ -261,6 +276,18 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
                 Ask anything. I can help research, summarize, and draft dossiers.
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Human-in-the-Loop Requests */}
+        {humanRequests && humanRequests.length > 0 && (
+          <div className="mb-4">
+            <HumanRequestList
+              requests={humanRequests}
+              onRespond={() => {
+                console.log('[MiniNoteAgentChat] Human request responded');
+              }}
+            />
           </div>
         )}
 

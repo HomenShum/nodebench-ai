@@ -46,7 +46,23 @@ import {
 
 const streamCancellationControllers = new Map<string, AbortController>();
 
-// Helper to create agent with specific model for agent streaming mode
+// Simple, lightweight agent for Mini Note Agent (no tools, fast responses)
+const createSimpleChatAgent = (model: string) => new Agent(components.agent, {
+  name: "MiniNoteAgent",
+  languageModel: openai.chat(model),
+  instructions: `You are a helpful, friendly AI assistant for quick conversations and note-taking.
+
+Keep responses:
+- Concise and conversational
+- Helpful and informative
+- Natural and friendly
+
+You don't have access to tools or external data - just provide thoughtful, direct responses based on the conversation.`,
+  tools: {}, // No tools for speed
+  stopWhen: stepCountIs(3), // Very short for simple chat
+});
+
+// Full-featured agent with tools for Fast Agent Panel
 const createChatAgent = (model: string) => new Agent(components.agent, {
   name: "FastChatAgent",
   languageModel: openai.chat(model),
@@ -783,6 +799,7 @@ export const initiateAsyncStreaming = mutation({
     threadId: v.id("chatThreadsStream"),
     prompt: v.string(),
     model: v.optional(v.string()),
+    useCoordinator: v.optional(v.boolean()), // Default false for Mini Note Agent
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -802,31 +819,6 @@ export const initiateAsyncStreaming = mutation({
     const modelName = args.model || "gpt-5-chat-latest";
     const chatAgent = createChatAgent(modelName);
 
-    // Idempotency guard: skip if an identical user message was created moments ago
-    const IDEMPOTENCY_WINDOW_MS = 4000; // keep in sync with client-side short TTL
-    const normalizedPrompt = args.prompt.trim();
-    try {
-      const recentResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-        threadId: streamingThread.agentThreadId,
-        order: "desc",
-        paginationOpts: { cursor: null, numItems: 8 },
-      });
-      const now = Date.now();
-      const recentPage: any[] = (recentResult as any)?.page ?? (recentResult as any) ?? [];
-      const dup = recentPage.find((m: any) => {
-        const text = typeof m.text === "string" ? m.text.trim() : "";
-        const created = typeof m._creationTime === "number" ? m._creationTime : 0;
-        return text === normalizedPrompt && now - created < IDEMPOTENCY_WINDOW_MS;
-      });
-      if (dup) {
-        const existingId = (dup as any).messageId ?? (dup as any).id ?? (dup as any)._id ?? `dedup-${requestId}`;
-        console.log(`[initiateAsyncStreaming:${requestId}] 🛑 Idempotency: Found recent identical user message, skipping save/schedule. Using messageId:`, existingId);
-        return { messageId: String(existingId) };
-      }
-    } catch (dedupeErr) {
-      console.warn(`[initiateAsyncStreaming:${requestId}] Idempotency check failed, proceeding normally:`, dedupeErr);
-    }
-
     console.log(`[initiateAsyncStreaming:${requestId}] 💾 Saving user message, agentThreadId:`, streamingThread.agentThreadId);
     console.log(`[initiateAsyncStreaming:${requestId}] 📝 Prompt:`, args.prompt);
 
@@ -838,13 +830,66 @@ export const initiateAsyncStreaming = mutation({
     });
 
     console.log(`[initiateAsyncStreaming:${requestId}] ✅ User message saved, messageId:`, messageId);
-    console.log(`[initiateAsyncStreaming:${requestId}] 🔍 This should be the ONLY user message created for this prompt`);
+
+    // POST-SAVE idempotency check: If an older identical message exists, delete this one and use the older one
+    // This handles race conditions where two calls arrive simultaneously
+    const IDEMPOTENCY_WINDOW_MS = 4000;
+    const normalizedPrompt = args.prompt.trim();
+    try {
+      const recentResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+        threadId: streamingThread.agentThreadId,
+        order: "desc",
+        paginationOpts: { cursor: null, numItems: 10 },
+      });
+      const now = Date.now();
+      const recentPage: any[] = (recentResult as any)?.page ?? (recentResult as any) ?? [];
+
+      // Find all messages with identical text within the window
+      const duplicates = recentPage.filter((m: any) => {
+        const text = typeof m.text === "string" ? m.text.trim() : "";
+        const created = typeof m._creationTime === "number" ? m._creationTime : 0;
+        const msgId = String(m.messageId ?? m.id ?? m._id ?? "");
+        return text === normalizedPrompt &&
+               now - created < IDEMPOTENCY_WINDOW_MS &&
+               msgId !== messageId; // Exclude the message we just created
+      });
+
+      if (duplicates.length > 0) {
+        // Found older duplicate(s) - delete the one we just created and use the oldest existing one
+        const oldest = duplicates.reduce((prev, curr) => {
+          const prevTime = prev._creationTime ?? 0;
+          const currTime = curr._creationTime ?? 0;
+          return currTime < prevTime ? curr : prev;
+        });
+
+        const oldestId = String(oldest.messageId ?? oldest.id ?? oldest._id ?? "");
+        console.log(`[initiateAsyncStreaming:${requestId}] 🛑 POST-SAVE Idempotency: Found ${duplicates.length} older duplicate(s), deleting newly created message ${messageId} and using oldest: ${oldestId}`);
+
+        // Delete the message we just created
+        try {
+          await ctx.runMutation(components.agent.messages.deleteByIds, {
+            messageIds: [messageId],
+          });
+          console.log(`[initiateAsyncStreaming:${requestId}] ✅ Deleted duplicate message ${messageId}`);
+        } catch (deleteErr) {
+          console.warn(`[initiateAsyncStreaming:${requestId}] Failed to delete duplicate:`, deleteErr);
+        }
+
+        // Return the oldest existing message ID (don't schedule a new stream)
+        return { messageId: oldestId };
+      }
+    } catch (dedupeErr) {
+      console.warn(`[initiateAsyncStreaming:${requestId}] POST-SAVE idempotency check failed, proceeding normally:`, dedupeErr);
+    }
+
+    console.log(`[initiateAsyncStreaming:${requestId}] 🔍 No duplicates found, proceeding with stream scheduling`);
 
     // Schedule async streaming
     await ctx.scheduler.runAfter(0, internal.fastAgentPanelStreaming.streamAsync, {
       threadId: streamingThread.agentThreadId,
       promptMessageId: messageId,
       model: modelName,
+      useCoordinator: args.useCoordinator ?? false, // Default to simple agent for Mini Note
     });
 
     console.log(`[initiateAsyncStreaming:${requestId}] ⏰ Stream scheduled for messageId:`, messageId);
@@ -904,7 +949,7 @@ export const streamAsync = internalAction({
     // Choose agent based on mode
     let agent;
     let agentType: string;
-    if (args.useCoordinator !== false) { // Default to coordinator
+    if (args.useCoordinator === true) { // Opt-in to coordinator (for Fast Agent Panel)
       if (!userId) {
         throw new Error("Coordinator agent requires a thread userId");
       }
@@ -913,9 +958,9 @@ export const streamAsync = internalAction({
       const { createCoordinatorAgent } = await import("./agents/specializedAgents");
       agent = createCoordinatorAgent(ctx, userId);
     } else {
-      agentType = 'SINGLE';
-      console.log(`[streamAsync:${executionId}] 🔧 Using SINGLE AGENT (legacy mode)`);
-      agent = createChatAgent(args.model);
+      agentType = 'SIMPLE';
+      console.log(`[streamAsync:${executionId}] � Using SIMPLE CHAT AGENT (fast, lightweight)`);
+      agent = createSimpleChatAgent(args.model || "gpt-5-mini"); // Use mini for speed
     }
 
     if (customThread?.cancelRequested) {
@@ -926,12 +971,16 @@ export const streamAsync = internalAction({
     const controller = new AbortController();
     streamCancellationControllers.set(args.threadId, controller);
 
-    // Set timeout for streaming (30 seconds default)
-    const STREAM_TIMEOUT_MS = 30000;
-    const timeoutId = setTimeout(() => {
-      console.warn(`[streamAsync:${executionId}] ⏱️ Stream timeout after ${STREAM_TIMEOUT_MS}ms, aborting...`);
-      controller.abort();
-    }, STREAM_TIMEOUT_MS);
+    // Optional timeout for streaming; disabled by default to allow long-running tasks
+    const ENABLE_STREAM_TIMEOUT = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    if (ENABLE_STREAM_TIMEOUT) {
+      const STREAM_TIMEOUT_MS = 600000; // 10 minutes
+      timeoutId = setTimeout(() => {
+        console.warn(`[streamAsync:${executionId}] ⏱️ Stream timeout after ${STREAM_TIMEOUT_MS}ms, aborting...`);
+        controller.abort();
+      }, STREAM_TIMEOUT_MS);
+    }
 
     try {
       console.log(`[streamAsync:${executionId}] 📡 Calling ${agentType} agent.streamText...`);
@@ -948,19 +997,30 @@ export const streamAsync = internalAction({
       const result = await agent.streamText(
         contextWithUserId as any,
         { threadId: args.threadId },
-        { promptMessageId: args.promptMessageId, abortSignal: controller.signal }
-      // IMPORTANT: Do NOT use saveStreamDeltas here
-      // When tools are called, the agent needs to save tool result messages
-      // saveStreamDeltas only saves text deltas, not tool result messages
-      // This causes the error: "tool_call_ids did not have response messages"
-      // The agent will automatically save the complete message with all tool results
-    );
+        {
+          promptMessageId: args.promptMessageId,
+          abortSignal: controller.signal,
+          // Increase step budget for multi-agent delegation + tools + final text
+          stopWhen: stepCountIs(15),
+        },
+        {
+          // Enable real-time streaming to clients
+          // According to Convex Agent docs, this CAN be used with tool execution
+          // The deltas are saved to DB and clients can subscribe via syncStreams
+          saveStreamDeltas: {
+            chunking: "word", // Stream word by word for smooth UX
+            throttleMs: 100,  // Throttle writes to reduce DB load
+          },
+        }
+      );
 
-      console.log(`[streamAsync:${executionId}] ✅ Stream started, messageId:`, result.messageId);
-      console.log(`[streamAsync:${executionId}] 🔍 streamText should NOT create a new user message, it should use promptMessageId:`, args.promptMessageId);
+      console.log(`[streamAsync:${executionId}] ✅ Stream started with stopWhen: stepCountIs(15), saveStreamDeltas: enabled`);
+      console.log(`[streamAsync:${executionId}] 📝 MessageId:`, result.messageId);
+      console.log(`[streamAsync:${executionId}] 🔍 Using promptMessageId:`, args.promptMessageId);
 
       // Use consumeStream() to ensure all tool calls are executed and results are captured
       // This waits for the entire stream to complete, including tool execution
+      // With saveStreamDeltas enabled, clients will see real-time updates via syncStreams
       await result.consumeStream();
 
       console.log(`[streamAsync:${executionId}] 🏁 Stream completed successfully`);
@@ -970,13 +1030,38 @@ export const streamAsync = internalAction({
       const toolResults = await result.toolResults;
       console.log(`[streamAsync:${executionId}] Tool calls: ${toolCalls?.length || 0}, Tool results: ${toolResults?.length || 0}`);
 
+      // Check if we got a text response - if not, this is AI_NoOutputGeneratedError
+      // This can happen when the agent executes tools but doesn't generate final text
+      const finalText = await result.text;
+      if (!finalText || finalText.trim().length === 0) {
+        console.warn(`[streamAsync:${executionId}] ⚠️ No text output generated after tool execution`);
+        console.warn(`[streamAsync:${executionId}] This usually means the agent hit step limit (stopWhen: stepCountIs(15)) without generating final response`);
+        console.warn(`[streamAsync:${executionId}] Consider increasing maxSteps if this happens frequently`);
+        // Don't throw - the tool results are still saved and visible in the UI
+        // The user can see the agent process and tool results even without final text
+      } else {
+        console.log(`[streamAsync:${executionId}] ✅ Final text response generated successfully`);
+        console.log(`[streamAsync:${executionId}] 📊 Text length: ${finalText.length} chars`);
+        console.log(`[streamAsync:${executionId}] 🎯 Real-time deltas were streamed to clients via saveStreamDeltas`);
+      }
+
       // Note: Usage tracking is handled automatically by the agent's usageHandler
 
     } catch (error) {
+      // Handle AI_NoOutputGeneratedError gracefully
+      const errorName = (error as any)?.name || '';
+      if (errorName === 'AI_NoOutputGeneratedError') {
+        console.warn(`[streamAsync:${executionId}] ⚠️ AI_NoOutputGeneratedError: Agent completed tool execution but didn't generate final text`);
+        console.warn(`[streamAsync:${executionId}] This should be RARE with stopWhen: stepCountIs(15). If you see this often, raise the step count.`);
+        console.warn(`[streamAsync:${executionId}] Tool results are still saved and visible in the UI.`);
+        // Don't re-throw - this is not a fatal error, tool results are visible
+        return;
+      }
+
       console.error(`[streamAsync:${executionId}] ❌ Error:`, error);
       throw error;
     } finally {
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
       streamCancellationControllers.delete(args.threadId);
       // Reset cancel flag via mutation (actions can't use ctx.db directly)
       if (customThread?._id) {

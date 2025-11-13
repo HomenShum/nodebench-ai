@@ -228,19 +228,19 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
 
   return (
     <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
-      <div className="max-w-4xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-3">
           {/* Public/Private Status */}
           <div className="flex items-center gap-2">
             {document.isPublic ? (
               <>
                 <Globe className="h-4 w-4 text-[var(--accent-green)]" />
-                <span className="text-sm text-[var(--text-secondary)]">Public</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Public</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full border ${
+                  className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
                     (document as any).allowPublicEdit
-                      ? 'border-[var(--accent-green)] text-[var(--accent-green)]'
-                      : 'border-[var(--border-color)] text-[var(--text-muted)]'
+                      ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/5'
+                      : 'border-[var(--border-color)] text-[var(--text-muted)] bg-[var(--bg-secondary)]'
                   }`}
                   title={(document as any).allowPublicEdit ? 'Anyone with the link can edit' : 'Public view-only'}
                 >
@@ -250,42 +250,50 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
             ) : (
               <>
                 <Lock className="h-4 w-4 text-[var(--text-muted)]" />
-                <span className="text-sm text-[var(--text-secondary)]">Private</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Private</span>
               </>
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            {/* Inspect Tab toggle (header tab) */}
+          {/* Action Buttons - Grouped with better spacing */}
+          <div className="flex items-center gap-1.5">
+            {/* Inspect Tab toggle */}
             <button
+              type="button"
               onClick={() => {
                 try {
                   window.dispatchEvent(new CustomEvent('nodebench:toggleInspector'));
                 } catch {}
               }}
-              className="px-2 py-1 rounded-md text-xs border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-200"
               title="Toggle Inspect view"
+              aria-label="Toggle Inspect view"
             >
-              Inspect
+              <span className="hidden sm:inline">Inspect</span>
             </button>
 
             {isOwner && (
               <button
+                type="button"
                 onClick={() => void handleToggleFavorite()}
-                className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+                className="flex items-center gap-1.5 p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-all duration-200"
                 title={document.isFavorite ? "Unfavorite" : "Favorite"}
+                aria-label={document.isFavorite ? "Unfavorite document" : "Favorite document"}
               >
-                <Star className={`h-4 w-4 ${document.isFavorite ? 'text-yellow-500 fill-yellow-500' : 'text-[var(--text-muted)]'}`} />
+                <Star className={`h-4 w-4 ${document.isFavorite ? 'text-yellow-500 fill-yellow-500' : 'text-[var(--text-secondary)]'}`} />
+                <span className="hidden sm:inline text-sm">{document.isFavorite ? "Favorited" : "Favorite"}</span>
               </button>
             )}
 
             <button
+              type="button"
               onClick={handleShare}
-              className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+              className="flex items-center gap-1.5 p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-all duration-200"
               title="Share"
+              aria-label="Share document"
             >
               <Share className="h-4 w-4 text-[var(--text-secondary)]" />
+              <span className="hidden sm:inline text-sm">Share</span>
             </button>
 
             {/* More Options Menu (owner only) */}
@@ -293,51 +301,51 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               <div className="relative">
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+                  className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
                   title="More options"
                 >
                   <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
                 {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-[var(--bg-primary)] rounded-md shadow-lg border border-[var(--border-color)] z-10">
+                  <div className="absolute right-0 mt-2 w-56 bg-[var(--bg-primary)] rounded-lg shadow-lg border border-[var(--border-color)] z-10 overflow-hidden">
                     <div className="py-1">
                       {!document.isPublic ? (
                         <>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-2">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             Make Public (view-only)
                           </button>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: true }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-2">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: true }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             Make Public (editable)
                           </button>
                         </>
                       ) : (
                         <>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: false, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-2">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: false, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                             <Lock className="h-4 w-4" />
                             Make Private
                           </button>
-                          <button onClick={async () => { await updateDocument({ id: document._id, allowPublicEdit: !(document as any).allowPublicEdit }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-2">
+                          <button onClick={async () => { await updateDocument({ id: document._id, allowPublicEdit: !(document as any).allowPublicEdit }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             {(document as any).allowPublicEdit ? "Disable public editing" : "Enable public editing"}
                           </button>
                         </>
                       )}
-                      <button onClick={() => { void handleAddIcon(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-2">
+                      <button onClick={() => { void handleAddIcon(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                         <Smile className="h-4 w-4" />
                         Change Icon
                       </button>
-                      <button onClick={() => { void handleAddCover(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-2">
+                      <button onClick={() => { void handleAddCover(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                         <ImageIcon className="h-4 w-4" />
                         Change Cover
                       </button>
                       <div className="border-t border-[var(--border-color)] my-1"></div>
-                      <button onClick={() => { void handleArchive(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-2">
+                      <button onClick={() => { void handleArchive(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                         <Archive className="h-4 w-4" />
                         Archive
                       </button>
-                      <button onClick={() => { void handleDelete(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                      <button onClick={() => { void handleDelete(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors">
                         <Trash2 className="h-4 w-4" />
                         Delete
                       </button>
@@ -352,7 +360,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
         {/* Title and Icon */}
         <div className="flex items-center gap-3">
           {document.icon && (
-            <span className="text-4xl">{document.icon}</span>
+            <span className="text-3xl sm:text-4xl flex-shrink-0">{document.icon}</span>
           )}
 
           {isEditing ? (
@@ -362,13 +370,13 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               onChange={(e) => setTitle(e.target.value)}
               onBlur={() => void handleTitleSubmit()}
               onKeyDown={handleKeyDown}
-              className="text-3xl font-bold text-[var(--text-primary)] bg-transparent border-none outline-none flex-1"
+              className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] bg-transparent border-none outline-none flex-1"
               autoFocus
             />
           ) : (
             <h1
               onClick={isOwner ? () => setIsEditing(true) : undefined}
-              className={`text-3xl font-bold text-[var(--text-primary)] ${isOwner ? 'cursor-pointer hover:bg-[var(--bg-hover)]' : ''} px-2 py-1 rounded flex-1`}
+              className={`text-2xl sm:text-3xl font-bold text-[var(--text-primary)] ${isOwner ? 'cursor-pointer hover:bg-[var(--bg-hover)] rounded-lg' : ''} px-2 py-1.5 flex-1 transition-colors`}
             >
               {document.title}
             </h1>
@@ -376,8 +384,8 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
         </div>
 
         {/* Tags Row */}
-        <div className="mt-2 px-2 flex items-center justify-between">
-          <div className="flex flex-wrap gap-1 items-center min-h-[24px]">
+        <div className="mt-2 px-1 sm:px-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+          <div className="flex flex-wrap gap-1 items-center min-h-[24px] w-full sm:w-auto">
             {tags === undefined ? (
               <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading tags...

@@ -32,60 +32,70 @@ export function UnifiedRow({
 
   return (
     <div
-      className={`sidebar-item group relative flex items-center gap-1.5 px-2 py-1 text-xs rounded-md cursor-pointer transition-colors duration-150 border border-transparent
+      className={`sidebar-item group relative flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg cursor-pointer transition-all duration-200 mx-1.5
         ${isSelected
-          ? 'bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]'
+          ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] font-medium'
           : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
       `}
       onClick={(e) => onOpen(item, e)}
       role="option"
       aria-selected={ariaSelected ?? isSelected}
     >
+      {/* Active indicator - left border accent */}
       {isSelected && (
         <span
-          className="absolute left-0 inset-y-0 h-full w-px bg-[var(--accent-primary)] rounded-l"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-[var(--accent-primary)] rounded-full"
           aria-hidden="true"
         />
       )}
+
+      {/* Icon/Checkbox */}
       {isTask ? (
         <input
           type="checkbox"
           checked={item.status === "done"}
           onChange={(e) => { e.stopPropagation(); onToggleDone(item); }}
-          className="h-4 w-4 accent-[var(--accent-primary)] cursor-pointer"
+          className="h-4 w-4 accent-[var(--accent-primary)] cursor-pointer flex-shrink-0"
           title={item.status === 'done' ? 'Mark as todo' : 'Mark as done'}
         />
       ) : (
-        <FileText className="h-4 w-4 flex-shrink-0" />
+        <FileText className="h-4 w-4 flex-shrink-0 text-[var(--text-secondary)]" />
       )}
 
-      {overdue && <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-red-500" title="Overdue" />}
+      {/* Overdue indicator */}
+      {overdue && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500" title="Overdue" />}
 
-      <span className="ml-2 flex-1 truncate">{item.title}</span>
+      {/* Title */}
+      <span className="flex-1 truncate font-medium">{item.title}</span>
 
-      {/* Right-side pills */}
-      {isTask && item.dueDate && (
-        <span className="mr-2 text-[10px] text-[var(--text-secondary)]">{formatDue(item.dueDate)}</span>
-      )}
-      <span className="mr-2 text-[10px] text-[var(--text-secondary)]">
-        {formatTimeAgo(item.updatedAt)}
-      </span>
+      {/* Right-side metadata */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {isTask && item.dueDate && (
+          <span className="text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+            {formatDue(item.dueDate)}
+          </span>
+        )}
+        <span className="text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+          {formatTimeAgo(item.updatedAt)}
+        </span>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); onToggleFavorite(item); }}
-        className={`p-1 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity duration-150 ${item.isFavorite ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
-        title={item.isFavorite ? 'Unpin' : 'Pin'}
-        aria-label={item.isFavorite ? 'Unpin' : 'Pin'}
-      >
-        <Star className={`h-3.5 w-3.5 ${item.isFavorite ? 'fill-current' : ''}`} />
-      </button>
+        {/* Favorite button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(item); }}
+          className={`p-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded hover:bg-[var(--bg-secondary)] ${item.isFavorite ? 'opacity-100 text-yellow-500' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          title={item.isFavorite ? 'Unpin' : 'Pin'}
+          aria-label={item.isFavorite ? 'Unpin' : 'Pin'}
+        >
+          <Star className={`h-3.5 w-3.5 ${item.isFavorite ? 'fill-current' : ''}`} />
+        </button>
 
-      {/* Kebab menu for documents */}
-      {!isTask && (
-        <div className="relative">
-          <MenuButton item={item} onRename={onRename} onArchive={onArchive} onShare={onShare} />
-        </div>
-      )}
+        {/* Kebab menu for documents */}
+        {!isTask && (
+          <div className="relative">
+            <MenuButton item={item} onRename={onRename} onArchive={onArchive} onShare={onShare} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -109,7 +119,7 @@ function MenuButton({
     <div className="relative">
       <button
         onClick={(e) => { e.stopPropagation(); setIsOpen((v) => !v); }}
-        className="p-1 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity duration-150 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        className="p-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         title="More"
         aria-label="More"
       >
@@ -117,34 +127,38 @@ function MenuButton({
       </button>
       {isOpen && (
         <div
-          className="absolute right-0 mt-1 bg-[var(--bg-primary)] rounded-md shadow-lg border border-[var(--border-color)] z-20 p-1"
+          className="absolute right-0 mt-1 bg-[var(--bg-primary)] rounded-lg shadow-lg border border-[var(--border-color)] z-20 p-1.5 min-w-[120px]"
           onClick={(e) => e.stopPropagation()}
           onMouseLeave={close}
         >
-          <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-0.5">
             <button
-              className="p-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors text-left w-full"
               title="Rename"
               aria-label="Rename"
               onClick={() => { onRename?.(item); close(); }}
             >
               <Edit3 className="h-3.5 w-3.5" />
+              <span>Rename</span>
             </button>
             <button
-              className="p-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              title="Delete"
-              aria-label="Delete"
-              onClick={() => { onArchive?.(item); close(); }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-            <button
-              className="p-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors text-left w-full"
               title="Share"
               aria-label="Share"
               onClick={() => { onShare?.(item); close(); }}
             >
               <Share2 className="h-3.5 w-3.5" />
+              <span>Share</span>
+            </button>
+            <div className="border-t border-[var(--border-color)] my-0.5"></div>
+            <button
+              className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-red-600 hover:bg-red-50 transition-colors text-left w-full"
+              title="Delete"
+              aria-label="Delete"
+              onClick={() => { onArchive?.(item); close(); }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete</span>
             </button>
           </div>
         </div>

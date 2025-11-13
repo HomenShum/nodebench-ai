@@ -13,7 +13,7 @@ import { CalendarHomeHub } from "./CalendarHomeHub";
 import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
 
 
-import { HelpCircle, Sun, Moon, MessageSquare, Settings as SettingsIcon, Link as LinkIcon, Send, Zap } from "lucide-react";
+import { HelpCircle, Sun, Moon, MessageSquare, Settings as SettingsIcon, Link as LinkIcon, Send, Zap, Menu, X as CloseIcon, Home } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
@@ -23,14 +23,17 @@ interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
   onDocumentSelect: (documentId: Id<"documents"> | null) => void;
   onShowWelcome?: () => void;
+  onShowWelcomeLanding?: () => void;
 }
 
-export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome }: MainLayoutProps) {
+export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome, onShowWelcomeLanding }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
   const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public'>('documents');
   const [smsMessage, setSmsMessage] = useState<{from: string, message: string} | null>(null);
   const [isGridMode, setIsGridMode] = useState(false);
+  // Mobile sidebar state
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   // File selection state for AI chat context
   const [selectedFileIds, setSelectedFileIds] = useState<Id<"files">[]>([]);
   // Multi-document selection for Fast Agent
@@ -420,10 +423,29 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   return (
     <div className="h-screen flex bg-[var(--bg-secondary)] transition-colors duration-200">
-      {/* Sidebar - Resizable Width */}
-      <div className="flex-shrink-0 h-full" style={{ width: `${sidebarWidth}px` }}>
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Resizable Width on Desktop, Overlay on Mobile */}
+      <div
+        className={`
+          flex-shrink-0 h-full bg-[var(--bg-primary)] z-50 transition-transform duration-300
+          lg:relative lg:translate-x-0
+          fixed inset-y-0 left-0
+          ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+        style={{ width: `${sidebarWidth}px` }}
+      >
         <Sidebar
-          onDocumentSelect={handleDocumentSelect}
+          onDocumentSelect={(id) => {
+            handleDocumentSelect(id);
+            setIsMobileSidebarOpen(false);
+          }}
           selectedDocumentId={selectedDocumentId}
           currentView={currentView === 'calendar' || currentView === 'timeline' || currentView === 'roadmap' ? 'documents' : currentView}
           onViewChange={(view) => setCurrentView(view)}
@@ -435,9 +457,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         />
       </div>
 
-      {/* Sidebar Resize Handle */}
+      {/* Sidebar Resize Handle - Desktop Only */}
       <div
-        className="w-2 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] cursor-col-resize transition-colors duration-200 flex-shrink-0"
+        className="hidden lg:block w-2 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] cursor-col-resize transition-colors duration-200 flex-shrink-0"
         onMouseDown={startSidebarResizing}
       />
 
@@ -449,24 +471,29 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             style={{ width: '100%' }}
         >
           {/* Top Bar */}
-          <div className="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-6 py-3 flex items-center transition-colors duration-200 relative">
-            <div className="flex items-center gap-4">
-              <h1 className="text-lg font-semibold text-[var(--text-primary)]">
+          <div className="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-3 sm:px-6 py-2 sm:py-3 flex items-center transition-colors duration-200 relative">
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Mobile Hamburger Menu */}
+              <button
+                type="button"
+                onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+                className="lg:hidden p-2 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                title={isMobileSidebarOpen ? "Close menu" : "Open menu"}
+              >
+                {isMobileSidebarOpen ? (
+                  <CloseIcon className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </button>
+
+              <h1 className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">
                 {currentView === 'public'
                   ? 'Public Documents'
                   : selectedDocumentId
                   ? 'My Documents'
                   : 'Home'}
               </h1>
-              {/* Mobile: Open AI Chat quickly */}
-              <button
-                onClick={() => setShowAIChat(true)}
-                className="lg:hidden flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-                title="Open AI Chat"
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span className="sm:hidden">Ask AI</span>
-              </button>
             </div>
 
             {/* Centered, full-width Quick AI Command Bar (compact) */}
@@ -533,16 +560,18 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               </div>
             </div>
 
-            <div className="flex items-center gap-3 ml-auto">
+            <div className="flex items-center gap-1.5 ml-auto">
               {/* Fast Agent Toggle */}
               <button
+                type="button"
                 onClick={() => setShowFastAgent(!showFastAgent)}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
                   showFastAgent
-                    ? 'bg-[var(--accent-primary)] text-white'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`}
                 title="Toggle Fast Agent Panel"
+                aria-label="Toggle Fast Agent Panel"
               >
                 <Zap className="h-4 w-4" />
                 <span className="hidden sm:inline">Fast Agent</span>
@@ -550,9 +579,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
               {/* Settings Button */}
               <button
+                type="button"
                 onClick={() => openSettings("usage")}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-all duration-200"
                 title="Open Settings"
+                aria-label="Open Settings"
               >
                 <SettingsIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">Settings</span>
@@ -560,9 +591,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
               {/* Theme Toggle Button */}
               <button
+                type="button"
                 onClick={toggleTheme}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-all duration-200"
                 title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {isDarkMode ? (
                   <Sun className="h-4 w-4" />
@@ -574,15 +607,30 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 </span>
               </button>
 
-              {/* Welcome/Help Button */}
+              {/* Welcome Landing Button */}
+              {onShowWelcomeLanding && (
+                <button
+                  type="button"
+                  onClick={onShowWelcomeLanding}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-all duration-200"
+                  title="Go to welcome landing page"
+                  aria-label="Go to welcome landing page"
+                >
+                  <Home className="h-4 w-4" />
+                  <span>Welcome</span>
+                </button>
+              )}
+
+              {/* Help/Tutorial Button */}
               {onShowWelcome && (
                 <button
+                  type="button"
                   onClick={onShowWelcome}
                   className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors"
-                  title="Show welcome guide"
+                  title="Show tutorial"
                 >
                   <HelpCircle className="h-4 w-4" />
-                  <span className="hidden sm:inline">Help</span>
+                  <span className="hidden sm:inline">Tutorial</span>
                 </button>
               )}
 

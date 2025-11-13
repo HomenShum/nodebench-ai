@@ -18,6 +18,7 @@ import { FileUpload } from './FastAgentPanel.FileUpload';
 import { ExportMenu } from './FastAgentPanel.ExportMenu';
 import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
 import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
+import { HumanRequestList } from './HumanRequestCard';
 import type { SpawnedAgent } from './types/agent';
 
 import type {
@@ -98,6 +99,12 @@ export function FastAgentPanel({
 
   // Track auto-created documents to avoid duplicates (by agentThreadId) and processed message IDs
   const autoDocCreatedThreadIdsRef = useRef<Set<string>>(new Set());
+
+  // Query for human-in-the-loop requests
+  const humanRequests = useQuery(
+    api.agents.humanInTheLoop.getPendingHumanRequests,
+    activeThreadId ? { threadId: activeThreadId } : 'skip'
+  );
   const processedDocMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Update active thread when initialThreadId changes (for external navigation)
@@ -474,6 +481,7 @@ export function FastAgentPanel({
           threadId: threadId as Id<"chatThreadsStream">,
           prompt: messageContent,
           model: selectedModel,
+          useCoordinator: true,  // Enable smart routing via coordinator
         });
 
         console.log('[FastAgentPanel] Streaming initiated');
@@ -619,6 +627,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         threadId: activeThreadId as Id<"chatThreadsStream">,
         prompt: confirmationMessage,
         model: selectedModel,
+        useCoordinator: true,
       });
       toast.success('Company selection confirmed');
       console.log('[FastAgentPanel] Company selection sent');
@@ -646,6 +655,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         threadId: activeThreadId as Id<"chatThreadsStream">,
         prompt: confirmationMessage,
         model: selectedModel,
+        useCoordinator: true,
       });
       toast.success('Person selection confirmed');
       console.log('[FastAgentPanel] Person selection sent');
@@ -673,6 +683,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         threadId: activeThreadId as Id<"chatThreadsStream">,
         prompt: confirmationMessage,
         model: selectedModel,
+        useCoordinator: true,
       });
       toast.success('Event selection confirmed');
       console.log('[FastAgentPanel] Event selection sent');
@@ -700,6 +711,7 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         threadId: activeThreadId as Id<"chatThreadsStream">,
         prompt: confirmationMessage,
         model: selectedModel,
+        useCoordinator: true,
       });
       toast.success('News article selection confirmed');
       console.log('[FastAgentPanel] News selection sent');
@@ -1077,6 +1089,19 @@ Please respond with ONLY the corrected Mermaid diagram in a \`\`\`mermaid code b
         <div className="chat-area">
           {/* Agent hierarchy / spawned agents */}
           <AgentHierarchy agents={liveAgents} isStreaming={isStreaming} />
+
+          {/* Human-in-the-Loop Requests */}
+          {humanRequests && humanRequests.length > 0 && (
+            <div className="px-4 py-3 border-b border-gray-200 bg-amber-50/50">
+              <HumanRequestList
+                requests={humanRequests}
+                onRespond={() => {
+                  // Requests will auto-refresh via query
+                  console.log('[FastAgentPanel] Human request responded');
+                }}
+              />
+            </div>
+          )}
 
           {/* Messages - Use UIMessageStream for streaming mode, MessageStream for agent mode */}
           {chatMode === 'agent-streaming' ? (
