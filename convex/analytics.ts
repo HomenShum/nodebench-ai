@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -317,3 +317,164 @@ export const getRoadmapAnalytics = query({
   },
 });
 
+/**
+ * Track a visitor (anonymous or authenticated)
+ */
+export const trackVisitor = mutation({
+  args: {
+    userId: v.optional(v.id("users")),
+    sessionId: v.string(),
+    page: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    // Check if this session was already tracked in the last 30 minutes
+    const recentVisit = await ctx.db
+      .query("visitors")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .order("desc")
+      .first();
+
+    if (recentVisit && now - recentVisit._creationTime < 30 * 60 * 1000) {
+      // Update last seen
+      await ctx.db.patch(recentVisit._id, {
+        lastSeen: now,
+        page: args.page,
+      });
+      return recentVisit._id;
+    }
+
+    // Create new visitor record
+    return await ctx.db.insert("visitors", {
+      userId: args.userId,
+      sessionId: args.sessionId,
+      page: args.page,
+      lastSeen: now,
+    });
+  },
+});
+
+/**
+ * Get real-time visitor stats
+ */
+export const getVisitorStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const last24Hours = now - 24 * 60 * 60 * 1000;
+    const last30Minutes = now - 30 * 60 * 1000;
+
+    // Get all visitors in last 24 hours
+    const allVisitors = await ctx.db
+      .query("visitors")
+      .filter((q) => q.gte(q.field("_creationTime"), last24Hours))
+      .collect();
+
+    // Active now (last 30 minutes)
+    const activeNow = allVisitors.filter((v) => v.lastSeen >= last30Minutes);
+
+    // Unique sessions in last 24 hours
+    const uniqueSessions = new Set(allVisitors.map((v) => v.sessionId)).size;
+
+    // Unique users (authenticated) in last 24 hours
+    const uniqueUsers = new Set(
+      allVisitors
+        .filter((v) => v.userId)
+        .map((v) => v.userId)
+    ).size;
+
+    // Total unique visitors based on users table (all accounts)
+    const allUsers = await ctx.db.query("users").collect();
+    const totalUniqueVisitors = allUsers.length;
+
+    return {
+      activeNow: activeNow.length,
+      last24Hours: uniqueSessions,
+      uniqueUsers24h: uniqueUsers,
+      totalVisits: allVisitors.length,
+      totalUniqueVisitors,
+    };
+  },
+});
+
+/**
+ * Track email sent
+ */
+export const trackEmailSent = mutation({
+  args: {
+    email: v.string(),
+    userId: v.optional(v.id("users")),
+    subject: v.string(),
+    success: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("emailsSent", {
+      email: args.email,
+      userId: args.userId,
+      subject: args.subject,
+      success: args.success,
+      sentAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Get email stats
+ */
+export const getEmailStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const last24Hours = Date.now() - 24 * 60 * 60 * 1000;
+
+    const recentEmails = await ctx.db
+      .query("emailsSent")
+      .filter((q) => q.gte(q.field("sentAt"), last24Hours))
+      .collect();
+
+    return {
+      total24h: recentEmails.length,
+      successful24h: recentEmails.filter(e => e.success).length,
+      failed24h: recentEmails.filter(e => !e.success).length,
+    };
+  },
+});
+
+/**
+ * Get dossier generation stats (for landing page metrics)
+ */
+export const getDossierStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const last24Hours = now - 24 * 60 * 60 * 1000;
+
+    // Get all dossiers created in last 24 hours
+    const recentDossiers = await ctx.db
+      .query("documents")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("documentType"), "dossier"),
+          q.eq(q.field("dossierType"), "primary"),
+          q.gte(q.field("_creationTime"), last24Hours)
+        )
+      )
+      .collect();
+
+    // Get total dossiers ever created
+    const allDossiers = await ctx.db
+      .query("documents")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("documentType"), "dossier"),
+          q.eq(q.field("dossierType"), "primary")
+        )
+      )
+      .collect();
+
+    return {
+      generatedToday: recentDossiers.length,
+      totalGenerated: allDossiers.length,
+    };
+  },
+});

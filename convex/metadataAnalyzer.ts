@@ -26,8 +26,9 @@ export const buildDossierMetadata = action({
   args: { dossierId: v.id("documents"), testBypassUserId: v.optional(v.union(v.id("users"), v.string())) },
   returns: v.object({
     success: v.boolean(),
-    quickNotesId: v.id("documents"),
-    addedLines: v.number(),
+    quickNotesId: v.optional(v.id("documents")),
+    addedLines: v.optional(v.number()),
+    error: v.optional(v.string()),
     judge: v.object({
       passSpeed: v.boolean(),
       passCompleteness: v.boolean(),
@@ -47,6 +48,11 @@ export const buildDossierMetadata = action({
 
     // 1) Get or create Quick Notes doc
     const quickNotes: any = await ctx.runMutation(api.documents.getOrCreateQuickNotes, { dossierId, userId });
+
+    // If quick notes not available (e.g., public dossier without edit permissions), skip metadata generation
+    if (!quickNotes) {
+      return { success: false, error: "Quick notes not available for this dossier", judge: { passSpeed: true, passCompleteness: false, passUsefulness: false, overallPass: false } };
+    }
 
     // 2) Collect quick-notes user text (keep small)
     const qnNodes = await ctx.runQuery(api.nodes.by_document, { docId: quickNotes._id });
@@ -190,6 +196,7 @@ export const analyzeSelectedFilesIntoDossier = action({
     success: v.boolean(),
     analyzed: v.number(),
     failed: v.number(),
+    error: v.optional(v.string()),
     judge: v.object({
       passSpeed: v.boolean(),
       passCompleteness: v.boolean(),
@@ -205,6 +212,11 @@ export const analyzeSelectedFilesIntoDossier = action({
     if (!dossier || dossier.documentType !== "dossier") throw new Error("Invalid dossierId");
 
     const quickNotes: any = await ctx.runMutation(api.documents.getOrCreateQuickNotes, { dossierId, userId });
+
+    // If quick notes not available (e.g., public dossier without edit permissions), skip analysis
+    if (!quickNotes) {
+      return { success: false, analyzed: 0, failed: 0, error: "Quick notes not available for this dossier", judge: { passSpeed: true, passCompleteness: false, passUsefulness: false, overallPass: false } };
+    }
 
     // Map docs → fileIds
     const docs: any[] = await Promise.all(documentIds.map((id) => ctx.runQuery(api.documents.getById, { documentId: id, userId })));

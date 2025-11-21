@@ -200,7 +200,38 @@ export const generateAndCreateDocument = action({
 
       // 4. Generate document content using DocumentGenerationAgent
       console.log(`[generateAndCreateDocument:${executionId}] Generating content...`);
-      const { createDocumentGenerationAgent } = await import("./agents/specializedAgents");
+      // 4. Generate document content using DocumentGenerationAgent
+      console.log(`[generateAndCreateDocument:${executionId}] Generating content...`);
+
+      // Define agent locally since specializedAgents is deprecated
+      const { Agent } = await import("@convex-dev/agent");
+      const { openai } = await import("@ai-sdk/openai");
+
+      const createDocumentGenerationAgent = (ctx: any, userId: any) => new Agent(components.agent, {
+        name: "DocumentGenerationAgent",
+        languageModel: openai.chat("gpt-4o"),
+        instructions: `You are an expert document writer and editor.
+Your goal is to write high-quality, well-structured documents based on user prompts.
+
+GUIDELINES:
+1. Use clear, professional language
+2. Structure content with proper Markdown headings (#, ##, ###)
+3. Use lists, tables, and formatting to improve readability
+4. Ensure the content is comprehensive and addresses the user's prompt
+5. If the user provides a title, use it. If not, generate a relevant title.
+
+OUTPUT FORMAT:
+You must include a metadata block at the start of your response:
+<!-- DOCUMENT_METADATA
+{
+  "title": "Document Title",
+  "summary": "Brief summary of content"
+}
+-->
+
+Followed by the document content in Markdown.`,
+      });
+
       const agent = createDocumentGenerationAgent(ctx, threadUserId);
 
       const result = await agent.streamText(

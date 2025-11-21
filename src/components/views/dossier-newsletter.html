@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Daily Funding Dossier: Dual Edition</title>
+    <style>
+        /* GLOBAL & FONT IMPORTS */
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto:wght@400;700&display=swap');
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: #e8e2d8; /* Neutral background for both themes */
+            padding: 20px;
+            font-family: 'Lora', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* --- MODE SWITCHER (OPTION B vs C) --- */
+        .mode-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 6px 10px;
+            background: #fdfaf4;
+            border-radius: 6px;
+            border: 1px solid #d4c8b8;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            font-family: 'Roboto', sans-serif;
+        }
+        .mode-tab {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            color: #4b5563;
+            background: transparent;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .mode-tab.active {
+            background-color: #111827;
+            color: #f9fafb;
+            border-color: #111827;
+        }
+
+        /* --- STYLE SWITCHER (THEME: WSJ vs DAILY PROPHET) --- */
+        .style-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #ffffff;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 1px solid #ccc;
+        }
+        .switcher-tab {
+            padding: 8px 16px;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 999px;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .switcher-tab.active {
+            background-color: #111827;
+            color: #f9fafb;
+        }
+
+        /* --- CONTAINER STYLES --- */
+        .dossier-container { display: none; }
+        .dossier-container.active { display: block; }
+
+        /* ===================================================================== */
+        /* ===               WALL STREET JOURNAL STYLES                      === */
+        /* ===================================================================== */
+        #wall-street-view {
+            width: 100%;
+            max-width: 1400px;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            font-family: 'Lora', serif;
+        }
+        .wsj-header {
+            border-bottom: 4px solid #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .wsj-header h1 {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 900;
+            font-size: 3.5em;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        .wsj-header .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #555;
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+        }
+        .wsj-body {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 40px;
+        }
+        .wsj-main-content {
+            column-count: 3;
+            column-gap: 30px;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        .wsj-main-content h2, .wsj-main-content h3 {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 700;
+            column-span: all;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .deal-card {
+            break-inside: avoid;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            max-width: 100%;
+            overflow-wrap: break-word;
+        }
+        .deal-card h4 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.2em;
+            margin: 0 0 10px 0;
+        }
+        .deal-card .tombstone {
+            font-size: 0.9em;
+            list-style: none;
+            padding: 0;
+            margin: 5px 0;
+            color: #444;
+        }
+        .deal-card .tombstone li { margin-bottom: 3px; }
+        .deal-card .tombstone strong { font-family: 'Roboto', sans-serif; color: #000; }
+        .deal-card p { font-size: 0.95em; text-align: justify; }
+
+        .wsj-sidebar h3 { font-family: 'Roboto', sans-serif; }
+        .wsj-sidebar ul { padding-left: 20px; }
+        .wsj-sidebar li { margin-bottom: 10px; }
+
+        .wsj-sources {
+            grid-column: 1 / -1;
+            margin-top: 30px;
+            border-top: 2px solid #333;
+            padding-top: 15px;
+        }
+        .wsj-sources ul { list-style-type: decimal; }
+        .wsj-sources a { text-decoration: none; color: #1d4ed8; }
+
+        .wsj-research-log {
+            grid-column: 1 / -1;
+            margin-top: 12px;
+            font-size: 0.85em;
+            color: #4b5563;
+        }
+        .wsj-research-log h4 {
+            font-family: 'Roboto', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 0.9em;
+            margin: 0 0 6px 0;
+        }
+        .wsj-research-log ul {
+            padding-left: 18px;
+            margin: 4px 0;
+        }
+
+        /* ===================================================================== */
+        /* ===                  DAILY PROPHET STYLES                         === */
+        /* ===================================================================== */
+        #daily-prophet-view {
+            width: 100%;
+            max-width: 1200px;
+            background-color: #f7f2e8;
+            border: 10px ridge #4a4a4a;
+            padding: 50px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+            font-family: 'Lora', serif;
+        }
+        .dp-header {
+            border-bottom: 5px double #333;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            text-align: center;
+        }
+        .dp-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4em;
+            font-weight: 900;
+            margin: 0;
+            text-shadow: 1px 1px 1px #a8a8a8;
+        }
+        .dp-header .meta { font-style: italic; color: #555; }
+
+        .dp-body {
+            display: grid;
+            grid-template-columns: 4fr 1fr;
+            gap: 50px;
+        }
+        .dp-main-content {
+            column-count: 2;
+            column-gap: 35px;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        .dp-main-content h2, .dp-main-content h3 {
+            font-family: 'Playfair Display', serif;
+            column-span: all;
+            border-bottom: 2px solid #a8a8a8;
+            padding-bottom: 5px;
+        }
+        .dispatch-card {
+            break-inside: avoid;
+            margin-bottom: 25px;
+            max-width: 100%;
+            overflow-wrap: break-word;
+        }
+        .dispatch-card h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5em;
+            margin: 0 0 10px 0;
+        }
+        .moving-photo-card {
+            background-color: #e0d8c9;
+            border: 3px double #444;
+            padding: 10px;
+            margin: 15px 0;
+            box-shadow: 0 0 0 rgba(0,0,0,0);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            cursor: pointer;
+        }
+        .moving-photo-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(100, 70, 0, 0.6);
+        }
+        .media-placeholder {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background-color: #8b4513;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-align: center;
+            text-shadow: 2px 2px 3px #000;
+        }
+        .media-caption { font-size: 0.9em; font-style: italic; margin-top: 10px; text-align: center; color: #444; }
+
+        .dp-sidebar h3 { font-family: 'Playfair Display', serif; }
+        .dp-sidebar ul { list-style-type: '→ '; padding-left: 20px; }
+
+        .dp-sources {
+            grid-column: 1 / -1;
+            margin-top: 30px;
+            border-top: 5px double #333;
+            padding-top: 20px;
+        }
+        .source-scroll {
+            border: 1px solid #d4c8b8;
+            background-color: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .source-scroll a { text-decoration: none; color: #8b4513; }
+
+        /* ===================================================================== */
+        /* ===                SOURCE SUMMARY PILL STYLES                     === */
+        /* ===================================================================== */
+        .source-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 10px 0 4px;
+            max-width: 100%;
+        }
+        .source-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #d4c8b8;
+            background: #fdf5e6;
+            font-size: 0.78em;
+            font-family: 'Roboto', sans-serif;
+            color: #4b5563;
+            text-decoration: none;
+            white-space: nowrap;
+            max-width: 100%;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        .source-pill:hover {
+            background: #f3e6cf;
+        }
+        button.source-pill {
+            /* Reset button styles to match anchor pills */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        .source-pill-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .source-pill-host {
+            font-size: 0.72em;
+            color: #9ca3af;
+        }
+        .source-pill--video::before,
+        .source-pill--article::before,
+        .source-pill--pdf::before,
+        .source-pill--image::before,
+        .source-pill--website::before {
+            display: inline-block;
+            margin-right: 3px;
+        }
+        .source-pill--video::before { content: '\25b6'; }
+        .source-pill--article::before { content: '\270E'; }
+        .source-pill--pdf::before { content: '\1F4C4'; }
+        .source-pill--image::before { content: '\1F5BC'; }
+        .source-pill--website::before { content: '\1F310'; }
+        .source-pill--more {
+            background: #111827;
+            color: #f9fafb;
+            border-color: #111827;
+            font-weight: 600;
+        }
+        .mode-print .source-pill {
+            background: transparent;
+            border-style: dotted;
+        }
+        .mode-print .source-pill--more {
+            display: none;
+        }
+
+        /* ===================================================================== */
+        /* ===                SOURCES POPOVER (HOVER COMPONENT)              === */
+        /* ===================================================================== */
+        .source-pill-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .sources-popover {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fdf5e6;
+            border: 3px solid #8b4513;
+            border-radius: 6px;
+            padding: 16px;
+            min-width: 320px;
+            max-width: 400px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            font-family: 'Lora', serif;
+            pointer-events: none;
+        }
+        .source-pill-wrapper:hover .sources-popover {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .sources-popover::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: #8b4513;
+        }
+        .sources-popover-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #2c1810;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #d4c8b8;
+        }
+        .sources-popover-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        .sources-popover-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #ffffff;
+            border: 1px solid #d4c8b8;
+            border-radius: 4px;
+            font-size: 0.85em;
+            transition: background 0.15s ease;
+        }
+        .sources-popover-item:hover {
+            background: #f9f6f0;
+        }
+        .sources-popover-item:last-child {
+            margin-bottom: 0;
+        }
+        .sources-popover-type {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            font-weight: 700;
+            font-family: 'Roboto', sans-serif;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .sources-popover-type.video {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .sources-popover-type.article {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .sources-popover-type.pdf {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        .sources-popover-type.image {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .sources-popover-type.website {
+            background: #e9d5ff;
+            color: #6b21a8;
+        }
+        .sources-popover-item-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 2px;
+            line-height: 1.3;
+        }
+        .sources-popover-item-host {
+            font-size: 0.85em;
+            color: #6b7280;
+            font-style: italic;
+        }
+        .sources-popover-link {
+            color: #8b4513;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s ease;
+        }
+        .sources-popover-link:hover {
+            color: #6b3410;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="mode-interactive">
+
+    <div class="mode-switcher">
+        <div class="mode-tab active" data-mode="interactive" onclick="switchMode('interactive')">Interactive research workstation</div>
+        <div class="mode-tab" data-mode="print" onclick="switchMode('print')">Print-only email layout</div>
+    </div>
+
+    <div class="style-switcher">
+        <div class="switcher-tab active" onclick="switchView('wall-street-view')">Wall Street Edition</div>
+        <div class="switcher-tab" onclick="switchView('daily-prophet-view')">Daily Prophet Edition</div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!--                  WALL STREET JOURNAL VIEW                             -->
+    <!-- ===================================================================== -->
+    <div id="wall-street-view" class="dossier-container active">
+        <header class="wsj-header">
+            <h1>The Funding Ledger</h1>
+            <div class="meta">
+                <span>Venture Capital & Technology Watch</span>
+                <span>November 16, 2025</span>
+            </div>
+        </header>
+
+        <div class="wsj-body">
+            <main class="wsj-main-content">
+                <h2>Healthcare & Life Sciences: Early-Stage Deals</h2>
+                <p><strong>Note:</strong> No new seed or Series A rounds in healthcare or life sciences were date-stamped November 16. The following represents the most recent deals reported in the last 3-4 days.</p>
+
+                <div class="deal-card">
+                    <h4>OutcomesAI (US) - Digital Health</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $10M</li>
+                        <li><strong>Stage:</strong> Seed</li>
+                        <li><strong>Lead Investor:</strong> Santé Ventures</li>
+                        <li><strong>Reported:</strong> Nov 12</li>
+                    </ul>
+                    <p>Develops AI engine *Glia* to augment licensed nurses with voice agents for triage and patient follow-ups, aiming to address the global nursing shortage.</p>
+
+                    <!-- Key sources summary -->
+                    <div class="source-pills" aria-label="Key sources for OutcomesAI">
+                        <a class="source-pill source-pill--article" href="https://dharab.com/us-based-company-raises-funding-for-its-ai-enabled-nursing-care-solution/" target="_blank" rel="noopener noreferrer">
+                            <span class="source-pill-label">Funding note · DH Arab</span>
+                            <span class="source-pill-host">dharab.com</span>
+                        </a>
+                        <a class="source-pill source-pill--video" href="https://www.youtube.com/watch?v=demo" target="_blank" rel="noopener noreferrer">
+                            <span class="source-pill-label">Glia triage demo (video)</span>
+                            <span class="source-pill-host">Product demo</span>
+                        </a>
+                        <a class="source-pill source-pill--pdf" href="#" onclick="event.preventDefault();">
+                            <span class="source-pill-label">Seed pitch deck (mock)</span>
+                            <span class="source-pill-host">Internal</span>
+                        </a>
+                        <span class="source-pill-wrapper">
+                            <span class="source-pill source-pill--more">+2 more</span>
+                            <div class="sources-popover">
+                                <h4 class="sources-popover-title">OutcomesAI - All Sources</h4>
+                                <ul class="sources-popover-list">
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Article</span>
+                                        <div class="sources-popover-item-title">Funding note · DH Arab</div>
+                                        <div class="sources-popover-item-host">dharab.com</div>
+                                        <a href="https://dharab.com/us-based-company-raises-funding-for-its-ai-enabled-nursing-care-solution/" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type video">Video</span>
+                                        <div class="sources-popover-item-title">Glia triage demo</div>
+                                        <div class="sources-popover-item-host">Product demo</div>
+                                        <a href="https://www.youtube.com/watch?v=demo" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type pdf">PDF</span>
+                                        <div class="sources-popover-item-title">Seed pitch deck (mock)</div>
+                                        <div class="sources-popover-item-host">Internal</div>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Article</span>
+                                        <div class="sources-popover-item-title">AI Daily coverage</div>
+                                        <div class="sources-popover-item-host">aidaily.co.uk</div>
+                                        <a href="https://aidaily.co.uk/articles/outcomesai-raises-10m" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type website">Website</span>
+                                        <div class="sources-popover-item-title">Company website</div>
+                                        <div class="sources-popover-item-host">outcomesai.com</div>
+                                        <a href="https://outcomesai.com" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="deal-card">
+                    <h4>Praan Health (India) - HealthTech</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> ₹8.5 Cr (~$1M)</li>
+                        <li><strong>Stage:</strong> Seed</li>
+                        <li><strong>Lead Investor:</strong> Rainmatter Investments</li>
+                        <li><strong>Reported:</strong> Nov 12</li>
+                    </ul>
+                    <p>A chronic-care platform enabling adult children to coordinate care for parents over 50 through a combination of clinics, coaching, and technology.</p>
+                </div>
+
+                <div class="deal-card">
+                    <h4>MediView XR (US) - MedTech</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $24M</li>
+                        <li><strong>Stage:</strong> Series A</li>
+                        <li><strong>Lead Investor:</strong> GE HealthCare</li>
+                        <li><strong>Reported:</strong> Syndicated Nov 14-15</li>
+                    </ul>
+                    <p>Provides an FDA-cleared augmented reality surgical navigation system that overlays 3D anatomy onto a patient in real-time for minimally invasive procedures.</p>
+                </div>
+
+                <div class="deal-card">
+                    <h4>RAGE Biotech (Australia) - Biotech</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $29M</li>
+                        <li><strong>Stage:</strong> Series A</li>
+                        <li><strong>Lead Investor:</strong> N/A</li>
+                        <li><strong>Reported:</strong> Nov 13</li>
+                    </ul>
+                    <p>Focuses on developing precision RNA therapies. Capital will be used to advance its lead candidate and expand its proprietary RNA platform.</p>
+                </div>
+
+                <h2>Technology Sector: Deals Reported Nov. 16</h2>
+                <p>The following deals in broader technology sectors were reported within the last 24 hours.</p>
+
+                <div class="deal-card">
+                    <h4>Wonderful (Israel) - AI Agents</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $100M</li>
+                        <li><strong>Stage:</strong> Series A</li>
+                        <li><strong>Valuation:</strong> $700M Post-Money</li>
+                        <li><strong>Reported:</strong> Nov 16</li>
+                    </ul>
+                    <p>Building an autonomous AI agent platform for enterprise workflows, reflecting strong investor appetite for core AI agent infrastructure.</p>
+
+                    <!-- Key sources summary -->
+                    <div class="source-pills" aria-label="Key sources for Wonderful">
+                        <a class="source-pill source-pill--article" href="https://ai-daily.news/articles/wonderful-raises-100-million-series-a-at-700-million-valuati" target="_blank" rel="noopener noreferrer">
+                            <span class="source-pill-label">Coverage · AI Daily</span>
+                            <span class="source-pill-host">ai-daily.news</span>
+                        </a>
+                        <a class="source-pill source-pill--video" href="https://www.youtube.com/watch?v=wonderful" target="_blank" rel="noopener noreferrer">
+                            <span class="source-pill-label">Platform + founder interviews</span>
+                            <span class="source-pill-host">YouTube</span>
+                        </a>
+                        <a class="source-pill source-pill--pdf" href="#" onclick="event.preventDefault();">
+                            <span class="source-pill-label">Term sheet &amp; market analysis</span>
+                            <span class="source-pill-host">Analyst notes</span>
+                        </a>
+                        <span class="source-pill-wrapper">
+                            <span class="source-pill source-pill--more">+3 more</span>
+                            <div class="sources-popover">
+                                <h4 class="sources-popover-title">Wonderful - All Sources</h4>
+                                <ul class="sources-popover-list">
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Article</span>
+                                        <div class="sources-popover-item-title">TechCrunch feature</div>
+                                        <div class="sources-popover-item-host">techcrunch.com</div>
+                                        <a href="https://techcrunch.com/wonderful-seed-round" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type video">Video</span>
+                                        <div class="sources-popover-item-title">Product demo</div>
+                                        <div class="sources-popover-item-host">YouTube</div>
+                                        <a href="https://www.youtube.com/watch?v=wonderful" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type pdf">PDF</span>
+                                        <div class="sources-popover-item-title">Investor deck</div>
+                                        <div class="sources-popover-item-host">Internal</div>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Article</span>
+                                        <div class="sources-popover-item-title">VentureBeat coverage</div>
+                                        <div class="sources-popover-item-host">venturebeat.com</div>
+                                        <a href="https://venturebeat.com/wonderful" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type image">Image</span>
+                                        <div class="sources-popover-item-title">Product screenshots</div>
+                                        <div class="sources-popover-item-host">Internal</div>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Article</span>
+                                        <div class="sources-popover-item-title">AI Daily coverage</div>
+                                        <div class="sources-popover-item-host">ai-daily.news</div>
+                                        <a href="https://ai-daily.news/articles/wonderful-raises-100-million-series-a-at-700-million-valuati" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="deal-card">
+                    <h4>Fintary (Europe) - Insurtech SaaS</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $10M</li>
+                        <li><strong>Stage:</strong> Series A</li>
+                        <li><strong>Lead Investor:</strong> N/A</li>
+                        <li><strong>Reported:</strong> Nov 16</li>
+                    </ul>
+                    <p>A B2B SaaS platform that automates insurance commission management for brokers and agencies, aiming for market expansion.</p>
+                </div>
+
+                <div class="deal-card">
+                    <h4>Uare.ai (US) - Personalized AI</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $10.3M</li>
+                        <li><strong>Stage:</strong> Seed</li>
+                        <li><strong>Lead Investor:</strong> N/A</li>
+                        <li><strong>Reported:</strong> Nov 16</li>
+                    </ul>
+                    <p>Defining a new category of "Individual AI" where users are provided with persistent, personalized AI agents that act as a personal data layer.</p>
+                </div>
+
+                <div class="deal-card">
+                    <h4>Nyayanidhi (India) - LegalTech</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $2M</li>
+                        <li><strong>Stage:</strong> Seed</li>
+                        <li><strong>Lead Investor:</strong> 3one4 Capital</li>
+                        <li><strong>Reported:</strong> Nov 15-16</li>
+                    </ul>
+                    <p>A platform designed to streamline litigation and case-management workflows specifically for the complexities of the Indian legal system.</p>
+                </div>
+
+                <div class="deal-card">
+                    <h4>ExtraMile Play (India) - HR Tech</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $500K</li>
+                        <li><strong>Stage:</strong> Seed</li>
+                        <li><strong>Lead Investor:</strong> GSF</li>
+                        <li><strong>Reported:</strong> Nov 16</li>
+                    </ul>
+                    <p>Utilizes gamification to enhance employee engagement, aiming to boost workforce motivation and retention for corporate clients.</p>
+                </div>
+
+                <div class="deal-card">
+                    <h4>Nia.one (India) - Gig Economy Benefits</h4>
+                    <ul class="tombstone">
+                        <li><strong>Amount:</strong> $2.4M</li>
+                        <li><strong>Stage:</strong> Seed</li>
+                        <li><strong>Lead Investor:</strong> Mix of Investors</li>
+                        <li><strong>Reported:</strong> Nov 16</li>
+                    </ul>
+                    <p>A platform providing financial protection, benefits, and support services to improve the lives of India's growing gig and migrant workforce.</p>
+                </div>
+            </main>
+            <aside class="wsj-sidebar">
+                <h3>Market Analysis</h3>
+                <ul>
+                    <li><strong>Healthcare News Lag:</strong> Early-stage health and biotech financings are consistently reported with a 2-3 day lag compared to general tech news.</li>
+                    <li><strong>AI Infrastructure Dominance:</strong> The largest rounds reported today are flowing into core AI infrastructure and agent layers (e.g., Wonderful's $100M Series A), indicating a focus on foundational technologies.</li>
+                    <li><strong>Workflow Augmentation Theme:</strong> A clear pattern across all sectors is the funding of tools that augment or automate human workflows (nursing, legal, insurance, HR) rather than attempting outright replacement.</li>
+                </ul>
+            </aside>
+            <section class="wsj-sources">
+                <h3>Sources & Citations</h3>
+                <ul>
+                    <li><a href="https://dharab.com/us-based-company-raises-funding-for-its-ai-enabled-nursing-care-solution/" target="_blank" rel="noopener noreferrer">DH Arab, on OutcomesAI</a></li>
+                    <li><a href="https://www.tice.news/tice-trending/top-startup-news-today-from-physicswallahs-ipo-run-to-swiggys-new-urban-lifestyle-play-12th-november-10649000" target="_blank" rel="noopener noreferrer">TICE News, on Praan Health</a></li>
+                    <li><a href="https://mediview.com/mediview-closes-24-million-series-a-to-redefine-surgical-navigation-and-medical-imaging-with-augmented-reality-2/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">MediView Press Release, on MediView XR</a></li>
+                    <li><a href="https://pharmadispatch.com/news/rage-biotech-raises-29-million-and-appoints-new-leadership-to-advance-precision-rna-therapeutics" target="_blank" rel="noopener noreferrer">PharmaDispatch, on RAGE Biotech</a></li>
+                    <li><a href="https://ai-daily.news/articles/wonderful-raises-100-million-series-a-at-700-million-valuati" target="_blank" rel="noopener noreferrer">AI Daily, on Wonderful</a></li>
+                    <li><a href="https://freep.com/press-release/story/132859/fintary-secures-10m-in-series-a-funding-to-automate-insurance-commission-management/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">Detroit Free Press, on Fintary</a></li>
+                    <li><a href="https://thefuturismtoday.com/artificial-intelligence/uare-ai-raises-10-3m-individual-ai/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">Futurism Today, on Uare.ai</a></li>
+                    <li><a href="https://startupnews.fyi/2025/11/15/legal-tech-startup-nyayanidhi-raises-2-million-in-round-led-by-3one4-capital/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">StartupNews.fyi, on Nyayanidhi</a></li>
+                    <li><a href="https://bharatfast.com/english/entrepreneur/extramile-play-raises-500k-seed-funding-to-strengthen-gamified-employee-engagement/30005/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">Bharat Fast, on ExtraMile Play</a></li>
+                    <li><a href="https://bharatfast.com/english/start-up/nia-one-raises-2-4-million-to-strengthen-support-system-for-indias-gig-workforce/29998/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">Bharat Fast, on Nia.one</a></li>
+                </ul>
+            </section>
+            <section class="wsj-research-log">
+                <h4>How this dossier was compiled</h4>
+                <ul>
+                    <li>Focused on clearly dated seed &amp; Series A rounds in healthcare, life sciences, and broader tech from roughly the last 3–4 days.</li>
+                    <li>Highlighted truly date-stamped Nov 16 technology deals (Wonderful, Fintary, Uare.ai) separately from slightly older health &amp; life-sciences rounds.</li>
+                    <li>Cross-referenced multiple outlets (news aggregators, company releases, sector roundups) and noted that healthcare news typically lags actual funding dates.</li>
+                    <li>Grouped companies by themes—AI infrastructure, workflow augmentation, and worker benefits—rather than simply listing deals alphabetically.</li>
+                </ul>
+            </section>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!--                   DAILY PROPHET VIEW                                  -->
+    <!-- ===================================================================== -->
+    <div id="daily-prophet-view" class="dossier-container">
+        <header class="dp-header">
+            <h1>The Daily Dossier</h1>
+            <div class="meta">Tidings of Treasure, Tomes of Tech & Tonics of Therapeutics — November 16, 2025</div>
+        </header>
+
+        <div class="dp-body">
+            <main class="dp-main-content">
+                <h2>Treasures Unearthed in Health & Healing</h2>
+                <p><i>Hark! While the owls delivered no new scrolls of Seed or Series A gold for healers on this very day, whispers from recent sunsets reveal a flurry of activity in the alchemical arts of health and life sciences.</i></p>
+
+                <div class="dispatch-card">
+                    <h4>OutcomesAI's Enchanted Nurses ($10M Seed)</h4>
+                    <div class="moving-photo-card">
+                        <div class="media-placeholder">IMAGE: An Enchanted Stethoscope Whispering Counsel</div>
+                        <p class="media-caption">The AI spirit *Glia*, which lends its voice to aid overworked nurses.</p>
+                    </div>
+                    <p>From the Americas, a powerful enchantment known as *Glia* has been backed by the gold of Santé Ventures. This AI spirit lends its voice to licensed nurses, aiding in the sorting of ailments and the education of patients, multiplying their reach as if by magic.</p>
+
+                    <!-- Key sources summary -->
+                    <div class="source-pills" aria-label="Enchanted sources for OutcomesAI">
+                        <a class="source-pill source-pill--article" href="https://dharab.com/us-based-company-raises-funding-for-its-ai-enabled-nursing-care-solution/" target="_blank" rel="noopener noreferrer">
+                            <span class="source-pill-label">DH Arab scroll on OutcomesAI</span>
+                            <span class="source-pill-host">dharab.com</span>
+                        </a>
+                        <a class="source-pill source-pill--video" href="https://www.youtube.com/watch?v=demo" target="_blank" rel="noopener noreferrer">
+                            <span class="source-pill-label">Glia demonstration (moving portrait)</span>
+                            <span class="source-pill-host">Pensieve memory</span>
+                        </a>
+                        <a class="source-pill source-pill--pdf" href="#" onclick="event.preventDefault();">
+                            <span class="source-pill-label">Founder's grimoire (scroll)</span>
+                            <span class="source-pill-host">Parchment</span>
+                        </a>
+                        <span class="source-pill-wrapper">
+                            <span class="source-pill source-pill--more">+1 more</span>
+                            <div class="sources-popover">
+                                <h4 class="sources-popover-title">OutcomesAI - Mystical Sources</h4>
+                                <ul class="sources-popover-list">
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Scroll</span>
+                                        <div class="sources-popover-item-title">DH Arab scroll on OutcomesAI</div>
+                                        <div class="sources-popover-item-host">dharab.com</div>
+                                        <a href="https://dharab.com/us-based-company-raises-funding-for-its-ai-enabled-nursing-care-solution/" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type video">Portrait</span>
+                                        <div class="sources-popover-item-title">Glia demonstration (moving portrait)</div>
+                                        <div class="sources-popover-item-host">Pensieve memory</div>
+                                        <a href="https://www.youtube.com/watch?v=demo" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type pdf">Grimoire</span>
+                                        <div class="sources-popover-item-title">Founder's grimoire (scroll)</div>
+                                        <div class="sources-popover-item-host">Parchment</div>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type website">Portal</span>
+                                        <div class="sources-popover-item-title">Company portal</div>
+                                        <div class="sources-popover-item-host">outcomesai.com</div>
+                                        <a href="https://outcomesai.com" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="dispatch-card">
+                    <h4>The Gilded Vision of MediView XR ($24M Series A)</h4>
+                    <div class="moving-photo-card">
+                        <div class="media-placeholder">DOCUMENT: Ministry of Magic Approval for 'X-Ray Vision' Spectacles</div>
+                        <p class="media-caption">A decree from the Ministry (FDA) approving the AR device for surgical use.</p>
+                    </div>
+                    <p>Healers at the Cleveland and Mayo Clinics, along with the financiers at GE HealthCare, have poured Galleons into this marvel: augmented reality spectacles that grant surgeons "X-ray vision," revealing a patient's inner workings in shimmering 3D form during delicate procedures.</p>
+                </div>
+
+                 <div class="dispatch-card">
+                    <h4>RAGE Biotech's RNA Runes ($29M Series A)</h4>
+                    <p>From the land down under, a secretive consortium known as RAGE Biotech has secured a fortune to decipher the very runes of life—RNA. This funding will empower them to brew potent new therapies from these fundamental scripts of vitality.</p>
+                </div>
+
+                <h2>Marvels & Machinations in the Wider World of Tech</h2>
+
+                <div class="dispatch-card">
+                    <h4>Wonderful's Army of AI Golems ($100M Series A)</h4>
+                     <div class="moving-photo-card">
+                        <div class="media-placeholder">VIDEO: An Animated Golem Assembling a Workflow Cog by Cog</div>
+                        <p class="media-caption">Wonderful's agents are said to autonomously perform tasks for great enterprises.</p>
+                    </div>
+                    <p>A staggering treasure of $100 Million has been awarded to the Israeli sorcerers at Wonderful. They are crafting an army of autonomous AI agents—golems of pure logic—to serve the great enterprises of our age, a feat valuing their workshop at a mighty $700 Million.</p>
+
+                    <!-- Key sources summary -->
+                    <div class="source-pills" aria-label="Enchanted sources for Wonderful">
+                        <a class="source-pill source-pill--article" href="https://ai-daily.news/articles/wonderful-raises-100-million-series-a-at-700-million-valuati" target="_blank" rel="noopener noreferrer">
+                            <span class="source-pill-label">AI Daily missive on Wonderful</span>
+                            <span class="source-pill-host">ai-daily.news</span>
+                        </a>
+                        <a class="source-pill source-pill--video" href="https://www.youtube.com/watch?v=wonderful" target="_blank" rel="noopener noreferrer">
+                            <span class="source-pill-label">Golem army in motion</span>
+                            <span class="source-pill-host">Pensieve memory</span>
+                        </a>
+                        <a class="source-pill source-pill--pdf" href="#" onclick="event.preventDefault();">
+                            <span class="source-pill-label">Gringotts ledger &amp; vault record</span>
+                            <span class="source-pill-host">Gringotts</span>
+                        </a>
+                        <span class="source-pill-wrapper">
+                            <span class="source-pill source-pill--more">+2 more</span>
+                            <div class="sources-popover">
+                                <h4 class="sources-popover-title">Wonderful - Mystical Sources</h4>
+                                <ul class="sources-popover-list">
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Missive</span>
+                                        <div class="sources-popover-item-title">AI Daily missive on Wonderful</div>
+                                        <div class="sources-popover-item-host">ai-daily.news</div>
+                                        <a href="https://ai-daily.news/articles/wonderful-raises-100-million-series-a-at-700-million-valuati" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type video">Portrait</span>
+                                        <div class="sources-popover-item-title">Golem army in motion</div>
+                                        <div class="sources-popover-item-host">Pensieve memory</div>
+                                        <a href="https://www.youtube.com/watch?v=wonderful" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type pdf">Ledger</span>
+                                        <div class="sources-popover-item-title">Gringotts ledger &amp; vault record</div>
+                                        <div class="sources-popover-item-host">Gringotts</div>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Scroll</span>
+                                        <div class="sources-popover-item-title">TechCrunch feature</div>
+                                        <div class="sources-popover-item-host">techcrunch.com</div>
+                                        <a href="https://techcrunch.com/wonderful-seed-round" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                    <li class="sources-popover-item">
+                                        <span class="sources-popover-type article">Scroll</span>
+                                        <div class="sources-popover-item-title">VentureBeat coverage</div>
+                                        <div class="sources-popover-item-host">venturebeat.com</div>
+                                        <a href="https://venturebeat.com/wonderful" target="_blank" rel="noopener noreferrer" class="sources-popover-link">View →</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="dispatch-card">
+                    <h4>Uare.ai's Personal Poltergeists ($10.3M Seed)</h4>
+                    <p>A new school of thought emerges with Uare.ai, which promises every witch and wizard their own personal AI spirit. This "Individual AI" will act as a loyal, persistent companion, learning its master's ways to assist in all manner of digital quests.</p>
+                </div>
+
+                <div class="dispatch-card">
+                    <h4>India's Arcane Arts Attract Investors</h4>
+                    <p>From the vibrant markets of India come tales of smaller, yet potent, fundings. **Nyayanidhi** ($2M) brews potions to simplify the labyrinthine legal scrolls. **ExtraMile Play** ($500K) uses gamification charms to boost worker morale. And **Nia.one** ($2.4M) weaves a safety net of benefits for the ever-moving gig and migrant workforce.</p>
+                </div>
+
+            </main>
+            <aside class="dp-sidebar">
+                <h3>Prophetic Patterns</h3>
+                <p>The crystal ball reveals three key truths from this week's movements:</p>
+                <ul>
+                    <li><b>Delayed Dispatches:</b> Scrolls from the world of healing often arrive by slow owl, appearing days after the gold has been counted.</li>
+                    <li><b>The Rise of Golems:</b> Vast fortunes are flowing not to simple charms, but to the creation of core AI infrastructure—the very clay from which intelligent agents are molded.</li>
+                    <li><b>The Augmentation Accord:</b> The most successful new spells are those that assist, rather than replace, the skilled craftsperson—be they a nurse, a scribe, or an alchemist.</li>
+                </ul>
+            </aside>
+            <section class="dp-sources" id="dp-sources">
+                <h3>Dispatches & Owl Posts</h3>
+                <div class="source-scroll"><a href="https://dharab.com/us-based-company-raises-funding-for-its-ai-enabled-nursing-care-solution/" target="_blank" rel="noopener noreferrer">DH Arab Scroll on OutcomesAI</a></div>
+                <div class="source-scroll"><a href="https://www.tice.news/tice-trending/top-startup-news-today-from-physicswallahs-ipo-run-to-swiggys-new-urban-lifestyle-play-12th-november-10649000" target="_blank" rel="noopener noreferrer">TICE News Telegram on Praan Health</a></div>
+                <div class="source-scroll"><a href="https://mediview.com/mediview-closes-24-million-series-a-to-redefine-surgical-navigation-and-medical-imaging-with-augmented-reality-2/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">MediView's Official Proclamation</a></div>
+                <div class="source-scroll"><a href="https://pharmadispatch.com/news/rage-biotech-raises-29-million-and-appoints-new-leadership-to-advance-precision-rna-therapeutics" target="_blank" rel="noopener noreferrer">PharmaDispatch Owl Post on RAGE Biotech</a></div>
+                <div class="source-scroll"><a href="https://ai-daily.news/articles/wonderful-raises-100-million-series-a-at-700-million-valuati" target="_blank" rel="noopener noreferrer">AI Daily Missive on Wonderful</a></div>
+                <div class="source-scroll"><a href="https://freep.com/press-release/story/132859/fintary-secures-10m-in-series-a-funding-to-automate-insurance-commission-management/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">Detroit Free Press Dispatch on Fintary</a></div>
+                <div class="source-scroll"><a href="https://thefuturismtoday.com/artificial-intelligence/uare-ai-raises-10-3m-individual-ai/?utm_source=chatgpt.com" target="_blank" rel="noopener noreferrer">Futurism Today Scrying Mirror on Uare.ai</a></div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        function switchView(viewId) {
+            // Deactivate all containers and tabs
+            document.querySelectorAll('.dossier-container').forEach(function (container) {
+                container.classList.remove('active');
+            });
+            document.querySelectorAll('.switcher-tab').forEach(function (tab) {
+                tab.classList.remove('active');
+            });
+
+            // Activate the selected view and its corresponding tab
+            var viewEl = document.getElementById(viewId);
+            if (viewEl) {
+                viewEl.classList.add('active');
+            }
+            document.querySelectorAll('.switcher-tab').forEach(function (tab) {
+                var handler = tab.getAttribute('onclick') || '';
+                if (handler.indexOf("switchView('" + viewId + "')") !== -1) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+
+        function switchMode(mode) {
+            var body = document.body;
+            body.classList.remove('mode-interactive', 'mode-print');
+            if (mode === 'print') {
+                body.classList.add('mode-print');
+            } else {
+                body.classList.add('mode-interactive');
+            }
+
+            document.querySelectorAll('.mode-tab').forEach(function (tab) {
+                var tabMode = tab.getAttribute('data-mode');
+                tab.classList.toggle('active', tabMode === mode);
+            });
+        }
+
+        (function initializeDossier() {
+            var activeModeTab = document.querySelector('.mode-tab.active');
+            var initialMode = activeModeTab ? activeModeTab.getAttribute('data-mode') : 'interactive';
+            switchMode(initialMode || 'interactive');
+        })();
+    </script>
+
+</body>
+</html>

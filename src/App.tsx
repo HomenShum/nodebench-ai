@@ -11,7 +11,7 @@ import { ContextPillsProvider } from "./hooks/contextPills";
 
 function App() {
   const [showTutorial, setShowTutorial] = useState(false);
-  const [showWelcomeLanding, setShowWelcomeLanding] = useState(false);
+  const [showWelcomeLanding, setShowWelcomeLanding] = useState(true);
   const [selectedDocumentId, setSelectedDocumentId] = useState<Id<"documents"> | null>(null);
 
   const user = useQuery(api.auth.loggedInUser);
@@ -43,6 +43,11 @@ function App() {
     setShowTutorial(false);
   };
 
+  const handleEnterWorkspace = () => {
+    setShowWelcomeLanding(false);
+    setShowTutorial(false);
+  };
+
   return (
     <main className="h-screen">
       <Unauthenticated>
@@ -56,10 +61,14 @@ function App() {
               onGetStarted={handleGetStarted}
               onDocumentSelect={handleDocumentSelect}
             />
-          ) : showWelcomeLanding ? (
-            /* Authenticated users can navigate back to WelcomeLanding */
-            <WelcomeLanding onDocumentSelect={handleDocumentSelect} />
-          ) : documents && documents.length > 0 ? (
+          ) : documents && documents.length > 0 && !showWelcomeLanding ? (
+            <MainLayout
+              selectedDocumentId={selectedDocumentId}
+              onDocumentSelect={setSelectedDocumentId}
+              onShowWelcome={handleShowTutorial}
+              onShowWelcomeLanding={handleShowWelcomeLanding}
+            />
+          ) : !showWelcomeLanding ? (
             <MainLayout
               selectedDocumentId={selectedDocumentId}
               onDocumentSelect={setSelectedDocumentId}
@@ -67,8 +76,11 @@ function App() {
               onShowWelcomeLanding={handleShowWelcomeLanding}
             />
           ) : (
-            /* Authenticated users with no documents stay on WelcomeLanding */
-            <WelcomeLanding onDocumentSelect={handleDocumentSelect} />
+            /* Authenticated users land on WelcomeLanding by default */
+            <WelcomeLanding
+              onDocumentSelect={handleDocumentSelect}
+              onEnterWorkspace={handleEnterWorkspace}
+            />
           )}
         </ContextPillsProvider>
       </Authenticated>

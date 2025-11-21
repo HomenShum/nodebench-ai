@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Research Assistant Optimized</title>
+    <style>
+        /* Base Styling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Typography & Headings */
+        .headline-large {
+            font-size: 3em;
+            font-weight: 800;
+            color: #212529;
+            line-height: 1.1;
+        }
+        .sub-headline {
+            font-size: 1.25em;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+        .faded-text {
+            color: #99a2ab;
+        }
+
+        /* Metrics */
+        .metrics {
+            margin: 20px 0;
+            font-size: 0.9em;
+            color: #495057;
+        }
+        .metrics span {
+            margin: 0 15px;
+            font-weight: 600;
+        }
+
+        /* Audience Tabs */
+        .audience-tabs {
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .tab-button {
+            padding: 8px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            background-color: white;
+            color: #495057;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-button.selected {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+            font-weight: 600;
+        }
+
+        /* Input/CTA Area */
+        .cta-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 40px;
+        }
+        .input-group {
+            display: flex;
+            width: 100%;
+            max-width: 550px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .prompt-input {
+            flex-grow: 1;
+            border: none;
+            padding: 15px 20px;
+            font-size: 1em;
+            outline: none;
+        }
+        .send-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s;
+        }
+        .send-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Secondary CTA */
+        .secondary-cta {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .google-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .google-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 1. The Hook (What it Does) -->
+    <h1 class="headline-large">
+        The AI That Builds Your Daily Research Dossier.
+    </h1>
+    <p class="sub-headline">
+        Capture notes, search knowledge, and curate personalized digests.
+        <br>No sign-in required to start.
+    </p>
+
+    <!-- 2. The Visitor Count (The Required Constraint) -->
+    <div class="metrics">
+        <span style="color: #28a745;">⚡ 5 Active Now</span>
+        <span style="color: #ffc107;">📈 31 Digests Generated Today</span>
+    </div>
+
+    <!-- 3. Audience Filter (Is this for me?) -->
+    <div class="audience-tabs">
+        <div class="tab-button">Investors</div>
+        <div class="tab-button">Bankers</div>
+        <div class="tab-button">Marketing</div>
+        <div class="tab-button selected">Researchers</div>
+        <div class="tab-button">Healthcare</div>
+        <div class="tab-button">Founders</div>
+    </div>
+
+    <!-- 4. Primary CTA (What should I do next? - Low Friction) -->
+    <div class="cta-section">
+        <div class="input-group">
+            <input 
+                type="text" 
+                class="prompt-input" 
+                placeholder="Paste a URL, a topic, or a few notes to generate your first Dossier."
+            >
+            <button class="send-button">
+                Send
+            </button>
+        </div>
+
+        <!-- Secondary CTA (Sign-up for Saving/Subscription) -->
+        <div class="secondary-cta">
+            <a href="#" class="google-button">Continue with Google</a> 
+            <p>to subscribe and save all your personalized digests.</p>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
+

@@ -30,7 +30,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
   const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public'>('documents');
-  const [smsMessage, setSmsMessage] = useState<{from: string, message: string} | null>(null);
+  const [smsMessage, setSmsMessage] = useState<{ from: string, message: string } | null>(null);
   const [isGridMode, setIsGridMode] = useState(false);
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -100,6 +100,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const startXRef = useRef(0);
   // Removed AIChatPanel resize refs
   const startSidebarWidthRef = useRef(0);
+
+  // Agent Panel resizing
+  const [agentPanelWidth, setAgentPanelWidth] = useState(400);
+  const agentResizingRef = useRef(false);
+  const startAgentWidthRef = useRef(0);
   // Centralized task selection for inline editor
   const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
   const [selectedTaskSource, setSelectedTaskSource] = useState<
@@ -176,7 +181,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     // Ensure switching back to Documents view when a document is chosen from anywhere
     if (documentId) {
       setCurrentView('documents');
-      try { window.dispatchEvent(new CustomEvent('navigate:documents')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('navigate:documents')); } catch { }
     }
   };
 
@@ -213,6 +218,33 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     sidebarResizingRef.current = false;
     document.removeEventListener('mousemove', resizeSidebar);
     document.removeEventListener('mouseup', stopSidebarResizing);
+  };
+
+  // Agent Panel resizable handlers
+  const startAgentResizing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    agentResizingRef.current = true;
+    startXRef.current = e.clientX;
+    startAgentWidthRef.current = agentPanelWidth;
+
+    document.addEventListener('mousemove', resizeAgent);
+    document.addEventListener('mouseup', stopAgentResizing);
+  };
+
+  const resizeAgent = (e: MouseEvent) => {
+    if (!agentResizingRef.current) return;
+
+    // Calculate new width (dragging left increases width)
+    const diff = startXRef.current - e.clientX;
+    const newWidth = Math.min(Math.max(startAgentWidthRef.current + diff, 300), 800);
+
+    setAgentPanelWidth(newWidth);
+  };
+
+  const stopAgentResizing = () => {
+    agentResizingRef.current = false;
+    document.removeEventListener('mousemove', resizeAgent);
+    document.removeEventListener('mouseup', stopAgentResizing);
   };
 
   // Track single doc viewing when not in grid mode (avoid redundant updates)
@@ -422,7 +454,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
 
   return (
-    <div className="h-screen flex bg-[var(--bg-secondary)] transition-colors duration-200">
+    <div className="h-screen flex bg-gradient-to-br from-[var(--bg-secondary)] via-[var(--bg-tertiary)] to-[var(--bg-secondary)] transition-colors duration-200">
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div
@@ -434,7 +466,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Sidebar - Resizable Width on Desktop, Overlay on Mobile */}
       <div
         className={`
-          flex-shrink-0 h-full bg-[var(--bg-primary)] z-50 transition-transform duration-300
+          flex-shrink-0 h-full bg-[var(--bg-primary)]/80 backdrop-blur-md border-r border-[var(--border-color)] z-50 transition-transform duration-300
           lg:relative lg:translate-x-0
           fixed inset-y-0 left-0
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -468,10 +500,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         {/* Main Content Area */}
         <div
           className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
-            style={{ width: '100%' }}
+          style={{ width: '100%' }}
         >
           {/* Top Bar */}
-          <div className="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-3 sm:px-6 py-2 sm:py-3 flex items-center transition-colors duration-200 relative">
+          <div className="bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border-color)] px-3 sm:px-6 py-2 sm:py-3 flex items-center transition-colors duration-200 relative">
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Mobile Hamburger Menu */}
               <button
@@ -491,8 +523,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 {currentView === 'public'
                   ? 'Public Documents'
                   : selectedDocumentId
-                  ? 'My Documents'
-                  : 'Home'}
+                    ? 'My Documents'
+                    : 'Home'}
               </h1>
             </div>
 
@@ -565,11 +597,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setShowFastAgent(!showFastAgent)}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                  showFastAgent
-                    ? 'bg-[var(--accent-primary)] text-white shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                }`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all duration-200 ${showFastAgent
+                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                  }`}
                 title="Toggle Fast Agent Panel"
                 aria-label="Toggle Fast Agent Panel"
               >
@@ -738,24 +769,46 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
 
           {/* Floating Context Pills */}
-            {/* Context pills rendered inline in views */}
+          {/* Context pills rendered inline in views */}
         </div>
 
         {/* Resize Handle between Main and AI Chat Panel */}
-        {/* Removed AIChatPanel resize handle */}
+        {showFastAgent && (
+          <div
+            className="hidden lg:block w-1 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] cursor-col-resize transition-colors duration-200 flex-shrink-0 z-10"
+            onMouseDown={startAgentResizing}
+          />
+        )}
 
-        {/* AI Chat Panel - Right Side Push-out */}
-        {/* Removed AIChatPanel */}
+        {/* AI Chat Panel - Right Side Column */}
+        {showFastAgent && (
+          <div
+            className="flex-shrink-0 h-full bg-[var(--bg-primary)] border-l border-[var(--border-color)] z-20 shadow-xl lg:shadow-none lg:relative absolute right-0 top-0 bottom-0"
+            style={{ width: `${agentPanelWidth}px` }}
+          >
+            <FastAgentPanel
+              isOpen={true}
+              onClose={() => setShowFastAgent(false)}
+              selectedDocumentId={selectedDocumentId || undefined}
+              selectedDocumentIds={selectedDocumentIdsForAgent}
+              initialThreadId={fastAgentThreadId}
+              variant="sidebar"
+            />
+          </div>
+        )}
       </div>
 
-      {/* Fast Agent Panel - Overlay */}
-      <FastAgentPanel
-        isOpen={showFastAgent}
-        onClose={() => setShowFastAgent(false)}
-        selectedDocumentId={selectedDocumentId || undefined}
-        selectedDocumentIds={selectedDocumentIdsForAgent}
-        initialThreadId={fastAgentThreadId}
-      />
+      {/* Fast Agent Panel - Overlay (Mobile Only) */}
+      <div className="lg:hidden">
+        <FastAgentPanel
+          isOpen={showFastAgent}
+          onClose={() => setShowFastAgent(false)}
+          selectedDocumentId={selectedDocumentId || undefined}
+          selectedDocumentIds={selectedDocumentIdsForAgent}
+          initialThreadId={fastAgentThreadId}
+          variant="overlay"
+        />
+      </div>
 
       {/* Central Settings Modal */}
       {showSettingsModal && (

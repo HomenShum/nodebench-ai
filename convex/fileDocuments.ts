@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 
@@ -68,6 +69,10 @@ export const createFileDocument = mutation({
       mimeType: file.mimeType,
       lastModified: now,
     });
+
+    // Index file document into Gemini File Search asynchronously
+    const api = await import("./_generated/api");
+    await ctx.scheduler.runAfter(0, api.internal.fileSearch.upsertDocument, { documentId });
 
     return documentId;
   },

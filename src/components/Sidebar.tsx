@@ -3,10 +3,10 @@ import { useDropzone } from "react-dropzone";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id, Doc } from "../../convex/_generated/dataModel";
-import { 
-  Search, 
-  Plus, 
-  FileText, 
+import {
+  Search,
+  Plus,
+  FileText,
   Trash2,
   Globe,
   Bot,
@@ -143,8 +143,8 @@ interface SidebarProps {
   ) => void;
 }
 
-export function Sidebar({ 
-  onDocumentSelect, 
+export function Sidebar({
+  onDocumentSelect,
   selectedDocumentId,
   currentView,
   onViewChange,
@@ -152,11 +152,11 @@ export function Sidebar({
   onOpenSettings
 }: SidebarProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  
+
   // Data queries
   const userPreferences = useQuery(api.userPreferences.getUserPreferences);
   const updateUserPrefs = useMutation(api.userPreferences.updateUserPreferences);
-  
+
   // Folder organization state
   const [selectedDocuments, setSelectedDocuments] = useState<Set<Id<"documents">>>(new Set());
   // Bulk action modals state
@@ -166,15 +166,15 @@ export function Sidebar({
   const [targetFolderId, setTargetFolderId] = useState<Id<"folders"> | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [sharePublic, setSharePublic] = useState(true);
-  
+
   // Document title editing state
   const [editingDocumentId, setEditingDocumentId] = useState<Id<"documents"> | null>(null);
   const [editingDocumentTitle, setEditingDocumentTitle] = useState('');
   const editingTitleInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Quick actions menu state
   const [quickActionsFor, setQuickActionsFor] = useState<Id<"documents"> | null>(null);
-  
+
   // Auto-refresh timer tick (force rerender of relative timestamps)
   const [nowTick, setNowTick] = useState(0);
   useEffect(() => {
@@ -207,8 +207,8 @@ export function Sidebar({
       toast.error("Failed to create task");
     }
   }, [createTaskMutation, user]);
- 
-  
+
+
   // Trash state
   const [isTrashOpen, setIsTrashOpen] = useState(false);
 
@@ -217,13 +217,13 @@ export function Sidebar({
   const [smsTo, setSmsTo] = useState("+1-555-MOCK-AI");
   const [smsMessage, setSmsMessage] = useState("");
   const [_isSmsSending, _setIsSmsSending] = useState(false);
-  
+
   // Email state
   const [showEmailPanel, setShowEmailPanel] = useState(false);
   const [emailTo, setEmailTo] = useState("ai@example.com");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
-  
+
   // Gmail state
   const [showGmailPanel, setShowGmailPanel] = useState(false);
   const gmailConnection = useQuery(api.gmail.getConnection);
@@ -237,7 +237,7 @@ export function Sidebar({
     from?: string;
     date?: string;
   }>>([]);
-  
+
   // Additional communication channels state
   const [showSlackPanel, setShowSlackPanel] = useState(false);
   const [slackChannel, setSlackChannel] = useState("#ai-chat");
@@ -246,7 +246,7 @@ export function Sidebar({
   const [discordChannel, setDiscordChannel] = useState("#general");
   const [discordMessage, setDiscordMessage] = useState("");
   const [showMcpManager, setShowMcpManager] = useState(false);
-  
+
   // MCP UI state
   const [showMcpPanel, setShowMcpPanel] = useState(false);
   // Tools panel state
@@ -254,7 +254,7 @@ export function Sidebar({
   // Inline URL analysis panel state
   const [showUrlPanel, setShowUrlPanel] = useState(false);
   const [urlInput, setUrlInput] = useState("");
-  
+
   // Flow Panel state
   const [showFlowPanel, setShowFlowPanel] = useState(false);
   const [flowCommand, setFlowCommand] = useState("");
@@ -266,11 +266,11 @@ export function Sidebar({
     designDocId?: Id<"documents">;
   }>>([]);
   const [isFlowRunning, setIsFlowRunning] = useState(false);
-  
+
   // Tab state for Communication Hub
   type CommunicationTab = 'documents' | 'messages' | 'reports';
   const [activeTab, setActiveTab] = useState<CommunicationTab>('documents');
-  
+
   // Context selection state
   const [selectedContextDocumentIds, setSelectedContextDocumentIds] = useState<Id<"documents">[]>([]);
   const [selectedContextFileIds, setSelectedContextFileIds] = useState<Id<"files">[]>([]);
@@ -283,14 +283,14 @@ export function Sidebar({
   const [tasksSortBy, setTasksSortBy] = useState<"updated" | "due" | "priority" | "title">("updated");
   const [tasksSortOrder, setTasksSortOrder] = useState<"asc" | "desc">("desc");
   const [tasksFilter, setTasksFilter] = useState<"all" | "open" | "completed">("all");
-  
+
   // Separate collapse state for Documents/Tasks subgroups
   const [collapsedDocGroups, setCollapsedDocGroups] = useState<Set<string>>(new Set());
   const [collapsedTaskGroups, setCollapsedTaskGroups] = useState<Set<string>>(new Set());
   // Multi-select state for documents
   const [docSelectionAnchor, setDocSelectionAnchor] = useState<{ group: string; id: Id<"documents"> } | null>(null);
   const docsKeyboardScopeRef = useRef<HTMLDivElement | null>(null);
-  
+
   // Drag-and-drop ordering for document cards (per group)
   const [docOrderByGroup, setDocOrderByGroup] = useState<Record<string, Array<Id<"documents">>>>({});
   const groupDocsRef = useRef<Record<string, Array<Id<"documents">>>>({});
@@ -312,11 +312,11 @@ export function Sidebar({
       }
     };
   }, []);
-  
+
   // Drag state for Integrate section icons (dnd-kit)
   const [_isReordering, setIsReordering] = useState(false);
   const [hasBeenDragged, setHasBeenDragged] = useState(false);
-  
+
   const [iconOrder, setIconOrder] = useState([
     // Prioritized icons in requested order
     'flow', 'tools', 'mcp', 'sms', 'email', 'gmail', 'phone',
@@ -338,27 +338,27 @@ export function Sidebar({
       setDocOrderByGroup((prev) => ({ ...prev, ...incoming }));
     }
   }, [userPreferences]);
-  
+
   // Document sorting and filtering state
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title'>('updated');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterText, setFilterText] = useState('');
-  
+
   // Unified work items hook removed; explicit Documents/Tasks sections are used.
-  
+
   // File upload state
   const [_isFileUploading, setIsFileUploading] = useState(false);
   const [_uploadProgress, setUploadProgress] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const documents = useQuery(api.documents.getSidebarWithOptions, { 
-    sortBy, 
+
+  const documents = useQuery(api.documents.getSidebarWithOptions, {
+    sortBy,
     sortOrder
   });
   const publicDocuments = useQuery(api.documents.getPublic);
   const trash = useQuery(api.documents.getTrash);
-  
-  const toolsList = useQuery(api.aiAgents.listAgentTools);
+
+  // const toolsList = useQuery(api.aiAgents.listAgentTools);
   // MCP tools (to map Agent Tool names to MCP tools when possible)
   const mcpToolsAll = useQuery(api.mcp.getMcpTools, {}) || [];
   const callMcpTool = useAction(api.mcpClient.callMcpTool);
@@ -594,25 +594,25 @@ export function Sidebar({
   }, [filteredDocuments]);
 
   // Folder queries/mutations for document organization (declared below alongside other folder queries)
-  
+
   // Auto-pinning disabled:
   // Previously, this component would auto-pin the current month calendar document
   // by detecting titles like "📅 March 2024" and calling `toggleFavorite`.
   // This behavior has been intentionally removed to prevent automatic favorites.
   // Real email sender (Resend-backed Convex action)
   const sendEmail = useAction(api.email.sendEmail);
-  
+
   // Calendar creation state
   const [isCreatingCalendar, setIsCreatingCalendar] = useState(false);
   const [customCalendarSuffix, setCustomCalendarSuffix] = useState('');
-  
+
   // Handler to create new prepopulated calendar documents
   const handleCreateCalendar = async () => {
     setIsCreatingCalendar(true);
     try {
       const suffix = customCalendarSuffix.trim() || undefined;
       const docId = await createCalendarDocument(createWithSnapshot, suffix);
-      
+
       // Auto-pin the newly created calendar document once upon creation
       let pinned = false;
       try {
@@ -625,7 +625,7 @@ export function Sidebar({
       onDocumentSelect(docId);
       setCustomCalendarSuffix('');
       toast.success(`Calendar created successfully${suffix ? ` - ${suffix}` : ''}!${pinned ? ' (Pinned)' : ''}`);
-      
+
     } catch (error) {
       console.error('Failed to create calendar:', error);
       toast.error('Failed to create calendar document');
@@ -642,7 +642,7 @@ export function Sidebar({
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const weeks = Math.floor(diff / (1000 * 60 * 60 * 24 * 7));
-    
+
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
@@ -700,16 +700,16 @@ export function Sidebar({
   }
 
   const toggleDocumentInContext = useCallback((documentId: Id<"documents">) => {
-    setSelectedContextDocumentIds(prev => 
-      prev.includes(documentId) 
+    setSelectedContextDocumentIds(prev =>
+      prev.includes(documentId)
         ? prev.filter(id => id !== documentId)
         : [...prev, documentId]
     );
   }, []);
 
   const toggleFileInContext = useCallback((fileId: Id<"files">) => {
-    setSelectedContextFileIds(prev => 
-      prev.includes(fileId) 
+    setSelectedContextFileIds(prev =>
+      prev.includes(fileId)
         ? prev.filter(id => id !== fileId)
         : [...prev, fileId]
     );
@@ -802,7 +802,7 @@ export function Sidebar({
                 <span className="text-sm font-medium text-[var(--text-primary)]">{groupInfo.name}</span>
                 <span className="ml-auto text-xs text-[var(--text-secondary)]">{items.length}</span>
               </button>
-              
+
               {isExpanded && (
                 <div className="ml-6 mt-2 space-y-1 pl-3">
                   {items.map((item: any) => {
@@ -810,7 +810,7 @@ export function Sidebar({
                     const fileType: FileType = isDocument
                       ? getFileTypeFromDocument(item)
                       : inferFileType({ name: item.fileName, mimeType: item?.mimeType });
-                     
+
                     return (
                       <div key={item._id} className="flex items-center gap-2 p-2 transition-colors">
                         <FileTypeIcon type={fileType} className="h-3 w-3" />
@@ -841,11 +841,11 @@ export function Sidebar({
 
   const renderContextSection = useCallback(() => {
     if (!showContext) return null;
-    
+
     const availableFiles: any[] = [];
     const selectedDocuments = documents?.filter(doc => selectedContextDocumentIds.includes(doc._id)) || [];
     const selectedFiles = availableFiles.filter(file => selectedContextFileIds.includes(file._id)) || [];
-    
+
     if (selectedDocuments.length === 0 && selectedFiles.length === 0) {
       return (
         <div className="border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] overflow-hidden mb-4">
@@ -879,27 +879,25 @@ export function Sidebar({
             AI Context ({selectedDocuments.length + selectedFiles.length})
           </span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 bg-[var(--bg-secondary)] rounded p-1 border border-[var(--border-color)]">
             <button
               onClick={() => setContextViewMode('flat')}
-              className={`px-2 py-1 text-xs rounded transition-colors ${
-                contextViewMode === 'flat'
-                  ? 'bg-[var(--accent-primary)] text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-              }`}
+              className={`px-2 py-1 text-xs rounded transition-colors ${contextViewMode === 'flat'
+                ? 'bg-[var(--accent-primary)] text-white'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                }`}
               title="Flat view"
             >
               Flat
             </button>
             <button
               onClick={() => setContextViewMode('hierarchical')}
-              className={`px-2 py-1 text-xs rounded transition-colors ${
-                contextViewMode === 'hierarchical'
-                  ? 'bg-[var(--accent-primary)] text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-              }`}
+              className={`px-2 py-1 text-xs rounded transition-colors ${contextViewMode === 'hierarchical'
+                ? 'bg-[var(--accent-primary)] text-white'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                }`}
               title="Hierarchical view"
             >
               Tree
@@ -920,7 +918,7 @@ export function Sidebar({
       <div className="border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] overflow-hidden mb-4">
         {contextHeader}
         <div>
-          {contextViewMode === 'flat' 
+          {contextViewMode === 'flat'
             ? renderFlatContextView(selectedDocuments, selectedFiles)
             : renderHierarchicalContextView(selectedDocuments, selectedFiles)
           }
@@ -949,22 +947,22 @@ export function Sidebar({
   const handleFileUpload = useCallback(async (file: File) => {
     setIsFileUploading(true);
     setUploadProgress(`Uploading ${file.name}...`);
-    
+
     try {
       const uploadUrl = await generateUploadUrl();
-      
+
       const response = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": file.type },
         body: file,
       });
-      
+
       if (!response.ok) {
         throw new Error(`Upload failed: ${response.statusText}`);
       }
-      
+
       const { storageId } = await response.json();
-      
+
       const fileId = await createFile({
         storageId,
         fileName: file.name,
@@ -972,7 +970,7 @@ export function Sidebar({
         mimeType: ensureMimeType(file),
         fileSize: file.size,
       });
-      
+
       // Prompt user to analyze now (manual trigger)
       const shouldAnalyze = window.confirm(`File "${file.name}" uploaded. Analyze it now?`);
       if (shouldAnalyze) {
@@ -982,7 +980,7 @@ export function Sidebar({
           analysisPrompt: "Provide a comprehensive analysis of this file, including key insights and summary.",
           analysisType: getAnalysisType(file),
         });
-        
+
         if (result.success) {
           toast.success(`Analysis complete for ${file.name}`);
           if (onSmsReceived) {
@@ -1003,7 +1001,7 @@ export function Sidebar({
           description: 'You can analyze it later from the Tools panel or context.',
         } as any);
       }
-      
+
     } catch (error) {
       console.error("Upload error:", error);
       toast.error(`Failed to upload ${file.name}`);
@@ -1034,7 +1032,7 @@ export function Sidebar({
   const handleUrlAnalysis = useCallback(async (url: string) => {
     setIsFileUploading(true);
     setUploadProgress(`Analyzing URL...`);
-    
+
     try {
       // Prompt user before running analysis
       const shouldAnalyze = window.confirm(`Analyze this URL now?\n\n${url}`);
@@ -1048,7 +1046,7 @@ export function Sidebar({
         url,
         analysisPrompt: "Analyze the content at this URL and provide key insights.",
       });
-      
+
       if (result.success) {
         toast.success("URL analysis complete");
         if (onSmsReceived) {
@@ -1303,10 +1301,10 @@ export function Sidebar({
 
   const executeFlow = async (command: string) => {
     if (!command.trim()) return;
-    
+
     setIsFlowRunning(true);
     const flowId = `flow_${Date.now()}`;
-    
+
     try {
       const newFlow = {
         id: flowId,
@@ -1315,25 +1313,25 @@ export function Sidebar({
         createdAt: Date.now()
       };
       setActiveFlows(prev => [newFlow, ...prev]);
-      
+
       const designDocContent = generateFlowDesignDoc(command, flowId);
       const designDocId = await createWithSnapshot({
         title: `Flow Design: ${command.substring(0, 50)}...`,
         initialContent: designDocContent
       } as any);
-      
-      setActiveFlows(prev => prev.map(f => 
+
+      setActiveFlows(prev => prev.map(f =>
         f.id === flowId ? { ...f, designDocId, status: 'completed' } : f
       ));
-      
+
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       toast.success(`Flow executed: ${command.substring(0, 30)}...`);
       setFlowCommand("");
-      
+
     } catch (error) {
       console.error('Flow execution error:', error);
-      setActiveFlows(prev => prev.map(f => 
+      setActiveFlows(prev => prev.map(f =>
         f.id === flowId ? { ...f, status: 'failed' } : f
       ));
       toast.error('Failed to execute flow');
@@ -1345,7 +1343,7 @@ export function Sidebar({
   const generateFlowDesignDoc = (command: string, flowId: string) => {
     const now = new Date();
     const timestamp = now.toISOString();
-    
+
     return [
       {
         type: 'heading',
@@ -1419,39 +1417,39 @@ export function Sidebar({
 
   const parseCommandToSteps = (command: string): string[] => {
     const steps = [];
-    
+
     if (command.includes('csv') || command.includes('CSV')) {
       steps.push('Parse and validate CSV file');
       steps.push('Extract data schema and columns');
     }
-    
+
     if (command.includes('scoring') || command.includes('framework')) {
       steps.push('Analyze scoring framework');
       steps.push('Define scoring criteria and weights');
     }
-    
+
     if (command.includes('scraping') || command.includes('workflow')) {
       steps.push('Configure scraping parameters');
       steps.push('Set up scheduling (daily basis)');
       steps.push('Implement deduplication logic');
     }
-    
+
     if (command.includes('daily')) {
       steps.push('Configure cron job for daily execution');
     }
-    
+
     if (command.includes('not repeat') || command.includes('duplicate')) {
       steps.push('Set up result caching');
       steps.push('Implement duplicate detection');
     }
-    
+
     if (steps.length === 0) {
       steps.push('Parse command intent');
       steps.push('Execute primary action');
       steps.push('Validate results');
       steps.push('Generate report');
     }
-    
+
     return steps;
   };
 
@@ -1466,7 +1464,7 @@ export function Sidebar({
           <X className="h-3 w-3 text-[var(--text-secondary)]" />
         </button>
       </div>
-      
+
       <textarea
         placeholder="Enter flow command (e.g., 'review ABC_prospect.csv, create daily scraping workflow')"
         value={flowCommand}
@@ -1474,7 +1472,7 @@ export function Sidebar({
         rows={4}
         className="w-full px-2 py-1 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] placeholder-[var(--text-secondary)] mb-2 resize-none"
       />
-      
+
       <button
         onClick={() => void executeFlow(flowCommand)}
         disabled={!flowCommand.trim() || isFlowRunning}
@@ -1482,7 +1480,7 @@ export function Sidebar({
       >
         {isFlowRunning ? 'Executing Flow...' : 'Execute Flow'}
       </button>
-      
+
       {activeFlows.length > 0 && (
         <div className="mt-3 space-y-1">
           <div className="text-xs font-medium text-[var(--text-secondary)] mb-1">Recent Flows</div>
@@ -1492,11 +1490,10 @@ export function Sidebar({
               className="flex items-center gap-2 p-2 bg-[var(--bg-primary)] rounded text-xs cursor-pointer hover:bg-[var(--bg-hover)] transition-colors"
               onClick={() => flow.designDocId && onDocumentSelect(flow.designDocId)}
             >
-              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                flow.status === 'completed' ? 'bg-green-500' :
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${flow.status === 'completed' ? 'bg-green-500' :
                 flow.status === 'running' ? 'bg-yellow-500 animate-pulse' :
-                flow.status === 'failed' ? 'bg-red-500' : 'bg-gray-500'
-              }`} />
+                  flow.status === 'failed' ? 'bg-red-500' : 'bg-gray-500'
+                }`} />
               <span className="truncate flex-1">{flow.command}</span>
               <span className="text-[var(--text-secondary)]">
                 {formatTimeAgo(flow.createdAt)}
@@ -1517,7 +1514,7 @@ export function Sidebar({
       time: '2:30 PM'
     },
     {
-      id: '2', 
+      id: '2',
       type: 'email' as const,
       preview: 'Quarterly report analysis shows 15% growth in user engagement metrics...',
       recipient: 'team@company.com',
@@ -1528,52 +1525,52 @@ export function Sidebar({
   const mockSendSms = async (to: string, message: string) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log(`[MOCK SMS] To: ${to}, Message: ${message}`);
-    
+
     if (onSmsReceived) {
       setTimeout(() => {
         onSmsReceived(to, `SMS: ${message}`);
       }, 1800);
     }
-    
+
     return { success: true, messageId: `mock_sms_${Date.now()}` };
   };
 
   const mockSendSlack = async (channel: string, message: string) => {
     await new Promise(resolve => setTimeout(resolve, 1200));
     console.log(`[MOCK SLACK] Channel: ${channel}, Message: ${message}`);
-    
+
     if (onSmsReceived) {
       setTimeout(() => {
         onSmsReceived(channel, `Slack: ${message}`);
       }, 2000);
     }
-    
+
     return { success: true, messageId: `mock_slack_${Date.now()}` };
   };
 
   const mockSendDiscord = async (channel: string, message: string) => {
     await new Promise(resolve => setTimeout(resolve, 1400));
     console.log(`[MOCK DISCORD] Channel: ${channel}, Message: ${message}`);
-    
+
     if (onSmsReceived) {
       setTimeout(() => {
         onSmsReceived(channel, `Discord: ${message}`);
       }, 2200);
     }
-    
+
     return { success: true, messageId: `mock_discord_${Date.now()}` };
   };
 
   const mockSendWebhook = async (url: string, payload: string) => {
     await new Promise(resolve => setTimeout(resolve, 1600));
     console.log(`[MOCK WEBHOOK] URL: ${url}, Payload: ${payload}`);
-    
+
     if (onSmsReceived) {
       setTimeout(() => {
         onSmsReceived(url, `Webhook: ${payload}`);
       }, 2400);
     }
-    
+
     return { success: true, messageId: `mock_webhook_${Date.now()}` };
   };
 
@@ -1634,16 +1631,15 @@ export function Sidebar({
           </button>
           <SignOutButton />
         </div>
-        
+
         {/* Documents Home Button */}
         <div className="mt-2 pt-2 border-t border-[var(--border-color)]/30">
           <button
             onClick={() => onDocumentSelect(null)}
-            className={`w-full flex items-center justify-center gap-2.5 px-3 py-2 mb-2 text-xs font-semibold rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 ${
-              selectedDocumentId === null
-                ? "bg-[var(--bg-active)] text-[var(--text-primary)] border border-[var(--border-color)]"
-                : "text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-            }`}
+            className={`w-full flex items-center justify-center gap-2.5 px-3 py-2 mb-2 text-xs font-semibold rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 ${selectedDocumentId === null
+              ? "bg-[var(--bg-active)] text-[var(--text-primary)] border border-[var(--border-color)]"
+              : "text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              }`}
             title="Navigate to Documents Home"
           >
             <Home className="h-4 w-4" />
@@ -1656,9 +1652,9 @@ export function Sidebar({
           <div className="flex items-center justify-between mb-2">
             <div className="text-[11px] font-medium text-[var(--text-secondary)]/70">Integration Panel</div>
           </div>
-          
+
           {/* AI Chat Assistant removed */}
-          
+
           <SortableList
             items={iconOrder}
             orientation="horizontal"
@@ -1683,15 +1679,13 @@ export function Sidebar({
               return (
                 <button
                   onClick={(e) => handleIconClick(e, config)}
-                  className={`flex flex-col items-center gap-1 px-1 py-1 text-xs rounded-md transition-colors duration-150 cursor-pointer min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 ${
-                    config.isActive
-                      ? "text-[var(--text-primary)] bg-[var(--bg-active)] border border-[var(--border-color)]"
-                      : "text-[var(--text-secondary)] bg-transparent border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                  } ${
-                    isDragging
+                  className={`flex flex-col items-center gap-1 px-1 py-1 text-xs rounded-md transition-colors duration-150 cursor-pointer min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 ${config.isActive
+                    ? "text-[var(--text-primary)] bg-[var(--bg-active)] border border-[var(--border-color)]"
+                    : "text-[var(--text-secondary)] bg-transparent border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                    } ${isDragging
                       ? "opacity-70 text-[var(--accent-primary)] bg-[var(--bg-active)] border border-[var(--accent-primary)]/40"
                       : ""
-                  }`}
+                    }`}
                   title={config.title}
                   aria-label={config.title || config.label}
                   aria-pressed={config.isActive}
@@ -1773,7 +1767,7 @@ export function Sidebar({
 
                         await toast.promise(run(), {
                           loading: 'Analyzing selected files…',
-                          success: (s) => `${s} file(s) analyzed` ,
+                          success: (s) => `${s} file(s) analyzed`,
                           error: 'Failed to analyze selected files',
                         });
                       })();
@@ -1835,7 +1829,7 @@ export function Sidebar({
               )}
             </div>
           )}
-        
+
           {/* SMS Panel */}
           {showSmsPanel && (
             <div className="mt-3 p-3 bg-[var(--bg-secondary)] rounded-md border border-[var(--border-color)]">
@@ -2122,7 +2116,7 @@ export function Sidebar({
 
           {/* Enhanced MCP Integration Panel */}
           {showMcpPanel && (
-            <EnhancedMcpPanel 
+            <EnhancedMcpPanel
               onClose={() => setShowMcpPanel(false)}
             />
           )}
@@ -2164,9 +2158,9 @@ export function Sidebar({
                 email: { icon: '📧', bg: 'rgba(77, 171, 154, 0.2)', color: 'var(--accent-green)' }
               };
               const config = typeConfig[message.type];
-              
+
               return (
-                <div 
+                <div
                   key={message.id}
                   className="message-item bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-3 mb-3 cursor-pointer transition-colors duration-150 hover:bg-[var(--bg-hover)] hover:border-[var(--border-color-light)]"
                   onClick={() => {
@@ -2176,7 +2170,7 @@ export function Sidebar({
                   }}
                 >
                   <div className="message-header flex justify-between items-center mb-2">
-                    <div 
+                    <div
                       className="message-type flex items-center gap-1.5 px-2 py-1 rounded text-xs font-semibold"
                       style={{ backgroundColor: config.bg, color: config.color }}
                     >
@@ -2198,7 +2192,7 @@ export function Sidebar({
             })}
           </div>
         )}
-        
+
         {activeTab === 'reports' && (
           <div className="text-center py-8">
             <BookUser className="h-12 w-12 text-[var(--text-secondary)] mx-auto mb-3" />
@@ -2206,14 +2200,14 @@ export function Sidebar({
             <p className="text-xs text-[var(--text-secondary)] mt-1">Reports will appear here when generated</p>
           </div>
         )}
-        
+
         {activeTab === 'documents' && (
           <div>
             {isTrashOpen ? (
               <div className="p-3">
                 <div className="flex items-center justify-between mb-4">
-                  <button 
-                    onClick={() => setIsTrashOpen(false)} 
+                  <button
+                    onClick={() => setIsTrashOpen(false)}
                     className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -2238,7 +2232,7 @@ export function Sidebar({
                   {trash?.map((doc) => {
                     const deletedDate = formatTimeAgo(doc._creationTime);
                     const fileType = getFileTypeFromDocument(doc);
-                    
+
                     return (
                       <div
                         key={doc._id}
@@ -2249,12 +2243,12 @@ export function Sidebar({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <FileTypeIcon type={fileType} className="h-4 w-4 text-red-400 flex-shrink-0" />
-                            
+
                             <div className="flex-1 min-w-0">
                               <div className="message-preview text-sm text-[var(--text-secondary)] truncate font-medium">
                                 {doc.title}
                               </div>
-                              
+
                               <div className="message-recipient text-xs text-[var(--text-secondary)] mt-1 flex items-center gap-2">
                                 <span>Deleted {deletedDate} ago</span>
                                 <span className="w-1 h-1 bg-[var(--text-secondary)] rounded-full opacity-50"></span>
@@ -2262,24 +2256,24 @@ export function Sidebar({
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-1 opacity-0 group-hover/trash:opacity-100 transition-all duration-200">
-                            <button 
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                onRestore(doc._id); 
-                              }} 
-                              className="p-1.5 hover:bg-green-100 hover:text-green-600 rounded-md transition-colors duration-150" 
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRestore(doc._id);
+                              }}
+                              className="p-1.5 hover:bg-green-100 hover:text-green-600 rounded-md transition-colors duration-150"
                               title="Restore document"
                             >
                               <Undo2 className="h-3 w-3" />
                             </button>
-                            <button 
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                onRemove(doc._id); 
-                              }} 
-                              className="p-1.5 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors duration-150" 
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRemove(doc._id);
+                              }}
+                              className="p-1.5 hover:bg-red-100 hover:text-red-600 rounded-md transition-colors duration-150"
                               title="Delete forever"
                             >
                               <Trash className="h-3 w-3" />
@@ -2300,21 +2294,19 @@ export function Sidebar({
                     <div className="flex items-center gap-0.5 bg-[var(--bg-primary)]/80 p-0.5 rounded-md border border-[var(--border-color)]">
                       <button
                         onClick={() => onViewChange('documents')}
-                        className={`flex-1 px-2 py-1 text-xs font-medium transition-colors duration-150 rounded-sm whitespace-nowrap ${
-                          currentView === 'documents'
-                            ? "bg-[var(--bg-active)] text-[var(--text-primary)] border border-[var(--border-color)]"
-                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60"
-                        }`}
+                        className={`flex-1 px-2 py-1 text-xs font-medium transition-colors duration-150 rounded-sm whitespace-nowrap ${currentView === 'documents'
+                          ? "bg-[var(--bg-active)] text-[var(--text-primary)] border border-[var(--border-color)]"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60"
+                          }`}
                       >
                         My Docs
                       </button>
                       <button
                         onClick={() => onViewChange('public')}
-                        className={`flex-1 px-2 py-1 text-xs font-medium transition-colors duration-150 rounded-sm whitespace-nowrap ${
-                          currentView === 'public'
-                            ? "bg-[var(--bg-active)] text-[var(--text-primary)] border border-[var(--border-color)]"
-                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60"
-                        }`}
+                        className={`flex-1 px-2 py-1 text-xs font-medium transition-colors duration-150 rounded-sm whitespace-nowrap ${currentView === 'public'
+                          ? "bg-[var(--bg-active)] text-[var(--text-primary)] border border-[var(--border-color)]"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/60"
+                          }`}
                       >
                         Public
                       </button>
@@ -2324,35 +2316,35 @@ export function Sidebar({
                   {/* Row 2: Action Buttons */}
                   <div className="mb-2">
                     <div className="flex flex-wrap gap-1">
-                      <button 
+                      <button
                         onClick={() => setIsSearchOpen(true)}
                         className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors duration-150 border border-[var(--border-color)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
                         title="Search"
                       >
                         <Search className="h-3.5 w-3.5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => void handleCreateDocument('New Page')}
                         className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors duration-150 border border-[var(--border-color)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
                         title="Add New Page"
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => fileInputRef.current?.click()}
                         className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors duration-150 border border-[var(--border-color)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
                         title="Upload File"
                       >
                         <Upload className="h-3.5 w-3.5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => setShowUrlPanel((v) => !v)}
                         className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors duration-150 border border-[var(--border-color)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
                         title="Analyze URL"
                       >
                         <Globe className="h-3.5 w-3.5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => void handleCreateCalendar()}
                         disabled={isCreatingCalendar}
                         className="p-1.5 text-[var(--text-secondary)] hover:text-blue-600 hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-150 border border-[var(--border-color)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
@@ -2455,7 +2447,7 @@ export function Sidebar({
                 {/* Content (single scroll parent: panel-content) */}
                 <div className="flex-1 px-3 py-2">
                   {renderContextSection()}
-                  
+
                   {/* Documents and Tasks sections */}
                   {currentView === 'documents' && (
                     <div className="mb-3 space-y-4">
@@ -2725,28 +2717,28 @@ export function Sidebar({
                             const timeAgo = formatTimeAgo(lastModified);
                             const isRecent = Date.now() - lastModified < 24 * 60 * 60 * 1000;
                             const fileType = getFileTypeFromDocument(doc);
-                            
+
                             return (
-                              <div 
+                              <div
                                 key={doc._id}
                                 className={`group/pub flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-md cursor-pointer 
                                   transition-colors duration-150 hover:bg-[var(--bg-hover)]
-                                  ${selectedDocumentId === doc._id 
-                                    ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
+                                  ${selectedDocumentId === doc._id
+                                    ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30'
                                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                   }`}
                                 onClick={() => onDocumentSelect(doc._id)}
                                 title={`${doc.title} • ${lastModified !== doc._creationTime ? 'Updated' : 'Created'} ${new Date(lastModified).toLocaleDateString()}`}
                               >
                                 <FileTypeIcon type={fileType} className="h-3.5 w-3.5 flex-shrink-0" />
-                                
+
                                 <span className="font-medium truncate flex-1 min-w-0">{doc.title}</span>
-                                
+
                                 {isRecent && (
                                   <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" title="Recently updated" />
                                 )}
-                                
-                                <span 
+
+                                <span
                                   className={`text-xs px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium transition-colors duration-150
                                     ${selectedDocumentId === doc._id
                                       ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'
@@ -2756,7 +2748,7 @@ export function Sidebar({
                                 >
                                   {timeAgo}
                                 </span>
-                                
+
                                 {user?.name && (
                                   <button
                                     onClick={(e) => {
@@ -2779,7 +2771,7 @@ export function Sidebar({
                     </>
                   )}
                 </div>
-                
+
                 {/* Hidden file input */}
                 <input
                   ref={fileInputRef}
@@ -2794,7 +2786,7 @@ export function Sidebar({
               </div>
             )}
           </div>
-       )}
+        )}
       </div>
 
       {/* Footer (Trash button) */}

@@ -610,6 +610,15 @@ body {
   scrollbar-color: var(--text-muted) var(--bg-secondary);
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Webkit Scrollbar Styling */
 *::-webkit-scrollbar {
   width: 8px;

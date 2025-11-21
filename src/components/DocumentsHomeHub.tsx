@@ -499,7 +499,7 @@ export function DocumentsHomeHub({
 
   // These are Convex actions, not mutations
 
-  const compileAaplModel = useAction(api.aiAgents.compileAaplModel);
+  // const compileAaplModel = useAction(api.aiAgents.compileAaplModel);
 
   const analyzeFileWithGenAI = useAction(api.fileAnalysis.analyzeFileWithGenAI);
 
@@ -605,16 +605,16 @@ export function DocumentsHomeHub({
 
     loggedInUser
       ? {
-          start: agendaWeekStartUtc,
+        start: agendaWeekStartUtc,
 
-          end: agendaWeekEndUtc,
+        end: agendaWeekEndUtc,
 
-          country: "US",
+        country: "US",
 
-          holidaysStartUtc: agendaWeekHolidayRange.startUtc,
+        holidaysStartUtc: agendaWeekHolidayRange.startUtc,
 
-          holidaysEndUtc: agendaWeekHolidayRange.endUtc,
-        }
+        holidaysEndUtc: agendaWeekHolidayRange.endUtc,
+      }
       : "skip",
   );
 
@@ -715,7 +715,7 @@ export function DocumentsHomeHub({
 
     if (loggedInUser) {
       void setPlannerViewPrefs({ agendaSelectedDateMs: canonical }).catch(
-        () => {},
+        () => { },
       );
     } else {
       try {
@@ -723,7 +723,7 @@ export function DocumentsHomeHub({
           "nodebench:agendaSelectedDateMs",
           String(canonical),
         );
-      } catch {}
+      } catch { }
     }
   }, [agendaStartUtc, offsetMs, startOfWeekMs, loggedInUser]);
 
@@ -738,7 +738,7 @@ export function DocumentsHomeHub({
 
     if (loggedInUser) {
       void setPlannerViewPrefs({ agendaSelectedDateMs: canonical }).catch(
-        () => {},
+        () => { },
       );
     } else {
       try {
@@ -746,7 +746,7 @@ export function DocumentsHomeHub({
           "nodebench:agendaSelectedDateMs",
           String(canonical),
         );
-      } catch {}
+      } catch { }
     }
   }, [agendaStartUtc, offsetMs, startOfWeekMs, loggedInUser]);
 
@@ -754,11 +754,11 @@ export function DocumentsHomeHub({
     setAgendaSelectedDateMs(null);
 
     if (loggedInUser) {
-      void setPlannerViewPrefs({}).catch(() => {});
+      void setPlannerViewPrefs({}).catch(() => { });
     } else {
       try {
         localStorage.removeItem("nodebench:agendaSelectedDateMs");
-      } catch {}
+      } catch { }
     }
   }, [loggedInUser]);
 
@@ -770,7 +770,7 @@ export function DocumentsHomeHub({
 
       if (loggedInUser) {
         void setPlannerViewPrefs({ agendaSelectedDateMs: canonical }).catch(
-          () => {},
+          () => { },
         );
       } else {
         try {
@@ -778,7 +778,7 @@ export function DocumentsHomeHub({
             "nodebench:agendaSelectedDateMs",
             String(canonical),
           );
-        } catch {}
+        } catch { }
       }
     },
     [loggedInUser, setPlannerViewPrefs],
@@ -1034,7 +1034,7 @@ export function DocumentsHomeHub({
 
     if (ids.length === 0) return;
 
-    await Promise.all(ids.map((id) => toggleFavorite({ id }).catch(() => {})));
+    await Promise.all(ids.map((id) => toggleFavorite({ id }).catch(() => { })));
 
     clearSelection();
   }, [selectedDocIds, toggleFavorite, clearSelection]);
@@ -1044,7 +1044,7 @@ export function DocumentsHomeHub({
 
     if (ids.length === 0) return;
 
-    await Promise.all(ids.map((id) => archiveDocument({ id }).catch(() => {})));
+    await Promise.all(ids.map((id) => archiveDocument({ id }).catch(() => { })));
 
     clearSelection();
   }, [selectedDocIds, archiveDocument, clearSelection]);
@@ -1662,7 +1662,7 @@ export function DocumentsHomeHub({
     try {
       if (typeof window !== "undefined")
         localStorage.setItem("nodebench:kanbanOrientation", kanbanOrientation);
-    } catch {}
+    } catch { }
   }, [kanbanOrientation]);
 
   const [showWeekInAgenda, setShowWeekInAgenda] = useState<boolean>(true);
@@ -1754,9 +1754,9 @@ export function DocumentsHomeHub({
     loggedInUser ? {} : "skip",
   ) as
     | {
-        docOrderByFilter?: Record<string, string[]>;
-        docOrderBySegmented?: Record<string, string[]>;
-      }
+      docOrderByFilter?: Record<string, string[]>;
+      docOrderBySegmented?: Record<string, string[]>;
+    }
     | undefined;
 
   const saveOrderForFilter = useMutation(
@@ -1826,7 +1826,7 @@ export function DocumentsHomeHub({
   useEffect(() => {
     if (!loggedInUser) return;
 
-    setPlannerModeMutation({ mode }).catch(() => {});
+    setPlannerModeMutation({ mode }).catch(() => { });
   }, [mode, loggedInUser, setPlannerModeMutation]);
 
   // Initialize density and showWeekInAgenda from server preferences
@@ -1873,7 +1873,7 @@ export function DocumentsHomeHub({
           : null;
 
       if (umLS === "list" || umLS === "mini") setUpcomingMode(umLS);
-    } catch {}
+    } catch { }
   }, [prefs]);
 
   // Agenda scope persistence (local only)
@@ -1886,14 +1886,14 @@ export function DocumentsHomeHub({
           : null;
 
       if (s === "day" || s === "week") setAgendaScope(s);
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
     try {
       if (typeof window !== "undefined")
         localStorage.setItem("nodebench:agendaScope", agendaScope);
-    } catch {}
+    } catch { }
   }, [agendaScope]);
 
   // Labels for agenda navigation
@@ -1968,7 +1968,7 @@ export function DocumentsHomeHub({
 
         if (Number.isFinite(n)) setAgendaSelectedDateMs(n);
       }
-    } catch {}
+    } catch { }
   }, [loggedInUser]);
 
   // Removed toolbar style persistence (ghost style is always used)
@@ -2293,7 +2293,7 @@ export function DocumentsHomeHub({
           toast?.error?.(
             "Couldn't create a timeline on the selected document. Creating a new Timeline doc you own.",
           );
-        } catch {}
+        } catch { }
 
         const newDoc = await createDocument({ title: "Timeline Gantt" });
 
@@ -2368,42 +2368,42 @@ export function DocumentsHomeHub({
         agentType?: "orchestrator" | "main" | "leaf";
         status?: "pending" | "running" | "complete" | "paused";
       }> = [
-        {
-          id: "orc",
-          parentId: null,
-          name: "Orchestrate",
-          startOffsetMs: 0,
-          durationMs: 5 * 60 * 1000,
-          agentType: "orchestrator",
-        },
+          {
+            id: "orc",
+            parentId: null,
+            name: "Orchestrate",
+            startOffsetMs: 0,
+            durationMs: 5 * 60 * 1000,
+            agentType: "orchestrator",
+          },
 
-        {
-          id: "main",
-          parentId: "orc",
-          name: "Main Research",
-          startOffsetMs: 0,
-          durationMs: 30 * 60 * 1000,
-          agentType: "main",
-        },
+          {
+            id: "main",
+            parentId: "orc",
+            name: "Main Research",
+            startOffsetMs: 0,
+            durationMs: 30 * 60 * 1000,
+            agentType: "main",
+          },
 
-        {
-          id: "leaf1",
-          parentId: "main",
-          name: "Collect Sources",
-          startOffsetMs: 0,
-          durationMs: 10 * 60 * 1000,
-          agentType: "leaf",
-        },
+          {
+            id: "leaf1",
+            parentId: "main",
+            name: "Collect Sources",
+            startOffsetMs: 0,
+            durationMs: 10 * 60 * 1000,
+            agentType: "leaf",
+          },
 
-        {
-          id: "leaf2",
-          parentId: "main",
-          name: "Summarize",
-          startOffsetMs: 10 * 60 * 1000,
-          durationMs: 15 * 60 * 1000,
-          agentType: "leaf",
-        },
-      ];
+          {
+            id: "leaf2",
+            parentId: "main",
+            name: "Summarize",
+            startOffsetMs: 10 * 60 * 1000,
+            durationMs: 15 * 60 * 1000,
+            agentType: "leaf",
+          },
+        ];
 
       const links = [{ sourceId: "leaf1", targetId: "leaf2", type: "e2e" }];
 
@@ -2419,7 +2419,7 @@ export function DocumentsHomeHub({
             detail: { docId: targetDocId },
           }),
         );
-      } catch {}
+      } catch { }
 
       toast.success("Timeline seeded!");
     } catch (e: any) {
@@ -3069,8 +3069,8 @@ export function DocumentsHomeHub({
 
         const tagsArr: string[] = Array.isArray(ev?.tags)
           ? ((ev.tags as any[]).filter(
-              (x) => typeof x === "string",
-            ) as string[])
+            (x) => typeof x === "string",
+          ) as string[])
           : [];
 
         const colorVal =
@@ -3164,7 +3164,7 @@ export function DocumentsHomeHub({
     setDensity(d);
 
     if (loggedInUser) {
-      setPlannerViewPrefs({ density: d }).catch(() => {});
+      setPlannerViewPrefs({ density: d }).catch(() => { });
     } else {
       try {
         localStorage.setItem("nodebench:plannerDensity", d);
@@ -3180,7 +3180,7 @@ export function DocumentsHomeHub({
     setShowWeekInAgenda(next);
 
     if (loggedInUser) {
-      setPlannerViewPrefs({ showWeekInAgenda: next }).catch(() => {});
+      setPlannerViewPrefs({ showWeekInAgenda: next }).catch(() => { });
     } else {
       try {
         localStorage.setItem("nodebench:showWeekInAgenda", String(next));
@@ -3198,7 +3198,7 @@ export function DocumentsHomeHub({
     if (m !== "weekly") setLastNonWeeklyAgendaMode(m);
 
     if (loggedInUser) {
-      setPlannerViewPrefs({ agendaMode: m }).catch(() => {});
+      setPlannerViewPrefs({ agendaMode: m }).catch(() => { });
     } else {
       try {
         localStorage.setItem("nodebench:agendaMode", m);
@@ -3249,16 +3249,16 @@ export function DocumentsHomeHub({
 
     const due = newTaskModalDue
       ? (() => {
-          const [yy, mm, dd] = newTaskModalDue
-            .split("-")
-            .map((x) => parseInt(x, 10));
+        const [yy, mm, dd] = newTaskModalDue
+          .split("-")
+          .map((x) => parseInt(x, 10));
 
-          if (!yy || !mm || !dd) return undefined as unknown as number;
+        if (!yy || !mm || !dd) return undefined as unknown as number;
 
-          const dt = new Date(yy, mm - 1, dd, 23, 59, 59, 999);
+        const dt = new Date(yy, mm - 1, dd, 23, 59, 59, 999);
 
-          return dt.getTime();
-        })()
+        return dt.getTime();
+      })()
       : undefined;
 
     const priority = toTaskPriority(newTaskModalPriority || undefined);
@@ -4274,7 +4274,7 @@ export function DocumentsHomeHub({
                 !newEventStart ||
                 (!!newEventEnd &&
                   new Date(newEventEnd).getTime() <
-                    new Date(newEventStart).getTime())
+                  new Date(newEventStart).getTime())
               }
             >
               Add Event
@@ -4321,7 +4321,7 @@ export function DocumentsHomeHub({
 
                     if (loggedInUser) {
                       void setListOrders({ agendaListOrder: pruned }).catch(
-                        () => {},
+                        () => { },
                       );
                     } else {
                       try {
@@ -4406,7 +4406,7 @@ export function DocumentsHomeHub({
                           <MiniAgendaEditorPanel
                             kind="task"
                             taskId={entry.item._id}
-                            onClose={onClearTaskSelection ?? (() => {})}
+                            onClose={onClearTaskSelection ?? (() => { })}
                           />
                         )}
                       </div>
@@ -4441,7 +4441,7 @@ export function DocumentsHomeHub({
 
                     if (loggedInUser) {
                       void setListOrders({ upcomingListOrder: pruned }).catch(
-                        () => {},
+                        () => { },
                       );
                     } else {
                       try {
@@ -4499,7 +4499,7 @@ export function DocumentsHomeHub({
                               )
                             )
                               return;
-                          } catch {}
+                          } catch { }
 
                           onSelectTask?.(entry.item._id as Id<"tasks">, "week");
 
@@ -4588,7 +4588,7 @@ export function DocumentsHomeHub({
                               )
                             )
                               return;
-                          } catch {}
+                          } catch { }
 
                           onSelectTask?.(t._id as Id<"tasks">, "other");
 
@@ -5634,7 +5634,7 @@ export function DocumentsHomeHub({
                           )
                         )
                           return;
-                      } catch {}
+                      } catch { }
 
                       const container = e.currentTarget as HTMLElement;
 
@@ -5831,8 +5831,8 @@ export function DocumentsHomeHub({
 
                                 const tagsArr: string[] = Array.isArray(t?.tags)
                                   ? ((t.tags as any[]).filter(
-                                      (x) => typeof x === "string",
-                                    ) as string[])
+                                    (x) => typeof x === "string",
+                                  ) as string[])
                                   : [];
 
                                 const newEventId = await createEventMutation({
@@ -5893,7 +5893,7 @@ export function DocumentsHomeHub({
                                         await deleteEventMutation({
                                           eventId: newEventId as Id<"events">,
                                         });
-                                      } catch {}
+                                      } catch { }
                                     },
                                   },
                                 });
@@ -6045,13 +6045,13 @@ export function DocumentsHomeHub({
                                   ev?.tags,
                                 )
                                   ? ((ev.tags as any[]).filter(
-                                      (x) => typeof x === "string",
-                                    ) as string[])
+                                    (x) => typeof x === "string",
+                                  ) as string[])
                                   : [];
 
                                 const colorVal =
                                   typeof ev?.color === "string" &&
-                                  ev.color.trim()
+                                    ev.color.trim()
                                     ? ev.color.trim()
                                     : undefined;
 
@@ -6100,7 +6100,7 @@ export function DocumentsHomeHub({
 
                                           descriptionJson:
                                             typeof ev?.descriptionJson ===
-                                            "string"
+                                              "string"
                                               ? ev.descriptionJson
                                               : undefined,
 
@@ -6135,7 +6135,7 @@ export function DocumentsHomeHub({
                                         await deleteTaskMutation({
                                           taskId: newTaskId as Id<"tasks">,
                                         });
-                                      } catch {}
+                                      } catch { }
                                     },
                                   },
                                 });
@@ -6232,16 +6232,16 @@ export function DocumentsHomeHub({
 
       loggedInUser && weekRange && weekUtcRange
         ? {
-            start: weekRange.start,
+          start: weekRange.start,
 
-            end: weekRange.end,
+          end: weekRange.end,
 
-            country: "US",
+          country: "US",
 
-            holidaysStartUtc: weekUtcRange.startUtc,
+          holidaysStartUtc: weekUtcRange.startUtc,
 
-            holidaysEndUtc: weekUtcRange.endUtc,
-          }
+          holidaysEndUtc: weekUtcRange.endUtc,
+        }
         : "skip",
     );
 
@@ -6784,7 +6784,7 @@ export function DocumentsHomeHub({
 
   return (
     <>
-      <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative">
+      <div className="h-full w-full bg-transparent overflow-y-auto relative">
         {/* Removed metallic overlay for cleaner look */}
 
         {/* Minimal two-column dashboard with floating docks */}
@@ -6838,693 +6838,693 @@ export function DocumentsHomeHub({
                   aria-label="Documents grid"
                   className=""
                 >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <h2 className={sectionHeader}>Documents & Files</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <h2 className={sectionHeader}>Documents & Files</h2>
 
-                    <span
-                      className="inline-flex items-center gap-1 px-1.5 py-0 rounded-full border text-[10px] bg-amber-50 text-amber-700 border-amber-200"
-                      title="Switch Cards/List/Segmented. Use filters below and star favorites."
-                      aria-label="Documents tips"
-                    >
-                      <Lightbulb className="h-3 w-3 text-amber-500" />
-                      Tips
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-                      <button
-                        onClick={() => setDocViewMode("cards")}
-                        className={`px-3 py-1 text-xs font-semibold rounded-md ${docViewMode === "cards" ? "text-gray-800 bg-white shadow" : "text-gray-500 hover:bg-white/50"}`}
+                      <span
+                        className="inline-flex items-center gap-1 px-1.5 py-0 rounded-full border text-[10px] bg-amber-50 text-amber-700 border-amber-200"
+                        title="Switch Cards/List/Segmented. Use filters below and star favorites."
+                        aria-label="Documents tips"
                       >
-                        Cards
-                      </button>
-
-                      <button
-                        onClick={() => setDocViewMode("list")}
-                        className={`px-3 py-1 text-xs font-semibold rounded-md ${docViewMode === "list" ? "text-gray-800 bg-white shadow" : "text-gray-500 hover:bg-white/50"}`}
-                      >
-                        List
-                      </button>
-
-                      <button
-                        onClick={() => setDocViewMode("segmented")}
-                        className={`px-3 py-1 text-xs font-semibold rounded-md ${docViewMode === "segmented" ? "text-gray-800 bg-white shadow" : "text-gray-500 hover:bg-white/50"}`}
-                        title="Show grouped sections: Calendar, Documents, Files"
-                      >
-                        Segmented
-                      </button>
+                        <Lightbulb className="h-3 w-3 text-amber-500" />
+                        Tips
+                      </span>
                     </div>
-                  </div>
-                </div>
 
-                {/* Dropzone root wrapping filters + grid */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                        <button
+                          onClick={() => setDocViewMode("cards")}
+                          className={`px-3 py-1 text-xs font-semibold rounded-md ${docViewMode === "cards" ? "text-gray-800 bg-white shadow" : "text-gray-500 hover:bg-white/50"}`}
+                        >
+                          Cards
+                        </button>
 
-                <div
-                  {...getRootProps({
-                    className: "relative",
-                    onDragOver: (e: any) => e.preventDefault(),
-                  })}
-                >
-                  <input {...getInputProps()} />
+                        <button
+                          onClick={() => setDocViewMode("list")}
+                          className={`px-3 py-1 text-xs font-semibold rounded-md ${docViewMode === "list" ? "text-gray-800 bg-white shadow" : "text-gray-500 hover:bg-white/50"}`}
+                        >
+                          List
+                        </button>
 
-                  {isDragActive && (
-                    <div className="absolute inset-0 z-20 rounded-none border-2 border-dashed border-[var(--accent-primary)]/60 bg-[var(--bg-primary)]/80 backdrop-blur-sm flex items-center justify-center">
-                      <div className="text-center text-[var(--text-secondary)]">
-                        <p className="font-semibold text-[var(--text-primary)]">
-                          Drop files to upload
-                        </p>
-
-                        <p className="text-xs mt-1">
-                          They will be uploaded and analyzed automatically
-                        </p>
+                        <button
+                          onClick={() => setDocViewMode("segmented")}
+                          className={`px-3 py-1 text-xs font-semibold rounded-md ${docViewMode === "segmented" ? "text-gray-800 bg-white shadow" : "text-gray-500 hover:bg-white/50"}`}
+                          title="Show grouped sections: Calendar, Documents, Files"
+                        >
+                          Segmented
+                        </button>
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Filters / Tools relocated here */}
+                  {/* Dropzone root wrapping filters + grid */}
 
-                  {/* Header controls removed here to avoid duplication; Top Bar owns these controls */}
+                  <div
+                    {...getRootProps({
+                      className: "relative",
+                      onDragOver: (e: any) => e.preventDefault(),
+                    })}
+                  >
+                    <input {...getInputProps()} />
 
-                  <FiltersToolsBar
-                    documentTypes={documentTypes}
-                    filter={filter}
-                    setFilter={setFilter}
-                    countsByFilter={countsByFilter as Record<string, number>}
-                    filterButtonRefs={filterButtonRefs}
-                    onFilterKeyDown={onFilterKeyDown}
-                    viewButtonRef={viewButtonRef}
-                    viewMenuRef={viewMenuRef}
-                    viewMenuOpen={viewMenuOpen}
-                    setViewMenuOpen={setViewMenuOpen}
-                    onChangeDensity={onChangeDensity}
-                    density={density}
-                    showWeekInAgenda={showWeekInAgenda}
-                    onToggleShowWeek={onToggleShowWeek}
-                    loggedInUser={loggedInUser}
-                    isCompiling={isCompiling}
-                    handleCompileAaplModel={handleCompileAaplModel}
-                    isSeedingOnboarding={isSeedingOnboarding}
-                    handleSeedOnboarding={handleSeedOnboarding}
-                    isSeedingTimeline={isSeedingTimeline}
-                    handleSeedTimeline={handleSeedTimeline}
-                    onOpenCalendarPage={() => {
-                      try {
-                        window.dispatchEvent(
-                          new CustomEvent("navigate:calendar"),
-                        );
-                      } catch {
-                        /* no-op */
-                      }
-                    }}
-                    onOpenTimelinePage={() => {
-                      try {
-                        window.dispatchEvent(
-                          new CustomEvent("navigate:timeline"),
-                        );
-                      } catch {}
-                    }}
-                    onUploadClick={() => open()}
-                    isUploading={isUploading}
-                    uploadProgress={uploadProgress}
-                    selectedCount={selectedDocIds.size}
-                    onBulkToggleFavorite={() => void handleBulkToggleFavorite()}
-                    onBulkArchive={() => void handleBulkArchive()}
-                    onClearSelection={() => clearSelection()}
-                  />
+                    {isDragActive && (
+                      <div className="absolute inset-0 z-20 rounded-none border-2 border-dashed border-[var(--accent-primary)]/60 bg-[var(--bg-primary)]/80 backdrop-blur-sm flex items-center justify-center">
+                        <div className="text-center text-[var(--text-secondary)]">
+                          <p className="font-semibold text-[var(--text-primary)]">
+                            Drop files to upload
+                          </p>
 
-                  {(docViewMode === "list" || docViewMode === "cards") &&
-                    filteredDocuments.length === 0 && (
-                      <div className="text-sm text-[var(--text-secondary)]">
-                        No documents found.
+                          <p className="text-xs mt-1">
+                            They will be uploaded and analyzed automatically
+                          </p>
+                        </div>
                       </div>
                     )}
 
-                  {docViewMode === "list" ? (
-                    <SortableList
-                      items={orderedDocuments.map((d) => d._id)}
-                      onReorder={(newOrderIds) => {
-                        // Prune to currently visible/filtered documents only
+                    {/* Filters / Tools relocated here */}
 
-                        const valid = new Set(
-                          filteredDocuments.map((d) => d._id),
-                        );
+                    {/* Header controls removed here to avoid duplication; Top Bar owns these controls */}
 
-                        const pruned = newOrderIds.filter((id) =>
-                          valid.has(id),
-                        );
-
-                        setDocOrderByFilter((prev) => ({
-                          ...prev,
-                          [filter]: pruned.map((id) => id as string),
-                        }));
-
-                        if (loggedInUser) {
-                          void saveOrderForFilter({
-                            filterKey: filter,
-                            order: pruned,
-                          }).catch(() => {});
-                        } else {
-                          try {
-                            localStorage.setItem(
-                              "nodebench:docOrderByFilter",
-                              JSON.stringify({
-                                ...docOrderByFilter,
-                                [filter]: pruned.map((id) => id as string),
-                              }),
-                            );
-                          } catch {
-                            /* no-op */
-                          }
+                    <FiltersToolsBar
+                      documentTypes={documentTypes}
+                      filter={filter}
+                      setFilter={setFilter}
+                      countsByFilter={countsByFilter as Record<string, number>}
+                      filterButtonRefs={filterButtonRefs}
+                      onFilterKeyDown={onFilterKeyDown}
+                      viewButtonRef={viewButtonRef}
+                      viewMenuRef={viewMenuRef}
+                      viewMenuOpen={viewMenuOpen}
+                      setViewMenuOpen={setViewMenuOpen}
+                      onChangeDensity={onChangeDensity}
+                      density={density}
+                      showWeekInAgenda={showWeekInAgenda}
+                      onToggleShowWeek={onToggleShowWeek}
+                      loggedInUser={loggedInUser}
+                      isCompiling={isCompiling}
+                      handleCompileAaplModel={handleCompileAaplModel}
+                      isSeedingOnboarding={isSeedingOnboarding}
+                      handleSeedOnboarding={handleSeedOnboarding}
+                      isSeedingTimeline={isSeedingTimeline}
+                      handleSeedTimeline={handleSeedTimeline}
+                      onOpenCalendarPage={() => {
+                        try {
+                          window.dispatchEvent(
+                            new CustomEvent("navigate:calendar"),
+                          );
+                        } catch {
+                          /* no-op */
                         }
                       }}
-                      renderItem={(id, _index, _isDragging) => {
-                        const doc = docsById[String(id)];
-
-                        if (!doc) return null;
-
-                        return (
-                          <DocumentRow
-                            doc={doc}
-                            onSelect={handleSelectDocument}
-                            onToggleFavorite={handleToggleFavorite}
-                            onDelete={handleDeleteDocument}
-                            density={density}
-                          />
-                        );
+                      onOpenTimelinePage={() => {
+                        try {
+                          window.dispatchEvent(
+                            new CustomEvent("navigate:timeline"),
+                          );
+                        } catch { }
                       }}
+                      onUploadClick={() => open()}
+                      isUploading={isUploading}
+                      uploadProgress={uploadProgress}
+                      selectedCount={selectedDocIds.size}
+                      onBulkToggleFavorite={() => void handleBulkToggleFavorite()}
+                      onBulkArchive={() => void handleBulkArchive()}
+                      onClearSelection={() => clearSelection()}
                     />
-                  ) : docViewMode === "cards" ? (
-                    <DocumentsGridSortable
-                      items={orderedDocuments.map((d) => d._id)}
-                      onReorder={(newOrderIds) => {
-                        // Prune to currently visible/filtered documents only
 
-                        const valid = new Set(
-                          filteredDocuments.map((d) => d._id),
-                        );
+                    {(docViewMode === "list" || docViewMode === "cards") &&
+                      filteredDocuments.length === 0 && (
+                        <div className="text-sm text-[var(--text-secondary)]">
+                          No documents found.
+                        </div>
+                      )}
 
-                        const pruned = newOrderIds.filter((id) =>
-                          valid.has(id),
-                        );
+                    {docViewMode === "list" ? (
+                      <SortableList
+                        items={orderedDocuments.map((d) => d._id)}
+                        onReorder={(newOrderIds) => {
+                          // Prune to currently visible/filtered documents only
 
-                        setDocOrderByFilter((prev) => ({
-                          ...prev,
-                          [filter]: pruned.map((id) => String(id)),
-                        }));
+                          const valid = new Set(
+                            filteredDocuments.map((d) => d._id),
+                          );
 
-                        if (loggedInUser) {
-                          void saveOrderForFilter({
-                            filterKey: filter,
-                            order: pruned,
-                          }).catch(() => {});
-                        } else {
-                          try {
-                            localStorage.setItem(
-                              "nodebench:docOrderByFilter",
-                              JSON.stringify({
-                                ...docOrderByFilter,
-                                [filter]: pruned.map((id) => String(id)),
-                              }),
-                            );
-                          } catch {
-                            /* no-op */
+                          const pruned = newOrderIds.filter((id) =>
+                            valid.has(id),
+                          );
+
+                          setDocOrderByFilter((prev) => ({
+                            ...prev,
+                            [filter]: pruned.map((id) => id as string),
+                          }));
+
+                          if (loggedInUser) {
+                            void saveOrderForFilter({
+                              filterKey: filter,
+                              order: pruned,
+                            }).catch(() => { });
+                          } else {
+                            try {
+                              localStorage.setItem(
+                                "nodebench:docOrderByFilter",
+                                JSON.stringify({
+                                  ...docOrderByFilter,
+                                  [filter]: pruned.map((id) => id as string),
+                                }),
+                              );
+                            } catch {
+                              /* no-op */
+                            }
                           }
-                        }
-                      }}
-                      renderItem={(id, _index, isDragging) => {
-                        const doc = docsById[String(id)];
+                        }}
+                        renderItem={(id, _index, _isDragging) => {
+                          const doc = docsById[String(id)];
 
-                        if (!doc) return null;
+                          if (!doc) return null;
 
-                        return (
-                          <DocumentCardMemo
-                            key={doc._id}
-                            doc={doc}
-                            onSelect={handleSelectDocument}
-                            onDelete={handleDeleteDocument}
-                            onToggleFavorite={handleToggleFavorite}
-                            onOpenMiniEditor={openMiniEditor}
-                            hybrid={true}
-                            isDragging={isDragging}
-                            isSelected={selectedDocIds.has(String(doc._id))}
-                            onToggleSelect={(docId) =>
-                              toggleSelected(String(docId))
+                          return (
+                            <DocumentRow
+                              doc={doc}
+                              onSelect={handleSelectDocument}
+                              onToggleFavorite={handleToggleFavorite}
+                              onDelete={handleDeleteDocument}
+                              density={density}
+                            />
+                          );
+                        }}
+                      />
+                    ) : docViewMode === "cards" ? (
+                      <DocumentsGridSortable
+                        items={orderedDocuments.map((d) => d._id)}
+                        onReorder={(newOrderIds) => {
+                          // Prune to currently visible/filtered documents only
+
+                          const valid = new Set(
+                            filteredDocuments.map((d) => d._id),
+                          );
+
+                          const pruned = newOrderIds.filter((id) =>
+                            valid.has(id),
+                          );
+
+                          setDocOrderByFilter((prev) => ({
+                            ...prev,
+                            [filter]: pruned.map((id) => String(id)),
+                          }));
+
+                          if (loggedInUser) {
+                            void saveOrderForFilter({
+                              filterKey: filter,
+                              order: pruned,
+                            }).catch(() => { });
+                          } else {
+                            try {
+                              localStorage.setItem(
+                                "nodebench:docOrderByFilter",
+                                JSON.stringify({
+                                  ...docOrderByFilter,
+                                  [filter]: pruned.map((id) => String(id)),
+                                }),
+                              );
+                            } catch {
+                              /* no-op */
                             }
-                            onCardMouseClick={(docId, e) =>
-                              handleCardClickWithModifiers(
-                                docId,
+                          }
+                        }}
+                        renderItem={(id, _index, isDragging) => {
+                          const doc = docsById[String(id)];
 
-                                e,
+                          if (!doc) return null;
 
-                                `cards:${filter}`,
+                          return (
+                            <DocumentCardMemo
+                              key={doc._id}
+                              doc={doc}
+                              onSelect={handleSelectDocument}
+                              onDelete={handleDeleteDocument}
+                              onToggleFavorite={handleToggleFavorite}
+                              onOpenMiniEditor={openMiniEditor}
+                              hybrid={true}
+                              isDragging={isDragging}
+                              isSelected={selectedDocIds.has(String(doc._id))}
+                              onToggleSelect={(docId) =>
+                                toggleSelected(String(docId))
+                              }
+                              onCardMouseClick={(docId, e) =>
+                                handleCardClickWithModifiers(
+                                  docId,
 
-                                orderedDocuments.map((d) => d._id),
-                              )
-                            }
-                          />
-                        );
-                      }}
-                      gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
-                    />
-                  ) : (
-                    <div>
-                      {(filter === "all" || filter === "favorites") &&
-                        groupedDocuments.favorites.length > 0 && (
-                          <div>
-                            <h3
-                              className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
-                              title="Starred documents you favorited"
-                            >
-                              <Star className="h-4 w-4 text-yellow-500" />
-                              Favorites{" "}
-                              <span className="text-[var(--text-secondary)] font-normal">
-                                ({groupedDocuments.favorites.length})
-                              </span>
-                            </h3>
+                                  e,
 
-                            <DocumentsGridSortable
-                              items={orderDocsBy(
-                                segmentedOrderByGroup["favorites"],
-                                groupedDocuments.favorites,
-                              ).map((d) => d._id)}
-                              onReorder={(newOrderIds) => {
-                                const groupKey = "favorites";
+                                  `cards:${filter}`,
 
-                                const valid = new Set(
-                                  groupedDocuments.favorites.map((d) => d._id),
-                                );
-
-                                const pruned = newOrderIds.filter((id) =>
-                                  valid.has(id),
-                                );
-
-                                setSegmentedOrderByGroup((prev) => ({
-                                  ...prev,
-                                  [groupKey]: pruned.map((id) => String(id)),
-                                }));
-
-                                if (loggedInUser) {
-                                  void saveOrderForSegmented({
-                                    groupKey,
-                                    order: pruned,
-                                  }).catch(() => {});
-                                } else {
-                                  try {
-                                    localStorage.setItem(
-                                      "nodebench:docOrderBySegmented",
-                                      JSON.stringify({
-                                        ...segmentedOrderByGroup,
-                                        [groupKey]: pruned.map((id) =>
-                                          String(id),
-                                        ),
-                                      }),
-                                    );
-                                  } catch {
-                                    /* no-op */
-                                  }
-                                }
-                              }}
-                              renderItem={(id, _index, isDragging) => {
-                                const doc =
-                                  groupedDocuments.favorites.find(
-                                    (d) => d._id === id,
-                                  ) ?? docsById[String(id)];
-
-                                if (!doc) return null;
-
-                                return (
-                                  <DocumentCardMemo
-                                    key={doc._id}
-                                    doc={doc}
-                                    onSelect={handleSelectDocument}
-                                    onDelete={handleDeleteDocument}
-                                    onToggleFavorite={handleToggleFavorite}
-                                    onOpenMiniEditor={openMiniEditor}
-                                    hybrid={true}
-                                    isDragging={isDragging}
-                                    isSelected={selectedDocIds.has(
-                                      String(doc._id),
-                                    )}
-                                    onToggleSelect={(docId) =>
-                                      toggleSelected(String(docId))
-                                    }
-                                    onCardMouseClick={(docId, e) =>
-                                      handleCardClickWithModifiers(
-                                        docId,
-
-                                        e,
-
-                                        `segmented:favorites`,
-
-                                        orderDocsBy(
-                                          segmentedOrderByGroup["favorites"],
-                                          groupedDocuments.favorites,
-                                        ).map((d) => d._id),
-                                      )
-                                    }
-                                  />
-                                );
-                              }}
-                              gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+                                  orderedDocuments.map((d) => d._id),
+                                )
+                              }
                             />
-                          </div>
-                        )}
+                          );
+                        }}
+                        gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+                      />
+                    ) : (
+                      <div>
+                        {(filter === "all" || filter === "favorites") &&
+                          groupedDocuments.favorites.length > 0 && (
+                            <div>
+                              <h3
+                                className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
+                                title="Starred documents you favorited"
+                              >
+                                <Star className="h-4 w-4 text-yellow-500" />
+                                Favorites{" "}
+                                <span className="text-[var(--text-secondary)] font-normal">
+                                  ({groupedDocuments.favorites.length})
+                                </span>
+                              </h3>
 
-                      {(filter === "all" || filter === "calendar") &&
-                        groupedDocuments.calendar.length > 0 && (
-                          <div>
-                            <h3
-                              className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
-                              title="Calendar-related items like schedules and events"
-                            >
-                              <Calendar className="h-4 w-4 text-[var(--accent-primary)]" />
-                              Calendar{" "}
-                              <span className="text-[var(--text-secondary)] font-normal">
-                                ({groupedDocuments.calendar.length})
-                              </span>
-                            </h3>
+                              <DocumentsGridSortable
+                                items={orderDocsBy(
+                                  segmentedOrderByGroup["favorites"],
+                                  groupedDocuments.favorites,
+                                ).map((d) => d._id)}
+                                onReorder={(newOrderIds) => {
+                                  const groupKey = "favorites";
 
-                            <DocumentsGridSortable
-                              items={orderDocsBy(
-                                segmentedOrderByGroup["calendar"],
-                                groupedDocuments.calendar,
-                              ).map((d) => d._id)}
-                              onReorder={(newOrderIds) => {
-                                const groupKey = "calendar";
+                                  const valid = new Set(
+                                    groupedDocuments.favorites.map((d) => d._id),
+                                  );
 
-                                const valid = new Set(
-                                  groupedDocuments.calendar.map((d) => d._id),
-                                );
+                                  const pruned = newOrderIds.filter((id) =>
+                                    valid.has(id),
+                                  );
 
-                                const pruned = newOrderIds.filter((id) =>
-                                  valid.has(id),
-                                );
+                                  setSegmentedOrderByGroup((prev) => ({
+                                    ...prev,
+                                    [groupKey]: pruned.map((id) => String(id)),
+                                  }));
 
-                                setSegmentedOrderByGroup((prev) => ({
-                                  ...prev,
-                                  [groupKey]: pruned.map((id) => String(id)),
-                                }));
-
-                                if (loggedInUser) {
-                                  void saveOrderForSegmented({
-                                    groupKey,
-                                    order: pruned,
-                                  }).catch(() => {});
-                                } else {
-                                  try {
-                                    localStorage.setItem(
-                                      "nodebench:docOrderBySegmented",
-                                      JSON.stringify({
-                                        ...segmentedOrderByGroup,
-                                        [groupKey]: pruned.map((id) =>
-                                          String(id),
-                                        ),
-                                      }),
-                                    );
-                                  } catch {
-                                    /* no-op */
+                                  if (loggedInUser) {
+                                    void saveOrderForSegmented({
+                                      groupKey,
+                                      order: pruned,
+                                    }).catch(() => { });
+                                  } else {
+                                    try {
+                                      localStorage.setItem(
+                                        "nodebench:docOrderBySegmented",
+                                        JSON.stringify({
+                                          ...segmentedOrderByGroup,
+                                          [groupKey]: pruned.map((id) =>
+                                            String(id),
+                                          ),
+                                        }),
+                                      );
+                                    } catch {
+                                      /* no-op */
+                                    }
                                   }
-                                }
-                              }}
-                              renderItem={(id, _index, isDragging) => {
-                                const doc =
-                                  groupedDocuments.calendar.find(
-                                    (d) => d._id === id,
-                                  ) ?? docsById[String(id)];
+                                }}
+                                renderItem={(id, _index, isDragging) => {
+                                  const doc =
+                                    groupedDocuments.favorites.find(
+                                      (d) => d._id === id,
+                                    ) ?? docsById[String(id)];
 
-                                if (!doc) return null;
+                                  if (!doc) return null;
 
-                                return (
-                                  <DocumentCardMemo
-                                    key={doc._id}
-                                    doc={doc}
-                                    onSelect={handleSelectDocument}
-                                    onDelete={handleDeleteDocument}
-                                    onToggleFavorite={handleToggleFavorite}
-                                    onOpenMiniEditor={openMiniEditor}
-                                    hybrid={true}
-                                    isDragging={isDragging}
-                                    isSelected={selectedDocIds.has(
-                                      String(doc._id),
-                                    )}
-                                    onToggleSelect={(docId) =>
-                                      toggleSelected(String(docId))
+                                  return (
+                                    <DocumentCardMemo
+                                      key={doc._id}
+                                      doc={doc}
+                                      onSelect={handleSelectDocument}
+                                      onDelete={handleDeleteDocument}
+                                      onToggleFavorite={handleToggleFavorite}
+                                      onOpenMiniEditor={openMiniEditor}
+                                      hybrid={true}
+                                      isDragging={isDragging}
+                                      isSelected={selectedDocIds.has(
+                                        String(doc._id),
+                                      )}
+                                      onToggleSelect={(docId) =>
+                                        toggleSelected(String(docId))
+                                      }
+                                      onCardMouseClick={(docId, e) =>
+                                        handleCardClickWithModifiers(
+                                          docId,
+
+                                          e,
+
+                                          `segmented:favorites`,
+
+                                          orderDocsBy(
+                                            segmentedOrderByGroup["favorites"],
+                                            groupedDocuments.favorites,
+                                          ).map((d) => d._id),
+                                        )
+                                      }
+                                    />
+                                  );
+                                }}
+                                gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+                              />
+                            </div>
+                          )}
+
+                        {(filter === "all" || filter === "calendar") &&
+                          groupedDocuments.calendar.length > 0 && (
+                            <div>
+                              <h3
+                                className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
+                                title="Calendar-related items like schedules and events"
+                              >
+                                <Calendar className="h-4 w-4 text-[var(--accent-primary)]" />
+                                Calendar{" "}
+                                <span className="text-[var(--text-secondary)] font-normal">
+                                  ({groupedDocuments.calendar.length})
+                                </span>
+                              </h3>
+
+                              <DocumentsGridSortable
+                                items={orderDocsBy(
+                                  segmentedOrderByGroup["calendar"],
+                                  groupedDocuments.calendar,
+                                ).map((d) => d._id)}
+                                onReorder={(newOrderIds) => {
+                                  const groupKey = "calendar";
+
+                                  const valid = new Set(
+                                    groupedDocuments.calendar.map((d) => d._id),
+                                  );
+
+                                  const pruned = newOrderIds.filter((id) =>
+                                    valid.has(id),
+                                  );
+
+                                  setSegmentedOrderByGroup((prev) => ({
+                                    ...prev,
+                                    [groupKey]: pruned.map((id) => String(id)),
+                                  }));
+
+                                  if (loggedInUser) {
+                                    void saveOrderForSegmented({
+                                      groupKey,
+                                      order: pruned,
+                                    }).catch(() => { });
+                                  } else {
+                                    try {
+                                      localStorage.setItem(
+                                        "nodebench:docOrderBySegmented",
+                                        JSON.stringify({
+                                          ...segmentedOrderByGroup,
+                                          [groupKey]: pruned.map((id) =>
+                                            String(id),
+                                          ),
+                                        }),
+                                      );
+                                    } catch {
+                                      /* no-op */
                                     }
-                                    onCardMouseClick={(docId, e) =>
-                                      handleCardClickWithModifiers(
-                                        docId,
-
-                                        e,
-
-                                        `segmented:calendar`,
-
-                                        orderDocsBy(
-                                          segmentedOrderByGroup["calendar"],
-                                          groupedDocuments.calendar,
-                                        ).map((d) => d._id),
-                                      )
-                                    }
-                                  />
-                                );
-                              }}
-                              gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
-                            />
-                          </div>
-                        )}
-
-                      {(filter === "all" || filter === "text") &&
-                        groupedDocuments.text.length > 0 && (
-                          <div>
-                            <h3
-                              className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
-                              title="Text documents you created or imported"
-                            >
-                              <FileText className="h-4 w-4 text-[var(--accent-primary)]" />
-                              Documents{" "}
-                              <span className="text-[var(--text-secondary)] font-normal">
-                                ({groupedDocuments.text.length})
-                              </span>
-                            </h3>
-
-                            <DocumentsGridSortable
-                              items={orderDocsBy(
-                                segmentedOrderByGroup["text"],
-                                groupedDocuments.text,
-                              ).map((d) => d._id)}
-                              onReorder={(newOrderIds) => {
-                                const groupKey = "text";
-
-                                const valid = new Set(
-                                  groupedDocuments.text.map((d) => d._id),
-                                );
-
-                                const pruned = newOrderIds.filter((id) =>
-                                  valid.has(id),
-                                );
-
-                                setSegmentedOrderByGroup((prev) => ({
-                                  ...prev,
-                                  [groupKey]: pruned.map((id) => String(id)),
-                                }));
-
-                                if (loggedInUser) {
-                                  void saveOrderForSegmented({
-                                    groupKey,
-                                    order: pruned,
-                                  }).catch(() => {});
-                                } else {
-                                  try {
-                                    localStorage.setItem(
-                                      "nodebench:docOrderBySegmented",
-                                      JSON.stringify({
-                                        ...segmentedOrderByGroup,
-                                        [groupKey]: pruned.map((id) =>
-                                          String(id),
-                                        ),
-                                      }),
-                                    );
-                                  } catch {
-                                    /* no-op */
                                   }
-                                }
-                              }}
-                              renderItem={(id, _index, isDragging) => {
-                                const doc =
-                                  groupedDocuments.text.find(
-                                    (d) => d._id === id,
-                                  ) ?? docsById[String(id)];
+                                }}
+                                renderItem={(id, _index, isDragging) => {
+                                  const doc =
+                                    groupedDocuments.calendar.find(
+                                      (d) => d._id === id,
+                                    ) ?? docsById[String(id)];
 
-                                if (!doc) return null;
+                                  if (!doc) return null;
 
-                                return (
-                                  <DocumentCardMemo
-                                    key={doc._id}
-                                    doc={doc}
-                                    onSelect={handleSelectDocument}
-                                    onDelete={handleDeleteDocument}
-                                    onToggleFavorite={handleToggleFavorite}
-                                    onOpenMiniEditor={openMiniEditor}
-                                    hybrid={true}
-                                    isDragging={isDragging}
-                                    isSelected={selectedDocIds.has(
-                                      String(doc._id),
-                                    )}
-                                    onToggleSelect={(docId) =>
-                                      toggleSelected(String(docId))
+                                  return (
+                                    <DocumentCardMemo
+                                      key={doc._id}
+                                      doc={doc}
+                                      onSelect={handleSelectDocument}
+                                      onDelete={handleDeleteDocument}
+                                      onToggleFavorite={handleToggleFavorite}
+                                      onOpenMiniEditor={openMiniEditor}
+                                      hybrid={true}
+                                      isDragging={isDragging}
+                                      isSelected={selectedDocIds.has(
+                                        String(doc._id),
+                                      )}
+                                      onToggleSelect={(docId) =>
+                                        toggleSelected(String(docId))
+                                      }
+                                      onCardMouseClick={(docId, e) =>
+                                        handleCardClickWithModifiers(
+                                          docId,
+
+                                          e,
+
+                                          `segmented:calendar`,
+
+                                          orderDocsBy(
+                                            segmentedOrderByGroup["calendar"],
+                                            groupedDocuments.calendar,
+                                          ).map((d) => d._id),
+                                        )
+                                      }
+                                    />
+                                  );
+                                }}
+                                gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+                              />
+                            </div>
+                          )}
+
+                        {(filter === "all" || filter === "text") &&
+                          groupedDocuments.text.length > 0 && (
+                            <div>
+                              <h3
+                                className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
+                                title="Text documents you created or imported"
+                              >
+                                <FileText className="h-4 w-4 text-[var(--accent-primary)]" />
+                                Documents{" "}
+                                <span className="text-[var(--text-secondary)] font-normal">
+                                  ({groupedDocuments.text.length})
+                                </span>
+                              </h3>
+
+                              <DocumentsGridSortable
+                                items={orderDocsBy(
+                                  segmentedOrderByGroup["text"],
+                                  groupedDocuments.text,
+                                ).map((d) => d._id)}
+                                onReorder={(newOrderIds) => {
+                                  const groupKey = "text";
+
+                                  const valid = new Set(
+                                    groupedDocuments.text.map((d) => d._id),
+                                  );
+
+                                  const pruned = newOrderIds.filter((id) =>
+                                    valid.has(id),
+                                  );
+
+                                  setSegmentedOrderByGroup((prev) => ({
+                                    ...prev,
+                                    [groupKey]: pruned.map((id) => String(id)),
+                                  }));
+
+                                  if (loggedInUser) {
+                                    void saveOrderForSegmented({
+                                      groupKey,
+                                      order: pruned,
+                                    }).catch(() => { });
+                                  } else {
+                                    try {
+                                      localStorage.setItem(
+                                        "nodebench:docOrderBySegmented",
+                                        JSON.stringify({
+                                          ...segmentedOrderByGroup,
+                                          [groupKey]: pruned.map((id) =>
+                                            String(id),
+                                          ),
+                                        }),
+                                      );
+                                    } catch {
+                                      /* no-op */
                                     }
-                                    onCardMouseClick={(docId, e) =>
-                                      handleCardClickWithModifiers(
-                                        docId,
-
-                                        e,
-
-                                        `segmented:text`,
-
-                                        orderDocsBy(
-                                          segmentedOrderByGroup["text"],
-                                          groupedDocuments.text,
-                                        ).map((d) => d._id),
-                                      )
-                                    }
-                                  />
-                                );
-                              }}
-                              gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
-                            />
-                          </div>
-                        )}
-
-                      {(filter === "all" || filter === "files") &&
-                        groupedDocuments.files.length > 0 && (
-                          <div>
-                            <h3
-                              className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
-                              title="Uploaded files (PDFs, images, spreadsheets, etc.)"
-                            >
-                              <File className="h-4 w-4 text-[var(--accent-primary)]" />
-                              Files{" "}
-                              <span className="text-[var(--text-secondary)] font-normal">
-                                ({groupedDocuments.files.length})
-                              </span>
-                            </h3>
-
-                            <DocumentsGridSortable
-                              items={orderDocsBy(
-                                segmentedOrderByGroup["files"],
-                                groupedDocuments.files,
-                              ).map((d) => d._id)}
-                              onReorder={(newOrderIds) => {
-                                const groupKey = "files";
-
-                                const valid = new Set(
-                                  groupedDocuments.files.map((d) => d._id),
-                                );
-
-                                const pruned = newOrderIds.filter((id) =>
-                                  valid.has(id),
-                                );
-
-                                setSegmentedOrderByGroup((prev) => ({
-                                  ...prev,
-                                  [groupKey]: pruned.map((id) => String(id)),
-                                }));
-
-                                if (loggedInUser) {
-                                  void saveOrderForSegmented({
-                                    groupKey,
-                                    order: pruned,
-                                  }).catch(() => {});
-                                } else {
-                                  try {
-                                    localStorage.setItem(
-                                      "nodebench:docOrderBySegmented",
-                                      JSON.stringify({
-                                        ...segmentedOrderByGroup,
-                                        [groupKey]: pruned.map((id) =>
-                                          String(id),
-                                        ),
-                                      }),
-                                    );
-                                  } catch {
-                                    /* no-op */
                                   }
-                                }
-                              }}
-                              renderItem={(id, _index, isDragging) => {
-                                const doc =
-                                  groupedDocuments.files.find(
-                                    (d) => d._id === id,
-                                  ) ?? docsById[String(id)];
+                                }}
+                                renderItem={(id, _index, isDragging) => {
+                                  const doc =
+                                    groupedDocuments.text.find(
+                                      (d) => d._id === id,
+                                    ) ?? docsById[String(id)];
 
-                                if (!doc) return null;
+                                  if (!doc) return null;
 
-                                return (
-                                  <DocumentCardMemo
-                                    key={doc._id}
-                                    doc={doc}
-                                    onSelect={handleSelectDocument}
-                                    onDelete={handleDeleteDocument}
-                                    onToggleFavorite={handleToggleFavorite}
-                                    onOpenMiniEditor={openMiniEditor}
-                                    hybrid={true}
-                                    isDragging={isDragging}
-                                    isSelected={selectedDocIds.has(
-                                      String(doc._id),
-                                    )}
-                                    onToggleSelect={(docId) =>
-                                      toggleSelected(String(docId))
+                                  return (
+                                    <DocumentCardMemo
+                                      key={doc._id}
+                                      doc={doc}
+                                      onSelect={handleSelectDocument}
+                                      onDelete={handleDeleteDocument}
+                                      onToggleFavorite={handleToggleFavorite}
+                                      onOpenMiniEditor={openMiniEditor}
+                                      hybrid={true}
+                                      isDragging={isDragging}
+                                      isSelected={selectedDocIds.has(
+                                        String(doc._id),
+                                      )}
+                                      onToggleSelect={(docId) =>
+                                        toggleSelected(String(docId))
+                                      }
+                                      onCardMouseClick={(docId, e) =>
+                                        handleCardClickWithModifiers(
+                                          docId,
+
+                                          e,
+
+                                          `segmented:text`,
+
+                                          orderDocsBy(
+                                            segmentedOrderByGroup["text"],
+                                            groupedDocuments.text,
+                                          ).map((d) => d._id),
+                                        )
+                                      }
+                                    />
+                                  );
+                                }}
+                                gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+                              />
+                            </div>
+                          )}
+
+                        {(filter === "all" || filter === "files") &&
+                          groupedDocuments.files.length > 0 && (
+                            <div>
+                              <h3
+                                className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
+                                title="Uploaded files (PDFs, images, spreadsheets, etc.)"
+                              >
+                                <File className="h-4 w-4 text-[var(--accent-primary)]" />
+                                Files{" "}
+                                <span className="text-[var(--text-secondary)] font-normal">
+                                  ({groupedDocuments.files.length})
+                                </span>
+                              </h3>
+
+                              <DocumentsGridSortable
+                                items={orderDocsBy(
+                                  segmentedOrderByGroup["files"],
+                                  groupedDocuments.files,
+                                ).map((d) => d._id)}
+                                onReorder={(newOrderIds) => {
+                                  const groupKey = "files";
+
+                                  const valid = new Set(
+                                    groupedDocuments.files.map((d) => d._id),
+                                  );
+
+                                  const pruned = newOrderIds.filter((id) =>
+                                    valid.has(id),
+                                  );
+
+                                  setSegmentedOrderByGroup((prev) => ({
+                                    ...prev,
+                                    [groupKey]: pruned.map((id) => String(id)),
+                                  }));
+
+                                  if (loggedInUser) {
+                                    void saveOrderForSegmented({
+                                      groupKey,
+                                      order: pruned,
+                                    }).catch(() => { });
+                                  } else {
+                                    try {
+                                      localStorage.setItem(
+                                        "nodebench:docOrderBySegmented",
+                                        JSON.stringify({
+                                          ...segmentedOrderByGroup,
+                                          [groupKey]: pruned.map((id) =>
+                                            String(id),
+                                          ),
+                                        }),
+                                      );
+                                    } catch {
+                                      /* no-op */
                                     }
-                                    onCardMouseClick={(docId, e) =>
-                                      handleCardClickWithModifiers(
-                                        docId,
+                                  }
+                                }}
+                                renderItem={(id, _index, isDragging) => {
+                                  const doc =
+                                    groupedDocuments.files.find(
+                                      (d) => d._id === id,
+                                    ) ?? docsById[String(id)];
 
-                                        e,
+                                  if (!doc) return null;
 
-                                        `segmented:files`,
+                                  return (
+                                    <DocumentCardMemo
+                                      key={doc._id}
+                                      doc={doc}
+                                      onSelect={handleSelectDocument}
+                                      onDelete={handleDeleteDocument}
+                                      onToggleFavorite={handleToggleFavorite}
+                                      onOpenMiniEditor={openMiniEditor}
+                                      hybrid={true}
+                                      isDragging={isDragging}
+                                      isSelected={selectedDocIds.has(
+                                        String(doc._id),
+                                      )}
+                                      onToggleSelect={(docId) =>
+                                        toggleSelected(String(docId))
+                                      }
+                                      onCardMouseClick={(docId, e) =>
+                                        handleCardClickWithModifiers(
+                                          docId,
 
-                                        orderDocsBy(
-                                          segmentedOrderByGroup["files"],
-                                          groupedDocuments.files,
-                                        ).map((d) => d._id),
-                                      )
-                                    }
-                                  />
-                                );
-                              }}
-                              gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
-                            />
-                          </div>
-                        )}
+                                          e,
 
-                      {filter === "all" &&
-                        groupedDocuments.calendar.length === 0 &&
-                        groupedDocuments.text.length === 0 &&
-                        groupedDocuments.files.length === 0 &&
-                        groupedDocuments.favorites.length === 0 && (
-                          <div className="text-sm text-[var(--text-secondary)]">
-                            No documents found.
-                          </div>
-                        )}
+                                          `segmented:files`,
 
-                      {filter !== "all" &&
-                        ((filter === "calendar" &&
-                          groupedDocuments.calendar.length === 0) ||
-                          (filter === "text" &&
-                            groupedDocuments.text.length === 0) ||
-                          (filter === "files" &&
-                            groupedDocuments.files.length === 0) ||
-                          (filter === "favorites" &&
-                            groupedDocuments.favorites.length === 0)) && (
-                          <div className="text-sm text-[var(--text-secondary)]">
-                            No documents found.
-                          </div>
-                        )}
-                    </div>
-                  )}
-                </div>
-              </section>
+                                          orderDocsBy(
+                                            segmentedOrderByGroup["files"],
+                                            groupedDocuments.files,
+                                          ).map((d) => d._id),
+                                        )
+                                      }
+                                    />
+                                  );
+                                }}
+                                gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+                              />
+                            </div>
+                          )}
+
+                        {filter === "all" &&
+                          groupedDocuments.calendar.length === 0 &&
+                          groupedDocuments.text.length === 0 &&
+                          groupedDocuments.files.length === 0 &&
+                          groupedDocuments.favorites.length === 0 && (
+                            <div className="text-sm text-[var(--text-secondary)]">
+                              No documents found.
+                            </div>
+                          )}
+
+                        {filter !== "all" &&
+                          ((filter === "calendar" &&
+                            groupedDocuments.calendar.length === 0) ||
+                            (filter === "text" &&
+                              groupedDocuments.text.length === 0) ||
+                            (filter === "files" &&
+                              groupedDocuments.files.length === 0) ||
+                            (filter === "favorites" &&
+                              groupedDocuments.favorites.length === 0)) && (
+                            <div className="text-sm text-[var(--text-secondary)]">
+                              No documents found.
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                </section>
               </div>
             </div>
 
@@ -7532,7 +7532,7 @@ export function DocumentsHomeHub({
 
             {/* Sidebar column */}
 
-            <aside className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-[var(--border-color)] bg-[var(--bg-primary)] relative`}>
+            <aside className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-[var(--border-color)] bg-[var(--bg-primary)]/50 backdrop-blur-sm relative transition-all duration-300`}>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(!sidebarOpen)}

@@ -5,38 +5,78 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 
 /**
  * Call an MCP tool via HTTP (static tool-calling only)
  */
 export const callMcpTool: any = action({
   args: {
-    serverId: v.id("mcpServers"),
+    serverId: v.optional(v.id("mcpServers")),
     toolName: v.string(),
     parameters: v.any(),
+    prioritizedServers: v.optional(v.array(v.string())),
   },
   returns: v.object({
     success: v.boolean(),
     result: v.optional(v.any()),
     error: v.optional(v.string()),
+    serverId: v.optional(v.id("mcpServers")),
+    serverName: v.optional(v.string()),
   }),
   handler: async (ctx, args): Promise<{
     success: boolean;
     result?: any;
     error?: string;
+    serverId?: Id<"mcpServers">;
+    serverName?: string;
   }> => {
     try {
-      // Get server configuration from database
-      const server: any = await ctx.runQuery(api.mcp.getMcpServerById, {
-        serverId: args.serverId,
-      });
+      // Helper to score preferred servers (lower is better)
+      const PRIORITY = (args.prioritizedServers && args.prioritizedServers.length > 0)
+        ? args.prioritizedServers.map((p) => p.toLowerCase())
+        : ["context7", "convex"];
+      const scoreServer = (name?: string) => {
+        if (!name) return PRIORITY.length + 1;
+        const lower = name.toLowerCase();
+        const idx = PRIORITY.findIndex((p) => lower.includes(p));
+        return idx === -1 ? PRIORITY.length : idx;
+      };
+
+      let serverId = args.serverId as Id<"mcpServers"> | undefined;
+      let server: any = null;
+
+      // If no serverId provided, pick the best available server for the current user
+      if (!serverId) {
+        const servers = await ctx.runQuery(api.mcp.listMcpServers, {});
+        const withUrls = servers.filter((s: any) => Boolean(s.url));
+        withUrls.sort((a: any, b: any) => {
+          const scoreDiff = scoreServer(a.name) - scoreServer(b.name);
+          if (scoreDiff !== 0) return scoreDiff;
+          // Most recently updated wins as a tiebreaker
+          return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+        });
+        server = withUrls[0] ?? null;
+        serverId = server?._id;
+      }
+
+      if (!serverId) {
+        return { success: false, error: "No MCP server configured", serverId: undefined, serverName: undefined };
+      }
+
+      // Get server configuration from database (if not already fetched)
+      if (!server) {
+        server = await ctx.runQuery(api.mcp.getMcpServerById, {
+          serverId,
+        });
+      }
 
       if (!server) {
-        return { success: false, error: "Server not found" };
+        return { success: false, error: "Server not found", serverId };
       }
 
       if (!server.url) {
-        return { success: false, error: "Server URL not configured" };
+        return { success: false, error: "Server URL not configured", serverId, serverName: server.name };
       }
 
       // Generate unique request ID for JSON-RPC 2.0
@@ -115,6 +155,8 @@ export const callMcpTool: any = action({
       return {
         success: true,
         result: result.result || result,
+        serverId,
+        serverName: server?.name,
       };
 
     } catch (error) {
@@ -122,6 +164,7 @@ export const callMcpTool: any = action({
       return {
         success: false,
         error: error instanceof Error ? error.message : "Tool execution failed",
+        serverId: args.serverId ?? undefined,
       };
     }
   },

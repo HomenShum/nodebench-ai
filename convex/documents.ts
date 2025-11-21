@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
-import { components } from "./_generated/api";
+import { api, internal, components } from "./_generated/api";
 import { extractMediaFromMessages } from "./lib/dossierHelpers";
 
 // Internal: mark document as RAG-indexed
@@ -299,8 +299,8 @@ const _buildEditorJSON = (blocks: any[]): string => {
     const kids = Array.isArray(b?.children)
       ? b.children
       : Array.isArray(b?.items)
-      ? b.items
-      : [];
+        ? b.items
+        : [];
     return Array.isArray(kids) ? kids : [];
   };
 
@@ -495,6 +495,10 @@ export const create = mutation({
       lastModified: Date.now(),
     });
 
+    // Asynchronously index into Gemini File Search
+    const api = await import("./_generated/api");
+    await ctx.scheduler.runAfter(0, api.internal.fileSearch.upsertDocument, { documentId: document });
+
     return document;
   },
 });
@@ -525,6 +529,8 @@ export const createWithContent = mutation({
       lastModified: Date.now(),
     } as any);
 
+    await ctx.scheduler.runAfter(0, (internal as any).fileSearch.upsertDocument, { documentId: document as Id<"documents"> });
+
     return document as Id<"documents">;
   },
 });
@@ -543,7 +549,7 @@ export const listNotesInRange = query({
       )
       .filter((q: any) => q.neq(q.field("isArchived"), true))
       .order("asc")
-      .collect();
+      .take(500);
     return rows;
   },
 });
@@ -564,7 +570,7 @@ export const listDocumentsByTag = query({
     const tagRecords = await ctx.db
       .query("tags")
       .withIndex("by_name", (q) => q.eq("name", args.tag))
-      .collect();
+      .take(25);
 
     if (tagRecords.length === 0) return [];
 
@@ -575,7 +581,7 @@ export const listDocumentsByTag = query({
         .query("tagRefs")
         .withIndex("by_tag", (q) => q.eq("tagId", tag._id))
         .filter((q) => q.eq(q.field("targetType"), "documents"))
-        .collect();
+        .take(200);
       allTagRefs.push(...refs);
     }
 
@@ -639,7 +645,7 @@ export const getSidebar = query({
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
       .filter((q) => q.neq(q.field("isArchived"), true))
       .order("desc")
-      .collect();
+      .take(200);
 
     // Sort by lastModified if available, otherwise by _creationTime
     return documents.sort((a, b) => {
@@ -661,29 +667,36 @@ export const findByTitleAny = query({
     const userId = await getAuthUserId(ctx);
     const lower = title.toLowerCase();
 
-    // 1) Search user-owned documents
-    const userDocs = await ctx.db
-      .query("documents")
-      .withIndex("by_user", (q) => q.eq("createdBy", userId as any))
-      .filter((q) => q.neq(q.field("isArchived"), true))
-      .order("desc")
-      .collect();
+    const searchForMatch = async (params: {
+      isPublic?: boolean;
+      createdBy?: Id<"users">;
+    }) => {
+      const res = await ctx.db
+        .query("documents")
+        .withSearchIndex("search_title", (q) => {
+          let builder = q.search("title", title).eq("isArchived", false as any);
+          if (params.isPublic !== undefined) {
+            builder = builder.eq("isPublic", params.isPublic);
+          }
+          if (params.createdBy) {
+            builder = builder.eq("createdBy", params.createdBy as any);
+          }
+          return builder;
+        })
+        .take(50);
 
-    let found = userDocs.find((d) => (d.title || "").toLowerCase() === lower);
-    if (!found) found = userDocs.find((d) => (d.title || "").toLowerCase().includes(lower));
-    if (found) return found._id;
+      let hit = res.find((d) => (d.title || "").toLowerCase() === lower);
+      if (!hit) hit = res.find((d) => (d.title || "").toLowerCase().includes(lower));
+      return hit;
+    };
+
+    // 1) Search user-owned documents
+    const userHit = await searchForMatch({ createdBy: userId as any });
+    if (userHit) return userHit._id;
 
     // 2) Search public documents
-    const publicDocs = await ctx.db
-      .query("documents")
-      .withIndex("by_public", (q) => q.eq("isPublic", true))
-      .filter((q) => q.neq(q.field("isArchived"), true))
-      .order("desc")
-      .collect();
-
-    found = publicDocs.find((d) => (d.title || "").toLowerCase() === lower);
-    if (!found) found = publicDocs.find((d) => (d.title || "").toLowerCase().includes(lower));
-    return found ? found._id : null;
+    const publicHit = await searchForMatch({ isPublic: true });
+    return publicHit ? publicHit._id : null;
   },
 });
 
@@ -696,7 +709,7 @@ export const getSidebarWithPreviews = query({
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
       .filter((q) => q.neq(q.field("isArchived"), true))
       .order("desc")
-      .collect();
+      .take(200);
 
     // Add truncated content preview and sort by lastModified
     const documentsWithPreviews = documents.map(doc => {
@@ -735,7 +748,7 @@ export const getSidebarWithOptions = query({
       .query("documents")
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
       .filter((q) => q.neq(q.field("isArchived"), true))
-      .collect();
+      .take(200);
 
     // Apply title filter if provided
     if (args.filterBy) {
@@ -780,6 +793,38 @@ export const getSidebarWithOptions = query({
   },
 });
 
+export const listUserDossiers = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const limit = args.limit ?? 10;
+
+    const documents = await ctx.db
+      .query("documents")
+      .withIndex("by_user", (q) => q.eq("createdBy", userId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("documentType"), "dossier"),
+          q.eq(q.field("dossierType"), "primary"),
+          q.eq(q.field("isArchived"), false)
+        )
+      )
+      .order("desc")
+      .take(limit);
+
+    return documents.sort((a, b) => {
+      const aTime = (a as any).lastModified || a._creationTime;
+      const bTime = (b as any).lastModified || b._creationTime;
+      return bTime - aTime; // newest first
+    });
+  },
+});
+
+
 export const getById = query({
   args: {
     documentId: v.id("documents"),
@@ -820,7 +865,12 @@ export const update = mutation({
       lastModified: Date.now()
     };
 
-    return await ctx.db.patch(id, updateData);
+    const result = await ctx.db.patch(id, updateData);
+
+    // Re-index after updates
+    await ctx.scheduler.runAfter(0, (internal as any).fileSearch.upsertDocument, { documentId: id });
+
+    return result;
   },
 });
 
@@ -978,22 +1028,22 @@ export const getNodesPaginated = query({
 });
 
 export const clearTrash = mutation({
-    handler: async (ctx) => {
-        const userId = await getAuthUserId(ctx);
-        if (!userId) {
-            throw new Error("Not authenticated");
-        }
-        const trash = await ctx.db
-            .query("documents")
-            .withIndex("by_user_archived", (q) =>
-                q.eq("createdBy", userId).eq("isArchived", true)
-            )
-            .collect();
-        for (const doc of trash) {
-            await ctx.db.delete(doc._id);
-        }
-        return true;
-    },
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+    const trash = await ctx.db
+      .query("documents")
+      .withIndex("by_user_archived", (q) =>
+        q.eq("createdBy", userId).eq("isArchived", true)
+      )
+      .collect();
+    for (const doc of trash) {
+      await ctx.db.delete(doc._id);
+    }
+    return true;
+  },
 });
 
 export const getSearch = query({
@@ -1025,7 +1075,8 @@ export const getRecentForMentions = query({
       .query("documents")
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
       .filter((q) => q.neq(q.field("isArchived"), true))
-      .collect();
+      .order("desc")
+      .take(200);
 
     // Sort by lastModified if available, otherwise by creation time (newest first)
     docs.sort((a, b) => {
@@ -1075,7 +1126,7 @@ export const getPublic = query({
       .query("documents")
       .withIndex("by_public", (q) => q.eq("isPublic", true))
       .filter((q) => q.neq(q.field("isArchived"), true))
-      .collect();
+      .take(200);
   },
 });
 
@@ -1088,7 +1139,7 @@ export const debugDocuments = query({
     const allUserDocs = await ctx.db
       .query("documents")
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
-      .collect();
+      .take(200);
 
     return allUserDocs.map(doc => ({
       id: doc._id,
@@ -1281,18 +1332,37 @@ export const getOrCreateQuickNotes = mutation({
     userId: v.optional(v.union(v.id("users"), v.string())),
   },
   handler: async (ctx, args) => {
-    const userId = (args as any).userId || await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    // Get raw userId from args or auth
+    const rawUserId = (args as any).userId || await getAuthUserId(ctx);
+    if (!rawUserId) throw new Error("Not authenticated");
+
+    // Normalize userId to handle pipe-separated format from auth providers
+    let userId: Id<"users">;
+    if (typeof rawUserId === "string" && rawUserId.includes("|")) {
+      const userIdPart = rawUserId.split("|")[0];
+      if (!userIdPart || userIdPart.length < 10) {
+        throw new Error("Invalid user ID format. Please sign out and sign back in.");
+      }
+      userId = userIdPart as Id<"users">;
+    } else {
+      userId = rawUserId as Id<"users">;
+    }
 
     const dossier = await ctx.db.get(args.dossierId);
     if (!dossier) {
       throw new Error("Dossier not found");
     }
 
-    if (dossier.createdBy !== userId) {
-      throw new Error("Not authorized to manage quick notes for this dossier");
+    // Check access: user must be creator OR dossier must be public (for viewing)
+    const isCreator = dossier.createdBy === userId;
+    const canView = dossier.isPublic;
+    const canEdit = isCreator || (dossier.isPublic && dossier.allowPublicEdit);
+
+    if (!isCreator && !canView) {
+      throw new Error("Not authorized to view quick notes for this dossier");
     }
 
+    // Check if quick notes already exist
     const existing = await ctx.db
       .query("documents")
       .withIndex("by_parent_dossier", (q) => q.eq("parentDossierId", args.dossierId))
@@ -1301,6 +1371,13 @@ export const getOrCreateQuickNotes = mutation({
 
     if (existing) {
       return existing;
+    }
+
+    // Only allow creation if user can edit
+    if (!canEdit) {
+      // For public dossiers where user can't edit, return null instead of creating
+      // This allows viewing the dossier without quick notes
+      return null;
     }
 
     // Create new Quick Notes document

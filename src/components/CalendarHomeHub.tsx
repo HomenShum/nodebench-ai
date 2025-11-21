@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Id } from "../../convex/_generated/dataModel";
 import { CalendarView } from "@/components/views/CalendarView";
-import { AgentDashboard } from "@/components/agentDashboard/AgentDashboard";
+
 import { usePlannerState } from "@/hooks/usePlannerState";
 import { SidebarMiniCalendar } from "@/components/shared/SidebarMiniCalendar";
 import { SidebarUpcoming } from "@/components/shared/SidebarUpcoming";
@@ -20,32 +20,7 @@ export function CalendarHomeHub({
 }: CalendarHomeHubProps) {
   // Shared planner state
   const { focusedDateMs, setFocusedDateMs, handleViewDay, handleViewWeek, handleAddTaskForDate, upcoming } = usePlannerState();
-  // Subview: calendar | agents; synced to URL hash (#calendar or #calendar/agents)
-  const [subView, setSubView] = useState<"calendar" | "agents">("calendar");
-  useEffect(() => {
-    const apply = () => {
-      try {
-        const h = (window.location.hash || "").toLowerCase();
-        // Only react to hash changes that target the calendar hub; ignore unrelated hashes
-        if (!h.startsWith("#calendar")) return;
-        setSubView(h.includes("calendar/agents") ? "agents" : "calendar");
-      } catch {
-        // noop
-      }
-    };
-    apply();
-    window.addEventListener("hashchange", apply);
-    return () => window.removeEventListener("hashchange", apply);
-  }, []);
-  const switchTo = (v: "calendar" | "agents") => {
-    try {
-      const base = "#calendar";
-      window.location.hash = v === "agents" ? `${base}/agents` : base;
-    } catch {
-      // best effort
-    }
-    setSubView(v);
-  };
+
 
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     try {
@@ -74,7 +49,7 @@ export function CalendarHomeHub({
       const w = Math.ceil(el.getBoundingClientRect().width);
       try {
         document.documentElement.style.setProperty('--left-overlay-padding', isOverlay && w > 0 ? `${w}px` : '0px');
-      } catch {}
+      } catch { }
     };
     update();
     let ro: ResizeObserver | null = null;
@@ -85,12 +60,12 @@ export function CalendarHomeHub({
         // @ts-ignore
         ro.observe(el);
       }
-    } catch {}
+    } catch { }
     window.addEventListener('resize', update);
     return () => {
-      try { document.documentElement.style.setProperty('--left-overlay-padding', '0px'); } catch {}
+      try { document.documentElement.style.setProperty('--left-overlay-padding', '0px'); } catch { }
       window.removeEventListener('resize', update);
-      if (ro) try { ro.disconnect(); } catch {}
+      if (ro) try { ro.disconnect(); } catch { }
     };
   }, [sidebarOpen]);
 
@@ -103,22 +78,18 @@ export function CalendarHomeHub({
           <div className="flex-1 min-w-0">
             <TopDividerBar
               left={
-                <UnifiedHubPills active={subView} showRoadmap roadmapDisabled={false} />
+                <UnifiedHubPills active="calendar" showRoadmap roadmapDisabled={false} />
               }
             />
             {/* Sub-tabs replaced by header breadcrumb/toggles */}
 
-            {subView === "calendar" ? (
-              <CalendarView
-                focusedDateMs={focusedDateMs}
-                onSelectDate={setFocusedDateMs}
-                onViewDay={handleViewDay}
-                onViewWeek={handleViewWeek}
-                onQuickAddTask={handleAddTaskForDate}
-              />
-            ) : (
-              <AgentDashboard />
-            )}
+            <CalendarView
+              focusedDateMs={focusedDateMs}
+              onSelectDate={setFocusedDateMs}
+              onViewDay={handleViewDay}
+              onViewWeek={handleViewWeek}
+              onQuickAddTask={handleAddTaskForDate}
+            />
           </div>
           <aside ref={sidebarRef} className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-[var(--border-color)] bg-[var(--bg-primary)] relative z-20`}>
             <button

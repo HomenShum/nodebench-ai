@@ -1,391 +1,208 @@
-// Agent-based Chat using @convex-dev/agent component
-// This replaces the manual HTTP streaming approach with built-in memory management
+// convex/agentChat.ts
+// Query and mutation functions for Agent component-based chat
+// This provides the interface between the frontend and the @convex-dev/agent component
 
 import { v } from "convex/values";
-import { action, mutation, query, internalMutation } from "./_generated/server";
-import { Agent } from "@convex-dev/agent";
-import { components } from "./_generated/api";
-import { openai } from "@ai-sdk/openai";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
+import { internal, components } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { paginationOptsValidator } from "convex/server";
-
-// Helper to create agent with specific model
-const createChatAgent = (model: string) => new Agent(components.agent, {
-  name: "ChatAgent",
-  languageModel: openai.chat(model),
-  instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
-});
 
 /**
- * Create a new chat thread and send the first message
+ * Utility function to safely extract and validate user ID from authentication
  */
-export const createThreadWithMessage = action({
-  args: {
-    prompt: v.string(),
-    model: v.optional(v.string()),
-    fastMode: v.optional(v.boolean()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+async function getSafeUserId(ctx: any): Promise<Id<"users">> {
+  const rawUserId = await getAuthUserId(ctx);
+  if (!rawUserId) {
+    throw new Error("Not authenticated");
+  }
 
-    const modelName = args.model || "gpt-5-chat-latest";
-    const chatAgent = createChatAgent(modelName);
+  // Handle malformed user IDs with pipe characters
+  let userId: Id<"users">;
+  if (typeof rawUserId === "string" && rawUserId.includes("|")) {
+    const userIdPart = rawUserId.split("|")[0];
+    if (!userIdPart || userIdPart.length < 10) {
+      throw new Error("Invalid user ID format. Please sign out and sign back in.");
+    }
+    userId = userIdPart as Id<"users">;
+  } else {
+    userId = rawUserId as Id<"users">;
+  }
 
-    // Create a new thread using the Agent component
-    const { threadId, thread } = await chatAgent.createThread(ctx, { userId });
+  // Verify user exists
+  const user = await ctx.db.get(userId);
+  if (!user) {
+    throw new Error("User not found. Please sign out and sign back in.");
+  }
 
-    // Update thread summary with model info
-    await ctx.runMutation(components.agent.threads.updateThread, {
-      threadId,
-      patch: {
-        summary: `Model: ${modelName}, Fast: ${args.fastMode || false}`,
-      },
-    });
-
-    // Generate the first response
-    const result = await thread.generateText({
-      prompt: args.prompt,
-      system: chatAgent.options.instructions,
-    });
-
-    return {
-      threadId,
-      text: result.text,
-      messageId: result.messageId,
-    };
-  },
-});
+  return userId;
+}
 
 /**
- * Continue an existing conversation thread
+ * List all agent threads for the current user
+ * Returns threads from the Agent component's storage
  */
-export const continueThread = action({
-  args: {
-    threadId: v.string(),
-    prompt: v.string(),
-    model: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+export const listUserThreads = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getSafeUserId(ctx);
 
-    // Verify thread ownership
-    const thread = await ctx.runQuery(components.agent.threads.getThread, {
-      threadId: args.threadId,
-    });
-    if (thread?.userId !== userId) throw new Error("Unauthorized");
+    // Get all streaming threads for this user (which link to agent threads)
+    const streamThreads = await ctx.db
+      .query("chatThreadsStream")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
 
-    const modelName = args.model || "gpt-5-chat-latest";
-    const chatAgent = createChatAgent(modelName);
-
-    // Continue the thread - this automatically includes previous message history
-    const { thread: agentThread } = await chatAgent.continueThread(ctx, {
-      threadId: args.threadId,
-    });
-
-    // Generate response with full conversation context
-    const result = await agentThread.generateText({
-      prompt: args.prompt,
-    });
-
-    return {
-      text: result.text,
-      messageId: result.messageId,
-    };
+    // Map to the format expected by the frontend
+    return streamThreads.map((thread) => ({
+      _id: thread.agentThreadId || thread._id, // Use agent thread ID if available
+      userId: thread.userId,
+      title: thread.title,
+      pinned: thread.pinned || false,
+      createdAt: thread.createdAt,
+      updatedAt: thread.updatedAt,
+      _creationTime: thread._creationTime,
+      messageCount: 0, // Will be populated by separate query if needed
+      lastMessage: undefined,
+      lastMessageAt: thread.updatedAt,
+      toolsUsed: [],
+      modelsUsed: thread.model ? [thread.model] : [],
+    }));
   },
 });
 
 /**
- * Create a new thread with first message (non-streaming for reliability)
- */
-export const createThreadWithStream = action({
-  args: {
-    prompt: v.string(),
-    model: v.optional(v.string()),
-    fastMode: v.optional(v.boolean()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const modelName = args.model || "gpt-5-chat-latest";
-    const chatAgent = createChatAgent(modelName);
-
-    console.log('[agentChat] Creating new thread for user:', userId);
-    const { threadId, thread } = await chatAgent.createThread(ctx, { userId });
-    console.log('[agentChat] Thread created:', threadId);
-
-    // Update thread summary
-    await ctx.runMutation(components.agent.threads.updateThread, {
-      threadId,
-      patch: {
-        summary: `Model: ${modelName}, Fast: ${args.fastMode || false}`,
-      },
-    });
-
-    // Use generateText (synchronous) instead of streamText
-    // The frontend will subscribe to message updates via query
-    console.log('[agentChat] Generating response...');
-    const result = await thread.generateText({
-      prompt: args.prompt,
-      system: chatAgent.options.instructions,
-    });
-    console.log('[agentChat] Response generated, messageId:', result.messageId);
-
-    return {
-      threadId,
-      text: result.text,
-      messageId: result.messageId,
-    };
-  },
-});
-
-/**
- * Continue a thread with message (non-streaming for reliability)
- */
-export const continueThreadWithStream = action({
-  args: {
-    threadId: v.string(),
-    prompt: v.string(),
-    model: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    console.log('[agentChat] Continuing thread:', args.threadId);
-
-    // Verify thread ownership
-    const thread = await ctx.runQuery(components.agent.threads.getThread, {
-      threadId: args.threadId,
-    });
-    if (thread?.userId !== userId) throw new Error("Unauthorized");
-
-    const modelName = args.model || "gpt-5-chat-latest";
-    const chatAgent = createChatAgent(modelName);
-
-    const { thread: agentThread } = await chatAgent.continueThread(ctx, {
-      threadId: args.threadId,
-    });
-
-    // Use generateText instead of streamText
-    // Frontend subscribes to message updates via query
-    console.log('[agentChat] Generating response...');
-    const result = await agentThread.generateText({
-      prompt: args.prompt,
-    });
-    console.log('[agentChat] Response generated, messageId:', result.messageId);
-
-    return {
-      text: result.text,
-      messageId: result.messageId,
-    };
-  },
-});
-
-/**
- * Get messages for a thread (for UI display)
- * This queries the Agent component's internal storage
+ * Get messages for a specific thread
  */
 export const getThreadMessages = query({
   args: {
     threadId: v.string(),
-    paginationOpts: paginationOptsValidator,
+    paginationOpts: v.optional(
+      v.object({
+        numItems: v.number(),
+        cursor: v.union(v.string(), v.null()),
+      })
+    ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const userId = await getSafeUserId(ctx);
 
-    // Verify thread ownership
-    const thread = await ctx.runQuery(components.agent.threads.getThread, {
-      threadId: args.threadId,
-    });
-    if (thread?.userId !== userId) throw new Error("Unauthorized");
+    // Verify user has access to this thread (via the stream thread link)
+    const streamThread = await ctx.db
+      .query("chatThreadsStream")
+      .withIndex("by_agentThreadId", (q) => q.eq("agentThreadId", args.threadId))
+      .first();
 
-    // Query messages directly from the agent component table
-    // Use listMessagesByThreadId instead of listMessages
-    return await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-      threadId: args.threadId,
-      order: "asc",
-      paginationOpts: args.paginationOpts,
-    });
-  },
-});
-
-/**
- * List all threads for the current user with enriched data
- */
-export const listUserThreads = query({
-  args: {},
-  returns: v.array(v.object({
-    _id: v.string(),
-    userId: v.optional(v.string()),
-    title: v.string(),
-    pinned: v.boolean(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    _creationTime: v.number(),
-    messageCount: v.number(),
-    toolsUsed: v.array(v.string()),
-    modelsUsed: v.array(v.string()),
-    lastMessage: v.string(),
-    lastMessageAt: v.number(),
-  })),
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
-    const threads = await ctx.runQuery(components.agent.threads.listThreadsByUserId, {
-      userId,
-    });
-
-    console.log('[listUserThreads] Raw threads from agent:', threads.page.length);
-    if (threads.page.length > 0) {
-      console.log('[listUserThreads] First thread structure:', JSON.stringify(threads.page[0]));
+    if (!streamThread) {
+      // Fallback: check if it's a raw agent thread owned by user (if not linked yet)
+      // But for now, let's assume it must be linked.
+      // Actually, if we just created it, it should be linked.
+      // If not found, return empty.
+      return { page: [], isDone: true, continueCursor: null };
     }
 
-    // Enrich each thread with message count, tools used, and last message info
-    const enrichedThreads = await Promise.all(
-      threads.page.map(async (thread: any) => {
-        try {
-          console.log(`[listUserThreads] Processing thread ${thread._id}, type: ${typeof thread._id}`);
+    if (streamThread.userId !== userId) {
+      throw new Error("Not authorized to view this thread");
+    }
 
-          // Get messages for this thread
-          const messagesResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-            threadId: thread._id,
-            order: "asc",
-            paginationOpts: { cursor: null, numItems: 1000 },
-          });
+    // Fetch messages from the Agent component
+    const messages = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+      threadId: args.threadId,
+      order: "asc",
+      paginationOpts: args.paginationOpts || { numItems: 100, cursor: null },
+    });
 
-          console.log(`[listUserThreads] messagesResult for ${thread._id}:`, {
-            hasPage: !!messagesResult.page,
-            pageLength: messagesResult.page?.length,
-            isDone: messagesResult.isDone,
-          });
-
-          const messages = messagesResult.page || [];
-          const messageCount = messages.length;
-
-          console.log(`[listUserThreads] Thread ${thread._id}: Found ${messageCount} messages`);
-          
-          // Extract unique tools and models from messages
-          const toolsUsed = new Set<string>();
-          const modelsUsed = new Set<string>();
-          let lastMessage = "";
-          let lastMessageAt = thread._creationTime;
-          
-          for (const message of messages) {
-            const msg = message as any;
-            
-            // Track tools - agent component stores tool info in 'tool' field
-            if (msg.tool) {
-              // Extract tool name from tool object
-              if (typeof msg.tool === 'string') {
-                toolsUsed.add(msg.tool);
-              } else if (msg.tool.name) {
-                toolsUsed.add(msg.tool.name);
-              } else if (msg.tool.toolName) {
-                toolsUsed.add(msg.tool.toolName);
-              }
-            }
-            
-            // Also check message.message for tool call info
-            if (msg.message && typeof msg.message === 'object') {
-              if (msg.message.tool) {
-                const toolName = typeof msg.message.tool === 'string' ? msg.message.tool : msg.message.tool.name;
-                if (toolName) toolsUsed.add(toolName);
-              }
-              // Check for toolCalls array in message
-              if (msg.message.toolCalls && Array.isArray(msg.message.toolCalls)) {
-                for (const tc of msg.message.toolCalls) {
-                  if (tc.toolName) toolsUsed.add(tc.toolName);
-                  if (tc.name) toolsUsed.add(tc.name);
-                }
-              }
-            }
-            
-            // Track model from provider metadata or message
-            if (msg.providerMetadata?.model) {
-              modelsUsed.add(msg.providerMetadata.model);
-            } else if (msg.message?.model) {
-              modelsUsed.add(msg.message.model);
-            }
-            
-            // Get last message text for preview
-            if (msg.text) {
-              lastMessage = msg.text.substring(0, 100);
-              lastMessageAt = msg._creationTime;
-            }
-          }
-          
-          const enriched = {
-            _id: thread._id,
-            userId: thread.userId,
-            title: thread.title || thread.summary || "New Chat",
-            pinned: false,
-            createdAt: thread._creationTime,
-            updatedAt: thread._creationTime,
-            _creationTime: thread._creationTime,
-            messageCount,
-            toolsUsed: Array.from(toolsUsed),
-            modelsUsed: Array.from(modelsUsed),
-            lastMessage,
-            lastMessageAt,
-          };
-          console.log(`[listUserThreads] Enriched thread ${thread._id}:`, {
-            messageCount: enriched.messageCount,
-            toolsCount: enriched.toolsUsed.length,
-            modelsCount: enriched.modelsUsed.length,
-          });
-          return enriched;
-        } catch (error) {
-          console.error("[listUserThreads] Error enriching thread:", thread._id, error);
-          return {
-            _id: thread._id,
-            userId: thread.userId,
-            title: thread.title || thread.summary || "New Chat",
-            pinned: false,
-            createdAt: thread._creationTime,
-            updatedAt: thread._creationTime,
-            _creationTime: thread._creationTime,
-            messageCount: 0,
-            toolsUsed: [],
-            modelsUsed: [],
-            lastMessage: "",
-            lastMessageAt: thread._creationTime,
-          };
-        }
-      })
-    );
-
-    console.log('[listUserThreads] Returning', enrichedThreads.length, 'enriched threads');
-    return enrichedThreads;
+    return messages;
   },
 });
 
+
+
 /**
- * Delete a thread (soft delete by marking as archived)
+ * Delete a thread
  */
 export const deleteThread = mutation({
   args: { threadId: v.string() },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const userId = await getSafeUserId(ctx);
 
-    // Verify thread ownership
-    const thread = await ctx.runQuery(components.agent.threads.getThread, {
-      threadId: args.threadId,
-    });
-    if (thread?.userId !== userId) throw new Error("Unauthorized");
+    // Find the streaming thread by agent thread ID
+    const streamThread = await ctx.db
+      .query("chatThreadsStream")
+      .withIndex("by_agentThreadId", (q) => q.eq("agentThreadId", args.threadId))
+      .first();
 
-    // Mark as archived by prefixing summary
-    await ctx.runMutation(components.agent.threads.updateThread, {
-      threadId: args.threadId,
-      patch: {
-        summary: `[ARCHIVED] ${thread.summary || ""}`,
-      },
+    if (!streamThread) {
+      throw new Error("Thread not found");
+    }
+
+    // Verify user has access
+    if (streamThread.userId !== userId) {
+      throw new Error("Not authorized to delete this thread");
+    }
+
+    // Delete all messages in the thread
+    const messages = await ctx.db
+      .query("chatMessagesStream")
+      .withIndex("by_thread", (q) => q.eq("threadId", streamThread._id))
+      .collect();
+
+    for (const message of messages) {
+      await ctx.db.delete(message._id);
+    }
+
+    // Delete the thread
+    await ctx.db.delete(streamThread._id);
+
+    return { success: true };
+  },
+});
+
+/**
+ * Internal mutation to create a new thread
+ */
+export const createThread = internalMutation({
+  args: {
+    userId: v.id("users"),
+    title: v.string(),
+    model: v.optional(v.string()),
+    agentThreadId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const threadId = await ctx.db.insert("chatThreadsStream", {
+      userId: args.userId,
+      title: args.title,
+      model: args.model,
+      agentThreadId: args.agentThreadId,
+      createdAt: now,
+      updatedAt: now,
     });
+
+    return threadId;
+  },
+});
+
+/**
+ * Internal query to get a streaming thread by ID
+ * Used to resolve thread IDs in actions
+ */
+export const getStreamThread = internalQuery({
+  args: {
+    threadId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Try to get it as a valid ID first
+    try {
+      const threadId = ctx.db.normalizeId("chatThreadsStream", args.threadId);
+      if (threadId) {
+        return await ctx.db.get(threadId);
+      }
+    } catch (e) {
+      // Not a valid ID format
+    }
+    return null;
   },
 });
 

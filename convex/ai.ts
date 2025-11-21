@@ -8,7 +8,8 @@ import { Id } from "./_generated/dataModel";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-import { agentToolsOpenAI } from "./agents/agentTools";
+// Legacy import - agentTools not used with new Convex Agent system
+// import { agentToolsOpenAI } from "./agents/agentTools";
 
 
 // =================================================================
@@ -87,7 +88,11 @@ export const generateResponse = action({
     openaiVariant: v.optional(v.union(v.literal("gpt-5-nano"), v.literal("gpt-5-mini"))),
   },
   handler: async (ctx, args): Promise<AIResponse> => {
-    const { userMessage, selectedDocumentId, selectedNodeId, contextBeforeCursor, selectedBlockContent, contextAfterCursor, uiSummary, openaiVariant } = args;
+    const { userMessage, uiSummary, openaiVariant } = args;
+    // Convert null to undefined for type compatibility
+    const selectedDocumentId = args.selectedDocumentId ?? undefined;
+    const selectedNodeId = args.selectedNodeId ?? undefined;
+    const { contextBeforeCursor, selectedBlockContent, contextAfterCursor } = args;
 
     const documents = await ctx.runQuery(api.documents.getSidebar);
 
@@ -160,10 +165,12 @@ export const generateResponse = action({
     messages.push({ role: "system", content: systemMessage });
     messages.push({ role: "user", content: cleanedUserMessage });
 
-    const tools = agentToolsOpenAI as any;
+    // Legacy tools - not used with new Convex Agent system
+    // const tools = agentToolsOpenAI as any;
+    const tools: any[] = []; // Empty tools array for now
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const response = await openai.chat.completions.create({ model: modelVariant, messages, tools, tool_choice: "auto" });
+    const response = await openai.chat.completions.create({ model: modelVariant, messages, tools: tools.length > 0 ? tools : undefined, tool_choice: tools.length > 0 ? "auto" : undefined });
     // Increment usage on successful OpenAI call
     try {
       await ctx.runMutation(internal.usage.incrementDailyUsage, { provider: "openai" });
@@ -192,9 +199,12 @@ export const generateResponse = action({
       functionArgs = {};
     }
 
+    // Legacy tool execution - not used with new Convex Agent system
+    // Tools are now created with createTool() and executed automatically by the agent
     let dispatchResult: any;
     try {
-      dispatchResult = await ctx.runAction(api.aiAgents.executeOpenAITool, { name: functionName, params: functionArgs });
+      // dispatchResult = await ctx.runAction(api.aiAgents.executeOpenAITool, { name: functionName, params: functionArgs });
+      return { message: `Legacy tool execution not supported. Please use the new Fast Agent Panel.`, actions: [] };
     } catch (e) {
       return { message: `Tool execution failed: ${String((e as Error)?.message || e)}`, actions: [] };
     }
