@@ -1033,7 +1033,70 @@ export default function WelcomeLanding({
 
                 {/* Content Area - Changes based on active tab */}
                 {!latestAssistantText && !isRunning && (
-                  <div className="flex-1 overflow-y-auto p-6">
+                  <div className="flex-1 flex flex-col overflow-y-auto">
+
+                    {/* Input Section - Always visible at top */}
+                    <div className="flex-shrink-0 flex flex-col items-center justify-center py-12 px-6">
+                      <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 text-purple-600">
+                        <Sparkles className="w-8 h-8" />
+                      </div>
+                      <h2 className="text-2xl font-semibold text-gray-900 tracking-tight mb-2">
+                        What are we researching today?
+                      </h2>
+                      <p className="text-gray-500 mb-8 text-sm">
+                        Ask anything about companies, markets, or documents
+                      </p>
+
+                      {/* Input Field */}
+                      <div className="relative w-full max-w-2xl group">
+                        <div className="absolute -inset-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-[2rem] blur-2xl opacity-50 group-hover:opacity-70 transition duration-1000"></div>
+
+                        <div className="relative flex items-center bg-white rounded-xl shadow-sm h-14 w-full overflow-hidden border border-gray-200">
+                          <div className="absolute left-4 text-gray-400 pointer-events-none">
+                            <Search className="w-5 h-5" />
+                          </div>
+
+                          <input
+                            type="text"
+                            className="w-full h-full bg-transparent text-base text-gray-900 placeholder:text-gray-400 pl-12 pr-12 outline-none border-none ring-0 focus:ring-0"
+                            placeholder="Ask anything..."
+                            value={researchPrompt}
+                            onChange={(e) => setResearchPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                e.preventDefault();
+                                void handleRunPrompt();
+                              }
+                            }}
+                            autoFocus
+                          />
+
+                          <div className="absolute right-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleRunPrompt()}
+                              disabled={isRunning}
+                              className="p-2 bg-gray-900 hover:bg-black text-white rounded-lg transition-all shadow hover:shadow-lg active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Run research (Cmd+Enter)"
+                            >
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-center gap-3 mt-3 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-semibold">⌘</kbd>
+                            <span>+</span>
+                            <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-semibold">Enter</kbd>
+                            <span className="ml-1">to run</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Preview Content - Scrollable */}
+                    <div className="flex-1 overflow-y-auto p-6 pt-0">
 
                     {/* Dossier Preview */}
                     {activeTab === 'dossier' && (
@@ -1114,6 +1177,7 @@ export default function WelcomeLanding({
                       </div>
                     )}
 
+                    </div>
                   </div>
                 )}
 
