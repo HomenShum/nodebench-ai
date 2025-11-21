@@ -24,28 +24,28 @@ export const searchTodaysFunding = createTool({
   - News sources with links
   
   Use this when users ask about recent funding, investment rounds, or startup news.`,
-  
+
   args: z.object({
     industries: z.array(z.string()).describe("Industries to search (e.g., ['healthcare', 'life sciences', 'tech'])"),
     fundingStages: z.array(z.enum(['seed', 'series-a', 'series-b'])).default(['seed', 'series-a']).describe("Funding stages to include"),
     includeDate: z.string().optional().describe("Date to search (YYYY-MM-DD format). Defaults to today."),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
     const apiKey = process.env.LINKUP_API_KEY;
     if (!apiKey) {
       throw new Error("LINKUP_API_KEY not configured");
     }
-    
+
     // Build search query
     const today = args.includeDate || new Date().toISOString().split('T')[0];
     const industryTerms = args.industries.join(' OR ');
     const stageTerms = args.fundingStages.map(s => s.replace('-', ' ')).join(' OR ');
-    
+
     const query = `funding announcement ${today} (${industryTerms}) (${stageTerms}) investors amount`;
-    
+
     console.log(`[searchTodaysFunding] Query: ${query}`);
-    
+
     // Define structured output schema for funding announcements
     const fundingSchema = {
       type: "object",
@@ -80,7 +80,7 @@ export const searchTodaysFunding = createTool({
       },
       required: ["announcements", "summary"],
     };
-    
+
     try {
       // Call LinkUp API with structured output
       const response = await fetch("https://api.linkup.so/v1/search", {
@@ -96,27 +96,27 @@ export const searchTodaysFunding = createTool({
           structuredOutputSchema: fundingSchema,
         }),
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`[searchTodaysFunding] API error:`, errorText);
         throw new Error(`LinkUp API error: ${response.status}`);
       }
-      
+
       const data = await response.json();
       const structured = data.structured || { announcements: [], summary: "No funding announcements found for today." };
-      
+
       console.log(`[searchTodaysFunding] Found ${structured.announcements?.length || 0} announcements`);
-      
+
       // Format response for AI consumption
       const announcements = structured.announcements || [];
-      
+
       if (announcements.length === 0) {
         return `No funding announcements found for ${today} in ${args.industries.join(', ')}.
 
 Try broadening the search or checking a different date.`;
       }
-      
+
       // Build formatted response
       const lines: string[] = [];
       lines.push(`# Today's Funding Announcements (${today})`);
@@ -126,7 +126,7 @@ Try broadening the search or checking a different date.`;
         lines.push(`**Total Amount Raised:** ${structured.totalAmountRaised}`);
       }
       lines.push('');
-      
+
       // Group by funding stage
       const byStage: Record<string, any[]> = {};
       announcements.forEach((a: any) => {
@@ -134,12 +134,12 @@ Try broadening the search or checking a different date.`;
         if (!byStage[stage]) byStage[stage] = [];
         byStage[stage].push(a);
       });
-      
+
       // Format each stage
       for (const [stage, companies] of Object.entries(byStage)) {
         lines.push(`## ${stage} Rounds (${companies.length})`);
         lines.push('');
-        
+
         companies.forEach((company: any, idx: number) => {
           lines.push(`### ${idx + 1}. ${company.companyName}`);
           if (company.description) {
@@ -173,19 +173,19 @@ Try broadening the search or checking a different date.`;
           lines.push('');
         });
       }
-      
+
       // Add sources section
       lines.push('## Sources');
       const sources = announcements
         .filter((a: any) => a.newsUrl)
         .map((a: any) => `- [${a.newsSource || a.companyName}](${a.newsUrl})`);
-      
+
       if (sources.length > 0) {
         lines.push(...sources);
       }
-      
+
       return lines.join('\n');
-      
+
     } catch (error: any) {
       console.error('[searchTodaysFunding] Error:', error);
       return `Error searching for funding announcements: ${error.message}
@@ -211,65 +211,62 @@ export const getFundedCompanyProfile = createTool({
   - Recent news and milestones
   
   Use this for deep-dive research on specific companies from funding announcements.`,
-  
+
   args: z.object({
     companyName: z.string().describe("Name of the company to research"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
-    // Use existing LinkUp company profile functionality
-    const { linkupCompanyProfile } = await import("../../agents/services/linkup");
+    // Use LinkUp API to search for company profile information
+    const apiKey = process.env.LINKUP_API_KEY;
+    if (!apiKey) {
+      return "LinkUp API key not configured. Cannot retrieve company profile.";
+    }
 
     try {
-      const profile: any = await linkupCompanyProfile(args.companyName);
+      const query = `${args.companyName} company profile overview business model funding investors`;
 
-      if ('error' in profile) {
-        return `Could not retrieve profile for ${args.companyName}: ${profile.error}`;
+      const response = await fetch("https://api.linkup.so/v1/search", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          q: query,
+          depth: "deep",
+          outputType: "sourcedAnswer",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[getFundedCompanyProfile] API error:`, errorText);
+        return `Could not retrieve profile for ${args.companyName}: API error ${response.status}`;
       }
 
-      // Format the profile data
+      const data = await response.json();
+
+      if (!data.answer) {
+        return `No profile information found for ${args.companyName}`;
+      }
+
+      // Format the response with sources
       const lines: string[] = [];
-      lines.push(`# ${profile.companyName || args.companyName}`);
+      lines.push(`# ${args.companyName} Profile`);
       lines.push('');
+      lines.push(data.answer);
 
-      if (profile.headline) {
-        lines.push(`**${profile.headline}**`);
+      if (data.sources && data.sources.length > 0) {
         lines.push('');
-      }
-
-      if (profile.summary) {
-        lines.push(String(profile.summary));
-        lines.push('');
-      }
-      
-      if (profile.website) {
-        lines.push(`**Website:** ${profile.website}`);
-      }
-      
-      if (profile.location) {
-        lines.push(`**Location:** ${profile.location}`);
-      }
-      
-      // Funding information
-      if (profile.financials?.fundingRounds && profile.financials.fundingRounds.length > 0) {
-        lines.push('');
-        lines.push('## Funding History');
-        profile.financials.fundingRounds.forEach((round: any) => {
-          lines.push(`- **${round.roundName}**: ${round.amount} (${round.date})`);
-          if (round.leadInvestors && round.leadInvestors.length > 0) {
-            lines.push(`  Lead: ${round.leadInvestors.join(', ')}`);
-          }
+        lines.push('## Sources');
+        data.sources.forEach((source: any, index: number) => {
+          lines.push(`${index + 1}. [${source.name}](${source.url})`);
         });
       }
-      
-      if (profile.financials?.investors && profile.financials.investors.length > 0) {
-        lines.push('');
-        lines.push('## Investors');
-        lines.push(profile.financials.investors.join(', '));
-      }
-      
+
       return lines.join('\n');
-      
+
     } catch (error: any) {
       return `Error retrieving company profile: ${error.message}`;
     }

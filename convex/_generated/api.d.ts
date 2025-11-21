@@ -11,47 +11,9 @@
 import type * as account from "../account.js";
 import type * as actions_spreadsheetActions from "../actions/spreadsheetActions.js";
 import type * as agentChat from "../agentChat.js";
-import type * as agentEditor from "../agentEditor.js";
-import type * as agentImageResults from "../agentImageResults.js";
-import type * as agentMemory from "../agentMemory.js";
+import type * as agentChatActions from "../agentChatActions.js";
 import type * as agentTimelines from "../agentTimelines.js";
-import type * as agents_advancedAgentTools from "../agents/advancedAgentTools.js";
-import type * as agents_agentComposition from "../agents/agentComposition.js";
-import type * as agents_agentDispatcher from "../agents/agentDispatcher.js";
-import type * as agents_agentTools from "../agents/agentTools.js";
-import type * as agents_criteriaSearch from "../agents/criteriaSearch.js";
-import type * as agents_crmExtraction from "../agents/crmExtraction.js";
-import type * as agents_csvExport from "../agents/csvExport.js";
-import type * as agents_dataOperations from "../agents/dataOperations.js";
-import type * as agents_dynamicAgents from "../agents/dynamicAgents.js";
-import type * as agents_hashtagAgent from "../agents/hashtagAgent.js";
-import type * as agents_humanInTheLoop from "../agents/humanInTheLoop.js";
-import type * as agents_index from "../agents/index.js";
-import type * as agents_intentParser from "../agents/intentParser.js";
-import type * as agents_lib_agentContext from "../agents/lib/agentContext.js";
-import type * as agents_lib_agentThinking from "../agents/lib/agentThinking.js";
-import type * as agents_lib_csvWorkflow from "../agents/lib/csvWorkflow.js";
-import type * as agents_lib_docEdit from "../agents/lib/docEdit.js";
-import type * as agents_lib_docOps from "../agents/lib/docOps.js";
-import type * as agents_lib_generation from "../agents/lib/generation.js";
-import type * as agents_lib_intent from "../agents/lib/intent.js";
-import type * as agents_lib_openaiUtils from "../agents/lib/openaiUtils.js";
-import type * as agents_lib_planning from "../agents/lib/planning.js";
-import type * as agents_lib_planningExec from "../agents/lib/planningExec.js";
-import type * as agents_lib_planningGen from "../agents/lib/planningGen.js";
-import type * as agents_lib_ragOps from "../agents/lib/ragOps.js";
-import type * as agents_lib_types from "../agents/lib/types.js";
-import type * as agents_orchestrate from "../agents/orchestrate.js";
-import type * as agents_promptPlan from "../agents/promptPlan.js";
-import type * as agents_seedProductionMocks from "../agents/seedProductionMocks.js";
-import type * as agents_specialized from "../agents/specialized.js";
-import type * as agents_specializedAgents from "../agents/specializedAgents.js";
-import type * as agents_timelineMock from "../agents/timelineMock.js";
-import type * as agents_visualLLMValidation from "../agents/visualLLMValidation.js";
-import type * as agents_xrayWorkflow from "../agents/xrayWorkflow.js";
-import type * as agentsPrefs from "../agentsPrefs.js";
 import type * as ai from "../ai.js";
-import type * as aiAgents from "../aiAgents.js";
 import type * as analytics from "../analytics.js";
 import type * as apiKeys from "../apiKeys.js";
 import type * as apiKeysActions from "../apiKeysActions.js";
@@ -68,19 +30,22 @@ import type * as documentMetadataParser from "../documentMetadataParser.js";
 import type * as documentTasks from "../documentTasks.js";
 import type * as documentVersions from "../documentVersions.js";
 import type * as documents from "../documents.js";
+import type * as email from "../email.js";
 import type * as email_dossierEmailExample from "../email/dossierEmailExample.js";
 import type * as email_dossierEmailTemplate from "../email/dossierEmailTemplate.js";
-import type * as email from "../email.js";
 import type * as entityContexts from "../entityContexts.js";
 import type * as eventTaskDocuments from "../eventTaskDocuments.js";
 import type * as events from "../events.js";
+import type * as exampleDossiers from "../exampleDossiers.js";
 import type * as fastAgentChat from "../fastAgentChat.js";
 import type * as fastAgentChatHelpers from "../fastAgentChatHelpers.js";
 import type * as fastAgentDocumentCreation from "../fastAgentDocumentCreation.js";
-import type * as fastAgentPanelCoordinator from "../fastAgentPanelCoordinator.js";
 import type * as fastAgentPanelStreaming from "../fastAgentPanelStreaming.js";
 import type * as fast_agents_contextAgent from "../fast_agents/contextAgent.js";
+import type * as fast_agents_coordinatorAgent from "../fast_agents/coordinatorAgent.js";
 import type * as fast_agents_editingAgent from "../fast_agents/editingAgent.js";
+import type * as fast_agents_multiAgentWorkflow from "../fast_agents/multiAgentWorkflow.js";
+import type * as fast_agents_multiAgentWorkflowDefinition from "../fast_agents/multiAgentWorkflowDefinition.js";
 import type * as fast_agents_orchestrator from "../fast_agents/orchestrator.js";
 import type * as fast_agents_prompts from "../fast_agents/prompts.js";
 import type * as fast_agents_tools from "../fast_agents/tools.js";
@@ -89,6 +54,8 @@ import type * as fileAnalysis from "../fileAnalysis.js";
 import type * as fileAnalysis_working from "../fileAnalysis_working.js";
 import type * as fileDocuments from "../fileDocuments.js";
 import type * as fileQueries from "../fileQueries.js";
+import type * as fileSearch from "../fileSearch.js";
+import type * as fileSearchData from "../fileSearchData.js";
 import type * as files from "../files.js";
 import type * as folders from "../folders.js";
 import type * as genai from "../genai.js";
@@ -98,10 +65,8 @@ import type * as hashtagDossiers from "../hashtagDossiers.js";
 import type * as holidays from "../holidays.js";
 import type * as holidays_actions from "../holidays_actions.js";
 import type * as http from "../http.js";
+import type * as humanInTheLoop from "../humanInTheLoop.js";
 import type * as integrations from "../integrations.js";
-import type * as legacy_agentRuns from "../legacy/agentRuns.js";
-import type * as legacy_common from "../legacy/common.js";
-import type * as legacy_documents from "../legacy/documents.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_dossierHelpers from "../lib/dossierHelpers.js";
 import type * as lib_markdown from "../lib/markdown.js";
@@ -111,19 +76,11 @@ import type * as mcp from "../mcp.js";
 import type * as mcpClient from "../mcpClient.js";
 import type * as mcpLearning from "../mcpLearning.js";
 import type * as metadataAnalyzer from "../metadataAnalyzer.js";
-import type * as migrations_migrateEventsTasksToDocuments from "../migrations/migrateEventsTasksToDocuments.js";
 import type * as migrations from "../migrations.js";
+import type * as migrations_migrateEventsTasksToDocuments from "../migrations/migrateEventsTasksToDocuments.js";
 import type * as nodes from "../nodes.js";
 import type * as nodes_extras from "../nodes_extras.js";
 import type * as onboarding from "../onboarding.js";
-import type * as orchestrator_classifier from "../orchestrator/classifier.js";
-import type * as orchestrator_index from "../orchestrator/index.js";
-import type * as orchestrator_orchestrator from "../orchestrator/orchestrator.js";
-import type * as orchestrator_planner from "../orchestrator/planner.js";
-import type * as orchestrator_router from "../orchestrator/router.js";
-import type * as orchestrator_subAgents from "../orchestrator/subAgents.js";
-import type * as orchestrator_types from "../orchestrator/types.js";
-import type * as orchestrator_workflows from "../orchestrator/workflows.js";
 import type * as ossStats from "../ossStats.js";
 import type * as polar from "../polar.js";
 import type * as presence from "../presence.js";
@@ -134,6 +91,7 @@ import type * as ragEnhancedBatchIndex from "../ragEnhancedBatchIndex.js";
 import type * as rag_queries from "../rag_queries.js";
 import type * as relationTypes from "../relationTypes.js";
 import type * as relations from "../relations.js";
+import type * as resend from "../resend.js";
 import type * as router from "../router.js";
 import type * as schema_apiUsage from "../schema/apiUsage.js";
 import type * as seedGoldenDataset from "../seedGoldenDataset.js";
@@ -145,20 +103,7 @@ import type * as sync_mutations from "../sync_mutations.js";
 import type * as tags from "../tags.js";
 import type * as tags_actions from "../tags_actions.js";
 import type * as tasks from "../tasks.js";
-import type * as testBulkCSVResearch from "../testBulkCSVResearch.js";
-import type * as testEntityResearch from "../testEntityResearch.js";
-import type * as testEntityResearchCritical from "../testEntityResearchCritical.js";
-import type * as testEntityResearchCritical2 from "../testEntityResearchCritical2.js";
-import type * as testEntityResearchDirect from "../testEntityResearchDirect.js";
-import type * as testEntityResearchValidation from "../testEntityResearchValidation.js";
 import type * as testHelpers from "../testHelpers.js";
-import type * as testIntegrationE2E from "../testIntegrationE2E.js";
-import type * as testMultiAgentOrchestration from "../testMultiAgentOrchestration.js";
-import type * as testParallelResearch from "../testParallelResearch.js";
-import type * as testQueryPatterns from "../testQueryPatterns.js";
-import type * as testSelfEvaluatingResearch from "../testSelfEvaluatingResearch.js";
-import type * as testSelfEvaluationIntegration from "../testSelfEvaluationIntegration.js";
-import type * as testYoutubeSearch from "../testYoutubeSearch.js";
 import type * as tests_fastAgentPanelStreamingTests from "../tests/fastAgentPanelStreamingTests.js";
 import type * as tools_confirmCompanySelection from "../tools/confirmCompanySelection.js";
 import type * as tools_confirmEventSelection from "../tools/confirmEventSelection.js";
@@ -167,12 +112,14 @@ import type * as tools_confirmPersonSelection from "../tools/confirmPersonSelect
 import type * as tools_dataAccessTools from "../tools/dataAccessTools.js";
 import type * as tools_documentEditingLiveTest from "../tools/documentEditingLiveTest.js";
 import type * as tools_documentTools from "../tools/documentTools.js";
+import type * as tools_enhancedFundingTools from "../tools/enhancedFundingTools.js";
 import type * as tools_evaluation_comprehensiveTest from "../tools/evaluation/comprehensiveTest.js";
 import type * as tools_evaluation_evaluator from "../tools/evaluation/evaluator.js";
 import type * as tools_evaluation_helpers from "../tools/evaluation/helpers.js";
 import type * as tools_evaluation_quickTest from "../tools/evaluation/quickTest.js";
 import type * as tools_evaluation_testCases from "../tools/evaluation/testCases.js";
 import type * as tools_fundingResearchTools from "../tools/fundingResearchTools.js";
+import type * as tools_geminiFileSearch from "../tools/geminiFileSearch.js";
 import type * as tools_hashtagSearchTools from "../tools/hashtagSearchTools.js";
 import type * as tools_linkupSearch from "../tools/linkupSearch.js";
 import type * as tools_mediaTools from "../tools/mediaTools.js";
@@ -186,8 +133,10 @@ import type * as tools_youtubeSearch from "../tools/youtubeSearch.js";
 import type * as usage from "../usage.js";
 import type * as userPreferences from "../userPreferences.js";
 import type * as users from "../users.js";
+import type * as voice_voiceActions from "../voice/voiceActions.js";
+import type * as voice_voiceAgent from "../voice/voiceAgent.js";
+import type * as voice_voiceMutations from "../voice/voiceMutations.js";
 import type * as work from "../work.js";
-import type * as workflows_agentWorkflows from "../workflows/agentWorkflows.js";
 
 import type {
   ApiFromModules,
@@ -195,59 +144,13 @@ import type {
   FunctionReference,
 } from "convex/server";
 
-/**
- * A utility for referencing Convex functions in your app's API.
- *
- * Usage:
- * ```js
- * const myFunctionReference = api.myModule.myFunction;
- * ```
- */
 declare const fullApi: ApiFromModules<{
   account: typeof account;
   "actions/spreadsheetActions": typeof actions_spreadsheetActions;
   agentChat: typeof agentChat;
-  agentEditor: typeof agentEditor;
-  agentImageResults: typeof agentImageResults;
-  agentMemory: typeof agentMemory;
+  agentChatActions: typeof agentChatActions;
   agentTimelines: typeof agentTimelines;
-  "agents/advancedAgentTools": typeof agents_advancedAgentTools;
-  "agents/agentComposition": typeof agents_agentComposition;
-  "agents/agentDispatcher": typeof agents_agentDispatcher;
-  "agents/agentTools": typeof agents_agentTools;
-  "agents/criteriaSearch": typeof agents_criteriaSearch;
-  "agents/crmExtraction": typeof agents_crmExtraction;
-  "agents/csvExport": typeof agents_csvExport;
-  "agents/dataOperations": typeof agents_dataOperations;
-  "agents/dynamicAgents": typeof agents_dynamicAgents;
-  "agents/hashtagAgent": typeof agents_hashtagAgent;
-  "agents/humanInTheLoop": typeof agents_humanInTheLoop;
-  "agents/index": typeof agents_index;
-  "agents/intentParser": typeof agents_intentParser;
-  "agents/lib/agentContext": typeof agents_lib_agentContext;
-  "agents/lib/agentThinking": typeof agents_lib_agentThinking;
-  "agents/lib/csvWorkflow": typeof agents_lib_csvWorkflow;
-  "agents/lib/docEdit": typeof agents_lib_docEdit;
-  "agents/lib/docOps": typeof agents_lib_docOps;
-  "agents/lib/generation": typeof agents_lib_generation;
-  "agents/lib/intent": typeof agents_lib_intent;
-  "agents/lib/openaiUtils": typeof agents_lib_openaiUtils;
-  "agents/lib/planning": typeof agents_lib_planning;
-  "agents/lib/planningExec": typeof agents_lib_planningExec;
-  "agents/lib/planningGen": typeof agents_lib_planningGen;
-  "agents/lib/ragOps": typeof agents_lib_ragOps;
-  "agents/lib/types": typeof agents_lib_types;
-  "agents/orchestrate": typeof agents_orchestrate;
-  "agents/promptPlan": typeof agents_promptPlan;
-  "agents/seedProductionMocks": typeof agents_seedProductionMocks;
-  "agents/specialized": typeof agents_specialized;
-  "agents/specializedAgents": typeof agents_specializedAgents;
-  "agents/timelineMock": typeof agents_timelineMock;
-  "agents/visualLLMValidation": typeof agents_visualLLMValidation;
-  "agents/xrayWorkflow": typeof agents_xrayWorkflow;
-  agentsPrefs: typeof agentsPrefs;
   ai: typeof ai;
-  aiAgents: typeof aiAgents;
   analytics: typeof analytics;
   apiKeys: typeof apiKeys;
   apiKeysActions: typeof apiKeysActions;
@@ -264,19 +167,22 @@ declare const fullApi: ApiFromModules<{
   documentTasks: typeof documentTasks;
   documentVersions: typeof documentVersions;
   documents: typeof documents;
+  email: typeof email;
   "email/dossierEmailExample": typeof email_dossierEmailExample;
   "email/dossierEmailTemplate": typeof email_dossierEmailTemplate;
-  email: typeof email;
   entityContexts: typeof entityContexts;
   eventTaskDocuments: typeof eventTaskDocuments;
   events: typeof events;
+  exampleDossiers: typeof exampleDossiers;
   fastAgentChat: typeof fastAgentChat;
   fastAgentChatHelpers: typeof fastAgentChatHelpers;
   fastAgentDocumentCreation: typeof fastAgentDocumentCreation;
-  fastAgentPanelCoordinator: typeof fastAgentPanelCoordinator;
   fastAgentPanelStreaming: typeof fastAgentPanelStreaming;
   "fast_agents/contextAgent": typeof fast_agents_contextAgent;
+  "fast_agents/coordinatorAgent": typeof fast_agents_coordinatorAgent;
   "fast_agents/editingAgent": typeof fast_agents_editingAgent;
+  "fast_agents/multiAgentWorkflow": typeof fast_agents_multiAgentWorkflow;
+  "fast_agents/multiAgentWorkflowDefinition": typeof fast_agents_multiAgentWorkflowDefinition;
   "fast_agents/orchestrator": typeof fast_agents_orchestrator;
   "fast_agents/prompts": typeof fast_agents_prompts;
   "fast_agents/tools": typeof fast_agents_tools;
@@ -285,6 +191,8 @@ declare const fullApi: ApiFromModules<{
   fileAnalysis_working: typeof fileAnalysis_working;
   fileDocuments: typeof fileDocuments;
   fileQueries: typeof fileQueries;
+  fileSearch: typeof fileSearch;
+  fileSearchData: typeof fileSearchData;
   files: typeof files;
   folders: typeof folders;
   genai: typeof genai;
@@ -294,10 +202,8 @@ declare const fullApi: ApiFromModules<{
   holidays: typeof holidays;
   holidays_actions: typeof holidays_actions;
   http: typeof http;
+  humanInTheLoop: typeof humanInTheLoop;
   integrations: typeof integrations;
-  "legacy/agentRuns": typeof legacy_agentRuns;
-  "legacy/common": typeof legacy_common;
-  "legacy/documents": typeof legacy_documents;
   "lib/crypto": typeof lib_crypto;
   "lib/dossierHelpers": typeof lib_dossierHelpers;
   "lib/markdown": typeof lib_markdown;
@@ -307,19 +213,11 @@ declare const fullApi: ApiFromModules<{
   mcpClient: typeof mcpClient;
   mcpLearning: typeof mcpLearning;
   metadataAnalyzer: typeof metadataAnalyzer;
-  "migrations/migrateEventsTasksToDocuments": typeof migrations_migrateEventsTasksToDocuments;
   migrations: typeof migrations;
+  "migrations/migrateEventsTasksToDocuments": typeof migrations_migrateEventsTasksToDocuments;
   nodes: typeof nodes;
   nodes_extras: typeof nodes_extras;
   onboarding: typeof onboarding;
-  "orchestrator/classifier": typeof orchestrator_classifier;
-  "orchestrator/index": typeof orchestrator_index;
-  "orchestrator/orchestrator": typeof orchestrator_orchestrator;
-  "orchestrator/planner": typeof orchestrator_planner;
-  "orchestrator/router": typeof orchestrator_router;
-  "orchestrator/subAgents": typeof orchestrator_subAgents;
-  "orchestrator/types": typeof orchestrator_types;
-  "orchestrator/workflows": typeof orchestrator_workflows;
   ossStats: typeof ossStats;
   polar: typeof polar;
   presence: typeof presence;
@@ -330,6 +228,7 @@ declare const fullApi: ApiFromModules<{
   rag_queries: typeof rag_queries;
   relationTypes: typeof relationTypes;
   relations: typeof relations;
+  resend: typeof resend;
   router: typeof router;
   "schema/apiUsage": typeof schema_apiUsage;
   seedGoldenDataset: typeof seedGoldenDataset;
@@ -341,20 +240,7 @@ declare const fullApi: ApiFromModules<{
   tags: typeof tags;
   tags_actions: typeof tags_actions;
   tasks: typeof tasks;
-  testBulkCSVResearch: typeof testBulkCSVResearch;
-  testEntityResearch: typeof testEntityResearch;
-  testEntityResearchCritical: typeof testEntityResearchCritical;
-  testEntityResearchCritical2: typeof testEntityResearchCritical2;
-  testEntityResearchDirect: typeof testEntityResearchDirect;
-  testEntityResearchValidation: typeof testEntityResearchValidation;
   testHelpers: typeof testHelpers;
-  testIntegrationE2E: typeof testIntegrationE2E;
-  testMultiAgentOrchestration: typeof testMultiAgentOrchestration;
-  testParallelResearch: typeof testParallelResearch;
-  testQueryPatterns: typeof testQueryPatterns;
-  testSelfEvaluatingResearch: typeof testSelfEvaluatingResearch;
-  testSelfEvaluationIntegration: typeof testSelfEvaluationIntegration;
-  testYoutubeSearch: typeof testYoutubeSearch;
   "tests/fastAgentPanelStreamingTests": typeof tests_fastAgentPanelStreamingTests;
   "tools/confirmCompanySelection": typeof tools_confirmCompanySelection;
   "tools/confirmEventSelection": typeof tools_confirmEventSelection;
@@ -363,12 +249,14 @@ declare const fullApi: ApiFromModules<{
   "tools/dataAccessTools": typeof tools_dataAccessTools;
   "tools/documentEditingLiveTest": typeof tools_documentEditingLiveTest;
   "tools/documentTools": typeof tools_documentTools;
+  "tools/enhancedFundingTools": typeof tools_enhancedFundingTools;
   "tools/evaluation/comprehensiveTest": typeof tools_evaluation_comprehensiveTest;
   "tools/evaluation/evaluator": typeof tools_evaluation_evaluator;
   "tools/evaluation/helpers": typeof tools_evaluation_helpers;
   "tools/evaluation/quickTest": typeof tools_evaluation_quickTest;
   "tools/evaluation/testCases": typeof tools_evaluation_testCases;
   "tools/fundingResearchTools": typeof tools_fundingResearchTools;
+  "tools/geminiFileSearch": typeof tools_geminiFileSearch;
   "tools/hashtagSearchTools": typeof tools_hashtagSearchTools;
   "tools/linkupSearch": typeof tools_linkupSearch;
   "tools/mediaTools": typeof tools_mediaTools;
@@ -382,17 +270,35 @@ declare const fullApi: ApiFromModules<{
   usage: typeof usage;
   userPreferences: typeof userPreferences;
   users: typeof users;
+  "voice/voiceActions": typeof voice_voiceActions;
+  "voice/voiceAgent": typeof voice_voiceAgent;
+  "voice/voiceMutations": typeof voice_voiceMutations;
   work: typeof work;
-  "workflows/agentWorkflows": typeof workflows_agentWorkflows;
 }>;
-declare const fullApiWithMounts: typeof fullApi;
 
+/**
+ * A utility for referencing Convex functions in your app's public API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = api.myModule.myFunction;
+ * ```
+ */
 export declare const api: FilterApi<
-  typeof fullApiWithMounts,
+  typeof fullApi,
   FunctionReference<any, "public">
 >;
+
+/**
+ * A utility for referencing Convex functions in your app's internal API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = internal.myModule.myFunction;
+ * ```
+ */
 export declare const internal: FilterApi<
-  typeof fullApiWithMounts,
+  typeof fullApi,
   FunctionReference<any, "internal">
 >;
 
@@ -1274,12 +1180,6 @@ export declare const components: {
         },
         null
       >;
-      getMessageSearchFields: FunctionReference<
-        "query",
-        "internal",
-        { messageId: string },
-        { embedding?: Array<number>; embeddingModel?: string; text?: string }
-      >;
       getMessagesByIds: FunctionReference<
         "query",
         "internal",
@@ -1546,6 +1446,12 @@ export declare const components: {
             | { message: string; type: "other" }
           >;
         }>
+      >;
+      getMessageSearchFields: FunctionReference<
+        "query",
+        "internal",
+        { messageId: string },
+        { embedding?: Array<number>; embeddingModel?: string; text?: string }
       >;
       listMessagesByThreadId: FunctionReference<
         "query",
@@ -4958,18 +4864,6 @@ export declare const components: {
         { githubAccessToken: string; owner: string; page?: number },
         any
       >;
-      updateGithubRepoStars: FunctionReference<
-        "mutation",
-        "internal",
-        { name: string; owner: string; starCount: number },
-        any
-      >;
-      updateGithubRepoStats: FunctionReference<
-        "action",
-        "internal",
-        { githubAccessToken: string; repo: string },
-        any
-      >;
       updateGithubRepos: FunctionReference<
         "mutation",
         "internal",
@@ -4982,6 +4876,18 @@ export declare const components: {
             starCount: number;
           }>;
         },
+        any
+      >;
+      updateGithubRepoStars: FunctionReference<
+        "mutation",
+        "internal",
+        { name: string; owner: string; starCount: number },
+        any
+      >;
+      updateGithubRepoStats: FunctionReference<
+        "action",
+        "internal",
+        { githubAccessToken: string; repo: string },
         any
       >;
     };
@@ -5084,12 +4990,6 @@ export declare const components: {
         },
         any
       >;
-      updateNpmPackageStats: FunctionReference<
-        "action",
-        "internal",
-        { name: string },
-        any
-      >;
       updateNpmPackagesForOrg: FunctionReference<
         "mutation",
         "internal",
@@ -5102,6 +5002,12 @@ export declare const components: {
             name: string;
           }>;
         },
+        any
+      >;
+      updateNpmPackageStats: FunctionReference<
+        "action",
+        "internal",
+        { name: string },
         any
       >;
     };

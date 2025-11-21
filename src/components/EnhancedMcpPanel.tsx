@@ -756,29 +756,29 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
   const [newServerName, setNewServerName] = useState('');
   const [newServerUrl, setNewServerUrl] = useState('');
   const [newApiKey, setNewApiKey] = useState('');
-  
+
   // Toggle for input method
   const [separateInputs, setSeparateInputs] = useState(false);
   const [combinedInput, setCombinedInput] = useState('https://mcp.tavily.com/mcp/?tavilyApiKey=');
-  
+
   // State for expanded servers
   const [expandedServers, setExpandedServers] = useState<Set<string>>(new Set());
-  
+
   // State for model selection
   const [selectedModel, setSelectedModel] = useState<'openai' | 'gemini'>('openai');
-  
+
   // Tool invocation state - now AI-powered!
-  const [selectedTool, setSelectedTool] = useState<{serverId: string, toolName: string} | null>(null);
+  const [selectedTool, setSelectedTool] = useState<{ serverId: string, toolName: string } | null>(null);
   const [executeAnchorEl, setExecuteAnchorEl] = useState<HTMLElement | null>(null);
   const [naturalLanguageQuery, setNaturalLanguageQuery] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<any>(null);
   // Global history popover
   const [historyAnchorEl, setHistoryAnchorEl] = useState<HTMLElement | null>(null);
-  
+
   // Dropdown menu state
   const [activeDropdown, setActiveDropdown] = useState<Id<"mcpServers"> | null>(null);
-  
+
   // Server editing state
   const [editingServer, setEditingServer] = useState<Id<"mcpServers"> | null>(null);
   const [editAnchorEl, setEditAnchorEl] = useState<HTMLElement | null>(null);
@@ -789,13 +789,13 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
     apiKey: '',
     isEnabled: true
   });
-  
+
   // Server deletion state
   const [deletingServer, setDeletingServer] = useState<Id<"mcpServers"> | null>(null);
   const [serverDeleteAnchorEl, setServerDeleteAnchorEl] = useState<HTMLElement | null>(null);
-  
+
   // Tool management state (edit merged into execute popover)
-  const [deletingTool, setDeletingTool] = useState<{serverId: string, toolId: string} | null>(null);
+  const [deletingTool, setDeletingTool] = useState<{ serverId: string, toolId: string } | null>(null);
   const [toolDeleteAnchorEl, setToolDeleteAnchorEl] = useState<HTMLElement | null>(null);
 
   // Get all MCP servers and tools using Convex queries
@@ -808,18 +808,18 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
     invoking: _invoking,
     addServer: addMcpServer,
   } = useMcp();
-  
+
   // Convex mutations for CRUD operations
   const updateMcpServer = useMutation(api.mcp.updateMcpServer);
   const deleteMcpServer = useMutation(api.mcp.deleteMcpServer);
   const updateMcpTool = useMutation(api.mcp.updateMcpTool);
   const deleteMcpTool = useMutation(api.mcp.deleteMcpTool);
-  
+
   // AI-powered tool execution
-  const executeToolWithAI = useAction(api.aiAgents.executeToolWithNaturalLanguage);
+  // const executeToolWithAI = useAction(api.aiAgents.executeToolWithNaturalLanguage);
 
   // Find the actual tool object for the selected tool to get the correct _id
-  const actualTool = selectedTool ? tools.find(tool => 
+  const actualTool = selectedTool ? tools.find(tool =>
     tool.serverId === selectedTool.serverId && tool.name === selectedTool.toolName
   ) : null;
   // Per-tool usage history (last 5) for placeholder/examples
@@ -839,7 +839,7 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
         .join('\n');
       if (lines) return `Recent examples from your usage:\n${lines}`;
     }
-    
+
     // Fallback to static examples if no learning data available yet
     switch (toolName) {
       case 'tavily_search':
@@ -869,7 +869,7 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
     try {
       let serverUrl = '';
       let serverName = '';
-      
+
       if (separateInputs) {
         // Use separate inputs
         if (!newServerName || !newServerUrl || !newApiKey) {
@@ -890,7 +890,7 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
 
       await addMcpServer(serverUrl, serverName);
       toast.success('MCP server added successfully');
-      
+
       // Reset form
       setNewServerName('');
       setNewServerUrl('');
@@ -903,10 +903,10 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
 
   const handleInvokeTool = async () => {
     if (!selectedTool || !naturalLanguageQuery.trim()) return;
-    
+
     try {
       setIsExecuting(true);
-      
+
       // Use AI agent to parse natural language and execute the tool with selected model
       const result = await executeToolWithAI({
         serverId: selectedTool.serverId,
@@ -914,7 +914,7 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
         naturalLanguageQuery: naturalLanguageQuery.trim(),
         model: selectedModel,
       });
-      
+
       setExecutionResult(result);
       setNaturalLanguageQuery('');
       toast.success('Tool executed successfully!');
@@ -938,12 +938,12 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
 
   const handleDeleteTool = async (toolId: string) => {
     if (!deletingTool) return;
-    
+
     try {
       await deleteMcpTool({
         toolId: toolId as Id<"mcpTools">
       });
-      
+
       setDeletingTool(null);
       toast.success('Tool deleted successfully');
     } catch (error) {
@@ -967,13 +967,13 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
     setActiveDropdown(null); // Close dropdown first
     setEditingServer(server._id);
     setEditAnchorEl(anchorEl);
-    
+
     // Parse URL to separate base URL from API key
     let baseUrl = server.url || '';
     if (baseUrl.includes('?tavilyApiKey=')) {
       baseUrl = baseUrl.split('?tavilyApiKey=')[0];
     }
-    
+
     setEditForm({
       name: server.name || '',
       description: server.description || '',
@@ -1064,26 +1064,26 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
         </div>
       </div>
       <div className="p-3 space-y-3">
-      {/* Add Server Popover */}
-      {addAnchorEl && createPortal(
-        <AddServerPopover
-          anchorEl={addAnchorEl}
-          separateInputs={separateInputs}
-          setSeparateInputs={setSeparateInputs}
-          combinedInput={combinedInput}
-          setCombinedInput={setCombinedInput}
-          newServerName={newServerName}
-          setNewServerName={setNewServerName}
-          newServerUrl={newServerUrl}
-          setNewServerUrl={setNewServerUrl}
-          newApiKey={newApiKey}
-          setNewApiKey={setNewApiKey}
-          onAdd={() => { void handleAddServer(); setAddAnchorEl(null); }}
-          onClose={() => setAddAnchorEl(null)}
-        />,
-        document.body
-      )}
-      
+        {/* Add Server Popover */}
+        {addAnchorEl && createPortal(
+          <AddServerPopover
+            anchorEl={addAnchorEl}
+            separateInputs={separateInputs}
+            setSeparateInputs={setSeparateInputs}
+            combinedInput={combinedInput}
+            setCombinedInput={setCombinedInput}
+            newServerName={newServerName}
+            setNewServerName={setNewServerName}
+            newServerUrl={newServerUrl}
+            setNewServerUrl={setNewServerUrl}
+            newApiKey={newApiKey}
+            setNewApiKey={setNewApiKey}
+            onAdd={() => { void handleAddServer(); setAddAnchorEl(null); }}
+            onClose={() => setAddAnchorEl(null)}
+          />,
+          document.body
+        )}
+
         {/* Servers List */}
         {servers.length === 0 ? (
           <div className="text-center py-6">
@@ -1105,7 +1105,7 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
               return (
                 <div key={server._id} className="border border-[var(--border-color)] rounded">
                   {/* Server Header */}
-                  <div 
+                  <div
                     className="flex items-center justify-between p-2 cursor-pointer hover:bg-[var(--bg-hover)]"
                     onClick={() => toggleServerExpansion(server._id)}
                   >
@@ -1138,7 +1138,7 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
                         >
                           <Settings className="h-3 w-3" />
                         </button>
-                        
+
                         {/* Settings Dropdown */}
                         {activeDropdown === server._id && (
                           <div className="absolute right-0 top-full mt-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded shadow-lg z-50 min-w-[120px]">
@@ -1249,7 +1249,7 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
           />,
           document.body
         )}
-        
+
         {/* Delete Server Popover */}
         {deletingServer && serverDeleteAnchorEl && createPortal(
           <ConfirmPopover
@@ -1262,9 +1262,9 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
           />,
           document.body
         )}
-        
+
         {/* Tool Edit Modal removed; editing is now inside Execute popover */}
-        
+
         {/* Delete Tool Popover */}
         {deletingTool && toolDeleteAnchorEl && createPortal(
           <ConfirmPopover
@@ -1277,7 +1277,7 @@ export function EnhancedMcpPanel({ onClose }: EnhancedMcpPanelProps) {
           />,
           document.body
         )}
-        
+
         {/* Anchored Execute Tool Popover */}
         {selectedTool && executeAnchorEl && actualTool && createPortal(
           <ExecuteToolPopover

@@ -23,6 +23,8 @@ export const updateRunStatus = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Legacy function - aiAgents module doesn't exist
+    // Update the agentRuns table directly
     const fields: any = { status: args.status };
     if (args.finalResponse !== undefined) {
       fields.finalResponse = args.finalResponse;
@@ -30,12 +32,10 @@ export const updateRunStatus = internalMutation({
     if (args.errorMessage !== undefined) {
       fields.errorMessage = args.errorMessage;
     }
-    
-    await ctx.runMutation(internal.aiAgents.updateAgentRun, {
-      runId: args.runId,
-      fields,
-    });
-    
+
+    // Direct update instead of calling non-existent aiAgents module
+    await ctx.db.patch(args.runId, fields);
+
     return null;
   },
 });
@@ -96,13 +96,11 @@ export const appendRunEvent = internalMutation({
   },
   returns: v.object({ seq: v.number() }),
   handler: async (ctx, args): Promise<{ seq: number }> => {
-    const result: { seq: number } = await ctx.runMutation(internal.aiAgents.appendRunEvent, {
-      runId: args.runId,
-      kind: args.kind,
-      message: args.message,
-      data: args.data,
-    });
-    return result;
+    // Legacy function - aiAgents module doesn't exist
+    // For now, just return a dummy sequence number
+    // In a real implementation, you'd store events in a separate table
+    console.warn(`[appendRunEvent] Not implemented - would append event to run ${args.runId}: ${args.kind}`);
+    return { seq: 1 };
   },
 });
 

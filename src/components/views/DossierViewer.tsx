@@ -3,7 +3,7 @@ import { useRef, useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
-import { ChevronLeft, ChevronRight, Sparkles, Loader2, Video, Image as ImageIcon, FileText, Maximize2, Edit3, LayoutList, Search, Home, ChevronDown, Filter, SortAsc } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Loader2, Video, Image as ImageIcon, FileText, Maximize2, Edit3, LayoutList, Search, Home, ChevronDown, Filter, SortAsc, ExternalLink } from "lucide-react";
 import { DossierMediaGallery } from "./dossier/DossierMediaGallery";
 import { extractMediaFromTipTap, countMediaAssets, type TipTapDocument } from "./dossier/tipTapMediaExtractor";
 import UnifiedEditor from "@/components/UnifiedEditor";
@@ -11,10 +11,18 @@ import type { VideoAsset, ImageAsset, DocumentAsset } from "./dossier/mediaExtra
 
 type ViewMode = 'split' | 'unified';
 
+type DossierViewerVariant = 'classic' | 'newspaper';
+
 interface DossierViewerProps {
   documentId: Id<"documents">;
   isGridMode?: boolean;
   isFullscreen?: boolean;
+  /**
+   * Layout variant:
+   * - classic: existing split/unified dossier layout
+   * - newspaper: Daily-Prophet/WSJ-inspired layout (used on WelcomeLanding only)
+   */
+  variant?: DossierViewerVariant;
 }
 
 /**
@@ -24,8 +32,9 @@ interface DossierViewerProps {
  * - Split Panel Mode (default): Left panel shows media gallery (65%), right panel shows transcript (35%)
  * - Unified Editor Mode: Full-width editable UnifiedEditor for direct content editing
  */
-export function DossierViewer({ documentId, isGridMode = false, isFullscreen = false }: DossierViewerProps) {
+export function DossierViewer({ documentId, isGridMode = false, isFullscreen = false, variant = 'classic' }: DossierViewerProps) {
   const document = useQuery(api.documents.getById, { documentId });
+
   const linkedAssets = useQuery(api.documents.getLinkedAssets, { dossierId: documentId });
   const analyzeSelectedFilesIntoDossier = useAction(api.metadataAnalyzer.analyzeSelectedFilesIntoDossier);
 
@@ -40,10 +49,14 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
         .then((doc) => {
           if (doc) {
             setQuickNotesDocId(doc._id);
+          } else {
+            // Quick notes not available (e.g., public dossier without edit permissions)
+            console.log('[DossierViewer] Quick notes not available for this dossier');
           }
         })
         .catch((error) => {
-          console.error('Failed to get or create quick notes:', error);
+          console.error('[DossierViewer] Failed to get or create quick notes:', error);
+          // Don't show error to user - quick notes are optional
         });
     }
   }, [documentId, quickNotesDocId, getOrCreateQuickNotes]);
@@ -313,6 +326,57 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     }
   };
 
+  // Helper function to render text content with marks
+  const renderContent = (content: any[] | undefined): React.ReactNode => {
+    if (!content) return null;
+    return content.map((node, idx) => {
+      if (node.type === 'text') {
+        let text = node.text || '';
+        if (node.marks) {
+          for (const mark of node.marks) {
+            if (mark.type === 'bold') text = <strong key={idx}>{text}</strong>;
+            if (mark.type === 'italic') text = <em key={idx}>{text}</em>;
+            if (mark.type === 'code') text = <code key={idx} className="bg-[var(--bg-secondary)] px-1 rounded">{text}</code>;
+            if (mark.type === 'link') {
+              const href = mark.attrs?.href;
+              const isLocalDocument = href?.startsWith('/documents/');
+
+              if (isLocalDocument) {
+                // Local document link - handle with single/double click
+                const docId = href.split('/documents/')[1] as Id<"documents">;
+                text = (
+                  <a
+                    key={idx}
+                    href={href}
+                    className="text-[var(--accent-primary)] hover:underline cursor-pointer"
+                    onClick={(e) => handleDocumentLinkClick(docId, e)}
+                  >
+                    {text}
+                  </a>
+                );
+              } else {
+                // External link - open in new tab
+                text = (
+                  <a
+                    key={idx}
+                    href={href}
+                    className="text-[var(--accent-primary)] hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {text}
+                  </a>
+                );
+              }
+            }
+          }
+        }
+        return <span key={idx}>{text}</span>;
+      }
+      return null;
+    });
+  };
+
   // Helper function to render TipTap nodes as read-only content
   const renderTipTapNode = (node: any): React.ReactNode => {
     switch (node.type) {
@@ -399,55 +463,81 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     }
   }, []);
 
-  const renderContent = (content: any[] | undefined): React.ReactNode => {
-    if (!content) return null;
-    return content.map((node, idx) => {
-      if (node.type === 'text') {
-        let text = node.text || '';
-        if (node.marks) {
-          for (const mark of node.marks) {
-            if (mark.type === 'bold') text = <strong key={idx}>{text}</strong>;
-            if (mark.type === 'italic') text = <em key={idx}>{text}</em>;
-            if (mark.type === 'code') text = <code key={idx} className="bg-[var(--bg-secondary)] px-1 rounded">{text}</code>;
-            if (mark.type === 'link') {
-              const href = mark.attrs?.href;
-              const isLocalDocument = href?.startsWith('/documents/');
+  // Loading state
+  if (!document) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)] mx-auto" />
+          <p className="text-sm text-[var(--text-secondary)]">Loading dossier...</p>
+        </div>
+      </div>
+    );
+  }
 
-              if (isLocalDocument) {
-                // Local document link - handle with single/double click
-                const docId = href.split('/documents/')[1] as Id<"documents">;
-                text = (
-                  <a
-                    key={idx}
-                    href={href}
-                    className="text-[var(--accent-primary)] hover:underline cursor-pointer"
-                    onClick={(e) => handleDocumentLinkClick(docId, e)}
-                  >
-                    {text}
-                  </a>
-                );
-              } else {
-                // External link - open in new tab
-                text = (
-                  <a
-                    key={idx}
-                    href={href}
-                    className="text-[var(--accent-primary)] hover:underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {text}
-                  </a>
-                );
-              }
-            }
-          }
-        }
-        return text;
-      }
-      return renderTipTapNode(node);
-    });
-  };
+  // Newspaper-style layout used for WelcomeLanding dossiers
+  if (variant === 'newspaper') {
+    return (
+      <div className="h-full overflow-y-auto bg-[#f8f6f1]">
+        <div className="max-w-[1100px] mx-auto px-6 py-8">
+          <div className="bg-white shadow-lg border border-gray-300 font-serif">
+            {/* Masthead */}
+            <div className="border-b-4 border-black px-8 pt-6 pb-3">
+              <div className="text-center border-b border-gray-400 pb-3 mb-2">
+                <h1 className="font-serif text-5xl font-black tracking-tight text-black mb-1">
+                  THE DAILY DOSSIER
+                </h1>
+                <p className="text-xs text-gray-600 uppercase tracking-widest">Research Intelligence Report</p>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-700">
+                <span className="uppercase tracking-wide">Vol. 1, No. 1</span>
+                <span>
+                  {new Date(document?._creationTime || Date.now()).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+                <span className="uppercase tracking-wide">Price: Free</span>
+              </div>
+            </div>
+
+            {/* Document Title */}
+            <div className="px-8 pt-6 pb-4 border-b border-gray-300">
+              <h2 className="font-serif text-3xl font-bold text-black leading-tight">
+                {document?.title || 'Untitled Research'}
+              </h2>
+            </div>
+
+            {/* Main Content */}
+            <div className="px-8 py-6">
+              <div className="prose prose-sm max-w-none">
+                {tipTapContent ? (
+                  <div className="text-gray-800 leading-relaxed">
+                    {tipTapContent.content.map((node, idx) => (
+                      <div key={idx} className="mb-4">
+                        {renderTipTapNode(node)}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500 italic">
+                    No content available.
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="mt-6 pt-3 text-xs border-t-2 border-gray-800 text-gray-600">
+                <p>Analyzed {mediaCounts.total} media assets • Compiled on {new Date(document?._creationTime || Date.now()).toLocaleDateString("en-US")}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // If in unified editor mode, render full-width editor
   if (viewMode === 'unified') {
@@ -815,116 +905,6 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       )}
     </div>
   );
-}
-
-/**
- * Helper function to render TipTap nodes as React elements
- */
-function renderTipTapNode(node: any): React.ReactNode {
-  if (!node) return null;
-
-  switch (node.type) {
-    case "paragraph":
-      return (
-        <p className="leading-relaxed mb-2">
-          {node.content?.map((child: any, idx: number) => (
-            <span key={idx}>{renderTipTapNode(child)}</span>
-          ))}
-        </p>
-      );
-    case "heading":
-      const level = node.attrs?.level || 1;
-      const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
-      const headingClasses = {
-        1: "text-2xl font-bold mb-3 mt-4",
-        2: "text-xl font-semibold mb-2 mt-3",
-        3: "text-lg font-semibold mb-2 mt-2",
-        4: "text-base font-semibold mb-1 mt-2",
-        5: "text-sm font-semibold mb-1 mt-1",
-        6: "text-xs font-semibold mb-1 mt-1",
-      };
-      return (
-        <HeadingTag className={headingClasses[level as keyof typeof headingClasses] || headingClasses[1]}>
-          {node.content?.map((child: any, idx: number) => (
-            <span key={idx}>{renderTipTapNode(child)}</span>
-          ))}
-        </HeadingTag>
-      );
-    case "text":
-      let text: React.ReactNode = node.text || "";
-      if (node.marks) {
-        node.marks.forEach((mark: any) => {
-          if (mark.type === "bold") {
-            text = <strong key="bold">{text}</strong>;
-          } else if (mark.type === "italic") {
-            text = <em key="italic">{text}</em>;
-          } else if (mark.type === "code") {
-            text = <code key="code" className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-xs font-mono">{text}</code>;
-          } else if (mark.type === "link") {
-            text = <a key="link" href={mark.attrs?.href} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">{text}</a>;
-          }
-        });
-      }
-      return text;
-    case "bulletList":
-      return (
-        <ul className="list-disc list-inside space-y-1 ml-4 mb-2">
-          {node.content?.map((child: any, idx: number) => (
-            <div key={idx}>{renderTipTapNode(child)}</div>
-          ))}
-        </ul>
-      );
-    case "orderedList":
-      return (
-        <ol className="list-decimal list-inside space-y-1 ml-4 mb-2">
-          {node.content?.map((child: any, idx: number) => (
-            <div key={idx}>{renderTipTapNode(child)}</div>
-          ))}
-        </ol>
-      );
-    case "listItem":
-      return (
-        <li>
-          {node.content?.map((child: any, idx: number) => (
-            <span key={idx}>{renderTipTapNode(child)}</span>
-          ))}
-        </li>
-      );
-    case "codeBlock":
-      return (
-        <pre className="bg-[var(--bg-secondary)] p-3 rounded-lg overflow-x-auto mb-2 border border-[var(--border-color)]">
-          <code className="text-xs font-mono">
-            {node.content?.map((child: any, idx: number) => (
-              <span key={idx}>{renderTipTapNode(child)}</span>
-            ))}
-          </code>
-        </pre>
-      );
-    case "blockquote":
-      return (
-        <blockquote className="border-l-4 border-[var(--accent-primary)] pl-4 italic text-[var(--text-secondary)] mb-2">
-          {node.content?.map((child: any, idx: number) => (
-            <div key={idx}>{renderTipTapNode(child)}</div>
-          ))}
-        </blockquote>
-      );
-    case "horizontalRule":
-      return <hr className="my-4 border-[var(--border-color)]" />;
-    case "hardBreak":
-      return <br />;
-    default:
-      // For unknown node types, try to render content if it exists
-      if (node.content) {
-        return (
-          <div className="mb-2">
-            {node.content.map((child: any, idx: number) => (
-              <span key={idx}>{renderTipTapNode(child)}</span>
-            ))}
-          </div>
-        );
-      }
-      return null;
-  }
 }
 
 /**

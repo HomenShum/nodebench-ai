@@ -7,7 +7,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
@@ -18,15 +18,12 @@ import { CompanySelectionCard, type CompanyOption } from './CompanySelectionCard
 import { PeopleSelectionCard, type PersonOption } from './PeopleSelectionCard';
 import { EventSelectionCard, type EventOption } from './EventSelectionCard';
 import { NewsSelectionCard, type NewsArticleOption } from './NewsSelectionCard';
-import { CollapsibleAgentProgress } from './CollapsibleAgentProgress';
 import { RichMediaSection } from './RichMediaSection';
 import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaExtractor';
 import { GoalCard, type TaskStatusItem } from './FastAgentPanel.GoalCard';
-import { ThoughtBubble } from './FastAgentPanel.ThoughtBubble';
-import { CitationLink } from './FastAgentPanel.CitationLink';
 import { DocumentActionGrid, extractDocumentActions, removeDocumentActionMarkers } from './DocumentActionCard';
 
-interface UIMessageBubbleProps {
+interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
   onMermaidRetry?: (error: string, code: string) => void;
   onRegenerateMessage?: () => void;
@@ -50,14 +47,14 @@ function SafeImage({ src, alt, className }: { src: string; alt: string; classNam
 
   if (error) {
     return (
-      <div className="flex items-center justify-center gap-2 p-4 bg-gray-50 border border-gray-200 rounded">
+      <div className="flex items-center justify-center gap-2 p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded">
         <AlertCircle className="h-5 w-5 text-red-500" />
-        <div className="text-sm text-gray-700">
+        <div className="text-sm text-[var(--text-primary)]">
           <div className="font-medium">Failed to load image</div>
-          <div className="text-xs text-gray-500 mt-1">The file may be too large or unavailable</div>
-          <a 
-            href={src} 
-            target="_blank" 
+          <div className="text-xs text-[var(--text-muted)] mt-1">The file may be too large or unavailable</div>
+          <a
+            href={src}
+            target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:underline text-xs mt-1 inline-block"
           >
@@ -71,8 +68,8 @@ function SafeImage({ src, alt, className }: { src: string; alt: string; classNam
   return (
     <div className="relative">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded">
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--text-muted)]" />
         </div>
       )}
       <img
@@ -183,7 +180,7 @@ function ToolOutputRenderer({
   const restOfContent = afterImages ? '##' + afterImages.slice(1).join('##') : '';
 
   return (
-    <div className="text-xs text-gray-600 mt-1 space-y-2">
+    <div className="text-xs text-[var(--text-secondary)] mt-1 space-y-2">
       {/* Render company selection prompt */}
       {companySelectionData && onCompanySelect && (
         <CompanySelectionCard
@@ -236,19 +233,19 @@ function ToolOutputRenderer({
       {/* Render images gallery */}
       {hasMultipleImages && imageUrls.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-gray-700 mt-3 mb-2">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mt-3 mb-2">
             Images
-            <span className="text-xs font-normal text-gray-500 ml-2">
+            <span className="text-xs font-normal text-[var(--text-muted)] ml-2">
               (scroll to see all)
             </span>
           </h2>
-          <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ scrollbarWidth: 'thin' }}>
+          <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-[var(--border-color)] scrollbar-track-[var(--bg-secondary)]" style={{ scrollbarWidth: 'thin' }}>
             {imageUrls.map((img, idx) => (
               <div key={idx} className="flex-shrink-0">
                 <SafeImage
                   src={img.url}
                   alt={img.alt}
-                  className="h-48 w-auto rounded-lg border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="h-48 w-auto rounded-lg border border-[var(--border-color)] cursor-pointer hover:shadow-lg transition-shadow"
                 />
               </div>
             ))}
@@ -272,17 +269,17 @@ function ToolOutputRenderer({
             ),
             // Style headings
             h2: ({ node, ...props }) => (
-              <h2 {...props} className="text-sm font-semibold text-gray-700 mt-3 mb-2" />
+              <h2 {...props} className="text-sm font-semibold text-[var(--text-primary)] mt-3 mb-2" />
             ),
             // Style paragraphs
             p: ({ node, ...props }) => (
-              <p {...props} className="text-xs text-gray-600 mb-2" />
+              <p {...props} className="text-xs text-[var(--text-secondary)] mb-2" />
             ),
             // Style videos
             video: ({ node, ...props }) => (
               <video
                 {...props}
-                className="max-w-full h-auto rounded-lg border border-gray-200 my-2"
+                className="max-w-full h-auto rounded-lg border border-[var(--border-color)] my-2"
                 style={{ maxHeight: '300px' }}
               />
             ),
@@ -329,26 +326,26 @@ function FileTextPreview({ fileUrl, fileName }: { fileUrl: string; fileName: str
       {/* Text File Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="px-4 py-3 bg-gradient-to-r from-blue-50 to-white flex items-center gap-3 border-b border-gray-200 hover:from-blue-100 transition-colors"
+        className="px-4 py-3 bg-gradient-to-r from-blue-50 to-[var(--bg-primary)] dark:from-blue-900/20 dark:to-[var(--bg-primary)] flex items-center gap-3 border-b border-[var(--border-color)] hover:from-blue-100 dark:hover:from-blue-900/30 transition-colors"
       >
-        <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+        <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300">
           <ImageIcon className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <div className="text-sm font-medium text-gray-900 truncate">
+          <div className="text-sm font-medium text-[var(--text-primary)] truncate">
             {fileName}
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">Text File</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Text File</p>
         </div>
-        <div className="text-xs text-gray-400">
+        <div className="text-xs text-[var(--text-muted)]">
           {isExpanded ? 'Collapse' : 'Expand'}
         </div>
       </button>
       {/* Text Preview */}
       {isExpanded && (
-        <div className="bg-gray-50 p-4">
+        <div className="bg-[var(--bg-secondary)] p-4">
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Loading file content...</span>
             </div>
@@ -357,7 +354,7 @@ function FileTextPreview({ fileUrl, fileName }: { fileUrl: string; fileName: str
               {error}
             </div>
           ) : (
-            <pre className="text-xs bg-white p-3 rounded border border-gray-200 overflow-x-auto max-h-96 overflow-y-auto">
+            <pre className="text-xs bg-[var(--bg-primary)] p-3 rounded border border-[var(--border-color)] overflow-x-auto max-h-96 overflow-y-auto">
               {content}
             </pre>
           )}
@@ -377,9 +374,46 @@ const agentRoleConfig = {
 };
 
 /**
- * CollapsibleToolStep - Renders a single tool call as a collapsible step
+ * ThinkingAccordion - Collapsible section for agent reasoning
  */
-function CollapsibleToolStep({
+function ThinkingAccordion({
+  reasoning,
+  isStreaming
+}: {
+  reasoning: string;
+  isStreaming: boolean;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!reasoning) return null;
+
+  return (
+    <div className="mb-4 border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--bg-secondary)]/50">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+      >
+        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        <BrainCircuit className="w-3 h-3 text-purple-500" />
+        <span>Thinking Process</span>
+        {isStreaming && <Loader2 className="w-3 h-3 animate-spin ml-auto text-purple-500" />}
+      </button>
+
+      {isExpanded && (
+        <div className="px-3 py-2 border-t border-[var(--border-color)] bg-[var(--bg-primary)]">
+          <div className="prose prose-xs max-w-none text-[var(--text-secondary)]">
+            <ReactMarkdown>{reasoning}</ReactMarkdown>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * ToolStep - Renders a single tool call as a structured step
+ */
+function ToolStep({
   part,
   stepNumber,
   onCompanySelect,
@@ -397,68 +431,55 @@ function CollapsibleToolStep({
   const [isExpanded, setIsExpanded] = useState(false);
   const hasOutput = part.output !== undefined && part.output !== null;
   const toolName = part.type.replace('tool-', '');
-  
+
   // Determine status based on part type
   const isComplete = part.type.startsWith('tool-result');
-  const isCall = part.type === 'tool-call';
   const isError = part.type === 'tool-error';
-  
+
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-      {/* Collapsed Header - Always Visible */}
+    <div className="mb-2 last:mb-0 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] shadow-sm overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+        className="w-full px-3 py-2 flex items-center gap-3 hover:bg-[var(--bg-hover)] transition-colors"
       >
-        {/* Expand/Collapse Icon */}
-        {isExpanded ? (
-          <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-gray-500 flex-shrink-0" />
-        )}
-        
         {/* Status Icon */}
         <div className="flex-shrink-0">
           {isComplete ? (
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
           ) : isError ? (
-            <XCircle className="h-4 w-4 text-red-600" />
+            <XCircle className="h-4 w-4 text-red-500" />
           ) : (
-            <Clock className="h-4 w-4 text-blue-600 animate-pulse" />
+            <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
           )}
         </div>
-        
-        {/* Tool Name & Step Number */}
-        <div className="flex-1 text-left">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-500">Step {stepNumber}</span>
-            <span className="text-xs text-gray-300">•</span>
-            <span className="text-sm font-semibold text-gray-700">{toolName}</span>
-          </div>
+
+        {/* Tool Name */}
+        <div className="flex-1 text-left flex items-center gap-2">
+          <span className="text-xs font-semibold text-[var(--text-primary)] font-mono">{toolName}</span>
+          {isComplete && <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded-full">Completed</span>}
         </div>
-        
-        {/* Tool Icon */}
-        <Wrench className="h-4 w-4 text-blue-600 flex-shrink-0" />
+
+        {/* Expand/Collapse */}
+        {isExpanded ? <ChevronDown className="h-3 w-3 text-[var(--text-muted)]" /> : <ChevronRight className="h-3 w-3 text-[var(--text-muted)]" />}
       </button>
-      
-      {/* Expanded Content - Details */}
+
       {isExpanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-gray-100 bg-gray-50">
-          {/* Tool Arguments */}
+        <div className="px-3 py-2 border-t border-[var(--border-color-light)] bg-[var(--bg-secondary)]/50 text-xs">
+          {/* Arguments */}
           {(part as any).args && (
-            <div className="mb-3">
-              <div className="text-xs font-medium text-gray-600 mb-1">Input:</div>
-              <pre className="text-xs bg-white p-2 rounded border border-gray-200 overflow-x-auto">
+            <div className="mb-2">
+              <div className="font-medium text-[var(--text-muted)] mb-1">Input</div>
+              <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[var(--text-secondary)]">
                 {JSON.stringify((part as any).args, null, 2)}
               </pre>
             </div>
           )}
-          
-          {/* Tool Output */}
+
+          {/* Output */}
           {hasOutput && (
             <div>
-              <div className="text-xs font-medium text-gray-600 mb-1">Output:</div>
-              <div className="bg-white p-3 rounded border border-gray-200">
+              <div className="font-medium text-gray-500 mb-1">Output</div>
+              <div className="bg-white p-2 rounded border border-gray-200 overflow-x-auto">
                 <ToolOutputRenderer
                   output={part.output}
                   onCompanySelect={onCompanySelect}
@@ -469,12 +490,11 @@ function CollapsibleToolStep({
               </div>
             </div>
           )}
-          
-          {/* Error Message */}
+
+          {/* Error */}
           {isError && (part as any).error && (
-            <div className="bg-red-50 border border-red-200 rounded p-3">
-              <div className="text-xs font-medium text-red-700 mb-1">Error:</div>
-              <div className="text-xs text-red-600">{(part as any).error}</div>
+            <div className="mt-2 bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400">
+              {(part as any).error}
             </div>
           )}
         </div>
@@ -484,11 +504,11 @@ function CollapsibleToolStep({
 }
 
 /**
- * UIMessageBubble - Renders a UIMessage with smooth streaming animation
+ * FastAgentUIMessageBubble - Renders a UIMessage with smooth streaming animation
  * Handles all UIMessage part types: text, reasoning, tool calls, files, etc.
  * Supports hierarchical rendering with agent role badges
  */
-export function UIMessageBubble({
+export function FastAgentUIMessageBubble({
   message,
   onMermaidRetry,
   onRegenerateMessage,
@@ -501,7 +521,7 @@ export function UIMessageBubble({
   isParent,
   isChild,
   agentRole,
-}: UIMessageBubbleProps) {
+}: FastAgentUIMessageBubbleProps) {
   const isUser = message.role === 'user';
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -568,7 +588,7 @@ export function UIMessageBubble({
       if (mediaParts && mediaParts.length > 0) {
         copyText += '\n\n--- Media References ---\n';
         for (const part of mediaParts) {
-          const toolName = (part as ToolUIPart).toolName;
+          const toolName = (part as any).toolName;
           copyText += `\n${toolName}:\n`;
 
           // Try to extract URLs from output
@@ -613,18 +633,8 @@ export function UIMessageBubble({
   );
 
   // Extract media from BOTH tool results AND final text
-  // Tool results contain raw output with HTML markers, but when agent synthesizes a response,
-  // the media info is in the final text in plain format
   const extractedMedia = useMemo(() => {
     if (isUser) return { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] };
-
-    // Debug: Log all parts to see what we have
-    console.log('[UIMessageBubble] Message parts:', message.parts.map(p => ({
-      type: p.type,
-      hasResult: !!(p as any).result,
-      toolName: (p as any).toolName,
-      resultPreview: typeof (p as any).result === 'string' ? (p as any).result.substring(0, 100) : undefined
-    })));
 
     // Extract all tool-result parts from message
     const toolResultParts = message.parts.filter((p): p is any =>
@@ -648,33 +658,10 @@ export function UIMessageBubble({
     // ALSO extract from final text (for when agent synthesizes response)
     const textMedia = extractMediaFromText(visibleText || '');
 
-    // Keep tool media and text media separate for better UX
-    // Tool media = comprehensive results from search tools
-    // Text media = what the agent chose to mention in the answer
-    const separatedMedia = {
+    return {
       toolMedia,
       textMedia,
     };
-
-    console.log('[UIMessageBubble] Extracted media:', {
-      toolResultCount: toolResultParts.length,
-      fromToolResults: {
-        youtubeCount: toolMedia.youtubeVideos.length,
-        secCount: toolMedia.secDocuments.length,
-        webSourceCount: toolMedia.webSources.length,
-        profileCount: toolMedia.profiles.length,
-        imageCount: toolMedia.images.length,
-      },
-      fromFinalText: {
-        youtubeCount: textMedia.youtubeVideos.length,
-        secCount: textMedia.secDocuments.length,
-        webSourceCount: textMedia.webSources.length,
-        profileCount: textMedia.profiles.length,
-        imageCount: textMedia.images.length,
-      },
-    });
-
-    return separatedMedia;
   }, [message.parts, isUser, visibleText]);
 
   // Extract document actions from tool results
@@ -716,31 +703,29 @@ export function UIMessageBubble({
       {!isUser && (
         <div className="flex-shrink-0">
           <div className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center shadow-md ring-2 ring-white",
-            roleConfig
-              ? `bg-gradient-to-br from-${roleConfig.color}-400 to-${roleConfig.color}-600`
-              : "bg-gradient-to-br from-purple-500 to-blue-500"
+            "w-8 h-8 rounded-full flex items-center justify-center shadow-sm ring-1 ring-white/20 backdrop-blur-sm",
+            "bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)]"
           )}>
-            <Bot className="h-5 w-5 text-white" />
+            <Bot className="w-5 h-5 text-white" />
           </div>
         </div>
       )}
 
       {/* Message Content */}
       <div className={cn(
-        "flex flex-col gap-3 max-w-[80%]",
+        "flex flex-col gap-2 max-w-[85%]",
         isUser && "items-end"
       )}>
         {/* Agent Role Badge (for specialized agents) */}
         {roleConfig && !isUser && (
           <div className={cn(
-            "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium",
+            "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium mb-1",
             "bg-gradient-to-r shadow-sm",
-            roleConfig.color === 'purple' && "from-purple-100 to-purple-200 text-purple-700",
-            roleConfig.color === 'blue' && "from-blue-100 to-blue-200 text-blue-700",
-            roleConfig.color === 'pink' && "from-pink-100 to-pink-200 text-pink-700",
-            roleConfig.color === 'green' && "from-green-100 to-green-200 text-green-700",
-            roleConfig.color === 'cyan' && "from-cyan-100 to-cyan-200 text-cyan-700"
+            roleConfig.color === 'purple' && "from-purple-100 to-purple-200 dark:from-purple-900/40 dark:to-purple-800/40 text-purple-700 dark:text-purple-300",
+            roleConfig.color === 'blue' && "from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 text-blue-700 dark:text-blue-300",
+            roleConfig.color === 'pink' && "from-pink-100 to-pink-200 dark:from-pink-900/40 dark:to-pink-800/40 text-pink-700 dark:text-pink-300",
+            roleConfig.color === 'green' && "from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 text-green-700 dark:text-green-300",
+            roleConfig.color === 'cyan' && "from-cyan-100 to-cyan-200 dark:from-cyan-900/40 dark:to-cyan-800/40 text-cyan-700 dark:text-cyan-300"
           )}>
             <span className="text-sm">{roleConfig.icon}</span>
             <span>{roleConfig.label}</span>
@@ -759,21 +744,21 @@ export function UIMessageBubble({
           // Extract task status from delegation calls
           const tasks: TaskStatusItem[] = delegationCalls.map((part: any, idx) => {
             const toolName = part.toolName?.replace('delegateTo', '').replace('Agent', '') || 'Task';
-            
+
             // Default status is queued, will be updated by child responses
             let status: 'queued' | 'active' | 'success' | 'failed' = 'queued';
-            
+
             // Check if there's a corresponding result
-            const resultPart = toolParts.find((p: any) => 
+            const resultPart = toolParts.find((p: any) =>
               p.type === 'tool-result' && p.toolCallId === (part as any).toolCallId
             );
-            
+
             if (resultPart) {
               status = 'success';
             } else if (part.type === 'tool-call') {
               status = 'active';
             }
-            
+
             return {
               id: `delegation-${idx}`,
               name: toolName,
@@ -793,22 +778,44 @@ export function UIMessageBubble({
           );
         })()}
 
-        {/* Thought Bubble - Only show for parent/coordinator reasoning */}
-        {!isUser && !isChild && visibleReasoning && (
-          <ThoughtBubble 
-            thought={visibleReasoning}
+        {/* Thinking Accordion */}
+        {!isUser && visibleReasoning && (
+          <ThinkingAccordion
+            reasoning={visibleReasoning}
             isStreaming={message.status === 'streaming'}
           />
         )}
 
+        {/* Tool Steps List */}
+        {!isUser && toolParts.length > 0 && (
+          <div className="mb-4 w-full">
+            {toolParts.map((part, idx) => {
+              // Only render tool calls, not results (results are nested in steps)
+              if (part.type !== 'tool-call' && part.type !== 'tool-result' && part.type !== 'tool-error') return null;
+
+              // We want to group call+result into one step if possible, but for now simple list
+              // Actually, let's just render all parts as steps for simplicity and robustness
+              return (
+                <ToolStep
+                  key={idx}
+                  part={part}
+                  stepNumber={idx + 1}
+                  onCompanySelect={onCompanySelect}
+                  onPersonSelect={onPersonSelect}
+                  onEventSelect={onEventSelect}
+                  onNewsSelect={onNewsSelect}
+                />
+              );
+            })}
+          </div>
+        )}
+
         {/* NEW PRESENTATION LAYER: Polished media display FIRST */}
-        {/* Show media for all assistant messages that have extracted media */}
-        {/* This ensures videos, sources, etc. are always visible inline */}
         {!isUser && (
           <RichMediaSection media={extractedMedia} showCitations={true} />
         )}
 
-        {/* Document Actions - Show created/updated documents */}
+        {/* Document Actions */}
         {!isUser && extractedDocuments.length > 0 && (
           <DocumentActionGrid
             documents={extractedDocuments}
@@ -817,40 +824,7 @@ export function UIMessageBubble({
           />
         )}
 
-        {/* Collapsible Agent Progress Section */}
-        {/* Collapsed by default so final answer is visible first */}
-        {/* User can expand to see detailed agent progress and tool executions */}
-        {!isUser && (
-          <CollapsibleAgentProgress
-            toolParts={toolParts}
-            reasoning={visibleReasoning}
-            isStreaming={message.status === 'streaming'}
-            defaultExpanded={false}
-            onCompanySelect={onCompanySelect}
-            onPersonSelect={onPersonSelect}
-            onEventSelect={onEventSelect}
-            onNewsSelect={onNewsSelect}
-          />
-        )}
-
-        {/* Entity Selection Cards (rendered from tool outputs) */}
-        {toolParts.map((part, idx) => {
-          if (part.type !== 'tool-result') return null;
-
-          return (
-            <div key={idx}>
-              <ToolOutputRenderer
-                output={(part as any).result}
-                onCompanySelect={onCompanySelect}
-                onPersonSelect={onPersonSelect}
-                onEventSelect={onEventSelect}
-                onNewsSelect={onNewsSelect}
-              />
-            </div>
-          );
-        })}
-
-        {/* 3. Files (images, etc.) - Supporting media */}
+        {/* Files (images, etc.) */}
         {fileParts.map((part, idx) => {
           // FileUIPart has url and mimeType properties
           const fileUrl = (part as any).url || '';
@@ -863,94 +837,13 @@ export function UIMessageBubble({
           const isAudio = mimeType.startsWith('audio/');
 
           return (
-            <div key={idx} className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+            <div key={idx} className="rounded-xl overflow-hidden border border-gray-200 shadow-sm mb-2">
               {isImage ? (
                 <SafeImage
                   src={fileUrl}
                   alt={fileName}
                   className="max-w-full h-auto"
                 />
-              ) : isPDF ? (
-                <div className="flex flex-col">
-                  {/* PDF Header */}
-                  <div className="px-4 py-3 bg-gradient-to-r from-red-50 to-white flex items-center gap-3 border-b border-gray-200">
-                    <div className="p-2 rounded-lg bg-red-100 text-red-600">
-                      <ImageIcon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
-                        {fileName}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">PDF Document</p>
-                    </div>
-                    <a
-                      href={fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      Open ↗
-                    </a>
-                  </div>
-                  {/* PDF Preview Embed */}
-                  <div className="bg-gray-100 p-2">
-                    <iframe
-                      src={fileUrl}
-                      className="w-full h-96 border-0 rounded"
-                      title={fileName}
-                    />
-                  </div>
-                </div>
-              ) : isVideo ? (
-                <div className="flex flex-col">
-                  {/* Video Header */}
-                  <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-white flex items-center gap-3 border-b border-gray-200">
-                    <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
-                      <ImageIcon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
-                        {fileName}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">Video File</p>
-                    </div>
-                  </div>
-                  {/* Video Preview */}
-                  <div className="bg-black">
-                    <video
-                      src={fileUrl}
-                      controls
-                      className="w-full max-h-96"
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                </div>
-              ) : isAudio ? (
-                <div className="flex flex-col">
-                  {/* Audio Header */}
-                  <div className="px-4 py-3 bg-gradient-to-r from-green-50 to-white flex items-center gap-3 border-b border-gray-200">
-                    <div className="p-2 rounded-lg bg-green-100 text-green-600">
-                      <ImageIcon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
-                        {fileName}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">Audio File</p>
-                    </div>
-                  </div>
-                  {/* Audio Preview */}
-                  <div className="p-4 bg-gray-50">
-                    <audio
-                      src={fileUrl}
-                      controls
-                      className="w-full"
-                    >
-                      Your browser does not support the audio tag.
-                    </audio>
-                  </div>
-                </div>
               ) : isText ? (
                 <FileTextPreview fileUrl={fileUrl} fileName={fileName} />
               ) : (
@@ -969,35 +862,29 @@ export function UIMessageBubble({
                     </a>
                     <p className="text-xs text-gray-500 mt-0.5">File Attachment</p>
                   </div>
-                  <div className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
-                    →
-                  </div>
                 </div>
               )}
             </div>
           );
         })}
 
-        {/* 4. Main text content - THE ANSWER (at bottom for natural reading flow) */}
-        {/* Use cleanedText for assistant messages to remove media markers, visibleText for user messages */}
-        {/* ALWAYS show answer section for assistant messages, even if streaming (show placeholder) */}
+        {/* Main text content - THE ANSWER */}
         {!isUser || (cleanedText || visibleText) ? (
           <div
             className={cn(
-              "rounded-xl px-5 py-4 shadow-sm",
+              "relative p-4 rounded-xl shadow-sm transition-all duration-200 text-sm leading-relaxed",
               isUser
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-800 border border-gray-200",
-              message.status === 'streaming' && !isUser && "bg-gradient-to-br from-green-50 to-white border-green-200 animate-pulse",
-              message.status === 'failed' && "bg-red-50 border-red-300"
+                ? "bg-[var(--accent-primary)] text-white rounded-br-none shadow-md"
+                : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm",
+              message.status === 'streaming' && 'animate-pulse-subtle',
+              message.status === 'failed' && "bg-red-50/80 border-red-200"
             )}
-            title={!isUser && message.status !== 'streaming' ? "Use the Copy button below to copy this message" : undefined}
           >
             {/* Show placeholder while streaming and no text yet */}
             {!isUser && message.status === 'streaming' && !cleanedText && !visibleText ? (
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-500 italic">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Generating answer...</span>
+                <span>Generating answer...</span>
               </div>
             ) : (
               <ReactMarkdown
@@ -1006,7 +893,6 @@ export function UIMessageBubble({
                     const match = /language-(\w+)/.exec(className || '');
                     const language = match ? match[1] : '';
 
-                    // Special handling for Mermaid diagrams
                     if (!inline && language === 'mermaid') {
                       const mermaidCode = String(children).replace(/\n$/, '');
                       const isStreaming = message.status === 'streaming';
@@ -1019,7 +905,6 @@ export function UIMessageBubble({
                       );
                     }
 
-                    // Regular code blocks
                     return !inline && match ? (
                       <SyntaxHighlighter
                         style={vscDarkPlus}
@@ -1031,39 +916,15 @@ export function UIMessageBubble({
                       </SyntaxHighlighter>
                     ) : (
                       <code className={cn(
-                        "px-1 py-0.5 rounded text-sm font-mono",
-                        isUser ? "bg-blue-700" : "bg-gray-100"
+                        "px-1 py-0.5 rounded text-xs font-mono",
+                        isUser ? "bg-blue-700/50 text-white" : "bg-gray-100 text-gray-800"
                       )} {...props}>
                         {children}
                       </code>
                     );
                   },
-                  p({ children }) {
-                    return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
-                  },
-                  ul({ children }) {
-                    return <ul className="list-disc ml-5 mb-3 space-y-1">{children}</ul>;
-                  },
-                  ol({ children }) {
-                    return <ol className="list-decimal ml-5 mb-3 space-y-1">{children}</ol>;
-                  },
-                  li({ children }) {
-                    return <li className="leading-relaxed">{children}</li>;
-                  },
-                  h1({ children }) {
-                    return <h1 className="text-2xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>;
-                  },
-                  h2({ children }) {
-                    return <h2 className="text-xl font-bold mb-2 mt-3 first:mt-0">{children}</h2>;
-                  },
-                  h3({ children }) {
-                    return <h3 className="text-lg font-semibold mb-2 mt-3 first:mt-0">{children}</h3>;
-                  },
-                  blockquote({ children }) {
-                    return <blockquote className="border-l-4 border-gray-300 pl-4 italic my-3">{children}</blockquote>;
-                  },
                   a({ href, children }) {
-                    return <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>;
+                    return <a href={href} className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">{children}</a>;
                   },
                 }}
               >
@@ -1074,33 +935,27 @@ export function UIMessageBubble({
         ) : null}
 
         {/* Status indicator and actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mt-1">
           {message.status === 'streaming' && (
             <div className="text-xs text-gray-400 flex items-center gap-1">
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               Streaming...
             </div>
           )}
-          
+
           {/* Action buttons for completed messages */}
           {message.status !== 'streaming' && visibleText && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               {/* Copy button */}
               <button
                 onClick={() => { void handleCopy(); }}
-                className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
+                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
                 title="Copy response"
               >
                 {copied ? (
-                  <>
-                    <Check className="h-3 w-3 text-green-600" />
-                    <span className="text-xs text-green-600">Copied!</span>
-                  </>
+                  <Check className="h-3 w-3 text-green-600" />
                 ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    <span className="text-xs">Copy</span>
-                  </>
+                  <Copy className="h-3 w-3" />
                 )}
               </button>
 
@@ -1109,11 +964,10 @@ export function UIMessageBubble({
                 <button
                   onClick={handleRegenerate}
                   disabled={isRegenerating}
-                  className="text-xs text-gray-500 hover:text-gray-700 disabled:text-gray-400 flex items-center gap-1 transition-colors"
+                  className="text-xs text-gray-400 hover:text-gray-600 disabled:text-gray-300 flex items-center gap-1 transition-colors"
                   title="Regenerate response"
                 >
                   <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
-                  <span className="text-xs">{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
                 </button>
               )}
 
@@ -1123,15 +977,13 @@ export function UIMessageBubble({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={handleDelete}
-                      className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors px-2 py-1 bg-red-50 rounded"
-                      title="Confirm delete"
+                      className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors px-2 py-0.5 bg-red-50 rounded"
                     >
-                      <Trash2 className="h-3 w-3" />
-                      <span className="text-xs">Confirm</span>
+                      Confirm
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-1"
+                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-0.5"
                     >
                       Cancel
                     </button>
@@ -1154,12 +1006,11 @@ export function UIMessageBubble({
       {/* User Avatar */}
       {isUser && (
         <div className="flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md ring-2 ring-white">
-            <User className="h-5 w-5 text-white" />
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center shadow-sm ring-1 ring-white/50 backdrop-blur-sm">
+            <User className="h-4 w-4 text-white" />
           </div>
         </div>
       )}
     </div>
   );
 }
-

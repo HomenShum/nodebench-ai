@@ -33,6 +33,8 @@ const documents = defineTable({
 
   // Lazy indexing marker for RAG
   ragIndexedAt: v.optional(v.number()),
+  // Gemini File Search indexing marker
+  fileSearchIndexedAt: v.optional(v.number()),
 
   // FILE & SPECIAL DOCUMENT SUPPORT
   documentType: v.optional(
@@ -314,6 +316,17 @@ const documentFolders = defineTable({
   .index("by_folder", ["folderId"])
   .index("by_user", ["userId"])
   .index("by_document_folder", ["documentId", "folderId"]);
+
+/* ------------------------------------------------------------------ */
+/* GEMINI FILE SEARCH STORES                                          */
+/* ------------------------------------------------------------------ */
+const fileSearchStores = defineTable({
+  userId: v.id("users"),
+  storeName: v.string(),                   // full resource name from Gemini
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"]);
 
 /* ------------------------------------------------------------------ */
 /* MCP SERVERS - Model Context Protocol server configurations         */
@@ -1002,6 +1015,26 @@ const agentImageResults = defineTable({
   .index("by_task", ["taskId"])
   .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
 
+/* ------------------------------------------------------------------ */
+/* VOICE SESSIONS - Real-time voice agent sessions (RTVI/Daily Bots) */
+/* ------------------------------------------------------------------ */
+const voiceSessions = defineTable({
+  sessionId: v.string(),           // Unique session identifier
+  userId: v.id("users"),           // User who owns this session
+  threadId: v.string(),            // Agent thread ID for conversation continuity
+  createdAt: v.number(),           // Session creation timestamp
+  lastActivityAt: v.number(),      // Last interaction timestamp
+  metadata: v.optional(v.object({  // Optional session metadata
+    clientType: v.optional(v.string()),    // "daily-bots", "rtvi", etc.
+    deviceInfo: v.optional(v.string()),    // Device/browser info
+    model: v.optional(v.string()),         // AI model used
+  })),
+})
+  .index("by_user", ["userId"])
+  .index("by_session_id", ["sessionId"])
+  .index("by_thread_id", ["threadId"])
+  .index("by_last_activity", ["lastActivityAt"]);
+
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
   documents,
@@ -1028,6 +1061,7 @@ export default defineSchema({
   mcpSessions,
   agentRuns,
   agentRunEvents,
+  fileSearchStores,
   // chatThreads and chatMessages removed - using @convex-dev/agent component
   chatThreadsStream,
   chatMessagesStream,
@@ -1049,6 +1083,7 @@ export default defineSchema({
   agentLinks,
   agentTimelineRuns,
   agentImageResults,
+  voiceSessions,
 
   // API Usage Tracking
   apiUsage: defineTable({
@@ -1250,5 +1285,27 @@ export default defineSchema({
       searchField: "entityName",
       filterFields: ["entityType", "researchedBy"],
     }),
+
+  // Visitor tracking for analytics
+  visitors: defineTable({
+    userId: v.optional(v.id("users")),
+    sessionId: v.string(),
+    page: v.string(),
+    lastSeen: v.number(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_user", ["userId"]),
+
+  // Email tracking
+  emailsSent: defineTable({
+    email: v.string(),
+    userId: v.optional(v.id("users")),
+    subject: v.string(),
+    success: v.boolean(),
+    sentAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_user", ["userId"])
+    .index("by_sent_at", ["sentAt"]),
 
 });

@@ -42,7 +42,6 @@ export const runQuickTest = action({
       "cal-001",    // listEvents
       "web-001",    // linkupSearch
       "sec-001",    // searchSecFilings
-      "youtube-001", // YouTube search
       "agent-001",  // Coordinator multi-domain
       "agent-002",  // MediaAgent YouTube
       "agent-003",  // SECAgent filing search
@@ -474,4 +473,3 @@ export const testWorkflow = action({
     }
   },
 });
-

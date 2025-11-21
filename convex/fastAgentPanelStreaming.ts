@@ -1,15 +1,15 @@
 // FastAgentPanel Streaming - Backend functions for Agent component streaming
 import { v } from "convex/values";
-import { query, mutation, internalQuery, internalMutation, action, internalAction } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
-import { components, internal } from "./_generated/api";
-import { Agent, stepCountIs } from "@convex-dev/agent";
-import { openai } from "@ai-sdk/openai";
+import { internalQuery, internalMutation, internalAction, action, mutation, query } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal, components } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
 // Import streaming utilities from @convex-dev/agent
-import { vStreamArgs, syncStreams, listUIMessages, vProviderMetadata, storeFile, getFile, saveMessage } from "@convex-dev/agent";
+import { Agent, stepCountIs, vStreamArgs, syncStreams, listUIMessages, storeFile, getFile, saveMessage, vProviderMetadata } from "@convex-dev/agent";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 
 // Import tools
 import { linkupSearch } from "./tools/linkupSearch";
@@ -43,19 +43,48 @@ import {
   downloadSecFiling,
   getCompanyInfo
 } from "./tools/secFilingTools";
+import {
+  searchHashtag,
+  createHashtagDossier,
+  getOrCreateHashtagDossier
+} from "./tools/hashtagSearchTools";
+import {
+  searchTodaysFunding
+} from "./tools/fundingResearchTools";
+import {
+  enrichFounderInfo,
+  enrichInvestmentThesis,
+  enrichPatentsAndResearch,
+  enrichCompanyDossier
+} from "./tools/enhancedFundingTools";
+import { searchFiles } from "./tools/geminiFileSearch";
 
 const streamCancellationControllers = new Map<string, AbortController>();
+
+// Helper to get the appropriate language model based on model name
+// Note: For now, only OpenAI models are supported due to bundler constraints
+// Gemini support will be added in a future update
+function getLanguageModel(modelName: string) {
+  // For now, map all models to OpenAI
+  // TODO: Add Gemini support with dynamic imports when @ai-sdk/google is available
+  if (modelName.startsWith("gemini")) {
+    console.warn(`[getLanguageModel] Gemini model requested(${modelName}) but not yet supported, falling back to gpt - 5 - chat - latest`);
+    return openai.chat("gpt-5-chat-latest");
+  }
+  // Default to OpenAI
+  return openai.chat(modelName);
+}
 
 // Simple, lightweight agent for Mini Note Agent (no tools, fast responses)
 const createSimpleChatAgent = (model: string) => new Agent(components.agent, {
   name: "MiniNoteAgent",
-  languageModel: openai.chat(model),
-  instructions: `You are a helpful, friendly AI assistant for quick conversations and note-taking.
+  languageModel: getLanguageModel(model),
+  instructions: `You are a helpful, friendly AI assistant for quick conversations and note - taking.
 
 Keep responses:
 - Concise and conversational
-- Helpful and informative
-- Natural and friendly
+  - Helpful and informative
+    - Natural and friendly
 
 You don't have access to tools or external data - just provide thoughtful, direct responses based on the conversation.`,
   tools: {}, // No tools for speed
@@ -65,7 +94,34 @@ You don't have access to tools or external data - just provide thoughtful, direc
 // Full-featured agent with tools for Fast Agent Panel
 const createChatAgent = (model: string) => new Agent(components.agent, {
   name: "FastChatAgent",
-  languageModel: openai.chat(model),
+  languageModel: getLanguageModel(model),
+  contextHandler: async (ctx: any, args: any): Promise<any[]> => {
+    try {
+      if (!args.threadId) return [];
+      const threadId = args.threadId as string;
+      const recent = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+        threadId,
+        order: "desc",
+        paginationOpts: { cursor: null, numItems: 30 },
+      });
+
+      const lessons = recent.page
+        .filter((m: any) => m.role === "assistant" && m.metadata?.lesson)
+        .map((m: any) => ({ role: "assistant", content: m.metadata.lesson as string }));
+
+      return [
+        ...(lessons || []),
+        ...(args.recent || []),
+        ...(args.inputMessages || []),
+        ...(typeof args.inputPrompt === "string"
+          ? [{ role: "user", content: args.inputPrompt }]
+          : []),
+      ] as any;
+    } catch (err) {
+      console.warn("[FastChatAgent][contextHandler] failed, falling back to default", err);
+      return [];
+    }
+  },
   instructions: `You are a helpful AI assistant with access to the user's documents, tasks, events, and media files.
 
 You can help with:
@@ -73,6 +129,7 @@ You can help with:
 - Analyzing and summarizing documents
 - Creating and editing documents
 - Searching for images and videos in the user's files
+- Searching across uploaded files (PDFs, images, documents) using searchFiles tool
 - Managing tasks and calendar events
 - Organizing files in folders
 - Searching the web for current information
@@ -108,6 +165,11 @@ IMPORTANT Tool Selection Guidelines:
 - For document-related queries:
   * Use findDocument to SEARCH for documents by title or content
   * Use getDocumentContent to READ/SHOW the actual content of a specific document
+  * Use searchFiles to search across ALL uploaded files (PDFs, images, documents) when:
+    - User asks to find information across multiple uploaded files
+    - User wants to search through their uploaded documents
+    - User asks questions about files they've uploaded
+    - User wants to compare or analyze content from multiple files
   * Use analyzeMultipleDocuments when the user wants to:
     - Compare multiple documents
     - Synthesize information across documents
@@ -220,23 +282,8 @@ Mermaid Error Auto-Correction:
   5. Add a brief note about what was fixed
 
 Always provide clear, helpful responses and confirm actions you take.`,
-  usageHandler: async (ctx, args) => {
-    // Track OpenAI API usage for billing/analytics
-    if (!args.userId) {
-      console.debug("[usageHandler] No userId, skipping tracking");
-      return;
-    }
 
-    await ctx.runMutation(internal.fastAgentPanelStreaming.insertApiUsage, {
-      userId: args.userId,
-      apiName: "openai",
-      operation: "generate",
-      model: args.model,
-      provider: args.provider,
-      usage: args.usage, // Pass as-is, will transform in mutation
-      providerMetadata: args.providerMetadata,
-    });
-  },
+  // Explicitly pass all tools to the agent
   tools: {
     // Web search
     linkupSearch,
@@ -258,7 +305,7 @@ Always provide clear, helpful responses and confirm actions you take.`,
     getMediaDetails,
     listMediaFiles,
 
-    // Data access
+    // Data access (tasks, events, folders)
     listTasks,
     createTask,
     updateTask,
@@ -266,17 +313,79 @@ Always provide clear, helpful responses and confirm actions you take.`,
     createEvent,
     getFolderContents,
 
-    // SEC EDGAR filings
+    // SEC filings
     searchSecFilings,
     downloadSecFiling,
     getCompanyInfo,
+
+    // Hashtag and dossier tools
+    searchHashtag,
+    createHashtagDossier,
+    getOrCreateHashtagDossier,
+
+    // Funding research tools
+    searchTodaysFunding,
+    enrichFounderInfo,
+    enrichInvestmentThesis,
+    enrichPatentsAndResearch,
+    enrichCompanyDossier,
+
+    // Gemini File Search
+    searchFiles,
   },
-  stopWhen: stepCountIs(10), // Allow up to 10 tool call steps
+
+  // Allow up to 15 steps for complex multi-tool workflows
+  stopWhen: stepCountIs(15),
+
+  // Add text embedding model for vector search
+  textEmbeddingModel: openai.embedding("text-embedding-3-small"),
+
+  usageHandler: async (ctx, args) => {
+    // Track OpenAI API usage for billing/analytics
+    if (!args.userId) {
+      console.debug("[usageHandler] No userId, skipping tracking");
+      return;
+    }
+
+    await ctx.runMutation(internal.fastAgentPanelStreaming.insertApiUsage, {
+      userId: args.userId,
+      apiName: "openai",
+      operation: "generate",
+      model: args.model,
+      provider: args.provider,
+      usage: args.usage, // Pass as-is, will transform in mutation
+    });
+  },
 });
 
-/* ================================================================
- * THREAD MANAGEMENT
- * ================================================================ */
+// Fast responder with small step budget for simple requests (still has all tools)
+const createFastResponderAgent = (model: string) => new Agent(components.agent, {
+  name: "FastResponder",
+  languageModel: getLanguageModel(model),
+  instructions: `You are the fast path responder. Provide a direct, helpful reply in one message with no tool calls or long reasoning. Keep it under two sentences unless clarification is essential.`,
+  tools: {},
+  stopWhen: stepCountIs(1),
+  textEmbeddingModel: openai.embedding("text-embedding-3-small"),
+});
+
+// Lightweight planner to decide simple vs complex and emit tasks
+const planSchema = z.object({
+  mode: z.enum(["simple", "complex"]),
+  tasks: z.array(
+    z.object({
+      description: z.string(),
+      agent: z.enum(["document", "media", "sec", "web", "task", "event", "general"]).default("general"),
+    })
+  ).default([]),
+});
+
+const createPlannerAgent = (model: string) => new Agent(components.agent, {
+  name: "PlannerAgent",
+  languageModel: getLanguageModel(model),
+  instructions: `Classify the user's request as 'simple' (can be answered in one short response) or 'complex' (requires multiple tool calls or tasks).
+If complex, break it into clear tasks with an appropriate agent bucket: document, media, sec, web, task, event, or general.`,
+  stopWhen: stepCountIs(3),
+});
 
 /**
  * List all streaming threads for the current user with enriched data
@@ -291,7 +400,7 @@ export const listThreads = query({
       .query("chatThreadsStream")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
-      .collect();
+      .take(200);
 
     // Enrich each thread with message count, tools used, and models used
     const enrichedThreads = await Promise.all(
@@ -301,7 +410,7 @@ export const listThreads = query({
           const messages = await ctx.db
             .query("chatMessagesStream")
             .withIndex("by_thread", (q) => q.eq("threadId", thread._id))
-            .collect();
+            .take(500);
 
           let messageCount = messages.length;
 
@@ -455,7 +564,7 @@ export const getThreadByStreamId = query({
  */
 export const createThread = action({
   args: {
-    title: v.string(),
+    title: v.optional(v.string()),
     model: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"chatThreadsStream">> => {
@@ -464,15 +573,16 @@ export const createThread = action({
 
     const modelName = args.model || "gpt-5-chat-latest";
     const chatAgent = createChatAgent(modelName);
+    const title = (args.title ?? "").trim() || "Research Thread";
 
     // Create agent thread for automatic memory management
-    const { threadId: agentThreadId } = await chatAgent.createThread(ctx, { userId });
+    const { threadId: agentThreadId } = await chatAgent.createThread(ctx, { userId, title });
 
     // Update agent thread summary
     await ctx.runMutation(components.agent.threads.updateThread, {
       threadId: agentThreadId,
       patch: {
-        summary: args.title,
+        summary: title,
       },
     });
 
@@ -480,7 +590,7 @@ export const createThread = action({
     const now = Date.now();
     const threadId = await ctx.runMutation(internal.fastAgentPanelStreaming.createThreadInternal, {
       userId,
-      title: args.title,
+      title,
       model: modelName,
       agentThreadId,
       now,
@@ -557,13 +667,20 @@ export const deleteThread = mutation({
     }
 
     // Delete all messages in the thread
-    const messages = await ctx.db
-      .query("chatMessagesStream")
-      .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
-      .collect();
+    // Delete messages in batches to avoid loading too many at once
+    let cursor: string | null = null;
+    while (true) {
+      const page = await ctx.db
+        .query("chatMessagesStream")
+        .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
+        .paginate({ cursor, numItems: 200 });
 
-    for (const message of messages) {
-      await ctx.db.delete(message._id);
+      for (const message of page.page) {
+        await ctx.db.delete(message._id);
+      }
+
+      if (page.isDone) break;
+      cursor = page.continueCursor;
     }
 
     // Delete the thread
@@ -651,7 +768,7 @@ export const deleteMessage = mutation({
       const linked = await ctx.db
         .query("chatMessagesStream")
         .withIndex("by_agentMessageId", (q) => q.eq("agentMessageId", args.messageId))
-        .collect();
+        .take(100);
 
       for (const m of linked) {
         if (m.threadId === args.threadId) {
@@ -799,7 +916,7 @@ export const initiateAsyncStreaming = mutation({
     threadId: v.id("chatThreadsStream"),
     prompt: v.string(),
     model: v.optional(v.string()),
-    useCoordinator: v.optional(v.boolean()), // Default false for Mini Note Agent
+    useCoordinator: v.optional(v.boolean()), // Default true to honor planner + coordinator routing
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -850,8 +967,8 @@ export const initiateAsyncStreaming = mutation({
         const created = typeof m._creationTime === "number" ? m._creationTime : 0;
         const msgId = String(m.messageId ?? m.id ?? m._id ?? "");
         return text === normalizedPrompt &&
-               now - created < IDEMPOTENCY_WINDOW_MS &&
-               msgId !== messageId; // Exclude the message we just created
+          now - created < IDEMPOTENCY_WINDOW_MS &&
+          msgId !== messageId; // Exclude the message we just created
       });
 
       if (duplicates.length > 0) {
@@ -889,7 +1006,7 @@ export const initiateAsyncStreaming = mutation({
       threadId: streamingThread.agentThreadId,
       promptMessageId: messageId,
       model: modelName,
-      useCoordinator: args.useCoordinator ?? false, // Default to simple agent for Mini Note
+      useCoordinator: args.useCoordinator ?? true, // Default to planner+coordinator routing
     });
 
     console.log(`[initiateAsyncStreaming:${requestId}] ⏰ Stream scheduled for messageId:`, messageId);
@@ -949,23 +1066,80 @@ export const streamAsync = internalAction({
     // Choose agent based on mode
     let agent;
     let agentType: string;
-    if (args.useCoordinator === true) { // Opt-in to coordinator (for Fast Agent Panel)
-      if (!userId) {
-        throw new Error("Coordinator agent requires a thread userId");
-      }
-      agentType = 'COORDINATOR';
-      console.log(`[streamAsync:${executionId}] 🎯 Using COORDINATOR AGENT for intelligent delegation`);
-      const { createCoordinatorAgent } = await import("./agents/specializedAgents");
-      agent = createCoordinatorAgent(ctx, userId);
-    } else {
-      agentType = 'SIMPLE';
-      console.log(`[streamAsync:${executionId}] � Using SIMPLE CHAT AGENT (fast, lightweight)`);
-      agent = createSimpleChatAgent(args.model || "gpt-5-mini"); // Use mini for speed
-    }
+    let responsePromptOverride: string | undefined;
+    const contextWithUserId = {
+      ...ctx,
+      evaluationUserId: userId,
+    };
 
     if (customThread?.cancelRequested) {
       console.log(`[streamAsync:${executionId}] ❌ Stream already cancelled before start`);
       throw new Error("Stream cancelled");
+    }
+
+    // Create the appropriate agent
+    if (args.useCoordinator !== false) { // Default to planner + coordinator/fastroute
+      const planner = createPlannerAgent(args.model);
+      const fastResponder = createFastResponderAgent(args.model);
+      const coordinatorBuilder = (await import("./fast_agents/coordinatorAgent")).createCoordinatorAgent;
+
+      // Fetch prompt text for classification
+      const [promptMsg] = await ctx.runQuery(components.agent.messages.getMessagesByIds, {
+        messageIds: [args.promptMessageId],
+      });
+      const userPrompt =
+        (promptMsg as any)?.text ||
+        (typeof (promptMsg as any)?.message?.text === "string" ? (promptMsg as any).message.text : "") ||
+        "";
+
+      const { object: plan } = await planner.generateObject(
+        contextWithUserId as any,
+        { threadId: args.threadId },
+        { schema: planSchema, prompt: userPrompt },
+      );
+
+      if (plan?.mode === "simple") {
+        console.log(`[streamAsync:${executionId}] Planner chose SIMPLE mode. Using FastResponder.`);
+        agent = fastResponder;
+        agentType = "fast";
+      } else {
+        console.log(`[streamAsync:${executionId}] Planner chose COMPLEX mode. Starting durable workflow and sending fast ack.`);
+
+        if (userId) {
+          const includeMedia = plan?.tasks?.some((t: any) => t.agent === "media") ? true : undefined;
+          const includeFilings = plan?.tasks?.some((t: any) => t.agent === "sec") ? true : undefined;
+          try {
+            const { workflowId } = await ctx.runAction(
+              (internal as any)["fast_agents/multiAgentWorkflow"].startMultiAgentWorkflowInternal,
+              {
+                prompt: userPrompt || "User request",
+                threadId: args.threadId,
+                includeMedia,
+                includeFilings,
+                userId,
+              },
+            );
+            console.log(`[streamAsync:${executionId}] Durable workflow started`, { workflowId });
+            agent = fastResponder;
+            agentType = "fast-workflow-ack";
+            responsePromptOverride = `Got it. Kicking off a deeper research workflow for "${userPrompt}". I'll update this thread as results land. Keep listening for updates.`;
+          } catch (err) {
+            console.warn(`[streamAsync:${executionId}] Failed to start durable workflow, falling back to coordinator`, err);
+            agent = coordinatorBuilder(args.model);
+            agentType = "coordinator-fallback";
+          }
+        } else {
+          console.warn(`[streamAsync:${executionId}] No userId on thread; falling back to coordinator agent.`);
+          agent = coordinatorBuilder(args.model);
+          agentType = "coordinator";
+        }
+
+        // Persisting lessons skipped to simplify type surface
+      }
+    } else {
+      console.log(`[streamAsync:${executionId}] Using SIMPLE AGENT (legacy mode)`);
+      agent = createSimpleChatAgent(args.model);
+      agentType = "simple";
     }
 
     const controller = new AbortController();
@@ -987,22 +1161,18 @@ export const streamAsync = internalAction({
       console.log(`[streamAsync:${executionId}] 🔑 Using promptMessageId:`, args.promptMessageId);
       console.log(`[streamAsync:${executionId}] 🧵 ThreadId:`, args.threadId);
 
-      // Create a context with userId for tools to access
-      // This allows tools like createDocument to authenticate properly
-      const contextWithUserId = {
-        ...ctx,
-        evaluationUserId: userId,
-      };
-
       const result = await agent.streamText(
         contextWithUserId as any,
         { threadId: args.threadId },
-        {
-          promptMessageId: args.promptMessageId,
-          abortSignal: controller.signal,
-          // Increase step budget for multi-agent delegation + tools + final text
-          stopWhen: stepCountIs(15),
-        },
+        responsePromptOverride
+          ? {
+              prompt: responsePromptOverride,
+              abortSignal: controller.signal,
+            }
+          : {
+              promptMessageId: args.promptMessageId,
+              abortSignal: controller.signal,
+            },
         {
           // Enable real-time streaming to clients
           // According to Convex Agent docs, this CAN be used with tool execution
@@ -1014,7 +1184,7 @@ export const streamAsync = internalAction({
         }
       );
 
-      console.log(`[streamAsync:${executionId}] ✅ Stream started with stopWhen: stepCountIs(15), saveStreamDeltas: enabled`);
+      console.log(`[streamAsync:${executionId}] ✅ Stream started with agent defaults, saveStreamDeltas enabled`);
       console.log(`[streamAsync:${executionId}] 📝 MessageId:`, result.messageId);
       console.log(`[streamAsync:${executionId}] 🔍 Using promptMessageId:`, args.promptMessageId);
 
@@ -1094,24 +1264,31 @@ export const generateDocumentContent = action({
   handler: async (ctx, args) => {
     console.log(`[generateDocumentContent] Generating content for prompt: "${args.prompt}"`);
 
-    // Get userId from thread
-    const thread = await ctx.runQuery(components.agent.threads.getThread, {
-      threadId: args.threadId
-    });
-    const userId = (thread?.userId ?? null) as Id<"users"> | null;
+    const modelName = "gpt-5-chat-latest";
+    const chatAgent = createChatAgent(modelName);
 
-    // Create document generation agent
-    const { createDocumentGenerationAgent } = await import("./agents/specializedAgents");
-    const agent = createDocumentGenerationAgent(ctx, userId);
+    // Create or get thread
+    let threadId: string;
+    if (!args.threadId) {
+      const result = await chatAgent.createThread(ctx as any, {});
+      threadId = result.threadId;
+    } else {
+      threadId = args.threadId;
+    }
 
-    // Generate content
-    const result = await agent.streamText(
-      ctx,
-      { threadId: args.threadId },
-      { prompt: args.prompt }
+    // Stream the response
+    const result = await chatAgent.streamText(
+      ctx as any,
+      { threadId },
+      { promptMessageId: undefined },
+      {
+        saveStreamDeltas: {
+          chunking: "word",
+          throttleMs: 100,
+        },
+      },
     );
 
-    await result.consumeStream();
     const text = await result.text;
 
     console.log(`[generateDocumentContent] Generated ${text.length} characters`);
@@ -1347,7 +1524,7 @@ export const getThreadMessagesForStreaming = internalQuery({
       .query("chatMessagesStream")
       .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
       .order("asc")
-      .collect();
+      .take(500);
 
     return messages;
   },
@@ -1531,12 +1708,9 @@ export const sendMessageInternal = internalAction({
     // Choose agent based on mode
     let chatAgent;
     if (args.useCoordinator !== false) { // Default to coordinator
-      if (!args.userId) {
-        throw new Error("Coordinator agent requires a userId when coordinator mode is enabled");
-      }
       console.log('[sendMessageInternal] Using COORDINATOR AGENT for intelligent delegation');
-      const { createCoordinatorAgent } = await import("./agents/specializedAgents");
-      chatAgent = createCoordinatorAgent(contextWithUserId as any, args.userId);
+      const { createCoordinatorAgent } = await import("./fast_agents/coordinatorAgent");
+      chatAgent = createCoordinatorAgent(modelName);
     } else {
       console.log('[sendMessageInternal] Using SINGLE AGENT (legacy mode)');
       chatAgent = createChatAgent(modelName);
@@ -1594,6 +1768,124 @@ export const sendMessageInternal = internalAction({
     if (toolCalls) {
       for (const toolCall of toolCalls) {
         toolsCalled.push(toolCall.toolName);
+      }
+    }
+
+    // If no tools were called, force a tool-first follow-up with explicit guidance
+    if (toolsCalled.length === 0) {
+      console.log('[sendMessageInternal] No tools called. Forcing tool-first follow-up...');
+      const toolForcePrompt = [
+        "You must call a tool BEFORE answering. Select the single best tool for the user request and execute it now.",
+        `User request: ${args.message}`,
+        "Mappings:",
+        "- Documents: findDocument; if reading, call getDocumentContent (after findDocument).",
+        "- Images: searchMedia (images); if none, fall back to linkupSearch includeImages=true.",
+        "- Videos: youtubeSearch.",
+        "- SEC filings: searchSecFilings (with ticker).",
+        "- Tasks: listTasks; updates via updateTask.",
+        "- Events: listEvents (week), createEvent if needed.",
+        "- Web search: linkupSearch.",
+        "Return a concise answer after tool execution."
+      ].join("\n");
+
+      const forced = await chatAgent.streamText(
+        contextWithUserId as any,
+        { threadId },
+        { prompt: toolForcePrompt },
+        {
+          saveStreamDeltas: {
+            chunking: "word",
+            throttleMs: 100,
+          },
+        },
+      );
+
+      await forced.consumeStream();
+
+      const forcedCalls = await forced.toolCalls;
+      const forcedResults = await forced.toolResults;
+      const forcedText = await forced.text;
+
+      if (forcedCalls) {
+        for (const call of forcedCalls) {
+          if (!toolsCalled.includes(call.toolName)) {
+            toolsCalled.push(call.toolName);
+          }
+        }
+      }
+
+      if (forcedResults && forcedResults.length > 0) {
+        toolResults = toolResults ? [...toolResults, ...forcedResults] : forcedResults;
+      }
+
+      if (forcedText && forcedText.trim().length > 0) {
+        responseText = forcedText;
+      }
+
+      // If we still didn't get any tool calls, force one more attempt with an even stricter prompt
+      if (toolsCalled.length === 0) {
+        const strictPrompt = [
+          "STOP. You must call exactly one tool now for the user's request. Do not answer until you have invoked a tool.",
+          `User request: ${args.message}`,
+          "Pick the single best tool from: findDocument, getDocumentContent, searchMedia, youtubeSearch, searchSecFilings, listTasks, listEvents, linkupSearch.",
+          "Call it immediately with sensible arguments."
+        ].join("\n");
+
+        const strict = await chatAgent.streamText(
+          contextWithUserId as any,
+          { threadId },
+          { prompt: strictPrompt },
+          {
+            saveStreamDeltas: {
+              chunking: "word",
+              throttleMs: 100,
+            },
+          },
+        );
+
+        await strict.consumeStream();
+
+        const strictCalls = await strict.toolCalls;
+        const strictResults = await strict.toolResults;
+        const strictText = await strict.text;
+
+        if (strictCalls) {
+          for (const call of strictCalls) {
+            if (!toolsCalled.includes(call.toolName)) {
+              toolsCalled.push(call.toolName);
+            }
+          }
+        }
+        if (strictResults && strictResults.length > 0) {
+          toolResults = toolResults ? [...toolResults, ...strictResults] : strictResults;
+        }
+        if (strictText && strictText.trim().length > 0) {
+          responseText = responseText || strictText;
+        }
+      }
+    }
+
+    // Fallback: inspect recent agent messages to infer tool usage if toolCalls are empty
+    if (toolsCalled.length === 0) {
+      try {
+        const recent = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+          threadId,
+          order: "desc",
+          paginationOpts: { cursor: null, numItems: 10 },
+        });
+        const msgs = recent.page || [];
+        for (const msg of msgs) {
+          const candidate =
+            (msg as any).tool?.name ||
+            (msg as any).tool?.toolName ||
+            (msg as any).message?.tool?.name ||
+            (msg as any).message?.tool;
+          if (candidate && typeof candidate === "string" && !toolsCalled.includes(candidate)) {
+            toolsCalled.push(candidate);
+          }
+        }
+      } catch (err) {
+        console.warn("[sendMessageInternal] Tool inference from messages failed", err);
       }
     }
 
@@ -1737,7 +2029,12 @@ export const uploadFile = action({
     bytes: v.bytes(),
     sha256: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  returns: v.object({
+    fileId: v.string(),
+    url: v.string(),
+    fileSearchStore: v.optional(v.string()),
+  }),
+  handler: async (ctx, args): Promise<{ fileId: string; url: string; fileSearchStore?: string }> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Unauthorized - please sign in to upload files");
@@ -1759,9 +2056,24 @@ export const uploadFile = action({
 
     console.log(`[uploadFile] ✅ File stored: ${file.fileId}`);
 
+    // Mirror into Gemini File Search for retrieval
+    let fileSearchStore: string | undefined;
+    try {
+      const result: { store: string } | null = await ctx.runAction(internal.fileSearch.uploadFileToSearch, {
+        userId,
+        bytes: args.bytes,
+        mimeType: args.mimeType,
+        displayName: args.filename,
+      });
+      fileSearchStore = result?.store;
+    } catch (err) {
+      console.warn("[uploadFile] Gemini File Search upload failed", err);
+    }
+
     return {
       fileId: file.fileId,
       url: file.url,
+      fileSearchStore,
     };
   },
 });
@@ -1841,6 +2153,34 @@ export const submitFileQuestion = mutation({
       messageId: streamMessageId,
       agentMessageId: messageId,
     };
+  },
+});
+
+/**
+ * Save an intermediate agent progress message (for multi-agent workflow)
+ */
+export const saveAgentProgressMessage = internalAction({
+  args: {
+    threadId: v.string(),
+    agentName: v.string(),
+    message: v.string(),
+    emoji: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    console.log(`[saveAgentProgressMessage] ${args.agentName}: ${args.message.slice(0, 100)}...`);
+
+    const prefix = args.emoji ? `${args.emoji} **${args.agentName}**\n\n` : `**${args.agentName}**\n\n`;
+    const fullMessage = prefix + args.message;
+
+    await saveMessage(ctx, components.agent, {
+      threadId: args.threadId,
+      message: {
+        role: "assistant",
+        content: fullMessage,
+      },
+    });
+
+    console.log(`[saveAgentProgressMessage] ✅ Saved message for ${args.agentName}`);
   },
 });
 

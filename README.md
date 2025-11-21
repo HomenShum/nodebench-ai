@@ -208,7 +208,8 @@ MIT License - see LICENSE file for details
 - Workaround: Deploy with `--typecheck=disable` flag
 - Priority: Low - does not affect human-in-the-loop functionality
 
-See `FIXES_APPLIED.md` for detailed fix documentation and testing results.
+Detailed fix documentation and testing results for this work have been
+consolidated into this README and the changelog entries below.
 
 ---
 
@@ -281,13 +282,11 @@ See `FIXES_APPLIED.md` for detailed fix documentation and testing results.
 4. `src/components/MiniNoteAgentChat.tsx` - Integrated HumanRequestList
 
 #### Documentation
-- `AGENT_ARCHITECTURE.md` - Architecture overview
-- `IMPLEMENTATION_SUMMARY.md` - Implementation details
-- `MULTI_AGENT_TESTING.md` - Testing guide
-- `REVIEW_ROUND_1.md` - First review findings
-- `REVIEW_ROUND_2_FIXES.md` - Fixes applied
-- `IMPLEMENTATION_COMPLETE.md` - Final summary
-- `HANDOFF_CONTEXT.md` - Context for next session
+The architecture, implementation details, testing strategy, review
+rounds, and handoff context for the multi-agent system were originally
+captured in several standalone markdown files. Those documents have now
+been consolidated into this README and the changelog so that this file
+is the single source of truth.
 
 #### Performance Characteristics
 - Human-in-the-Loop: Request creation <100ms, response <200ms
@@ -353,13 +352,90 @@ See `FIXES_APPLIED.md` for detailed fix documentation and testing results.
 - ⏳ Error tracking setup (recommended)
 - ⏳ Performance monitoring (recommended)
 
+### 2025-11-12 - Banker-Facing Dossier & WelcomeLanding UX ✅
+
+**Status**: Live in WelcomeLanding
+
+#### Highlights
+- Transformed the WelcomeLanding results view from a debug panel into a
+  banker-facing **dossier + newsletter** experience.
+- Introduced **DealFlowOutcomeHeader**, **CompanyDossierCard**, and
+  **NewsletterPreview** components for outcome-first presentation.
+- Implemented a **live agent progress timeline** (StepTimeline) and
+  **rich media section** that surfaces videos, documents, and people
+  cards above the text answer.
+- Applied multiple rounds of **visual polish** (modern SaaS styling,
+  typography, spacing, gradients, loading states, and action bar
+  redesign) to make the page production-ready for banker workflows.
+
+#### User Experience
+- Default hierarchy: Outcome header → company dossiers → newsletter
+  preview → sources (collapsible) → provenance & search steps
+  (collapsible).
+- Clear handling for zero or sparse results, with suggestions for
+  broadening criteria.
+- Clean, markdown-based analysis section that adapts its heading based
+  on whether dossiers are present.
+
+---
+
+### 2025-11-13 - Enhanced Funding Tools & Dossier Enrichment ✅
+
+**Status**: Backend tools live, used by Web Agent / WelcomeLanding
+
+#### Highlights
+- Added **smartFundingSearch** tool with automatic date-range
+  expansion:
+  - Today → last 3 days → last 7 days.
+  - Returns structured fallback metadata (`applied`, `originalDate`,
+    `expandedTo`, `reason`) and a flag when enrichment is recommended.
+- Implemented enrichment tools:
+  - **enrichFounderInfo** – founder backgrounds, prior exits,
+    education, notable achievements.
+  - **enrichInvestmentThesis** – why investors funded the company,
+    catalysts, competitive advantages, and risks.
+  - **enrichPatentsAndResearch** – patents, research papers, and
+    clinical trials (especially for life sciences).
+- Added **enrichCompanyDossier** as a high-level guide for agents to
+  orchestrate founder, thesis, and IP enrichment when results are
+  sparse.
+
+#### Integration
+- Web Agent registers all enhanced funding tools and can combine them
+  with existing LinkUp and SEC tools.
+- Dossier parsing extracts fallback metadata so WelcomeLanding can show
+  transparent messaging when auto-fallback is applied.
+
+---
+
+### 2025-11-13 - Email Sending & Visitor Analytics on WelcomeLanding ✅
+
+**Status**: Implemented and wired to Convex / Resend
+
+#### Highlights
+- Added **Resend-based email sending** via `convex/resend.ts`, using
+  `RESEND_API_KEY` and `EMAIL_FROM` env vars as the single sources of
+  truth.
+- Built an **email input bar** on WelcomeLanding so users can send the
+  current research digest to any email address, with validation,
+  loading states, and success/error toasts.
+- Implemented **session-based visitor tracking** with `visitors` and
+  `emailsSent` tables, plus analytics queries for:
+  - Active visitors (last 30 minutes)
+  - Unique sessions and users in the last 24 hours
+  - Email send counts and success/failure stats.
+- Surfaced **real-time visitor stats** in the hero section ("active
+  now", "visitors today") and **continuous enrichment** controls
+  ("Go Deeper" / "Go Wider") tied to the enhanced funding tools.
+
 ---
 
 ### Previous Updates
 
-Additional documentation files:
-- `AGENT_CHAT_TEST_REPORT.md` - Agent chat testing results
-- `LANDING_PAGE_ENHANCEMENTS.md` - Landing page improvements
+Earlier sessions produced several standalone markdown reports for agent
+chat testing and landing page UX enhancements. The key findings and
+improvements from those documents have been merged into this README and
+the changelog above.
 
 ---
 
@@ -371,3 +447,128 @@ For questions or issues, please open an issue on GitHub or contact the developme
 
 **Built with ❤️ by the NodeBench AI team**
 
+---
+
+
+
+# Nodebench AI Intelligence Engine: Product Requirement Document (PRD)
+**Version:** 2.0 | **Status:** Approved for Engineering | **Scope:** Backend Agent Architecture
+
+
+
+## 1. Executive Summary
+This document outlines the architectural requirements for the **Nodebench AI Intelligence Engine**, a high-end, self-adaptive research platform. The system transitions from fragile, heuristic-based logic to a **durable, agent-driven architecture** powered by Convex.
+
+**Core Philosophy:**
+1.  **Self-Adaptive:** The system determines its own execution path (Fast Stream vs. Deep Research) via LLM reasoning, not client-side `if/else` blocks.
+2.  **Durable & Self-Healing:** All complex operations are wrapped in transactional workflows that survive server restarts and automatically retry transient failures.
+3.  **Multi-Modal Realtime:** The same intelligence backend powers both high-frequency text streaming and low-latency voice interfaces.
+
+
+
+## 2. System Architecture: The "Router & Worker" Model
+
+### 2.1 The Adaptive Router (The Entry Point)
+**Requirement:** All incoming user requests must pass through a centralized "Coordinator Agent" that classifies intent before execution.
+**Mechanism:**
+*   Use `generateObject` to classify requests into `SIMPLE` (Direct Response) or `COMPLEX` (Research Plan).
+*   **Implementation:**
+    ```typescript
+    // The Router decides the path
+    const plan = await coordinator.generateObject(ctx, {
+      prompt: "Classify and plan: Simple response or Multi-step research?",
+      schema: z.object({ mode: z.enum(["simple", "complex"]), tasks: z.array(...) })
+    });
+    ```
+*   **Optimization:** This removes client-side heuristics. The agent "heals" bad requests by re-planning rather than failing.
+*   **Documentation:** [Generating Structured Objects](https://docs.convex.dev/agents)
+
+### 2.2 Path A: The Fast Stream (Low Latency)
+**Requirement:** For `SIMPLE` queries, the system must provide immediate feedback (<200ms TTFB).
+**Mechanism:**
+*   Bypass the heavy workflow engine.
+*   Invoke a lightweight Agent (e.g., `gpt-4o-mini`) with `stepCountIs(1)` constraints.
+*   **Streaming:** Use `streamText` with `saveStreamDeltas: true` to write incremental updates directly to the Convex Database.
+*   **Documentation:** [Agent Streaming](https://docs.convex.dev/agents) | [Retrieving Streamed Deltas](https://docs.convex.dev/agents)
+
+### 2.3 Path B: The Deep Thinking Workflow (High Fidelity)
+**Requirement:** For `COMPLEX` queries, the system must orchestrate multiple specialized sub-agents without timing out or losing state.
+**Mechanism:**
+*   **Orchestration:** Use the **Convex Workflow** component. This ensures that if a 5-minute research task fails at minute 4, it retries from the last checkpoint, not the beginning.
+*   **Parallelism:** Execute sub-tasks (e.g., "Search SEC Filings" and "Check TechCrunch") in parallel using `step.runAction`.
+*   **Infrastructure:** Wrap logic in `WorkflowManager` to utilize the `Workpool` for concurrency limits (preventing rate-limit bans).
+*   **Documentation:** [Workflow Component](https://www.convex.dev/components) | [Durable Workflows & Guarantees](https://stack.convex.dev/durable-workflows-and-strong-guarantees)
+
+
+
+## 3. Core Agent Capabilities
+
+### 3.1 Tooling & External Access (Width)
+**Requirement:** Agents must possess "Width" (access to the outside world) to ground their research.
+**Tools Implementation:**
+*   **Web Search:** Integration with Linkup/Tavily APIs via `createTool`.
+*   **RAG:** Hybrid search over internal documents using the **Convex Agent** hybrid search capabilities.
+*   **Documentation:** [Agent Tools](https://docs.convex.dev/agents) | [RAG with Agent Component](https://docs.convex.dev/agents)
+
+### 3.2 Context Management (Memory)
+**Requirement:** The agent must adapt its context window dynamically based on the task phase (e.g., "don't read the whole thread when summarizing a single document").
+**Mechanism:**
+*   Use `contextHandler` to programmatically filter, summarize, or inject specific memories before the prompt hits the LLM.
+*   **Documentation:** [Full Context Control](https://docs.convex.dev/agents)
+
+### 3.3 Self-Correction (Quality Control)
+**Requirement:** The system must detect hallucinations or poor outputs without human intervention.
+**Mechanism:**
+*   **Critic Loop:** A Workflow step where a secondary agent (The "Grader") reviews the output of the primary agent.
+*   **Loop:** If the score is < 80%, the workflow loops back to the generation step with feedback.
+*   **Documentation:** [Building Reliable Workflows](https://docs.convex.dev/agents)
+
+
+
+## 4. Realtime & Voice Interfaces
+
+### 4.1 Unified Voice Backend
+**Requirement:** The platform must support a "Phone Mode" or "Voice Chat" without duplicating logic.
+**Mechanism:**
+*   **Transport:** Use Convex `httpAction` to receive events from voice clients (RTVI / Daily Bots).
+*   **Logic:** The HTTP action triggers the *exact same* Agent/Workflow logic used by the text chat.
+*   **Response:** Results are piped back via HTTP or stored in the DB for the frontend to reactively update.
+*   **Documentation:** [Shop Talk: Voice Agents](https://stack.convex.dev/shop-talk-building-a-voice-controlled-shopping-list-app-with-daily-bots-and-convex) | [Realtime Capabilities](https://docs.convex.dev/realtime)
+
+### 4.2 Hybrid Streaming
+**Requirement:** Voice and Text must remain in sync.
+**Mechanism:**
+*   Use **Persistent Text Streaming** to allow the voice provider to read tokens as they are generated, while simultaneously updating the web UI.
+*   **Documentation:** [Persistent Text Streaming Component](https://www.convex.dev/components)
+
+
+
+## 5. Reliability & Infrastructure Optimization
+
+### 5.1 Production Guardrails
+**Requirement:** Prevent "Runaway Agents" from draining credits or crashing the DB.
+**Mechanism:**
+*   **Rate Limiting:** Use the **Rate Limiter Component** to cap tokens-per-minute per user.
+*   **Usage Tracking:** Implement `usageHandler` to log token consumption for billing.
+*   **Documentation:** [Rate Limiter Component](https://www.convex.dev/components) | [Usage Tracking](https://docs.convex.dev/agents)
+
+### 5.2 Performance Tuning
+**Requirement:** High-throughput mutations (e.g., streaming chunks from 100 concurrent agents) must not cause conflicts.
+**Mechanism:**
+*   **Sharded Counters:** Use **Sharded Counter Component** for tracking stats.
+*   **Hot/Cold Tables:** Separate "Streaming Deltas" (high write) from "Thread Metadata" (low write) to minimize transaction conflicts.
+*   **Documentation:** [Sharded Counter](https://www.convex.dev/components) | [High Throughput Patterns](https://stack.convex.dev/high-throughput-mutations-via-precise-queries)
+
+
+
+## 6. Component & Reference Map
+
+| Feature Area | Convex Component / Concept | Documentation URL |
+| :--- | :--- | :--- |
+| **Orchestration** | Workflow & Workpool | [Workflow Component](https://www.convex.dev/components) |
+| **Agent Logic** | Agent Component | [Agent Definition](https://docs.convex.dev/agents) |
+| **Reliability** | Durable Execution | [Durable Workflows Blog](https://stack.convex.dev/durable-workflows-and-strong-guarantees) |
+| **Streaming** | Stream Text / Deltas | [Streaming Docs](https://docs.convex.dev/agents) |
+| **Voice** | HTTP Actions & Realtime | [Realtime Docs](https://docs.convex.dev/realtime) |
+| **Safety** | Rate Limiter | [Rate Limiter Component](https://www.convex.dev/components) |
+| **Observability** | Log Streams | [Log Streams](https://stack.convex.dev/log-streams-common-uses) |

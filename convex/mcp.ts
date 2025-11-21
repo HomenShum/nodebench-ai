@@ -594,10 +594,12 @@ export const discoverAndStoreTools = internalAction({
   returns: v.null(),
   handler: async (ctx, { serverId, serverUrl }) => {
     try {
-      // Discover tools from the MCP server
-      const tools = await ctx.runAction(internal.aiAgents.discoverMcpTools, {
-        serverUrl
-      });
+      // Legacy function - aiAgents module doesn't exist
+      // MCP tool discovery not implemented in new Convex Agent system
+      // const tools = await ctx.runAction(internal.aiAgents.discoverMcpTools, {
+      //   serverUrl
+      // });
+      const tools: any[] = [];
       
       // Store each discovered tool and trigger adaptive learning
       const storedToolIds: Id<"mcpTools">[] = [];

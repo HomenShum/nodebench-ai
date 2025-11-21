@@ -81,14 +81,16 @@ export const learnTool = internalAction({
         console.log(`[Learning] Attempting: "${query}"`);
         const startTime = Date.now();
         
-        // Execute the tool with the learning query
-        const result = await ctx.runAction(api.aiAgents.executeToolWithNaturalLanguage, {
-          serverId,
-          toolName,
-          naturalLanguageQuery: query,
-          model: "openai", // Use OpenAI for consistent learning
-          isLearning: true, // Flag to indicate this is learning, not user interaction
-        });
+        // Legacy function - aiAgents module doesn't exist
+        // MCP learning not implemented in new Convex Agent system
+        // const result = await ctx.runAction(api.aiAgents.executeToolWithNaturalLanguage, {
+        //   serverId,
+        //   toolName,
+        //   naturalLanguageQuery: query,
+        //   model: "openai",
+        //   isLearning: true,
+        // });
+        const result: any = { success: false, error: "MCP learning not implemented" };
         
         const executionTime = Date.now() - startTime;
         const success = result.success && result.result?.convertedParameters;

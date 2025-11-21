@@ -133,12 +133,17 @@ export const addDocumentToEnhancedRag = internalAction({
       // If this is a primary dossier, include associated quick-notes content
       let quickNotesText = "";
       if ((doc as any).documentType === "dossier" && (doc as any).dossierType === "primary") {
-        const quickNotes: any = await ctx.runMutation(api.documents.getOrCreateQuickNotes, { dossierId: documentId });
-        if (quickNotes) {
-          const qnNodes = await ctx.runQuery(api.nodes.by_document, { docId: quickNotes._id });
-          if (qnNodes.length > 0) {
-            quickNotesText = qnNodes.map((n: any) => n.text || "").filter(Boolean).join("\n");
+        try {
+          const quickNotes: any = await ctx.runMutation(api.documents.getOrCreateQuickNotes, { dossierId: documentId });
+          if (quickNotes) {
+            const qnNodes = await ctx.runQuery(api.nodes.by_document, { docId: quickNotes._id });
+            if (qnNodes.length > 0) {
+              quickNotesText = qnNodes.map((n: any) => n.text || "").filter(Boolean).join("\n");
+            }
           }
+        } catch (error) {
+          // Quick notes not available (e.g., public dossier without edit permissions)
+          console.warn('[ragEnhanced] Quick notes not available:', error);
         }
       }
 
