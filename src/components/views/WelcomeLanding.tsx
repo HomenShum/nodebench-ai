@@ -1,27 +1,34 @@
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery, useConvexAuth } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useUIMessages } from "@convex-dev/agent/react";
-import { StepTimeline, toolPartsToTimelineSteps } from "../FastAgentPanel/StepTimeline";
-import { extractMediaFromMessages, ExtractedAsset } from "../../../convex/lib/dossierHelpers";
 import {
-  ArrowRight,
   Sparkles,
-  Search,
-  MoreHorizontal,
-  Clock,
-  FileText,
   TrendingUp,
-  Activity,
+  Globe,
   Newspaper,
-  Image as ImageIcon,
-  Layout,
+  Calendar,
+  Tag,
   ChevronRight,
   ChevronDown,
-  Filter
+  Circle,
+  FileText,
+  LayoutDashboard as Layout,
+  Clock,
+  BarChart2,
+  ExternalLink,
+  Zap,
+  AlertCircle,
+  Search,
+  Filter,
+  Image as ImageIcon,
 } from "lucide-react";
+import { Id } from "../../../convex/_generated/dataModel";
+import { extractMediaFromMessages, ExtractedAsset } from "../../../convex/lib/dossierHelpers";
 import { useMemo, useState, useEffect } from "react";
 import ReactMarkdown from 'react-markdown';
+import LiveDossierDocument from "./LiveDossierDocument";
+import MagicInputContainer from "./MagicInputContainer";
 
 // Source Configuration
 interface SourceConfig {
@@ -140,6 +147,7 @@ interface SourcePreset {
   description: string;
   sources: string[];
   icon: string;
+  color: string;
 }
 
 const SOURCE_PRESETS: SourcePreset[] = [
@@ -149,6 +157,7 @@ const SOURCE_PRESETS: SourcePreset[] = [
     description: 'Search across all available sources',
     sources: ['ycombinator', 'techcrunch', 'reddit', 'twitter', 'github', 'arxiv'],
     icon: '🌐',
+    color: 'text-gray-600',
   },
   {
     id: 'tech-news',
@@ -156,6 +165,7 @@ const SOURCE_PRESETS: SourcePreset[] = [
     description: 'YC News, TechCrunch, GitHub',
     sources: ['ycombinator', 'techcrunch', 'github'],
     icon: '📰',
+    color: 'text-blue-600',
   },
   {
     id: 'academic',
@@ -163,6 +173,7 @@ const SOURCE_PRESETS: SourcePreset[] = [
     description: 'ArXiv and research papers',
     sources: ['arxiv'],
     icon: '🎓',
+    color: 'text-green-600',
   },
   {
     id: 'social',
@@ -170,6 +181,7 @@ const SOURCE_PRESETS: SourcePreset[] = [
     description: 'Reddit and Twitter/X',
     sources: ['reddit', 'twitter'],
     icon: '💬',
+    color: 'text-pink-600',
   },
   {
     id: 'high-trust',
@@ -177,6 +189,7 @@ const SOURCE_PRESETS: SourcePreset[] = [
     description: 'Only sources with 90+ trust score',
     sources: ['ycombinator', 'techcrunch', 'github', 'arxiv'],
     icon: '⭐',
+    color: 'text-yellow-600',
   },
 ];
 
@@ -189,6 +202,7 @@ export default function WelcomeLanding({
   onDocumentSelect,
   onEnterWorkspace,
 }: WelcomeLandingProps) {
+  const { isAuthenticated } = useConvexAuth();
   const user = useQuery(api.auth.loggedInUser);
   const { signIn } = useAuthActions();
   const createThread = useAction(api.fastAgentPanelStreaming.createThread);
@@ -203,22 +217,63 @@ export default function WelcomeLanding({
   const [activePreset, setActivePreset] = useState<string | null>('all');
   const [isReasoningOpen, setIsReasoningOpen] = useState(false);
   const [hasReceivedResponse, setHasReceivedResponse] = useState(false);
+  const [showHero, setShowHero] = useState(true); // Control which view to show
+  const [isFromCache, setIsFromCache] = useState(false); // Track if results are from cache
+
+  // Cache utility functions
+  const getCacheKey = (prompt: string, date: string) => {
+    return `search_cache_${prompt.trim().toLowerCase()}_${date}`;
+  };
+
+  const getCachedResult = (prompt: string): string | null => {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const cacheKey = getCacheKey(prompt, today);
+      const cached = localStorage.getItem(cacheKey);
+
+      if (cached) {
+        const { threadId, date } = JSON.parse(cached);
+        if (date === today) {
+          return threadId;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to read cache:', e);
+    }
+    return null;
+  };
+
+  const cacheResult = (prompt: string, threadId: string) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const cacheKey = getCacheKey(prompt, today);
+      const cacheValue = {
+        threadId,
+        prompt: prompt.trim(),
+        date: today,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(cacheValue));
+    } catch (e) {
+      console.error('Failed to cache result:', e);
+    }
+  };
 
   // Resolve agent thread and streaming messages to keep UI consistent with agent artifacts
   const streamingThread = useQuery(
     api.fastAgentPanelStreaming.getThreadByStreamId,
-    threadId ? { threadId } : "skip"
+    threadId ? { threadId: threadId as Id<"chatThreadsStream"> } : "skip"
   ) as any;
 
   const agentThreadId = streamingThread?.agentThreadId as string | undefined;
   const { results: uiMessages } = useUIMessages(
     api.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
-    agentThreadId ? { threadId: agentThreadId } : "skip",
+    agentThreadId ? { threadId: agentThreadId as Id<"chatThreadsStream"> } : "skip",
     { initialNumItems: 50, stream: true }
   );
 
   const handleSignIn = async () => {
-    await signIn("github", { redirectTo: "/" });
+    await signIn("google", { redirectTo: "/" });
   };
 
   const latestAssistantMessage = useMemo(() => {
@@ -249,6 +304,7 @@ export default function WelcomeLanding({
   useEffect(() => {
     if (responseText && responseText.trim() && !hasReceivedResponse) {
       setHasReceivedResponse(true);
+      setShowHero(false); // Switch to dossier view
     }
   }, [responseText, hasReceivedResponse]);
 
@@ -329,10 +385,10 @@ export default function WelcomeLanding({
   const toggleSource = (sourceId: string) => {
     setActiveSources(prev =>
       prev.includes(sourceId)
-        ? prev.filter(s => s !== sourceId)
+        ? prev.filter(id => id !== sourceId)
         : [...prev, sourceId]
     );
-    setActivePreset(null); // Clear preset when manually toggling
+    setActivePreset(''); // Clear preset when manually toggling
   };
 
   const applyPreset = (presetId: string) => {
@@ -346,7 +402,7 @@ export default function WelcomeLanding({
   // Keyboard shortcuts for source toggling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // ?/Ctrl + 1-6 for source toggling
+      // ⌘/Ctrl + 1-6 for source toggling
       if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '6') {
         e.preventDefault();
         const shortcutNum = parseInt(e.key);
@@ -355,7 +411,7 @@ export default function WelcomeLanding({
           toggleSource(source.id);
         }
       }
-      // ?/Ctrl + Shift + A for "All Sources" preset
+      // ⌘/Ctrl + Shift + A for "All Sources" preset
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'A') {
         e.preventDefault();
         applyPreset('all');
@@ -366,33 +422,71 @@ export default function WelcomeLanding({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeSources]);
 
-  const handleRunPrompt = async () => {
+  // Function to reset back to search view
+  const handleBackToSearch = () => {
+    setShowHero(true);
+    // Keep threadId so we can navigate back to results
+  };
+
+  // Function to view last results
+  const handleViewLastResults = () => {
+    setShowHero(false);
+  };
+
+  const handleRunPrompt = async (promptOverride?: string) => {
+    const promptToRun = promptOverride || researchPrompt;
+    if (promptOverride) {
+      setResearchPrompt(promptOverride);
+    }
+
+    if (!promptToRun.trim()) return;
+
+    // Check cache first - works for both authenticated and anonymous users
+    const cachedThreadId = getCachedResult(promptToRun);
+    if (cachedThreadId) {
+      console.log('✨ Loading cached results for:', promptToRun);
+      setThreadId(cachedThreadId);
+      setShowHero(false);
+      setHasReceivedResponse(true);
+      setIsFromCache(true);
+      setIsRunning(false);
+      return; // Skip API call entirely
+    }
+
+    // No cache hit, proceed with normal search
     if (!user) {
       await handleSignIn();
       return;
     }
+
     setIsRunning(true);
-    setHasReceivedResponse(false); // Reset to show fresh content
+    setShowHero(false); // Switch to dossier view immediately
+    setHasReceivedResponse(false);
+    setIsFromCache(false);
+
     try {
       const newThreadId = await createThread({
-        title: researchPrompt.slice(0, 120) || "Research Thread",
+        title: promptToRun.slice(0, 120) || "Research Thread",
       });
       setThreadId(newThreadId);
 
+      // Cache the threadId for this prompt
+      cacheResult(promptToRun, newThreadId);
+
       // Build prompt with source filters
-      let enhancedPrompt = researchPrompt;
+      let enhancedPrompt = promptToRun;
       if (activeSources.length > 0 && activeSources.length < 2) {
         const sourceNames = activeSources.map(s =>
           s === 'ycombinator' ? 'YCombinator News' : 'TechCrunch'
         ).join(', ');
-        enhancedPrompt = `${researchPrompt}\n\nFocus on sources: ${sourceNames}`;
+        enhancedPrompt = `${promptToRun}\n\nFocus on sources: ${sourceNames}`;
       }
 
       await sendStreaming({
         threadId: newThreadId,
         prompt: enhancedPrompt,
       });
-      setIsRunning(false);
+      // setIsRunning(false) is handled by the useEffect when content arrives
     } catch (error) {
       console.error("Failed to run prompt:", error);
       setIsRunning(false);
@@ -508,8 +602,8 @@ export default function WelcomeLanding({
       <div
         onClick={onClick}
         className={`group relative flex items-center justify-between py-2 px-2.5 rounded-lg cursor-pointer transition-colors ${active
-            ? 'bg-gray-50'
-            : 'hover:bg-gray-50'
+          ? 'bg-gray-50'
+          : 'hover:bg-gray-50'
           } ${onClick ? 'select-none' : ''}`}
       >
         {/* Left side: Icon + Name */}
@@ -722,12 +816,11 @@ export default function WelcomeLanding({
     );
   }
 
-  // Welcome state - show when no content yet
-  if (!latestAssistantText && !isRunning) {
-    return (
-      <>
-        {/* Custom Scrollbar Styling */}
-        <style>{`
+  // Main Render - Persistent Layout
+  return (
+    <>
+      {/* Custom Scrollbar Styling */}
+      <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
         
         .custom-scrollbar::-webkit-scrollbar {
@@ -745,905 +838,258 @@ export default function WelcomeLanding({
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#FAFAFA] font-sans selection:bg-blue-100 relative">
-        {/* Ambient Background Mesh */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-purple-100/40 rounded-full blur-[120px]" />
-          <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[60%] bg-blue-100/40 rounded-full blur-[120px]" />
-        </div>
+      <div className="flex h-screen bg-[#FAFAFA] font-sans selection:bg-blue-100 overflow-hidden">
 
-        {/* Header / Nav */}
-        <header className="relative z-20 w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-lg shadow-black/10">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold text-gray-900 tracking-tight">Nodebench AI</span>
-          </div>
-
-          {user && onEnterWorkspace && (
-            <button
-              onClick={onEnterWorkspace}
-              className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-full transition-all border border-gray-200 shadow-sm hover:shadow text-sm font-medium"
-            >
-              Enter Workspace
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
-
-          {!user && (
-            <button
-              onClick={handleSignIn}
-              className="px-5 py-2 bg-black hover:bg-gray-800 text-white rounded-full transition-all shadow-lg hover:shadow-xl text-sm font-medium"
-            >
-              Sign In
-            </button>
-          )}
-        </header>
-
-        {/* Hero Section */}
-        <main className="relative z-10 w-full max-w-7xl mx-auto px-6 pt-12 pb-32 lg:pt-20 lg:pb-40 text-center">
-          <div className="max-w-3xl mx-auto space-y-8">
-            <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 leading-[1.1] tracking-tight">
-              The AI That Builds Your <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                Research Dossier
-              </span>
-            </h1>
-
-            <p className="text-xl text-gray-600 font-medium max-w-2xl mx-auto leading-relaxed">
-              Capture notes, analyze documents, and generate professional briefings with an AI partner that understands your context.
-            </p>
-
-            {!user && (
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-                <button
-                  onClick={handleSignIn}
-                  className="px-8 py-4 bg-black hover:bg-gray-800 text-white rounded-2xl font-semibold text-lg transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 flex items-center gap-2"
-                >
-                  Open your workspace
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-                <span className="text-sm text-gray-500 font-medium">No credit card required</span>
+        {/* PERSISTENT SIDEBAR */}
+        <aside className="w-64 bg-[#FBFBFB] border-r border-gray-200 flex flex-col shrink-0 z-30">
+          {/* Logo Area */}
+          <div className="h-16 flex items-center px-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-lg shadow-black/10">
+                <Sparkles className="w-4 h-4 text-white" />
               </div>
-            )}
-          </div>
-        </main>
-
-        {/* Floating App Preview (Breaking the Plane) */}
-        <div className="relative z-20 -mt-24 lg:-mt-32 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-20">
-          {/* The "Glow" Orb behind the app window */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r from-purple-200/40 via-blue-200/40 to-pink-200/40 blur-3xl rounded-full -z-10 pointer-events-none" />
-
-          <div className="rounded-2xl bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] ring-1 ring-white/10 ring-inset overflow-hidden backdrop-blur-sm transform transition-all hover:scale-[1.002] duration-500">
-
-            {/* Fake Browser Toolbar */}
-            <div className="border-b border-gray-200 bg-gray-50/80 px-4 py-3 flex items-center gap-4 backdrop-blur-md">
-              <div className="flex gap-2">
-                <div className="h-3 w-3 rounded-full bg-[#FF5F57] border border-[#E0443E]/50"></div>
-                <div className="h-3 w-3 rounded-full bg-[#FEBC2E] border border-[#D89E24]/50"></div>
-                <div className="h-3 w-3 rounded-full bg-[#28C840] border border-[#1AAB29]/50"></div>
-              </div>
-
-              {/* Tab Bar / Segmented Control */}
-              <div className="flex-1 flex justify-center">
-                <div className="flex items-center p-1 bg-gray-200/50 rounded-lg border border-gray-200/50">
-                  <button
-                    onClick={() => setActiveTab('dossier')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'dossier'
-                      ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
-                      }`}
-                  >
-                    <Newspaper className="w-3.5 h-3.5" />
-                    Dossier
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('newsletter')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'newsletter'
-                      ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
-                      }`}
-                  >
-                    <Layout className="w-3.5 h-3.5" />
-                    Newsletter
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('media')}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'media'
-                      ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
-                      }`}
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    Media
-                  </button>
-                </div>
-              </div>
-
-              <div className="w-16"></div> {/* Spacer for balance */}
-            </div>
-
-            {/* Main App Layout */}
-            <div className="flex h-[650px] bg-white">
-              {/* Sidebar */}
-              <div className="w-64 bg-white h-full flex flex-col border-r border-gray-100">
-                <div className="p-4 shrink-0">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="w-full pl-8 pr-3 py-1.5 bg-white shadow-sm rounded-lg text-xs focus:outline-none focus:shadow-md transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-5 space-y-2">
-                  <div className="px-1 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recent Dossiers</div>
-
-                  <SidebarItem
-                    icon={<TrendingUp className="w-4 h-4 text-blue-600" />}
-                    title="Tech Market Q3"
-                    time="2m ago"
-                    active
-                  />
-                  <SidebarItem
-                    icon={<Activity className="w-4 h-4 text-emerald-600" />}
-                    title="VitalWatch DD"
-                    time="4h ago"
-                  />
-                  <SidebarItem
-                    icon={<FileText className="w-4 h-4 text-purple-600" />}
-                    title="Competitor Analysis"
-                    time="1d ago"
-                  />
-
-                  {/* Source Presets */}
-                  <div className="px-1 py-1.5 mt-4 flex items-center justify-between group">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Presets</span>
-                    <span className="text-[9px] text-gray-400 opacity-0 transition-opacity group-hover:opacity-100">Cmd + A for All</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {SOURCE_PRESETS.map(preset => (
-                      <button
-                        key={preset.id}
-                        onClick={() => applyPreset(preset.id)}
-                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-md border transition-colors ${
-                          activePreset === preset.id
-                            ? 'bg-purple-100 text-purple-700 border-purple-200'
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                        }`}
-                        title={preset.description}
-                      >
-                        {preset.name}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Individual Sources */}
-                  <div className="px-1 py-1.5 mt-2 flex items-center justify-between group">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sources</span>
-                    <span className="text-[9px] text-gray-400 opacity-0 transition-opacity group-hover:opacity-100">Cmd + 1-6</span>
-                  </div>
-                  {SOURCES.map(source => (
-                    <SidebarItem
-                      key={source.id}
-                      icon={
-                        <div className={`w-5 h-5 rounded-md shadow-sm border flex items-center justify-center transition-all ${
-                          activeSources.includes(source.id)
-                            ? `${source.activeBgColor} ${source.activeBorderColor}`
-                            : 'bg-white border-gray-200 opacity-50'
-                        }`}>
-                          <span className={`text-xs font-bold transition-colors ${
-                            activeSources.includes(source.id) ? source.color : 'text-gray-400'
-                          }`}>
-                            {source.icon}
-                          </span>
-                        </div>
-                      }
-                      title={
-                        <div className="flex items-center gap-1.5">
-                          <span>{source.name}</span>
-                          <span className="text-[9px] text-gray-400 font-normal opacity-0 group-hover:opacity-100 transition-opacity">Cmd+{source.keyboardShortcut}</span>
-                        </div>
-                      }
-                      time={
-                        <div className="flex items-center gap-2">
-                          <TrustBadge score={source.trustScore} />
-                        </div>
-                      }
-                      isLive={source.freshness === 'realtime'}
-                      active={activeSources.includes(source.id)}
-                      onClick={() => toggleSource(source.id)}
-                    />
-                  ))}
-                </div>
-
-                <div className="p-4 border-t border-gray-100 shrink-0 bg-white">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-sm"></div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-gray-900 truncate">Demo User</div>
-                      <div className="text-[10px] text-gray-500 truncate">Pro Plan</div>
-                    </div>
-                    <MoreHorizontal className="w-4 h-4 text-gray-400" />
-                  </div>
-                </div>
-              </div>
-
-              {/* RIGHT COLUMN: The Canvas */}
-              <div className="flex-1 bg-white flex flex-col h-full relative">
-
-                {/* OMNIBAR - Sticky Command Center - Only shown when content exists */}
-                {(latestAssistantText || isRunning) && (
-                  <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl px-8 py-6 shrink-0 border-b border-gray-100">
-                    <div className="max-w-2xl mx-auto">
-                      {/* The Input Container */}
-                      <div className="relative w-full h-14 group">
-                        {/* Icon (Absolute Left) */}
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
-                          <Sparkles className="w-5 h-5" />
-                        </div>
-
-                        {/* The Actual Input Field */}
-                        <input
-                          type="text"
-                          value={researchPrompt}
-                          onChange={(e) => setResearchPrompt(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                              e.preventDefault();
-                              handleRunPrompt();
-                            }
-                          }}
-                          className="w-full h-full pl-12 pr-14 rounded-xl border border-gray-200 bg-white text-gray-700 placeholder:text-gray-400 outline-none transition-all focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-                          style={{
-                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-                          }}
-                          placeholder="Ask anything about companies, markets, or docs..."
-                        />
-
-                        {/* Button (Absolute Right) */}
-                        <button
-                          type="button"
-                          onClick={handleRunPrompt}
-                          disabled={isRunning}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Generate (Cmd+Enter)"
-                        >
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Helper Text */}
-                      <div className="flex gap-2 text-[11px] text-gray-600 font-medium mt-3 justify-center">
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 text-gray-700 px-2.5 py-1 border border-gray-200 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
-                          <span className="px-1 py-0.5 rounded bg-white text-[10px] font-semibold border border-gray-300">Cmd</span>
-                          <span>Focus</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 text-gray-700 px-2.5 py-1 border border-gray-200 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
-                          <span className="px-1 py-0.5 rounded bg-white text-[10px] font-semibold border border-gray-300">Enter</span>
-                          <span>Run</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Content Area - Changes based on active tab */}
-                {!latestAssistantText && !isRunning && (
-                  <div className="flex-1 flex flex-col overflow-y-auto">
-
-                    {/* Input Section - Always visible at top */}
-                    <div className="flex-shrink-0 flex flex-col items-center justify-center py-12 px-6">
-                      <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 text-purple-600">
-                        <Sparkles className="w-8 h-8" />
-                      </div>
-                      <h2 className="text-2xl font-semibold text-gray-900 tracking-tight mb-2">
-                        What are we researching today?
-                      </h2>
-                      <p className="text-gray-500 mb-8 text-sm">
-                        Ask anything about companies, markets, or documents
-                      </p>
-
-                      {/* Input Field */}
-                      <div className="relative w-full max-w-2xl group">
-                        <div className="absolute -inset-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-[2rem] blur-2xl opacity-50 group-hover:opacity-70 transition duration-1000"></div>
-
-                        <div className="relative flex items-center bg-white rounded-xl shadow-sm h-14 w-full overflow-hidden border border-gray-200">
-                          <div className="absolute left-4 text-gray-400 pointer-events-none">
-                            <Search className="w-5 h-5" />
-                          </div>
-
-                          <input
-                            type="text"
-                            className="w-full h-full bg-transparent text-base text-gray-900 placeholder:text-gray-400 pl-12 pr-12 outline-none border-none ring-0 focus:ring-0"
-                            placeholder="Ask anything..."
-                            value={researchPrompt}
-                            onChange={(e) => setResearchPrompt(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                                e.preventDefault();
-                                void handleRunPrompt();
-                              }
-                            }}
-                            autoFocus
-                          />
-
-                          <div className="absolute right-2">
-                            <button
-                              type="button"
-                              onClick={() => void handleRunPrompt()}
-                              disabled={isRunning}
-                              className="p-2 bg-gray-900 hover:bg-black text-white rounded-lg transition-all shadow hover:shadow-lg active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Run research (Cmd+Enter)"
-                            >
-                              <ArrowRight className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-center gap-3 mt-3 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-semibold">⌘</kbd>
-                            <span>+</span>
-                            <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-semibold">Enter</kbd>
-                            <span className="ml-1">to run</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Preview Content - Scrollable */}
-                    <div className="flex-1 overflow-y-auto p-6 pt-0">
-
-                    {/* Dossier Preview */}
-                    {activeTab === 'dossier' && (
-                      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                        <div className="border-b-2 border-black pb-3 mb-6">
-                          <h1 className="text-3xl font-black text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
-                            THE DAILY DOSSIER
-                          </h1>
-                          <p className="text-xs text-center text-gray-500 mt-2">Preview Mode</p>
-                        </div>
-                        <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-                          Healthcare Seed Funding: A Market Shift
-                        </h2>
-                        <p className="text-sm text-gray-700 leading-relaxed mb-4">
-                          The landscape of healthcare seed funding has undergone a dramatic transformation.
-                          Traditional biotech investments are yielding ground to AI-driven diagnostic platforms.
-                        </p>
-                        <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-4">
-                          <p className="text-sm italic text-gray-700">
-                            "The integration of generative AI into clinical workflows is becoming the standard for new entrants."
-                          </p>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-6">
-                          Run a query to see your personalized dossier here
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Newsletter Preview */}
-                    {activeTab === 'newsletter' && (
-                      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-center">
-                          <h1 className="text-2xl font-bold text-white">Your Research Digest</h1>
-                          <p className="text-blue-100 text-sm mt-1">Preview Mode</p>
-                        </div>
-                        <div className="p-6 space-y-4">
-                          <h2 className="text-xl font-bold text-gray-900">Healthcare Seed Funding</h2>
-                          <p className="text-sm text-gray-700">
-                            Key insights from recent market analysis:
-                          </p>
-                          <ul className="space-y-2 text-sm text-gray-700">
-                            <li className="flex items-start gap-2">
-                              <span className="text-blue-600 mt-1">•</span>
-                              <span>AI diagnostics seeing 40% higher valuations</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <span className="text-blue-600 mt-1">•</span>
-                              <span>Deal flow increased 15% QoQ despite market slowdown</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <span className="text-blue-600 mt-1">•</span>
-                              <span>VitalWatch AI raised $12M Series A</span>
-                            </li>
-                          </ul>
-                          <p className="text-xs text-gray-500 mt-6 pt-4 border-t">
-                            Run a query to generate your personalized newsletter
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Media Preview */}
-                    {activeTab === 'media' && (
-                      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">Media Gallery</h2>
-                        <p className="text-sm text-gray-600 mb-6">Preview Mode - Sample Assets</p>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                          <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <ImageIcon className="w-12 h-12 text-white opacity-50" />
-                          </div>
-                          <div className="aspect-video bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-                            <FileText className="w-12 h-12 text-white opacity-50" />
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 text-center">
-                          Run a query to collect images, videos, and documents
-                        </p>
-                      </div>
-                    )}
-
-                    </div>
-                  </div>
-                )}
-
-                {/* Footer watermark */}
-                <div className="absolute bottom-6 w-full text-center">
-                  <span className="text-xs text-gray-300 flex items-center justify-center gap-1">
-                    <Clock className="w-3 h-3" /> Powered by Nodebench AI Agent
-                  </span>
-                </div>
-              </div>
+              <span className="text-lg font-bold text-gray-900 tracking-tight">Nodebench AI</span>
             </div>
           </div>
-        </div>
-      </div>
-      </>
-    );
-  }
 
-  // Loading state
-  if (isRunning && !latestAssistantText) {
-    return (
-      <div className="mx-auto max-w-3xl bg-white shadow-2xl rounded-sm min-h-[800px] border-t-4 border-black flex items-center justify-center p-20">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center animate-pulse">
-            <Sparkles className="w-8 h-8 text-purple-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Researching...</h3>
-          <p className="text-sm text-gray-600">
-            The agent is gathering insights for your dossier
-          </p>
-        </div>
-      </div>
-    );
-  }
+          {/* Navigation */}
+          <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6 custom-scrollbar">
+            {/* Main Nav */}
+            <div className="space-y-1">
+              <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Workspace</div>
+              <SidebarItem icon={<Layout className="w-4 h-4" />} title="Dashboard" time="" active />
+              <SidebarItem icon={<Clock className="w-4 h-4" />} title="Recent Research" time="" />
+              <SidebarItem icon={<FileText className="w-4 h-4" />} title="Saved Dossiers" time="" />
+            </div>
 
-  // Render content with tabs
-  return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Tab Navigation */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={() => setActiveTab('dossier')}
-              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2 ${
-                activeTab === 'dossier'
-                  ? 'bg-black text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <Newspaper className="w-4 h-4" />
-              Dossier
-            </button>
-            <button
-              onClick={() => setActiveTab('newsletter')}
-              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2 ${
-                activeTab === 'newsletter'
-                  ? 'bg-black text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <Layout className="w-4 h-4" />
-              Newsletter
-            </button>
-            <button
-              onClick={() => setActiveTab('media')}
-              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2 ${
-                activeTab === 'media'
-                  ? 'bg-black text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <ImageIcon className="w-4 h-4" />
-              Media
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Area */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {activeTab === 'newsletter' && (
-          <MockNewsletterView
-            responseText={responseText || `# Healthcare Seed Funding: A Market Shift Towards AI Diagnostics
-
-The landscape of healthcare seed funding has undergone a dramatic transformation in Q3 2024. Traditional biotech investments are yielding ground to AI-driven diagnostic platforms, driven by recent breakthroughs in multimodal models.
-
-**Key Finding:** Investors are prioritizing platforms that integrate clinical workflow automation with diagnostic capabilities. The "pure play" AI diagnostic tools are seeing a 40% higher valuation multiple compared to standard SaaS health platforms.
-
-> The integration of generative AI into clinical workflows isn't just an efficiency play; it's becoming the standard for new entrants in the digital health space.
-
-## Market Velocity
-
-Deal flow in the sector has increased by 15% QoQ, despite a broader market slowdown. This resilience suggests a decoupling of AI-Health from general tech trends.
-
-## Notable Deals
-
-- **VitalWatch AI** raised $12M Series A for real-time patient monitoring
-- **DiagnosticFlow** secured $8M seed for AI-powered pathology
-- **CareSync** announced $15M for clinical workflow automation`}
-            isLoading={isRunning}
-            mediaAssets={mediaAssets.length > 0 ? mediaAssets : [
-              { type: 'image', url: 'https://via.placeholder.com/400x300/4F46E5/FFFFFF?text=AI+Diagnostics', title: 'AI Diagnostics Platform', description: 'Next-generation diagnostic tools' },
-              { type: 'image', url: 'https://via.placeholder.com/400x300/7C3AED/FFFFFF?text=Healthcare+Tech', title: 'Healthcare Technology', description: 'Innovation in patient care' },
-            ]}
-            citations={citations}
-            sourceAnalytics={sourceAnalytics}
-          />
-        )}
-
-        {activeTab === 'media' && (
-          <MockMediaView
-            mediaAssets={mediaAssets.length > 0 ? mediaAssets : [
-              { type: 'image', url: 'https://via.placeholder.com/600x400/4F46E5/FFFFFF?text=AI+Infrastructure', title: 'AI Infrastructure Startup', description: 'Leading AI infrastructure company' },
-              { type: 'image', url: 'https://via.placeholder.com/600x400/7C3AED/FFFFFF?text=Funding+Round', title: 'Series A Funding', description: '$50M raised for AI platform' },
-              { type: 'image', url: 'https://via.placeholder.com/600x400/EC4899/FFFFFF?text=Tech+Innovation', title: 'Technology Innovation', description: 'Breakthrough in machine learning' },
-              { type: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'AI Startup Pitch', description: 'CEO presents vision for AI future' },
-              { type: 'pdf', url: '#', title: 'Q3 2024 Market Report', description: 'Comprehensive analysis of AI funding trends' },
-              { type: 'sec-document', url: '#', title: 'SEC Filing - Form S-1', description: 'IPO registration statement' },
-            ]}
-            isLoading={isRunning}
-          />
-        )}
-
-        {activeTab === 'dossier' && (
-          <div className="mx-auto max-w-3xl bg-white shadow-2xl rounded-sm min-h-[800px] border-t-4 border-black relative">
-      {/* Privacy Badge */}
-      <div className="absolute top-4 right-4 px-3 py-1 bg-black text-white text-[10px] font-bold uppercase tracking-wider rounded">
-        Private & Confidential
-      </div>
-
-      <div className="p-12 font-serif">
-        {/* Masthead */}
-        <div className="border-b-4 border-black pb-4 mb-8">
-          <div className="text-center border-b border-gray-200 pb-4 mb-3">
-            <h1 className="text-5xl font-black tracking-tighter text-black mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-              THE DAILY DOSSIER
-            </h1>
-            <div className="flex items-center justify-center gap-4 text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">
-              <span>Intelligence Report</span>
-              <span className="w-1 h-1 rounded-full bg-gray-400" />
-              <span>Tech Sector</span>
+            {/* Live Sources */}
+            <div className="space-y-1">
+              <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex justify-between items-center">
+                <span>Live Sources</span>
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              </div>
+              {SOURCES.map(source => (
+                <SidebarItem
+                  key={source.id}
+                  icon={<span className={`font-bold ${source.color}`}>{source.icon}</span>}
+                  title={source.name}
+                  time={<TrustBadge score={source.trustScore} />}
+                  active={activeSources.includes(source.id)}
+                  onClick={() => toggleSource(source.id)}
+                  isLive={source.freshness === 'realtime'}
+                />
+              ))}
             </div>
           </div>
-          <div className="flex justify-between items-end text-xs font-medium text-gray-600 font-sans">
-            <div className="flex gap-4">
-              <span>Vol. 24, No. 142</span>
-              <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-            </div>
-            <div className="uppercase tracking-wide">Confidential</div>
-          </div>
-        </div>
 
-        {/* Main Headline */}
-        <div className="mb-8">
-          <h2 className="text-4xl font-bold leading-[1.1] text-gray-900 mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {hasReceivedResponse ? "Live Dossier Preview" : "Healthcare Seed Funding:"} <br />
-            <span className="text-gray-600 italic font-serif">
-              {hasReceivedResponse ? "Generated from your prompt in real time" : "A Market Shift Towards AI Diagnostics"}
-            </span>
-          </h2>
-          <div className="flex items-center gap-3 text-sm text-gray-500 font-sans mb-6">
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600">AI</div>
-            <span>{hasReceivedResponse ? "Nodebench Fast Agent" : "Generated by Nodebench Agent"}</span>
-            <span className="w-1 h-1 rounded-full bg-gray-300" />
-            <span>{isRunning ? "Streaming..." : "5 min read"}</span>
-          </div>
-        </div>
-
-        {/* Executive Summary Block */}
-        <ExecutiveSummaryBlock />
-
-        {/* Stat Cards Grid */}
-        <div className="my-8 grid grid-cols-2 gap-4">
-          <StatCard label="Total Funding (Q3)" value="$1.2B" change="14% vs Q2" trend="up" />
-          <StatCard label="Deal Count" value="42" change="Flat" trend="flat" />
-        </div>
-
-        {/* Columns */}
-        <div className="grid grid-cols-12 gap-8">
-          {/* Main Column */}
-          <div className="col-span-8">
-            {hasReceivedResponse ? (
-              <div className="prose prose-slate max-w-none prose-headings:font-serif prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:font-semibold prose-blockquote:border-l-4 prose-blockquote:border-purple-500 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:italic prose-blockquote:text-xl prose-blockquote:text-gray-900 prose-blockquote:bg-purple-50/50 prose-blockquote:rounded-r-lg prose-blockquote:my-8 first-letter:prose-p:first:text-5xl first-letter:prose-p:first:font-bold first-letter:prose-p:first:float-left first-letter:prose-p:first:mr-3 first-letter:prose-p:first:mt-[-6px]">
-                {responseText ? (
-                  <ReactMarkdown
-                    components={{
-                      // Transform **Bold Text** into "Entity Chips"
-                      strong: ({ node, ...props }) => (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-gray-800 font-semibold text-[0.9em] align-baseline mx-0.5 cursor-pointer hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors">
-                          {props.children}
-                        </span>
-                      ),
-                      // Pull quotes for blockquotes
-                      blockquote: ({ node, ...props }) => (
-                        <blockquote className="my-8 border-l-4 border-purple-500 pl-6 py-2 italic text-xl text-gray-900 font-serif bg-purple-50/50 rounded-r-lg">
-                          {props.children}
-                        </blockquote>
-                      ),
-                    }}
-                  >
-                    {responseText}
-                  </ReactMarkdown>
-                ) : (
-                  <div className="flex items-center justify-center py-12 text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-75" />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150" />
-                      <span className="ml-2">Loading next update...</span>
-                    </div>
-                  </div>
-                )}
+          {/* User Profile */}
+          <div className="p-4 border-t border-gray-200 bg-white">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs">
+                  {user?.name?.charAt(0) || "U"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{user?.name || "User"}</div>
+                  <div className="text-xs text-gray-500 truncate">Pro Plan</div>
+                </div>
               </div>
             ) : (
-              <div className="space-y-6 text-gray-800 leading-relaxed text-[15px]">
-                <p className="first-letter:text-5xl first-letter:font-bold first-letter:float-left first-letter:mr-3 first-letter:mt-[-6px]">
-                  The landscape of healthcare seed funding has undergone a dramatic transformation in Q3 2024. Traditional biotech investments are yielding ground to AI-driven diagnostic platforms, driven by recent breakthroughs in multimodal models.
-                </p>
-                <p>
-                  <strong>Key Finding:</strong>{" "}
-                  Investors are prioritizing platforms that integrate clinical workflow automation with diagnostic capabilities. The "pure play" AI diagnostic tools are seeing a 40% higher valuation multiple compared to standard SaaS health platforms.
-                </p>
-
-                <div className="my-8 p-6 bg-gray-50 border-l-4 border-blue-500 italic text-gray-700">
-                  The integration of generative AI into clinical workflows isn't just an efficiency play; it's becoming the standard for new entrants in the digital health space.
-                </div>
-
-                <h3 className="text-xl font-bold text-gray-900 mt-8 mb-2">Market Velocity</h3>
-                <p>
-                  Deal flow in the sector has increased by 15% QoQ, despite a broader market slowdown. This resilience suggests a decoupling of AI-Health from general tech trends.
-                </p>
-              </div>
+              <button
+                onClick={handleSignIn}
+                className="w-full py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                Sign In
+              </button>
             )}
+          </div>
+        </aside>
 
-            {/* Media Gallery - Display images and PDFs from tool outputs */}
-            {mediaAssets.length > 0 && (
-              <div className="my-8">
-                <h4 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-4 font-sans">Research Assets</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {mediaAssets.slice(0, 6).map((asset, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                      {(asset.type === 'image' || asset.type === 'news') && asset.thumbnail && (
-                        <div className="aspect-video bg-gray-100 relative">
-                          <img
-                            src={asset.thumbnail}
-                            alt={asset.title || 'Asset'}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
-                      {(asset.type === 'pdf' || asset.type === 'sec-document') && (
-                        <div className="aspect-video bg-red-50/50 flex items-center justify-center">
-                          <FileText className="w-12 h-12 text-red-600 opacity-50" />
-                        </div>
-                      )}
-                      <div className="p-3 bg-white">
-                        <a
-                          href={asset.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-medium text-gray-900 hover:text-blue-600 line-clamp-2 transition-colors"
+        {/* MAIN CONTENT AREA */}
+        <div className="flex-1 flex flex-col relative min-w-0 bg-white">
+
+          {/* PERSISTENT HEADER */}
+          <header className="h-16 border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-6">
+            <div className="flex items-center gap-4">
+              {/* Breadcrumbs or Title */}
+              <div className="flex items-center text-sm text-gray-500">
+                <span>Research</span>
+                <ChevronRight className="w-4 h-4 mx-1" />
+                <span className="text-gray-900 font-medium">
+                  {activeTab === 'dossier' ? 'Live Dossier' : activeTab === 'newsletter' ? 'Newsletter' : 'Media Gallery'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {!showHero && (
+                <>
+                  <button
+                    onClick={handleBackToSearch}
+                    className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <ChevronRight className="w-4 h-4 rotate-180" />
+                    Back to Search
+                  </button>
+                  <div className="h-4 w-px bg-gray-200"></div>
+                </>
+              )}
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <Search className="w-4 h-4" />
+              </button>
+              <div className="h-4 w-px bg-gray-200"></div>
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <Filter className="w-4 h-4" />
+              </button>
+            </div>
+          </header>
+
+          {/* SCROLLABLE CANVAS */}
+          <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+
+            {/* CONDITIONAL CONTENT: HERO vs ACTIVE */}
+            {showHero ? (
+              // HERO STATE
+              <div className="min-h-full flex flex-col items-center justify-center p-8 pb-32">
+                <div className="max-w-2xl w-full text-center space-y-8">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium border border-purple-100 mb-4">
+                    <Sparkles className="w-3 h-3" />
+                    <span>New: Multi-source Verification Engine</span>
+                  </div>
+
+                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
+                    Research at the Speed of <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">Thought.</span>
+                  </h1>
+
+                  <p className="text-lg text-gray-600 max-w-xl mx-auto">
+                    Access real-time intelligence from trusted sources. Generate briefings, analyze trends, and verify facts in seconds.
+                  </p>
+
+                  <div className="pt-8 w-full max-w-xl mx-auto">
+                    <MagicInputContainer
+                      onRun={(prompt) => handleRunPrompt(prompt)}
+                      defaultValue={researchPrompt}
+                    />
+
+                    {/* Source Pills */}
+                    <div className="flex flex-wrap justify-center gap-2 mt-6">
+                      {SOURCE_PRESETS.map(preset => (
+                        <button
+                          key={preset.id}
+                          onClick={() => applyPreset(preset.id)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
+                            ? 'bg-gray-900 text-white border-gray-900'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }`}
                         >
-                          {asset.title || 'View Asset'}
-                        </a>
-                        {asset.toolName && (
-                          <div className="text-[10px] text-gray-400 mt-1 font-sans">
-                            via {asset.toolName}
-                          </div>
-                        )}
+                          <span className="mr-1.5">{preset.icon}</span>
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* View Last Results Button */}
+                    {threadId && hasReceivedResponse && (
+                      <div className="mt-6">
+                        <button
+                          onClick={handleViewLastResults}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
+                        >
+                          <Clock className="w-4 h-4" />
+                          View Last Results
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // ACTIVE DOSSIER STATE
+              <div className="min-h-full bg-gray-50/50">
+                {/* Sticky Input Bar for Active State */}
+                <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
+                  <MagicInputContainer
+                    onRun={(prompt) => handleRunPrompt(prompt)}
+                    compact={true}
+                    defaultValue={researchPrompt}
+                  />
+                  <ThoughtStreamTicker isActive={isRunning} />
+
+                  {/* Cache Indicator */}
+                  {isFromCache && (
+                    <div className="max-w-4xl mx-auto mt-2 px-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
+                        <Zap className="w-3 h-3" />
+                        Loaded from cache (instant results)
                       </div>
                     </div>
-                  ))}
+                  )}
+                </div>
+
+                <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
+                  {/* Tabs */}
+                  <div className="flex border-b border-gray-200 mb-8">
+                    <button
+                      onClick={() => setActiveTab('dossier')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dossier' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                      Live Dossier
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('newsletter')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'newsletter' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                      Newsletter Preview
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('media')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'media' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                      Media Gallery <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{mediaAssets.length}</span>
+                    </button>
+                  </div>
+
+                  {/* View Content */}
+                  {activeTab === 'dossier' && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      {/* Executive Summary Block (Only show if we have some content) */}
+                      {citations.length > 0 && <ExecutiveSummaryBlock />}
+
+                      {/* Reasoning Chain */}
+                      <CollapsibleReasoningChain steps={toolParts} />
+
+                      {/* The Main Document */}
+                      <LiveDossierDocument threadId={threadId} isLoading={isRunning} />
+                    </div>
+                  )}
+
+                  {activeTab === 'newsletter' && (
+                    <MockNewsletterView
+                      responseText={responseText}
+                      isLoading={isRunning}
+                      mediaAssets={mediaAssets}
+                      citations={citations}
+                      sourceAnalytics={sourceAnalytics}
+                    />
+                  )}
+
+                  {activeTab === 'media' && (
+                    <MockMediaView mediaAssets={mediaAssets} />
+                  )}
                 </div>
               </div>
             )}
-
-            {/* Citation Cards - Display sources from linkupSearch */}
-            {citations.length > 0 && (
-              <div className="my-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-gray-500 font-sans">Sources & Citations</h4>
-                  <SourceAnalytics analytics={sourceAnalytics} />
-                </div>
-                <div className="space-y-3">
-                  {citations.map((citation: any, idx) => {
-                    const source = SOURCES.find(s => s.id === citation.source);
-                    return (
-                      <a
-                        key={idx}
-                        href={citation.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block p-3 bg-gray-50/50 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/30 transition-all group"
-                      >
-                        <div className="flex items-start gap-3">
-                          <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 mt-0.5 transition-colors" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className="text-sm font-medium text-gray-900 group-hover:text-blue-700 line-clamp-1 transition-colors flex-1">
-                                {citation.title}
-                              </div>
-                              {source && (
-                                <div className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${source.activeBgColor} ${source.color}`}>
-                                  {source.shortName}
-                                </div>
-                              )}
-                            </div>
-                            {citation.description && (
-                              <div className="text-xs text-gray-600 mt-1 line-clamp-2 font-sans">
-                                {citation.description}
-                              </div>
-                            )}
-                            {citation.domain && (
-                              <div className="text-[10px] text-gray-400 mt-1 font-sans">
-                                {citation.domain}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar Column */}
-          <div className="col-span-4 space-y-6">
-            <div className="bg-gray-50 p-4 border border-gray-100">
-              <h4 className="font-sans text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Key Players</h4>
-              <ul className="space-y-3 font-sans text-sm">
-                <li className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                    <span className="font-medium truncate">VitalWatch</span>
-                  </div>
-                  <svg width="40" height="16" className="flex-shrink-0">
-                    <polyline
-                      points="0,12 10,8 20,10 30,4 40,6"
-                      fill="none"
-                      stroke="#3B82F6"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </li>
-                <li className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" />
-                    <span className="font-medium truncate">MediGen AI</span>
-                  </div>
-                  <svg width="40" height="16" className="flex-shrink-0">
-                    <polyline
-                      points="0,10 10,12 20,6 30,8 40,2"
-                      fill="none"
-                      stroke="#A855F7"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </li>
-                <li className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                    <span className="font-medium truncate">CureFlow</span>
-                  </div>
-                  <svg width="40" height="16" className="flex-shrink-0">
-                    <polyline
-                      points="0,8 10,5 20,7 30,3 40,4"
-                      fill="none"
-                      stroke="#10B981"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-gray-50 p-4 border border-gray-100">
-              <h4 className="font-sans text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Sentiment</h4>
-              <div className="flex items-end gap-2 mb-1">
-                <span className="text-3xl font-bold text-emerald-600">84%</span>
-                <span className="text-xs text-emerald-600 font-medium mb-1.5">Bullish</span>
-              </div>
-              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full w-[84%]" />
-              </div>
-            </div>
-          </div>
+          </main>
         </div>
-
-        {(toolParts.length > 0 || reasoningText || latestAssistantMessage) && (
-          <div className="mt-12 border-t border-gray-100 pt-6">
-            <button
-              type="button"
-              onClick={() => setIsReasoningOpen(!isReasoningOpen)}
-              className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-purple-600 transition-colors"
-            >
-              <Sparkles className="w-4 h-4" />
-              {isReasoningOpen ? "Hide AI Reasoning & Sources" : "View AI Reasoning & Sources"}
-              <ChevronDown className={`w-4 h-4 transition-transform ${isReasoningOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isReasoningOpen && (
-              <div className="mt-4 space-y-4">
-                {reasoningText && (
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-2">Reasoning</div>
-                    <pre className="whitespace-pre-wrap text-xs text-gray-700 font-mono">{reasoningText}</pre>
-                  </div>
-                )}
-                {toolParts.length > 0 && (
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Tool Calls</div>
-                      <span className="text-[10px] text-gray-400">{toolParts.length} part(s)</span>
-                    </div>
-                    <StepTimeline steps={toolPartsToTimelineSteps(toolParts as any)} />
-                  </div>
-                )}
-                {latestAssistantMessage && (
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 overflow-x-auto">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500 font-semibold mb-2">
-                      Raw Agent Message (truncated schema)
-                    </div>
-                    <pre className="text-[10px] font-mono text-gray-600 whitespace-pre-wrap">
-                      {JSON.stringify(
-                        {
-                          id: latestAssistantMessage._id ?? latestAssistantMessage.id ?? latestAssistantMessage.messageId,
-                          role: latestAssistantMessage.role ?? latestAssistantMessage?.message?.role,
-                          text: latestAssistantMessage.text ?? latestAssistantMessage?.message?.text,
-                          parts: Array.isArray(latestAssistantMessage.parts)
-                            ? latestAssistantMessage.parts.map((p: any) => ({
-                              type: p.type,
-                              toolName: p.toolName,
-                              hasArgs: !!p.args,
-                              hasResult: !!(p.result || p.output),
-                            }))
-                            : undefined,
-                        },
-                        null,
-                        2
-                      )}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
       </div>
-    </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
+
+// --- Mock Views for Tabs ---
 
 function MockNewsletterView({
   responseText,
@@ -1740,7 +1186,17 @@ function MockNewsletterView({
           <div className="border-t border-gray-200 pt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Sources</h3>
-              <SourceAnalytics analytics={sourceAnalytics} />
+              {/* SourceAnalytics component removed/inline if needed, or assume it's defined elsewhere. 
+                  Wait, previous code had SourceAnalytics. I should keep it or mock it. 
+                  The previous code had a missing SourceAnalytics definition error. 
+                  I will inline a simple one here to be safe. */}
+              <div className="flex gap-1">
+                {Object.entries(sourceAnalytics).map(([source, count]) => (
+                  <span key={source} className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                    {source}: {count}
+                  </span>
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
               {citations.map((citation: any, idx) => {
@@ -1783,127 +1239,44 @@ function MockNewsletterView({
   );
 }
 
-function MockMediaView({
-  mediaAssets = [],
-  isLoading,
-}: {
-  mediaAssets?: ExtractedAsset[];
-  isLoading?: boolean;
-}) {
-  // Loading state
-  if (isLoading && mediaAssets.length === 0) {
+function MockMediaView({ mediaAssets }: { mediaAssets: ExtractedAsset[] }) {
+  if (mediaAssets.length === 0) {
     return (
-      <div className="mx-auto max-w-5xl bg-white shadow-sm min-h-full border border-gray-200/60 p-20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center animate-pulse">
-            <ImageIcon className="w-6 h-6 text-pink-600" />
-          </div>
-          <p className="text-sm font-medium text-gray-600">Collecting media...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+        <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+        <p className="text-sm">No media assets found in this research.</p>
       </div>
     );
   }
 
-  // Group media by type
-  const images = mediaAssets.filter(a => a.type === 'image' || a.type === 'news');
-  const documents = mediaAssets.filter(a => a.type === 'pdf' || a.type === 'sec-document');
-  const videos = mediaAssets.filter(a => a.type === 'youtube' || a.type === 'video');
-
   return (
-    <div className="mx-auto max-w-5xl bg-white shadow-sm min-h-full border border-gray-200/60">
-      {/* Gallery Header */}
-      <div className="border-b border-gray-200 px-8 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Media Gallery</h2>
-            <p className="text-sm text-gray-500">
-              {mediaAssets.length} asset{mediaAssets.length !== 1 ? 's' : ''} collected from research
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-gray-600">
-            {images.length > 0 && (
-              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
-                {images.length} {images.length === 1 ? 'image' : 'images'}
-              </span>
-            )}
-            {documents.length > 0 && (
-              <span className="px-2 py-1 bg-red-50 text-red-700 rounded-full font-medium">
-                {documents.length} {documents.length === 1 ? 'doc' : 'docs'}
-              </span>
-            )}
-            {videos.length > 0 && (
-              <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
-                {videos.length} {videos.length === 1 ? 'video' : 'videos'}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Gallery Grid */}
-      <div className="p-8">
-        <div className="grid grid-cols-3 gap-4">
-          {mediaAssets.map((asset, idx) => (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {mediaAssets.map((asset, idx) => (
+        <div key={idx} className="group relative aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+          {asset.thumbnail ? (
+            <img
+              src={asset.thumbnail}
+              alt={asset.title || 'Media Asset'}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+              <ImageIcon className="w-8 h-8 text-gray-300" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+            <p className="text-white text-sm font-medium line-clamp-2">{asset.title}</p>
             <a
-              key={idx}
               href={asset.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative border border-gray-200 rounded-lg overflow-hidden hover:border-blue-300 hover:shadow-lg transition-all duration-300"
+              className="mt-2 text-xs text-white/80 hover:text-white underline"
             >
-              {/* Asset Preview */}
-              {(asset.type === 'image' || asset.type === 'news') && asset.thumbnail && (
-                <div className="aspect-square bg-gray-100 overflow-hidden">
-                  <img
-                    src={asset.thumbnail}
-                    alt={asset.title || 'Media asset'}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-              {(asset.type === 'pdf' || asset.type === 'sec-document') && (
-                <div className="aspect-square bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
-                  <FileText className="w-16 h-16 text-red-600 opacity-50" />
-                </div>
-              )}
-              {(asset.type === 'youtube' || asset.type === 'video') && (
-                <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center relative">
-                  {asset.thumbnail ? (
-                    <img src={asset.thumbnail} alt={asset.title || 'Video'} className="w-full h-full object-cover" />
-                  ) : (
-                    <Activity className="w-16 h-16 text-purple-600 opacity-50" />
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-                    <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                      <ChevronRight className="w-6 h-6 text-gray-900 ml-0.5" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Asset Info Overlay */}
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                <p className="text-xs font-medium line-clamp-2">
-                  {asset.title || 'Untitled'}
-                </p>
-                {asset.toolName && (
-                  <p className="text-[10px] text-white/70 mt-1">
-                    via {asset.toolName}
-                  </p>
-                )}
-              </div>
-
-              {/* Type Badge */}
-              <div className="absolute top-2 right-2 px-2 py-1 bg-black/50 backdrop-blur-sm rounded text-[10px] text-white font-medium uppercase tracking-wide">
-                {asset.type}
-              </div>
+              View Source
             </a>
-          ))}
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }
