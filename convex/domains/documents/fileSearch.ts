@@ -28,7 +28,7 @@ async function ensureStoreForUser(ctx: any, userId: Id<"users">): Promise<string
     config: { displayName }
   });
 
-  const storeName = fileSearchStore.name;
+  const storeName = fileSearchStore.name || displayName;
 
   await ctx.runMutation(internal.fileSearchData.createFileSearchStore, {
     userId,
