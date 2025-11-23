@@ -2,7 +2,7 @@ import { action, internalMutation, query } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "../../_generated/api";
-import { polar } from "./polar";
+import { polar } from "../integrations/polar";
 
 // Plans
 type Plan = "free" | "supporter";

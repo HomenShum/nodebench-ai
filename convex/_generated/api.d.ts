@@ -44,6 +44,16 @@ import type * as domains_agents_fastAgentChatHelpers from "../domains/agents/fas
 import type * as domains_agents_fastAgentPanelStreaming from "../domains/agents/fastAgentPanelStreaming.js";
 import type * as domains_agents_humanInTheLoop from "../domains/agents/humanInTheLoop.js";
 import type * as domains_agents_index from "../domains/agents/index.js";
+import type * as domains_auth_apiKeys from "../domains/auth/apiKeys.js";
+import type * as domains_auth_apiKeysActions from "../domains/auth/apiKeysActions.js";
+import type * as domains_auth_auth from "../domains/auth/auth.js";
+import type * as domains_auth_index from "../domains/auth/index.js";
+import type * as domains_auth_presence from "../domains/auth/presence.js";
+import type * as domains_auth_usage from "../domains/auth/usage.js";
+import type * as domains_auth_users from "../domains/auth/users.js";
+import type * as domains_billing_apiUsageTracking from "../domains/billing/apiUsageTracking.js";
+import type * as domains_billing_billing from "../domains/billing/billing.js";
+import type * as domains_billing_index from "../domains/billing/index.js";
 import type * as domains_calendar_calendar from "../domains/calendar/calendar.js";
 import type * as domains_calendar_holidays from "../domains/calendar/holidays.js";
 import type * as domains_calendar_holidays_actions from "../domains/calendar/holidays_actions.js";
@@ -61,6 +71,18 @@ import type * as domains_documents_fileSearchData from "../domains/documents/fil
 import type * as domains_documents_files from "../domains/documents/files.js";
 import type * as domains_documents_folders from "../domains/documents/folders.js";
 import type * as domains_documents_index from "../domains/documents/index.js";
+import type * as domains_integrations_email from "../domains/integrations/email.js";
+import type * as domains_integrations_email_dossierEmailExample from "../domains/integrations/email/dossierEmailExample.js";
+import type * as domains_integrations_email_dossierEmailTemplate from "../domains/integrations/email/dossierEmailTemplate.js";
+import type * as domains_integrations_gmail from "../domains/integrations/gmail.js";
+import type * as domains_integrations_index from "../domains/integrations/index.js";
+import type * as domains_integrations_polar from "../domains/integrations/polar.js";
+import type * as domains_integrations_resend from "../domains/integrations/resend.js";
+import type * as domains_integrations_sms from "../domains/integrations/sms.js";
+import type * as domains_integrations_spreadsheets from "../domains/integrations/spreadsheets.js";
+import type * as domains_integrations_voice_voiceActions from "../domains/integrations/voice/voiceActions.js";
+import type * as domains_integrations_voice_voiceAgent from "../domains/integrations/voice/voiceAgent.js";
+import type * as domains_integrations_voice_voiceMutations from "../domains/integrations/voice/voiceMutations.js";
 import type * as domains_search_hashtagDossiers from "../domains/search/hashtagDossiers.js";
 import type * as domains_search_index from "../domains/search/index.js";
 import type * as domains_search_rag from "../domains/search/rag.js";
@@ -68,6 +90,13 @@ import type * as domains_search_ragEnhanced from "../domains/search/ragEnhanced.
 import type * as domains_search_ragEnhancedBatchIndex from "../domains/search/ragEnhancedBatchIndex.js";
 import type * as domains_search_rag_queries from "../domains/search/rag_queries.js";
 import type * as domains_search_searchCache from "../domains/search/searchCache.js";
+import type * as domains_tasks_dailyNotes from "../domains/tasks/dailyNotes.js";
+import type * as domains_tasks_eventTaskDocuments from "../domains/tasks/eventTaskDocuments.js";
+import type * as domains_tasks_index from "../domains/tasks/index.js";
+import type * as domains_tasks_tasks from "../domains/tasks/tasks.js";
+import type * as domains_tasks_work from "../domains/tasks/work.js";
+import type * as domains_tasks_workflows_coordinatorWorkflow from "../domains/tasks/workflows/coordinatorWorkflow.js";
+import type * as domains_tasks_workflows_index from "../domains/tasks/workflows/index.js";
 import type * as email from "../email.js";
 import type * as email_dossierEmailExample from "../email/dossierEmailExample.js";
 import type * as email_dossierEmailTemplate from "../email/dossierEmailTemplate.js";
@@ -200,7 +229,7 @@ import type * as voice_voiceActions from "../voice/voiceActions.js";
 import type * as voice_voiceAgent from "../voice/voiceAgent.js";
 import type * as voice_voiceMutations from "../voice/voiceMutations.js";
 import type * as work from "../work.js";
-import type * as workflows_coordinatorWorkflow from "../workflows/coordinatorWorkflow.js";
+import type * as workflows_index from "../workflows/index.js";
 
 import type {
   ApiFromModules,
@@ -245,6 +274,16 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/fastAgentPanelStreaming": typeof domains_agents_fastAgentPanelStreaming;
   "domains/agents/humanInTheLoop": typeof domains_agents_humanInTheLoop;
   "domains/agents/index": typeof domains_agents_index;
+  "domains/auth/apiKeys": typeof domains_auth_apiKeys;
+  "domains/auth/apiKeysActions": typeof domains_auth_apiKeysActions;
+  "domains/auth/auth": typeof domains_auth_auth;
+  "domains/auth/index": typeof domains_auth_index;
+  "domains/auth/presence": typeof domains_auth_presence;
+  "domains/auth/usage": typeof domains_auth_usage;
+  "domains/auth/users": typeof domains_auth_users;
+  "domains/billing/apiUsageTracking": typeof domains_billing_apiUsageTracking;
+  "domains/billing/billing": typeof domains_billing_billing;
+  "domains/billing/index": typeof domains_billing_index;
   "domains/calendar/calendar": typeof domains_calendar_calendar;
   "domains/calendar/holidays": typeof domains_calendar_holidays;
   "domains/calendar/holidays_actions": typeof domains_calendar_holidays_actions;
@@ -262,6 +301,18 @@ declare const fullApi: ApiFromModules<{
   "domains/documents/files": typeof domains_documents_files;
   "domains/documents/folders": typeof domains_documents_folders;
   "domains/documents/index": typeof domains_documents_index;
+  "domains/integrations/email": typeof domains_integrations_email;
+  "domains/integrations/email/dossierEmailExample": typeof domains_integrations_email_dossierEmailExample;
+  "domains/integrations/email/dossierEmailTemplate": typeof domains_integrations_email_dossierEmailTemplate;
+  "domains/integrations/gmail": typeof domains_integrations_gmail;
+  "domains/integrations/index": typeof domains_integrations_index;
+  "domains/integrations/polar": typeof domains_integrations_polar;
+  "domains/integrations/resend": typeof domains_integrations_resend;
+  "domains/integrations/sms": typeof domains_integrations_sms;
+  "domains/integrations/spreadsheets": typeof domains_integrations_spreadsheets;
+  "domains/integrations/voice/voiceActions": typeof domains_integrations_voice_voiceActions;
+  "domains/integrations/voice/voiceAgent": typeof domains_integrations_voice_voiceAgent;
+  "domains/integrations/voice/voiceMutations": typeof domains_integrations_voice_voiceMutations;
   "domains/search/hashtagDossiers": typeof domains_search_hashtagDossiers;
   "domains/search/index": typeof domains_search_index;
   "domains/search/rag": typeof domains_search_rag;
@@ -269,6 +320,13 @@ declare const fullApi: ApiFromModules<{
   "domains/search/ragEnhancedBatchIndex": typeof domains_search_ragEnhancedBatchIndex;
   "domains/search/rag_queries": typeof domains_search_rag_queries;
   "domains/search/searchCache": typeof domains_search_searchCache;
+  "domains/tasks/dailyNotes": typeof domains_tasks_dailyNotes;
+  "domains/tasks/eventTaskDocuments": typeof domains_tasks_eventTaskDocuments;
+  "domains/tasks/index": typeof domains_tasks_index;
+  "domains/tasks/tasks": typeof domains_tasks_tasks;
+  "domains/tasks/work": typeof domains_tasks_work;
+  "domains/tasks/workflows/coordinatorWorkflow": typeof domains_tasks_workflows_coordinatorWorkflow;
+  "domains/tasks/workflows/index": typeof domains_tasks_workflows_index;
   email: typeof email;
   "email/dossierEmailExample": typeof email_dossierEmailExample;
   "email/dossierEmailTemplate": typeof email_dossierEmailTemplate;
@@ -401,7 +459,7 @@ declare const fullApi: ApiFromModules<{
   "voice/voiceAgent": typeof voice_voiceAgent;
   "voice/voiceMutations": typeof voice_voiceMutations;
   work: typeof work;
-  "workflows/coordinatorWorkflow": typeof workflows_coordinatorWorkflow;
+  "workflows/index": typeof workflows_index;
 }>;
 
 /**

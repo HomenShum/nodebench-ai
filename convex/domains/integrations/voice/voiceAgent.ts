@@ -14,11 +14,11 @@ import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { components } from "../../../_generated/api";
-import { createCoordinatorAgent } from "../fast_agents/coordinatorAgent";
+import { createCoordinatorAgent } from "../../../fast_agents/coordinatorAgent";
 
 // Import all tools for voice agent access
-import { linkupSearch } from "../tools/linkupSearch";
-import { youtubeSearch } from "../tools/youtubeSearch";
+import { linkupSearch } from "../../../tools/linkupSearch";
+import { youtubeSearch } from "../../../tools/youtubeSearch";
 import {
   findDocument,
   getDocumentContent,
@@ -28,13 +28,13 @@ import {
   createDocument,
   generateEditProposals,
   createDocumentFromAgentContentTool,
-} from "../tools/documentTools";
+} from "../../../tools/documentTools";
 import {
   searchMedia,
   analyzeMediaFile,
   getMediaDetails,
   listMediaFiles
-} from "../tools/mediaTools";
+} from "../../../tools/mediaTools";
 import {
   listTasks,
   createTask,
@@ -42,17 +42,17 @@ import {
   listEvents,
   createEvent,
   getFolderContents
-} from "../tools/dataAccessTools";
+} from "../../../tools/dataAccessTools";
 import {
   searchSecFilings,
   downloadSecFiling,
   getCompanyInfo
-} from "../tools/secFilingTools";
+} from "../../../tools/secFilingTools";
 import {
   searchHashtag,
   createHashtagDossier,
   getOrCreateHashtagDossier
-} from "../tools/hashtagSearchTools";
+} from "../../../tools/hashtagSearchTools";
 
 /**
  * Voice plan schema - determines routing strategy
@@ -150,7 +150,7 @@ When they need multi-step help or tool usage, say you'll work on it and proceed.
  */
 export const createVoiceCoordinatorAgent = (model: string) => {
   const baseAgent = createCoordinatorAgent(model);
-  
+
   // Override instructions to be voice-optimized
   return new Agent(components.agent, {
     ...baseAgent.options,

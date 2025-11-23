@@ -1,6 +1,7 @@
 export * from "./documents";
 export * from "./documentTasks";
-export * from "./documentVersions";
+// Don't export * from documentVersions to avoid conflicts - import directly from the file
+// export * from "./documentVersions";
 export * from "./documentEvents";
 export * from "./documentMetadataParser";
 export * from "./fileDocuments";

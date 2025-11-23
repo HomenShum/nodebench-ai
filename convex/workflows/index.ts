@@ -1,1 +1,1 @@
-export * from "./coordinatorWorkflow";
+export * from "../domains/tasks/workflows/coordinatorWorkflow";
