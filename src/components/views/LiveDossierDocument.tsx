@@ -3,10 +3,102 @@ import { api } from "../../../convex/_generated/api";
 import { useUIMessages } from "@convex-dev/agent/react";
 import ReactMarkdown from "react-markdown";
 import { useEffect, useRef, useMemo } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Briefcase, FileText, Lightbulb, ChevronRight } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 
-export default function LiveDossierDocument({ threadId, isLoading = false }: { threadId: string | null; isLoading?: boolean }) {
+// QuickActionButton Component
+interface QuickActionButtonProps {
+    icon: React.ReactNode;
+    label: string;
+    query: string;
+    onClick: (query: string) => void;
+}
+
+function QuickActionButton({ icon, label, query, onClick }: QuickActionButtonProps) {
+    return (
+        <button
+            onClick={() => onClick(query)}
+            className="group flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+        >
+            <span className="flex-shrink-0">{icon}</span>
+            <span>{label}</span>
+            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity -ml-1" />
+        </button>
+    );
+}
+
+// SuggestedFollowUps Component
+interface SuggestedFollowUpsProps {
+    onSelectFollowUp: (query: string) => void;
+    contentContext?: string;
+}
+
+function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: SuggestedFollowUpsProps) {
+    // Detect context from content
+    const isCompany = /\b(LLC|Inc|Corporation|Company|startup|business)\b/i.test(contentContext);
+    const isPerson = /\b(founder|CEO|CTO|executive|director)\b/i.test(contentContext);
+
+    // Extract entity name from content (simple heuristic)
+    const entityMatch = contentContext.match(/(?:^|\n)(?:First — to make sure.*?— )?(?:\*\*)?([A-Z][a-zA-Z0-9\s&]+(?:LLC|Inc|Corporation)?)/);
+    const entityName = entityMatch ? entityMatch[1].trim() : "";
+
+    // Generate contextual follow-ups
+    const followUps = useMemo(() => {
+        if (isCompany && entityName) {
+            return [
+                { icon: <TrendingUp className="w-4 h-4" />, label: "Full Enrichment Dossier", query: `Run the full enrichment dossier for ${entityName} including founders, investors, corporate details, and competitive analysis.` },
+                { icon: <Users className="w-4 h-4" />, label: "Founder Deep Dive", query: `Tell me about the founders of ${entityName} - their backgrounds, education, previous ventures, and expertise.` },
+                { icon: <Briefcase className="w-4 h-4" />, label: "Client & Partner Analysis", query: `Who are the major clients and partners of ${entityName}? Include case studies if available.` },
+                { icon: <FileText className="w-4 h-4" />, label: "IP & Patents", query: `What intellectual property, patents, and proprietary technology does ${entityName} have?` },
+            ];
+        } else if (isPerson && entityName) {
+            return [
+                { icon: <Users className="w-4 h-4" />, label: "Professional Background", query: `Tell me about ${entityName}'s professional background and career history.` },
+                { icon: <Briefcase className="w-4 h-4" />, label: "Previous Ventures", query: `What companies or ventures has ${entityName} founded or been involved with?` },
+                { icon: <FileText className="w-4 h-4" />, label: "Education & Expertise", query: `What is ${entityName}'s education background and areas of expertise?` },
+            ];
+        } else {
+            return [
+                { icon: <Lightbulb className="w-4 h-4" />, label: "More Details", query: `Provide more detailed information and context.` },
+                { icon: <TrendingUp className="w-4 h-4" />, label: "Related Topics", query: `What are related topics and areas I should explore?` },
+                { icon: <FileText className="w-4 h-4" />, label: "Recent News", query: `What is the latest news and recent developments?` },
+            ];
+        }
+    }, [isCompany, isPerson, entityName]);
+
+    return (
+        <div className="mt-12 mb-8 p-6 bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl border border-gray-200/60">
+            <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700">
+                    💡 Suggested Next Steps
+                </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {followUps.map((followUp, idx) => (
+                    <QuickActionButton
+                        key={idx}
+                        icon={followUp.icon}
+                        label={followUp.label}
+                        query={followUp.query}
+                        onClick={onSelectFollowUp}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+export default function LiveDossierDocument({
+    threadId,
+    isLoading = false,
+    onRunFollowUp
+}: {
+    threadId: string | null;
+    isLoading?: boolean;
+    onRunFollowUp?: (query: string) => void;
+}) {
     // 1. Subscribe to the Agent's Output
     const streamingThread = useQuery(
         api.fastAgentPanelStreaming.getThreadByStreamId,
@@ -151,6 +243,14 @@ export default function LiveDossierDocument({ threadId, isLoading = false }: { t
                         <span className="inline-block w-2 h-5 bg-purple-500 ml-1 animate-pulse align-middle rounded-sm"></span>
                     )}
                 </div>
+
+                {/* Suggested Follow-ups Section - Only show when content is ready and callback provided */}
+                {hasContent && !isStreaming && onRunFollowUp && (
+                    <SuggestedFollowUps
+                        onSelectFollowUp={onRunFollowUp}
+                        contentContext={content}
+                    />
+                )}
 
                 <div ref={bottomRef} />
             </div>
