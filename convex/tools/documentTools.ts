@@ -306,11 +306,11 @@ The document has been saved with your changes.
 
 <!-- DOCUMENT_ACTION_DATA
 ${JSON.stringify({
-  action: 'updated',
-  documentId: args.documentId,
-  title: doc?.title || 'Document',
-  updatedFields: Object.keys(updates)
-})}
+      action: 'updated',
+      documentId: args.documentId,
+      title: doc?.title || 'Document',
+      updatedFields: Object.keys(updates)
+    })}
 -->`;
 
     return response;
@@ -482,11 +482,11 @@ The document is ready to edit.
 
 <!-- DOCUMENT_ACTION_DATA
 ${JSON.stringify({
-  action: 'created',
-  documentId: String(documentId),
-  title: args.title,
-  isPublic: args.isPublic
-})}
+        action: 'created',
+        documentId: String(documentId),
+        title: args.title,
+        isPublic: args.isPublic
+      })}
 -->`;
 
       console.log(`[createDocument] Returning response with document ID: ${documentId}`);
@@ -515,14 +515,19 @@ export const generateEditProposals = createTool({
     console.log(`[generateEditProposals] Generating proposals for: ${args.documentId}`);
 
     try {
+      // Legacy editing agent was removed - this functionality needs to be reimplemented
+      return `Edit proposals feature is currently unavailable. The editing agent was removed as part of the Deep Agents 2.0 refactor. Please edit the document manually or request this feature to be reimplemented.`;
+
+      // TODO: Reimplement this using the new Deep Agents architecture
+      /* 
       // Get the document
       const doc = await ctx.runQuery(api.documents.getById, { documentId: args.documentId as any });
       if (!doc) {
         return `Document not found: ${args.documentId}`;
       }
 
-      // Import the editing agent
-      const { generateEdits } = await import("../fast_agents/editingAgent");
+      // Import the editing agent (REMOVED - part of Deep Agents 2.0 refactor)
+      // const { generateEdits } = await import("../fast_agents/editingAgent");
 
       // Generate proposals
       const proposals = await generateEdits(ctx, {
@@ -547,6 +552,7 @@ export const generateEditProposals = createTool({
       response += `\nConfidence: ${(proposals.confidence * 100).toFixed(0)}%`;
 
       return response;
+      */
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       return `Error generating proposals: ${errorMsg}`;
@@ -629,10 +635,10 @@ export const searchLocalDocuments = createTool({
     const formatted = matches.map((m: any, idx: number) => {
       const badge =
         m.matchType === "hybrid" ? "🎯" :
-        m.matchType === "exact-hybrid" ? "🎯" :
-        m.matchType === "exact-title" ? "📍" :
-        m.matchType === "exact-content" ? "📄" :
-        "🔍";
+          m.matchType === "exact-hybrid" ? "🎯" :
+            m.matchType === "exact-title" ? "📍" :
+              m.matchType === "exact-content" ? "📄" :
+                "🔍";
 
       return `${idx + 1}. ${badge} "${m.title}"
    ID: ${m._id}
@@ -662,11 +668,11 @@ Dossier ID: ${dossierId}
 
 <!-- DOCUMENT_ACTION_DATA
 ${JSON.stringify({
-  action: 'created',
-  documentId: String(dossierId),
-  title: `#${args.query}`,
-  via: 'searchLocalDocuments',
-})}
+        action: 'created',
+        documentId: String(dossierId),
+        title: `#${args.query}`,
+        via: 'searchLocalDocuments',
+      })}
 -->`;
     }
 

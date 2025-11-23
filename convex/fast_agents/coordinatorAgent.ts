@@ -1,49 +1,39 @@
 /**
- * Coordinator Agent - Main agent with full tool access
+ * Coordinator Agent - Deep Agents 2.0 Orchestrator
  *
- * Based on latest Convex Agent documentation:
- * https://docs.convex.dev/agents/agent-usage
+ * Architecture: Deep Agents 2.0 with hierarchical delegation
+ * Based on: https://www.philschmid.de/agents-2.0-deep-agents
  *
- * This agent has access to all tools and can handle complex multi-step workflows.
+ * This orchestrator agent delegates to specialized subagents and uses
+ * explicit planning and persistent memory for complex multi-step workflows.
  */
 
-import { Agent, createTool, stepCountIs, type ToolCtx } from "@convex-dev/agent";
+import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
 import { components } from "../_generated/api";
 
-// Import all tools
+// Import delegation tools (Deep Agents 2.0 hierarchical delegation)
+import { buildDelegationTools } from "./delegation/delegationTools";
+
+// Import MCP tool wrappers (planning & memory)
+import {
+  createPlan,
+  updatePlanStep,
+  getPlan,
+  writeAgentMemory,
+  readAgentMemory,
+  listAgentMemory,
+  deleteAgentMemory,
+} from "../tools/wrappers/coreAgentTools";
+
+// Import direct-access tools (for simple operations)
 import { linkupSearch } from "../tools/linkupSearch";
 import { youtubeSearch } from "../tools/youtubeSearch";
-import {
-  findDocument,
-  getDocumentContent,
-  analyzeDocument,
-  analyzeMultipleDocuments,
-  updateDocument,
-  createDocument,
-  generateEditProposals,
-  createDocumentFromAgentContentTool,
-} from "../tools/documentTools";
-import {
-  searchMedia,
-  analyzeMediaFile,
-  getMediaDetails,
-  listMediaFiles
-} from "../tools/mediaTools";
-import {
-  listTasks,
-  createTask,
-  updateTask,
-  listEvents,
-  createEvent,
-  getFolderContents
-} from "../tools/dataAccessTools";
-import {
-  searchSecFilings,
-  downloadSecFiling,
-  getCompanyInfo
-} from "../tools/secFilingTools";
+// Data access MCP wrappers are gated until the data_access_server is live
+// When ready, uncomment the import and set ENABLE_DATA_ACCESS_TOOLS to true
+// import { listTasks, createTask, updateTask, listEvents, createEvent, getFolderContents } from "../tools/dataAccessTools";
+const ENABLE_DATA_ACCESS_TOOLS = false;
+const dataAccessTools: Record<string, any> = {};
 import {
   searchHashtag,
   createHashtagDossier,
@@ -58,324 +48,194 @@ import {
   enrichPatentsAndResearch,
   enrichCompanyDossier
 } from "../tools/enhancedFundingTools";
-import { searchFiles } from "../tools/geminiFileSearch";
 
-type DelegationCtx = ToolCtx & { evaluationUserId?: string };
+// Import HITL tools
+import { askHuman } from "../tools/humanInputTools";
+import { externalOrchestratorTool } from "./tools/externalOrchestratorTools";
 
 export const DEFAULT_MODEL = "gpt-5-chat-latest";
 
-const pickUserId = (ctx: DelegationCtx) =>
-  (ctx.evaluationUserId as string | undefined) ?? ctx.userId;
-
-async function ensureThread(agent: Agent, ctx: DelegationCtx, threadId?: string) {
-  if (threadId) return threadId;
-  if (ctx.threadId) return ctx.threadId;
-  const { threadId: created } = await agent.createThread(ctx as any, {
-    userId: pickUserId(ctx),
-  });
-  return created;
-}
+// Note: Subagent definitions and delegation tools have been moved to:
+// - convex/fast_agents/subagents/document_subagent/documentAgent.ts
+// - convex/fast_agents/subagents/media_subagent/mediaAgent.ts
+// - convex/fast_agents/subagents/sec_subagent/secAgent.ts
+// - convex/fast_agents/subagents/openbb_subagent/openbbAgent.ts
+// - convex/fast_agents/subagents/entity_subagent/entityResearchAgent.ts
+// - convex/fast_agents/delegation/delegationTools.ts
 
 /**
- * Specialized document agent with a narrow toolset.
- */
-export const createDocumentAgent = (model: string) =>
-  new Agent(components.agent, {
-    name: "DocumentAgent",
-    languageModel: openai.chat(model),
-    textEmbeddingModel: openai.embedding("text-embedding-3-small"),
-    instructions: `You are a document analyst. Always:
-- Search for documents with findDocument
-- If the user wants to read/see/open content, immediately call getDocumentContent
-- When multiple docs are requested, call analyzeMultipleDocuments with all IDs
-- Return concise summaries with clear sources`,
-    tools: {
-      findDocument,
-      getDocumentContent,
-      analyzeDocument,
-      analyzeMultipleDocuments,
-      updateDocument,
-      createDocument,
-      generateEditProposals,
-      createDocumentFromAgentContentTool,
-      searchFiles,
-    },
-    stopWhen: stepCountIs(10),
-  });
-
-/**
- * Specialized media agent for image/video discovery.
- */
-export const createMediaAgent = (model: string) =>
-  new Agent(components.agent, {
-    name: "MediaAgent",
-    languageModel: openai.chat(model),
-    instructions: `You are a media specialist. Behaviors:
-- For videos or "find videos", ALWAYS call youtubeSearch first
-- For images or general media, call searchMedia and fall back to linkupSearch with includeImages=true if empty
-- Summaries must cite the source (internal library vs web)`,
-    tools: {
-      searchMedia,
-      analyzeMediaFile,
-      getMediaDetails,
-      listMediaFiles,
-      youtubeSearch,
-      linkupSearch,
-    },
-    stopWhen: stepCountIs(8),
-  });
-
-/**
- * Specialized SEC filings agent.
- */
-export const createSECAgent = (model: string) =>
-  new Agent(components.agent, {
-    name: "SECAgent",
-    languageModel: openai.chat(model),
-    instructions: `You are a filings specialist focused on EDGAR:
-- Use searchSecFilings for tickers or company names
-- Download filings when asked with downloadSecFiling
-- Include form types (10-K, 10-Q, 8-K) and a short rationale`,
-    tools: {
-      searchSecFilings,
-      downloadSecFiling,
-      getCompanyInfo,
-    },
-    stopWhen: stepCountIs(8),
-  });
-
-function buildDelegationTools(model: string) {
-  const documentAgent = createDocumentAgent(model);
-  const mediaAgent = createMediaAgent(model);
-  const secAgent = createSECAgent(model);
-
-  const delegateToDocumentAgent = createTool({
-    description:
-      "Delegate document search/reading/comparison to the DocumentAgent. It shares the current thread so history stays intact.",
-    args: z.object({
-      query: z.string().describe("What to find or analyze in documents"),
-      analysisType: z
-        .enum(["comparison", "synthesis", "aggregation", "themes", "relationships"])
-        .optional()
-        .describe("How to analyze multiple documents when relevant"),
-      threadId: z.string().optional().describe("Agent thread to reuse"),
-    }),
-    handler: async (ctx: DelegationCtx, args) => {
-      const threadId = await ensureThread(documentAgent, ctx, args.threadId);
-      const prompt = [
-        "DocumentAgent task:",
-        `Query: ${args.query}`,
-        args.analysisType ? `Analysis: ${args.analysisType}` : null,
-        "If user wants to read/see/open, call getDocumentContent right after findDocument.",
-        "Summarize with bullet points and include sources.",
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      const result = await documentAgent.generateText(
-        ctx as any,
-        { threadId, userId: pickUserId(ctx) },
-        { prompt, stopWhen: stepCountIs(8) },
-      );
-      const toolCalls = (await result.toolCalls) ?? [];
-
-      return {
-        delegate: "DocumentAgent",
-        threadId,
-        messageId: result.messageId,
-        text: result.text,
-        toolsUsed: toolCalls.map((call: any) => call.toolName),
-      };
-    },
-  });
-
-  const delegateToMediaAgent = createTool({
-    description:
-      "Delegate media and video requests to MediaAgent. Use for 'find videos', 'find images', or media analysis.",
-    args: z.object({
-      query: z.string().describe("Topic to search for media"),
-      mediaType: z.enum(["image", "video", "any"]).optional(),
-      threadId: z.string().optional(),
-    }),
-    handler: async (ctx: DelegationCtx, args) => {
-      const threadId = await ensureThread(mediaAgent, ctx, args.threadId);
-      const prompt = [
-        "MediaAgent task:",
-        `Query: ${args.query}`,
-        args.mediaType ? `MediaType: ${args.mediaType}` : null,
-        "For videos, always call youtubeSearch first.",
-        "If searchMedia returns nothing, immediately try linkupSearch with images.",
-        "Return a concise gallery-style summary.",
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      const result = await mediaAgent.generateText(
-        ctx as any,
-        { threadId, userId: pickUserId(ctx) },
-        { prompt, stopWhen: stepCountIs(8) },
-      );
-      const toolCalls = (await result.toolCalls) ?? [];
-
-      return {
-        delegate: "MediaAgent",
-        threadId,
-        messageId: result.messageId,
-        text: result.text,
-        toolsUsed: toolCalls.map((call: any) => call.toolName),
-      };
-    },
-  });
-
-  const delegateToSECAgent = createTool({
-    description:
-      "Delegate SEC filing lookups to SECAgent. Use for 10-K, 10-Q, 8-K or company filings.",
-    args: z.object({
-      query: z.string().describe("Ticker or company to search"),
-      formType: z.string().optional().describe("Specific form type like 10-K or 10-Q"),
-      threadId: z.string().optional(),
-    }),
-    handler: async (ctx: DelegationCtx, args) => {
-      const threadId = await ensureThread(secAgent, ctx, args.threadId);
-      const prompt = [
-        "SECAgent task:",
-        `Company/Ticker: ${args.query}`,
-        args.formType ? `Form type: ${args.formType}` : null,
-        "Use searchSecFilings first, downloadSecFiling if the user wants the file.",
-        "Return a short list of filings with form type and date.",
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      const result = await secAgent.generateText(
-        ctx as any,
-        { threadId, userId: pickUserId(ctx) },
-        { prompt, stopWhen: stepCountIs(6) },
-      );
-      const toolCalls = (await result.toolCalls) ?? [];
-
-      return {
-        delegate: "SECAgent",
-        threadId,
-        messageId: result.messageId,
-        text: result.text,
-        toolsUsed: toolCalls.map((call: any) => call.toolName),
-      };
-    },
-  });
-
-  return { delegateToDocumentAgent, delegateToMediaAgent, delegateToSECAgent };
-}
-
-/**
- * Create a coordinator agent with full tool access
+ * Create a Deep Agents 2.0 Coordinator Agent
  *
- * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-4o-mini")
- * @returns Agent instance configured with all tools
+ * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-5-chat-latest")
+ * @returns Orchestrator agent configured with delegation and planning tools
  */
 export const createCoordinatorAgent = (model: string) => new Agent(components.agent, {
   name: "CoordinatorAgent",
   languageModel: openai.chat(model),
-  textEmbeddingModel: openai.embedding("text-embedding-3-small"), // For vector search
-  instructions: `You are a helpful AI assistant coordinator with access to the user's documents, tasks, events, and media files.
+  textEmbeddingModel: openai.embedding("text-embedding-3-small"),
+  instructions: `You are the Coordinator Agent for NodeBench AI, an orchestrator in a Deep Agents 2.0 architecture.
 
-Delegation rules (use these tools first):
-- delegateToDocumentAgent for any 'find/read/open/show document', comparisons, or multi-doc synthesis
-- delegateToMediaAgent for videos or media discovery; always rely on it for YouTube/video requests
-- delegateToSECAgent for SEC filings (10-K, 10-Q, 8-K) or company filing research
-These delegates share the same thread. Call them before lower-level tools.
+# ARCHITECTURE OVERVIEW
 
-You can help with:
-- Finding and opening documents by title or content
-- Analyzing and summarizing documents
-- Creating and editing documents
-- Searching for images and videos in the user's files
-- Managing tasks and calendar events
-- Organizing files in folders
-- Searching the web for current information
-- Creating flowcharts and diagrams using Mermaid syntax
-- Searching and downloading SEC EDGAR filings (10-K, 10-Q, 8-K, etc.)
-- Looking up company information from SEC databases
-- Researching funding announcements and company information
-- Creating hashtag dossiers for topic collections
+You are the top-level orchestrator that delegates to specialized subagents. You have access to:
 
-CRITICAL BEHAVIOR RULES:
-1. BE PROACTIVE - Don't ask for clarification when you can take reasonable action
-2. USE CONTEXT - If a query is ambiguous, make a reasonable assumption and act
-3. COMPLETE WORKFLOWS - When a user asks for multiple actions, complete ALL of them
-4. PROVIDE SOURCES - When using multiple documents or web sources, cite them clearly
-5. HANDLE LONG CONTEXTS - For multi-document analysis, retrieve and analyze all relevant documents
-6. TAKE ACTION IMMEDIATELY - When asked to create, update, or modify something, DO IT without asking for confirmation
-7. COMPLETE DOCUMENT READING - When user asks to "show", "read", "open", or "display" document content:
-   - First call findDocument to get the document ID
-   - Then IMMEDIATELY call getDocumentContent with that ID (use the first result if multiple documents found)
-   - DO NOT ask which version to open - just open the first one
-8. MULTI-DOCUMENT CONTEXT - When user has selected multiple documents:
-   - Use analyzeMultipleDocuments with ALL provided document IDs
-   - Choose appropriate analysisType: "comparison", "synthesis", "aggregation", "themes", or "relationships"
-   - Provide comprehensive analysis that leverages all documents together
+1. **Delegation Tools** - Delegate to specialist agents (including parallel execution)
+2. **Planning Tools** - Create and manage explicit task plans
+3. **Memory Tools** - Store and retrieve intermediate results
+4. **Human Tools** - Ask for clarification or approval
+5. **Direct Tools** - For simple operations that don't need delegation
 
-Always provide clear, helpful responses and confirm actions you take.`,
+# SUBAGENT ROSTER
 
-  // Explicitly pass all tools to the agent
+You can delegate to these specialized agents:
+
+## EntityResearchAgent
+**Use for**: Deep research on companies, people, and topics.
+**Tools**: enrichCompanyDossier, enrichFounderInfo, searchHashtag
+**When to delegate**: "Research OpenAI", "Who is Sam Altman?", "Tell me about #AI"
+
+## DocumentAgent
+**Use for**: Document search, reading, creation, editing, multi-document analysis
+**Tools**: findDocument, getDocumentContent, analyzeDocument
+**When to delegate**: Any document-related operation
+
+## MediaAgent
+**Use for**: YouTube videos, web search, images, media discovery
+**Tools**: youtubeSearch, linkupSearch, searchMedia
+**When to delegate**: Finding videos, images, or web content
+
+## SECAgent
+**Use for**: SEC filings, company research, regulatory documents
+**Tools**: searchSecFilings, downloadSecFiling
+**When to delegate**: Looking up 10-K, 10-Q, 8-K filings
+
+## OpenBBAgent
+**Use for**: Financial data, stock prices, crypto, economic indicators
+**Tools**: Stock prices, crypto data, GDP/employment
+**When to delegate**: Financial market data, stock research
+
+# DELEGATION STRATEGY
+
+## When to Delegate
+
+**ALWAYS delegate** for these operations:
+- Deep Entity/Company Research → delegateToEntityResearchAgent
+- Document operations → delegateToDocumentAgent
+- Media/video discovery → delegateToMediaAgent
+- SEC filings → delegateToSECAgent
+- Financial data → delegateToOpenBBAgent
+
+**Handle directly** for these operations:
+- Simple task/event management
+- Web search when not media-focused (linkupSearch)
+
+## Parallel Delegation
+
+Use **parallelDelegate** when you need to run multiple agents at once.
+Example: "Compare Tesla and Rivian" -> Run EntityResearchAgent for both simultaneously.
+Example: "Get Apple stock price and recent news" -> Run OpenBBAgent and MediaAgent simultaneously.
+
+## Human-in-the-Loop
+
+Use **askHuman** when:
+- The request is ambiguous (e.g., "Send the email" - to whom?)
+- You need approval for a critical action
+- You need more context to proceed
+
+# EXTERNAL ORCHESTRATOR
+
+Use **externalOrchestratorTool** when you need an outside orchestrator (OpenAI/Gemini) to reason or plan with additional context the caller provides.
+- Provide a concise instruction; include any relevant plan/memory context in the tool args.
+- Reach for this when vendor-specific features (assistants/runs) or a second opinion would help.
+
+# PLANNING WORKFLOW
+
+Use explicit planning for complex multi-step tasks:
+
+**When to create a plan**:
+- User asks to plan something
+- Task requires 3+ steps
+- Multiple agents needed
+- Long-running workflow
+
+# MEMORY WORKFLOW
+
+Use persistent memory to avoid context window overflow:
+- Store intermediate results with writeAgentMemory
+- Retrieve with readAgentMemory
+
+# CRITICAL BEHAVIOR RULES
+
+1. **DELEGATE FIRST** - Always check if a subagent can handle the task before using direct tools
+2. **USE PARALLELISM** - If tasks are independent, use parallelDelegate to save time
+3. **ASK FOR HELP** - If unsure, use askHuman
+4. **COMPLETE WORKFLOWS** - Finish all steps of multi-step tasks
+5. **USE PLANNING** - Create explicit plans for complex tasks
+6. **PROVIDE SOURCES** - Always cite which agent or tool provided information
+
+# RESPONSE FORMAT
+
+Structure your responses clearly:
+- "I asked [AgentName] to [task]"
+- "I'm running [Agent1] and [Agent2] in parallel..."
+- Present the agent's findings
+- Add your own synthesis if needed
+`,
+
+  // Tool registry organized by category
   tools: {
+    // === DELEGATION TOOLS (Deep Agents 2.0) ===
+    // These are the primary tools - delegate to specialists first
     ...buildDelegationTools(model),
 
-    // Web search
+    // === HUMAN TOOLS ===
+    askHuman,
+
+    // === PLANNING TOOLS (MCP: core_agent_server) ===
+    createPlan,
+    updatePlanStep,
+    getPlan,
+
+    // === MEMORY TOOLS (MCP: core_agent_server) ===
+    writeAgentMemory,
+    readAgentMemory,
+    listAgentMemory,
+    deleteAgentMemory,
+
+    // === DIRECT ACCESS TOOLS ===
+    // Use these only when delegation is not appropriate
+
+    // Web search (use MediaAgent for media-focused searches)
     linkupSearch,
     youtubeSearch,
 
-    // Document operations
-    findDocument,
-    getDocumentContent,
-    analyzeDocument,
-    analyzeMultipleDocuments,
-    updateDocument,
-    createDocument,
-    generateEditProposals,
-    createDocumentFromAgentContentTool,
-
-    // Media operations
-    searchMedia,
-    analyzeMediaFile,
-    getMediaDetails,
-    listMediaFiles,
+    // External orchestrators (OpenAI / Gemini)
+    externalOrchestratorTool,
 
     // Data access (tasks, events, folders)
-    listTasks,
-    createTask,
-    updateTask,
-    listEvents,
-    createEvent,
-    getFolderContents,
+    ...dataAccessTools,
 
-    // SEC filings
-    searchSecFilings,
-    downloadSecFiling,
-    getCompanyInfo,
-
-    // Hashtag and dossier tools
+    // Hashtag and dossier tools (Legacy - prefer EntityResearchAgent)
     searchHashtag,
     createHashtagDossier,
     getOrCreateHashtagDossier,
 
-    // Funding research tools
+    // Funding research tools (Legacy - prefer EntityResearchAgent)
     searchTodaysFunding,
     enrichFounderInfo,
     enrichInvestmentThesis,
     enrichPatentsAndResearch,
     enrichCompanyDossier,
-
-    // File search
-    searchFiles,
   },
 
-  // Allow up to 15 steps for complex multi-tool workflows
-  stopWhen: stepCountIs(15),
+  // Allow up to 25 steps for complex orchestration workflows
+  stopWhen: stepCountIs(25),
+});
 
-  // Optional: Add usage tracking for billing/analytics
-  // usageHandler: async (ctx, args) => {
-  //   const { usage, model, provider, agentName, threadId, userId } = args;
-  //   // Log or save usage data
-  // },
+/**
+ * Export the coordinator agent as an action for workflow usage.
+ * This allows the workflow to call the agent as a durable step.
+ */
+export const runCoordinatorAgent = createCoordinatorAgent(DEFAULT_MODEL).asTextAction({
+  stopWhen: stepCountIs(25),
 });

@@ -2,6 +2,7 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, mutation, query } from "./_generated/server";
 import { internal, api } from "./_generated/api";
+import { discoverToolsWithSdk } from "./lib/mcpClient";
 import { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -495,39 +496,31 @@ export const connectToServer = internalAction({
   returns: v.null(),
   handler: async (ctx, args) => {
     const server = await ctx.runQuery(api.mcp.getMcpServerById, { serverId: args.serverId });
-    if (!server || !server.isEnabled) {
+    if (!server || server.isEnabled === false) {
       return null;
     }
 
     try {
-      // Update status to connecting
       await ctx.runMutation(internal.mcp.updateServerStatus, {
         serverId: args.serverId,
         status: "connecting",
         errorMessage: undefined,
       });
 
-      // This is where we would implement the actual MCP connection logic
-      // For now, we'll simulate a successful connection
-      // In a real implementation, you would:
-      // 1. Create the appropriate transport (stdio, SSE, websocket)
-      // 2. Connect the MCP client
-      // 3. List available tools
-      // 4. Store the tools in the database
+      // Discover tools from the remote MCP server
+      if (server.url) {
+        await ctx.runAction(internal.mcp.discoverAndStoreTools, {
+          serverId: args.serverId,
+          serverUrl: server.url,
+        });
+      }
 
-      // Simulate connection delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Update status to connected
       await ctx.runMutation(internal.mcp.updateServerStatus, {
         serverId: args.serverId,
         status: "connected",
         errorMessage: undefined,
         lastConnected: Date.now(),
       });
-
-      // For demo purposes, add some sample tools based on server name
-      await ctx.runMutation(internal.mcp.addSampleTools, { serverId: args.serverId });
 
     } catch (error) {
       console.error(`Failed to connect to MCP server ${args.serverId}:`, error);
@@ -594,16 +587,12 @@ export const discoverAndStoreTools = internalAction({
   returns: v.null(),
   handler: async (ctx, { serverId, serverUrl }) => {
     try {
-      // Legacy function - aiAgents module doesn't exist
-      // MCP tool discovery not implemented in new Convex Agent system
-      // const tools = await ctx.runAction(internal.aiAgents.discoverMcpTools, {
-      //   serverUrl
-      // });
-      const tools: any[] = [];
-      
-      // Store each discovered tool and trigger adaptive learning
+      const tools = await discoverToolsWithSdk(serverUrl);
+
+      // Mark existing tools unavailable before refresh
+      await ctx.runMutation(internal.mcp.markToolsUnavailable, { serverId });
+
       const storedToolIds: Id<"mcpTools">[] = [];
-      
       for (const tool of tools) {
         const toolId = await ctx.runMutation(internal.mcp.storeMcpTool, {
           serverId,
@@ -612,17 +601,13 @@ export const discoverAndStoreTools = internalAction({
           inputSchema: tool.inputSchema || {
             type: "object",
             properties: {},
-            additionalProperties: false
+            additionalProperties: false,
           },
         });
-        
-        if (toolId) {
-          storedToolIds.push(toolId);
-        }
+        if (toolId) storedToolIds.push(toolId);
       }
-      
-      console.log(`[MCP] Stored ${tools.length} tools for server ${serverId}`);
-      // Adaptive learning disabled: Only discovery & storage are performed.
+
+      console.log(`[MCP] Stored ${storedToolIds.length} tools for server ${serverId}`);
     } catch (error) {
       console.error(`[MCP] Failed to discover tools for server ${serverId}:`, error);
     }
@@ -643,38 +628,106 @@ export const storeMcpTool = internalMutation({
   },
   returns: v.id("mcpTools"),
   handler: async (ctx, args) => {
-    // Check if tool already exists
     const existing = await ctx.db
       .query("mcpTools")
       .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
       .filter((q) => q.eq(q.field("name"), args.name))
       .first();
-    
-    if (!existing) {
-      const newId = await ctx.db.insert("mcpTools", {
-        serverId: args.serverId,
-        name: args.name,
-        description: args.description,
-        schema: args.inputSchema,
-        isAvailable: true,
-        isEnabled: true,
-        usageCount: 0,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-      console.log(`[MCP] Stored tool: ${args.name}`);
-      return newId;
-    } else {
-      // Update existing tool
+
+    const now = Date.now();
+
+    if (existing) {
       await ctx.db.patch(existing._id, {
         description: args.description,
         schema: args.inputSchema,
         isAvailable: true,
-        updatedAt: Date.now(),
+        updatedAt: now,
       });
       console.log(`[MCP] Updated tool: ${args.name}`);
       return existing._id;
     }
+
+    const newId = await ctx.db.insert("mcpTools", {
+      serverId: args.serverId,
+      name: args.name,
+      description: args.description,
+      schema: args.inputSchema,
+      isAvailable: true,
+      isEnabled: true,
+      usageCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+    console.log(`[MCP] Stored tool: ${args.name}`);
+    return newId;
+  },
+});
+
+export const incrementMcpUsage = internalMutation({
+  args: {
+    userId: v.optional(v.id("users")),
+    date: v.string(), // YYYY-MM-DD
+    limit: v.number(),
+  },
+  returns: v.object({ allowed: v.boolean(), count: v.number() }),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("dailyUsage")
+      .withIndex("by_user_provider_date", (q) => q.eq("userId", args.userId ?? undefined).eq("provider", "mcp").eq("date", args.date))
+      .first();
+
+    const now = Date.now();
+    if (!existing) {
+      await ctx.db.insert("dailyUsage", {
+        userId: args.userId ?? undefined,
+        provider: "mcp",
+        date: args.date,
+        count: 1,
+        limit: args.limit,
+        updatedAt: now,
+      });
+      return { allowed: true, count: 1 };
+    }
+
+    const newCount = (existing.count ?? 0) + 1;
+    if (existing.limit && newCount > existing.limit && existing.limit <= args.limit) {
+      return { allowed: false, count: existing.count ?? 0 };
+    }
+
+    await ctx.db.patch(existing._id, {
+      count: newCount,
+      limit: args.limit,
+      updatedAt: now,
+    });
+    return { allowed: newCount <= args.limit, count: newCount };
+  },
+});
+
+export const getToolByName = query({
+  args: {
+    serverId: v.id("mcpServers"),
+    name: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("mcpTools"),
+      serverId: v.id("mcpServers"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      schema: v.optional(v.any()),
+      isAvailable: v.boolean(),
+      isEnabled: v.optional(v.boolean()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("mcpTools")
+      .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
+      .filter((q) => q.eq(q.field("name"), args.name))
+      .first();
   },
 });
 

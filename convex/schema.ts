@@ -346,7 +346,24 @@ const mcpServers = defineTable({
   transport: v.optional(v.string()),        // transport type ("sse", "http", etc.)
 })
   .index("by_user", ["userId"])
-  .index("by_name", ["name"]);
+  .index("by_name", ["name"])
+  .index("by_user_name", ["userId", "name"]);
+
+const mcpPlans = defineTable({
+  planId: v.string(),
+  goal: v.string(),
+  steps: v.any(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+}).index("by_planId", ["planId"]);
+
+const mcpMemoryEntries = defineTable({
+  key: v.string(),
+  content: v.string(),
+  metadata: v.optional(v.any()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+}).index("by_key", ["key"]);
 
 /* ------------------------------------------------------------------ */
 /* AGENT RUNS - streaming progress for AI chat                        */
@@ -375,7 +392,8 @@ const agentRuns = defineTable({
 })
   .index("by_user", ["userId"])
   .index("by_thread", ["threadId"])
-  .index("by_createdAt", ["createdAt"]);
+  .index("by_createdAt", ["createdAt"])
+  .index("by_user_createdAt", ["userId", "createdAt"]);
 
 const agentRunEvents = defineTable({
   runId: v.id("agentRuns"),
@@ -409,6 +427,7 @@ const chatThreadsStream = defineTable({
   .index("by_user", ["userId"])
   .index("by_user_pinned", ["userId", "pinned"])
   .index("by_updatedAt", ["updatedAt"])
+  .index("by_user_updatedAt", ["userId", "updatedAt"])
   .index("by_agentThreadId", ["agentThreadId"]);
 
 const chatMessagesStream = defineTable({
@@ -477,7 +496,8 @@ const mcpTools = defineTable({
 })
   .index("by_server", ["serverId"])
   .index("by_server_available", ["serverId", "isAvailable"])
-  .index("by_name", ["name"]);
+  .index("by_name", ["name"])
+  .index("by_server_name", ["serverId", "name"]);
 
 /* ------------------------------------------------------------------ */
 /* MCP SESSIONS - Active MCP client sessions                          */
@@ -1081,6 +1101,8 @@ export default defineSchema({
   mcpServers,
   mcpTools,
   mcpSessions,
+  mcpPlans,
+  mcpMemoryEntries,
   agentRuns,
   agentRunEvents,
   fileSearchStores,
@@ -1330,5 +1352,39 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_user", ["userId"])
     .index("by_sent_at", ["sentAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* AGENT PLANS - Task plans created by Deep Agents                    */
+  /* ------------------------------------------------------------------ */
+  agentPlans: defineTable({
+    userId: v.id("users"),
+    goal: v.string(),
+    steps: v.array(v.object({
+      description: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("in_progress"),
+        v.literal("completed")
+      ),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_updated", ["userId", "updatedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* AGENT MEMORY - Persistent memory for Deep Agents                   */
+  /* ------------------------------------------------------------------ */
+  agentMemory: defineTable({
+    userId: v.id("users"),
+    key: v.string(),
+    content: v.string(),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_key", ["userId", "key"]),
 
 });

@@ -22,11 +22,28 @@ export default function LiveDossierDocument({ threadId, isLoading = false }: { t
     );
 
     const latestAssistantMessage = useMemo(() => {
-        if (!uiMessages || uiMessages.length === 0) return null;
-        const latest = [...uiMessages]
-            .reverse()
-            .find((m: any) => (m.role ?? m?.message?.role) === "assistant");
-        return latest || null;
+        try {
+            if (!uiMessages || uiMessages.length === 0) return null;
+
+            // Optimized: Use reverse loop instead of array copy
+            for (let i = uiMessages.length - 1; i >= 0; i--) {
+                const m = uiMessages[i];
+                if (!m) continue; // Defensive null check
+
+                const isAssistant = (m.role ?? m?.message?.role) === "assistant";
+                if (!isAssistant) continue;
+
+                // Safe text check with null guards
+                const hasText = (typeof m.text === "string" && m.text.trim().length > 0) ||
+                    (Array.isArray(m.content) && m.content.some((c: any) => c?.text?.trim?.()));
+
+                if (hasText) return m;
+            }
+            return null;
+        } catch (error) {
+            console.error("Error finding latest assistant message:", error);
+            return null;
+        }
     }, [uiMessages]);
 
     const content = useMemo(() => {

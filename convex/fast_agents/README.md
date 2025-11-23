@@ -1,17 +1,39 @@
-# Fast Agents - Convex Agent Implementation
+# Fast Agents - Deep Agents 2.0 Architecture
 
-This directory contains the Convex Agent implementation for NodeBench AI, following the latest [Convex Agent documentation](https://docs.convex.dev/agents).
+This directory contains the Deep Agents 2.0 implementation for NodeBench AI, following the [Deep Agents 2.0 architecture](https://www.philschmid.de/agents-2.0-deep-agents) and [Convex Agent documentation](https://docs.convex.dev/agents).
 
-## Architecture
+## 🏗️ Architecture
 
-The Fast Agents system uses the `@convex-dev/agent` component to provide AI-powered assistance with full access to the user's documents, tasks, events, and media files.
+The Fast Agents system uses a **hierarchical delegation pattern** with four pillars:
+
+1. **Explicit Planning** - Task plans as tool-accessible documents
+2. **Hierarchical Delegation** - Coordinator → Specialized subagents
+3. **Persistent Memory** - External storage for intermediate results
+4. **Extreme Context Engineering** - Detailed orchestrator instructions
+
+### Directory Structure
+
+```
+fast_agents/
+├── coordinatorAgent.ts          # Deep Agents 2.0 orchestrator
+├── prompts.ts                    # Shared prompt templates
+├── delegation/                   # Delegation infrastructure
+│   ├── delegationHelpers.ts     # Thread management, response formatting
+│   ├── delegationTools.ts       # Delegation tool factory
+│   └── README.md
+└── subagents/                    # Specialized sub-agents
+    ├── document_subagent/        # Document operations
+    ├── media_subagent/           # Media discovery
+    ├── sec_subagent/             # SEC filings
+    └── openbb_subagent/          # Financial data
+```
 
 ### Key Files
 
-- **`coordinatorAgent.ts`** - Main agent with full tool access for complex multi-step workflows
-- **`tools.ts`** - Tool capability reference (documentation only)
+- **`coordinatorAgent.ts`** - Deep Agents 2.0 orchestrator with delegation, planning, and memory tools
+- **`delegation/`** - Delegation infrastructure for hierarchical agent coordination
+- **`subagents/`** - Specialized agents with domain-specific tools
 - **`prompts.ts`** - Shared prompt templates
-- **Other agent files** - Specialized agents for specific domains (context, editing, validation, orchestration)
 
 ## Agent Configuration
 
@@ -38,87 +60,101 @@ const agent = new Agent(components.agent, {
 });
 ```
 
-## Available Tools
+## 🛠️ Available Tools
 
-The coordinator agent has access to all tools defined in `convex/tools/`:
+The coordinator agent has access to three categories of tools:
 
-### Document Operations
-- `findDocument` - Search for documents by title or content
-- `getDocumentContent` - Read document content
-- `analyzeDocument` - Analyze a single document
-- `analyzeMultipleDocuments` - Compare/synthesize multiple documents
-- `updateDocument` - Update document content
-- `createDocument` - Create new documents
-- `generateEditProposals` - Generate edit suggestions
-- `createDocumentFromAgentContentTool` - Persist agent-generated content
+### 1. Delegation Tools (Primary)
+- `delegateToDocumentAgent` - Delegate document operations
+- `delegateToMediaAgent` - Delegate media discovery
+- `delegateToSECAgent` - Delegate SEC filings research
+- `delegateToOpenBBAgent` - Delegate financial data queries
 
-### Media Operations
-- `searchMedia` - Search for images and videos
-- `analyzeMediaFile` - Analyze media files
-- `getMediaDetails` - Get media metadata
-- `listMediaFiles` - List all media files
+### 2. Planning & Memory Tools (MCP)
+**Planning:**
+- `createPlan` - Create explicit task plan
+- `updatePlanStep` - Update plan step status
+- `getPlan` - Retrieve plan
 
-### Data Access
-- `listTasks` - List tasks with filtering
-- `createTask` - Create new tasks
-- `updateTask` - Update existing tasks
-- `listEvents` - List calendar events
-- `createEvent` - Create calendar events
-- `getFolderContents` - Browse folder structure
+**Memory:**
+- `writeAgentMemory` - Store intermediate results
+- `readAgentMemory` - Retrieve stored data
+- `listAgentMemory` - List all memory entries
+- `deleteAgentMemory` - Clean up memory
 
-### Web Search
-- `linkupSearch` - Search the web using LinkUp API
-- `youtubeSearch` - Search YouTube videos
+### 3. Direct Access Tools
+**Web Search:**
+- `linkupSearch` - Web search
+- `youtubeSearch` - YouTube search
 
-### SEC Filings
-- `searchSecFilings` - Search SEC EDGAR filings
-- `downloadSecFiling` - Download SEC documents
-- `getCompanyInfo` - Get company information
+**Data Access:**
+- `listTasks`, `createTask`, `updateTask`
+- `listEvents`, `createEvent`
+- `getFolderContents`
 
-### Hashtag & Dossiers
-- `searchHashtag` - Hybrid search for hashtag keywords
-- `createHashtagDossier` - Create topic collections
-- `getOrCreateHashtagDossier` - Get or create dossier
+**Hashtags & Dossiers:**
+- `searchHashtag`, `createHashtagDossier`, `getOrCreateHashtagDossier`
 
-### Funding Research
-- `searchTodaysFunding` - Search funding announcements
-- `enrichFounderInfo` - Research founder backgrounds
-- `enrichInvestmentThesis` - Research investment rationale
-- `enrichPatentsAndResearch` - Search patents and papers
-- `enrichCompanyDossier` - Full company enrichment workflow
+**Funding Research:**
+- `searchTodaysFunding`, `enrichFounderInfo`, `enrichInvestmentThesis`, `enrichPatentsAndResearch`, `enrichCompanyDossier`
 
-## Usage in fastAgentPanelStreaming.ts
+### Subagent Tools (Accessed via Delegation)
 
-The main streaming implementation uses the coordinator agent:
+Each subagent has its own specialized tools. See `subagents/*/README.md` for details.
+
+## 🚀 Usage
+
+### Basic Usage
 
 ```typescript
 import { createCoordinatorAgent } from "./fast_agents/coordinatorAgent";
 
-// Create agent
-const agent = createCoordinatorAgent(args.model);
+// Create the orchestrator
+const coordinator = createCoordinatorAgent("gpt-4o");
 
-// Stream response
-const result = await agent.streamText(
+// The coordinator automatically delegates to subagents
+const result = await coordinator.generateText(
   ctx,
-  { threadId: thread._id },
-  {
-    prompt: args.prompt,
-    userId: args.userId,
-  }
+  { threadId, userId },
+  { prompt: "Find documents about revenue" }
 );
 ```
 
-## Best Practices
+### Streaming Usage
 
-1. **Explicit Tool Registration** - Always pass tools explicitly to the agent, don't rely on global registration
-2. **Text Embedding Model** - Include `textEmbeddingModel` for vector search capabilities
-3. **Step Limits** - Use `stopWhen: stepCountIs(n)` to limit reasoning steps (15 is good for complex workflows)
-4. **Usage Tracking** - Implement `usageHandler` for billing and analytics
-5. **Async Message Pattern** - For non-streaming, use `saveMessage()` then `generateText()` with `promptMessageId`
+```typescript
+// In fastAgentPanelStreaming.ts
+const agent = createCoordinatorAgent(args.model);
 
-## References
+const result = await agent.streamText(
+  ctx,
+  { threadId: thread._id },
+  { prompt: args.prompt, userId: args.userId }
+);
+```
 
-- [Convex Agent Documentation](https://docs.convex.dev/agents)
-- [Agent Usage Patterns](https://docs.convex.dev/agents/agent-usage)
-- [Convex Agent Component](https://www.convex.dev/components/agent)
+## 📚 Documentation
+
+For detailed information, see:
+
+- **[Quick Start Guide](../../QUICK_START_GUIDE.md)** - Getting started with Deep Agents 2.0
+- **[Implementation Summary](../../IMPLEMENTATION_SUMMARY.md)** - Complete implementation details
+- **[Changelog](../../CHANGELOG_2025-11-22_DEEP_AGENTS_MCP_ARCHITECTURE.md)** - Full architecture documentation
+- **[Subagents README](./subagents/README.md)** - Subagent architecture
+- **[Delegation README](./delegation/README.md)** - Delegation infrastructure
+
+## 🎯 Best Practices
+
+1. **Delegate First** - Always check if a subagent can handle the task before using direct tools
+2. **Use Planning** - Create explicit plans for complex multi-step tasks (3+ steps)
+3. **Use Memory** - Store intermediate results to avoid context overflow
+4. **Track Progress** - Update plan steps as you complete them
+5. **Synthesize Results** - When using multiple agents, combine their outputs into a coherent answer
+6. **Step Limits** - Coordinator uses 25 steps for orchestration overhead; subagents use 8-10 steps
+
+## 📖 References
+
+- [Deep Agents 2.0 Article](https://www.philschmid.de/agents-2.0-deep-agents) - Architecture inspiration
+- [Convex Agent Documentation](https://docs.convex.dev/agents) - Convex Agent framework
+- [Convex Agent Component](https://www.convex.dev/components/agent) - Agent component
 
