@@ -7,24 +7,24 @@ import { authTables } from "@convex-dev/auth/server";
 /* 1.  DOCUMENTS  –  page/board/post level metadata                    */
 /* ------------------------------------------------------------------ */
 const documents = defineTable({
-  title:       v.string(),
-  parentId:   v.optional(v.id("documents")),  // hierarchy
-  isPublic:    v.boolean(),
+  title: v.string(),
+  parentId: v.optional(v.id("documents")),  // hierarchy
+  isPublic: v.boolean(),
   // When true, public viewers may also edit (used by ProseMirror + UI to toggle read-only)
   allowPublicEdit: v.optional(v.boolean()),
-  createdBy:   v.id("users"),
+  createdBy: v.id("users"),
   lastEditedBy: v.optional(v.id("users")),    // who last edited this document
-  coverImage:  v.optional(v.id("_storage")),
+  coverImage: v.optional(v.id("_storage")),
   // LEGACY: holds ProseMirror JSON blob; retained temporarily for migration
-  content:     v.optional(v.string()),
-  summary:    v.optional(v.string()),
+  content: v.optional(v.string()),
+  summary: v.optional(v.string()),
 
-  icon:        v.optional(v.string()),
-  isArchived:  v.optional(v.boolean()),
-  isFavorite:  v.optional(v.boolean()),
+  icon: v.optional(v.string()),
+  isArchived: v.optional(v.boolean()),
+  isFavorite: v.optional(v.boolean()),
   publishedAt: v.optional(v.number()),        // ms since epoch
   /** points at the top GraphNode that owns the editor view */
-  rootNodeId:  v.optional(v.id("nodes")),
+  rootNodeId: v.optional(v.id("nodes")),
   lastModified: v.optional(v.number()),       // ms since epoch - when document was last updated
   // Optional: associate a document with a calendar day (local midnight ms)
   agendaDate: v.optional(v.number()),
@@ -45,9 +45,9 @@ const documents = defineTable({
       v.literal("dossier")
     )
   ), // "text" (default) | "file" | "timeline" | "dossier"
-  fileId:      v.optional(v.id("files")),     // reference to files table for file documents
-  fileType:    v.optional(v.string()),        // "csv", "pdf", "image", etc. for file documents
-  mimeType:    v.optional(v.string()),        // MIME type for file documents
+  fileId: v.optional(v.id("files")),     // reference to files table for file documents
+  fileType: v.optional(v.string()),        // "csv", "pdf", "image", etc. for file documents
+  mimeType: v.optional(v.string()),        // MIME type for file documents
 
   // RESEARCH DOSSIER SUPPORT
   dossierType: v.optional(
@@ -58,7 +58,7 @@ const documents = defineTable({
     )
   ),
   parentDossierId: v.optional(v.id("documents")),  // Links media assets to primary dossier
-  chatThreadId:    v.optional(v.string()),         // Source chat thread (Agent component uses string IDs)
+  chatThreadId: v.optional(v.string()),         // Source chat thread (Agent component uses string IDs)
   assetMetadata: v.optional(v.object({
     assetType: v.union(
       v.literal("image"),
@@ -69,20 +69,20 @@ const documents = defineTable({
       v.literal("news"),
       v.literal("file")
     ),
-    sourceUrl:     v.string(),                     // Original URL of the asset
-    thumbnailUrl:  v.optional(v.string()),         // Thumbnail/preview URL
-    extractedAt:   v.number(),                     // Timestamp when found in chat
-    toolName:      v.optional(v.string()),         // Which tool found this asset
-    metadata:      v.optional(v.any()),            // Additional metadata (title, description, etc.)
+    sourceUrl: v.string(),                     // Original URL of the asset
+    thumbnailUrl: v.optional(v.string()),         // Thumbnail/preview URL
+    extractedAt: v.number(),                     // Timestamp when found in chat
+    toolName: v.optional(v.string()),         // Which tool found this asset
+    metadata: v.optional(v.any()),            // Additional metadata (title, description, etc.)
   })),
   // Idempotency key for creation (threadId + title + content hash)
   creationKey: v.optional(v.string()),
 
 })
-  .index("by_user",           ["createdBy"])
-  .index("by_user_archived",  ["createdBy", "isArchived"])
-  .index("by_parent",         ["parentId"])
-  .index("by_public",         ["isPublic"])
+  .index("by_user", ["createdBy"])
+  .index("by_user_archived", ["createdBy", "isArchived"])
+  .index("by_parent", ["parentId"])
+  .index("by_public", ["isPublic"])
   // For calendar integration: query notes by day per-user
   .index("by_user_agendaDate", ["createdBy", "agendaDate"])
   // Fast idempotency lookup
@@ -90,10 +90,10 @@ const documents = defineTable({
   // For dossier pattern: query linked assets by parent dossier
   .index("by_parent_dossier", ["parentDossierId"])
   // For dossier pattern: query all documents from a chat thread
-  .index("by_chat_thread",    ["chatThreadId"])
+  .index("by_chat_thread", ["chatThreadId"])
 
   .searchIndex("search_title", {
-    searchField:  "title",
+    searchField: "title",
     filterFields: ["isPublic", "createdBy", "isArchived"],
   });
 
@@ -101,23 +101,23 @@ const documents = defineTable({
 /* 2.  NODES  –  one row per ProseMirror block (GraphNode)             */
 /* ------------------------------------------------------------------ */
 const nodes = defineTable({
-  documentId:    v.id("documents"),           // which doc/board it belongs to
-  parentId:      v.optional(v.id("nodes")),   // null ⇒ root
-  order:         v.number(),                  // sibling ordering
-  type:          v.string(),                  // "paragraph" | "heading" | …
-  text:          v.optional(v.string()),      // plain text (for search)
-  json:          v.optional(v.any()),         // full PM node as JSON
-  authorId:      v.id("users"),               // who created this node
-  lastEditedBy:  v.optional(v.id("users")),   // who last edited this node
-  createdAt:     v.number(),
-  updatedAt:     v.number(),
-  isUserNode:    v.optional(v.boolean()),     // flags for mention logic
+  documentId: v.id("documents"),           // which doc/board it belongs to
+  parentId: v.optional(v.id("nodes")),   // null ⇒ root
+  order: v.number(),                  // sibling ordering
+  type: v.string(),                  // "paragraph" | "heading" | …
+  text: v.optional(v.string()),      // plain text (for search)
+  json: v.optional(v.any()),         // full PM node as JSON
+  authorId: v.id("users"),               // who created this node
+  lastEditedBy: v.optional(v.id("users")),   // who last edited this node
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  isUserNode: v.optional(v.boolean()),     // flags for mention logic
 })
   .index("by_document", ["documentId", "order"])
-  .index("by_parent",   ["parentId",  "order"])
-  .index("by_updated",  ["updatedAt"])
+  .index("by_parent", ["parentId", "order"])
+  .index("by_updated", ["updatedAt"])
   .searchIndex("search_text", {
-    searchField:  "text",
+    searchField: "text",
     filterFields: ["documentId", "authorId"],
   });
 
@@ -125,22 +125,22 @@ const nodes = defineTable({
 /* 3.  RELATIONS  –  arbitrary graph edges (“child”, “relatedTo”… )    */
 /* ------------------------------------------------------------------ */
 const relations = defineTable({
-  from:           v.id("nodes"),
-  to:             v.id("nodes"),
+  from: v.id("nodes"),
+  to: v.id("nodes"),
   relationTypeId: v.string(),                 // store the string id, faster than join
-  order:          v.optional(v.number()),     // for ordered children
-  createdBy:      v.id("users"),
-  createdAt:      v.number(),
+  order: v.optional(v.number()),     // for ordered children
+  createdBy: v.id("users"),
+  createdAt: v.number(),
 })
   .index("by_from", ["from"])
-  .index("by_to",   ["to"])
+  .index("by_to", ["to"])
   .index("by_type", ["relationTypeId"]);
 
 /* ------------------------------------------------------------------ */
 /* 4.  RELATION TYPES  –  mostly static, but editable in UI            */
 /* ------------------------------------------------------------------ */
 const relationTypes = defineTable({
-  id:   v.string(),                           // "child", "relatedTo", "hashtag"…
+  id: v.string(),                           // "child", "relatedTo", "hashtag"…
   name: v.string(),
   icon: v.optional(v.string()),
 })
@@ -151,16 +151,16 @@ const relationTypes = defineTable({
 /* 5.  TAGS  –  domain/entity/topic keywords                           */
 /* ------------------------------------------------------------------ */
 export const tags = defineTable({
-  name:        v.string(),                 // canonical tag text (lower-cased)
-  kind:        v.optional(v.string()),     // "domain" | "entity" | "topic" etc
-  importance:  v.optional(v.float64()),    // 0–1 weighting when ranking context
-  createdBy:   v.id("users"),
-  createdAt:   v.number(),
+  name: v.string(),                 // canonical tag text (lower-cased)
+  kind: v.optional(v.string()),     // "domain" | "entity" | "topic" etc
+  importance: v.optional(v.float64()),    // 0–1 weighting when ranking context
+  createdBy: v.id("users"),
+  createdAt: v.number(),
 })
   .index("by_name", ["name"])
   .index("by_kind", ["kind"])
   .searchIndex("search_name", {
-    searchField:  "name",
+    searchField: "name",
     filterFields: ["kind"],
   });
 
@@ -168,22 +168,22 @@ export const tags = defineTable({
 /* 6.  TAG REFERENCES  –  many-to-many tag ↔ page/node                 */
 /* ------------------------------------------------------------------ */
 export const tagRefs = defineTable({
-  tagId:      v.id("tags"),
-  targetId:   v.string(),                 // generic Id in string form
+  tagId: v.id("tags"),
+  targetId: v.string(),                 // generic Id in string form
   targetType: v.string(),                 // "documents" | "nodes"
-  createdBy:  v.id("users"),
-  createdAt:  v.number(),
+  createdBy: v.id("users"),
+  createdAt: v.number(),
 })
-  .index("by_tag",    ["tagId"])
+  .index("by_tag", ["tagId"])
   .index("by_target", ["targetId", "targetType"]);
 
 /* ------------------------------------------------------------------ */
 /* 7.  SMS LOGS                                                        */
 /* ------------------------------------------------------------------ */
 export const smsLogs = defineTable({
-  to:        v.string(),
-  body:      v.string(),
-  status:    v.string(),       // "sent" | "failed"
+  to: v.string(),
+  body: v.string(),
+  status: v.string(),       // "sent" | "failed"
   createdAt: v.number(),
 })
   .index("by_to", ["to"]);
@@ -195,7 +195,7 @@ export const smsLogs = defineTable({
 // keep a compact cache here; leave it out if you’re only embedding client-side.
 const embeddings = defineTable({
   chunkHash: v.string(),               // sha256(text)
-  vector:    v.array(v.float64()),     // normalised
+  vector: v.array(v.float64()),     // normalised
 });
 
 /* ------------------------------------------------------------------ */
@@ -205,19 +205,19 @@ const embeddings = defineTable({
 /* 9.  GRID PROJECTS  –  saved multi-document grid configurations     */
 /* ------------------------------------------------------------------ */
 const gridProjects = defineTable({
-  name:        v.string(),                    // user-defined name for the grid project
+  name: v.string(),                    // user-defined name for the grid project
   description: v.optional(v.string()),       // optional description
-  createdBy:   v.id("users"),               // owner of the grid project
+  createdBy: v.id("users"),               // owner of the grid project
   documentIds: v.array(v.id("documents")),   // array of document IDs in the grid
-  layout:      v.object({                    // grid layout configuration
+  layout: v.object({                    // grid layout configuration
     cols: v.number(),
     rows: v.number(),
     gridClass: v.string(),
     name: v.string(),
   }),
-  createdAt:   v.number(),                   // ms since epoch
-  updatedAt:   v.number(),                   // ms since epoch
-  isArchived:  v.optional(v.boolean()),      // soft delete
+  createdAt: v.number(),                   // ms since epoch
+  updatedAt: v.number(),                   // ms since epoch
+  isArchived: v.optional(v.boolean()),      // soft delete
 })
   .index("by_user", ["createdBy"])
   .index("by_user_archived", ["createdBy", "isArchived"]);
@@ -226,38 +226,38 @@ const gridProjects = defineTable({
 /* 7.  FILES  –  uploaded files for analysis                           */
 /* ------------------------------------------------------------------ */
 const files = defineTable({
-  userId:       v.string(),                     // user ID from auth
-  storageId:    v.string(),                     // Convex storage ID
-  fileName:     v.string(),                     // original filename
-  fileType:     v.string(),                     // "video", "image", "audio", "document"
-  mimeType:     v.string(),                     // MIME type
-  fileSize:     v.number(),                     // file size in bytes
+  userId: v.string(),                     // user ID from auth
+  storageId: v.string(),                     // Convex storage ID
+  fileName: v.string(),                     // original filename
+  fileType: v.string(),                     // "video", "image", "audio", "document"
+  mimeType: v.string(),                     // MIME type
+  fileSize: v.number(),                     // file size in bytes
 
   // Analysis results
-  analysis:       v.optional(v.string()),      // analysis text result
+  analysis: v.optional(v.string()),      // analysis text result
   structuredData: v.optional(v.any()),         // structured analysis data
-  analysisType:   v.optional(v.string()),      // type of analysis performed
+  analysisType: v.optional(v.string()),      // type of analysis performed
   processingTime: v.optional(v.number()),      // time taken for analysis in ms
-  analyzedAt:     v.optional(v.number()),      // ms since epoch when analyzed
+  analyzedAt: v.optional(v.number()),      // ms since epoch when analyzed
 
   // Metadata
-  isPublic:     v.optional(v.boolean()),       // whether file is publicly accessible
-  tags:         v.optional(v.array(v.string())), // user-defined tags
-  description:  v.optional(v.string()),        // user description
+  isPublic: v.optional(v.boolean()),       // whether file is publicly accessible
+  tags: v.optional(v.array(v.string())), // user-defined tags
+  description: v.optional(v.string()),        // user description
 
   // Modification tracking for CSV editing
-  lastModified:     v.optional(v.number()),    // ms since epoch when last modified
+  lastModified: v.optional(v.number()),    // ms since epoch when last modified
   modificationCount: v.optional(v.number()),   // number of times file has been modified
-  parentFileId:     v.optional(v.id("files")), // reference to original file if this is a copy/export
+  parentFileId: v.optional(v.id("files")), // reference to original file if this is a copy/export
 
   // GenAI cache & extracted metadata (optional)
-  genaiFileName:   v.optional(v.string()),
-  genaiFileUri:    v.optional(v.string()),
-  cacheName:       v.optional(v.string()),
-  cacheExpiresAt:  v.optional(v.number()),
-  metadata:        v.optional(v.any()),
-  contentSummary:  v.optional(v.string()),
-  textPreview:     v.optional(v.string()),
+  genaiFileName: v.optional(v.string()),
+  genaiFileUri: v.optional(v.string()),
+  cacheName: v.optional(v.string()),
+  cacheExpiresAt: v.optional(v.number()),
+  metadata: v.optional(v.any()),
+  contentSummary: v.optional(v.string()),
+  textPreview: v.optional(v.string()),
 })
   .index("by_user", ["userId"])
   .index("by_user_and_type", ["userId", "fileType"])
@@ -270,12 +270,12 @@ const files = defineTable({
 /* 8.  URL ANALYSES  –  URL content analysis results                   */
 /* ------------------------------------------------------------------ */
 const urlAnalyses = defineTable({
-  userId:       v.string(),                     // user ID from auth
-  url:          v.string(),                     // analyzed URL
-  analysis:     v.optional(v.string()),        // analysis text result
+  userId: v.string(),                     // user ID from auth
+  url: v.string(),                     // analyzed URL
+  analysis: v.optional(v.string()),        // analysis text result
   structuredData: v.optional(v.any()),         // structured analysis data
-  analyzedAt:   v.number(),                     // ms since epoch when analyzed
-  contentType:  v.optional(v.string()),        // detected content type
+  analyzedAt: v.number(),                     // ms since epoch when analyzed
+  contentType: v.optional(v.string()),        // detected content type
 })
   .index("by_user", ["userId"])
   .index("by_url", ["url"]);
@@ -284,9 +284,9 @@ const urlAnalyses = defineTable({
 /* 8b. FILE CHUNKS  –  extracted chunks + embeddings per file          */
 /* ------------------------------------------------------------------ */
 const chunks = defineTable({
-  fileId:   v.id("files"),
-  text:     v.string(),
-  meta:     v.optional(v.any()), // { page?, startTimeSec?, endTimeSec? }
+  fileId: v.id("files"),
+  text: v.string(),
+  meta: v.optional(v.any()), // { page?, startTimeSec?, endTimeSec? }
   embedding: v.array(v.number()),
 })
   .index("by_file", ["fileId"]);
@@ -437,6 +437,28 @@ const chatMessagesStream = defineTable({
   .index("by_streamId", ["streamId"])
   .index("by_agentMessageId", ["agentMessageId"])
   .index("by_user", ["userId"]);
+
+/* ------------------------------------------------------------------ */
+/* SEARCH CACHE - Global search result caching with versioning       */
+/* ------------------------------------------------------------------ */
+const searchCache = defineTable({
+  prompt: v.string(),                      // Normalized search query (lowercase, trimmed)
+  threadId: v.string(),                    // Current/latest thread ID with full content
+  lastUpdated: v.number(),                 // Timestamp of last update
+  searchCount: v.number(),                 // Popularity metric (how many times searched)
+  versions: v.array(v.object({             // History of updates
+    date: v.string(),                      // YYYY-MM-DD when this version was created
+    threadId: v.string(),                  // Thread ID for this version
+    summary: v.string(),                   // What changed in this update
+    timestamp: v.number()                  // When this version was created
+  })),
+  isPublic: v.boolean(),                   // Whether this cache entry is publicly visible
+  createdAt: v.number(),                   // Initial creation timestamp
+})
+  .index("by_prompt", ["prompt"])          // Fast lookup by query
+  .index("by_popularity", ["searchCount"]) // For trending queries
+  .index("by_updated", ["lastUpdated"])    // Recent updates
+  .index("by_public", ["isPublic", "searchCount"]); // Public trending queries
 
 /* ------------------------------------------------------------------ */
 /* MCP TOOLS - Available tools from connected MCP servers             */
@@ -1065,6 +1087,7 @@ export default defineSchema({
   // chatThreads and chatMessages removed - using @convex-dev/agent component
   chatThreadsStream,
   chatMessagesStream,
+  searchCache,
   mcpToolLearning,
   mcpGuidanceExamples,
   mcpToolHistory,

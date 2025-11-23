@@ -94,6 +94,7 @@ import type * as relations from "../relations.js";
 import type * as resend from "../resend.js";
 import type * as router from "../router.js";
 import type * as schema_apiUsage from "../schema/apiUsage.js";
+import type * as searchCache from "../searchCache.js";
 import type * as seedGoldenDataset from "../seedGoldenDataset.js";
 import type * as sms from "../sms.js";
 import type * as snapshot_migrations from "../snapshot_migrations.js";
@@ -231,6 +232,7 @@ declare const fullApi: ApiFromModules<{
   resend: typeof resend;
   router: typeof router;
   "schema/apiUsage": typeof schema_apiUsage;
+  searchCache: typeof searchCache;
   seedGoldenDataset: typeof seedGoldenDataset;
   sms: typeof sms;
   snapshot_migrations: typeof snapshot_migrations;
