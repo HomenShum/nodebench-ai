@@ -1,5 +1,5 @@
 import { WorkflowManager } from "@convex-dev/workflow";
-import { components, internal } from "../_generated/api";
+import { components, internal } from "../../../_generated/api";
 import { v } from "convex/values";
 
 const workflowManager = new WorkflowManager(components.workflow);

@@ -1181,20 +1181,20 @@ export default function WelcomeLanding({
                   </div>
 
                   {/* View Content */}
-                  {activeTab === 'dossier' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      {/* Executive Summary Block (Only show if we have some content) */}
-                      {citations.length > 0 && <ExecutiveSummaryBlock />}
+                  {activeTab === 'dossier' && (<div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {/* Executive Summary Block (Only show if we have some content) */}
+                    {citations.length > 0 && <ExecutiveSummaryBlock />}
 
-                      {/* Reasoning Chain */}
-                      <CollapsibleReasoningChain steps={toolParts} />
+                    {/* Reasoning Chain */}
+                    <CollapsibleReasoningChain steps={toolParts} />
 
-                      {/* The Main Document */}
-                      <LiveDossierDocument
-                        threadId={threadId}
-                        isLoading={isRunning || (hasReceivedResponse && !responseText)}
-                      />
-                    </div>
+                    {/* The Main Document */}
+                    <LiveDossierDocument
+                      threadId={threadId}
+                      isLoading={isRunning || (hasReceivedResponse && !responseText)}
+                      onRunFollowUp={handleRunPrompt}
+                    />
+                  </div>
                   )}
 
                   {activeTab === 'newsletter' && (

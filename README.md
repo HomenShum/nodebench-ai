@@ -170,19 +170,6 @@ npx convex deploy
 
 ---
 
-## License
-
-MIT License - see LICENSE file for details
-
----
-
-## Changelog
-
-### 2025-11-22 (Latest) - UI Optimization & Global Search Cache ✅
-
-**Status**: ✅ **PRODUCTION READY**
-
-#### Features Added
 
 ##### 1. UI Flickering Fixes
 - **Stable View State Management**:
