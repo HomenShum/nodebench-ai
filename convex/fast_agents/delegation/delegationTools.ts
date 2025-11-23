@@ -4,9 +4,11 @@
  * Tools that enable the coordinator agent to delegate tasks to specialized subagents
  */
 
-import { createTool, stepCountIs } from "@convex-dev/agent";
+import { Agent, createTool, stepCountIs } from "@convex-dev/agent";
 import { z } from "zod";
 import type { DelegationCtx, ensureThread, pickUserId, formatDelegationResult, extractToolNames } from "./delegationHelpers";
+
+type DelegationTool = ReturnType<typeof createTool>;
 
 // Import subagent creators
 import { createDocumentAgent } from "../subagents/document_subagent/documentAgent";
@@ -29,11 +31,11 @@ import {
  * @param model - Language model to use for subagents
  * @returns Object containing all delegation tools
  */
-export function buildDelegationTools(model: string) {
+export function buildDelegationTools(model: string): Record<string, DelegationTool> {
   // Create subagent instances
   const documentAgent = createDocumentAgent(model);
   const mediaAgent = createMediaAgent(model);
-  const secAgent = createSECAgent(model);
+  const secAgent: Agent = createSECAgent(model);
   const openbbAgent = createOpenBBAgent(model);
 
   /**
@@ -70,7 +72,7 @@ export function buildDelegationTools(model: string) {
    * Delegate to Document Agent
    * Use for: document search, reading, creation, editing, multi-document analysis
    */
-  const delegateToDocumentAgent = createTool({
+  const delegateToDocumentAgent: DelegationTool = createTool({
     description: `Delegate document-related tasks to the DocumentAgent specialist.
 
 Use this tool when the user asks to:
@@ -119,7 +121,7 @@ The DocumentAgent has specialized tools for document management and will return 
    * Delegate to Media Agent
    * Use for: YouTube videos, web search, images, media discovery
    */
-  const delegateToMediaAgent = createTool({
+  const delegateToMediaAgent: DelegationTool = createTool({
     description: `Delegate media discovery tasks to the MediaAgent specialist.
 
 Use this tool when the user asks to:
@@ -167,7 +169,7 @@ The MediaAgent has specialized tools for media discovery and will return relevan
    * Delegate to SEC Agent
    * Use for: SEC filings, company research, regulatory documents
    */
-  const delegateToSECAgent = createTool({
+  const delegateToSECAgent: DelegationTool = createTool({
     description: `Delegate SEC filing and company research tasks to the SECAgent specialist.
 
 Use this tool when the user asks to:
@@ -189,7 +191,7 @@ The SECAgent has specialized tools for SEC EDGAR database access and will return
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(secAgent, ctx, args.threadId);
 
-      const result = await runWithTimeout(secAgent.generateText(
+      const result = await runWithTimeout<any>(secAgent.generateText(
         { ...ctx, depth: nextDepth } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
@@ -214,7 +216,7 @@ The SECAgent has specialized tools for SEC EDGAR database access and will return
    * Delegate to OpenBB Agent
    * Use for: financial data, stock prices, crypto, economic indicators, financial news
    */
-  const delegateToOpenBBAgent = createTool({
+  const delegateToOpenBBAgent: DelegationTool = createTool({
     description: `Delegate financial data and market research tasks to the OpenBBAgent specialist.
 
 Use this tool when the user asks to:
@@ -267,7 +269,7 @@ The OpenBBAgent has specialized tools for financial data via OpenBB Platform and
    * Delegate to Entity Research Agent
    * Use for: deep research on companies and people
    */
-  const delegateToEntityResearchAgent = createTool({
+  const delegateToEntityResearchAgent: DelegationTool = createTool({
     description: `Delegate deep research tasks to the EntityResearchAgent specialist.
 
 Use this tool when the user asks to:
@@ -314,7 +316,7 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
    * Parallel Delegation
    * Use for: running multiple subagents simultaneously
    */
-  const parallelDelegate = createTool({
+  const parallelDelegate: DelegationTool = createTool({
     description: `Delegate to multiple agents simultaneously.
     
     Use this when:
@@ -349,14 +351,16 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
         const threadId = await ensureThreadHelper(agent, ctx, task.threadId);
 
         try {
-          const result: any = await runWithTimeout(agent.generateText(
+          const generation = agent.generateText(
             { ...ctx, depth: nextDepth } as any,
             { threadId, userId: pickUserIdHelper(ctx) },
             {
               prompt: task.query,
               stopWhen: stepCountIs(8), // Slightly lower limit for parallel tasks
             }
-          ));
+          ) as Promise<any>;
+
+          const result: any = await runWithTimeout<any>(generation);
 
           return {
             task: task.query,
