@@ -1757,7 +1757,7 @@ export const sendMessageInternal = internalAction({
     // Now we can safely access the results
     let responseText = await streamResult.text;
     const toolCalls = await streamResult.toolCalls;
-    let toolResults = await streamResult.toolResults;
+    let toolResults: any[] = (await streamResult.toolResults) ?? [];
 
     console.log('[sendMessageInternal] Text received, length:', responseText.length);
     console.log('[sendMessageInternal] Tool calls:', toolCalls?.length || 0);
@@ -1803,7 +1803,7 @@ export const sendMessageInternal = internalAction({
       await forced.consumeStream();
 
       const forcedCalls = await forced.toolCalls;
-      const forcedResults = await forced.toolResults;
+      const forcedResults = (await forced.toolResults) ?? [];
       const forcedText = await forced.text;
 
       if (forcedCalls) {
@@ -1846,7 +1846,7 @@ export const sendMessageInternal = internalAction({
         await strict.consumeStream();
 
         const strictCalls = await strict.toolCalls;
-        const strictResults = await strict.toolResults;
+        const strictResults = (await strict.toolResults) ?? [];
         const strictText = await strict.text;
 
         if (strictCalls) {
@@ -1976,7 +1976,7 @@ export const sendMessageInternal = internalAction({
 
       const forcedText = await forcedResult.text;
       const forcedToolCalls = await forcedResult.toolCalls;
-      const forcedToolResults = await forcedResult.toolResults;
+      const forcedToolResults = (await forcedResult.toolResults) ?? [];
 
       if (forcedToolCalls) {
         for (const call of forcedToolCalls) {

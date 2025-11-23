@@ -349,14 +349,16 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
         const threadId = await ensureThreadHelper(agent, ctx, task.threadId);
 
         try {
-          const result: any = await runWithTimeout(agent.generateText(
+          const generation = agent.generateText(
             { ...ctx, depth: nextDepth } as any,
             { threadId, userId: pickUserIdHelper(ctx) },
             {
               prompt: task.query,
               stopWhen: stepCountIs(8), // Slightly lower limit for parallel tasks
             }
-          ));
+          ) as Promise<any>;
+
+          const result: any = await runWithTimeout<any>(generation);
 
           return {
             task: task.query,
