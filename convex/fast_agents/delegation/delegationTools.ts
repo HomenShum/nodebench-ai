@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { DelegationCtx, ensureThread, pickUserId, formatDelegationResult, extractToolNames } from "./delegationHelpers";
 
 type DelegationTool = ReturnType<typeof createTool>;
+type AgentGenerateTextResult = Awaited<ReturnType<Agent["generateText"]>>;
 
 // Import subagent creators
 import { createDocumentAgent } from "../subagents/document_subagent/documentAgent";
@@ -96,7 +97,7 @@ The DocumentAgent has specialized tools for document management and will return 
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(documentAgent, ctx, args.threadId);
 
-      const result = await runWithTimeout(documentAgent.generateText(
+      const result: AgentGenerateTextResult = await runWithTimeout(documentAgent.generateText(
         { ...ctx, depth: nextDepth } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
@@ -144,7 +145,7 @@ The MediaAgent has specialized tools for media discovery and will return relevan
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(mediaAgent, ctx, args.threadId);
 
-      const result = await runWithTimeout(mediaAgent.generateText(
+      const result: AgentGenerateTextResult = await runWithTimeout(mediaAgent.generateText(
         { ...ctx, depth: nextDepth } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
@@ -191,7 +192,7 @@ The SECAgent has specialized tools for SEC EDGAR database access and will return
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(secAgent, ctx, args.threadId);
 
-      const result = await runWithTimeout<any>(secAgent.generateText(
+      const result: AgentGenerateTextResult = await runWithTimeout(secAgent.generateText(
         { ...ctx, depth: nextDepth } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
@@ -239,7 +240,7 @@ The OpenBBAgent has specialized tools for financial data via OpenBB Platform and
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(openbbAgent, ctx, args.threadId);
 
-      const result = await runWithTimeout(openbbAgent.generateText(
+      const result: AgentGenerateTextResult = await runWithTimeout(openbbAgent.generateText(
         { ...ctx, depth: nextDepth } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
