@@ -4,4 +4,5 @@ export * from "./users";
 export * from "./apiKeys";
 export * from "./apiKeysActions";
 export * from "./usage";
-export * from "./presence";
+// Don't export * from presence to avoid conflicts - import directly from the file
+// export * from "./presence";

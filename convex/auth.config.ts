@@ -1,1 +1,1 @@
-export * from "./domains/auth/auth.config";
+export { default } from "./domains/auth/auth.config";
