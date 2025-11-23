@@ -69,7 +69,7 @@ export const DEFAULT_MODEL = "gpt-5-chat-latest";
  * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-5-chat-latest")
  * @returns Orchestrator agent configured with delegation and planning tools
  */
-export const createCoordinatorAgent = (model: string) => new Agent(components.agent, {
+export const createCoordinatorAgent = (model: string): Agent => new Agent(components.agent, {
   name: "CoordinatorAgent",
   languageModel: openai.chat(model),
   textEmbeddingModel: openai.embedding("text-embedding-3-small"),
@@ -236,6 +236,6 @@ Structure your responses clearly:
  * Export the coordinator agent as an action for workflow usage.
  * This allows the workflow to call the agent as a durable step.
  */
-export const runCoordinatorAgent = createCoordinatorAgent(DEFAULT_MODEL).asTextAction({
+export const runCoordinatorAgent: ReturnType<Agent["asTextAction"]> = createCoordinatorAgent(DEFAULT_MODEL).asTextAction({
   stopWhen: stepCountIs(25),
 });

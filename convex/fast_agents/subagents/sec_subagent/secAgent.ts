@@ -8,9 +8,11 @@
  * - Regulatory compliance research
  */
 
-import { Agent, stepCountIs } from "@convex-dev/agent";
+import { Agent, createTool, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
 import { components } from "../../../_generated/api";
+import { internal } from "../../../_generated/api";
+import { z } from "zod";
 
 // Import SEC-specific tools
 import {
@@ -18,7 +20,18 @@ import {
   downloadSecFiling,
   getCompanyInfo,
 } from "./tools/secFilingTools";
-import { searchSecCompanies } from "./tools/secCompanySearch";
+
+type SearchSecCompaniesResult = { cik: string; name: string; ticker?: string }[];
+
+const searchSecCompaniesTool = createTool<{ companyName: string }, SearchSecCompaniesResult>({
+  description: "Find SEC companies by name and return potential matches with CIK, name, and ticker.",
+  args: z.object({
+    companyName: z.string().describe("Company name to search for"),
+  }),
+  handler: async (ctx, args): Promise<SearchSecCompaniesResult> => {
+    return ctx.runAction(internal.tools.secCompanySearch.searchCompanies, args);
+  },
+});
 
 /**
  * Create an SEC Agent instance
@@ -26,7 +39,7 @@ import { searchSecCompanies } from "./tools/secCompanySearch";
  * @param model - Language model to use ("gpt-4o", "gpt-5-chat-latest", etc.)
  * @returns Configured SEC Agent
  */
-export function createSECAgent(model: string) {
+export function createSECAgent(model: string): Agent {
   return new Agent(components.agent, {
     name: "SECAgent",
     languageModel: openai.chat(model),
@@ -102,7 +115,7 @@ Always structure responses with:
       searchSecFilings,
       downloadSecFiling,
       getCompanyInfo,
-      searchSecCompanies,
+      searchSecCompanies: searchSecCompaniesTool,
     },
     stopWhen: stepCountIs(8),
   });
