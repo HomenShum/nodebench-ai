@@ -7,6 +7,8 @@ import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
+const rateLimiter = new Map<string, { count: number; expiresAt: number }>();
+
 /**
  * Call an MCP tool via HTTP (static tool-calling only)
  */
@@ -31,6 +33,23 @@ export const callMcpTool: any = action({
     serverId?: Id<"mcpServers">;
     serverName?: string;
   }> => {
+    const userIdentity = await ctx.auth.getUserIdentity();
+    const userId = userIdentity?.subject as Id<"users"> | undefined;
+
+    // Durable per-user daily rate limit via dailyUsage
+    const today = new Date().toISOString().slice(0, 10);
+    const limitPerDay = 500;
+    const usage = await ctx.runMutation((api as any).mcp.incrementMcpUsage, {
+      userId,
+      date: today,
+      limit: limitPerDay,
+    });
+    if (!usage.allowed) {
+      return {
+        success: false,
+        error: "MCP daily rate limit exceeded. Please retry tomorrow.",
+      };
+    }
     try {
       // Helper to score preferred servers (lower is better)
       const PRIORITY = (args.prioritizedServers && args.prioritizedServers.length > 0)
@@ -98,14 +117,13 @@ export const callMcpTool: any = action({
         "Accept": "application/json",
       };
 
-      // Add API key if provided - check for different auth patterns
+      if (userId) {
+        headers["X-User-Id"] = userId;
+      }
+
+      // Add API key if provided
       if (server.apiKey) {
-        // Try different auth patterns that MCP servers might expect
-        if (server.url.includes('tavilyApiKey=')) {
-          // For Tavily, the API key is in the URL
-        } else {
-          headers["Authorization"] = `Bearer ${server.apiKey}`;
-        }
+        headers["Authorization"] = `Bearer ${server.apiKey}`;
       }
 
       console.log(`Making MCP request to ${server.url}:`, JSON.stringify(requestBody, null, 2));
@@ -150,7 +168,22 @@ export const callMcpTool: any = action({
       }
 
       // TODO: Update tool usage statistics when properly implemented
-      // Currently disabled due to parameter mismatch
+      if (userId) {
+        try {
+          await ctx.runMutation((api as any).mcp.storeUsageHistory, {
+            userId,
+            toolId: serverId ? await findToolId(ctx, serverId, args.toolName) : (undefined as any),
+            serverId: serverId as Id<"mcpServers">,
+            naturalLanguageQuery: args.toolName,
+            parameters: args.parameters,
+            executionSuccess: true,
+            resultPreview: JSON.stringify(result.result ?? result).slice(0, 500),
+            errorMessage: undefined,
+          });
+        } catch (logErr) {
+          console.warn("[mcpClient] Failed to store usage history", logErr);
+        }
+      }
 
       return {
         success: true,
@@ -161,6 +194,22 @@ export const callMcpTool: any = action({
 
     } catch (error) {
       console.error(`Failed to call MCP tool ${args.toolName}:`, error);
+      if (userId) {
+        try {
+          await ctx.runMutation((api as any).mcp.storeUsageHistory, {
+            userId,
+            toolId: args.serverId ? await findToolId(ctx, args.serverId as Id<"mcpServers">, args.toolName) : (undefined as any),
+            serverId: args.serverId as Id<"mcpServers">,
+            naturalLanguageQuery: args.toolName,
+            parameters: args.parameters,
+            executionSuccess: false,
+            resultPreview: undefined,
+            errorMessage: error instanceof Error ? error.message : "Tool execution failed",
+          });
+        } catch (logErr) {
+          console.warn("[mcpClient] Failed to store usage history (error path)", logErr);
+        }
+      }
       return {
         success: false,
         error: error instanceof Error ? error.message : "Tool execution failed",
@@ -169,6 +218,11 @@ export const callMcpTool: any = action({
     }
   },
 });
+
+async function findToolId(ctx: any, serverId: Id<"mcpServers">, toolName: string) {
+  const tool = await ctx.runQuery(api.mcp.getToolByName, { serverId, name: toolName });
+  return tool?._id;
+}
 
 /**
  * Fallback helper functions for compatibility (currently return errors in static mode)

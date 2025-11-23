@@ -1,0 +1,93 @@
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const createPlan = mutation({
+  args: {
+    plan: v.object({
+      id: v.string(),
+      goal: v.string(),
+      steps: v.any(),
+      createdAt: v.string(),
+      updatedAt: v.string(),
+    }),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    await ctx.db.insert("mcpPlans", {
+      planId: args.plan.id,
+      goal: args.plan.goal,
+      steps: args.plan.steps,
+      createdAt: new Date(args.plan.createdAt).getTime() || now,
+      updatedAt: new Date(args.plan.updatedAt).getTime() || now,
+    });
+    return true;
+  },
+});
+
+export const getPlan = query({
+  args: {
+    planId: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      id: v.string(),
+      goal: v.string(),
+      steps: v.any(),
+      createdAt: v.string(),
+      updatedAt: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const plan = await ctx.db
+      .query("mcpPlans")
+      .withIndex("by_planId", (q) => q.eq("planId", args.planId))
+      .first();
+    if (!plan) return null;
+    return {
+      id: plan.planId,
+      goal: plan.goal,
+      steps: plan.steps,
+      createdAt: new Date(plan.createdAt).toISOString(),
+      updatedAt: new Date(plan.updatedAt).toISOString(),
+    };
+  },
+});
+
+export const updatePlan = mutation({
+  args: {
+    planId: v.string(),
+    plan: v.object({
+      id: v.string(),
+      goal: v.string(),
+      steps: v.any(),
+      createdAt: v.string(),
+      updatedAt: v.string(),
+    }),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("mcpPlans")
+      .withIndex("by_planId", (q) => q.eq("planId", args.planId))
+      .first();
+    const now = Date.now();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        goal: args.plan.goal,
+        steps: args.plan.steps,
+        updatedAt: new Date(args.plan.updatedAt).getTime() || now,
+      });
+      return true;
+    }
+    await ctx.db.insert("mcpPlans", {
+      planId: args.plan.id,
+      goal: args.plan.goal,
+      steps: args.plan.steps,
+      createdAt: new Date(args.plan.createdAt).getTime() || now,
+      updatedAt: new Date(args.plan.updatedAt).getTime() || now,
+    });
+    return true;
+  },
+});

@@ -207,18 +207,101 @@ export default function WelcomeLanding({
   const { signIn } = useAuthActions();
   const createThread = useAction(api.fastAgentPanelStreaming.createThread);
   const sendStreaming = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
-  const [activeTab, setActiveTab] = useState<'dossier' | 'newsletter' | 'media'>('dossier');
-  const [researchPrompt, setResearchPrompt] = useState(
-    "Summarize last week's top funding news and any SEC filings for AI infrastructure startups."
-  );
-  const [threadId, setThreadId] = useState<string | null>(null);
+  // State with persistence
+  const [activeTab, setActiveTab] = useState<'dossier' | 'newsletter' | 'media'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('nodebench_landing_activeTab');
+      return (saved as 'dossier' | 'newsletter' | 'media') || 'dossier';
+    }
+    return 'dossier';
+  });
+
+  const [researchPrompt, setResearchPrompt] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('nodebench_landing_prompt') || "Summarize last week's top funding news and any SEC filings for AI infrastructure startups.";
+    }
+    return "Summarize last week's top funding news and any SEC filings for AI infrastructure startups.";
+  });
+
+  const [threadId, setThreadId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('nodebench_landing_threadId');
+    }
+    return null;
+  });
+
   const [isRunning, setIsRunning] = useState(false);
-  const [activeSources, setActiveSources] = useState<string[]>(['ycombinator', 'techcrunch', 'reddit', 'twitter', 'github', 'arxiv']);
-  const [activePreset, setActivePreset] = useState<string | null>('all');
+
+  const [activeSources, setActiveSources] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('nodebench_landing_sources');
+      return saved ? JSON.parse(saved) : ['ycombinator', 'techcrunch', 'reddit', 'twitter', 'github', 'arxiv'];
+    }
+    return ['ycombinator', 'techcrunch', 'reddit', 'twitter', 'github', 'arxiv'];
+  });
+
+  const [activePreset, setActivePreset] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('nodebench_landing_preset') || 'all';
+    }
+    return 'all';
+  });
+
   const [isReasoningOpen, setIsReasoningOpen] = useState(false);
-  const [hasReceivedResponse, setHasReceivedResponse] = useState(false);
-  const [showHero, setShowHero] = useState(true); // Control which view to show
-  const [isFromCache, setIsFromCache] = useState(false); // Track if results are from cache
+
+  const [hasReceivedResponse, setHasReceivedResponse] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('nodebench_landing_hasResponse') === 'true';
+    }
+    return false;
+  });
+
+  const [showHero, setShowHero] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('nodebench_landing_showHero');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
+
+  const [isFromCache, setIsFromCache] = useState(false);
+
+  // Persist state changes
+  useEffect(() => {
+    sessionStorage.setItem('nodebench_landing_activeTab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    sessionStorage.setItem('nodebench_landing_prompt', researchPrompt);
+  }, [researchPrompt]);
+
+  useEffect(() => {
+    if (threadId) {
+      sessionStorage.setItem('nodebench_landing_threadId', threadId);
+    } else {
+      sessionStorage.removeItem('nodebench_landing_threadId');
+    }
+  }, [threadId]);
+
+  useEffect(() => {
+    sessionStorage.setItem('nodebench_landing_sources', JSON.stringify(activeSources));
+  }, [activeSources]);
+
+  useEffect(() => {
+    if (activePreset) {
+      sessionStorage.setItem('nodebench_landing_preset', activePreset);
+    } else {
+      sessionStorage.removeItem('nodebench_landing_preset');
+    }
+  }, [activePreset]);
+
+  useEffect(() => {
+    sessionStorage.setItem('nodebench_landing_hasResponse', String(hasReceivedResponse));
+  }, [hasReceivedResponse]);
+
+  useEffect(() => {
+    sessionStorage.setItem('nodebench_landing_showHero', String(showHero));
+  }, [showHero]);
 
   // Cache utility functions
   const getCacheKey = (prompt: string, date: string) => {
@@ -271,33 +354,60 @@ export default function WelcomeLanding({
     agentThreadId ? { threadId: agentThreadId as Id<"chatThreadsStream"> } : "skip",
     { initialNumItems: 50, stream: true }
   );
-
   const handleSignIn = async () => {
     await signIn("google", { redirectTo: "/" });
   };
 
+  // 1. Absolute latest message (for active status/reasoning)
   const latestAssistantMessage = useMemo(() => {
-    if (!uiMessages || uiMessages.length === 0) return "";
+    if (!uiMessages || uiMessages.length === 0) return null;
     const latest = [...uiMessages]
       .reverse()
       .find((m: any) => (m.role ?? m?.message?.role) === "assistant");
     return latest || null;
   }, [uiMessages]);
 
+  // 2. Latest message with text content (for persistent display of Dossier/Newsletter)
+  const latestContentMessage = useMemo(() => {
+    try {
+      if (!uiMessages || uiMessages.length === 0) return null;
+
+      // Optimized: Use reverse loop instead of array copy
+      for (let i = uiMessages.length - 1; i >= 0; i--) {
+        const m = uiMessages[i];
+        if (!m) continue; // Defensive null check
+
+        const isAssistant = (m.role ?? m?.message?.role) === "assistant";
+        if (!isAssistant) continue;
+
+        // Safe text check with null guards
+        const hasText = (typeof m.text === "string" && m.text.trim().length > 0) ||
+          (Array.isArray(m.content) && m.content.some((c: any) => c?.text?.trim?.()));
+
+        if (hasText) return m;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error finding latest content message:", error);
+      return null;
+    }
+  }, [uiMessages]);
+
   const latestAssistantText = useMemo(() => {
-    const latest = latestAssistantMessage as any;
+    const latest = latestContentMessage as any;
     if (!latest) return "";
-    if (typeof (latest as any).text === "string" && (latest as any).text.trim()) return (latest as any).text;
-    if (Array.isArray((latest as any).content)) {
-      const textParts = (latest as any).content
+    if (typeof latest.text === "string" && latest.text.trim()) return latest.text;
+    if (Array.isArray(latest.content)) {
+      const textParts = latest.content
         .filter((c: any) => typeof c?.text === "string")
         .map((c: any) => c.text)
         .join("\n\n");
       if (textParts.trim()) return textParts;
     }
-    if (typeof (latest as any).message?.text === "string") return latest.message.text;
+    if (typeof latest.message?.text === "string") return latest.message.text;
     return "";
-  }, [latestAssistantMessage]);
+  }, [latestContentMessage]);
+
   const responseText = typeof latestAssistantText === "string" ? latestAssistantText : "";
 
   // Track when we first receive a response to prevent flickering between views
@@ -308,9 +418,16 @@ export default function WelcomeLanding({
     }
   }, [responseText, hasReceivedResponse]);
 
+  // Tool parts for the Active Status (Reasoning Chain)
   const toolParts = useMemo(
     () => (latestAssistantMessage as any)?.parts?.filter?.((p: any) => p?.type?.startsWith?.("tool-")) ?? [],
     [latestAssistantMessage]
+  );
+
+  // Tool parts from Content Message (for Citations)
+  const contentToolParts = useMemo(
+    () => (latestContentMessage as any)?.parts?.filter?.((p: any) => p?.type?.startsWith?.("tool-")) ?? [],
+    [latestContentMessage]
   );
 
   const reasoningText = useMemo(
@@ -322,55 +439,66 @@ export default function WelcomeLanding({
     [latestAssistantMessage]
   );
 
-  // Extract media assets from the latest message
+  // Extract media assets from the CONTENT message (persistent)
   const mediaAssets = useMemo(() => {
-    if (!latestAssistantMessage) return [];
-    return extractMediaFromMessages([latestAssistantMessage]);
-  }, [latestAssistantMessage]);
+    if (!latestContentMessage) return [];
+    return extractMediaFromMessages([latestContentMessage]);
+  }, [latestContentMessage]);
 
-  // Extract citations from tool parts with source tracking
+  // Extract citations from CONTENT tool parts (persistent)
   const citations = useMemo(() => {
-    return toolParts
-      .filter((p: any) => p.type === "tool-result" && p.toolName === "linkupSearch")
-      .map((p: any) => {
-        try {
-          const output = p.output?.value || p.output || p.result;
-          if (typeof output === "string") {
+    try {
+      if (!contentToolParts || contentToolParts.length === 0) return [];
+
+      return contentToolParts
+        .filter((p: any) => p?.type === "tool-result" && p?.toolName === "linkupSearch")
+        .map((p: any) => {
+          try {
+            const output = p?.output?.value || p?.output || p?.result;
+            if (typeof output !== "string") return [];
+
             const galleryRegex = /<!--\s*SOURCE_GALLERY_DATA\s*\n([\s\S]*?)\n-->/;
             const match = output.match(galleryRegex);
-            if (match && match[1]) {
-              const results = JSON.parse(match[1]);
-              // Add source detection to each result
-              return results.map((r: any) => {
-                const domain = r.url ? new URL(r.url).hostname : undefined;
-                let detectedSource = 'unknown';
+            if (!match || !match[1]) return [];
 
-                if (domain?.includes('ycombinator.com') || domain?.includes('news.ycombinator.com')) {
-                  detectedSource = 'ycombinator';
-                } else if (domain?.includes('techcrunch.com')) {
-                  detectedSource = 'techcrunch';
-                } else if (domain?.includes('reddit.com')) {
-                  detectedSource = 'reddit';
-                } else if (domain?.includes('twitter.com') || domain?.includes('x.com')) {
-                  detectedSource = 'twitter';
-                } else if (domain?.includes('github.com')) {
-                  detectedSource = 'github';
-                } else if (domain?.includes('arxiv.org')) {
-                  detectedSource = 'arxiv';
-                }
+            const results = JSON.parse(match[1]);
+            if (!Array.isArray(results)) return [];
 
-                return { ...r, source: detectedSource };
-              });
-            }
+            // Add source detection to each result
+            return results.map((r: any) => {
+              if (!r || typeof r !== 'object') return null;
+
+              const domain = r.url ? new URL(r.url).hostname : undefined;
+              let detectedSource = 'unknown';
+
+              if (domain?.includes('ycombinator.com') || domain?.includes('news.ycombinator.com')) {
+                detectedSource = 'ycombinator';
+              } else if (domain?.includes('techcrunch.com')) {
+                detectedSource = 'techcrunch';
+              } else if (domain?.includes('reddit.com')) {
+                detectedSource = 'reddit';
+              } else if (domain?.includes('twitter.com') || domain?.includes('x.com')) {
+                detectedSource = 'twitter';
+              } else if (domain?.includes('github.com')) {
+                detectedSource = 'github';
+              } else if (domain?.includes('arxiv.org')) {
+                detectedSource = 'arxiv';
+              }
+
+              return { ...r, source: detectedSource };
+            }).filter(Boolean); // Remove null entries
+          } catch (e) {
+            console.error("Failed to parse citation:", e);
+            return [];
           }
-        } catch (e) {
-          console.error("Failed to parse citations:", e);
-        }
-        return [];
-      })
-      .flat()
-      .slice(0, 10); // Increased to 10 citations
-  }, [toolParts]);
+        })
+        .flat()
+        .slice(0, 10); // Increased to 10 citations
+    } catch (error) {
+      console.error("Error extracting citations:", error);
+      return [];
+    }
+  }, [contentToolParts]);
 
   // Calculate source analytics
   const sourceAnalytics = useMemo(() => {
@@ -1062,14 +1190,17 @@ export default function WelcomeLanding({
                       <CollapsibleReasoningChain steps={toolParts} />
 
                       {/* The Main Document */}
-                      <LiveDossierDocument threadId={threadId} isLoading={isRunning} />
+                      <LiveDossierDocument
+                        threadId={threadId}
+                        isLoading={isRunning || (hasReceivedResponse && !responseText)}
+                      />
                     </div>
                   )}
 
                   {activeTab === 'newsletter' && (
                     <MockNewsletterView
                       responseText={responseText}
-                      isLoading={isRunning}
+                      isLoading={isRunning || (hasReceivedResponse && !responseText)}
                       mediaAssets={mediaAssets}
                       citations={citations}
                       sourceAnalytics={sourceAnalytics}

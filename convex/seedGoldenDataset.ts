@@ -6,6 +6,7 @@
  */
 
 import { internalMutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
 /**
@@ -26,6 +27,7 @@ export const seedAll = internalMutation({
     await seedTasks(ctx);
     await seedEvents(ctx);
     await seedFolders(ctx);
+    await seedMcpServers(ctx);
 
     console.log("\n✅ Golden Dataset Seeding Complete!");
     return null;
@@ -329,7 +331,7 @@ async function seedTasks(ctx: any) {
   for (const task of tasks) {
     await ctx.db.insert("tasks", task);
     const dueLabel = task.dueDate === todayTimestamp ? "today" :
-                     task.dueDate === tomorrowTimestamp ? "tomorrow" : "next week";
+      task.dueDate === tomorrowTimestamp ? "tomorrow" : "next week";
     console.log(`   ✓ Created: "${task.title}" (${task.priority}, due ${dueLabel})`);
   }
 }
@@ -529,3 +531,72 @@ export const getTestUser = query({
     };
   },
 });
+
+/**
+ * Seed MCP Servers
+ */
+async function seedMcpServers(ctx: any) {
+  console.log("\n🔌 Seeding MCP Servers...");
+
+  // Get or create a test user
+  const testUser = await getOrCreateTestUser(ctx);
+  const now = Date.now();
+
+  const servers = [
+    {
+      name: "core_agent_server",
+      url: "http://localhost:8005",
+      description: "Core Agent Planning & Memory Server",
+      isEnabled: true,
+    },
+    {
+      name: "openbb_server",
+      url: "http://localhost:8001",
+      description: "OpenBB Financial Data Server",
+      isEnabled: true,
+    }
+  ];
+
+  for (const serverConfig of servers) {
+    // Check if server exists
+    const existing = await ctx.db
+      .query("mcpServers")
+      .withIndex("by_user", (q: any) => q.eq("userId", testUser))
+      .filter((q: any) => q.eq(q.field("name"), serverConfig.name))
+      .first();
+
+    let serverId;
+
+    if (existing) {
+      console.log(`   ✓ Updating existing server: ${serverConfig.name}`);
+      await ctx.db.patch(existing._id, {
+        url: serverConfig.url,
+        description: serverConfig.description,
+        isEnabled: serverConfig.isEnabled,
+        updatedAt: now,
+      });
+      serverId = existing._id;
+    } else {
+      console.log(`   ✓ Creating new server: ${serverConfig.name}`);
+      serverId = await ctx.db.insert("mcpServers", {
+        userId: testUser,
+        name: serverConfig.name,
+        url: serverConfig.url,
+        description: serverConfig.description,
+        isEnabled: serverConfig.isEnabled,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    // Trigger tool discovery
+    if (serverId) {
+      console.log(`     Triggering tool discovery for ${serverConfig.name}...`);
+      await ctx.scheduler.runAfter(0, internal.mcp.discoverAndStoreTools, {
+        serverId,
+        serverUrl: serverConfig.url
+      });
+    }
+  }
+}
+

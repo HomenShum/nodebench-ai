@@ -1,0 +1,32 @@
+{
+  "name": "@nodebench/core-agent-server",
+  "version": "1.0.0",
+  "description": "Planning and memory tools for NodeBench AI Deep Agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx server.ts",
+    "dev:http": "tsx httpServer.ts",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

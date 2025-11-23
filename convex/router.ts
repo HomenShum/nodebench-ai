@@ -703,53 +703,63 @@ http.route({
   path: "/api/mcp/connect",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     try {
-      const { url, name } = await request.json();
-      
+      const { url, name, apiKey } = await request.json();
+
       if (!url || !name) {
-        return new Response(
-          JSON.stringify({ error: "URL and name are required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "URL and name are required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
-      // For now, mock the MCP connection
-      // In a real implementation, you would connect to the MCP server
-      const sessionId = `mcp_session_${Date.now()}`;
-      const mockTools = [
-        {
-          name: "search",
-          description: "Search for information",
-          schema: {
-            type: "object",
-            properties: {
-              query: { type: "string", description: "Search query" }
-            }
-          }
-        },
-        {
-          name: "get_news",
-          description: "Get latest news",
-          schema: {
-            type: "object",
-            properties: {
-              topic: { type: "string", description: "News topic" }
-            }
-          }
+      // Try to create the server; if it already exists, fall back to the existing id.
+      let serverId: Id<"mcpServers"> | null = null;
+      try {
+        serverId = await ctx.runMutation(api.mcp.addMcpServer, { name, url, apiKey });
+      } catch (err: any) {
+        const alreadyExists = err instanceof Error && err.message?.includes("already exists");
+        if (!alreadyExists) {
+          throw err;
         }
-      ];
+        const existing = await ctx.runQuery(api.mcp.listMcpServers, {});
+        const match = existing.find((s: any) => s.name === name);
+        serverId = match?._id ?? null;
+      }
+
+      if (!serverId) {
+        return new Response(JSON.stringify({ error: "Unable to register MCP server" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Kick off connection and tool discovery (non-blocking)
+      await ctx.runAction(internal.mcp.connectToServer, { serverId });
+
+      // Return currently discovered tools
+      const tools = await ctx.runQuery(api.mcp.getMcpTools, { serverId, availableOnly: true });
 
       return new Response(
-        JSON.stringify({ 
-          sessionId,
-          tools: mockTools,
-          message: "Connected to MCP server"
+        JSON.stringify({
+          serverId,
+          serverName: name,
+          tools,
+          message: "MCP server registered and connection initiated",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
-    } catch {
+    } catch (err: any) {
       return new Response(
-        JSON.stringify({ error: "Failed to connect to MCP server" }),
+        JSON.stringify({ error: err instanceof Error ? err.message : "Failed to connect to MCP server" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -760,98 +770,77 @@ http.route({
   path: "/api/mcp/disconnect",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     try {
-      const { sessionId: _sessionId } = await request.json();
-        
-        // For now, mock the disconnection
-        // In a real implementation, you would disconnect from the MCP server
-        
-        return new Response(
-          JSON.stringify({ message: "Disconnected from MCP server" }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
-    } catch {
-        return new Response(
-          JSON.stringify({ error: "Failed to disconnect from MCP server" }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
-        );
+      const { serverId } = await request.json();
+      if (!serverId) {
+        return new Response(JSON.stringify({ error: "serverId is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
-    }),
-  });
+
+      await ctx.runAction(internal.mcp.disconnectFromServer, { serverId });
+      return new Response(JSON.stringify({ message: "Disconnected from MCP server", serverId }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err: any) {
+      return new Response(
+        JSON.stringify({ error: err instanceof Error ? err.message : "Failed to disconnect from MCP server" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
 
 http.route({
   path: "/api/mcp/invoke",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
-      try {
-      const { sessionId, toolName, args } = await request.json();
-      
-      if (!sessionId || !toolName) {
-        return new Response(
-          JSON.stringify({ error: "Session ID and tool name are required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    try {
+      const { serverId, toolName, args } = await request.json();
+      if (!toolName) {
+        return new Response(JSON.stringify({ error: "toolName is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
-      // For now, mock the tool invocation
-      // In a real implementation, you would invoke the actual MCP tool
-      let mockResult;
-      
-      switch (toolName) {
-        case "search":
-          mockResult = {
-            results: [
-              {
-                title: "AI Startups See Record Growth in 2024",
-                url: "https://example.com/ai-startups-2024",
-                snippet: "Recent analysis shows AI startups have raised over $50B in funding this year..."
-              },
-              {
-                title: "Top 10 AI Companies to Watch",
-                url: "https://example.com/top-ai-companies",
-                snippet: "These emerging AI companies are disrupting traditional industries..."
-              }
-            ],
-            query: args?.query || "default search"
-          };
-          break;
-        case "get_news":
-          mockResult = {
-            articles: [
-              {
-                headline: "Breaking: New AI Model Achieves Human-Level Performance",
-                source: "Tech News",
-                timestamp: new Date().toISOString()
-              },
-              {
-                headline: "Major Tech Company Announces AI Partnership",
-                source: "Business Journal",
-                timestamp: new Date().toISOString()
-              }
-            ],
-            topic: args?.topic || "general"
-          };
-          break;
-        default:
-          mockResult = {
-            message: `Tool '${toolName}' executed successfully`,
-            args: args || {},
-            timestamp: new Date().toISOString()
-          };
-      }
+      const result = await ctx.runAction((api as any).mcpClient.callMcpTool, {
+        serverId,
+        toolName,
+        parameters: args ?? {},
+      });
 
       return new Response(
-        JSON.stringify({ 
-          result: mockResult,
-          toolName,
-          sessionId,
-          message: "Tool invoked successfully"
+        JSON.stringify({
+          result: result.result,
+          success: result.success,
+          error: result.error,
+          serverId: result.serverId ?? serverId,
+          serverName: result.serverName,
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: result.success ? 200 : 500, headers: { "Content-Type": "application/json" } }
       );
-    } catch {
+    } catch (err: any) {
       return new Response(
-        JSON.stringify({ error: "Failed to invoke MCP tool" }),
+        JSON.stringify({ error: err instanceof Error ? err.message : "Failed to invoke MCP tool" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }

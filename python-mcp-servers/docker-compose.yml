@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  openbb:
+    build:
+      context: ./openbb
+      dockerfile: Dockerfile
+    container_name: openbb-mcp-server
+    ports:
+      - "8001:8001"
+    environment:
+      - OPENBB_API_KEY=${OPENBB_API_KEY}
+      - OPENBB_PORT=8001
+      - OPENBB_HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    env_file:
+      - .env
+    volumes:
+      - ./openbb:/app
+      - ./shared:/app/shared
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  core_agent:
+    build:
+      context: ./core_agent
+      dockerfile: Dockerfile
+    container_name: core-agent-mcp-server
+    ports:
+      - "8005:8005"
+    environment:
+      - CORE_AGENT_PORT=8005
+      - CORE_AGENT_HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    env_file:
+      - .env
+    volumes:
+      - ./core_agent:/app
+      - ./shared:/app/shared
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8005/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: mcp-servers-network

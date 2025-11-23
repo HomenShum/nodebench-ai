@@ -3,7 +3,7 @@
 // Allows agents to ask humans for input during execution
 
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -150,3 +150,31 @@ export const cancelRequest = mutation({
   },
 });
 
+
+/**
+ * Create a new human request (Internal)
+ */
+export const createRequest = internalMutation({
+  args: {
+    threadId: v.string(),
+    messageId: v.string(),
+    toolCallId: v.string(),
+    question: v.string(),
+    context: v.optional(v.string()),
+    options: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getSafeUserId(ctx);
+
+    await ctx.db.insert("humanRequests", {
+      userId,
+      threadId: args.threadId,
+      messageId: args.messageId,
+      toolCallId: args.toolCallId,
+      question: args.question,
+      context: args.context,
+      options: args.options,
+      status: "pending",
+    });
+  },
+});

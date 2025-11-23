@@ -47,7 +47,7 @@ export const chatWithAgentModern = action({
       }
 
       // Detect if this is a document editing request
-      const isEditRequest = selectedDocumentId && 
+      const isEditRequest = selectedDocumentId &&
         /\b(edit|modify|change|update|add|insert|create|write|append|prepend|delete|remove)\b/i.test(message);
 
       let response: string;
@@ -148,6 +148,15 @@ async function handleDocumentEdit(
   const { message, documentId, userId, runId, model, fastMode } = args;
 
   try {
+    // Legacy editing/validation agents were removed - this functionality needs to be reimplemented
+    if (runId) {
+      await emitEvent(ctx, runId, "error", "Document editing agent is currently unavailable");
+    }
+
+    return `Document editing feature is currently unavailable. The editing and validation agents were removed as part of the Deep Agents 2.0 refactor. Please edit the document manually or request this feature to be reimplemented using the new architecture.`;
+
+    // TODO: Reimplement using Deep Agents 2.0 architecture
+    /*
     // Emit thinking event
     if (runId) {
       await emitEvent(ctx, runId, "thinking", "Analyzing document edit request...");
@@ -162,9 +171,9 @@ async function handleDocumentEdit(
       await emitEvent(ctx, runId, "thinking", `Working on document: ${doc.title}`);
     }
 
-    // Import editing and validation agents
-    const { generateEdits } = await import("./fast_agents/editingAgent");
-    const { validateEdits } = await import("./fast_agents/validationAgent");
+    // Import editing and validation agents (REMOVED - part of Deep Agents 2.0 refactor)
+    // const { generateEdits } = await import("./fast_agents/editingAgent");
+    // const { validateEdits } = await import("./fast_agents/validationAgent");
 
     // Generate edit proposals
     if (runId) {
@@ -259,6 +268,7 @@ async function handleDocumentEdit(
     response += `\n${editOutput.explanation}`;
 
     return response;
+    */
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     return `❌ Error editing document: ${errorMsg}. Please try again.`;

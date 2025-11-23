@@ -1,5 +1,6 @@
 // convex/lib/mcpClient.ts
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { api } from "../_generated/api";
 
 /**
  * HTTP/SSE Transport for remote MCP servers
@@ -92,6 +93,41 @@ export class HttpSSETransport implements Transport {
     
     console.log(`[MCP SDK] Parsed result:`, result?.result);
     return result?.result;
+  }
+}
+
+type McpResult = {
+  success?: boolean;
+  result?: any;
+  error?: string;
+};
+
+/**
+ * Shared helper to call the core agent MCP server with consistent error handling.
+ * Intended for Convex functions/tools that want to prefer MCP and fall back to native logic.
+ */
+export async function callCoreAgentMcp(
+  ctx: any,
+  toolName: string,
+  parameters: any,
+  prioritizedServers: string[] = ["core_agent_server"],
+): Promise<{ source: "mcp"; payload: any }> {
+  try {
+    const res: McpResult = await ctx.runAction((api as any).mcpClient.callMcpTool, {
+      toolName,
+      parameters,
+      prioritizedServers,
+    });
+
+    if (!res?.success) {
+      throw new Error(res?.error || "MCP call failed");
+    }
+
+    const payload = res.result ?? {};
+    return { source: "mcp", payload };
+  } catch (err) {
+    console.warn(`[callCoreAgentMcp] MCP call failed for ${toolName}:`, err);
+    throw err instanceof Error ? err : new Error(String(err));
   }
 }
 
