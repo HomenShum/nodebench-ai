@@ -20,6 +20,9 @@ import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
 import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
+import { RichMediaSection } from './RichMediaSection';
+import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from './DocumentActionCard';
+import { extractMediaFromText, type ExtractedMedia } from './utils/mediaExtractor';
 import type { SpawnedAgent } from './types/agent';
 
 import type {
@@ -109,7 +112,7 @@ export function FastAgentPanel({
   const [liveSources, setLiveSources] = useState<Source[]>([]);
 
   // Tab state - MUST be declared before any conditional logic or loops
-  const [activeTab, setActiveTab] = useState<'thread' | 'tasks' | 'edits'>('thread');
+  const [activeTab, setActiveTab] = useState<'thread' | 'tasks' | 'edits' | 'artifacts'>('thread');
   const [isThreadDropdownOpen, setIsThreadDropdownOpen] = useState(false);
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -661,6 +664,73 @@ export function FastAgentPanel({
       model: msg.model,
     }));
 
+  // Artifact extraction helpers
+  const assistantTexts = useMemo(() => {
+    if (!messagesToRender) return [] as string[];
+
+    return messagesToRender
+      .filter((msg: any) => (msg.role ?? msg?.message?.role) === 'assistant')
+      .map((msg: any) => {
+        if (typeof msg.text === 'string' && msg.text.trim()) return msg.text;
+        if (typeof msg.content === 'string' && msg.content.trim()) return msg.content;
+        if (Array.isArray(msg.content)) {
+          const parts = msg.content
+            .filter((c: any) => typeof c?.text === 'string')
+            .map((c: any) => c.text)
+            .join('\n\n');
+          if (parts.trim()) return parts;
+        }
+        if (typeof msg.message?.text === 'string' && msg.message.text.trim()) return msg.message.text;
+        return '';
+      })
+      .filter(Boolean);
+  }, [messagesToRender]);
+
+  const aggregatedMedia = useMemo<ExtractedMedia>(() => {
+    const base: ExtractedMedia = { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] };
+
+    const dedupe = <T,>(items: T[], getKey: (item: T) => string | undefined) => {
+      const map = new Map<string, T>();
+      items.forEach((item) => {
+        const key = getKey(item);
+        if (!key) return;
+        if (!map.has(key)) map.set(key, item);
+      });
+      return Array.from(map.values());
+    };
+
+    const collected = assistantTexts.reduce((acc, text) => {
+      const media = extractMediaFromText(text);
+      acc.youtubeVideos.push(...media.youtubeVideos);
+      acc.secDocuments.push(...media.secDocuments);
+      acc.webSources.push(...media.webSources);
+      acc.profiles.push(...media.profiles);
+      acc.images.push(...media.images);
+      return acc;
+    }, base);
+
+    return {
+      youtubeVideos: dedupe(collected.youtubeVideos, (v: any) => v.url || v.videoId),
+      secDocuments: dedupe(collected.secDocuments, (doc: any) => doc.accessionNumber || doc.documentUrl),
+      webSources: dedupe(collected.webSources, (source: any) => source.url || source.title),
+      profiles: dedupe(collected.profiles, (profile: any) => profile.url || profile.name),
+      images: dedupe(collected.images, (img: any) => img.url),
+    };
+  }, [assistantTexts]);
+
+  const aggregatedDocumentActions = useMemo<DocumentAction[]>(() => {
+    const dedupe = (docs: DocumentAction[]) => {
+      const map = new Map<string, DocumentAction>();
+      docs.forEach((doc) => {
+        if (!map.has(doc.documentId)) map.set(doc.documentId, doc);
+      });
+      return Array.from(map.values());
+    };
+
+    const docs = assistantTexts.flatMap((text) => extractDocumentActions(text));
+    return dedupe(docs);
+  }, [assistantTexts]);
+
   return (
     <>
       {/* Backdrop for mobile */}
@@ -759,7 +829,7 @@ export function FastAgentPanel({
 
             {/* Bottom Row: Tabs */}
             <div className="flex p-1 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
-              {(['thread', 'tasks', 'edits'] as const).map((tab) => (
+              {(['thread', 'artifacts', 'tasks', 'edits'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -790,45 +860,53 @@ export function FastAgentPanel({
 
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] relative">
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
-              {/* Welcome / Empty State */}
-              {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
-                <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[var(--text-secondary)]">
-                  <div className="w-12 h-12 bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center mb-4">
-                    <Bot className="w-6 h-6 text-[var(--text-muted)]" />
+            {activeTab === 'artifacts' ? (
+              <ArtifactsTab
+                media={aggregatedMedia}
+                documents={aggregatedDocumentActions}
+                hasThread={Boolean(activeThreadId)}
+                onDocumentSelect={handleDocumentSelect}
+              />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+                {/* Welcome / Empty State */}
+                {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[var(--text-secondary)]">
+                    <div className="w-12 h-12 bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center mb-4">
+                      <Bot className="w-6 h-6 text-[var(--text-muted)]" />
+                    </div>
+                    <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">Nodebench AI</h3>
+                    <p className="text-xs text-[var(--text-muted)] max-w-[200px]">
+                      Ready to help with your coding tasks.
+                    </p>
                   </div>
-                  <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">Nodebench AI</h3>
-                  <p className="text-xs text-[var(--text-muted)] max-w-[200px]">
-                    Ready to help with your coding tasks.
-                  </p>
-                </div>
-              )}
+                )}
 
-              {messagesToRender?.map((message: any) => (
-                <FastAgentUIMessageBubble
-                  key={message._id || message.id}
-                  message={message}
-                  onRegenerateMessage={() => handleRegenerateMessage(message.key)}
-                  onDeleteMessage={() => handleDeleteMessage(message._id)}
-                  onCompanySelect={handleCompanySelect}
-                  onPersonSelect={handlePersonSelect}
-                  onEventSelect={handleEventSelect}
-                  onNewsSelect={handleNewsSelect}
-                  onDocumentSelect={handleDocumentSelect}
-                />
-              ))}
+                {messagesToRender?.map((message: any) => (
+                  <FastAgentUIMessageBubble
+                    key={message._id || message.id}
+                    message={message}
+                    onRegenerateMessage={() => handleRegenerateMessage(message.key)}
+                    onDeleteMessage={() => handleDeleteMessage(message._id)}
+                    onCompanySelect={handleCompanySelect}
+                    onPersonSelect={handlePersonSelect}
+                    onEventSelect={handleEventSelect}
+                    onNewsSelect={handleNewsSelect}
+                    onDocumentSelect={handleDocumentSelect}
+                  />
+                ))}
 
-              {/* Streaming Indicator */}
-              {isStreaming && (
-                <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] px-4 animate-pulse">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Thinking...</span>
-                </div>
-              )}
+                {/* Streaming Indicator */}
+                {isStreaming && (
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] px-4 animate-pulse">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Thinking...</span>
+                  </div>
+                )}
 
-              <div ref={messagesEndRef} />
-            </div>
+                <div ref={messagesEndRef} />
+              </div>
+            )}
 
             {/* Input Area */}
             <div className="p-4 bg-[var(--bg-primary)]/80 backdrop-blur-sm border-t border-[var(--border-color)]">
@@ -950,5 +1028,79 @@ export function FastAgentPanel({
         )}
       </div>
     </>
+  );
+}
+
+interface ArtifactsTabProps {
+  media: ExtractedMedia;
+  documents: DocumentAction[];
+  hasThread: boolean;
+  onDocumentSelect: (documentId: string) => void;
+}
+
+function ArtifactsTab({ media, documents, hasThread, onDocumentSelect }: ArtifactsTabProps) {
+  const totalSources = media.webSources.length + media.secDocuments.length;
+  const totalVideos = media.youtubeVideos.length;
+  const totalProfiles = media.profiles.length;
+  const totalImages = media.images.length;
+  const totalDocs = documents.length;
+  const totalArtifacts = totalSources + totalVideos + totalProfiles + totalImages + totalDocs;
+
+  if (totalArtifacts === 0) {
+    return (
+      <div className="flex-1 overflow-y-auto p-6 flex items-center justify-center text-center bg-[var(--bg-primary)]">
+        <div className="space-y-2 max-w-md">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">
+            No artifacts yet.
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">
+            {hasThread
+              ? 'Run a query or wait for the agent to finish to see collected sources, filings, media, and generated documents.'
+              : 'Start a thread to collect sources, filings, media, and generated documents as the agent works.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[var(--bg-primary)]">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {[{ label: 'Sources & Filings', value: totalSources }, { label: 'Videos', value: totalVideos }, { label: 'People', value: totalProfiles }, { label: 'Images', value: totalImages }, { label: 'Doc actions', value: totalDocs }] // Keep compact summary
+          .filter(card => card.value > 0)
+          .map((card) => (
+            <div
+              key={card.label}
+              className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-2 flex items-center justify-between text-xs"
+            >
+              <span className="font-medium text-[var(--text-primary)]">{card.label}</span>
+              <span className="text-[var(--accent-primary)] font-semibold">{card.value}</span>
+            </div>
+          ))}
+      </div>
+
+      <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-xs font-semibold text-[var(--text-primary)]">Artifacts</p>
+            <p className="text-[10px] text-[var(--text-muted)]">Evidence the agent discovered, with links and media.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <RichMediaSection media={media} showCitations={true} />
+
+          {documents.length > 0 && (
+            <div className="border-t border-[var(--border-color)] pt-3">
+              <DocumentActionGrid
+                documents={documents}
+                title="Generated Documents"
+                onDocumentSelect={onDocumentSelect}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
