@@ -109,6 +109,8 @@ Always structure responses with:
 - Provide direct EDGAR URLs
 - Explain the significance of filings
 - Include filing dates
+- Stamp each finding with the exact filing date/time (UTC) and keep the EDGAR URL beside it
+- Add a short verification note naming which SEC tool you used and when it was queried (UTC)
 - Cite specific sections when analyzing
 - Use bullet points for clarity`,
     tools: {

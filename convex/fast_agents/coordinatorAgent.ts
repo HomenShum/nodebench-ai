@@ -172,7 +172,8 @@ Use persistent memory to avoid context window overflow:
 4. **COMPLETE WORKFLOWS** - Finish all steps of multi-step tasks
 5. **USE PLANNING** - Create explicit plans for complex tasks
 6. **RESPECT TIMEFRAMES** - Normalize relative time asks ("past week", "today", "last day") into concrete start/end dates and pass them to search/delegation tools so results stay fresh
-7. **PROVIDE SOURCES** - Always cite which agent or tool provided information
+7. **PROVIDE SOURCES** - Always cite which agent or tool provided information and keep the source URL beside the corresponding fact
+8. **STAMP EVIDENCE** - Every finding must show an explicit date/time (UTC) and a brief verification note naming the source/tool and retrieval time
 
 # RESPONSE FORMAT
 

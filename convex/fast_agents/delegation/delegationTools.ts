@@ -70,6 +70,8 @@ export function buildDelegationTools(model: string): Record<string, DelegationTo
     }
   };
 
+  const premiumEvidenceRequirements = `\n\nQuality bar (premium output):\n- State an explicit date (YYYY-MM-DD) and timezone for every finding.\n- Put the primary source URL right next to the finding (EDGAR link, article URL, etc.).\n- Add a short verification note per finding: which tool/source you used and the UTC retrieval time.\n- Drop or clearly flag anything outside the requested timeframe.`;
+
   const buildDelegationPrompt = (query: string, inheritedContext?: DelegationCtx["temporalContext"]) => {
     const promptWithContext = buildPromptWithTemporalContext(query);
 
@@ -77,10 +79,10 @@ export function buildDelegationTools(model: string): Record<string, DelegationTo
       const prompt = `${query}\n\nTimeframe: ${inheritedContext.label} (from ${inheritedContext.startDate} to ${inheritedContext.endDate}).` +
         " Apply date filters in your tools to stay within this range and prioritize the most recent results.";
 
-      return { prompt, temporalContext: inheritedContext };
+      return { prompt: `${prompt}${premiumEvidenceRequirements}`, temporalContext: inheritedContext };
     }
 
-    return promptWithContext;
+    return { ...promptWithContext, prompt: `${promptWithContext.prompt}${premiumEvidenceRequirements}` };
   };
 
   /**
