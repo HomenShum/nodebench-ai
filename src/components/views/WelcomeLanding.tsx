@@ -25,6 +25,9 @@ import {
 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { extractMediaFromMessages, ExtractedAsset } from "../../../convex/lib/dossierHelpers";
+import { RichMediaSection } from "../FastAgentPanel/RichMediaSection";
+import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from "../FastAgentPanel/DocumentActionCard";
+import { extractMediaFromText, type ExtractedMedia } from "../FastAgentPanel/utils/mediaExtractor";
 import { useMemo, useState, useEffect } from "react";
 import ReactMarkdown from 'react-markdown';
 import LiveDossierDocument from "./LiveDossierDocument";
@@ -208,10 +211,10 @@ export default function WelcomeLanding({
   const createThread = useAction(api.fastAgentPanelStreaming.createThread);
   const sendStreaming = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
   // State with persistence
-  const [activeTab, setActiveTab] = useState<'dossier' | 'newsletter' | 'media'>(() => {
+  const [activeTab, setActiveTab] = useState<'dossier' | 'newsletter' | 'media' | 'artifacts'>(() => {
     if (typeof window !== 'undefined') {
       const saved = sessionStorage.getItem('nodebench_landing_activeTab');
-      return (saved as 'dossier' | 'newsletter' | 'media') || 'dossier';
+      return (saved as 'dossier' | 'newsletter' | 'media' | 'artifacts') || 'dossier';
     }
     return 'dossier';
   });
@@ -439,6 +442,27 @@ export default function WelcomeLanding({
     [latestAssistantMessage]
   );
 
+  const assistantTexts = useMemo(() => {
+    if (!uiMessages) return [] as string[];
+
+    return uiMessages
+      .filter((msg: any) => (msg.role ?? msg?.message?.role) === "assistant")
+      .map((msg: any) => {
+        if (typeof msg.text === "string" && msg.text.trim()) return msg.text;
+        if (typeof msg.content === "string" && msg.content.trim()) return msg.content;
+        if (Array.isArray(msg.content)) {
+          const parts = msg.content
+            .filter((c: any) => typeof c?.text === "string")
+            .map((c: any) => c.text)
+            .join("\n\n");
+          if (parts.trim()) return parts;
+        }
+        if (typeof msg.message?.text === "string" && msg.message.text.trim()) return msg.message.text;
+        return "";
+      })
+      .filter(Boolean);
+  }, [uiMessages]);
+
   // Extract media assets from the CONTENT message (persistent)
   const mediaAssets = useMemo(() => {
     if (!latestContentMessage) return [];
@@ -509,6 +533,73 @@ export default function WelcomeLanding({
     });
     return counts;
   }, [citations]);
+
+  const aggregatedMedia = useMemo<ExtractedMedia>(() => {
+    const base: ExtractedMedia = { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] };
+
+    const dedupe = <T,>(items: T[], getKey: (item: T) => string | undefined) => {
+      const map = new Map<string, T>();
+      items.forEach((item) => {
+        const key = getKey(item);
+        if (!key) return;
+        if (!map.has(key)) map.set(key, item);
+      });
+      return Array.from(map.values());
+    };
+
+    const collected = assistantTexts.reduce((acc, text) => {
+      const media = extractMediaFromText(text);
+      acc.youtubeVideos.push(...media.youtubeVideos);
+      acc.secDocuments.push(...media.secDocuments);
+      acc.webSources.push(...media.webSources);
+      acc.profiles.push(...media.profiles);
+      acc.images.push(...media.images);
+      return acc;
+    }, base);
+
+    const citationSources = citations
+      .map((c: any) => {
+        if (!c?.url) return null;
+        return {
+          title: c.title || c.headline || c.url,
+          url: c.url,
+          favicon: c.favicon,
+          source: c.source,
+          publishedAt: c.date || c.publishedAt,
+        };
+      })
+      .filter(Boolean);
+
+    collected.webSources.push(...citationSources);
+
+    return {
+      youtubeVideos: dedupe(collected.youtubeVideos, (v: any) => v.url || v.videoId),
+      secDocuments: dedupe(collected.secDocuments, (doc: any) => doc.accessionNumber || doc.documentUrl),
+      webSources: dedupe(collected.webSources, (source: any) => source.url || source.title),
+      profiles: dedupe(collected.profiles, (profile: any) => profile.url || profile.name),
+      images: dedupe(collected.images, (img: any) => img.url),
+    };
+  }, [assistantTexts, citations]);
+
+  const aggregatedDocumentActions = useMemo<DocumentAction[]>(() => {
+    const dedupe = (docs: DocumentAction[]) => {
+      const map = new Map<string, DocumentAction>();
+      docs.forEach((doc) => {
+        if (!map.has(doc.documentId)) map.set(doc.documentId, doc);
+      });
+      return Array.from(map.values());
+    };
+
+    const docs = assistantTexts.flatMap((text) => extractDocumentActions(text));
+    return dedupe(docs);
+  }, [assistantTexts]);
+
+  const totalArtifacts = aggregatedMedia.youtubeVideos.length +
+    aggregatedMedia.secDocuments.length +
+    aggregatedMedia.webSources.length +
+    aggregatedMedia.profiles.length +
+    aggregatedMedia.images.length +
+    aggregatedDocumentActions.length;
 
   const toggleSource = (sourceId: string) => {
     setActiveSources(prev =>
@@ -1178,6 +1269,13 @@ export default function WelcomeLanding({
                     >
                       Media Gallery <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{mediaAssets.length}</span>
                     </button>
+                    <button
+                      onClick={() => setActiveTab('artifacts')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'artifacts' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                      Artifacts <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{totalArtifacts}</span>
+                    </button>
                   </div>
 
                   {/* View Content */}
@@ -1209,6 +1307,15 @@ export default function WelcomeLanding({
 
                   {activeTab === 'media' && (
                     <MockMediaView mediaAssets={mediaAssets} />
+                  )}
+
+                  {activeTab === 'artifacts' && (
+                    <LandingArtifactsView
+                      media={aggregatedMedia}
+                      documents={aggregatedDocumentActions}
+                      hasThread={Boolean(threadId)}
+                      onDocumentSelect={onDocumentSelect}
+                    />
                   )}
                 </div>
               </div>
@@ -1408,6 +1515,68 @@ function MockMediaView({ mediaAssets }: { mediaAssets: ExtractedAsset[] }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function LandingArtifactsView({ media, documents, hasThread, onDocumentSelect }: { media: ExtractedMedia; documents: DocumentAction[]; hasThread: boolean; onDocumentSelect?: (documentId: string) => void; }) {
+  const totalSources = media.webSources.length + media.secDocuments.length;
+  const totalVideos = media.youtubeVideos.length;
+  const totalProfiles = media.profiles.length;
+  const totalImages = media.images.length;
+  const totalDocs = documents.length;
+  const totalArtifacts = totalSources + totalVideos + totalProfiles + totalImages + totalDocs;
+
+  if (totalArtifacts === 0) {
+    return (
+      <div className="bg-white shadow-sm min-h-full border border-gray-200/60 p-10 text-center rounded-xl">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center border border-gray-200">
+          <Layout className="w-5 h-5 text-gray-500" />
+        </div>
+        <p className="text-sm font-semibold text-gray-900">No artifacts yet</p>
+        <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+          {hasThread
+            ? "Run or finish a query to see the sources, filings, media, and generated docs the agent found."
+            : "Start a dossier to collect sources, filings, media, and generated docs as the agent works."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[{ label: 'Sources & Filings', value: totalSources }, { label: 'Videos', value: totalVideos }, { label: 'People', value: totalProfiles }, { label: 'Images', value: totalImages }, { label: 'Doc actions', value: totalDocs }]
+          .filter(card => card.value > 0)
+          .map((card) => (
+            <div
+              key={card.label}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 flex items-center justify-between text-xs shadow-sm"
+            >
+              <span className="font-medium text-gray-900">{card.label}</span>
+              <span className="text-blue-600 font-semibold">{card.value}</span>
+            </div>
+          ))}
+      </div>
+
+      <div className="bg-white shadow-sm border border-gray-200 rounded-xl p-4 space-y-4">
+        <div>
+          <p className="text-sm font-semibold text-gray-900">Artifacts</p>
+          <p className="text-xs text-gray-500">Evidence with timestamps, URLs, and generated outputs.</p>
+        </div>
+
+        <RichMediaSection media={media} showCitations={true} />
+
+        {documents.length > 0 && (
+          <div className="border-t border-gray-100 pt-3">
+            <DocumentActionGrid
+              documents={documents}
+              title="Generated Documents"
+              onDocumentSelect={onDocumentSelect || (() => {})}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
