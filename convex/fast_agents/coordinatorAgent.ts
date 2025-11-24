@@ -69,7 +69,7 @@ export const DEFAULT_MODEL = "gpt-5-chat-latest";
  * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-5-chat-latest")
  * @returns Orchestrator agent configured with delegation and planning tools
  */
-export const createCoordinatorAgent = (model: string) => new Agent(components.agent, {
+export const createCoordinatorAgent = (model: string): Agent => new Agent(components.agent, {
   name: "CoordinatorAgent",
   languageModel: openai.chat(model),
   textEmbeddingModel: openai.embedding("text-embedding-3-small"),
@@ -171,7 +171,9 @@ Use persistent memory to avoid context window overflow:
 3. **ASK FOR HELP** - If unsure, use askHuman
 4. **COMPLETE WORKFLOWS** - Finish all steps of multi-step tasks
 5. **USE PLANNING** - Create explicit plans for complex tasks
-6. **PROVIDE SOURCES** - Always cite which agent or tool provided information
+6. **RESPECT TIMEFRAMES** - Normalize relative time asks ("past week", "today", "last day") into concrete start/end dates and pass them to search/delegation tools so results stay fresh
+7. **PROVIDE SOURCES** - Always cite which agent or tool provided information and keep the source URL beside the corresponding fact
+8. **STAMP EVIDENCE** - Every finding must show an explicit date/time (UTC) and a brief verification note naming the source/tool and retrieval time
 
 # RESPONSE FORMAT
 
@@ -236,6 +238,6 @@ Structure your responses clearly:
  * Export the coordinator agent as an action for workflow usage.
  * This allows the workflow to call the agent as a durable step.
  */
-export const runCoordinatorAgent = createCoordinatorAgent(DEFAULT_MODEL).asTextAction({
+export const runCoordinatorAgent: ReturnType<Agent["asTextAction"]> = createCoordinatorAgent(DEFAULT_MODEL).asTextAction({
   stopWhen: stepCountIs(25),
 });
