@@ -15,6 +15,7 @@
     "lint:eslint": "eslint .",
     "lint:eslint:fix": "eslint . --fix",
     "test": "vitest",
+    "test:jest": "vitest run src/components/FastAgentPanel/__tests__/ArtifactsTab.test.tsx",
     "test:run": "vitest run",
     "eval": "tsx scripts/runEvaluation.ts",
     "eval:quick": "convex run tools/evaluation/quickTest:runQuickTest",

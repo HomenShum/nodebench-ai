@@ -1104,3 +1104,6 @@ function ArtifactsTab({ media, documents, hasThread, onDocumentSelect }: Artifac
     </div>
   );
 }
+
+// Exported for tests and shared rendering between panels and landing views
+export { ArtifactsTab };
