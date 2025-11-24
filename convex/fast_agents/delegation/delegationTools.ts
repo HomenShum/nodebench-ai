@@ -8,6 +8,7 @@ import { Agent, createTool, stepCountIs } from "@convex-dev/agent";
 import type { Tool } from "ai";
 import { z } from "zod";
 import type { DelegationCtx, ensureThread, pickUserId, formatDelegationResult, extractToolNames } from "./delegationHelpers";
+import { buildPromptWithTemporalContext } from "./temporalContext";
 
 type DelegationTool = Tool<any, any>;
 
@@ -69,6 +70,19 @@ export function buildDelegationTools(model: string): Record<string, DelegationTo
     }
   };
 
+  const buildDelegationPrompt = (query: string, inheritedContext?: DelegationCtx["temporalContext"]) => {
+    const promptWithContext = buildPromptWithTemporalContext(query);
+
+    if (!promptWithContext.temporalContext && inheritedContext) {
+      const prompt = `${query}\n\nTimeframe: ${inheritedContext.label} (from ${inheritedContext.startDate} to ${inheritedContext.endDate}).` +
+        " Apply date filters in your tools to stay within this range and prioritize the most recent results.";
+
+      return { prompt, temporalContext: inheritedContext };
+    }
+
+    return promptWithContext;
+  };
+
   /**
    * Delegate to Document Agent
    * Use for: document search, reading, creation, editing, multi-document analysis
@@ -96,12 +110,13 @@ The DocumentAgent has specialized tools for document management and will return 
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(documentAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout(documentAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(8),
         }
       ));
@@ -144,12 +159,13 @@ The MediaAgent has specialized tools for media discovery and will return relevan
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(mediaAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout(mediaAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(6),
         }
       ));
@@ -191,12 +207,13 @@ The SECAgent has specialized tools for SEC EDGAR database access and will return
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(secAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout<any>(secAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(6),
         }
       ));
@@ -239,12 +256,13 @@ The OpenBBAgent has specialized tools for financial data via OpenBB Platform and
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(openbbAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout(openbbAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(8),
         }
       ));
@@ -291,12 +309,13 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(entityResearchAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout(entityResearchAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(10),
         }
       ));
@@ -350,13 +369,14 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
         }
 
         const threadId = await ensureThreadHelper(agent, ctx, task.threadId);
+        const { prompt, temporalContext } = buildDelegationPrompt(task.query, ctx.temporalContext);
 
         try {
           const generation = agent.generateText(
-            { ...ctx, depth: nextDepth } as any,
+            { ...ctx, depth: nextDepth, temporalContext } as any,
             { threadId, userId: pickUserIdHelper(ctx) },
             {
-              prompt: task.query,
+              prompt,
               stopWhen: stepCountIs(8), // Slightly lower limit for parallel tasks
             }
           ) as Promise<any>;

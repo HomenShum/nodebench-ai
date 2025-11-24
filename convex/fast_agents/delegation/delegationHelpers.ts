@@ -6,11 +6,20 @@
 
 import type { Agent } from "@convex-dev/agent";
 import type { ToolCtx } from "@convex-dev/agent";
+import type { TemporalContext } from "./temporalContext";
 
 /**
  * Extended context type for delegation with optional evaluation user ID
  */
-export type DelegationCtx = ToolCtx & { evaluationUserId?: string; depth?: number };
+export type DelegationCtx = ToolCtx & {
+  evaluationUserId?: string;
+  depth?: number;
+  /**
+   * Normalized temporal window the orchestrator parsed from the user's query.
+   * Subagents can use this to set date filters or prefer fresh sources.
+   */
+  temporalContext?: TemporalContext;
+};
 
 /**
  * Pick the appropriate user ID from context
