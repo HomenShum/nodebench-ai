@@ -466,7 +466,13 @@ export default function WelcomeLanding({
   // Extract media assets from the CONTENT message (persistent)
   const mediaAssets = useMemo(() => {
     if (!latestContentMessage) return [];
-    return extractMediaFromMessages([latestContentMessage]);
+
+    try {
+      return extractMediaFromMessages([latestContentMessage]);
+    } catch (error) {
+      console.error("[WelcomeLanding] Failed to extract media from messages", error);
+      return [];
+    }
   }, [latestContentMessage]);
 
   // Extract citations from CONTENT tool parts (persistent)
@@ -537,48 +543,57 @@ export default function WelcomeLanding({
   const aggregatedMedia = useMemo<ExtractedMedia>(() => {
     const base: ExtractedMedia = { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] };
 
-    const dedupe = <T,>(items: T[], getKey: (item: T) => string | undefined) => {
-      const map = new Map<string, T>();
-      items.forEach((item) => {
-        const key = getKey(item);
-        if (!key) return;
-        if (!map.has(key)) map.set(key, item);
-      });
-      return Array.from(map.values());
-    };
+    try {
+      const dedupe = <T,>(items: T[], getKey: (item: T) => string | undefined) => {
+        const map = new Map<string, T>();
+        items.forEach((item) => {
+          const key = getKey(item);
+          if (!key) return;
+          if (!map.has(key)) map.set(key, item);
+        });
+        return Array.from(map.values());
+      };
 
-    const collected = assistantTexts.reduce((acc, text) => {
-      const media = extractMediaFromText(text);
-      acc.youtubeVideos.push(...media.youtubeVideos);
-      acc.secDocuments.push(...media.secDocuments);
-      acc.webSources.push(...media.webSources);
-      acc.profiles.push(...media.profiles);
-      acc.images.push(...media.images);
-      return acc;
-    }, base);
+      const collected = assistantTexts.reduce((acc, text) => {
+        try {
+          const media = extractMediaFromText(text);
+          acc.youtubeVideos.push(...media.youtubeVideos);
+          acc.secDocuments.push(...media.secDocuments);
+          acc.webSources.push(...media.webSources);
+          acc.profiles.push(...media.profiles);
+          acc.images.push(...media.images);
+        } catch (error) {
+          console.error("[WelcomeLanding] Failed to parse media from text", error);
+        }
+        return acc;
+      }, base);
 
-    const citationSources = citations
-      .map((c: any) => {
-        if (!c?.url) return null;
-        return {
-          title: c.title || c.headline || c.url,
-          url: c.url,
-          favicon: c.favicon,
-          source: c.source,
-          publishedAt: c.date || c.publishedAt,
-        };
-      })
-      .filter(Boolean);
+      const citationSources = citations
+        .map((c: any) => {
+          if (!c?.url) return null;
+          return {
+            title: c.title || c.headline || c.url,
+            url: c.url,
+            favicon: c.favicon,
+            source: c.source,
+            publishedAt: c.date || c.publishedAt,
+          };
+        })
+        .filter(Boolean);
 
-    collected.webSources.push(...citationSources);
+      collected.webSources.push(...citationSources);
 
-    return {
-      youtubeVideos: dedupe(collected.youtubeVideos, (v: any) => v.url || v.videoId),
-      secDocuments: dedupe(collected.secDocuments, (doc: any) => doc.accessionNumber || doc.documentUrl),
-      webSources: dedupe(collected.webSources, (source: any) => source.url || source.title),
-      profiles: dedupe(collected.profiles, (profile: any) => profile.url || profile.name),
-      images: dedupe(collected.images, (img: any) => img.url),
-    };
+      return {
+        youtubeVideos: dedupe(collected.youtubeVideos, (v: any) => v.url || v.videoId),
+        secDocuments: dedupe(collected.secDocuments, (doc: any) => doc.accessionNumber || doc.documentUrl),
+        webSources: dedupe(collected.webSources, (source: any) => source.url || source.title),
+        profiles: dedupe(collected.profiles, (profile: any) => profile.url || profile.name),
+        images: dedupe(collected.images, (img: any) => img.url),
+      };
+    } catch (error) {
+      console.error("[WelcomeLanding] Failed to aggregate media", error);
+      return base;
+    }
   }, [assistantTexts, citations]);
 
   const aggregatedDocumentActions = useMemo<DocumentAction[]>(() => {
@@ -590,8 +605,13 @@ export default function WelcomeLanding({
       return Array.from(map.values());
     };
 
-    const docs = assistantTexts.flatMap((text) => extractDocumentActions(text));
-    return dedupe(docs);
+    try {
+      const docs = assistantTexts.flatMap((text) => extractDocumentActions(text));
+      return dedupe(docs);
+    } catch (error) {
+      console.error("[WelcomeLanding] Failed to extract document actions", error);
+      return [];
+    }
   }, [assistantTexts]);
 
   const totalArtifacts = aggregatedMedia.youtubeVideos.length +
@@ -673,7 +693,7 @@ export default function WelcomeLanding({
     }
 
     // No cache hit, proceed with normal search
-    if (!user) {
+    if (!isAuthenticated) {
       await handleSignIn();
       return;
     }
