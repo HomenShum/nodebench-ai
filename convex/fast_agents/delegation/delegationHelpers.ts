@@ -51,8 +51,11 @@ export async function ensureThread(
   ctx: DelegationCtx,
   threadId?: string
 ): Promise<string> {
-  // If threadId is explicitly provided, use it
-  if (threadId) return threadId;
+  // If threadId is explicitly provided and looks like a real Convex thread ID, use it.
+  // Guard against LLM-provided labels like "ai_infra_funding_last_week".
+  const isLikelyThreadId = (val?: string) =>
+    typeof val === "string" && /^[a-z0-9]{20,}$/i.test(val);
+  if (isLikelyThreadId(threadId) && threadId) return threadId;
 
   // If context has a threadId, use it
   if (ctx.threadId) return ctx.threadId;
