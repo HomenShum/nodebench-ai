@@ -375,7 +375,7 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
 
         try {
           const generation = agent.generateText(
-            { ...ctx, depth: nextDepth, temporalContext } as any,
+            { ...ctx, depth: nextDepth } as any,
             { threadId, userId: pickUserIdHelper(ctx) },
             {
               prompt,
