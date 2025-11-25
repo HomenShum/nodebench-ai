@@ -25,10 +25,53 @@ import {
 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { extractMediaFromMessages, ExtractedAsset } from "../../../convex/lib/dossierHelpers";
-import { useMemo, useState, useEffect } from "react";
+import { RichMediaSection } from "../FastAgentPanel/RichMediaSection";
+import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from "../FastAgentPanel/DocumentActionCard";
+import { extractMediaFromText, type ExtractedMedia } from "../FastAgentPanel/utils/mediaExtractor";
+import React, { useMemo, useState, useEffect } from "react";
 import ReactMarkdown from 'react-markdown';
 import LiveDossierDocument from "./LiveDossierDocument";
 import MagicInputContainer from "./MagicInputContainer";
+
+const baseMedia: ExtractedMedia = {
+  youtubeVideos: [],
+  secDocuments: [],
+  webSources: [],
+  profiles: [],
+  images: [],
+};
+
+function sanitizeMedia(media?: Partial<ExtractedMedia>): ExtractedMedia {
+  const safeArray = <T,>(items: T[] | undefined, filter?: (item: T) => boolean) =>
+    (items || []).filter((item) => (filter ? filter(item) : Boolean(item)));
+
+  const youtubeVideos = safeArray(media?.youtubeVideos, (v: any) => Boolean(v && (v.url || v.videoId)));
+  const secDocuments = safeArray(media?.secDocuments, (d: any) => Boolean(d && (d.documentUrl || d.accessionNumber || d.title)));
+  const webSources = safeArray(media?.webSources, (s: any) => Boolean(s && (s.url || s.title)));
+  const profiles = safeArray(media?.profiles, (p: any) => Boolean(p && (p.url || p.name)));
+  const images = safeArray(media?.images, (i: any) => Boolean(i && i.url));
+
+  return {
+    youtubeVideos,
+    secDocuments,
+    webSources,
+    profiles,
+    images,
+  };
+}
+
+function sanitizeDocumentActions(docs: any[]): DocumentAction[] {
+  if (!Array.isArray(docs)) return [];
+
+  return docs.filter((doc): doc is DocumentAction =>
+    Boolean(
+      doc &&
+      (doc.action === 'created' || doc.action === 'updated') &&
+      typeof doc.documentId === 'string' &&
+      typeof doc.title === 'string'
+    )
+  );
+}
 
 // Source Configuration
 interface SourceConfig {
@@ -198,7 +241,7 @@ interface WelcomeLandingProps {
   onEnterWorkspace?: () => void;
 }
 
-export default function WelcomeLanding({
+function WelcomeLandingInner({
   onDocumentSelect,
   onEnterWorkspace,
 }: WelcomeLandingProps) {
@@ -208,10 +251,10 @@ export default function WelcomeLanding({
   const createThread = useAction(api.fastAgentPanelStreaming.createThread);
   const sendStreaming = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
   // State with persistence
-  const [activeTab, setActiveTab] = useState<'dossier' | 'newsletter' | 'media'>(() => {
+  const [activeTab, setActiveTab] = useState<'dossier' | 'newsletter' | 'media' | 'artifacts'>(() => {
     if (typeof window !== 'undefined') {
       const saved = sessionStorage.getItem('nodebench_landing_activeTab');
-      return (saved as 'dossier' | 'newsletter' | 'media') || 'dossier';
+      return (saved as 'dossier' | 'newsletter' | 'media' | 'artifacts') || 'dossier';
     }
     return 'dossier';
   });
@@ -349,11 +392,20 @@ export default function WelcomeLanding({
   ) as any;
 
   const agentThreadId = streamingThread?.agentThreadId as string | undefined;
-  const { results: uiMessages } = useUIMessages(
+  const {
+    results: uiMessages = [],
+    error: messagesError,
+  } = (useUIMessages(
     api.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
     agentThreadId ? { threadId: agentThreadId as Id<"chatThreadsStream"> } : "skip",
     { initialNumItems: 50, stream: true }
-  );
+  ) as any) ?? { results: [] };
+
+  useEffect(() => {
+    if (messagesError) {
+      console.error("[WelcomeLanding] Failed to stream messages", messagesError);
+    }
+  }, [messagesError]);
   const handleSignIn = async () => {
     await signIn("google", { redirectTo: "/" });
   };
@@ -439,10 +491,37 @@ export default function WelcomeLanding({
     [latestAssistantMessage]
   );
 
+  const assistantTexts = useMemo(() => {
+    if (!uiMessages) return [] as string[];
+
+    return uiMessages
+      .filter((msg: any) => (msg.role ?? msg?.message?.role) === "assistant")
+      .map((msg: any) => {
+        if (typeof msg.text === "string" && msg.text.trim()) return msg.text;
+        if (typeof msg.content === "string" && msg.content.trim()) return msg.content;
+        if (Array.isArray(msg.content)) {
+          const parts = msg.content
+            .filter((c: any) => typeof c?.text === "string")
+            .map((c: any) => c.text)
+            .join("\n\n");
+          if (parts.trim()) return parts;
+        }
+        if (typeof msg.message?.text === "string" && msg.message.text.trim()) return msg.message.text;
+        return "";
+      })
+      .filter(Boolean);
+  }, [uiMessages]);
+
   // Extract media assets from the CONTENT message (persistent)
   const mediaAssets = useMemo(() => {
     if (!latestContentMessage) return [];
-    return extractMediaFromMessages([latestContentMessage]);
+
+    try {
+      return extractMediaFromMessages([latestContentMessage]);
+    } catch (error) {
+      console.error("[WelcomeLanding] Failed to extract media from messages", error);
+      return [];
+    }
   }, [latestContentMessage]);
 
   // Extract citations from CONTENT tool parts (persistent)
@@ -509,6 +588,89 @@ export default function WelcomeLanding({
     });
     return counts;
   }, [citations]);
+
+  const aggregatedMedia = useMemo<ExtractedMedia>(() => {
+    const base: ExtractedMedia = sanitizeMedia(baseMedia);
+
+    try {
+      const dedupe = <T,>(items: T[], getKey: (item: T) => string | undefined) => {
+        const map = new Map<string, T>();
+        items.forEach((item) => {
+          const key = getKey(item);
+          if (!key) return;
+          if (!map.has(key)) map.set(key, item);
+        });
+        return Array.from(map.values());
+      };
+
+      const collected = assistantTexts.reduce((acc, text) => {
+        try {
+          const media = extractMediaFromText(text);
+          acc.youtubeVideos.push(...media.youtubeVideos);
+          acc.secDocuments.push(...media.secDocuments);
+          acc.webSources.push(...media.webSources);
+          acc.profiles.push(...media.profiles);
+          acc.images.push(...media.images);
+        } catch (error) {
+          console.error("[WelcomeLanding] Failed to parse media from text", error);
+        }
+        return acc;
+      }, base);
+
+      const citationSources = citations
+        .map((c: any) => {
+          if (!c?.url) return null;
+          return {
+            title: c.title || c.headline || c.url,
+            url: c.url,
+            favicon: c.favicon,
+            source: c.source,
+            publishedAt: c.date || c.publishedAt,
+          };
+        })
+        .filter(Boolean);
+
+      collected.webSources.push(...citationSources);
+
+      const sanitized = sanitizeMedia({
+        youtubeVideos: dedupe(collected.youtubeVideos, (v: any) => v.url || v.videoId),
+        secDocuments: dedupe(collected.secDocuments, (doc: any) => doc.accessionNumber || doc.documentUrl),
+        webSources: dedupe(collected.webSources, (source: any) => source.url || source.title),
+        profiles: dedupe(collected.profiles, (profile: any) => profile.url || profile.name),
+        images: dedupe(collected.images, (img: any) => img.url),
+      });
+
+      return sanitized;
+    } catch (error) {
+      console.error("[WelcomeLanding] Failed to aggregate media", error);
+      return base;
+    }
+  }, [assistantTexts, citations]);
+
+  const aggregatedDocumentActions = useMemo<DocumentAction[]>(() => {
+    const dedupe = (docs: DocumentAction[]) => {
+      const map = new Map<string, DocumentAction>();
+      docs.forEach((doc) => {
+        if (!map.has(doc.documentId)) map.set(doc.documentId, doc);
+      });
+      return Array.from(map.values());
+    };
+
+    try {
+      const docs = assistantTexts.flatMap((text) => extractDocumentActions(text));
+      return dedupe(sanitizeDocumentActions(docs));
+    } catch (error) {
+      console.error("[WelcomeLanding] Failed to extract document actions", error);
+      return [];
+    }
+  }, [assistantTexts]);
+
+  const totalArtifacts = aggregatedMedia.youtubeVideos.length +
+    aggregatedMedia.secDocuments.length +
+    aggregatedMedia.webSources.length +
+    aggregatedMedia.profiles.length +
+    aggregatedMedia.images.length +
+    aggregatedDocumentActions.length;
 
   const toggleSource = (sourceId: string) => {
     setActiveSources(prev =>
@@ -582,7 +744,7 @@ export default function WelcomeLanding({
     }
 
     // No cache hit, proceed with normal search
-    if (!user) {
+    if (!isAuthenticated) {
       await handleSignIn();
       return;
     }
@@ -1178,6 +1340,13 @@ export default function WelcomeLanding({
                     >
                       Media Gallery <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{mediaAssets.length}</span>
                     </button>
+                    <button
+                      onClick={() => setActiveTab('artifacts')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'artifacts' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                      Artifacts <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{totalArtifacts}</span>
+                    </button>
                   </div>
 
                   {/* View Content */}
@@ -1210,6 +1379,15 @@ export default function WelcomeLanding({
                   {activeTab === 'media' && (
                     <MockMediaView mediaAssets={mediaAssets} />
                   )}
+
+                  {activeTab === 'artifacts' && (
+                    <LandingArtifactsView
+                      media={aggregatedMedia}
+                      documents={aggregatedDocumentActions}
+                      hasThread={Boolean(threadId)}
+                      onDocumentSelect={onDocumentSelect}
+                    />
+                  )}
                 </div>
               </div>
             )}
@@ -1217,6 +1395,68 @@ export default function WelcomeLanding({
         </div>
       </div>
     </>
+  );
+}
+
+class LandingErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: Error }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[WelcomeLanding] Render failure", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+          <div className="max-w-md w-full bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-center space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-red-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Something went wrong</h2>
+            <p className="text-sm text-gray-600">
+              The welcome landing hit an unexpected error while composing the newsletter. Try reloading, or rerun your query.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                onClick={() => window.location.reload()}
+              >
+                Reload
+              </button>
+              <button
+                className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-900 transition-colors"
+                onClick={() => this.setState({ hasError: false, error: undefined })}
+              >
+                Return
+              </button>
+            </div>
+            {this.state.error && (
+              <pre className="text-left text-xs text-gray-500 bg-gray-50 rounded-lg p-3 overflow-auto max-h-40 border border-gray-100">
+                {this.state.error?.message}
+              </pre>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children as React.ReactElement;
+  }
+}
+
+export default function WelcomeLanding(props: WelcomeLandingProps) {
+  return (
+    <LandingErrorBoundary>
+      <WelcomeLandingInner {...props} />
+    </LandingErrorBoundary>
   );
 }
 
@@ -1410,4 +1650,84 @@ function MockMediaView({ mediaAssets }: { mediaAssets: ExtractedAsset[] }) {
       ))}
     </div>
   );
+}
+
+function LandingArtifactsView({ media, documents, hasThread, onDocumentSelect }: { media: ExtractedMedia; documents: DocumentAction[]; hasThread: boolean; onDocumentSelect?: (documentId: string) => void; }) {
+  try {
+    const safeMedia = sanitizeMedia(media || baseMedia);
+    const safeDocuments = sanitizeDocumentActions(documents);
+
+    const totalSources = safeMedia.webSources.length + safeMedia.secDocuments.length;
+    const totalVideos = safeMedia.youtubeVideos.length;
+    const totalProfiles = safeMedia.profiles.length;
+    const totalImages = safeMedia.images.length;
+    const totalDocs = safeDocuments.length;
+    const totalArtifacts = totalSources + totalVideos + totalProfiles + totalImages + totalDocs;
+
+    if (totalArtifacts === 0) {
+      return (
+        <div className="bg-white shadow-sm min-h-full border border-gray-200/60 p-10 text-center rounded-xl">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center border border-gray-200">
+            <Layout className="w-5 h-5 text-gray-500" />
+          </div>
+          <p className="text-sm font-semibold text-gray-900">No artifacts yet</p>
+          <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+            {hasThread
+              ? "Run or finish a query to see the sources, filings, media, and generated docs the agent found."
+              : "Start a dossier to collect sources, filings, media, and generated docs as the agent works."}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[{ label: 'Sources & Filings', value: totalSources }, { label: 'Videos', value: totalVideos }, { label: 'People', value: totalProfiles }, { label: 'Images', value: totalImages }, { label: 'Doc actions', value: totalDocs }]
+            .filter(card => card.value > 0)
+            .map((card) => (
+              <div
+                key={card.label}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 flex items-center justify-between text-xs shadow-sm"
+              >
+                <span className="font-medium text-gray-900">{card.label}</span>
+                <span className="text-blue-600 font-semibold">{card.value}</span>
+              </div>
+            ))}
+        </div>
+
+        <div className="bg-white shadow-sm border border-gray-200 rounded-xl p-4 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Artifacts</p>
+            <p className="text-xs text-gray-500">Evidence with timestamps, URLs, and generated outputs.</p>
+          </div>
+
+          <RichMediaSection media={safeMedia} showCitations={true} />
+
+          {safeDocuments.length > 0 && (
+            <div className="border-t border-gray-100 pt-3">
+              <DocumentActionGrid
+                documents={safeDocuments}
+                title="Generated Documents"
+                onDocumentSelect={onDocumentSelect || (() => {})}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  } catch (error) {
+    console.error("[WelcomeLanding] Failed to render artifacts tab", error);
+    return (
+      <div className="bg-white shadow-sm min-h-full border border-gray-200/60 p-10 text-center rounded-xl">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-50 flex items-center justify-center border border-red-100">
+          <AlertCircle className="w-5 h-5 text-red-500" />
+        </div>
+        <p className="text-sm font-semibold text-gray-900">Artifacts temporarily unavailable</p>
+        <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+          We hit a rendering error while loading evidence. Please try again or switch back to the dossier tab.
+        </p>
+      </div>
+    );
+  }
 }
