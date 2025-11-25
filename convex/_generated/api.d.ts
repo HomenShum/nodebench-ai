@@ -111,6 +111,8 @@ import type * as fastAgentPanelStreaming from "../fastAgentPanelStreaming.js";
 import type * as fast_agents_coordinatorAgent from "../fast_agents/coordinatorAgent.js";
 import type * as fast_agents_delegation_delegationHelpers from "../fast_agents/delegation/delegationHelpers.js";
 import type * as fast_agents_delegation_delegationTools from "../fast_agents/delegation/delegationTools.js";
+import type * as fast_agents_delegation_temporalContext from "../fast_agents/delegation/temporalContext.js";
+import type * as fast_agents_multiAgentWorkflow from "../fast_agents/multiAgentWorkflow.js";
 import type * as fast_agents_prompts from "../fast_agents/prompts.js";
 import type * as fast_agents_subagents_document_subagent_documentAgent from "../fast_agents/subagents/document_subagent/documentAgent.js";
 import type * as fast_agents_subagents_document_subagent_tools_documentTools from "../fast_agents/subagents/document_subagent/tools/documentTools.js";
@@ -341,6 +343,8 @@ declare const fullApi: ApiFromModules<{
   "fast_agents/coordinatorAgent": typeof fast_agents_coordinatorAgent;
   "fast_agents/delegation/delegationHelpers": typeof fast_agents_delegation_delegationHelpers;
   "fast_agents/delegation/delegationTools": typeof fast_agents_delegation_delegationTools;
+  "fast_agents/delegation/temporalContext": typeof fast_agents_delegation_temporalContext;
+  "fast_agents/multiAgentWorkflow": typeof fast_agents_multiAgentWorkflow;
   "fast_agents/prompts": typeof fast_agents_prompts;
   "fast_agents/subagents/document_subagent/documentAgent": typeof fast_agents_subagents_document_subagent_documentAgent;
   "fast_agents/subagents/document_subagent/tools/documentTools": typeof fast_agents_subagents_document_subagent_tools_documentTools;

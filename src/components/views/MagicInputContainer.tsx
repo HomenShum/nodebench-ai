@@ -58,7 +58,7 @@ export default function MagicInputContainer({ onRun, compact = false, defaultVal
 
     return (
         <div className="w-full max-w-2xl mx-auto group relative z-20">
-            <div className="absolute -inset-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-[2rem] blur-2xl opacity-50 group-hover:opacity-70 transition duration-1000"></div>
+            <div className="absolute -inset-3 bg-gradient-to-r from-gray-900/10 via-gray-600/10 to-gray-900/10 rounded-[2rem] blur-2xl opacity-40 group-hover:opacity-60 transition duration-1000"></div>
 
             <div className="relative flex items-center bg-white rounded-xl shadow-sm h-14 w-full overflow-hidden border border-gray-200">
                 <div className="absolute left-4 text-gray-400 pointer-events-none">

@@ -308,6 +308,9 @@ function WelcomeLandingInner({
   });
 
   const [isFromCache, setIsFromCache] = useState(false);
+  const [cacheHistory, setCacheHistory] = useState<Array<{ prompt: string; date: string; threadId: string; timestamp: number }>>([]);
+  const [followUpMode, setFollowUpMode] = useState<"append" | "new">("append");
+  const [followUpHistory, setFollowUpHistory] = useState<Array<{ prompt: string; mode: "append" | "new"; status: "queued" | "done"; timestamp: number }>>([]);
 
   // Persist state changes
   useEffect(() => {
@@ -351,6 +354,31 @@ function WelcomeLandingInner({
     return `search_cache_${prompt.trim().toLowerCase()}_${date}`;
   };
 
+  const loadCacheHistory = (): Array<{ prompt: string; date: string; threadId: string; timestamp: number }> => {
+    if (typeof window === 'undefined') return [];
+    const entries: Array<{ prompt: string; date: string; threadId: string; timestamp: number }> = [];
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('search_cache_'))
+      .forEach((key) => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          if (parsed?.prompt && parsed?.threadId && parsed?.date) {
+            entries.push({
+              prompt: parsed.prompt,
+              date: parsed.date,
+              threadId: parsed.threadId,
+              timestamp: parsed.timestamp ?? Date.now(),
+            });
+          }
+        } catch {
+          // ignore malformed
+        }
+      });
+    return entries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 10);
+  };
+
   const getCachedResult = (prompt: string): string | null => {
     try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -380,6 +408,7 @@ function WelcomeLandingInner({
         timestamp: Date.now()
       };
       localStorage.setItem(cacheKey, JSON.stringify(cacheValue));
+      setCacheHistory(loadCacheHistory());
     } catch (e) {
       console.error('Failed to cache result:', e);
     }
@@ -460,7 +489,29 @@ function WelcomeLandingInner({
     return "";
   }, [latestContentMessage]);
 
-  const responseText = typeof latestAssistantText === "string" ? latestAssistantText : "";
+  const assistantTexts = useMemo(() => {
+    if (!uiMessages) return [] as string[];
+
+    return uiMessages
+      .filter((msg: any) => (msg.role ?? msg?.message?.role) === "assistant")
+      .map((msg: any) => {
+        if (typeof msg.text === "string" && msg.text.trim()) return msg.text;
+        if (typeof msg.content === "string" && msg.content.trim()) return msg.content;
+        if (Array.isArray(msg.content)) {
+          const parts = msg.content
+            .filter((c: any) => typeof c?.text === "string")
+            .map((c: any) => c.text)
+            .join("\n\n");
+          if (parts.trim()) return parts;
+        }
+        if (typeof msg.message?.text === "string" && msg.message.text.trim()) return msg.message.text;
+        return "";
+      })
+      .filter(Boolean);
+  }, [uiMessages]);
+
+  const aggregatedAssistantText = assistantTexts.join("\n\n").trim();
+  const responseText = aggregatedAssistantText || (typeof latestAssistantText === "string" ? latestAssistantText : "");
 
   // Track when we first receive a response to prevent flickering between views
   useEffect(() => {
@@ -469,6 +520,21 @@ function WelcomeLandingInner({
       setShowHero(false); // Switch to dossier view
     }
   }, [responseText, hasReceivedResponse]);
+
+  useEffect(() => {
+    setCacheHistory(loadCacheHistory());
+  }, []);
+
+  // Mark latest history item as done when new assistant text arrives (completion heuristic)
+  useEffect(() => {
+    if (!responseText) return;
+    setFollowUpHistory((prev) => {
+      if (!prev.length) return prev;
+      const [latest, ...rest] = prev;
+      if (latest.status === "done") return prev;
+      return [{ ...latest, status: "done" }, ...rest];
+    });
+  }, [responseText]);
 
   // Tool parts for the Active Status (Reasoning Chain)
   const toolParts = useMemo(
@@ -490,27 +556,6 @@ function WelcomeLandingInner({
         ?.join("\n") ?? "",
     [latestAssistantMessage]
   );
-
-  const assistantTexts = useMemo(() => {
-    if (!uiMessages) return [] as string[];
-
-    return uiMessages
-      .filter((msg: any) => (msg.role ?? msg?.message?.role) === "assistant")
-      .map((msg: any) => {
-        if (typeof msg.text === "string" && msg.text.trim()) return msg.text;
-        if (typeof msg.content === "string" && msg.content.trim()) return msg.content;
-        if (Array.isArray(msg.content)) {
-          const parts = msg.content
-            .filter((c: any) => typeof c?.text === "string")
-            .map((c: any) => c.text)
-            .join("\n\n");
-          if (parts.trim()) return parts;
-        }
-        if (typeof msg.message?.text === "string" && msg.message.text.trim()) return msg.message.text;
-        return "";
-      })
-      .filter(Boolean);
-  }, [uiMessages]);
 
   // Extract media assets from the CONTENT message (persistent)
   const mediaAssets = useMemo(() => {
@@ -723,13 +768,52 @@ function WelcomeLandingInner({
     setShowHero(false);
   };
 
-  const handleRunPrompt = async (promptOverride?: string) => {
+  const handleRunPrompt = async (promptOverride?: string, options?: { appendToThread?: boolean }) => {
     const promptToRun = promptOverride || researchPrompt;
     if (promptOverride) {
       setResearchPrompt(promptOverride);
     }
 
-    if (!promptToRun.trim()) return;
+    if (!promptToRun.trim()) {
+      console.warn("[WelcomeLanding] Ignoring empty prompt");
+      return;
+    }
+
+    const preferAppend = options?.appendToThread ?? (followUpMode === "append");
+    const shouldAppendToExisting = Boolean(preferAppend && threadId);
+
+    // Track history entry
+    setFollowUpHistory((prev) => [
+      { prompt: promptToRun, mode: preferAppend ? "append" : "new", status: "queued", timestamp: Date.now() },
+      ...prev
+    ].slice(0, 5));
+
+    if (shouldAppendToExisting && threadId) {
+      if (!isAuthenticated) {
+        await handleSignIn();
+        return;
+      }
+
+      setIsRunning(true);
+      setShowHero(false);
+      setHasReceivedResponse(true); // keep the current dossier visible while enriching
+      setIsFromCache(false);
+
+      try {
+        await sendStreaming({
+          threadId: threadId as Id<"chatThreadsStream">,
+          prompt: promptToRun,
+        });
+      } catch (error) {
+        console.error("Failed to run follow-up prompt:", error);
+        setIsRunning(false);
+      }
+      return;
+    }
+
+    if (preferAppend && !threadId) {
+      console.warn("[WelcomeLanding] Follow-up requested with no active thread; starting a new thread instead.");
+    }
 
     // Check cache first - works for both authenticated and anonymous users
     const cachedThreadId = getCachedResult(promptToRun);
@@ -815,7 +899,7 @@ function WelcomeLandingInner({
 
     return (
       <div className="max-w-3xl mx-auto mt-2 px-2">
-        <div className="text-[11px] font-mono text-blue-600 animate-pulse">
+        <div className="text-[11px] font-mono text-gray-800 animate-pulse">
           &gt; {steps[currentStep]}
         </div>
       </div>
@@ -1242,13 +1326,13 @@ function WelcomeLandingInner({
               // HERO STATE
               <div className="min-h-full flex flex-col items-center justify-center p-8 pb-32">
                 <div className="max-w-2xl w-full text-center space-y-8">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium border border-purple-100 mb-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-900/5 text-gray-900 rounded-full text-xs font-medium border border-gray-200 mb-4">
                     <Sparkles className="w-3 h-3" />
                     <span>New: Multi-source Verification Engine</span>
                   </div>
 
                   <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
-                    Research at the Speed of <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">Thought.</span>
+                    Research at the Speed of <span className="underline decoration-gray-900/50 decoration-4 underline-offset-8">Thought.</span>
                   </h1>
 
                   <p className="text-lg text-gray-600 max-w-xl mx-auto">
@@ -1268,8 +1352,8 @@ function WelcomeLandingInner({
                           key={preset.id}
                           onClick={() => applyPreset(preset.id)}
                           className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
-                            ? 'bg-gray-900 text-white border-gray-900'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                            : 'bg-white text-gray-800 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                             }`}
                         >
                           <span className="mr-1.5">{preset.icon}</span>
@@ -1290,6 +1374,30 @@ function WelcomeLandingInner({
                         </button>
                       </div>
                     )}
+
+                    {cacheHistory.length > 0 && (
+                      <div className="mt-8 text-left">
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recent searches</div>
+                        <div className="space-y-2">
+                          {cacheHistory.map((entry, idx) => (
+                            <button
+                              key={`${entry.threadId}-${idx}`}
+                              onClick={() => {
+                                setThreadId(entry.threadId);
+                                setShowHero(false);
+                                setHasReceivedResponse(true);
+                                setIsFromCache(true);
+                                setIsRunning(false);
+                              }}
+                              className="w-full text-left px-3 py-2 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="text-sm font-medium text-gray-900 line-clamp-1">{entry.prompt}</div>
+                              <div className="text-[11px] text-gray-500">Cached: {entry.date}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1298,18 +1406,58 @@ function WelcomeLandingInner({
               <div className="min-h-full bg-gray-50/50">
                 {/* Sticky Input Bar for Active State */}
                 <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
-                  <MagicInputContainer
-                    onRun={(prompt) => handleRunPrompt(prompt)}
-                    compact={true}
-                    defaultValue={researchPrompt}
-                  />
-                  <ThoughtStreamTicker isActive={isRunning} />
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <MagicInputContainer
+                          onRun={(prompt) => handleRunPrompt(prompt)}
+                          compact={true}
+                          defaultValue={researchPrompt}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRunPrompt(undefined, { appendToThread: true })}
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${
+                          isRunning
+                            ? "bg-black text-white border-black"
+                            : "bg-white border-gray-300 text-gray-900 hover:bg-gray-100"
+                        }`}
+                        title="Append a follow-up to the current dossier thread"
+                      >
+                        <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-black"}`} />
+                        {isRunning ? "Appending…" : "Run follow-up"}
+                      </button>
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <span className="font-semibold">Mode:</span>
+                        <div className="inline-flex rounded-full border border-gray-200 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setFollowUpMode("append")}
+                            className={`px-3 py-1 ${followUpMode === "append" ? "bg-gray-900 text-white" : "bg-white text-gray-700"}`}
+                            title="Append to current dossier thread"
+                          >
+                            Append
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFollowUpMode("new")}
+                            className={`px-3 py-1 ${followUpMode === "new" ? "bg-gray-900 text-white" : "bg-white text-gray-700"}`}
+                            title="Start a new thread"
+                          >
+                            New thread
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <ThoughtStreamTicker isActive={isRunning} />
+                  </div>
 
                   {/* Cache Indicator */}
                   {isFromCache && (
                     <div className="max-w-4xl mx-auto mt-2 px-2">
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
-                        <Zap className="w-3 h-3" />
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
+                        <Zap className="w-3 h-3 text-gray-900" />
                         Loaded from cache (instant results)
                       </div>
                     </div>
@@ -1317,32 +1465,53 @@ function WelcomeLandingInner({
                 </div>
 
                 <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
+                  {/* Follow-up history drawer (compact) */}
+                  {followUpHistory.length > 0 && (
+                    <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
+                      <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                        <span>Follow-up history</span>
+                        <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
+                      </div>
+                      <div className="space-y-1">
+                        {followUpHistory.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
+                            <div className="flex items-center gap-2">
+                              <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
+                              <span className="font-medium">{item.mode === "append" ? "Append" : "New"}</span>
+                            </div>
+                            <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
+                            <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {/* Tabs */}
                   <div className="flex border-b border-gray-200 mb-8">
                     <button
                       onClick={() => setActiveTab('dossier')}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dossier' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dossier' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
                         }`}
                     >
                       Live Dossier
                     </button>
                     <button
                       onClick={() => setActiveTab('newsletter')}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'newsletter' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'newsletter' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
                         }`}
                     >
                       Newsletter Preview
                     </button>
                     <button
                       onClick={() => setActiveTab('media')}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'media' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'media' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
                         }`}
                     >
                       Media Gallery <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{mediaAssets.length}</span>
                     </button>
                     <button
                       onClick={() => setActiveTab('artifacts')}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'artifacts' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'artifacts' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
                         }`}
                     >
                       Artifacts <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{totalArtifacts}</span>
@@ -1361,7 +1530,7 @@ function WelcomeLandingInner({
                     <LiveDossierDocument
                       threadId={threadId}
                       isLoading={isRunning || (hasReceivedResponse && !responseText)}
-                      onRunFollowUp={handleRunPrompt}
+                      onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
                     />
                   </div>
                   )}
