@@ -21,6 +21,22 @@ export function CalendarHomeHub({
   // Shared planner state
   const { focusedDateMs, setFocusedDateMs, handleViewDay, handleViewWeek, handleAddTaskForDate, upcoming } = usePlannerState();
 
+  // Sync active pill with hash so #calendar/agents highlights Agents tab
+  const [activeHub, setActiveHub] = useState<"calendar" | "agents">("calendar");
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = (window.location.hash || "").toLowerCase();
+      if (hash.startsWith("#calendar/agents")) {
+        setActiveHub("agents");
+      } else {
+        setActiveHub("calendar");
+      }
+    };
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
+
 
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     try {
@@ -78,7 +94,7 @@ export function CalendarHomeHub({
           <div className="flex-1 min-w-0">
             <TopDividerBar
               left={
-                <UnifiedHubPills active="calendar" showRoadmap roadmapDisabled={false} />
+                <UnifiedHubPills active={activeHub} showRoadmap roadmapDisabled={false} />
               }
             />
             {/* Sub-tabs replaced by header breadcrumb/toggles */}
