@@ -838,19 +838,22 @@ export const getThreadMessagesWithStreaming = query({
     streamArgs: vStreamArgs,
   },
   handler: async (ctx, args) => {
+    const emptyResponse = {
+      page: [],
+      continueCursor: "",
+      isDone: true,
+      streams: { kind: "list" as const, messages: [] },
+    };
+
     const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      return { page: [], continueCursor: "", isDone: true, streams: [] };
-    }
+    if (!userId) return emptyResponse;
 
     // Verify the user has access to this agent thread
     const agentThread = await ctx.runQuery(components.agent.threads.getThread, {
       threadId: args.threadId,
     });
 
-    if (!agentThread || agentThread.userId !== userId) {
-      return { page: [], continueCursor: "", isDone: true, streams: [] };
-    }
+    if (!agentThread || agentThread.userId !== userId) return emptyResponse;
 
     // Fetch UIMessages with streaming support
     const paginated = await listUIMessages(ctx, components.agent, {
@@ -859,10 +862,11 @@ export const getThreadMessagesWithStreaming = query({
     });
 
     // Fetch streaming deltas
-    const streams = await syncStreams(ctx, components.agent, {
-      threadId: args.threadId,
-      streamArgs: args.streamArgs,
-    });
+    const streams =
+      (await syncStreams(ctx, components.agent, {
+        threadId: args.threadId,
+        streamArgs: args.streamArgs,
+      })) ?? emptyResponse.streams;
 
     return {
       ...paginated,
