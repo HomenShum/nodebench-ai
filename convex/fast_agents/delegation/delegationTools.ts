@@ -4,9 +4,13 @@
  * Tools that enable the coordinator agent to delegate tasks to specialized subagents
  */
 
-import { createTool, stepCountIs } from "@convex-dev/agent";
+import { Agent, createTool, stepCountIs } from "@convex-dev/agent";
+import type { Tool } from "ai";
 import { z } from "zod";
 import type { DelegationCtx, ensureThread, pickUserId, formatDelegationResult, extractToolNames } from "./delegationHelpers";
+import { buildPromptWithTemporalContext } from "./temporalContext";
+
+type DelegationTool = Tool<any, any>;
 
 // Import subagent creators
 import { createDocumentAgent } from "../subagents/document_subagent/documentAgent";
@@ -29,11 +33,11 @@ import {
  * @param model - Language model to use for subagents
  * @returns Object containing all delegation tools
  */
-export function buildDelegationTools(model: string) {
+export function buildDelegationTools(model: string): Record<string, DelegationTool> {
   // Create subagent instances
   const documentAgent = createDocumentAgent(model);
   const mediaAgent = createMediaAgent(model);
-  const secAgent = createSECAgent(model);
+  const secAgent: Agent = createSECAgent(model);
   const openbbAgent = createOpenBBAgent(model);
 
   /**
@@ -66,11 +70,26 @@ export function buildDelegationTools(model: string) {
     }
   };
 
+  const premiumEvidenceRequirements = `\n\nQuality bar (premium output):\n- State an explicit date (YYYY-MM-DD) and timezone for every finding.\n- Put the primary source URL right next to the finding (EDGAR link, article URL, etc.).\n- Add a short verification note per finding: which tool/source you used and the UTC retrieval time.\n- Drop or clearly flag anything outside the requested timeframe.`;
+
+  const buildDelegationPrompt = (query: string, inheritedContext?: DelegationCtx["temporalContext"]) => {
+    const promptWithContext = buildPromptWithTemporalContext(query);
+
+    if (!promptWithContext.temporalContext && inheritedContext) {
+      const prompt = `${query}\n\nTimeframe: ${inheritedContext.label} (from ${inheritedContext.startDate} to ${inheritedContext.endDate}).` +
+        " Apply date filters in your tools to stay within this range and prioritize the most recent results.";
+
+      return { prompt: `${prompt}${premiumEvidenceRequirements}`, temporalContext: inheritedContext };
+    }
+
+    return { ...promptWithContext, prompt: `${promptWithContext.prompt}${premiumEvidenceRequirements}` };
+  };
+
   /**
    * Delegate to Document Agent
    * Use for: document search, reading, creation, editing, multi-document analysis
    */
-  const delegateToDocumentAgent = createTool({
+  const delegateToDocumentAgent: DelegationTool = createTool({
     description: `Delegate document-related tasks to the DocumentAgent specialist.
 
 Use this tool when the user asks to:
@@ -93,12 +112,13 @@ The DocumentAgent has specialized tools for document management and will return 
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(documentAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout(documentAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(8),
         }
       ));
@@ -119,7 +139,7 @@ The DocumentAgent has specialized tools for document management and will return 
    * Delegate to Media Agent
    * Use for: YouTube videos, web search, images, media discovery
    */
-  const delegateToMediaAgent = createTool({
+  const delegateToMediaAgent: DelegationTool = createTool({
     description: `Delegate media discovery tasks to the MediaAgent specialist.
 
 Use this tool when the user asks to:
@@ -141,12 +161,13 @@ The MediaAgent has specialized tools for media discovery and will return relevan
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(mediaAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout(mediaAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(6),
         }
       ));
@@ -167,7 +188,7 @@ The MediaAgent has specialized tools for media discovery and will return relevan
    * Delegate to SEC Agent
    * Use for: SEC filings, company research, regulatory documents
    */
-  const delegateToSECAgent = createTool({
+  const delegateToSECAgent: DelegationTool = createTool({
     description: `Delegate SEC filing and company research tasks to the SECAgent specialist.
 
 Use this tool when the user asks to:
@@ -188,12 +209,13 @@ The SECAgent has specialized tools for SEC EDGAR database access and will return
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(secAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
-      const result = await runWithTimeout(secAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+      const result = await runWithTimeout<any>(secAgent.generateText(
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(6),
         }
       ));
@@ -214,7 +236,7 @@ The SECAgent has specialized tools for SEC EDGAR database access and will return
    * Delegate to OpenBB Agent
    * Use for: financial data, stock prices, crypto, economic indicators, financial news
    */
-  const delegateToOpenBBAgent = createTool({
+  const delegateToOpenBBAgent: DelegationTool = createTool({
     description: `Delegate financial data and market research tasks to the OpenBBAgent specialist.
 
 Use this tool when the user asks to:
@@ -236,12 +258,13 @@ The OpenBBAgent has specialized tools for financial data via OpenBB Platform and
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(openbbAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout(openbbAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(8),
         }
       ));
@@ -267,7 +290,7 @@ The OpenBBAgent has specialized tools for financial data via OpenBB Platform and
    * Delegate to Entity Research Agent
    * Use for: deep research on companies and people
    */
-  const delegateToEntityResearchAgent = createTool({
+  const delegateToEntityResearchAgent: DelegationTool = createTool({
     description: `Delegate deep research tasks to the EntityResearchAgent specialist.
 
 Use this tool when the user asks to:
@@ -288,12 +311,13 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
     handler: async (ctx: DelegationCtx, args) => {
       const nextDepth = enforceSafety(ctx);
       const threadId = await ensureThreadHelper(entityResearchAgent, ctx, args.threadId);
+      const { prompt, temporalContext } = buildDelegationPrompt(args.query, ctx.temporalContext);
 
       const result = await runWithTimeout(entityResearchAgent.generateText(
-        { ...ctx, depth: nextDepth } as any,
+        { ...ctx, depth: nextDepth, temporalContext } as any,
         { threadId, userId: pickUserIdHelper(ctx) },
         {
-          prompt: args.query,
+          prompt,
           stopWhen: stepCountIs(10),
         }
       ));
@@ -314,7 +338,7 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
    * Parallel Delegation
    * Use for: running multiple subagents simultaneously
    */
-  const parallelDelegate = createTool({
+  const parallelDelegate: DelegationTool = createTool({
     description: `Delegate to multiple agents simultaneously.
     
     Use this when:
@@ -347,13 +371,14 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
         }
 
         const threadId = await ensureThreadHelper(agent, ctx, task.threadId);
+        const { prompt, temporalContext } = buildDelegationPrompt(task.query, ctx.temporalContext);
 
         try {
           const generation = agent.generateText(
             { ...ctx, depth: nextDepth } as any,
             { threadId, userId: pickUserIdHelper(ctx) },
             {
-              prompt: task.query,
+              prompt,
               stopWhen: stepCountIs(8), // Slightly lower limit for parallel tasks
             }
           ) as Promise<any>;

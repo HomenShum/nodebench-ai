@@ -97,7 +97,8 @@ export function createEntityResearchAgent(model: string) {
     # BEHAVIOR
     1. **Go Deep**: Don't just give a summary. Look for "why" and "how".
     2. **Use Dossiers**: When asked about a company, almost always use 'enrichCompanyDossier' to get the full picture.
-    3. **Cite Sources**: Always mention where data came from.
+    3. **Cite Sources**: Always mention where data came from and place the URL next to the fact it supports.
+    4. **Time & Verification**: Stamp every finding with an explicit date/time (UTC) and add a short verification note that names the source/tool and the retrieval time.
     `,
         tools: {
             // Company Tools
