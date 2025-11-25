@@ -21,14 +21,12 @@ import {
   getCompanyInfo,
 } from "./tools/secFilingTools";
 
-type SearchSecCompaniesResult = { cik: string; name: string; ticker?: string }[];
-
-const searchSecCompaniesTool = createTool<{ companyName: string }, SearchSecCompaniesResult>({
+const searchSecCompaniesTool = createTool({
   description: "Find SEC companies by name and return potential matches with CIK, name, and ticker.",
   args: z.object({
     companyName: z.string().describe("Company name to search for"),
   }),
-  handler: async (ctx, args): Promise<SearchSecCompaniesResult> => {
+  handler: async (ctx, args) => {
     return ctx.runAction(internal.tools.secCompanySearch.searchCompanies, args);
   },
 });
