@@ -164,6 +164,7 @@ export default function LiveDossierDocument({
             .filter(({ text }) => Boolean(text && text.trim()) && !isPlannerArtifact(text));
     }, [uiMessages]);
 
+
     const combinedContent = useMemo(() => {
         if (!assistantMessages.length) return "";
         return assistantMessages.map(({ text }) => text).join("\n\n---\n\n");
@@ -179,30 +180,36 @@ export default function LiveDossierDocument({
     // Follow-up status handling
     const prevAppendingRef = useRef(false);
     const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+    const prevMessageCountRef = useRef(0);
 
     useEffect(() => {
+        // Clear appending flags if streaming started (detected by new messages)
         if (appendTriggered && isStreaming) {
             setAppendTriggered(false);
         }
+
+        // Clear loading state if NOT streaming and NOT in the triggered phase
         if (!isStreaming && !appendTriggered) {
             setIsAppending(false);
             setCurrentFollowUpLabel("");
         }
 
-        // Detect completion transition
-        if (prevAppendingRef.current && !isAppending && !isStreaming) {
-            setJustAppended(true);
-            // Highlight the newest section
-            setHighlightedIndex(assistantMessages.length - 1);
-            setTimeout(() => {
-                setJustAppended(false);
-                setHighlightedIndex(-1);
-            }, 3000);
-            // Scroll to new content with offset
-            setTimeout(() => {
-                bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-            }, 100);
+        // Detect NEW content arrival (message count increased)
+        if (assistantMessages.length > prevMessageCountRef.current) {
+            if (isAppending) {
+                // New content arrived! Clear the loading state
+                setIsAppending(false);
+                setCurrentFollowUpLabel("");
+                // Highlight the newest section
+                setHighlightedIndex(assistantMessages.length - 1);
+                setTimeout(() => {
+                    setHighlightedIndex(-1);
+                }, 3000);
+            }
+            prevMessageCountRef.current = assistantMessages.length;
         }
+
+        // Store previous state for transition detection
         prevAppendingRef.current = isAppending;
     }, [appendTriggered, isStreaming, isAppending, assistantMessages.length]);
 
