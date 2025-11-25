@@ -15,11 +15,12 @@ import OpenAI from 'openai';
 
 // Initialize real OpenAI client - skip tests if no API key
 const apiKey = process.env.OPENAI_API_KEY || process.env.CONVEX_OPENAI_API_KEY;
+const hasApiKey = Boolean(apiKey);
 let openai: OpenAI | null = null;
 
-if (apiKey) {
+if (hasApiKey) {
   openai = new OpenAI({
-    apiKey,
+    apiKey: apiKey!,
   });
 }
 
@@ -134,11 +135,10 @@ Generate a specific edit proposal. Return ONLY the proposed new content or chang
   }
 }
 
-describe('Document Editing - Live API Tests with LLM Judge', () => {
-  // Skip if no API key
-  const skipIfNoKey = apiKey ? describe : describe.skip;
+const describeIfApi = hasApiKey && openai ? describe : describe.skip;
 
-  skipIfNoKey('Live API Calls with Real OpenAI', () => {
+describeIfApi('Document Editing - Live API Tests with LLM Judge', () => {
+  describe('Live API Calls with Real OpenAI', () => {
     it.skipIf(!openai)('should generate and validate edit for company research question', async () => {
       const userRequest = 'Add information about Series B healthcare startups and their market opportunity';
       const documentTitle = 'Healthcare Investment Research';
@@ -425,4 +425,3 @@ describe('Document Editing - Live API Tests with LLM Judge', () => {
     }, 30000);
   });
 });
-

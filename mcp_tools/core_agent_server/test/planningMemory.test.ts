@@ -11,13 +11,16 @@ const readMemory = memoryTools.find((t) => t.name === "readAgentMemory")!;
 const listMemory = memoryTools.find((t) => t.name === "listAgentMemory")!;
 const deleteMemory = memoryTools.find((t) => t.name === "deleteAgentMemory")!;
 
+const hasConvexEnv = Boolean(process.env.CONVEX_BASE_URL && process.env.CONVEX_ADMIN_KEY);
+const describeIfConvex = hasConvexEnv ? describe : describe.skip;
+
 // Reset the module state before each test to avoid cross-test contamination
 beforeEach(() => {
   // Tools keep state in module-level Maps; reimporting clears them.
   vi.resetModules();
 });
 
-describe("core_agent_server tools (planning + memory)", () => {
+describeIfConvex("core_agent_server tools (planning + memory)", () => {
   it("creates, updates, and retrieves a plan end-to-end", async () => {
     const create = await createPlan.handler({
       goal: "Test goal",

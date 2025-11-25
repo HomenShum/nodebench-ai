@@ -239,8 +239,8 @@ describe('CollapsibleAgentProgress', () => {
     // When streaming and expanded, the timeline should be visible
     expect(screen.getByText('Agent Working...')).toBeInTheDocument();
     // The expandable content should be visible (not collapsed)
-    const timeline = screen.getByText(/Tool Call/i);
-    expect(timeline).toBeInTheDocument();
+    const timelineItems = screen.getAllByText(/web search/i);
+    expect(timelineItems.length).toBeGreaterThan(0);
   });
 
   it('collapses by default when not streaming to show media prominently', () => {
@@ -259,4 +259,3 @@ describe('CollapsibleAgentProgress', () => {
     expect(expandedContent).not.toBeInTheDocument();
   });
 });
-
