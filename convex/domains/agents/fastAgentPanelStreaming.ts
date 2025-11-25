@@ -555,7 +555,13 @@ export const getThreadByStreamId = query({
     threadId: v.id("chatThreadsStream"),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.threadId);
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const thread = await ctx.db.get(args.threadId);
+    if (!thread || thread.userId !== userId) return null;
+
+    return thread;
   },
 });
 
@@ -1098,7 +1104,7 @@ export const streamAsync = internalAction({
 
       const { object: plan } = await planner.generateObject(
         contextWithUserId as any,
-        { threadId: args.threadId },
+        { threadId: undefined }, // Don't save plan to main thread
         { schema: planSchema, prompt: userPrompt },
       );
 
@@ -1109,7 +1115,7 @@ export const streamAsync = internalAction({
       } else {
         console.log(`[streamAsync:${executionId}] Planner chose COMPLEX mode. Starting durable workflow and sending fast ack.`);
 
-        if (userId) {
+        if (userId && customThread?._id) {
           const includeMedia = plan?.tasks?.some((t: any) => t.agent === "media") ? true : undefined;
           const includeFilings = plan?.tasks?.some((t: any) => t.agent === "sec") ? true : undefined;
           try {
@@ -1117,7 +1123,7 @@ export const streamAsync = internalAction({
               (internal as any)["fast_agents/multiAgentWorkflow"].startMultiAgentWorkflowInternal,
               {
                 prompt: userPrompt || "User request",
-                threadId: args.threadId,
+                threadId: customThread._id,
                 includeMedia,
                 includeFilings,
                 userId,
@@ -1147,7 +1153,8 @@ export const streamAsync = internalAction({
     }
 
     const controller = new AbortController();
-    streamCancellationControllers.set(args.threadId, controller);
+    const cancelKey = customThread?._id ? String(customThread._id) : args.threadId;
+    streamCancellationControllers.set(cancelKey, controller);
 
     // Optional timeout for streaming; disabled by default to allow long-running tasks
     const ENABLE_STREAM_TIMEOUT = false;
@@ -1170,13 +1177,13 @@ export const streamAsync = internalAction({
         { threadId: args.threadId },
         responsePromptOverride
           ? {
-              prompt: responsePromptOverride,
-              abortSignal: controller.signal,
-            }
+            prompt: responsePromptOverride,
+            abortSignal: controller.signal,
+          }
           : {
-              promptMessageId: args.promptMessageId,
-              abortSignal: controller.signal,
-            },
+            promptMessageId: args.promptMessageId,
+            abortSignal: controller.signal,
+          },
         {
           // Enable real-time streaming to clients
           // According to Convex Agent docs, this CAN be used with tool execution
@@ -1236,7 +1243,7 @@ export const streamAsync = internalAction({
       throw error;
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
-      streamCancellationControllers.delete(args.threadId);
+      streamCancellationControllers.delete(cancelKey);
       // Reset cancel flag via mutation (actions can't use ctx.db directly)
       if (customThread?._id) {
         try {
