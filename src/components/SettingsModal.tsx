@@ -295,18 +295,18 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   }) => {
     const pct = Math.min(100, Math.round(((daily?.count ?? 0) / Math.max(1, daily?.limit ?? 1)) * 100));
     return (
-      <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
+      <div className="rounded-lg border border-gray-200 bg-white p-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <BarChart2 className="h-4 w-4" />
             <span>{title}</span>
           </div>
-          <span className="text-xs text-[var(--text-secondary)]">{daily ? daily.date : "Loading..."}</span>
+          <span className="text-xs text-gray-500">{daily ? daily.date : "Loading..."}</span>
         </div>
-        <div className="w-full h-2 bg-[var(--bg-tertiary)] rounded">
-          <div className="h-2 rounded bg-[var(--accent-primary)]" style={{ width: `${pct}%` }} />
+        <div className="w-full h-2 bg-gray-100 rounded">
+          <div className="h-2 rounded bg-blue-600" style={{ width: `${pct}%` }} />
         </div>
-        <div className="mt-2 text-xs text-[var(--text-secondary)]">
+        <div className="mt-2 text-xs text-gray-500">
           {daily ? (
             <>{daily.count} / {daily.limit} requests today</>
           ) : (
@@ -315,14 +315,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
         </div>
         {series && series.length > 0 && (
           <div className="mt-3">
-            <div className="text-[11px] text-[var(--text-secondary)] mb-1">Last 14 days</div>
+            <div className="text-[11px] text-gray-500 mb-1">Last 14 days</div>
             <div className="flex items-end gap-1 h-16">
               {series.map((d) => {
                 const ratio = (d.count ?? 0) / Math.max(1, d.limit ?? 1);
                 const h = Math.max(2, Math.min(60, Math.round(ratio * 60)));
                 return (
-                  <div key={d.date} className="w-2 bg-[var(--bg-tertiary)] rounded" title={`${d.date}: ${d.count}/${d.limit}`}>
-                    <div className="w-2 bg-[var(--accent-primary)] rounded" style={{ height: h }} />
+                  <div key={d.date} className="w-2 bg-gray-100 rounded" title={`${d.date}: ${d.count}/${d.limit}`}>
+                    <div className="w-2 bg-blue-600 rounded" style={{ height: h }} />
                   </div>
                 );
               })}
@@ -340,7 +340,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     const linkedAt = providerStatus[provider]?.createdAt;
     const inputEmpty = !(keyInputs[provider]?.trim());
     return (
-      <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
+      <div className="rounded-lg border border-gray-200 bg-white p-3">
         <div className="flex items-center gap-2 mb-2">
           <Key className="h-4 w-4" />
           <span className="text-sm font-semibold">{label} API Key</span>
@@ -351,19 +351,19 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             </span>
           )}
           {hasKey && linkedAt && (
-            <span className="ml-1 text-[11px] text-[var(--text-secondary)]">on {new Date(linkedAt).toLocaleDateString()}</span>
+            <span className="ml-1 text-[11px] text-gray-500">on {new Date(linkedAt).toLocaleDateString()}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <input
             type={isShown ? "text" : "password"}
-            className="flex-1 px-2 py-1 text-sm rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]"
+            className="flex-1 px-2 py-1 text-sm rounded border border-gray-200 bg-gray-50"
             placeholder={`Enter ${label} API key`}
             value={keyInputs[provider] ?? ""}
             onChange={(e) => setKeyInputs((p) => ({ ...p, [provider]: e.target.value }))}
           />
           <button
-            className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)] disabled:opacity-50"
+            className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
             onClick={() => setShowKeys((p) => ({ ...p, [provider]: !isShown }))}
             title={isShown ? "Hide" : "Show"}
             disabled={isBusy}
@@ -371,7 +371,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             {isShown ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </button>
           <button
-            className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:opacity-90 disabled:opacity-50"
+            className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:opacity-90 disabled:opacity-50"
             onClick={() => { void handleSaveKey(provider); }}
             disabled={isBusy || user === null || inputEmpty}
           >
@@ -379,7 +379,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
           </button>
           {hasKey && (
             <button
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)] text-red-600 disabled:opacity-50"
+              className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100 text-red-600 disabled:opacity-50"
               onClick={() => { void handleDeleteKey(provider); }}
               title="Remove saved key"
               disabled={isBusy || user === null}
@@ -392,15 +392,15 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             </button>
           )}
         </div>
-        <div className="mt-2 text-[11px] text-[var(--text-secondary)] flex items-center gap-1">
+        <div className="mt-2 text-[11px] text-gray-500 flex items-center gap-1">
           <Shield className="h-3 w-3" />
           Keys are stored encrypted client-side using a passphrase on this device (v2 format).
         </div>
-        <div className="mt-1 text-[11px] text-[var(--text-secondary)]">
+        <div className="mt-1 text-[11px] text-gray-500">
           If you lose the passphrase, re-enter your key. Never share keys publicly.
         </div>
         {user === null && (
-          <div className="mt-2 text-[11px] text-[var(--text-secondary)]">Sign in to save or remove API keys.</div>
+          <div className="mt-2 text-[11px] text-gray-500">Sign in to save or remove API keys.</div>
         )}
       </div>
     );
@@ -408,30 +408,30 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-[900px] max-w-[95vw] max-h-[85vh] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative w-[900px] max-w-[95vw] max-h-[85vh] bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-[var(--bg-tertiary)] border-b border-[var(--border-color)]">
-          <div className="flex items-center gap-2 text-sm font-semibold">
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
             <SettingsIcon className="h-4 w-4" />
             Settings Hub
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-[var(--bg-hover)]">
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="flex">
           {/* Left Nav */}
-          <div className="w-56 border-r border-[var(--border-color)] bg-[var(--bg-secondary)] p-3">
+          <div className="w-56 border-r border-gray-200 bg-gray-50 p-3">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActive(item.id)}
                 className={`w-full text-left px-2 py-2 rounded text-sm mb-1 transition-colors ${
                   active === item.id
-                    ? "bg-[var(--bg-active)] text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 {item.label}
@@ -444,14 +444,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             {active === "usage" ? (
               <div className="space-y-4">
                 {/* Plan */}
-                <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold">Current Plan</div>
-                      <div className="text-xs text-[var(--text-secondary)]">{planLabel}</div>
+                      <div className="text-xs text-gray-500">{planLabel}</div>
                     </div>
                     <button
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[var(--accent-primary)] text-white text-xs hover:opacity-90 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-600 text-white text-xs hover:opacity-90 disabled:opacity-50"
                       onClick={() => { void handleUpgrade(); }}
                       disabled={billingBusy || user === null || !subscription || subscription.status === "active"}
                       title={user === null ? "Sign in to upgrade" : undefined}
@@ -486,16 +486,16 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
               </div>
             ) : active === "billing" ? (
               <div className="space-y-4">
-                <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold">Supporter Plan</div>
-                      <div className="text-xs text-[var(--text-secondary)]">
+                      <div className="text-xs text-gray-500">
                         Status: {subscription ? subscription.status : "Loading…"}
                       </div>
                     </div>
                     <button
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-[var(--accent-primary)] text-white text-xs hover:opacity-90 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:opacity-90 disabled:opacity-50"
                       onClick={() => { void handleUpgrade(); }}
                       disabled={billingBusy || user === null || !subscription || subscription.status === "active"}
                       title={user === null ? "Sign in to upgrade" : undefined}
@@ -510,7 +510,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       )}
                     </button>
                   </div>
-                  <ul className="mt-3 text-xs text-[var(--text-secondary)] list-disc pl-5 space-y-1">
+                  <ul className="mt-3 text-xs text-gray-500 list-disc pl-5 space-y-1">
                     <li>Free tier: 5 requests/day total</li>
                     <li>Supporter: 50 requests/day total</li>
                     <li>One-time $1 purchase unlocks Supporter benefits</li>
@@ -522,15 +522,15 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
               </div>
             ) : active === "reminders" ? (
               <div className="space-y-4">
-                <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="text-sm font-semibold mb-2">Reminder Banner</div>
-                  <div className="text-xs text-[var(--text-secondary)] mb-3">
+                  <div className="text-xs text-gray-500 mb-3">
                     Control the banner that reminds you to link your AI API keys (OpenAI or Gemini). You can hide it permanently or keep it enabled until you link a key.
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm">Enable AI key reminder banner</div>
-                      <div className="text-[11px] text-[var(--text-secondary)]">When enabled, a banner appears if no API keys are linked.</div>
+                      <div className="text-[11px] text-gray-500">When enabled, a banner appears if no API keys are linked.</div>
                     </div>
                     <label className="inline-flex items-center cursor-pointer">
                       <input
@@ -557,7 +557,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         }}
                         disabled={savingReminder}
                       />
-                      <div className="w-10 h-5 bg-[var(--bg-tertiary)] peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--accent-primary)] transition-colors">
+                      <div className="w-10 h-5 bg-gray-100 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
                         <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
                       </div>
                     </label>
@@ -568,23 +568,23 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
               <div className="space-y-6">
                 {/* Display & Organization */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">Display & Organization</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">Display & Organization</h3>
                   
                   {/* Ungrouped Section Name */}
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Sidebar Section Name</div>
-                      <div className="text-[11px] text-[var(--text-secondary)]">
+                      <div className="text-[11px] text-gray-500">
                         Current: "{userPreferences?.ungroupedSectionName ?? "Ungrouped Documents"}"
                       </div>
                     </div>
-                    <div className="text-xs text-[var(--text-secondary)] mb-3">
+                    <div className="text-xs text-gray-500 mb-3">
                       Customize the name of the ungrouped documents section in the sidebar.
                     </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
-                        className="flex-1 px-2 py-1 text-sm rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]"
+                        className="flex-1 px-2 py-1 text-sm rounded border border-gray-200 bg-gray-50"
                         placeholder="Enter section name"
                         defaultValue={userPreferences?.ungroupedSectionName ?? "Ungrouped Documents"}
                         onKeyDown={(e) => {
@@ -602,7 +602,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         }}
                       />
                       <button
-                        className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:opacity-90 disabled:opacity-50"
+                        className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:opacity-90 disabled:opacity-50"
                         onClick={(e) => {
                           const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                           const value = input.value.trim();
@@ -622,11 +622,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
 
                   {/* Ungrouped Section Expanded State */}
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-semibold">Expand Ungrouped Section by Default</div>
-                        <div className="text-[11px] text-[var(--text-secondary)]">Whether the ungrouped documents section should be expanded when you first open the app.</div>
+                        <div className="text-[11px] text-gray-500">Whether the ungrouped documents section should be expanded when you first open the app.</div>
                       </div>
                       <label className="inline-flex items-center cursor-pointer">
                         <input
@@ -644,7 +644,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           }}
                           disabled={user === null}
                         />
-                        <div className="w-10 h-5 bg-[var(--bg-tertiary)] peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--accent-primary)] transition-colors">
+                        <div className="w-10 h-5 bg-gray-100 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
                           <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
                         </div>
                       </label>
@@ -654,17 +654,17 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Calendar & Planner */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">Calendar & Planner</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">Calendar & Planner</h3>
                   
                   {/* Calendar Hub Size */}
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Calendar Panel Size</div>
-                      <div className="text-[11px] text-[var(--text-secondary)]">
+                      <div className="text-[11px] text-gray-500">
                         Current: {calendarPrefs?.calendarHubSizePct ?? 45}%
                       </div>
                     </div>
-                    <div className="text-xs text-[var(--text-secondary)] mb-3">
+                    <div className="text-xs text-gray-500 mb-3">
                       Adjust the height of the calendar panel in the calendar view (20-80%).
                     </div>
                     <div className="flex items-center gap-2">
@@ -685,21 +685,21 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         }}
                         disabled={savingCalendarSize || user === null}
                       />
-                      <span className="text-xs text-[var(--text-secondary)] w-8 text-center">
+                      <span className="text-xs text-gray-500 w-8 text-center">
                         {savingCalendarSize ? "..." : `${calendarPrefs?.calendarHubSizePct ?? 45}%`}
                       </span>
                     </div>
                   </div>
 
                   {/* Planner Mode */}
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Default Planner Mode</div>
-                      <div className="text-[11px] text-[var(--text-secondary)]">
+                      <div className="text-[11px] text-gray-500">
                         Current: {calendarPrefs?.plannerMode === "calendar" ? "Calendar" : calendarPrefs?.plannerMode === "kanban" ? "Kanban" : "List"}
                       </div>
                     </div>
-                    <div className="text-xs text-[var(--text-secondary)] mb-3">
+                    <div className="text-xs text-gray-500 mb-3">
                       Choose your preferred view for the planner/calendar section.
                     </div>
                     <div className="flex gap-2">
@@ -712,8 +712,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           key={value}
                           className={`px-3 py-1 text-xs rounded border ${
                             calendarPrefs?.plannerMode === value
-                              ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
-                              : "border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "border-gray-200 hover:bg-gray-100"
                           }`}
                           onClick={() => {
                             if (user === null) {
@@ -733,11 +733,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
 
                   {/* Planner Density & Agenda Mode */}
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Planner Density & Agenda View</div>
                     </div>
-                    <div className="text-xs text-[var(--text-secondary)] mb-3">
+                    <div className="text-xs text-gray-500 mb-3">
                       Configure the density of the planner and how today's agenda is displayed.
                     </div>
                     <div className="space-y-3">
@@ -753,8 +753,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               key={value}
                               className={`px-3 py-1 text-xs rounded border ${
                                 calendarPrefs?.plannerDensity === value
-                                  ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
-                                  : "border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : "border-gray-200 hover:bg-gray-100"
                               }`}
                               onClick={() => {
                                 if (user === null) {
@@ -779,7 +779,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-sm">Show Week in Today's Agenda</div>
-                          <div className="text-[11px] text-[var(--text-secondary)]">Display upcoming events for the current week in today's agenda.</div>
+                          <div className="text-[11px] text-gray-500">Display upcoming events for the current week in today's agenda.</div>
                         </div>
                         <label className="inline-flex items-center cursor-pointer">
                           <input
@@ -799,7 +799,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             }}
                             disabled={savingPlannerPrefs || user === null}
                           />
-                          <div className="w-10 h-5 bg-[var(--bg-tertiary)] peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--accent-primary)] transition-colors">
+                          <div className="w-10 h-5 bg-gray-100 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
                             <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
                           </div>
                         </label>
@@ -817,8 +817,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               key={value}
                               className={`px-3 py-1 text-xs rounded border ${
                                 calendarPrefs?.agendaMode === value
-                                  ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
-                                  : "border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : "border-gray-200 hover:bg-gray-100"
                               }`}
                               onClick={() => {
                                 if (user === null) {
@@ -843,8 +843,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
 
                 {user === null && (
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
-                    <div className="text-[11px] text-[var(--text-secondary)]">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <div className="text-[11px] text-gray-500">
                       Sign in to save your preferences. Changes will be applied to your account.
                     </div>
                   </div>
@@ -854,17 +854,17 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
               <div className="space-y-6">
                 {/* User Information */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">User Information</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">User Information</h3>
                   
                   {/* User Name & Email */}
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-[var(--accent-primary)] rounded-full flex items-center justify-center">
+                      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
                         <User className="h-6 w-6 text-white" />
                       </div>
                       <div>
                         <div className="text-sm font-semibold">{user?.name || "Anonymous User"}</div>
-                        <div className="text-xs text-[var(--text-secondary)]">
+                        <div className="text-xs text-gray-500">
                           {user?.email ? (
                             <div className="flex items-center gap-1">
                               <Mail className="h-3 w-3" />
@@ -878,7 +878,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     </div>
                     
                     {user?._creationTime && (
-                      <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
                         <Calendar className="h-3 w-3" />
                         Member since {new Date(user._creationTime).toLocaleDateString()}
                       </div>
@@ -886,18 +886,18 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
 
                   {/* Account Status */}
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="text-sm font-semibold mb-2">Account Status</div>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-[var(--text-secondary)]">Authentication</span>
+                        <span className="text-gray-500">Authentication</span>
                         <span className="flex items-center gap-1 text-green-600">
                           <CheckCircle className="h-3 w-3" />
                           {user ? "Signed In" : "Not Signed In"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[var(--text-secondary)]">Plan</span>
+                        <span className="text-gray-500">Plan</span>
                         <span className="flex items-center gap-1">
                           {subscription?.status === "active" ? (
                             <span className="text-green-600 flex items-center gap-1">
@@ -905,12 +905,12 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               Supporter
                             </span>
                           ) : (
-                            <span className="text-[var(--text-secondary)]">Free</span>
+                            <span className="text-gray-500">Free</span>
                           )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[var(--text-secondary)]">Time Zone</span>
+                        <span className="text-gray-500">Time Zone</span>
                         <span className="font-mono text-xs">
                           {selectedTz ?? browserTz ?? "UTC"}
                         </span>
@@ -921,13 +921,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Account Actions */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">Account Actions</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">Account Actions</h3>
                   
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="text-sm font-semibold mb-3">Data Management</div>
                     <div className="space-y-3">
                       <button
-                        className="w-full text-left px-3 py-2 rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)] text-sm transition-colors"
+                        className="w-full text-left px-3 py-2 rounded border border-gray-200 hover:bg-gray-100 text-sm transition-colors"
                         onClick={() => {
                           toast.info("Data export feature coming soon");
                         }}
@@ -936,7 +936,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           <ArrowUpRight className="h-4 w-4" />
                           Export Account Data
                         </div>
-                        <div className="text-xs text-[var(--text-secondary)] mt-1">
+                        <div className="text-xs text-gray-500 mt-1">
                           Download a copy of your data in JSON format
                         </div>
                       </button>
@@ -951,7 +951,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           <Trash2 className="h-4 w-4" />
                           Delete Account
                         </div>
-                        <div className="text-[11px] text-[var(--text-secondary)] mt-1">
+                        <div className="text-[11px] text-gray-500 mt-1">
                           Permanently delete your account and all data
                         </div>
                       </button>
@@ -960,8 +960,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
 
                 {user === null && (
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
-                    <div className="text-[11px] text-[var(--text-secondary)]">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <div className="text-[11px] text-gray-500">
                       Sign in to view and manage your profile information.
                     </div>
                   </div>
@@ -971,20 +971,20 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
               <div className="space-y-6">
                 {/* AI Services */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">AI Services</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">AI Services</h3>
                   
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="text-sm font-semibold mb-3">Connected AI Providers</div>
                     <div className="space-y-3">
                       {/* OpenAI Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">OpenAI</div>
-                            <div className="text-xs text-[var(--text-secondary)]">
+                            <div className="text-xs text-gray-500">
                               GPT-5, GPT-5 Mini, Embeddings
                             </div>
                           </div>
@@ -999,7 +999,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             {providerStatus["openai"]?.hasKey ? "Connected" : "Not Connected"}
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                            className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100"
                             onClick={() => setActive("usage")}
                           >
                             Configure
@@ -1008,14 +1008,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Gemini Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Google Gemini</div>
-                            <div className="text-xs text-[var(--text-secondary)]">
+                            <div className="text-xs text-gray-500">
                               Gemini 1.5, Gemini 2.0, Vision
                             </div>
                           </div>
@@ -1030,7 +1030,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             {providerStatus["gemini"]?.hasKey ? "Connected" : "Not Connected"}
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                            className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100"
                             onClick={() => setActive("usage")}
                           >
                             Configure
@@ -1043,20 +1043,20 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Communication Platforms */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">Communication Platforms</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">Communication Platforms</h3>
                   
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="text-sm font-semibold mb-3">Connected Services</div>
                     <div className="space-y-3">
                       {/* Slack Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
                             <Slack className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Slack</div>
-                            <div className="text-xs text-[var(--text-secondary)]">
+                            <div className="text-xs text-gray-500">
                               Messages, notifications, bot integration
                             </div>
                           </div>
@@ -1070,14 +1070,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Discord Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
                             <MessageSquare className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Discord</div>
-                            <div className="text-xs text-[var(--text-secondary)]">
+                            <div className="text-xs text-gray-500">
                               Channels, messages, webhooks
                             </div>
                           </div>
@@ -1091,14 +1091,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Email Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
                             <Mail className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Email</div>
-                            <div className="text-xs text-[var(--text-secondary)]">
+                            <div className="text-xs text-gray-500">
                               Send notifications and automated responses
                             </div>
                           </div>
@@ -1109,7 +1109,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             Configured
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                            className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100"
                             onClick={() => {
                               toast.info("Email configuration available in AI Chat settings");
                             }}
@@ -1124,13 +1124,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Development & Productivity */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">Development & Productivity</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">Development & Productivity</h3>
                   
-                  <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="text-sm font-semibold mb-3">Connected Tools</div>
                     <div className="space-y-3">
                       {/* GitHub OSS Stats Integration */}
-                      <div className="p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
@@ -1138,7 +1138,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             </div>
                             <div>
                               <div className="text-sm font-semibold">GitHub OSS Stats</div>
-                              <div className="text-xs text-[var(--text-secondary)]">
+                              <div className="text-xs text-gray-500">
                                 {githubOwner ? (
                                   <>
                                     ⭐ {githubOwner.starCount?.toLocaleString() || 0} stars • 
@@ -1158,7 +1158,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               {githubOwner ? "Active" : "Loading..."}
                             </span>
                             <button
-                              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)] disabled:opacity-50"
+                              className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
                               onClick={() => {
                                 if (user === null) {
                                   toast.error("Please sign in to sync stats");
@@ -1188,7 +1188,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               {syncingStats ? "Syncing..." : "Sync"}
                             </button>
                             <button
-                              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                              className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100"
                               onClick={() => setShowGithubConfig((v) => !v)}
                               disabled={user === null}
                               title={user === null ? "Sign in to configure" : undefined}
@@ -1199,7 +1199,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </div>
                         {showGithubConfig && (
                           <div className="mt-3 space-y-3">
-                            <div className="text-[11px] text-[var(--text-secondary)]">
+                            <div className="text-[11px] text-gray-500">
                               Provide credentials for higher rate limits or private orgs. Values are stored client-side encrypted and saved to your account.
                             </div>
                             <ApiKeyItem provider="github_access_token" label="GitHub Access Token" />
@@ -1209,14 +1209,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* NPM OSS Stats Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">NPM Download Stats</div>
-                            <div className="text-xs text-[var(--text-secondary)]">
+                            <div className="text-xs text-gray-500">
                               {npmOrg ? (
                                 <>
                                   📥 {(npmOrg.downloadCount || 0).toLocaleString()} downloads
@@ -1235,7 +1235,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             {npmOrg ? "Active" : "Loading..."}
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                            className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100"
                             onClick={() => {
                               toast.info("NPM stats sync with GitHub sync");
                             }}
@@ -1246,14 +1246,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Webhook Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
                             <Webhook className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Webhooks</div>
-                            <div className="text-xs text-[var(--text-secondary)]">
+                            <div className="text-xs text-gray-500">
                               Custom integrations and automation
                             </div>
                           </div>
@@ -1267,14 +1267,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* MCP Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">MCP Server</div>
-                            <div className="text-xs text-[var(--text-secondary)]">
+                            <div className="text-xs text-gray-500">
                               Model Context Protocol for tool integration
                             </div>
                           </div>
@@ -1285,7 +1285,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             Active
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                            className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100"
                             onClick={() => {
                               toast.info("MCP configuration available in advanced settings");
                             }}
@@ -1299,24 +1299,24 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
 
                 {/* Integration Status Summary */}
-                <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="text-sm font-semibold mb-3">Integration Status</div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-green-600">2</div>
-                      <div className="text-xs text-[var(--text-secondary)]">Active</div>
+                      <div className="text-xs text-gray-500">Active</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-yellow-600">5</div>
-                      <div className="text-xs text-[var(--text-secondary)]">Coming Soon</div>
+                      <div className="text-xs text-gray-500">Coming Soon</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-blue-600">1</div>
-                      <div className="text-xs text-[var(--text-secondary)]">Configured</div>
+                      <div className="text-xs text-gray-500">Configured</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-600">0</div>
-                      <div className="text-xs text-[var(--text-secondary)]">Disconnected</div>
+                      <div className="text-xs text-gray-500">Disconnected</div>
                     </div>
                   </div>
                 </div>
@@ -1325,14 +1325,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             ) : active === "account" ? (
               <div className="space-y-4">
                 {/* Active Sessions */}
-                <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-sm font-semibold flex items-center gap-2">
                       <Shield className="h-4 w-4" />
                       Active Sessions
                     </div>
                     <button
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)] text-xs disabled:opacity-50"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 text-xs disabled:opacity-50"
                       onClick={() => {
                         if (user === null) {
                           toast.error("Please sign in");
@@ -1351,9 +1351,9 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     </button>
                   </div>
                   {sessions === undefined ? (
-                    <div className="text-xs text-[var(--text-secondary)]">Loading sessions…</div>
+                    <div className="text-xs text-gray-500">Loading sessions…</div>
                   ) : (sessions.length === 0 ? (
-                    <div className="text-xs text-[var(--text-secondary)]">No sessions found.</div>
+                    <div className="text-xs text-gray-500">No sessions found.</div>
                   ) : (
                     <div className="space-y-2">
                       {sessions
@@ -1363,7 +1363,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           const created = new Date(s._creationTime).toLocaleString();
                           const expires = new Date(s.expirationTime).toLocaleString();
                           return (
-                            <div key={s._id} className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                            <div key={s._id} className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                               <div className="text-xs">
                                 <div className="flex items-center gap-2">
                                   <User className="h-3.5 w-3.5" />
@@ -1372,12 +1372,12 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                                     <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700">Current</span>
                                   )}
                                 </div>
-                                <div className="mt-1 text-[11px] text-[var(--text-secondary)]">Started: {created}</div>
-                                <div className="text-[11px] text-[var(--text-secondary)]">Expires: {expires}</div>
+                                <div className="mt-1 text-[11px] text-gray-500">Started: {created}</div>
+                                <div className="text-[11px] text-gray-500">Expires: {expires}</div>
                               </div>
                               {!s.isCurrent && (
                                 <button
-                                  className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)] text-red-600 disabled:opacity-50"
+                                  className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100 text-red-600 disabled:opacity-50"
                                   onClick={() => {
                                     if (user === null) {
                                       toast.error("Please sign in");
@@ -1402,22 +1402,22 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
 
                 {/* Linked Accounts */}
-                <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="text-sm font-semibold mb-3 flex items-center gap-2">
                     <Link className="h-4 w-4" />
                     Linked Accounts
                   </div>
                   {linkedAccounts === undefined ? (
-                    <div className="text-xs text-[var(--text-secondary)]">Loading accounts…</div>
+                    <div className="text-xs text-gray-500">Loading accounts…</div>
                   ) : (linkedAccounts.length === 0 ? (
-                    <div className="text-xs text-[var(--text-secondary)]">No linked accounts.</div>
+                    <div className="text-xs text-gray-500">No linked accounts.</div>
                   ) : (
                     <div className="space-y-2">
                       {linkedAccounts.map((a) => (
-                        <div key={a._id} className="flex items-center justify-between p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                        <div key={a._id} className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
                           <div className="text-xs">
                             <div className="font-medium">{a.provider}</div>
-                            <div className="text-[11px] text-[var(--text-secondary)]">ID: {a.providerAccountId}</div>
+                            <div className="text-[11px] text-gray-500">ID: {a.providerAccountId}</div>
                           </div>
                           {/* Future: unlink button */}
                         </div>
@@ -1427,7 +1427,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-6 text-sm text-[var(--text-secondary)]">
+              <div className="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-500">
                 This section will be available soon.
               </div>
             )}

@@ -209,11 +209,7 @@ export function DocumentCard({
           }
         }}
         aria-selected={isSelected || undefined}
-        className={`${
-          hybrid
-            ? "document-card--hybrid"
-            : "bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] p-6 h-52 flex flex-col transition-all duration-200 cursor-pointer relative overflow-hidden backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] hover:ring-2 hover:shadow-md hover:bg-[var(--bg-hover)] hover:scale-[1.02]"
-        } ${isCalendarDoc ? "ring-1 ring-amber-400/30 bg-gradient-to-br from-amber-50/10 to-transparent" : `${theme.ring} ${theme.gradient}`} ${isDragging ? "is-dragging" : ""} ${isSelected ? "is-selected ring-2 ring-[var(--accent-primary)] ring-offset-2 ring-offset-[var(--background)] bg-[var(--accent-primary-bg)]/40 shadow-md" : ""}`}
+        className={`bg-white rounded-xl border border-gray-200/80 p-5 h-56 flex flex-col transition-all duration-200 ease-out cursor-pointer relative overflow-hidden shadow-sm hover:shadow-md hover:border-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 focus-visible:ring-offset-2 ${isDragging ? "opacity-90 scale-[1.01] shadow-lg" : ""} ${isSelected ? "ring-2 ring-gray-900 ring-offset-2 ring-offset-white bg-gray-50/50 border-gray-300" : ""}`}
       >
         {/* Selection checkbox (top-left) */}
         <div
@@ -228,7 +224,7 @@ export function DocumentCard({
               onToggleSelect?.(doc._id);
             }}
             onClick={(e) => e.stopPropagation()}
-            className="h-4 w-4 rounded border-[var(--border-color)] text-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)]/50 bg-white"
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500/50 bg-white"
           />
         </div>
 
@@ -262,7 +258,7 @@ export function DocumentCard({
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-sm ${isCalendarDoc ? "bg-amber-500" : theme.iconBg}`}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCalendarDoc ? "bg-amber-500" : theme.iconBg}`}
               >
                 {isCalendarDoc ? (
                   <Calendar className="h-5 w-5 text-white" />
@@ -282,7 +278,7 @@ export function DocumentCard({
                   e.stopPropagation();
                   onOpenMiniEditor?.(doc._id, e.currentTarget as HTMLElement);
                 }}
-                className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)] transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-7 h-7 rounded-lg flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
                 title="Quick edit"
               >
                 <Edit3 className="h-3.5 w-3.5" />
@@ -291,10 +287,10 @@ export function DocumentCard({
               {/* Pin/Favorite Button */}
               <button
                 onClick={handlePinClick}
-                className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
+                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 ${
                   (doc as any).isFavorite
-                    ? "bg-yellow-500 text-yellow-100 shadow-sm"
-                    : "bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)]"
+                    ? "bg-amber-100 text-amber-600"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-amber-500"
                 }`}
                 title={(doc as any).isFavorite ? "Unpin document" : "Pin document"}
               >
@@ -306,7 +302,7 @@ export function DocumentCard({
               {/* Delete Button */}
               <button
                 onClick={handleDeleteClick}
-                className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-7 h-7 rounded-lg flex items-center justify-center bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
                 title="Delete document"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -315,12 +311,12 @@ export function DocumentCard({
           </div>
 
           {/* Title */}
-          <h3 className="font-semibold text-[var(--text-primary)] text-base line-clamp-2 leading-snug">
+          <h3 className="font-semibold text-gray-900 text-[15px] line-clamp-2 leading-relaxed tracking-tight">
             {doc.title}
           </h3>
 
           {/* Pills Metadata Container */}
-          <div className="mt-auto pt-2 border-t border-[var(--border-color)] flex items-center justify-between gap-2">
+          <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
             {(() => {
               const pills = docToPills({
                 ...doc,
@@ -341,7 +337,7 @@ export function DocumentCard({
             })()}
 
             {doc.documentType === "timeline" && (
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-gray-200 bg-gray-50 text-gray-600">
                 Timeline
               </span>
             )}

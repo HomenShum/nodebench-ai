@@ -1104,8 +1104,15 @@ export const streamAsync = internalAction({
 
       const { object: plan } = await planner.generateObject(
         contextWithUserId as any,
-        { threadId: undefined }, // Don't save plan to main thread
+        {
+          threadId: args.threadId,
+          userId,
+        },
         { schema: planSchema, prompt: userPrompt },
+        {
+          // Avoid polluting the main thread with planner messages while still providing context
+          storageOptions: { saveMessages: "none" },
+        },
       );
 
       if (plan?.mode === "simple") {

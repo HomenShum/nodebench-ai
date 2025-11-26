@@ -31,8 +31,8 @@ export function DocumentsGridSortable<T extends string | number = string>({
   items,
   renderItem,
   onReorder,
-  // ✅ stable auto-fill grid w/ rows that don't collapse during drag
-  gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] auto-rows-fr gap-3",
+  // ✅ stable auto-fill grid w/ larger gaps for premium spacing
+  gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] auto-rows-fr gap-5",
 }: DocumentsGridSortableProps<T>) {
   const [activeId, setActiveId] = useState<T | null>(null);
 
@@ -93,7 +93,7 @@ export function DocumentsGridSortable<T extends string | number = string>({
       {/* ✅ Overlay clone prevents layout shift while dragging; enable smooth drop animation */}
       <DragOverlay>
         {activeId != null && activeIndex >= 0 ? (
-          <div className="ring-1 ring-[var(--accent-primary)]/50 rounded-xl">
+          <div className="ring-2 ring-gray-900/20 rounded-xl shadow-lg">
             {renderItem(activeId, activeIndex, true)}
           </div>
         ) : null}
