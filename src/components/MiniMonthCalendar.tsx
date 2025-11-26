@@ -507,21 +507,21 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
   // onClickDay removed; click now toggles a pinned preview. Use action buttons to view day/week.
 
   return (
-    <div className="relative bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl overflow-visible">
+    <div className="relative bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60 rounded-2xl overflow-visible shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.02)]">
       {/* Singular watermark for mini calendar */}
-      <span className="document-card__bg document-row__bg text-[var(--accent-primary)]" aria-hidden>
+      <span className="document-card__bg document-row__bg text-blue-500" aria-hidden>
         <CalendarDays className="h-10 w-10 rotate-12" />
       </span>
       {/* Clock + Timezone selector */}
-      <div className="px-3 py-1.5 border-b border-[var(--border-color)] flex items-center justify-between">
-        <div className="font-mono text-[11px] text-[var(--text-primary)]" aria-live="polite" aria-label="Current time">
+      <div className="px-4 py-2 border-b border-gray-100/80 flex items-center justify-between">
+        <div className="font-mono text-xs font-medium text-gray-900 tabular-nums" aria-live="polite" aria-label="Current time">
           {clockText}
         </div>
-        <div className="flex items-center gap-1.5">
-          <label className="text-[11px] text-[var(--text-muted)]" htmlFor="tz-select">Time zone</label>
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] text-gray-400 font-medium" htmlFor="tz-select">Time zone</label>
           <select
             id="tz-select"
-            className="h-6 text-[10px] leading-[1rem] bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-md px-1 py-0"
+            className="h-7 text-[11px] leading-[1rem] bg-white text-gray-700 border border-gray-200/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
             value={effectiveTz || browserTz || "UTC"}
             onChange={(e) => { void onChangeTimeZone(e.target.value); }}
           >
@@ -531,41 +531,33 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
           </select>
         </div>
       </div>
-      <div className="px-3 py-2 border-b border-[var(--border-color)] flex items-center justify-between">
+      <div className="px-4 py-2.5 border-b border-gray-100/80 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="text-sm font-semibold text-[var(--text-primary)]">{monthLabel}</div>
-          <span
-            className="inline-flex items-center gap-1 px-1.5 py-0 rounded-full border text-[10px] bg-amber-50 text-amber-700 border-amber-200"
-            title="Click a date to preview. Use actions to view day/week."
-            aria-label="Mini calendar tips"
-          >
-            <Lightbulb className="h-3 w-3 text-amber-500" />
-            Tips
-          </span>
+          <div className="text-base font-semibold text-gray-900 tracking-tight">{monthLabel}</div>
         </div>
         <div className="flex items-center gap-1">
           <button
-            className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white hover:bg-gray-50 border border-gray-200/60 shadow-sm transition-all duration-200 hover:shadow"
             onClick={goPrev}
             aria-label="Previous month"
             title="Previous month"
           >
-            <span className="text-[var(--text-secondary)]">‹</span>
+            <span className="text-gray-400 text-lg">‹</span>
           </button>
           <button
-            className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white hover:bg-gray-50 border border-gray-200/60 shadow-sm transition-all duration-200 hover:shadow"
             onClick={goNext}
             aria-label="Next month"
             title="Next month"
           >
-            <span className="text-[var(--text-secondary)]">›</span>
+            <span className="text-gray-400 text-lg">›</span>
           </button>
         </div>
       </div>
-      <div className="p-2">
-        <div className="grid grid-cols-7 text-center text-[11px] text-[var(--text-muted)] mb-1">
+      <div className="p-3">
+        <div className="grid grid-cols-7 text-center text-[11px] text-gray-400 mb-2">
           {dayLabels.map((lbl, i) => (
-            <div key={`lbl_${lbl}_${i}`} className="font-medium">{lbl}</div>
+            <div key={`lbl_${lbl}_${i}`} className="font-semibold uppercase tracking-wider">{lbl}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-1">
@@ -630,40 +622,40 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 }}
                 onMouseEnter={() => setHoveredKey(d.key)}
                 onMouseLeave={() => setHoveredKey((cur) => (cur === d.key ? null : cur))}
-                className={`relative aspect-square rounded-lg p-1 text-left border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF] ${
+                className={`relative rounded-xl p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px] ${
                   d.isToday
-                    ? "border-[#007AFF] bg-[#007AFF]/10"
-                    : "border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
-                  } ${d.inMonth ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]/60"}`}
+                    ? "border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-sm"
+                    : "border-transparent hover:bg-gray-50 hover:border-gray-100"
+                  } ${d.inMonth ? "text-gray-900" : "text-gray-300"}`}
                 title={d.date.toDateString()}
               >
-                <div className="text-[11px] font-medium">
-                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${priorityRing}`}>
+                <div className="text-[13px] font-semibold">
+                  <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${d.isToday ? "bg-blue-500 text-white shadow-sm" : ""} ${priorityRing}`}>
                     {d.date.getDate()}
                   </span>
                 </div>
                 {/* Markers (fixed positions; always rendered, zero counts muted) */}
-                <div className="absolute bottom-0.5 left-0.5 right-0.5 space-y-0.5">
+                <div className="absolute bottom-1 left-1 right-1 space-y-0.5">
                     {/* Top row: events (left), holidays (right) */}
                     <div className="flex items-center justify-between">
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.events > 0 ? "bg-blue-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.events > 0 ? "text-blue-700" : "text-[var(--text-muted)]/60"}`}>{m.events > 0 ? fmtSmall(m.events) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.events > 0 ? "text-blue-600" : "text-gray-300"}`}>{m.events > 0 ? fmtSmall(m.events) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.holidays > 0 ? "bg-purple-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.holidays > 0 ? "text-purple-700" : "text-[var(--text-muted)]/60"}`}>{m.holidays > 0 ? fmtSmall(m.holidays) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.holidays > 0 ? "text-purple-600" : "text-gray-300"}`}>{m.holidays > 0 ? fmtSmall(m.holidays) : ""}</span>
                       </span>
                     </div>
                     {/* Bottom row: tasks (left), notes (right) */}
                     <div className="flex items-center justify-between">
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.tasks > 0 ? "bg-emerald-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.tasks > 0 ? "text-emerald-700" : "text-[var(--text-muted)]/60"}`}>{m.tasks > 0 ? fmtSmall(m.tasks) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.tasks > 0 ? "text-emerald-600" : "text-gray-300"}`}>{m.tasks > 0 ? fmtSmall(m.tasks) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.notes > 0 ? "bg-amber-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.notes > 0 ? "text-amber-700" : "text-[var(--text-muted)]/60"}`}>{m.notes > 0 ? fmtSmall(m.notes) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.notes > 0 ? "text-amber-600" : "text-gray-300"}`}>{m.notes > 0 ? fmtSmall(m.notes) : ""}</span>
                       </span>
                     </div>
                   </div>
@@ -671,7 +663,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 {/* Hover/Pinned Preview */}
                 {(activeKey === d.key) && (
                   <div
-                    className={`absolute z-30 top-1 ${editTarget ? "w-72 max-w-[18rem]" : "w-64 max-w-[18rem]"} rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl p-2 text-[11px] ${
+                    className={`absolute z-30 top-1 ${editTarget ? "w-72 max-w-[18rem]" : "w-64 max-w-[18rem]"} rounded-lg border border-gray-200 bg-white shadow-xl p-2 text-[11px] ${
                       // In sidebar, keep previews inside; otherwise flip near right edge
                       constrainToSidebar ? "right-2" : ( (idx % 7) >= 4 ? "right-full mr-2" : "left-full ml-2" )
                     }`}
@@ -681,12 +673,12 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <div className="text-[10px] text-[var(--text-muted)]">
+                      <div className="text-[10px] text-gray-400">
                         {d.date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                       </div>
                       {pinnedKey === d.key && (
                         <button
-                          className="w-5 h-5 inline-flex items-center justify-center rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+                          className="w-5 h-5 inline-flex items-center justify-center rounded hover:bg-gray-100 text-gray-400"
                           aria-label="Close preview"
                           title="Close"
                           onClick={(e) => { e.stopPropagation(); setPinnedKey(null); setHoveredKey(null); setEditTarget(null); }}

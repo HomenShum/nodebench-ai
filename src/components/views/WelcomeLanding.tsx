@@ -73,168 +73,7 @@ function sanitizeDocumentActions(docs: any[]): DocumentAction[] {
   );
 }
 
-// Source Configuration
-interface SourceConfig {
-  id: string;
-  name: string;
-  shortName: string;
-  icon: string;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  activeBgColor: string;
-  activeBorderColor: string;
-  trustScore: number; // 0-100
-  freshness: 'realtime' | 'hourly' | 'daily';
-  category: 'tech' | 'academic' | 'social' | 'news';
-  keyboardShortcut: number;
-}
-
-const SOURCES: SourceConfig[] = [
-  {
-    id: 'ycombinator',
-    name: 'YCombinator News',
-    shortName: 'YC',
-    icon: 'Y',
-    color: 'text-orange-600',
-    bgColor: 'bg-white',
-    borderColor: 'border-orange-200',
-    activeBgColor: 'bg-orange-50',
-    activeBorderColor: 'border-orange-300',
-    trustScore: 95,
-    freshness: 'realtime',
-    category: 'tech',
-    keyboardShortcut: 1,
-  },
-  {
-    id: 'techcrunch',
-    name: 'TechCrunch',
-    shortName: 'TC',
-    icon: 'T',
-    color: 'text-blue-600',
-    bgColor: 'bg-white',
-    borderColor: 'border-blue-200',
-    activeBgColor: 'bg-blue-50',
-    activeBorderColor: 'border-blue-300',
-    trustScore: 90,
-    freshness: 'hourly',
-    category: 'news',
-    keyboardShortcut: 2,
-  },
-  {
-    id: 'reddit',
-    name: 'Reddit',
-    shortName: 'RD',
-    icon: 'R',
-    color: 'text-red-600',
-    bgColor: 'bg-white',
-    borderColor: 'border-red-200',
-    activeBgColor: 'bg-red-50',
-    activeBorderColor: 'border-red-300',
-    trustScore: 75,
-    freshness: 'realtime',
-    category: 'social',
-    keyboardShortcut: 3,
-  },
-  {
-    id: 'twitter',
-    name: 'Twitter/X',
-    shortName: 'X',
-    icon: 'X',
-    color: 'text-gray-900',
-    bgColor: 'bg-white',
-    borderColor: 'border-gray-300',
-    activeBgColor: 'bg-gray-50',
-    activeBorderColor: 'border-gray-400',
-    trustScore: 70,
-    freshness: 'realtime',
-    category: 'social',
-    keyboardShortcut: 4,
-  },
-  {
-    id: 'github',
-    name: 'GitHub',
-    shortName: 'GH',
-    icon: 'G',
-    color: 'text-purple-600',
-    bgColor: 'bg-white',
-    borderColor: 'border-purple-200',
-    activeBgColor: 'bg-purple-50',
-    activeBorderColor: 'border-purple-300',
-    trustScore: 92,
-    freshness: 'hourly',
-    category: 'tech',
-    keyboardShortcut: 5,
-  },
-  {
-    id: 'arxiv',
-    name: 'ArXiv',
-    shortName: 'AR',
-    icon: 'A',
-    color: 'text-green-600',
-    bgColor: 'bg-white',
-    borderColor: 'border-green-200',
-    activeBgColor: 'bg-green-50',
-    activeBorderColor: 'border-green-300',
-    trustScore: 98,
-    freshness: 'daily',
-    category: 'academic',
-    keyboardShortcut: 6,
-  },
-];
-
-// Source Presets
-interface SourcePreset {
-  id: string;
-  name: string;
-  description: string;
-  sources: string[];
-  icon: string;
-  color: string;
-}
-
-const SOURCE_PRESETS: SourcePreset[] = [
-  {
-    id: 'all',
-    name: 'All Sources',
-    description: 'Search across all available sources',
-    sources: ['ycombinator', 'techcrunch', 'reddit', 'twitter', 'github', 'arxiv'],
-    icon: '🌐',
-    color: 'text-gray-600',
-  },
-  {
-    id: 'tech-news',
-    name: 'Tech News',
-    description: 'YC News, TechCrunch, GitHub',
-    sources: ['ycombinator', 'techcrunch', 'github'],
-    icon: '📰',
-    color: 'text-blue-600',
-  },
-  {
-    id: 'academic',
-    name: 'Academic',
-    description: 'ArXiv and research papers',
-    sources: ['arxiv'],
-    icon: '🎓',
-    color: 'text-green-600',
-  },
-  {
-    id: 'social',
-    name: 'Social Media',
-    description: 'Reddit and Twitter/X',
-    sources: ['reddit', 'twitter'],
-    icon: '💬',
-    color: 'text-pink-600',
-  },
-  {
-    id: 'high-trust',
-    name: 'High Trust',
-    description: 'Only sources with 90+ trust score',
-    sources: ['ycombinator', 'techcrunch', 'github', 'arxiv'],
-    icon: '⭐',
-    color: 'text-yellow-600',
-  },
-];
+import { SOURCES, SOURCE_PRESETS } from "../../lib/sources";
 
 interface WelcomeLandingProps {
   onDocumentSelect?: (documentId: string) => void;
@@ -264,6 +103,13 @@ function WelcomeLandingInner({
       return sessionStorage.getItem('nodebench_landing_prompt') || "Summarize last week's top funding news and any SEC filings for AI infrastructure startups.";
     }
     return "Summarize last week's top funding news and any SEC filings for AI infrastructure startups.";
+  });
+  const [researchMode, setResearchMode] = useState<"quick" | "deep">(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('nodebench_landing_mode');
+      return (saved === "deep" || saved === "quick") ? saved : "quick";
+    }
+    return "quick";
   });
 
   const [threadId, setThreadId] = useState<string | null>(() => {
@@ -320,6 +166,10 @@ function WelcomeLandingInner({
   useEffect(() => {
     sessionStorage.setItem('nodebench_landing_prompt', researchPrompt);
   }, [researchPrompt]);
+
+  useEffect(() => {
+    sessionStorage.setItem('nodebench_landing_mode', researchMode);
+  }, [researchMode]);
 
   useEffect(() => {
     if (threadId) {
@@ -768,8 +618,14 @@ function WelcomeLandingInner({
     setShowHero(false);
   };
 
-  const handleRunPrompt = async (promptOverride?: string, options?: { appendToThread?: boolean }) => {
+  const handleRunPrompt = async (
+    promptOverride?: string,
+    options?: { appendToThread?: boolean; mode?: "quick" | "deep" }
+  ) => {
     const promptToRun = promptOverride || researchPrompt;
+    const selectedMode = options?.mode || researchMode;
+    setResearchMode(selectedMode);
+
     if (promptOverride) {
       setResearchPrompt(promptOverride);
     }
@@ -788,6 +644,10 @@ function WelcomeLandingInner({
       ...prev
     ].slice(0, 5));
 
+    const modeInstruction = selectedMode === "deep"
+      ? "Create a comprehensive research dossier with cross-verified sources, SEC/filing checks, and section-level confidence scores."
+      : "Produce a concise quick brief (30-second read) with the top 3-5 findings, key numbers, and the sources used.";
+
     if (shouldAppendToExisting && threadId) {
       if (!isAuthenticated) {
         await handleSignIn();
@@ -802,7 +662,7 @@ function WelcomeLandingInner({
       try {
         await sendStreaming({
           threadId: threadId as Id<"chatThreadsStream">,
-          prompt: promptToRun,
+          prompt: `${promptToRun}\n\n${modeInstruction}`,
         });
       } catch (error) {
         console.error("Failed to run follow-up prompt:", error);
@@ -847,13 +707,16 @@ function WelcomeLandingInner({
       // Cache the threadId for this prompt
       cacheResult(promptToRun, newThreadId);
 
-      // Build prompt with source filters
-      let enhancedPrompt = promptToRun;
-      if (activeSources.length > 0 && activeSources.length < 2) {
-        const sourceNames = activeSources.map(s =>
-          s === 'ycombinator' ? 'YCombinator News' : 'TechCrunch'
-        ).join(', ');
-        enhancedPrompt = `${promptToRun}\n\nFocus on sources: ${sourceNames}`;
+      // Build prompt with source filters and intent
+      let enhancedPrompt = `${promptToRun}\n\n${modeInstruction}`;
+      if (activeSources.length > 0) {
+        const sourceNames = activeSources
+          .map((s) => {
+            const source = SOURCES.find(src => src.id === s);
+            return source ? source.name : s;
+          })
+          .join(', ');
+        enhancedPrompt = `${enhancedPrompt}\n\nPrioritize these sources: ${sourceNames}.`;
       }
 
       await sendStreaming({
@@ -909,9 +772,9 @@ function WelcomeLandingInner({
   // Trust Badge Component
   function TrustBadge({ score }: { score: number }) {
     const getColor = (score: number) => {
-      if (score >= 90) return 'text-green-600 bg-green-50 border-green-100';
-      if (score >= 70) return 'text-blue-600 bg-blue-50 border-blue-100';
-      return 'text-gray-600 bg-gray-50 border-gray-100';
+      if (score >= 90) return 'text-green-600 bg-green-50 border-green-200';
+      if (score >= 75) return 'text-blue-600 bg-blue-50 border-blue-200';
+      return 'text-amber-600 bg-amber-50 border-amber-200';
     };
 
     return (
@@ -964,6 +827,8 @@ function WelcomeLandingInner({
     active = false,
     isLive = false,
     onClick,
+    activityCount = 0,
+    isQuerying = false,
   }: {
     icon: React.ReactNode;
     title: React.ReactNode;
@@ -971,12 +836,14 @@ function WelcomeLandingInner({
     active?: boolean;
     isLive?: boolean;
     onClick?: () => void;
+    activityCount?: number;
+    isQuerying?: boolean;
   }) {
     return (
       <div
         onClick={onClick}
-        className={`group relative flex items-center justify-between py-2 px-2.5 rounded-lg cursor-pointer transition-colors ${active
-          ? 'bg-gray-50'
+        className={`group relative flex items-center justify-between py-2 pl-3 pr-2.5 rounded-lg cursor-pointer transition-colors ${active
+          ? 'bg-gray-100'
           : 'hover:bg-gray-50'
           } ${onClick ? 'select-none' : ''}`}
       >
@@ -995,8 +862,20 @@ function WelcomeLandingInner({
           {/* This renders the TrustBadge component passed as 'time' prop */}
           {time}
 
+          {/* Activity badges */}
+          {activityCount > 0 && (
+            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+              {activityCount} hit{activityCount > 1 ? 's' : ''}
+            </span>
+          )}
+          {isQuerying && (
+            <span className="text-[10px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+              Running
+            </span>
+          )}
+
           {/* The Live Dot - Enhanced animation */}
-          {isLive && (
+          {isLive && !isQuerying && (
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -1231,9 +1110,9 @@ function WelcomeLandingInner({
             {/* Main Nav */}
             <div className="space-y-1">
               <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Workspace</div>
-              <SidebarItem icon={<Layout className="w-4 h-4" />} title="Dashboard" time="" active />
-              <SidebarItem icon={<Clock className="w-4 h-4" />} title="Recent Research" time="" />
-              <SidebarItem icon={<FileText className="w-4 h-4" />} title="Saved Dossiers" time="" />
+              <SidebarItem icon={<Layout className="w-4 h-4" />} title="Dashboard" time="" active onClick={onEnterWorkspace} />
+              <SidebarItem icon={<Clock className="w-4 h-4" />} title="Recent Research" time="" onClick={onEnterWorkspace} />
+              <SidebarItem icon={<FileText className="w-4 h-4" />} title="Saved Dossiers" time="" onClick={onEnterWorkspace} />
             </div>
 
             {/* Live Sources */}
@@ -1251,6 +1130,8 @@ function WelcomeLandingInner({
                   active={activeSources.includes(source.id)}
                   onClick={() => toggleSource(source.id)}
                   isLive={source.freshness === 'realtime'}
+                  activityCount={sourceAnalytics[source.id] || 0}
+                  isQuerying={isRunning && activeSources.includes(source.id)}
                 />
               ))}
             </div>
@@ -1341,23 +1222,60 @@ function WelcomeLandingInner({
 
                   <div className="pt-8 w-full max-w-xl mx-auto">
                     <MagicInputContainer
-                      onRun={(prompt) => handleRunPrompt(prompt)}
+                      onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                      onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep" })}
                       defaultValue={researchPrompt}
+                      mode={researchMode}
                     />
 
-                    {/* Source Pills */}
+                    <div className="mt-6 flex gap-3 justify-center">
+                      {[
+                        {
+                          id: "quick",
+                          title: "⚡ Quick Brief",
+                          description: "30-second answer, key facts only",
+                          mode: "quick" as const,
+                        },
+                        {
+                          id: "deep",
+                          title: "🔬 Deep Dossier",
+                          description: "Comprehensive research with cross-verification",
+                          mode: "deep" as const,
+                        },
+                      ].map((intent) => {
+                        const isActive = researchMode === intent.mode;
+                        return (
+                          <button
+                            key={intent.id}
+                            type="button"
+                            onClick={() => handleRunPrompt(undefined, { mode: intent.mode })}
+                            className={`relative text-center rounded-lg border px-6 py-3 transition-all ${isActive
+                              ? "border-gray-900 bg-gray-900 text-white shadow-sm"
+                              : "border-gray-200 bg-white hover:border-gray-300"
+                              }`}
+                          >
+                            <div className="text-sm font-semibold">{intent.title}</div>
+                            <p className={`mt-1 text-xs ${isActive ? "text-gray-300" : "text-gray-500"}`}>
+                              {intent.description}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Source Category Pills - Simplified */}
                     <div className="flex flex-wrap justify-center gap-2 mt-6">
                       {SOURCE_PRESETS.map(preset => (
                         <button
                           key={preset.id}
                           onClick={() => applyPreset(preset.id)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
-                            ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                            : 'bg-white text-gray-800 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
+                            ? 'bg-gray-900 text-white border-gray-900'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                             }`}
                         >
-                          <span className="mr-1.5">{preset.icon}</span>
-                          {preset.name}
+                          <span>{preset.icon}</span>
+                          <span>{preset.name}</span>
                         </button>
                       ))}
                     </div>
@@ -1410,23 +1328,24 @@ function WelcomeLandingInner({
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <MagicInputContainer
-                          onRun={(prompt) => handleRunPrompt(prompt)}
+                          onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                          onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
                           compact={true}
                           defaultValue={researchPrompt}
+                          mode={researchMode}
                         />
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRunPrompt(undefined, { appendToThread: true })}
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${
-                          isRunning
-                            ? "bg-black text-white border-black"
-                            : "bg-white border-gray-300 text-gray-900 hover:bg-gray-100"
-                        }`}
-                        title="Append a follow-up to the current dossier thread"
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
+                          ? "bg-black text-white border-black"
+                          : "bg-white border-gray-300 text-gray-900 hover:bg-gray-100"
+                          }`}
+                        title="Add findings to the current dossier"
                       >
                         <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-black"}`} />
-                        {isRunning ? "Appending…" : "Run follow-up"}
+                        {isRunning ? "Adding…" : "Add to Dossier"}
                       </button>
                       <div className="flex items-center gap-2 text-xs text-gray-600">
                         <span className="font-semibold">Mode:</span>
@@ -1435,17 +1354,17 @@ function WelcomeLandingInner({
                             type="button"
                             onClick={() => setFollowUpMode("append")}
                             className={`px-3 py-1 ${followUpMode === "append" ? "bg-gray-900 text-white" : "bg-white text-gray-700"}`}
-                            title="Append to current dossier thread"
+                            title="Keep building the current dossier"
                           >
-                            Append
+                            Add to Dossier
                           </button>
                           <button
                             type="button"
                             onClick={() => setFollowUpMode("new")}
                             className={`px-3 py-1 ${followUpMode === "new" ? "bg-gray-900 text-white" : "bg-white text-gray-700"}`}
-                            title="Start a new thread"
+                            title="Replace with a fresh run"
                           >
-                            New thread
+                            Replace
                           </button>
                         </div>
                       </div>
@@ -1477,7 +1396,7 @@ function WelcomeLandingInner({
                           <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
                             <div className="flex items-center gap-2">
                               <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
-                              <span className="font-medium">{item.mode === "append" ? "Append" : "New"}</span>
+                              <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
                             </div>
                             <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
                             <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
@@ -1546,7 +1465,15 @@ function WelcomeLandingInner({
                   )}
 
                   {activeTab === 'media' && (
-                    <MockMediaView mediaAssets={mediaAssets} />
+                    <MockMediaView
+                      mediaAssets={mediaAssets}
+                      onGenerateVisualization={() =>
+                        handleRunPrompt(
+                          "Create a funding comparison chart for the mentioned companies and pull any logos or screenshots that support the findings.",
+                          { appendToThread: true, mode: "deep" }
+                        )
+                      }
+                    />
                   )}
 
                   {activeTab === 'artifacts' && (
@@ -1555,6 +1482,13 @@ function WelcomeLandingInner({
                       documents={aggregatedDocumentActions}
                       hasThread={Boolean(threadId)}
                       onDocumentSelect={onDocumentSelect}
+                      onGenerateArtifact={() =>
+                        handleRunPrompt(
+                          "Generate a CSV of key funding or filing data and produce a PDF-ready executive summary with citations.",
+                          { appendToThread: Boolean(threadId), mode: "deep" }
+                        )
+                      }
+                      onStartResearch={() => handleRunPrompt(undefined, { appendToThread: false, mode: researchMode })}
                     />
                   )}
                 </div>
@@ -1779,12 +1713,31 @@ function MockNewsletterView({
   );
 }
 
-function MockMediaView({ mediaAssets }: { mediaAssets: ExtractedAsset[] }) {
+function MockMediaView({ mediaAssets, onGenerateVisualization }: { mediaAssets: ExtractedAsset[]; onGenerateVisualization?: () => void; }) {
   if (mediaAssets.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
-        <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
-        <p className="text-sm">No media assets found in this research.</p>
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500 border-2 border-dashed border-gray-200 rounded-xl space-y-3 bg-white">
+        <ImageIcon className="w-8 h-8 opacity-50" />
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-gray-900">No visuals captured yet.</p>
+          <p className="text-xs text-gray-500">Ask the agent to pull charts, screenshots, or logos from the sources.</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onGenerateVisualization}
+            className="px-3 py-1.5 text-xs rounded-lg bg-gray-900 text-white hover:bg-black transition-colors"
+          >
+            Generate visualization
+          </button>
+          <button
+            type="button"
+            onClick={onGenerateVisualization}
+            className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Capture screenshots
+          </button>
+        </div>
       </div>
     );
   }
@@ -1821,7 +1774,21 @@ function MockMediaView({ mediaAssets }: { mediaAssets: ExtractedAsset[] }) {
   );
 }
 
-function LandingArtifactsView({ media, documents, hasThread, onDocumentSelect }: { media: ExtractedMedia; documents: DocumentAction[]; hasThread: boolean; onDocumentSelect?: (documentId: string) => void; }) {
+function LandingArtifactsView({
+  media,
+  documents,
+  hasThread,
+  onDocumentSelect,
+  onGenerateArtifact,
+  onStartResearch,
+}: {
+  media: ExtractedMedia;
+  documents: DocumentAction[];
+  hasThread: boolean;
+  onDocumentSelect?: (documentId: string) => void;
+  onGenerateArtifact?: () => void;
+  onStartResearch?: () => void;
+}) {
   try {
     const safeMedia = sanitizeMedia(media || baseMedia);
     const safeDocuments = sanitizeDocumentActions(documents);
@@ -1845,6 +1812,22 @@ function LandingArtifactsView({ media, documents, hasThread, onDocumentSelect }:
               ? "Run or finish a query to see the sources, filings, media, and generated docs the agent found."
               : "Start a dossier to collect sources, filings, media, and generated docs as the agent works."}
           </p>
+          <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={onGenerateArtifact}
+              className="px-3 py-1.5 text-xs rounded-lg bg-gray-900 text-white hover:bg-black transition-colors"
+            >
+              Generate first artifact
+            </button>
+            <button
+              type="button"
+              onClick={onStartResearch}
+              className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Start new research
+            </button>
+          </div>
         </div>
       );
     }
@@ -1878,7 +1861,7 @@ function LandingArtifactsView({ media, documents, hasThread, onDocumentSelect }:
               <DocumentActionGrid
                 documents={safeDocuments}
                 title="Generated Documents"
-                onDocumentSelect={onDocumentSelect || (() => {})}
+                onDocumentSelect={onDocumentSelect || (() => { })}
               />
             </div>
           )}

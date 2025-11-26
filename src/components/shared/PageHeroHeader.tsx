@@ -7,26 +7,36 @@ interface PageHeroHeaderProps {
   subtitle?: ReactNode;
   presets?: ReactNode; // optional row of preset buttons/controls
   className?: string;
+  /** Enable premium underline accent on title (like WelcomeLanding) */
+  accent?: boolean;
 }
 
 /**
  * Standardized hero header used below the top divider bar.
- * - No outer margins so parent containers can control spacing via space-y utilities.
+ * Premium SaaS styling with optional underline accent.
  */
-export function PageHeroHeader({ icon, title, date, subtitle, presets, className }: PageHeroHeaderProps) {
+export function PageHeroHeader({ icon, title, date, subtitle, presets, className, accent = false }: PageHeroHeaderProps) {
   return (
     <div className={className}>
-      <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-        {icon}
-        {title}
-        {date ? <span className="text-sm font-normal text-gray-500 ml-auto">{date}</span> : null}
-      </h1>
-      {subtitle ? (
-        <p className="text-gray-600">{subtitle}</p>
-      ) : null}
-      {presets ? (
-        <div className="mt-3 pb-4 flex flex-wrap gap-2">{presets}</div>
-      ) : null}
+      <div className="flex items-center justify-between gap-4 mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-3">
+          {icon && <span className="text-2xl opacity-90">{icon}</span>}
+          {accent ? (
+            <span className="underline decoration-gray-900/40 decoration-[3px] underline-offset-[6px]">{title}</span>
+          ) : (
+            <span>{title}</span>
+          )}
+        </h1>
+        {date && (
+          <span className="text-sm font-medium text-gray-400 tabular-nums whitespace-nowrap">{date}</span>
+        )}
+      </div>
+      {subtitle && (
+        <p className="text-gray-500 text-sm leading-relaxed max-w-xl">{subtitle}</p>
+      )}
+      {presets && (
+        <div className="mt-5 pb-2 flex flex-wrap gap-2">{presets}</div>
+      )}
     </div>
   );
 }

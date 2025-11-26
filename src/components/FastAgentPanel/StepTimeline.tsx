@@ -364,6 +364,16 @@ export function StepTimeline({
 export function toolPartsToTimelineSteps(toolParts: ToolUIPart[]): TimelineStep[] {
   const steps: TimelineStep[] = [];
 
+  const inferAgentRole = (toolName: string): TimelineStep['agentRole'] | undefined => {
+    const normalized = toolName.toLowerCase();
+    if (normalized.includes('document')) return 'documentAgent';
+    if (normalized.includes('media')) return 'mediaAgent';
+    if (normalized.includes('sec')) return 'secAgent';
+    if (normalized.includes('web')) return 'webAgent';
+    if (normalized.includes('delegate') || normalized.includes('coordinate')) return 'coordinator';
+    return undefined;
+  };
+
   toolParts.forEach((part, idx) => {
     // Extract tool name from type field (e.g., 'tool-webSearch' -> 'webSearch')
     // Handle all variants: tool-call, tool-result-${toolName}, tool-error-${toolName}
@@ -422,6 +432,7 @@ export function toolPartsToTimelineSteps(toolParts: ToolUIPart[]): TimelineStep[
       description: args ? `Arguments: ${JSON.stringify(args)}` : undefined,
       status,
       toolName,
+      agentRole: inferAgentRole(toolName),
       args, // Store args separately for popover
       result,
       error,
@@ -430,4 +441,3 @@ export function toolPartsToTimelineSteps(toolParts: ToolUIPart[]): TimelineStep[
 
   return steps;
 }
-

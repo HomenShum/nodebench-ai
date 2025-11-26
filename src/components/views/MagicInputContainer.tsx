@@ -1,13 +1,17 @@
 import { ArrowRight, Search, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 
+type ResearchMode = "quick" | "deep";
+
 interface MagicInputContainerProps {
-    onRun: (prompt: string) => void;
+    onRun: (prompt: string, options?: { mode?: ResearchMode }) => void;
+    onDeepRun?: (prompt: string) => void;
     compact?: boolean;
     defaultValue?: string;
+    mode?: ResearchMode;
 }
 
-export default function MagicInputContainer({ onRun, compact = false, defaultValue = "" }: MagicInputContainerProps) {
+export default function MagicInputContainer({ onRun, onDeepRun, compact = false, defaultValue = "", mode = "quick" }: MagicInputContainerProps) {
     const [prompt, setPrompt] = useState(defaultValue);
 
     useEffect(() => {
@@ -17,9 +21,22 @@ export default function MagicInputContainer({ onRun, compact = false, defaultVal
     }, [defaultValue]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        const isMetaEnter = e.key === "Enter" && (e.metaKey || e.ctrlKey);
+        const isPlainEnter = e.key === "Enter" && !e.metaKey && !e.ctrlKey && !e.shiftKey;
+
+        if (isMetaEnter) {
             e.preventDefault();
-            onRun(prompt);
+            if (onDeepRun) {
+                onDeepRun(prompt);
+            } else {
+                onRun(prompt, { mode: "deep" });
+            }
+            return;
+        }
+
+        if (isPlainEnter) {
+            e.preventDefault();
+            onRun(prompt, { mode });
         }
     };
 
@@ -45,9 +62,9 @@ export default function MagicInputContainer({ onRun, compact = false, defaultVal
                     {/* Button (Absolute Right) */}
                     <button
                         type="button"
-                        onClick={() => onRun(prompt)}
+                        onClick={() => onRun(prompt, { mode })}
                         className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 bg-gray-900 hover:bg-black text-white rounded-md transition-all shadow-sm hover:shadow disabled:opacity-50"
-                        title="Generate (Cmd+Enter)"
+                        title="Generate (Enter for Quick, Cmd/Ctrl+Enter for Deep)"
                     >
                         <ArrowRight className="w-3.5 h-3.5" />
                     </button>
@@ -78,9 +95,9 @@ export default function MagicInputContainer({ onRun, compact = false, defaultVal
                 <div className="absolute right-2">
                     <button
                         type="button"
-                        onClick={() => onRun(prompt)}
+                        onClick={() => onRun(prompt, { mode })}
                         className="p-2 bg-gray-900 hover:bg-black text-white rounded-lg transition-all shadow hover:shadow-lg active:scale-95 flex items-center justify-center"
-                        title="Run research (Cmd+Enter)"
+                        title="Run research (Enter for Quick, Cmd/Ctrl+Enter for Deep)"
                     >
                         <ArrowRight className="w-4 h-4" />
                     </button>
@@ -89,10 +106,14 @@ export default function MagicInputContainer({ onRun, compact = false, defaultVal
 
             <div className="flex justify-center gap-3 mt-3 text-xs text-gray-500">
                 <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-semibold">Enter</kbd>
+                    <span className="ml-1">Quick Brief</span>
+                </span>
+                <span className="flex items-center gap-1">
                     <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-semibold">⌘</kbd>
                     <span>+</span>
                     <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-semibold">Enter</kbd>
-                    <span className="ml-1">to run</span>
+                    <span className="ml-1">Deep Dossier</span>
                 </span>
             </div>
         </div>

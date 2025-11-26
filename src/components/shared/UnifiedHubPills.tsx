@@ -14,22 +14,22 @@ export function UnifiedHubPills({
   className?: string;
 }) {
   const container = [
-    "inline-flex items-center gap-1 p-1 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-color)]",
+    "inline-flex items-center gap-0.5 p-1 rounded-xl bg-gray-100/80 backdrop-blur-sm border border-gray-200/50 shadow-sm",
     className ?? "",
   ]
     .join(" ")
     .trim();
 
-  const activeCls = "bg-white text-[var(--text-primary)] border-[var(--border-color)] shadow-sm";
-  const inactiveCls = "text-[var(--text-secondary)] border-transparent hover:bg-white/50";
-  const disabledCls = "opacity-50 cursor-not-allowed";
-
-  const btnCls = (name: Hub, disabled?: boolean) =>
-    [
-      "px-8 py-1.5 text-xs rounded-md border transition-colors",
-      active === name ? activeCls : inactiveCls,
-      disabled ? disabledCls : "",
+  const btnCls = (name: Hub, disabled?: boolean) => {
+    const isActive = active === name;
+    return [
+      "px-4 py-1.5 text-xs font-medium rounded-lg transition-all duration-200",
+      isActive
+        ? "bg-white text-gray-900 shadow-sm"
+        : "text-gray-500 hover:text-gray-700 hover:bg-white/60",
+      disabled ? "opacity-40 cursor-not-allowed" : "",
     ].join(" ");
+  };
 
   const goDocs = () => {
     try {
@@ -57,7 +57,7 @@ export function UnifiedHubPills({
   };
 
   return (
-    <div className={container} role="tablist" aria-label="Primary hubs">
+    <nav className={container} role="tablist" aria-label="Primary hubs">
       <button className={btnCls("documents")} onClick={goDocs} role="tab" aria-selected={active === "documents"}>
         Documents
       </button>
@@ -80,7 +80,7 @@ export function UnifiedHubPills({
           Roadmap
         </button>
       )}
-    </div>
+    </nav>
   );
 }
 

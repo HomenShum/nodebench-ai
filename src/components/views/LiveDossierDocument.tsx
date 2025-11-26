@@ -5,8 +5,14 @@ import { useUIMessages } from "@convex-dev/agent/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEffect, useRef, useMemo, useState } from "react";
-import { Sparkles, TrendingUp, Users, Briefcase, FileText, Lightbulb, ChevronRight, Loader2 } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Briefcase, FileText, Lightbulb, ChevronRight, Loader2, Radio, Activity } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
+import { toolPartsToTimelineSteps, type TimelineStep } from "../FastAgentPanel/StepTimeline";
+
+const truncateText = (text: string, max = 160) => {
+    if (!text) return "";
+    return text.length > max ? `${text.slice(0, max)}...` : text;
+};
 
 // QuickActionButton Component - Refined Look
 interface QuickActionButtonProps {
@@ -174,6 +180,74 @@ export default function LiveDossierDocument({
     const hasContent = combinedContent.length > 0;
     const isStreaming = (latestAssistantMessage as any)?.status === "streaming" || (latestAssistantMessage as any)?.message?.status === "streaming";
 
+    const latestUserMessage = useMemo(() => {
+        if (!uiMessages || uiMessages.length === 0) return null;
+        for (let i = uiMessages.length - 1; i >= 0; i--) {
+            const msg = uiMessages[i] as any;
+            const role = msg.role ?? msg?.message?.role;
+            if (role === "user") return msg;
+        }
+        return null;
+    }, [uiMessages]);
+
+    const latestRequestText = useMemo(() => latestUserMessage ? extractMessageText(latestUserMessage) : "", [latestUserMessage]);
+
+    const latestToolParts = useMemo(() => {
+        const raw = latestAssistantMessage as any;
+        const parts = raw?.parts || raw?.message?.parts;
+        if (Array.isArray(parts)) {
+            return parts.filter((p: any) => typeof p?.type === "string" && p.type.startsWith("tool-"));
+        }
+        return [] as any[];
+    }, [latestAssistantMessage]);
+
+    const timelineSteps = useMemo(() => toolPartsToTimelineSteps(latestToolParts).slice(-8), [latestToolParts]);
+
+    const observationStep = useMemo(() => {
+        for (let i = timelineSteps.length - 1; i >= 0; i--) {
+            const step = timelineSteps[i];
+            if (step.status === "error" || step.result || step.description) return step;
+        }
+        return null;
+    }, [timelineSteps]);
+
+    const agentStatuses = useMemo(() => {
+        const statusMap = new Map<string, TimelineStep["status"]>();
+        const inferRoleFromName = (name: string | undefined) => {
+            const normalized = (name || "").toLowerCase();
+            if (normalized.includes("document")) return "documentAgent";
+            if (normalized.includes("media")) return "mediaAgent";
+            if (normalized.includes("sec")) return "secAgent";
+            if (normalized.includes("web")) return "webAgent";
+            if (normalized.includes("delegate") || normalized.includes("coordinate")) return "coordinator";
+            return undefined;
+        };
+
+        timelineSteps.forEach((step) => {
+            const role = (step.agentRole || inferRoleFromName(step.toolName || step.title)) as string | undefined;
+            if (!role) return;
+            const current = statusMap.get(role);
+            if (!current || current === "pending") {
+                statusMap.set(role, step.status);
+                return;
+            }
+            if (step.status === "error" || step.status === "running" || (step.status === "complete" && current !== "error")) {
+                statusMap.set(role, step.status);
+            }
+        });
+
+        return Array.from(statusMap.entries()).map(([role, status]) => ({ role: role as TimelineStep["agentRole"], status }));
+    }, [timelineSteps]);
+
+    const liveOutputPreview = useMemo(() => {
+        return latestAssistantMessage ? extractMessageText(latestAssistantMessage as any) : "";
+    }, [latestAssistantMessage]);
+
+    const visibleSteps = (isAppending && !isStreaming) ? [] : timelineSteps;
+    const visibleAgentStatuses = (isAppending && !isStreaming) ? [] : agentStatuses;
+    const visibleObservation = (isAppending && !isStreaming) ? null : observationStep;
+    const visibleLiveOutput = (isAppending && !isStreaming) ? "" : liveOutputPreview;
+
     // Track which follow-up is currently running
     const [currentFollowUpLabel, setCurrentFollowUpLabel] = useState<string>("");
 
@@ -304,20 +378,16 @@ export default function LiveDossierDocument({
                     </div>
                 </header>
 
-                {/* Sticky Loading Banner for Follow-ups - Refined Look */}
-                {isAppending && !isStreaming && (
-                    <div className="sticky top-24 z-30 mb-8 flex justify-center pointer-events-none">
-                        <div className="bg-white/90 backdrop-blur-md border border-purple-100 rounded-full shadow-xl px-6 py-2.5 flex items-center gap-3 animate-in slide-in-from-top-4 duration-500">
-                            <div className="flex gap-1">
-                                <div className="h-2 w-2 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.3s]"></div>
-                                <div className="h-2 w-2 rounded-full bg-purple-500 animate-bounce [animation-delay:-0.15s]"></div>
-                                <div className="h-2 w-2 rounded-full bg-purple-500 animate-bounce"></div>
-                            </div>
-                            <span className="text-purple-900 font-medium text-sm">
-                                {currentFollowUpLabel ? `Enriching: ${currentFollowUpLabel}...` : "Appending research results..."}
-                            </span>
-                        </div>
-                    </div>
+                {(isAppending || isStreaming) && (
+                    <LiveAgentTicker
+                        isActive={isAppending || isStreaming}
+                        followUpLabel={currentFollowUpLabel}
+                        requestPreview={latestRequestText}
+                        liveOutput={visibleLiveOutput}
+                        agentStatuses={visibleAgentStatuses}
+                        observationStep={visibleObservation}
+                        steps={visibleSteps}
+                    />
                 )}
 
                 {/* Content Area - Render each message as a separate section but visually seamless */}
@@ -453,4 +523,181 @@ export default function LiveDossierDocument({
 
 function EmptyState() {
     return null; // Handle empty state in parent to prevent flash
+}
+
+interface LiveAgentTickerProps {
+    isActive: boolean;
+    followUpLabel?: string;
+    requestPreview?: string;
+    liveOutput?: string;
+    agentStatuses: { role: TimelineStep["agentRole"]; status: TimelineStep["status"] }[];
+    observationStep: TimelineStep | null;
+    steps: TimelineStep[];
+}
+
+function LiveAgentTicker({
+    isActive,
+    followUpLabel,
+    requestPreview,
+    liveOutput,
+    agentStatuses,
+    observationStep,
+    steps
+}: LiveAgentTickerProps) {
+    const [showDetails, setShowDetails] = useState(true);
+
+    const roleLabels: Record<string, string> = {
+        coordinator: "Coordinator",
+        documentAgent: "Document Agent",
+        mediaAgent: "Media Agent",
+        secAgent: "SEC Agent",
+        webAgent: "Web Agent"
+    };
+
+    const statusStyles: Record<TimelineStep["status"], string> = {
+        pending: "bg-white/10 text-white border-white/10",
+        running: "bg-blue-500/20 text-blue-100 border-blue-300/40",
+        complete: "bg-green-500/20 text-green-100 border-green-300/40",
+        error: "bg-red-500/20 text-red-100 border-red-300/40"
+    };
+
+    const recentSteps = (steps || []).slice(-4);
+
+    const observationText = observationStep
+        ? (() => {
+            if (observationStep.error) return observationStep.error;
+            if (typeof observationStep.result === "string") return observationStep.result;
+            if (observationStep.result) return JSON.stringify(observationStep.result, null, 2);
+            return observationStep.description || "";
+        })()
+        : "";
+
+    const renderAgentChips = () => {
+        if (!agentStatuses.length) {
+            return <p className="text-xs text-gray-200">Spinning up specialists...</p>;
+        }
+
+        return (
+            <div className="flex flex-wrap gap-2">
+                {agentStatuses.map(({ role, status }, idx) => (
+                    <span
+                        key={`${role}-${idx}`}
+                        className={`px-3 py-1 rounded-full text-[11px] font-semibold border ${statusStyles[status] || statusStyles.pending}`}
+                    >
+                        {roleLabels[role || "coordinator"] || "Agent"} • {status.replace("_", " ")}
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div className="sticky top-24 z-30 mb-8 pointer-events-none">
+            <div className="pointer-events-auto relative overflow-hidden bg-gradient-to-r from-gray-900 via-gray-900/95 to-gray-900 text-white rounded-2xl shadow-2xl border border-gray-800/60 p-5 md:p-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/5 opacity-60 pointer-events-none" />
+                <div className={`absolute top-0 left-0 right-0 h-1 ${isActive ? "animate-pulse" : ""} bg-gradient-to-r from-purple-500/60 via-purple-300/40 to-purple-500/60`} />
+                <div className="flex flex-wrap items-center gap-3 justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className={`h-10 w-10 rounded-xl bg-white/10 border ${isActive ? "border-purple-300/50 shadow-lg shadow-purple-500/20" : "border-white/10"} flex items-center justify-center`}>
+                            <Radio className="w-5 h-5 text-purple-200" />
+                        </div>
+                        <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-purple-200">
+                                Live Multi-Agent Stream
+                            </div>
+                            <div className="text-sm text-gray-100">See who is working on what while the dossier builds.</div>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${isActive ? "bg-green-500/20 text-green-100 border-green-300/40" : "bg-white/10 text-gray-100 border-white/10"}`}>
+                            {isActive ? "Streaming" : "Idle"}
+                        </span>
+                        {followUpLabel && (
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold border bg-white/10 text-white border-white/10">
+                                {followUpLabel}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-3 mt-4 text-gray-100">
+                    <InfoTile label="Request Context" body={requestPreview ? truncateText(requestPreview, 150) : "Awaiting prompt..."} />
+                    <InfoTile label="Active Agents" body={renderAgentChips()} />
+                    <InfoTile
+                        label="Live Output"
+                        body={
+                            liveOutput
+                                ? truncateText(liveOutput, 150)
+                                : observationText
+                                    ? truncateText(observationText, 150)
+                                    : "Waiting for first tokens..."
+                        }
+                    />
+                </div>
+
+                {recentSteps.length > 0 && (
+                    <div className="mt-5 pt-4 border-t border-white/10">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] text-purple-100 mb-3">
+                            <Activity className="w-4 h-4" />
+                            Active tools & delegates
+                            <button
+                                onClick={() => setShowDetails((prev) => !prev)}
+                                className="ml-auto text-[11px] px-3 py-1 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                            >
+                                {showDetails ? "Hide detail" : "Show detail"}
+                            </button>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-3">
+                            {showDetails && recentSteps.map((step) => (
+                                <div key={step.id} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2 shadow-inner shadow-black/10">
+                                    <div className="flex items-start gap-2">
+                                        <span className={`mt-1 h-2 w-2 rounded-full ${step.status === "complete" ? "bg-green-400" : step.status === "error" ? "bg-red-400" : step.status === "running" ? "bg-blue-400 animate-pulse" : "bg-gray-400"}`} />
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-semibold text-white">{step.title || "Agent action"}</span>
+                                                {step.agentRole && (
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 border border-white/5 text-purple-100">
+                                                        {roleLabels[step.agentRole]}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {(step.toolName || step.description) && (
+                                                <div className="text-[11px] text-gray-300">
+                                                    {step.toolName ? `Tool: ${step.toolName}` : step.description}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {step.description && (
+                                        <p className="text-xs text-gray-200">
+                                            {truncateText(step.description, 140)}
+                                        </p>
+                                    )}
+                                    {step.result && typeof step.result === "string" && (
+                                        <p className="text-xs text-gray-100 bg-black/30 rounded-lg p-2">
+                                            {truncateText(step.result, 170)}
+                                        </p>
+                                    )}
+                                    {step.error && (
+                                        <p className="text-xs text-red-200">
+                                            {truncateText(step.error, 170)}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function InfoTile({ label, body }: { label: string; body: React.ReactNode }) {
+    return (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+            <div className="text-[11px] uppercase tracking-[0.15em] text-purple-100 mb-1">{label}</div>
+            <div className="text-sm text-gray-100 leading-relaxed">{body}</div>
+        </div>
+    );
 }
