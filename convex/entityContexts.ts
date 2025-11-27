@@ -1,10 +1,28 @@
 // convex/entityContexts.ts
 // Entity context storage for caching company/person research results
+// Extended with GAM (General Agentic Memory) support
 
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id } from "./_generated/dataModel";
+import { 
+  evaluateMemoryQuality, 
+  isFactHighConfidence,
+  type MemoryQualityFlags,
+  type QualityTier 
+} from "./lib/memoryQuality";
+import { 
+  buildCanonicalKey, 
+  type EntityType 
+} from "./lib/entityResolution";
+import { 
+  validateFactBatch, 
+  findConflicts,
+  generateFactId,
+  type StructuredFact 
+} from "./lib/factValidation";
+import { MEMORY_LIMITS, QUALITY_THRESHOLDS } from "./lib/memoryLimits";
 
 /**
  * Store or update entity research context
@@ -251,19 +269,26 @@ export const deleteEntityContext = mutation({
 
 /**
  * Mark stale contexts (> 7 days old)
+ * Internal mutation so it can be called from cron jobs.
  */
-export const markStaleContexts = mutation({
+export const markStaleContexts = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
-    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const sevenDaysAgo = now - MEMORY_LIMITS.entityStaleDays * 24 * 60 * 60 * 1000;
     
     const contexts = await ctx.db.query("entityContexts").collect();
     
     let markedCount = 0;
     for (const context of contexts) {
       if (context.researchedAt < sevenDaysAgo && !context.isStale) {
-        await ctx.db.patch(context._id, { isStale: true });
+        await ctx.db.patch(context._id, { 
+          isStale: true,
+          quality: context.quality ? {
+            ...context.quality,
+            hasRecentResearch: false,
+          } : undefined,
+        });
         markedCount++;
       }
     }
@@ -303,5 +328,310 @@ export const getEntityContextStats = query({
     };
     
     return stats;
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GAM: STRUCTURED MEMORY MUTATIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Internal query to list all entity contexts for GC/migration.
+ */
+export const listAllForGC = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("entityContexts").collect();
+  },
+});
+
+/**
+ * Internal mutation to patch entity for migration.
+ */
+export const patchForMigration = internalMutation({
+  args: {
+    id: v.id("entityContexts"),
+    updates: v.any(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, args.updates);
+  },
+});
+
+/**
+ * Internal mutation to mark an entity as stale.
+ */
+export const markStale = internalMutation({
+  args: {
+    id: v.id("entityContexts"),
+  },
+  handler: async (ctx, args) => {
+    const entity = await ctx.db.get(args.id);
+    if (!entity) return;
+    
+    await ctx.db.patch(args.id, { 
+      isStale: true,
+      quality: entity.quality ? {
+        ...entity.quality,
+        hasRecentResearch: false,
+      } : undefined,
+    });
+  },
+});
+
+/**
+ * Internal mutation to archive (soft delete) an entity.
+ */
+export const archive = internalMutation({
+  args: {
+    id: v.id("entityContexts"),
+  },
+  handler: async (ctx, args) => {
+    // For now, just delete. Could move to archive table in future.
+    await ctx.db.delete(args.id);
+    console.log(`[entityContexts] Archived entity ${args.id}`);
+  },
+});
+
+/**
+ * Internal mutation to trim oversized fact arrays.
+ */
+export const trimFacts = internalMutation({
+  args: {
+    id: v.id("entityContexts"),
+    maxFacts: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const entity = await ctx.db.get(args.id);
+    if (!entity || !entity.structuredFacts) return;
+    
+    // Keep most recent facts (by timestamp), prioritize high confidence
+    const sorted = [...entity.structuredFacts].sort((a, b) => {
+      // High confidence first
+      if (a.isHighConfidence !== b.isHighConfidence) {
+        return a.isHighConfidence ? -1 : 1;
+      }
+      // Then by timestamp (newer first)
+      return b.timestamp.localeCompare(a.timestamp);
+    });
+    
+    const trimmed = sorted.slice(0, args.maxFacts);
+    
+    await ctx.db.patch(args.id, {
+      structuredFacts: trimmed,
+      factCount: trimmed.length,
+      version: entity.version + 1,
+    });
+    
+    console.log(`[entityContexts] Trimmed ${entity.entityName} from ${entity.structuredFacts.length} to ${trimmed.length} facts`);
+  },
+});
+
+/**
+ * Merge new facts from a review into existing entity memory.
+ * Uses boolean validation - facts either pass or fail.
+ */
+export const mergeFactsIntoMemory = internalMutation({
+  args: {
+    entityId: v.id("entityContexts"),
+    newFacts: v.array(v.object({
+      subject: v.string(),
+      predicate: v.string(),
+      object: v.string(),
+      confidence: v.number(),
+    })),
+    sourceDocId: v.optional(v.string()),
+    reviewSummary: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const entity = await ctx.db.get(args.entityId);
+    if (!entity) throw new Error("Entity not found");
+    
+    const now = new Date().toISOString();
+    const existingFacts: StructuredFact[] = entity.structuredFacts || [];
+    const existingConflicts = entity.conflicts || [];
+    
+    // Validate facts using boolean logic
+    const { validFacts, rejectedFacts, validationSummary } = validateFactBatch(
+      args.newFacts,
+      entity.entityName
+    );
+    
+    if (rejectedFacts.length > 0) {
+      console.warn(`[mergeFactsIntoMemory] Rejected ${rejectedFacts.length} facts for ${entity.entityName}:`,
+        rejectedFacts.map(f => f.reason)
+      );
+    }
+    
+    // Check for conflicts with existing facts
+    const newConflicts: typeof existingConflicts = [];
+    for (const newFact of validFacts) {
+      const conflicts = findConflicts(newFact, existingFacts);
+      
+      for (const conflicting of conflicts) {
+        newConflicts.push({
+          factIds: [conflicting.id, generateFactId()],
+          description: `Conflicting values for ${newFact.subject}.${newFact.predicate}: "${conflicting.object}" vs "${newFact.object}"`,
+          status: "unresolved" as const,
+          detectedAt: now,
+        });
+        
+        // If new fact is high confidence and old is not, mark old as outdated
+        const newIsHigh = isFactHighConfidence(newFact.confidence);
+        if (newIsHigh && !conflicting.isHighConfidence) {
+          conflicting.isOutdated = true;
+        }
+      }
+    }
+    
+    // Convert validated facts to structured format
+    const structuredNewFacts: StructuredFact[] = validFacts.map((f) => ({
+      id: generateFactId(),
+      subject: f.subject,
+      predicate: f.predicate,
+      object: f.object,
+      isHighConfidence: isFactHighConfidence(f.confidence),
+      sourceIds: args.sourceDocId ? [args.sourceDocId] : [],
+      timestamp: now,
+    }));
+    
+    // Merge facts
+    const mergedFacts = [...existingFacts, ...structuredNewFacts];
+    const allConflicts = [...existingConflicts, ...newConflicts];
+    
+    // Trim if over limit
+    const trimmedFacts = mergedFacts.length > MEMORY_LIMITS.maxStructuredFactsPerEntity
+      ? mergedFacts.slice(-MEMORY_LIMITS.maxStructuredFactsPerEntity)
+      : mergedFacts;
+    
+    // Also update keyFacts (string array)
+    const newKeyFacts = [
+      ...entity.keyFacts,
+      ...validFacts.map(f => `${f.subject} ${f.predicate}: ${f.object}`),
+    ].slice(-MEMORY_LIMITS.maxKeyFactsPerEntity);
+    
+    // Evaluate quality using boolean flags
+    const activeFacts = trimmedFacts.filter(f => !f.isOutdated);
+    const daysSinceResearch = (Date.now() - entity.researchedAt) / (1000 * 60 * 60 * 24);
+    
+    const qualityResult = evaluateMemoryQuality({
+      factCount: activeFacts.length,
+      daysSinceResearch,
+      unresolvedConflictCount: allConflicts.filter(c => c.status === "unresolved").length,
+      sourceCount: entity.sources.length,
+      factConfidences: activeFacts.map(f => f.isHighConfidence),
+      narrativeCount: entity.narratives?.length ?? 0,
+      heuristicCount: entity.heuristics?.length ?? 0,
+    });
+    
+    // Update entity
+    await ctx.db.patch(args.entityId, {
+      structuredFacts: trimmedFacts,
+      conflicts: allConflicts,
+      keyFacts: newKeyFacts,
+      quality: qualityResult.flags,
+      qualityTier: qualityResult.tier,
+      factCount: activeFacts.length,
+      version: entity.version + 1,
+      lastAccessedAt: Date.now(),
+      linkedDocIds: args.sourceDocId 
+        ? [...(entity.linkedDocIds || []), args.sourceDocId as any].slice(-MEMORY_LIMITS.maxLinkedDocsPerEntity)
+        : entity.linkedDocIds,
+    });
+    
+    console.log(`[mergeFactsIntoMemory] Updated ${entity.entityName}: +${validFacts.length} facts (${rejectedFacts.length} rejected), ${newConflicts.length} new conflicts, tier=${qualityResult.tier}`);
+    
+    return {
+      factsAdded: validFacts.length,
+      factsRejected: rejectedFacts.length,
+      conflictsDetected: newConflicts.length,
+      qualityTier: qualityResult.tier,
+    };
+  },
+});
+
+/**
+ * Upgrade entity to deep memory with narratives and heuristics.
+ */
+export const upgradeToDeepMemory = internalMutation({
+  args: {
+    entityId: v.id("entityContexts"),
+    narratives: v.array(v.object({
+      label: v.string(),
+      description: v.string(),
+      supportingFactIds: v.array(v.string()),
+      isWellSupported: v.boolean(),
+    })),
+    heuristics: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const entity = await ctx.db.get(args.entityId);
+    if (!entity) throw new Error("Entity not found");
+    
+    const now = new Date().toISOString();
+    
+    // Trim to limits
+    const trimmedNarratives = args.narratives
+      .slice(0, MEMORY_LIMITS.maxNarrativesPerEntity)
+      .map(n => ({ ...n, lastUpdated: now }));
+    
+    const trimmedHeuristics = args.heuristics
+      .slice(0, MEMORY_LIMITS.maxHeuristicsPerEntity);
+    
+    // Re-evaluate quality with new data
+    const daysSinceResearch = (Date.now() - entity.researchedAt) / (1000 * 60 * 60 * 24);
+    const activeFacts = (entity.structuredFacts || []).filter(f => !f.isOutdated);
+    
+    const qualityResult = evaluateMemoryQuality({
+      factCount: activeFacts.length,
+      daysSinceResearch,
+      unresolvedConflictCount: (entity.conflicts || []).filter(c => c.status === "unresolved").length,
+      sourceCount: entity.sources.length,
+      factConfidences: activeFacts.map(f => f.isHighConfidence),
+      narrativeCount: trimmedNarratives.length,
+      heuristicCount: trimmedHeuristics.length,
+    });
+    
+    await ctx.db.patch(args.entityId, {
+      narratives: trimmedNarratives,
+      heuristics: trimmedHeuristics,
+      researchDepth: "deep",
+      quality: qualityResult.flags,
+      qualityTier: qualityResult.tier,
+      version: entity.version + 1,
+      lastAccessedAt: Date.now(),
+    });
+    
+    console.log(`[upgradeToDeepMemory] ${entity.entityName} upgraded to deep memory: ${trimmedNarratives.length} narratives, ${trimmedHeuristics.length} heuristics, tier=${qualityResult.tier}`);
+  },
+});
+
+/**
+ * Set canonical key for an entity (for migration or disambiguation).
+ */
+export const setCanonicalKey = internalMutation({
+  args: {
+    entityId: v.id("entityContexts"),
+    canonicalKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.entityId, {
+      canonicalKey: args.canonicalKey,
+    });
+  },
+});
+
+/**
+ * Get entity by canonical key.
+ */
+export const getByCanonicalKey = query({
+  args: {
+    canonicalKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("entityContexts")
+      .withIndex("by_canonicalKey", q => q.eq("canonicalKey", args.canonicalKey))
+      .first();
   },
 });

@@ -95,6 +95,109 @@ Agents can request clarification from users when queries are ambiguous:
 
 ---
 
+## Deep Agents 2.0 Architecture
+
+The platform implements a **frontier-grade deep research agent** architecture with the following components:
+
+### Core Components
+
+| Component | Purpose | File |
+|-----------|---------|------|
+| **CoordinatorAgent** | Top-level orchestrator, handles all requests | `convex/fast_agents/coordinatorAgent.ts` |
+| **Orchestration Tools** | Self-awareness + planning | `convex/tools/orchestrationTools.ts` |
+| **Context Tools** | Scratchpad + context compaction | `convex/tools/contextTools.ts` |
+| **GAM Memory** | General Agentic Memory with boolean flags | `convex/tools/unifiedMemoryTools.ts` |
+
+### 4 Code-Enforced Invariants
+
+The architecture guarantees these invariants **in code, not just prompts**:
+
+#### Invariant A: Message Isolation
+- Every user message gets a unique `messageId`
+- Tools refuse to mutate state if `messageId` doesn't match
+- Prevents cross-query contamination
+
+#### Invariant B: Safe Context Fallback  
+- `compactContext` only falls back to previous context if **same messageId**
+- Never resurrects old data from previous messages
+- All output stamped with `messageId`
+
+#### Invariant C: Memory Deduplication
+- `memoryUpdatedEntities` array tracks what was updated
+- `isMemoryUpdated` / `markMemoryUpdated` tools for explicit tracking
+- Prevents duplicate fact insertions
+
+#### Invariant D: Capability Version Check
+- All tools have `writesMemory: boolean` flag
+- `capabilitiesVersion` ensures tool validity checks use current catalog
+- `sequentialThinking` requires capabilities to be loaded first
+
+### Scratchpad Schema
+
+```typescript
+scratchpad = {
+  messageId: string,               // Invariant A
+  memoryUpdatedEntities: string[], // Invariant C  
+  capabilitiesVersion: string,     // Invariant D
+  
+  activeEntities: string[],
+  currentIntent: string | null,
+  lastPlan: { nodes, edges, linearPlan } | null,
+  compactContext: { facts, constraints, missing, ... } | null,
+  
+  stepCount: number,
+  toolCallCount: number,
+  planningCallCount: number,
+}
+```
+
+### Safety Limits
+
+| Limit | Value | Enforcement |
+|-------|-------|-------------|
+| MAX_STEPS_PER_QUERY | 8 | Hard stop + summarize |
+| MAX_TOOL_CALLS_PER_QUERY | 12 | Hard stop + summarize |
+| MAX_PLANNING_CALLS | 2 | Prevents infinite planning |
+
+### Research Intensity (Boolean-Based)
+
+Research depth is determined by **boolean flags only**, not arbitrary numeric scores:
+
+```
+needsDeepResearch = (
+  userWantsDeepResearch ||
+  memory.isStale ||
+  memory.isIncomplete ||
+  memory.hasContradictions
+)
+```
+
+### Workflow
+
+```
+User Query
+    │
+    ├─ initScratchpad(intent) → messageId generated
+    │
+    ├─ queryMemory → boolean quality flags
+    │
+    ├─ If multi-entity → decomposeQuery
+    │
+    ├─ If complex → sequentialThinking (requires capabilities)
+    │
+    ├─ Execute tool
+    │
+    ├─ compactContext(messageId) → stamp output
+    │
+    ├─ updateScratchpad(messageId) → guard mismatch
+    │
+    ├─ If tool.writesMemory → markMemoryUpdated
+    │
+    └─ Generate response
+```
+
+---
+
 ## Tech Stack
 
 - **Frontend**: React, TypeScript, Vite, TailwindCSS
