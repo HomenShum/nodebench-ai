@@ -30,6 +30,14 @@ function addUnique(arr: string[], item: string): string[] {
 // INVARIANT C: memoryUpdatedEntities tracks memory dedupe
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Task schema for pendingTasks/completedTasks
+const taskSchema = z.object({
+  id: z.string().optional(),
+  description: z.string(),
+  suggestedTool: z.string().optional(),
+  status: z.string().optional(),
+});
+
 export const scratchpadSchema = z.object({
   // INVARIANT A: Message isolation
   messageId: z.string().describe("Unique ID for current user message - hard isolation"),
@@ -43,12 +51,25 @@ export const scratchpadSchema = z.object({
   // Existing fields
   activeEntities: z.array(z.string()).default([]),
   activeTheme: z.string().nullable().default(null),
-  lastPlan: z.any().nullable().default(null),
-  lastCapabilities: z.any().nullable().default(null),
-  compactContext: z.any().nullable().default(null),
-  lastToolOutput: z.any().nullable().default(null),
-  pendingTasks: z.array(z.any()).default([]),
-  completedTasks: z.array(z.any()).default([]),
+  lastPlan: z.object({
+    nodes: z.array(z.object({ id: z.string(), description: z.string() })).optional(),
+    edges: z.array(z.object({ from: z.string(), to: z.string() })).optional(),
+    linearPlan: z.array(z.object({ id: z.string(), description: z.string() })).optional(),
+  }).nullable().default(null),
+  lastCapabilities: z.object({
+    version: z.string().optional(),
+    directTools: z.array(z.object({ name: z.string(), purpose: z.string() })).optional(),
+  }).nullable().default(null),
+  compactContext: z.object({
+    facts: z.array(z.string()).optional(),
+    constraints: z.array(z.string()).optional(),
+    missing: z.array(z.string()).optional(),
+    summary: z.string().optional(),
+    messageId: z.string().optional(),
+  }).nullable().default(null),
+  lastToolOutput: z.string().nullable().default(null),
+  pendingTasks: z.array(taskSchema).default([]),
+  completedTasks: z.array(taskSchema).default([]),
   currentIntent: z.string().nullable().default(null),
   
   // Safety limits tracking
@@ -153,13 +174,24 @@ Call this AFTER each tool to maintain state continuity.`,
     updates: z.object({
       activeEntities: z.array(z.string()).optional(),
       activeTheme: z.string().nullable().optional(),
-      lastPlan: z.any().optional(),
-      lastCapabilities: z.any().optional(),
+      lastPlan: z.object({
+        nodes: z.array(z.object({ id: z.string(), description: z.string() })).optional(),
+        edges: z.array(z.object({ from: z.string(), to: z.string() })).optional(),
+        linearPlan: z.array(z.object({ id: z.string(), description: z.string() })).optional(),
+      }).optional(),
+      lastCapabilities: z.object({
+        version: z.string().optional(),
+        directTools: z.array(z.object({ name: z.string(), purpose: z.string() })).optional(),
+      }).optional(),
       capabilitiesVersion: z.string().optional(),
-      compactContext: z.any().optional(),
-      lastToolOutput: z.any().optional(),
-      completedTask: z.any().optional(),
-      newPendingTasks: z.array(z.any()).optional(),
+      compactContext: z.object({
+        facts: z.array(z.string()).optional(),
+        summary: z.string().optional(),
+        messageId: z.string().optional(),
+      }).optional(),
+      lastToolOutput: z.string().optional(),
+      completedTask: taskSchema.optional(),
+      newPendingTasks: z.array(taskSchema).optional(),
       incrementToolCall: z.boolean().optional(),
       incrementPlanningCall: z.boolean().optional(),
     }).describe("Fields to update"),
@@ -259,9 +291,15 @@ Returns a strict schema with: facts, constraints, missing, derivedEntities, open
   args: z.object({
     messageId: z.string().describe("REQUIRED: Current message ID for isolation"),
     toolName: z.string().describe("Name of the tool that produced the output"),
-    toolOutput: z.any().describe("Raw output from the tool"),
+    toolOutput: z.string().describe("Raw output from the tool (stringified)"),
     currentGoal: z.string().describe("What you're trying to achieve"),
-    previousContext: z.any().optional().describe("Previous compactContext if any"),
+    previousContext: z.object({
+      facts: z.array(z.string()).optional(),
+      constraints: z.array(z.string()).optional(),
+      missing: z.array(z.string()).optional(),
+      summary: z.string().optional(),
+      messageId: z.string().optional(),
+    }).optional().describe("Previous compactContext if any"),
   }),
 
   handler: async (_ctx, args) => {
