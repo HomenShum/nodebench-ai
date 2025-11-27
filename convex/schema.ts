@@ -78,6 +78,39 @@ const documents = defineTable({
   // Idempotency key for creation (threadId + title + content hash)
   creationKey: v.optional(v.string()),
 
+  // ═══════════════════════════════════════════════════════════════════
+  // GAM: THEME MEMORY (for hashtag dossiers)
+  // ═══════════════════════════════════════════════════════════════════
+  themeMemory: v.optional(v.object({
+    topicId: v.string(),               // e.g., "theme:agent-memory"
+    summary: v.string(),
+    keyFacts: v.array(v.object({
+      id: v.string(),
+      text: v.string(),
+      isHighConfidence: v.boolean(),   // Boolean: passes threshold or not
+      sourceDocIds: v.array(v.string()),
+    })),
+    narratives: v.array(v.object({
+      label: v.string(),
+      description: v.string(),
+      supportingDocIds: v.array(v.string()),
+    })),
+    heuristics: v.array(v.string()),
+    lastRefreshed: v.number(),
+    // Boolean quality flags (not arbitrary scores)
+    quality: v.object({
+      hasSufficientFacts: v.boolean(),
+      hasRecentResearch: v.boolean(),
+      hasVerifiedSources: v.boolean(),
+    }),
+    staleDays: v.number(),             // Default: 30 days
+    researchDepth: v.union(
+      v.literal("shallow"),
+      v.literal("standard"),
+      v.literal("deep")
+    ),
+  })),
+
 })
   .index("by_user", ["createdBy"])
   .index("by_user_archived", ["createdBy", "isArchived"])
@@ -1322,11 +1355,89 @@ const spreadsheets = defineTable({
       accessCount: v.number(),                 // Number of times accessed (cache hits)
       version: v.number(),                     // Version number for cache invalidation
       isStale: v.optional(v.boolean()),        // Flag for stale data (> 7 days)
+
+      // ═══════════════════════════════════════════════════════════════════
+      // GAM: STRUCTURED MEMORY FIELDS
+      // ═══════════════════════════════════════════════════════════════════
+      
+      /** Canonical key for disambiguation (e.g., "company:TSLA") */
+      canonicalKey: v.optional(v.string()),
+      
+      /** Structured facts with boolean confidence flags */
+      structuredFacts: v.optional(v.array(v.object({
+        id: v.string(),
+        subject: v.string(),
+        predicate: v.string(),
+        object: v.string(),
+        /** Boolean: does this fact meet confidence threshold? */
+        isHighConfidence: v.boolean(),
+        sourceIds: v.array(v.string()),
+        timestamp: v.string(),
+        isOutdated: v.optional(v.boolean()),
+      }))),
+      
+      /** Narrative interpretations (growth story, bear case, etc.) */
+      narratives: v.optional(v.array(v.object({
+        label: v.string(),
+        description: v.string(),
+        supportingFactIds: v.array(v.string()),
+        /** Boolean: is this narrative well-supported? */
+        isWellSupported: v.boolean(),
+        lastUpdated: v.string(),
+      }))),
+      
+      /** Actionable heuristics for agents */
+      heuristics: v.optional(v.array(v.string())),
+      
+      /** Conflict tracking */
+      conflicts: v.optional(v.array(v.object({
+        factIds: v.array(v.string()),
+        description: v.string(),
+        status: v.union(v.literal("unresolved"), v.literal("resolved")),
+        detectedAt: v.string(),
+      }))),
+      
+      /** Boolean quality flags (not arbitrary scores) */
+      quality: v.optional(v.object({
+        hasSufficientFacts: v.boolean(),
+        hasRecentResearch: v.boolean(),
+        hasNoConflicts: v.boolean(),
+        hasVerifiedSources: v.boolean(),
+        hasHighConfidenceFacts: v.boolean(),
+        hasNarratives: v.boolean(),
+        hasHeuristics: v.boolean(),
+      })),
+      
+      /** Quality tier derived from flags */
+      qualityTier: v.optional(v.union(
+        v.literal("excellent"),
+        v.literal("good"),
+        v.literal("fair"),
+        v.literal("poor")
+      )),
+      
+      /** Fact count for quick checks */
+      factCount: v.optional(v.number()),
+      
+      /** Cross-references */
+      relatedEntityNames: v.optional(v.array(v.string())),
+      linkedDocIds: v.optional(v.array(v.id("documents"))),
+      
+      /** Research job tracking */
+      lastResearchJobId: v.optional(v.string()),
+      researchDepth: v.optional(v.union(
+        v.literal("shallow"),
+        v.literal("standard"),
+        v.literal("deep")
+      )),
     })
       .index("by_entity", ["entityName", "entityType"])
       .index("by_spreadsheet", ["spreadsheetId", "rowIndex"])
       .index("by_user", ["researchedBy"])
       .index("by_researched_at", ["researchedAt"])
+      .index("by_canonicalKey", ["canonicalKey"])
+      .index("by_user_accessedAt", ["researchedBy", "lastAccessedAt"])
+      .index("by_qualityTier", ["qualityTier"])
       .searchIndex("search_entity", {
         searchField: "entityName",
         filterFields: ["entityType", "researchedBy"],
@@ -1387,5 +1498,75 @@ const spreadsheets = defineTable({
     })
       .index("by_user", ["userId"])
       .index("by_user_key", ["userId", "key"]),
+
+    /* ------------------------------------------------------------------ */
+    /* GAM: RESEARCH JOBS - Background research job queue                 */
+    /* ------------------------------------------------------------------ */
+    researchJobs: defineTable({
+      userId: v.id("users"),
+      targetType: v.union(v.literal("entity"), v.literal("theme")),
+      /** Canonical key (e.g., "company:TSLA" or "theme:agent-memory") */
+      targetId: v.string(),
+      /** Human-readable name for display */
+      targetDisplayName: v.string(),
+      jobType: v.union(
+        v.literal("initial"),
+        v.literal("refresh"),
+        v.literal("merge_review"),
+        v.literal("deep_upgrade")
+      ),
+      researchDepth: v.optional(v.union(
+        v.literal("shallow"),
+        v.literal("standard"),
+        v.literal("deep")
+      )),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("running"),
+        v.literal("completed"),
+        v.literal("failed")
+      ),
+      priority: v.number(),
+      triggerSource: v.optional(v.string()),
+      error: v.optional(v.string()),
+      /** Job duration tracking */
+      durationMs: v.optional(v.number()),
+      createdAt: v.number(),
+      startedAt: v.optional(v.number()),
+      completedAt: v.optional(v.number()),
+    })
+      .index("by_user_status", ["userId", "status"])
+      .index("by_target", ["targetType", "targetId"])
+      .index("by_createdAt", ["createdAt"]),
+
+    /* ------------------------------------------------------------------ */
+    /* GAM: MEMORY METRICS - Usage and quality tracking                   */
+    /* ------------------------------------------------------------------ */
+    memoryMetrics: defineTable({
+      date: v.string(),                       // YYYY-MM-DD
+      userId: v.optional(v.id("users")),      // null for global metrics
+      
+      // Query metrics (boolean outcomes)
+      queryMemoryCalls: v.number(),
+      queryMemoryHits: v.number(),            // found=true
+      queryMemoryMisses: v.number(),          // found=false
+      queryMemoryStaleHits: v.number(),       // found but stale
+      
+      // Job metrics
+      researchJobsCreated: v.number(),
+      researchJobsCompleted: v.number(),
+      researchJobsFailed: v.number(),
+      
+      // Memory state counts
+      totalEntityMemories: v.number(),
+      totalThemeMemories: v.number(),
+      
+      // Write metrics
+      factsAdded: v.number(),
+      factsRejected: v.number(),
+      conflictsDetected: v.number(),
+    })
+      .index("by_date", ["date"])
+      .index("by_user_date", ["userId", "date"]),
 
   });

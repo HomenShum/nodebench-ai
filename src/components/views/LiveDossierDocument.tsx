@@ -1,5 +1,7 @@
 import { useQuery } from "convex/react";
 import { DeepAgentProgress } from "./DeepAgentProgress";
+import { TaskPlanPanel, workflowProgressToTaskSteps } from "./TaskPlanPanel";
+import { InlineMetrics, type WorkflowMetrics } from "./WorkflowMetricsBar";
 import { api } from "../../../convex/_generated/api";
 import { useUIMessages } from "@convex-dev/agent/react";
 import ReactMarkdown from "react-markdown";
@@ -473,10 +475,15 @@ export default function LiveDossierDocument({
                     );
                 })}
 
-                {/* Deep Agent Progress - Rendered at the bottom if active */}
+                {/* Deep Agent Progress - Task Plan Panel with Metrics */}
                 {streamingThread?.workflowProgress && (
                     <div className="mb-12 border-t-2 border-gray-200 pt-8 animate-in fade-in duration-500">
-                        <DeepAgentProgress steps={streamingThread.workflowProgress.steps} />
+                        <TaskPlanPanel 
+                            steps={workflowProgressToTaskSteps(streamingThread.workflowProgress)}
+                            metrics={streamingThread.workflowProgress.metrics as WorkflowMetrics}
+                            isRunning={isStreaming || isAppending}
+                            title="Research Progress"
+                        />
                     </div>
                 )}
 

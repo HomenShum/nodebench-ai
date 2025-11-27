@@ -5,6 +5,17 @@ import type { Id } from "../_generated/dataModel";
 import { createCoordinatorAgent } from "./coordinatorAgent";
 
 /**
+ * Workflow metrics type for tracking sources, tools, and agents
+ */
+export interface WorkflowMetrics {
+    sourcesExplored: number;
+    toolsUsed: string[];
+    agentsCalled: string[];
+    totalDurationMs: number;
+    startedAt: number;
+}
+
+/**
  * Entry point for the multi-agent workflow.
  * Called by fastAgentPanelStreaming.ts when "complex" mode is selected.
  */
@@ -46,20 +57,29 @@ export const scheduleWorkflow = internalMutation({
         includeFilings: v.optional(v.boolean()),
     },
     handler: async (ctx, args): Promise<Id<"chatThreadsStream">> => {
-        // Create the initial progress state
+        const startTime = Date.now();
+        
+        // Create the initial progress state with metrics
         const initialProgress = {
             type: "deep_agent_progress",
             steps: [
                 { label: "Analyzing Request", status: "in_progress" },
                 { label: "Orchestrating Agents", status: "pending" },
                 { label: "Synthesizing Intelligence", status: "pending" }
-            ]
+            ],
+            metrics: {
+                sourcesExplored: 0,
+                toolsUsed: [],
+                agentsCalled: [],
+                totalDurationMs: 0,
+                startedAt: startTime,
+            }
         };
 
         // Update the thread with the progress state
         await ctx.db.patch(args.threadId, {
             workflowProgress: initialProgress,
-            updatedAt: Date.now()
+            updatedAt: startTime
         });
 
         console.log(`[multiAgentWorkflow] 📅 Scheduling runWorkflow for ${args.threadId}`);
@@ -171,14 +191,85 @@ export const updateWorkflowProgress = internalMutation({
     args: {
         threadId: v.id("chatThreadsStream"),
         steps: v.any(),
+        metrics: v.optional(v.object({
+            sourcesExplored: v.optional(v.number()),
+            toolsUsed: v.optional(v.array(v.string())),
+            agentsCalled: v.optional(v.array(v.string())),
+            totalDurationMs: v.optional(v.number()),
+        })),
     },
     handler: async (ctx, args) => {
+        // Get existing progress to merge metrics
+        const thread = await ctx.db.get(args.threadId);
+        const existingProgress = (thread?.workflowProgress as any) || {};
+        const existingMetrics = existingProgress.metrics || {
+            sourcesExplored: 0,
+            toolsUsed: [],
+            agentsCalled: [],
+            totalDurationMs: 0,
+            startedAt: Date.now(),
+        };
+
+        // Merge new metrics with existing
+        const updatedMetrics = args.metrics ? {
+            sourcesExplored: (args.metrics.sourcesExplored ?? 0) + existingMetrics.sourcesExplored,
+            toolsUsed: [...new Set([...existingMetrics.toolsUsed, ...(args.metrics.toolsUsed || [])])],
+            agentsCalled: [...new Set([...existingMetrics.agentsCalled, ...(args.metrics.agentsCalled || [])])],
+            totalDurationMs: args.metrics.totalDurationMs ?? (Date.now() - existingMetrics.startedAt),
+            startedAt: existingMetrics.startedAt,
+        } : existingMetrics;
+
         const workflowProgress = {
             type: "deep_agent_progress",
-            steps: args.steps
+            steps: args.steps,
+            metrics: updatedMetrics,
         };
         await ctx.db.patch(args.threadId, {
             workflowProgress,
+            updatedAt: Date.now()
+        });
+    }
+});
+
+// Helper mutation to increment metrics (for tool calls, sources, etc.)
+export const incrementWorkflowMetrics = internalMutation({
+    args: {
+        threadId: v.id("chatThreadsStream"),
+        sourcesExplored: v.optional(v.number()),
+        toolName: v.optional(v.string()),
+        agentName: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const thread = await ctx.db.get(args.threadId);
+        if (!thread) return;
+
+        const existingProgress = (thread.workflowProgress as any) || {};
+        const existingMetrics = existingProgress.metrics || {
+            sourcesExplored: 0,
+            toolsUsed: [],
+            agentsCalled: [],
+            totalDurationMs: 0,
+            startedAt: Date.now(),
+        };
+
+        // Increment metrics
+        const updatedMetrics = {
+            ...existingMetrics,
+            sourcesExplored: existingMetrics.sourcesExplored + (args.sourcesExplored || 0),
+            toolsUsed: args.toolName 
+                ? [...new Set([...existingMetrics.toolsUsed, args.toolName])]
+                : existingMetrics.toolsUsed,
+            agentsCalled: args.agentName
+                ? [...new Set([...existingMetrics.agentsCalled, args.agentName])]
+                : existingMetrics.agentsCalled,
+            totalDurationMs: Date.now() - existingMetrics.startedAt,
+        };
+
+        await ctx.db.patch(args.threadId, {
+            workflowProgress: {
+                ...existingProgress,
+                metrics: updatedMetrics,
+            },
             updatedAt: Date.now()
         });
     }

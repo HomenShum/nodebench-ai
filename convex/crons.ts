@@ -15,4 +15,25 @@ crons.interval(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// GAM: Memory maintenance crons
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Mark stale entity contexts daily (entities not refreshed in 7+ days)
+crons.daily(
+  "mark stale entity contexts",
+  { hourUTC: 3, minuteUTC: 0 },
+  internal.entityContexts.markStaleContexts,
+  {}
+);
+
+// Run memory GC weekly (archive old, trim oversized)
+// Disabled until memoryGC module is implemented
+// crons.weekly(
+//   "memory GC",
+//   { dayOfWeek: "sunday", hourUTC: 4, minuteUTC: 0 },
+//   internal.domains.agents.memoryGC.runWeeklyGC,
+//   {}
+// );
+
 export default crons;

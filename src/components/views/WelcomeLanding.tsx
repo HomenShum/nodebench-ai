@@ -32,6 +32,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import ReactMarkdown from 'react-markdown';
 import LiveDossierDocument from "./LiveDossierDocument";
 import MagicInputContainer from "./MagicInputContainer";
+import { InlineMetrics, type WorkflowMetrics } from "./WorkflowMetricsBar";
 
 const baseMedia: ExtractedMedia = {
   youtubeVideos: [],
@@ -199,16 +200,20 @@ function WelcomeLandingInner({
     sessionStorage.setItem('nodebench_landing_showHero', String(showHero));
   }, [showHero]);
 
-  // Cache utility functions
-  const getCacheKey = (prompt: string, date: string) => {
-    return `search_cache_${prompt.trim().toLowerCase()}_${date}`;
+  // Cache utility functions - include userId to isolate per-user caches
+  const userId = user?._id;
+  const getCacheKey = (prompt: string, date: string, uid?: string) => {
+    const userPart = uid ? `_${uid}` : '';
+    return `search_cache_${prompt.trim().toLowerCase()}_${date}${userPart}`;
   };
 
   const loadCacheHistory = (): Array<{ prompt: string; date: string; threadId: string; timestamp: number }> => {
-    if (typeof window === 'undefined') return [];
+    if (typeof window === 'undefined' || !userId) return [];
     const entries: Array<{ prompt: string; date: string; threadId: string; timestamp: number }> = [];
+    // Only load cache entries that belong to the current user
+    const userSuffix = `_${userId}`;
     Object.keys(localStorage)
-      .filter((k) => k.startsWith('search_cache_'))
+      .filter((k) => k.startsWith('search_cache_') && k.endsWith(userSuffix))
       .forEach((key) => {
         try {
           const raw = localStorage.getItem(key);
@@ -230,9 +235,11 @@ function WelcomeLandingInner({
   };
 
   const getCachedResult = (prompt: string): string | null => {
+    // Only use cache if we have a userId to ensure user isolation
+    if (!userId) return null;
     try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-      const cacheKey = getCacheKey(prompt, today);
+      const cacheKey = getCacheKey(prompt, today, userId);
       const cached = localStorage.getItem(cacheKey);
 
       if (cached) {
@@ -248,9 +255,11 @@ function WelcomeLandingInner({
   };
 
   const cacheResult = (prompt: string, threadId: string) => {
+    // Only cache if we have a userId to ensure user isolation
+    if (!userId) return;
     try {
       const today = new Date().toISOString().split('T')[0];
-      const cacheKey = getCacheKey(prompt, today);
+      const cacheKey = getCacheKey(prompt, today, userId);
       const cacheValue = {
         threadId,
         prompt: prompt.trim(),
@@ -373,7 +382,7 @@ function WelcomeLandingInner({
 
   useEffect(() => {
     setCacheHistory(loadCacheHistory());
-  }, []);
+  }, [userId]); // Reload cache history when user changes
 
   // Mark latest history item as done when new assistant text arrives (completion heuristic)
   useEffect(() => {
@@ -1003,8 +1012,8 @@ function WelcomeLandingInner({
     return { displayedText, isComplete };
   }
 
-  // Collapsible Reasoning Chain Component
-  function CollapsibleReasoningChain({ steps }: { steps: any[] }) {
+  // Collapsible Reasoning Chain Component with Metrics
+  function CollapsibleReasoningChain({ steps, metrics }: { steps: any[]; metrics?: WorkflowMetrics }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const stepIcons: Record<string, string> = {
@@ -1012,7 +1021,8 @@ function WelcomeLandingInner({
       'read': '📄',
       'analyze': '🧠',
       'write': '✍️',
-      'tool': '🔧'
+      'tool': '🔧',
+      'delegate': '👥'
     };
 
     const getStepIcon = (stepName: string) => {
@@ -1021,10 +1031,40 @@ function WelcomeLandingInner({
       if (name.includes('read')) return stepIcons.read;
       if (name.includes('analyz')) return stepIcons.analyze;
       if (name.includes('writ')) return stepIcons.write;
+      if (name.includes('delegate')) return stepIcons.delegate;
       return stepIcons.tool;
     };
 
+    // Derive metrics from steps if not provided
+    const derivedMetrics = useMemo(() => {
+      if (metrics) return metrics;
+      
+      // Extract metrics from tool parts
+      const toolNames = steps
+        .filter(s => s.toolName || s.name)
+        .map(s => s.toolName || s.name);
+      
+      const agentNames = steps
+        .filter(s => (s.toolName || s.name || '').toLowerCase().includes('delegate'))
+        .map(s => {
+          const name = s.toolName || s.name || '';
+          const match = name.match(/delegateTo(\w+)/i);
+          return match ? match[1] : 'Agent';
+        });
+
+      return {
+        sourcesExplored: steps.filter(s => 
+          (s.toolName || s.name || '').toLowerCase().includes('search')
+        ).length,
+        toolsUsed: [...new Set(toolNames)],
+        agentsCalled: [...new Set(agentNames)],
+      };
+    }, [steps, metrics]);
+
     if (!steps || steps.length === 0) return null;
+
+    const uniqueTools = [...new Set(derivedMetrics.toolsUsed)];
+    const uniqueAgents = [...new Set(derivedMetrics.agentsCalled)];
 
     return (
       <div className="my-6 border border-gray-200 rounded-lg overflow-hidden">
@@ -1034,9 +1074,14 @@ function WelcomeLandingInner({
         >
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-700">Reasoning Chain</span>
-            <span className="text-xs text-gray-500">
-              Checked {steps.length} source{steps.length !== 1 ? 's' : ''} • Analyzed {steps.filter(s => s.status === 'success').length} result{steps.filter(s => s.status === 'success').length !== 1 ? 's' : ''}
-            </span>
+            {/* Clean metrics display */}
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <span>{derivedMetrics.sourcesExplored} sources</span>
+              <span className="text-gray-300">•</span>
+              <span>{uniqueTools.length} tools</span>
+              <span className="text-gray-300">•</span>
+              <span>{uniqueAgents.length} agents</span>
+            </div>
           </div>
           <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
         </button>
@@ -1335,37 +1380,47 @@ function WelcomeLandingInner({
                           mode={researchMode}
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRunPrompt(undefined, { appendToThread: true })}
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
-                          ? "bg-black text-white border-black"
-                          : "bg-white border-gray-300 text-gray-900 hover:bg-gray-100"
-                          }`}
-                        title="Add findings to the current dossier"
-                      >
-                        <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-black"}`} />
-                        {isRunning ? "Adding…" : "Add to Dossier"}
-                      </button>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <span className="font-semibold">Mode:</span>
-                        <div className="inline-flex rounded-full border border-gray-200 overflow-hidden">
+                      {/* Unified Action Button with Mode Toggle */}
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
+                          disabled={isRunning}
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
+                            ? "bg-black text-white border-black cursor-wait"
+                            : "bg-black text-white border-black hover:bg-gray-800"
+                            }`}
+                          title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
+                        >
+                          <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
+                          {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
+                        </button>
+                        {/* Mode Dropdown */}
+                        <div className="relative group">
                           <button
                             type="button"
-                            onClick={() => setFollowUpMode("append")}
-                            className={`px-3 py-1 ${followUpMode === "append" ? "bg-gray-900 text-white" : "bg-white text-gray-700"}`}
-                            title="Keep building the current dossier"
+                            className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
                           >
-                            Add to Dossier
+                            <ChevronDown className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setFollowUpMode("new")}
-                            className={`px-3 py-1 ${followUpMode === "new" ? "bg-gray-900 text-white" : "bg-white text-gray-700"}`}
-                            title="Replace with a fresh run"
-                          >
-                            Replace
-                          </button>
+                          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
+                            <button
+                              type="button"
+                              onClick={() => setFollowUpMode("append")}
+                              className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
+                            >
+                              <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
+                              Append
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFollowUpMode("new")}
+                              className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
+                            >
+                              <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
+                              Replace
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1467,6 +1522,7 @@ function WelcomeLandingInner({
                   {activeTab === 'media' && (
                     <MockMediaView
                       mediaAssets={mediaAssets}
+                      aggregatedMedia={aggregatedMedia}
                       onGenerateVisualization={() =>
                         handleRunPrompt(
                           "Create a funding comparison chart for the mentioned companies and pull any logos or screenshots that support the findings.",
@@ -1612,11 +1668,32 @@ function MockNewsletterView({
 
       {/* Email Body */}
       <div className="px-8 py-8 space-y-6">
-        {/* Main Content */}
-        <div className="prose prose-sm max-w-none">
-          <p className="text-gray-600 leading-relaxed text-[15px]">
-            {responseText}
-          </p>
+        {/* Main Content - Rendered as Markdown */}
+        <div className="prose prose-sm max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-p:leading-relaxed prose-li:text-gray-600 prose-strong:text-gray-900">
+          <ReactMarkdown
+            components={{
+              h1: ({ children }) => <h2 className="text-xl font-bold text-gray-900 mt-6 mb-3">{children}</h2>,
+              h2: ({ children }) => <h3 className="text-lg font-semibold text-gray-900 mt-5 mb-2">{children}</h3>,
+              h3: ({ children }) => <h4 className="text-base font-semibold text-gray-800 mt-4 mb-2">{children}</h4>,
+              p: ({ children }) => <p className="text-gray-600 leading-relaxed text-[15px] mb-3">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-3">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-3">{children}</ol>,
+              li: ({ children }) => <li className="text-gray-600 text-[15px]">{children}</li>,
+              strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+              a: ({ href, children }) => (
+                <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  {children}
+                </a>
+              ),
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-4 border-blue-300 pl-4 py-1 my-3 bg-blue-50/50 italic text-gray-700">
+                  {children}
+                </blockquote>
+              ),
+            }}
+          >
+            {responseText || ''}
+          </ReactMarkdown>
         </div>
 
         {/* Featured Media */}
@@ -1713,8 +1790,23 @@ function MockNewsletterView({
   );
 }
 
-function MockMediaView({ mediaAssets, onGenerateVisualization }: { mediaAssets: ExtractedAsset[]; onGenerateVisualization?: () => void; }) {
-  if (mediaAssets.length === 0) {
+function MockMediaView({ 
+  mediaAssets, 
+  aggregatedMedia,
+  onGenerateVisualization 
+}: { 
+  mediaAssets: ExtractedAsset[]; 
+  aggregatedMedia?: ExtractedMedia;
+  onGenerateVisualization?: () => void; 
+}) {
+  // Calculate total media count from both sources
+  const totalCount = mediaAssets.length + 
+    (aggregatedMedia?.youtubeVideos.length || 0) + 
+    (aggregatedMedia?.images.length || 0) +
+    (aggregatedMedia?.webSources.length || 0) +
+    (aggregatedMedia?.profiles.length || 0);
+
+  if (totalCount === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-500 border-2 border-dashed border-gray-200 rounded-xl space-y-3 bg-white">
         <ImageIcon className="w-8 h-8 opacity-50" />
@@ -1743,33 +1835,173 @@ function MockMediaView({ mediaAssets, onGenerateVisualization }: { mediaAssets: 
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-      {mediaAssets.map((asset, idx) => (
-        <div key={idx} className="group relative aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-          {asset.thumbnail ? (
-            <img
-              src={asset.thumbnail}
-              alt={asset.title || 'Media Asset'}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-50">
-              <ImageIcon className="w-8 h-8 text-gray-300" />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-            <p className="text-white text-sm font-medium line-clamp-2">{asset.title}</p>
-            <a
-              href={asset.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 text-xs text-white/80 hover:text-white underline"
-            >
-              View Source
-            </a>
+    <div className="space-y-6">
+      {/* Stats bar */}
+      <div className="flex items-center gap-4 text-xs text-gray-500 border-b border-gray-200 pb-3">
+        <span className="font-semibold text-gray-900">Media Gallery</span>
+        <span>{aggregatedMedia?.youtubeVideos.length || 0} videos</span>
+        <span>•</span>
+        <span>{aggregatedMedia?.images.length || mediaAssets.length} images</span>
+        <span>•</span>
+        <span>{aggregatedMedia?.webSources.length || 0} sources</span>
+        <span>•</span>
+        <span>{aggregatedMedia?.profiles.length || 0} profiles</span>
+      </div>
+
+      {/* YouTube Videos Section */}
+      {aggregatedMedia?.youtubeVideos && aggregatedMedia.youtubeVideos.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Videos ({aggregatedMedia.youtubeVideos.length})</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {aggregatedMedia.youtubeVideos.map((video, idx) => (
+              <a
+                key={idx}
+                href={video.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
+              >
+                <img
+                  src={video.thumbnail || `https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`}
+                  alt={video.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3">
+                  <p className="text-white text-sm font-medium line-clamp-2">{video.title}</p>
+                  <p className="text-white/70 text-xs mt-1">{video.channel}</p>
+                </div>
+                {/* Play button overlay */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all">
+                    <svg className="w-5 h-5 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
-      ))}
+      )}
+
+      {/* Images Section */}
+      {((aggregatedMedia?.images && aggregatedMedia.images.length > 0) || mediaAssets.length > 0) && (
+        <div>
+          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
+            Images ({(aggregatedMedia?.images.length || 0) + mediaAssets.length})
+          </h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {/* From aggregated media */}
+            {aggregatedMedia?.images.map((img, idx) => (
+              <a
+                key={`agg-${idx}`}
+                href={img.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
+              >
+                <img
+                  src={img.url}
+                  alt={img.alt || 'Image'}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                  <p className="text-white text-xs line-clamp-2">{img.alt}</p>
+                </div>
+              </a>
+            ))}
+            {/* From mediaAssets */}
+            {mediaAssets.map((asset, idx) => (
+              <a
+                key={`asset-${idx}`}
+                href={asset.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
+              >
+                {asset.thumbnail ? (
+                  <img
+                    src={asset.thumbnail}
+                    alt={asset.title || 'Media Asset'}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                    <ImageIcon className="w-8 h-8 text-gray-300" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                  <p className="text-white text-sm font-medium line-clamp-2">{asset.title}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Web Sources Section */}
+      {aggregatedMedia?.webSources && aggregatedMedia.webSources.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Sources ({aggregatedMedia.webSources.length})</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {aggregatedMedia.webSources.slice(0, 8).map((source, idx) => (
+              <a
+                key={idx}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+              >
+                {source.favicon && (
+                  <img src={source.favicon} alt="" className="w-5 h-5 rounded mt-0.5" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 line-clamp-1">{source.title}</p>
+                  <p className="text-xs text-gray-500 line-clamp-1">{source.domain || new URL(source.url).hostname}</p>
+                </div>
+                <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              </a>
+            ))}
+          </div>
+          {aggregatedMedia.webSources.length > 8 && (
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              + {aggregatedMedia.webSources.length - 8} more sources
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Profiles Section */}
+      {aggregatedMedia?.profiles && aggregatedMedia.profiles.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">People ({aggregatedMedia.profiles.length})</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {aggregatedMedia.profiles.map((profile, idx) => (
+              <a
+                key={idx}
+                href={profile.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+              >
+                {profile.imageUrl ? (
+                  <img src={profile.imageUrl} alt={profile.name} className="w-10 h-10 rounded-full object-cover" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold">
+                    {profile.name?.charAt(0) || '?'}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 line-clamp-1">{profile.name}</p>
+                  {profile.profession && (
+                    <p className="text-xs text-gray-500 line-clamp-1">{profile.profession}</p>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

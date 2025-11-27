@@ -368,13 +368,14 @@ const createFastResponderAgent = (model: string) => new Agent(components.agent, 
   textEmbeddingModel: openai.embedding("text-embedding-3-small"),
 });
 
-// Lightweight planner to decide simple vs complex and emit tasks
+// Lightweight planner to classify and decompose requests
+// Note: The mode field is advisory - CoordinatorAgent is always used for research panel
 const planSchema = z.object({
   mode: z.enum(["simple", "complex"]),
   tasks: z.array(
     z.object({
       description: z.string(),
-      agent: z.enum(["document", "media", "sec", "web", "task", "event", "general"]).default("general"),
+      agent: z.enum(["document", "media", "sec", "web", "task", "event", "entity", "general"]).default("general"),
     })
   ).default([]),
 });
@@ -382,8 +383,33 @@ const planSchema = z.object({
 const createPlannerAgent = (model: string) => new Agent(components.agent, {
   name: "PlannerAgent",
   languageModel: getLanguageModel(model),
-  instructions: `Classify the user's request as 'simple' (can be answered in one short response) or 'complex' (requires multiple tool calls or tasks).
-If complex, break it into clear tasks with an appropriate agent bucket: document, media, sec, web, task, event, or general.`,
+  instructions: `Classify and decompose the user's request.
+
+RULES:
+- Use mode = "simple" ONLY when the request can be answered in one short response using general knowledge, with NO tasks.
+- Use mode = "complex" whenever you create ANY tasks.
+- If the user asks to research/analyze/investigate/dossier/newsletter about a company/person/theme, create a task with agent = "entity".
+- If tasks array is non-empty, mode MUST be "complex".
+- SEC/10-K/10-Q/funding/valuation requests → agent = "sec" or "entity"
+
+AGENT BUCKETS:
+- entity: Company research, person research, thematic analysis, GAM memory queries
+- document: Document search, reading, creation, editing
+- media: YouTube, images, web media
+- sec: SEC filings, 10-K, 10-Q, 8-K
+- web: General web search
+- task/event: Task or calendar management
+- general: Other
+
+EXAMPLES:
+"Research Tesla" → mode: "complex", tasks: [{ agent: "entity", description: "Research Tesla company" }]
+"Who is Sam Altman?" → mode: "complex", tasks: [{ agent: "entity", description: "Research Sam Altman" }]
+"Tell me about OpenAI" → mode: "complex", tasks: [{ agent: "entity", description: "Research OpenAI" }]
+"#AI infrastructure trends" → mode: "complex", tasks: [{ agent: "entity", description: "Research AI infrastructure theme" }]
+"Find Tesla's 10-K" → mode: "complex", tasks: [{ agent: "sec", description: "Find Tesla 10-K filing" }]
+"What is 2+2?" → mode: "simple", tasks: []
+"Thanks!" → mode: "simple", tasks: []
+"Hello" → mode: "simple", tasks: []`,
   stopWhen: stepCountIs(3),
 });
 
@@ -1088,71 +1114,16 @@ export const streamAsync = internalAction({
     }
 
     // Create the appropriate agent
-    if (args.useCoordinator !== false) { // Default to planner + coordinator/fastroute
-      const planner = createPlannerAgent(args.model);
-      const fastResponder = createFastResponderAgent(args.model);
+    // OPTION A: Always use CoordinatorAgent directly (no planner overhead)
+    // The Coordinator decides internally whether to use tools or answer directly
+    if (args.useCoordinator !== false) {
       const coordinatorBuilder = (await import("../../fast_agents/coordinatorAgent")).createCoordinatorAgent;
 
-      // Fetch prompt text for classification
-      const [promptMsg] = await ctx.runQuery(components.agent.messages.getMessagesByIds, {
-        messageIds: [args.promptMessageId],
-      });
-      const userPrompt =
-        (promptMsg as any)?.text ||
-        (typeof (promptMsg as any)?.message?.text === "string" ? (promptMsg as any).message.text : "") ||
-        "";
-
-      const { object: plan } = await planner.generateObject(
-        contextWithUserId as any,
-        {
-          threadId: args.threadId,
-          userId,
-        },
-        { schema: planSchema, prompt: userPrompt },
-        {
-          // Avoid polluting the main thread with planner messages while still providing context
-          storageOptions: { saveMessages: "none" },
-        },
-      );
-
-      if (plan?.mode === "simple") {
-        console.log(`[streamAsync:${executionId}] Planner chose SIMPLE mode. Using FastResponder.`);
-        agent = fastResponder;
-        agentType = "fast";
-      } else {
-        console.log(`[streamAsync:${executionId}] Planner chose COMPLEX mode. Starting durable workflow and sending fast ack.`);
-
-        if (userId && customThread?._id) {
-          const includeMedia = plan?.tasks?.some((t: any) => t.agent === "media") ? true : undefined;
-          const includeFilings = plan?.tasks?.some((t: any) => t.agent === "sec") ? true : undefined;
-          try {
-            const { workflowId } = await ctx.runAction(
-              (internal as any)["fast_agents/multiAgentWorkflow"].startMultiAgentWorkflowInternal,
-              {
-                prompt: userPrompt || "User request",
-                threadId: customThread._id,
-                includeMedia,
-                includeFilings,
-                userId,
-              },
-            );
-            console.log(`[streamAsync:${executionId}] Durable workflow started`, { workflowId });
-            agent = fastResponder;
-            agentType = "fast-workflow-ack";
-            responsePromptOverride = `Got it. Kicking off a deeper research workflow for "${userPrompt}". I'll update this thread as results land. Keep listening for updates.`;
-          } catch (err) {
-            console.warn(`[streamAsync:${executionId}] Failed to start durable workflow, falling back to coordinator`, err);
-            agent = coordinatorBuilder(args.model);
-            agentType = "coordinator-fallback";
-          }
-        } else {
-          console.warn(`[streamAsync:${executionId}] No userId on thread; falling back to coordinator agent.`);
-          agent = coordinatorBuilder(args.model);
-          agentType = "coordinator";
-        }
-
-        // Persisting lessons skipped to simplify type surface
-      }
+      // Always use CoordinatorAgent - it has GAM tools and decides internally when to use them
+      agent = coordinatorBuilder(args.model);
+      agentType = "coordinator";
+      
+      console.log(`[streamAsync:${executionId}] Using CoordinatorAgent directly - GAM memory tools available, agent decides simple vs complex`);
     } else {
       console.log(`[streamAsync:${executionId}] Using SIMPLE AGENT (legacy mode)`);
       agent = createSimpleChatAgent(args.model);
