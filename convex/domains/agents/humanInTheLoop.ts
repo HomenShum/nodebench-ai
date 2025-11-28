@@ -153,9 +153,11 @@ export const cancelRequest = mutation({
 
 /**
  * Create a new human request (Internal)
+ * Note: Internal mutations don't have auth context, so userId must be passed explicitly
  */
 export const createRequest = internalMutation({
   args: {
+    userId: v.id("users"),
     threadId: v.string(),
     messageId: v.string(),
     toolCallId: v.string(),
@@ -164,10 +166,9 @@ export const createRequest = internalMutation({
     options: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const userId = await getSafeUserId(ctx);
-
+    // userId is passed from the tool handler (which has auth context)
     await ctx.db.insert("humanRequests", {
-      userId,
+      userId: args.userId,
       threadId: args.threadId,
       messageId: args.messageId,
       toolCallId: args.toolCallId,
