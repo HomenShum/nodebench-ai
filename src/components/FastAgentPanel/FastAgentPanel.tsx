@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare } from 'lucide-react';
+import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 
@@ -20,6 +20,8 @@ import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
 import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
+import { LiveEventsPanel } from './LiveEventsPanel';
+import type { LiveEvent } from './LiveEventCard';
 import { RichMediaSection } from './RichMediaSection';
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from './DocumentActionCard';
 import { extractMediaFromText, type ExtractedMedia } from './utils/mediaExtractor';
@@ -91,6 +93,10 @@ export function FastAgentPanel({
 
   // Thread list collapse state
   const [showSidebar, setShowSidebar] = useState(false);
+
+  // Live Events Panel state
+  const [showEventsPanel, setShowEventsPanel] = useState(false);
+  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
 
   // File attachment state
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
@@ -243,6 +249,39 @@ export function FastAgentPanel({
     setActiveThreadId(null);
     toast.info(`Switched to ${chatMode === 'agent' ? 'Agent' : 'Agent Streaming'} mode`);
   }, [chatMode]);
+
+  // Extract live events from streaming messages
+  useEffect(() => {
+    if (!streamingMessages || streamingMessages.length === 0) return;
+    
+    const events: LiveEvent[] = [];
+    let eventCounter = 0;
+    
+    streamingMessages.forEach((msg: any) => {
+      if (msg.role !== 'assistant' || !msg.parts) return;
+      
+      msg.parts.forEach((part: any) => {
+        if (part.type === 'tool-call' || part.type === 'tool-result') {
+          const isResult = part.type === 'tool-result';
+          const toolName = part.toolName || 'unknown';
+          
+          events.push({
+            id: `${msg._id || msg.id}-${eventCounter++}`,
+            type: isResult ? 'tool_end' : 'tool_start',
+            status: isResult ? 'done' : 'running',
+            title: toolName,
+            toolName,
+            details: isResult && part.output ? 
+              (typeof part.output === 'string' ? part.output.slice(0, 100) : 'Completed') : 
+              'Executing...',
+            timestamp: Date.now() - (streamingMessages.length - eventCounter) * 1000,
+          });
+        }
+      });
+    });
+    
+    setLiveEvents(events);
+  }, [streamingMessages]);
 
   // Client no longer triggers workflows directly; coordinator handles routing via useCoordinator: true
 
@@ -814,17 +853,37 @@ export function FastAgentPanel({
                 )}
               </div>
 
-              <button
-                onClick={() => {
-                  setActiveThreadId(null);
-                  setInput('');
-                  setAttachedFiles([]);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-xs font-medium rounded-md border border-[var(--border-color)] transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                New
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Live Events toggle */}
+                <button
+                  onClick={() => setShowEventsPanel(!showEventsPanel)}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                    showEventsPanel
+                      ? 'bg-blue-50 border-blue-200 text-blue-700'
+                      : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
+                  }`}
+                  title="Toggle Live Events Panel"
+                >
+                  <Activity className={`w-3.5 h-3.5 ${isStreaming ? 'animate-pulse text-blue-500' : ''}`} />
+                  {liveEvents.filter(e => e.status === 'running').length > 0 && (
+                    <span className="px-1 py-0.5 text-[10px] bg-blue-500 text-white rounded-full">
+                      {liveEvents.filter(e => e.status === 'running').length}
+                    </span>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setActiveThreadId(null);
+                    setInput('');
+                    setAttachedFiles([]);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-xs font-medium rounded-md border border-[var(--border-color)] transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  New
+                </button>
+              </div>
             </div>
 
             {/* Bottom Row: Tabs */}
@@ -925,6 +984,16 @@ export function FastAgentPanel({
               />
             </div>
           </div>
+
+          {/* Live Events Panel */}
+          {showEventsPanel && (
+            <LiveEventsPanel
+              events={liveEvents}
+              onClose={() => setShowEventsPanel(false)}
+              isStreaming={isStreaming}
+              className="w-72 flex-shrink-0"
+            />
+          )}
         </div>
 
         <style>{`

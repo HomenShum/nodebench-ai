@@ -7,7 +7,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
@@ -388,14 +388,17 @@ function ThinkingAccordion({
   if (!reasoning) return null;
 
   return (
-    <div className="mb-4 border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--bg-secondary)]/50">
+    <div className="mb-4 border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--bg-secondary)]/30">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
       >
         {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-        <BrainCircuit className="w-3 h-3 text-purple-500" />
-        <span>Thinking Process</span>
+        <BrainCircuit className={cn(
+          "w-3 h-3 text-purple-500",
+          isStreaming && "animate-pulse"
+        )} />
+        <span>Reasoning Process</span>
         {isStreaming && <Loader2 className="w-3 h-3 animate-spin ml-auto text-purple-500" />}
       </button>
 
@@ -411,7 +414,7 @@ function ThinkingAccordion({
 }
 
 /**
- * ToolStep - Renders a single tool call as a structured step
+ * ToolStep - Renders a single tool call as a structured step with timeline
  */
 function ToolStep({
   part,
@@ -420,6 +423,8 @@ function ToolStep({
   onPersonSelect,
   onEventSelect,
   onNewsSelect,
+  isLast = false,
+  showTimeline = true,
 }: {
   part: ToolUIPart;
   stepNumber: number;
@@ -427,67 +432,118 @@ function ToolStep({
   onPersonSelect?: (person: PersonOption) => void;
   onEventSelect?: (event: EventOption) => void;
   onNewsSelect?: (article: NewsArticleOption) => void;
+  isLast?: boolean;
+  showTimeline?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const hasOutput = part.output !== undefined && part.output !== null;
   const toolName = part.type.replace('tool-', '');
 
   // Determine status based on part type
   const isComplete = part.type.startsWith('tool-result');
   const isError = part.type === 'tool-error';
+  const isActive = !isComplete && !isError;
 
   return (
-    <div className="mb-2 last:mb-0 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] shadow-sm overflow-hidden">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-3 py-2 flex items-center gap-3 hover:bg-[var(--bg-hover)] transition-colors"
-      >
-        {/* Status Icon */}
-        <div className="flex-shrink-0">
-          {isComplete ? (
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          ) : isError ? (
-            <XCircle className="h-4 w-4 text-red-500" />
-          ) : (
-            <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
+    <div className={cn(
+      "relative",
+      showTimeline && "pl-8"
+    )}>
+      {/* Timeline connector */}
+      {showTimeline && (
+        <>
+          {/* Vertical line */}
+          {!isLast && (
+            <div className="absolute left-[11px] top-6 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
           )}
-        </div>
+          {/* Status circle on the line */}
+          <div className={cn(
+            "absolute left-1 top-2.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white dark:bg-gray-900 z-10",
+            isActive && "border-blue-500 animate-pulse",
+            isComplete && "border-green-500 bg-green-500",
+            isError && "border-red-500 bg-red-500"
+          )}>
+            {isComplete && <Check className="w-3 h-3 text-white" />}
+            {isError && <XCircle className="w-2.5 h-2.5 text-white" />}
+            {isActive && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+          </div>
+        </>
+      )}
+      
+      {/* Card */}
+      <div className="mb-3 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-[var(--bg-hover)] transition-colors"
+        >
+          {/* Step number badge */}
+          <div className={cn(
+            "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold",
+            isComplete && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+            isError && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+            isActive && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+          )}>
+            {stepNumber}
+          </div>
 
-        {/* Tool Name */}
-        <div className="flex-1 text-left flex items-center gap-2">
-          <span className="text-xs font-semibold text-[var(--text-primary)] font-mono">{toolName}</span>
-          {isComplete && <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded-full">Completed</span>}
-        </div>
+          {/* Tool Name */}
+          <div className="flex-1 text-left flex items-center gap-2">
+            <span className="text-xs font-semibold text-[var(--text-primary)] font-mono">{toolName}</span>
+            {isComplete && <span className="text-[10px] text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded-full">Done</span>}
+            {isActive && <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />}
+          </div>
 
-        {/* Expand/Collapse */}
-        {isExpanded ? <ChevronDown className="h-3 w-3 text-[var(--text-muted)]" /> : <ChevronRight className="h-3 w-3 text-[var(--text-muted)]" />}
-      </button>
+          {/* Expand/Collapse */}
+          {isExpanded ? <ChevronDown className="h-3 w-3 text-[var(--text-muted)]" /> : <ChevronRight className="h-3 w-3 text-[var(--text-muted)]" />}
+        </button>
 
-      {isExpanded && (
+        {isExpanded && (
         <div className="px-3 py-2 border-t border-[var(--border-color-light)] bg-[var(--bg-secondary)]/50 text-xs">
-          {/* Arguments */}
-          {(part as any).args && (
+
+          {/* Main Output Renderer (Visual) */}
+          {hasOutput && (
             <div className="mb-2">
-              <div className="font-medium text-[var(--text-muted)] mb-1">Input</div>
-              <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[var(--text-secondary)]">
-                {JSON.stringify((part as any).args, null, 2)}
-              </pre>
+              <ToolOutputRenderer
+                output={part.output}
+                onCompanySelect={onCompanySelect}
+                onPersonSelect={onPersonSelect}
+                onEventSelect={onEventSelect}
+                onNewsSelect={onNewsSelect}
+              />
             </div>
           )}
 
-          {/* Output */}
-          {hasOutput && (
-            <div>
-              <div className="font-medium text-gray-500 mb-1">Output</div>
-              <div className="bg-white p-2 rounded border border-gray-200 overflow-x-auto">
-                <ToolOutputRenderer
-                  output={part.output}
-                  onCompanySelect={onCompanySelect}
-                  onPersonSelect={onPersonSelect}
-                  onEventSelect={onEventSelect}
-                  onNewsSelect={onNewsSelect}
-                />
-              </div>
+          {/* Collapsible Details (JSON) */}
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
+          >
+            {showDetails ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            <span>{showDetails ? "Hide Debug Details" : "View Debug Details"}</span>
+          </button>
+
+          {showDetails && (
+            <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              {/* Arguments */}
+              {(part as any).args && (
+                <div>
+                  <div className="font-medium text-[var(--text-muted)] mb-1 text-[10px] uppercase tracking-wider">Input Arguments</div>
+                  <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[10px] text-[var(--text-secondary)]">
+                    {JSON.stringify((part as any).args, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Raw Output */}
+              {hasOutput && (
+                <div>
+                  <div className="font-medium text-[var(--text-muted)] mb-1 text-[10px] uppercase tracking-wider">Raw Output</div>
+                  <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[10px] text-[var(--text-secondary)] max-h-60">
+                    {typeof part.output === 'string' ? part.output : JSON.stringify(part.output, null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
           )}
 
@@ -498,7 +554,8 @@ function ToolStep({
             </div>
           )}
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

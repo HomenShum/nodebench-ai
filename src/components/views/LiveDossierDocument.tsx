@@ -478,7 +478,7 @@ export default function LiveDossierDocument({
                 {/* Deep Agent Progress - Task Plan Panel with Metrics */}
                 {streamingThread?.workflowProgress && (
                     <div className="mb-12 border-t-2 border-gray-200 pt-8 animate-in fade-in duration-500">
-                        <TaskPlanPanel 
+                        <TaskPlanPanel
                             steps={workflowProgressToTaskSteps(streamingThread.workflowProgress)}
                             metrics={streamingThread.workflowProgress.metrics as WorkflowMetrics}
                             isRunning={isStreaming || isAppending}
@@ -572,9 +572,15 @@ function LiveAgentTicker({
 
     const observationText = observationStep
         ? (() => {
-            if (observationStep.error) return observationStep.error;
-            if (typeof observationStep.result === "string") return observationStep.result;
-            if (observationStep.result) return JSON.stringify(observationStep.result, null, 2);
+            if (observationStep.error) return "Error encountered";
+            if (typeof observationStep.result === "string") {
+                // If it looks like JSON, summarize it
+                if (observationStep.result.trim().startsWith("{") || observationStep.result.trim().startsWith("[")) {
+                    return "Analysis complete";
+                }
+                return observationStep.result;
+            }
+            if (observationStep.result) return "Task completed";
             return observationStep.description || "";
         })()
         : "";
@@ -646,16 +652,10 @@ function LiveAgentTicker({
                     <div className="mt-5 pt-4 border-t border-white/10">
                         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] text-purple-100 mb-3">
                             <Activity className="w-4 h-4" />
-                            Active tools & delegates
-                            <button
-                                onClick={() => setShowDetails((prev) => !prev)}
-                                className="ml-auto text-[11px] px-3 py-1 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
-                            >
-                                {showDetails ? "Hide detail" : "Show detail"}
-                            </button>
+                            Recent Activity
                         </div>
                         <div className="grid md:grid-cols-2 gap-3">
-                            {showDetails && recentSteps.map((step) => (
+                            {recentSteps.map((step) => (
                                 <div key={step.id} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2 shadow-inner shadow-black/10">
                                     <div className="flex items-start gap-2">
                                         <span className={`mt-1 h-2 w-2 rounded-full ${step.status === "complete" ? "bg-green-400" : step.status === "error" ? "bg-red-400" : step.status === "running" ? "bg-blue-400 animate-pulse" : "bg-gray-400"}`} />
@@ -675,21 +675,13 @@ function LiveAgentTicker({
                                             )}
                                         </div>
                                     </div>
-                                    {step.description && (
+                                    {/* Only show description if it's NOT a raw JSON dump */}
+                                    {step.description && !step.description.trim().startsWith("{") && (
                                         <p className="text-xs text-gray-200">
                                             {truncateText(step.description, 140)}
                                         </p>
                                     )}
-                                    {step.result && typeof step.result === "string" && (
-                                        <p className="text-xs text-gray-100 bg-black/30 rounded-lg p-2">
-                                            {truncateText(step.result, 170)}
-                                        </p>
-                                    )}
-                                    {step.error && (
-                                        <p className="text-xs text-red-200">
-                                            {truncateText(step.error, 170)}
-                                        </p>
-                                    )}
+                                    {/* Hide raw results completely in the ticker, just show status */}
                                 </div>
                             ))}
                         </div>
