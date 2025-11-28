@@ -237,6 +237,57 @@ All clustering results use **boolean flags** (no magic scores):
 
 ---
 
+## Artifact Streaming & Per-Section Linking
+
+Real-time artifact extraction and per-section linking for dossiers and research reports.
+
+### Overview
+
+When the Coordinator runs research tools, artifacts (URLs, sources) are automatically:
+1. **Extracted** from tool results
+2. **Persisted** to the database with deduplication
+3. **Linked** to the current dossier section
+4. **Displayed** in per-section MediaRails and a global SourcesLibrary
+
+### Tables
+
+| Table | Purpose |
+|-------|---------|
+| `artifacts` | Persisted URL artifacts with metadata |
+| `artifactLinks` | Section → artifact mapping |
+| `artifactRunMeta` | Per-run metadata (total count, status) |
+| `evidenceLinks` | Fact → artifact mapping (for citations) |
+
+### Per-Section Linking
+
+The Coordinator calls `setActiveSection` before each section's research:
+
+```typescript
+setActiveSection({ sectionKey: "market_landscape", runId })
+linkupSearch("Tesla market analysis")  // → linked to "market_landscape"
+```
+
+**Section Keys**: `executive_summary`, `company_overview`, `market_landscape`, `funding_signals`, `product_analysis`, `competitive_analysis`, `founder_background`, `investment_thesis`, `risk_flags`, `open_questions`, `sources_and_media`
+
+### Frontend Components
+
+| Component | Purpose |
+|-----------|---------|
+| `MediaRail` | Horizontal strip of artifacts under each section |
+| `EvidenceChips` | Inline `[1][2][3]` chips at `{{fact:*}}` anchors |
+| `SourcesLibrary` | Global footer with all artifacts |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `convex/lib/withArtifactPersistence.ts` | Tool wrapper for extraction |
+| `convex/lib/artifactPersistence.ts` | Durable persistence with retry |
+| `shared/sectionIds.ts` | Stable section ID generation |
+| `src/components/artifacts/` | MediaRail, EvidenceChips, SourcesLibrary |
+
+---
+
 ## AG-UI Live Events
 
 Modern agentic UI with real-time event streaming:
