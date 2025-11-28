@@ -16,7 +16,7 @@ import { ArtifactStoreProvider, useAllArtifacts, useSectionArtifacts } from "../
 import { useArtifactStreamConsumer } from "../../hooks/useArtifactStreamConsumer";
 import { SourcesLibrary, MediaRail } from "../artifacts";
 import { EvidenceChips } from "../artifacts/EvidenceChips";
-import { FACT_ANCHOR_REGEX, matchSectionKey, generateSectionId } from "../../shared/sectionIds";
+import { FACT_ANCHOR_REGEX, matchSectionKey, generateSectionId } from "../../../shared/sectionIds";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FACT ANCHOR PROCESSING
