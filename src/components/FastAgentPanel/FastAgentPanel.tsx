@@ -780,103 +780,321 @@ export function FastAgentPanel({
         />
       )}
 
-      max-width: calc(100vw - 2rem);
-      background: var(--bg-primary);
-      border-radius: 1rem;
-      display: flex;
-      flex-direction: column;
-      z-index: 1000;
-      box-shadow:
-      0 0 0 1px rgba(0,0,0,0.05),
-      0 10px 15px -3px rgba(0,0,0,0.1),
-      0 4px 6px -2px rgba(0,0,0,0.05);
-      overflow: hidden;
+      <div className={`fast-agent-panel ${variant === 'sidebar' ? 'sidebar-mode' : ''} bg-[var(--bg-primary)] border-l border-[var(--border-color)]`}>
+        {/* Header */}
+        <div className="fast-agent-panel-header border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+          <div className="flex flex-col gap-4 w-full">
+            {/* Top Row: Thread Selector & New Button */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="relative">
+                <button
+                  onClick={() => setIsThreadDropdownOpen(!isThreadDropdownOpen)}
+                  className="flex items-center gap-2 px-2 py-1.5 -ml-2 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors text-left max-w-[200px]"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                      {activeThreadId
+                        ? threads?.find(t => t._id === activeThreadId)?.title || 'Untitled Thread'
+                        : 'New Chat'}
+                    </div>
+                    <div className="text-[10px] text-[var(--text-secondary)] flex items-center gap-1.5">
+                      <div className={`w-1.5 h-1.5 rounded-full ${isStreaming ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
+                      {isStreaming ? 'Thinking...' : 'Ready'}
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isThreadDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Thread Dropdown */}
+                {isThreadDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsThreadDropdownOpen(false)}
+                    />
+                    <div className="absolute top-full left-0 mt-1 w-64 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg z-50 py-1 max-h-[300px] overflow-y-auto">
+                      <button
+                        onClick={() => {
+                          setActiveThreadId(null);
+                          setInput('');
+                          setAttachedFiles([]);
+                          setIsThreadDropdownOpen(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] flex items-center gap-2"
+                      >
+                        <div className="w-6 h-6 rounded bg-[var(--bg-secondary)] flex items-center justify-center">
+                          <Plus className="w-3.5 h-3.5" />
+                        </div>
+                        New Chat
+                      </button>
+
+                      <div className="my-1 border-t border-[var(--border-color)]" />
+
+                      <div className="px-3 py-1 text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                        Recent
+                      </div>
+
+                      {threads?.map((thread) => (
+                        <button
+                          key={thread._id}
+                          onClick={() => {
+                            setActiveThreadId(thread._id);
+                            setIsThreadDropdownOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 text-left text-xs hover:bg-[var(--bg-secondary)] flex items-center gap-2 ${activeThreadId === thread._id ? 'bg-[var(--bg-secondary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
+                            }`}
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate">{thread.title || 'Untitled Thread'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Live Events toggle */}
+                <button
+                  onClick={() => setShowEventsPanel(!showEventsPanel)}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${showEventsPanel
+                      ? 'bg-blue-50 border-blue-200 text-blue-700'
+                      : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
+                    }`}
+                  title="Toggle Live Events Panel"
+                >
+                  <Activity className={`w-3.5 h-3.5 ${isStreaming ? 'animate-pulse text-blue-500' : ''}`} />
+                  {liveEvents.filter(e => e.status === 'running').length > 0 && (
+                    <span className="px-1 py-0.5 text-[10px] bg-blue-500 text-white rounded-full">
+                      {liveEvents.filter(e => e.status === 'running').length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveThreadId(null);
+                    setInput('');
+                    setAttachedFiles([]);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-xs font-medium rounded-md border border-[var(--border-color)] transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  New
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Row: Tabs */}
+            <div className="flex p-1 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
+              {(['thread', 'artifacts', 'tasks', 'edits'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === tab
+                    ? 'bg-[var(--bg-primary)] text-[var(--accent-primary)] shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                    }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="fast-agent-panel-content bg-[var(--bg-primary)]">
+          {/* Left Sidebar (Thread List) - Only show if width allows or on mobile toggle */}
+          <div className={`panel-sidebar ${showSidebar ? 'visible' : ''} border-r border-[var(--border-color)] bg-[var(--bg-secondary)]`}>
+            <FastAgentThreadList
+              threads={threads || []}
+              activeThreadId={activeThreadId}
+              onSelectThread={setActiveThreadId}
+              onDeleteThread={handleDeleteThread}
+              className="h-full"
+            />
+          </div>
+
+          {/* Main Chat Area */}
+          <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] relative">
+            {activeTab === 'artifacts' ? (
+              <ArtifactsTab
+                media={aggregatedMedia}
+                documents={aggregatedDocumentActions}
+                hasThread={Boolean(activeThreadId)}
+                onDocumentSelect={handleDocumentSelect}
+              />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+                {/* Welcome / Empty State */}
+                {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[var(--text-secondary)]">
+                    <div className="w-12 h-12 bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center mb-4">
+                      <Bot className="w-6 h-6 text-[var(--text-muted)]" />
+                    </div>
+                    <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">Nodebench AI</h3>
+                    <p className="text-xs text-[var(--text-muted)] max-w-[200px]">
+                      Ready to help with your coding tasks.
+                    </p>
+                  </div>
+                )}
+
+                {messagesToRender?.map((message: any) => (
+                  <FastAgentUIMessageBubble
+                    key={message._id || message.id}
+                    message={message}
+                    onRegenerateMessage={() => handleRegenerateMessage(message.key)}
+                    onDeleteMessage={() => handleDeleteMessage(message._id)}
+                    onCompanySelect={handleCompanySelect}
+                    onPersonSelect={handlePersonSelect}
+                    onEventSelect={handleEventSelect}
+                    onNewsSelect={handleNewsSelect}
+                    onDocumentSelect={handleDocumentSelect}
+                  />
+                ))}
+
+                {/* Streaming Indicator */}
+                {isStreaming && (
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] px-4 animate-pulse">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Thinking...</span>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+
+            {/* Input Area */}
+            <div className="p-4 bg-[var(--bg-primary)]/80 backdrop-blur-sm border-t border-[var(--border-color)]">
+              <FastAgentInputBar
+                input={input}
+                setInput={setInput}
+                onSend={() => handleSendMessage(input)}
+                isStreaming={isStreaming}
+                onStop={() => setIsStreaming(false)}
+                selectedModel={selectedModel}
+                onSelectModel={setSelectedModel}
+                attachedFiles={attachedFiles}
+                onAttachFiles={handleAttachFiles}
+                onRemoveFile={handleRemoveFile}
+                selectedDocumentIds={selectedDocumentIds}
+              />
+            </div>
+          </div>
+
+          {/* Live Events Panel */}
+          {showEventsPanel && (
+            <LiveEventsPanel
+              events={liveEvents}
+              onClose={() => setShowEventsPanel(false)}
+              isStreaming={isStreaming}
+              className="w-72 flex-shrink-0"
+            />
+          )}
+        </div>
+
+        <style>{`
+        .fast-agent-panel {
+          position: fixed;
+          right: 1rem;
+          bottom: 1rem;
+          top: 1rem;
+          width: 450px;
+          max-width: calc(100vw - 2rem);
+          background: var(--bg-primary);
+          border-radius: 1rem;
+          display: flex;
+          flex-direction: column;
+          z-index: 1000;
+          box-shadow: 
+            0 0 0 1px rgba(0,0,0,0.05),
+            0 10px 15px -3px rgba(0,0,0,0.1),
+            0 4px 6px -2px rgba(0,0,0,0.05);
+          overflow: hidden;
         }
 
-      .fast-agent-panel.sidebar-mode {
-        position: relative;
-      right: auto;
-      bottom: auto;
-      top: auto;
-      width: 100%;
-      height: 100%;
-      border-radius: 0;
-      box-shadow: none;
-      border-left: 1px solid var(--border-color);
+        .fast-agent-panel.sidebar-mode {
+          position: relative;
+          right: auto;
+          bottom: auto;
+          top: auto;
+          width: 100%;
+          height: 100%;
+          border-radius: 0;
+          box-shadow: none;
+          border-left: 1px solid var(--border-color);
         }
 
-      .fast-agent-panel-header {
-        padding: 1rem;
-      background: var(--bg-primary);
-      border-bottom: 1px solid var(--border-color);
-      flex-shrink: 0;
+        .fast-agent-panel-header {
+          padding: 1rem;
+          background: var(--bg-primary);
+          border-bottom: 1px solid var(--border-color);
+          flex-shrink: 0;
         }
 
-      .fast-agent-panel-content {
-        flex: 1;
-      display: flex;
-      overflow: hidden;
-      position: relative;
+        .fast-agent-panel-content {
+          flex: 1;
+          display: flex;
+          overflow: hidden;
+          position: relative;
         }
 
-      .panel-sidebar {
-        width: 0;
-      overflow: hidden;
-      transition: width 0.3s ease;
-      border-right: 1px solid var(--border-color);
-      background: var(--bg-secondary);
+        .panel-sidebar {
+          width: 0;
+          overflow: hidden;
+          transition: width 0.3s ease;
+          border-right: 1px solid var(--border-color);
+          background: var(--bg-secondary);
         }
 
-      .panel-sidebar.visible {
-        width: 260px;
+        .panel-sidebar.visible {
+          width: 260px;
         }
-        `}</style >
+        `}</style>
 
-    {/* Export Menu */ }
-  {
-    exportingThreadId && (() => {
-      const thread = threads?.find((t: any) => (chatMode === 'agent' ? t.threadId : t._id) === exportingThreadId);
-      if (!thread) return null;
+        {/* Export Menu */}
+        {exportingThreadId && (() => {
+          const thread = threads?.find((t: any) => (chatMode === 'agent' ? t.threadId : t._id) === exportingThreadId);
+          if (!thread) return null;
 
-      // Convert to Thread type for ExportMenu
-      const exportThread: Thread = {
-        _id: thread._id,
-        userId: thread.userId,
-        title: thread.title,
-        pinned: false,
-        createdAt: thread._creationTime,
-        updatedAt: thread._creationTime,
-        _creationTime: thread._creationTime,
-        messageCount: thread.messageCount,
-        lastMessage: thread.lastMessage,
-        lastMessageAt: thread.lastMessageAt,
-        toolsUsed: thread.toolsUsed,
-        modelsUsed: thread.modelsUsed,
-      };
+          // Convert to Thread type for ExportMenu
+          const exportThread: Thread = {
+            _id: thread._id,
+            userId: thread.userId,
+            title: thread.title,
+            pinned: false,
+            createdAt: thread._creationTime,
+            updatedAt: thread._creationTime,
+            _creationTime: thread._creationTime,
+            messageCount: thread.messageCount,
+            lastMessage: thread.lastMessage,
+            lastMessageAt: thread.lastMessageAt,
+            toolsUsed: thread.toolsUsed,
+            modelsUsed: thread.modelsUsed,
+          };
 
-      return (
-        <ExportMenu
-          thread={exportThread}
-          messages={uiMessages}
-          onClose={() => setExportingThreadId(null)}
-        />
-      );
-    })()
-  }
+          return (
+            <ExportMenu
+              thread={exportThread}
+              messages={uiMessages}
+              onClose={() => setExportingThreadId(null)}
+            />
+          );
+        })()}
 
-  {/* Settings Panel */ }
-  {
-    showSettings && (
-      <SettingsPanel
-        fastMode={fastMode}
-        onFastModeChange={setFastMode}
-        model={selectedModel}
-        onModelChange={setSelectedModel}
-        onClose={() => setShowSettings(false)}
-      />
-    )
-  }
-      </div >
+        {/* Settings Panel */}
+        {showSettings && (
+          <SettingsPanel
+            fastMode={fastMode}
+            onFastModeChange={setFastMode}
+            model={selectedModel}
+            onModelChange={setSelectedModel}
+            onClose={() => setShowSettings(false)}
+          />
+        )}
+      </div>
     </>
   );
 }

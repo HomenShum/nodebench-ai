@@ -6,6 +6,60 @@ import { v } from "convex/values";
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
+// ═══════════════════════════════════════════════════════════════════════════
+// VALIDATORS - Extracted to avoid "Type instantiation is excessively deep"
+// ═══════════════════════════════════════════════════════════════════════════
+
+const eventBaseValidator = {
+  id: v.string(),
+  name: v.string(),
+  date: v.optional(v.string()),
+  location: v.optional(v.string()),
+  description: v.string(),
+  source: v.optional(v.string()),
+};
+
+const eventObjectValidator = v.object(eventBaseValidator);
+const eventArrayValidator = v.array(eventObjectValidator);
+
+const validatedEventValidator = v.object({
+  ...eventBaseValidator,
+  validationResult: v.union(v.literal("PASS"), v.literal("FAIL")),
+  reasoning: v.string(),
+});
+
+const validatedEventArrayValidator = v.array(validatedEventValidator);
+
+const confirmedEventValidator = v.object({
+  id: v.string(),
+  name: v.string(),
+  date: v.optional(v.string()),
+  location: v.optional(v.string()),
+  description: v.optional(v.string()),
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface EventBase {
+  id: string;
+  name: string;
+  date?: string;
+  location?: string;
+  description: string;
+  source?: string;
+}
+
+interface ValidatedEvent extends EventBase {
+  validationResult: "PASS" | "FAIL";
+  reasoning: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
 /**
  * Search for recent events by name/topic
  * This is a placeholder - in production, integrate with real event APIs
@@ -16,14 +70,7 @@ export const searchEvents = internalAction({
     eventQuery: v.string(),
     conversationContext: v.optional(v.string()),
   },
-  returns: v.array(v.object({
-    id: v.string(),
-    name: v.string(),
-    date: v.optional(v.string()),
-    location: v.optional(v.string()),
-    description: v.string(),
-    source: v.optional(v.string()),
-  })),
+  returns: eventArrayValidator,
   handler: async (ctx, args) => {
     console.log(`[searchEvents] Searching for: ${args.eventQuery}`);
 
@@ -141,31 +188,16 @@ export const validateEventMatches = internalAction({
   args: {
     userQuery: v.string(),
     conversationContext: v.optional(v.string()),
-    events: v.array(v.object({
-      id: v.string(),
-      name: v.string(),
-      date: v.optional(v.string()),
-      location: v.optional(v.string()),
-      description: v.string(),
-      source: v.optional(v.string()),
-    })),
+    events: eventArrayValidator,
   },
-  returns: v.array(v.object({
-    id: v.string(),
-    name: v.string(),
-    date: v.optional(v.string()),
-    location: v.optional(v.string()),
-    description: v.string(),
-    source: v.optional(v.string()),
-    validationResult: v.union(v.literal("PASS"), v.literal("FAIL")),
-    reasoning: v.string(),
-  })),
+  returns: validatedEventArrayValidator,
   handler: async (ctx, args) => {
-    console.log(`[validateEventMatches] Validating ${args.events.length} events for query: "${args.userQuery}"`);
+    const events = args.events as EventBase[];
+    console.log(`[validateEventMatches] Validating ${events.length} events for query: "${args.userQuery}"`);
 
     try {
       // Build context-aware validation prompt
-      const contextSection = args.conversationContext 
+      const contextSection = args.conversationContext
         ? `\n\nConversation Context:\n${args.conversationContext}\n\nUse this context to determine which event is most relevant to the user's intent.`
         : '';
 
@@ -174,7 +206,7 @@ export const validateEventMatches = internalAction({
 User Query: "${args.userQuery}"${contextSection}
 
 Events to validate:
-${args.events.map((e, i) => `${i + 1}. ${e.name}
+${events.map((e: EventBase, i: number) => `${i + 1}. ${e.name}
    Date: ${e.date || 'Unknown'}
    Location: ${e.location || 'Unknown'}
    Description: ${e.description}
@@ -221,16 +253,16 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
       const validationResults = JSON.parse(result.text);
 
       // Merge validation results with event data
-      const validatedEvents = args.events.map(event => {
-        const validation = validationResults.find((v: any) => v.id === event.id);
+      const validatedEvents: ValidatedEvent[] = events.map((event: EventBase) => {
+        const validation = validationResults.find((v: { id: string }) => v.id === event.id);
         return {
           ...event,
-          validationResult: validation?.validationResult || "FAIL" as "PASS" | "FAIL",
+          validationResult: (validation?.validationResult || "FAIL") as "PASS" | "FAIL",
           reasoning: validation?.reasoning || "No validation result",
         };
       });
 
-      const passCount = validatedEvents.filter(e => e.validationResult === "PASS").length;
+      const passCount = validatedEvents.filter((e: ValidatedEvent) => e.validationResult === "PASS").length;
       console.log(`[validateEventMatches] Validation complete: ${passCount} PASS, ${validatedEvents.length - passCount} FAIL`);
 
       return validatedEvents;
@@ -238,9 +270,9 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
     } catch (error) {
       console.error("[validateEventMatches] Error:", error);
       // If validation fails, mark all as FAIL
-      return args.events.map(event => ({
+      return events.map((event: EventBase): ValidatedEvent => ({
         ...event,
-        validationResult: "FAIL" as "PASS" | "FAIL",
+        validationResult: "FAIL",
         reasoning: "Validation error occurred",
       }));
     }
@@ -255,20 +287,11 @@ export const getConfirmedEvent = internalQuery({
     threadId: v.string(),
     eventQuery: v.string(),
   },
-  returns: v.union(
-    v.object({
-      id: v.string(),
-      name: v.string(),
-      date: v.optional(v.string()),
-      location: v.optional(v.string()),
-      description: v.optional(v.string()),
-    }),
-    v.null()
-  ),
+  returns: v.union(confirmedEventValidator, v.null()),
   handler: async (ctx, args) => {
     const confirmed = await ctx.db
       .query("confirmedEvents")
-      .withIndex("by_thread_and_query", (q) =>
+      .withIndex("by_thread_and_query", (q: any) =>
         q.eq("threadId", args.threadId).eq("eventQuery", args.eventQuery.toLowerCase())
       )
       .first();
@@ -305,7 +328,7 @@ export const confirmEvent = internalMutation({
     // Check if already confirmed
     const existing = await ctx.db
       .query("confirmedEvents")
-      .withIndex("by_thread_and_query", (q) =>
+      .withIndex("by_thread_and_query", (q: any) =>
         q.eq("threadId", args.threadId).eq("eventQuery", args.eventQuery.toLowerCase())
       )
       .first();

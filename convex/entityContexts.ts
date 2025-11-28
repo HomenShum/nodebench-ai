@@ -635,3 +635,73 @@ export const getByCanonicalKey = query({
       .first();
   },
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// KNOWLEDGE GRAPH INTEGRATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Link a knowledge graph to an entity context (internal)
+ */
+export const linkKnowledgeGraph = internalMutation({
+  args: {
+    entityContextId: v.id("entityContexts"),
+    knowledgeGraphId: v.id("knowledgeGraphs"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.entityContextId, {
+      knowledgeGraphId: args.knowledgeGraphId,
+    });
+  },
+});
+
+/**
+ * Update cluster assignment for an entity (internal)
+ */
+export const updateClusterAssignment = internalMutation({
+  args: {
+    entityContextId: v.id("entityContexts"),
+    clusterId: v.optional(v.string()),
+    isOddOneOut: v.boolean(),
+    isInClusterSupport: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.entityContextId, {
+      clusterId: args.clusterId,
+      isOddOneOut: args.isOddOneOut,
+      isInClusterSupport: args.isInClusterSupport,
+    });
+  },
+});
+
+/**
+ * Get entities by cluster ID
+ */
+export const getEntitiesByCluster = query({
+  args: {
+    clusterId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Note: Would need an index on clusterId for efficient querying
+    // For now, we'll filter in-memory
+    const entities = await ctx.db.query("entityContexts").collect();
+    return entities.filter(e => e.clusterId === args.clusterId);
+  },
+});
+
+/**
+ * Get all odd-one-out entities for a user
+ */
+export const getOddOneOutEntities = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const entities = await ctx.db
+      .query("entityContexts")
+      .withIndex("by_user", q => q.eq("researchedBy", args.userId))
+      .collect();
+    
+    return entities.filter(e => e.isOddOneOut === true);
+  },
+});

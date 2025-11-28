@@ -9,15 +9,38 @@ import { action, internalAction } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { isMemoryEnabled } from "../lib/featureFlags";
-import { 
-  buildCanonicalKey, 
+import {
+  buildCanonicalKey,
   resolveFromConfirmedCompany,
   resolveFromEntityContext,
   resolveNewEntity,
-  type ResolvedEntity 
+  type ResolvedEntity
 } from "../lib/entityResolution";
 import { MEMORY_LIMITS } from "../lib/memoryLimits";
 import type { Id } from "../_generated/dataModel";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ZOD SCHEMAS - Extracted to avoid "Type instantiation is excessively deep"
+// ═══════════════════════════════════════════════════════════════════════════
+
+const memoryTargetTypesSchema = z.array(z.enum(["entity", "confirmation"]));
+
+const entityTypeSchema = z.enum(["company", "person", "theme"]);
+const researchDepthSchema = z.enum(["shallow", "standard", "deep"]);
+const updateEntityTypeSchema = z.enum(["company", "person"]);
+
+const importanceSchema = z.object({
+  userPinned: z.boolean().optional(),
+  repeatCount: z.number().optional(),
+  isExplicitRequest: z.boolean().optional(),
+});
+
+const factSchema = z.object({
+  subject: z.string(),
+  predicate: z.string(),
+  object: z.string(),
+  confidence: z.number().min(0).max(1),
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -484,6 +507,9 @@ Each fact needs:
 // RESOLVE ENTITY - Canonicalize entity names
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Validator for entity type
+const entityTypeValidator = v.union(v.literal("company"), v.literal("person"), v.literal("theme"));
+
 /**
  * Resolve a free-form entity name to a canonical key.
  * Checks confirmed tables first, then entityContexts, then generates new key.
@@ -491,7 +517,7 @@ Each fact needs:
 export const resolveEntityAction = action({
   args: {
     name: v.string(),
-    type: v.union(v.literal("company"), v.literal("person"), v.literal("theme")),
+    type: entityTypeValidator,
     threadId: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<ResolvedEntity> => {

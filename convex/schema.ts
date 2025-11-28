@@ -1430,6 +1430,22 @@ const spreadsheets = defineTable({
         v.literal("standard"),
         v.literal("deep")
       )),
+      
+      // ═══════════════════════════════════════════════════════════════════
+      // KNOWLEDGE GRAPH INTEGRATION
+      // ═══════════════════════════════════════════════════════════════════
+      
+      /** Link to the entity's knowledge graph */
+      knowledgeGraphId: v.optional(v.id("knowledgeGraphs")),
+      
+      /** Cluster assignment from HDBSCAN (null = noise/odd-one-out) */
+      clusterId: v.optional(v.string()),
+      
+      /** Boolean: is this entity an outlier? (HDBSCAN noise label) */
+      isOddOneOut: v.optional(v.boolean()),
+      
+      /** Boolean: is this entity within cluster support region? (One-Class SVM) */
+      isInClusterSupport: v.optional(v.boolean()),
     })
       .index("by_entity", ["entityName", "entityType"])
       .index("by_spreadsheet", ["spreadsheetId", "rowIndex"])
@@ -1568,5 +1584,148 @@ const spreadsheets = defineTable({
     })
       .index("by_date", ["date"])
       .index("by_user_date", ["userId", "date"]),
+
+    /* ------------------------------------------------------------------ */
+    /* KNOWLEDGE GRAPHS - Claim-based graphs for entity/theme research     */
+    /* ------------------------------------------------------------------ */
+    knowledgeGraphs: defineTable({
+      // Identity
+      name: v.string(),
+      sourceType: v.union(
+        v.literal("entity"),      // from entityContexts
+        v.literal("theme"),       // from themeMemory
+        v.literal("artifact"),    // from document/file
+        v.literal("session")      // from chat session research
+      ),
+      sourceId: v.string(),       // canonicalKey or documentId
+      userId: v.id("users"),
+      
+      // Graph-level embeddings (fingerprints)
+      semanticFingerprint: v.optional(v.array(v.float64())),
+      wlSignature: v.optional(v.string()),        // Weisfeiler-Lehman hash
+      
+      // Clustering results (boolean outputs)
+      clusterId: v.optional(v.string()),          // null = noise/odd-one-out
+      isOddOneOut: v.boolean(),                   // HDBSCAN noise label
+      isInClusterSupport: v.optional(v.boolean()), // One-Class SVM inlier
+      
+      // Provenance
+      claimCount: v.number(),
+      edgeCount: v.number(),
+      lastBuilt: v.number(),
+      lastClustered: v.optional(v.number()),
+      lastFingerprinted: v.optional(v.number()),
+      
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_source", ["sourceType", "sourceId"])
+      .index("by_cluster", ["clusterId"])
+      .index("by_oddOneOut", ["isOddOneOut"])
+      .index("by_user_source", ["userId", "sourceType"]),
+
+    /* ------------------------------------------------------------------ */
+    /* GRAPH CLAIMS - Individual claims (SPO triples) within a graph       */
+    /* ------------------------------------------------------------------ */
+    graphClaims: defineTable({
+      graphId: v.id("knowledgeGraphs"),
+      
+      // Claim content (SPO triple)
+      subject: v.string(),
+      predicate: v.string(),
+      object: v.string(),
+      claimText: v.string(),                      // Full sentence form
+      
+      // Provenance
+      sourceDocIds: v.array(v.string()),
+      sourceSnippets: v.optional(v.array(v.string())),
+      extractedAt: v.number(),
+      
+      // Boolean quality flags (no arbitrary scores)
+      isHighConfidence: v.boolean(),
+      isVerified: v.optional(v.boolean()),
+      isOutdated: v.optional(v.boolean()),
+      
+      // Embedding for semantic similarity
+      embedding: v.optional(v.array(v.float64())),
+      
+      createdAt: v.number(),
+    })
+      .index("by_graph", ["graphId"])
+      .index("by_graph_subject", ["graphId", "subject"])
+      .index("by_graph_predicate", ["graphId", "predicate"])
+      .index("by_confidence", ["isHighConfidence"])
+      .searchIndex("search_claims", {
+        searchField: "claimText",
+        filterFields: ["graphId", "isHighConfidence"],
+      }),
+
+    /* ------------------------------------------------------------------ */
+    /* GRAPH EDGES - Relations between claims                              */
+    /* ------------------------------------------------------------------ */
+    graphEdges: defineTable({
+      graphId: v.id("knowledgeGraphs"),
+      fromClaimId: v.id("graphClaims"),
+      toClaimId: v.id("graphClaims"),
+      
+      // Edge type
+      edgeType: v.union(
+        v.literal("supports"),
+        v.literal("contradicts"),
+        v.literal("mentions"),
+        v.literal("causes"),
+        v.literal("relatedTo"),
+        v.literal("partOf"),
+        v.literal("precedes")
+      ),
+      
+      // Strength (boolean, not score)
+      isStrong: v.boolean(),
+      
+      // Provenance
+      sourceDocId: v.optional(v.string()),
+      
+      createdAt: v.number(),
+    })
+      .index("by_graph", ["graphId"])
+      .index("by_from", ["fromClaimId"])
+      .index("by_to", ["toClaimId"])
+      .index("by_type", ["edgeType"]),
+
+    /* ------------------------------------------------------------------ */
+    /* GRAPH CLUSTERS - HDBSCAN clustering results                         */
+    /* ------------------------------------------------------------------ */
+    graphClusters: defineTable({
+      clusterId: v.string(),                      // UUID
+      userId: v.id("users"),
+      name: v.optional(v.string()),               // Auto-generated or user label
+      description: v.optional(v.string()),
+      
+      // Members
+      memberGraphIds: v.array(v.id("knowledgeGraphs")),
+      memberCount: v.number(),
+      
+      // Cluster fingerprint (centroid)
+      centroidVector: v.optional(v.array(v.float64())),
+      
+      // One-Class SVM "soft hull" model reference
+      svmModelRef: v.optional(v.string()),
+      
+      // Shared characteristics (for explainability)
+      sharedPredicates: v.optional(v.array(v.string())),
+      sharedSubjects: v.optional(v.array(v.string())),
+      dominantSourceType: v.optional(v.string()),
+      
+      // Metadata
+      algorithmUsed: v.optional(v.string()),      // "hdbscan", "kmeans", etc.
+      minClusterSize: v.optional(v.number()),
+      
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_clusterId", ["clusterId"])
+      .index("by_memberCount", ["memberCount"]),
 
   });
