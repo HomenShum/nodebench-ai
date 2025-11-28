@@ -22,15 +22,15 @@ import {
   Search,
   Filter,
   Image as ImageIcon,
-  Activity,
 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { extractMediaFromMessages, ExtractedAsset } from "../../../convex/lib/dossierHelpers";
 import { RichMediaSection } from "../FastAgentPanel/RichMediaSection";
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from "../FastAgentPanel/DocumentActionCard";
 import { extractMediaFromText, type ExtractedMedia } from "../FastAgentPanel/utils/mediaExtractor";
-import { LiveEventsPanel } from "../FastAgentPanel/LiveEventsPanel";
-import type { LiveEvent, LiveEventType, LiveEventStatus } from "../FastAgentPanel/LiveEventCard";
+// LiveEventsPanel removed - events now shown inline in LiveDossierDocument
+// import { LiveEventsPanel } from "../FastAgentPanel/LiveEventsPanel";
+// import type { LiveEvent, LiveEventType, LiveEventStatus } from "../FastAgentPanel/LiveEventCard";
 import React, { useMemo, useState, useEffect } from "react";
 import ReactMarkdown from 'react-markdown';
 import LiveDossierDocument from "./LiveDossierDocument";
@@ -162,9 +162,9 @@ function WelcomeLandingInner({
   const [followUpMode, setFollowUpMode] = useState<"append" | "new">("append");
   const [followUpHistory, setFollowUpHistory] = useState<Array<{ prompt: string; mode: "append" | "new"; status: "queued" | "done"; timestamp: number }>>([]);
 
-  // Live Events Panel state
-  const [showEventsPanel, setShowEventsPanel] = useState(false);
-  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
+  // Live Events Panel state - REMOVED (events now inline in LiveDossierDocument)
+  // const [showEventsPanel, setShowEventsPanel] = useState(false);
+  // const [liveEvents, setLiveEvents] = useState([]);
 
   // Persist state changes
   useEffect(() => {
@@ -398,7 +398,7 @@ function WelcomeLandingInner({
       if (!prev.length) return prev;
       const [latest, ...rest] = prev;
       if (latest.status === "done") return prev;
-      return [{ ...latest, status: "done" }, ...rest];
+      return [{ ...latest, status: "done" as const }, ...rest];
     });
   }, [responseText]);
 
@@ -414,56 +414,8 @@ function WelcomeLandingInner({
     [latestContentMessage]
   );
 
-  // Extract live events from tool parts for the LiveEventsPanel
-  useEffect(() => {
-    if (!contentToolParts || contentToolParts.length === 0) {
-      return;
-    }
-
-    const events: LiveEvent[] = contentToolParts.map((part: any, index: number) => {
-      const isInvocation = part.type === 'tool-invocation';
-      const isResult = part.type === 'tool-result';
-      const isError = part.type === 'tool-error' || (isResult && part.output?.type === 'error-text');
-      
-      let eventType: LiveEventType = 'tool_start';
-      let status: LiveEventStatus = 'pending';
-      
-      if (isInvocation) {
-        eventType = 'tool_start';
-        status = 'running';
-      } else if (isResult) {
-        eventType = 'tool_end';
-        status = isError ? 'error' : 'success';
-      } else if (isError) {
-        eventType = 'tool_error';
-        status = 'error';
-      }
-
-      const toolName = part.toolName || part.name || 'unknown';
-      
-      // Generate a more descriptive title
-      let title = toolName;
-      if (toolName.toLowerCase().includes('search')) {
-        title = isResult ? 'Search completed' : 'Searching...';
-      } else if (toolName.toLowerCase().includes('delegate')) {
-        title = isResult ? 'Agent completed' : 'Delegating to agent...';
-      } else if (toolName.toLowerCase().includes('memory')) {
-        title = isResult ? 'Memory updated' : 'Accessing memory...';
-      }
-
-      return {
-        id: part.toolCallId || `event-${index}-${Date.now()}`,
-        type: eventType,
-        status,
-        title,
-        toolName,
-        details: part.args ? `Args: ${JSON.stringify(part.args).slice(0, 100)}...` : undefined,
-        timestamp: Date.now() - (contentToolParts.length - index) * 1000, // Approximate timestamps
-      };
-    });
-
-    setLiveEvents(events);
-  }, [contentToolParts]);
+  // Live events extraction REMOVED - events now shown inline in LiveDossierDocument
+  // The LiveAgentTicker component in LiveDossierDocument handles real-time tool visualization
 
   const reasoningText = useMemo(
     () =>
@@ -707,7 +659,12 @@ function WelcomeLandingInner({
 
     // Track history entry
     setFollowUpHistory((prev) => [
-      { prompt: promptToRun, mode: preferAppend ? "append" : "new", status: "queued", timestamp: Date.now() },
+      { 
+        prompt: promptToRun, 
+        mode: (preferAppend ? "append" : "new") as "append" | "new", 
+        status: "queued" as const, 
+        timestamp: Date.now() 
+      },
       ...prev
     ].slice(0, 5));
 
@@ -1096,12 +1053,12 @@ function WelcomeLandingInner({
     // Derive metrics from steps if not provided
     const derivedMetrics = useMemo(() => {
       if (metrics) return metrics;
-      
+
       // Extract metrics from tool parts
       const toolNames = steps
         .filter(s => s.toolName || s.name)
         .map(s => s.toolName || s.name);
-      
+
       const agentNames = steps
         .filter(s => (s.toolName || s.name || '').toLowerCase().includes('delegate'))
         .map(s => {
@@ -1111,7 +1068,7 @@ function WelcomeLandingInner({
         });
 
       return {
-        sourcesExplored: steps.filter(s => 
+        sourcesExplored: steps.filter(s =>
           (s.toolName || s.name || '').toLowerCase().includes('search')
         ).length,
         toolsUsed: [...new Set(toolNames)],
@@ -1299,25 +1256,7 @@ function WelcomeLandingInner({
               <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <Filter className="w-4 h-4" />
               </button>
-              <div className="h-4 w-px bg-gray-200"></div>
-              {/* Live Events Toggle */}
-              <button
-                onClick={() => setShowEventsPanel(!showEventsPanel)}
-                className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-                  showEventsPanel
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                }`}
-                title="Toggle Live Events"
-              >
-                <Activity className="w-4 h-4" />
-                {liveEvents.filter(e => e.status === 'running').length > 0 && (
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    {liveEvents.filter(e => e.status === 'running').length}
-                  </span>
-                )}
-              </button>
+              {/* Live Events Toggle - REMOVED (events now inline in LiveDossierDocument) */}
             </div>
           </header>
 
@@ -1326,321 +1265,312 @@ function WelcomeLandingInner({
             {/* SCROLLABLE CANVAS */}
             <main className="flex-1 overflow-y-auto custom-scrollbar relative">
 
-            {/* CONDITIONAL CONTENT: HERO vs ACTIVE */}
-            {showHero ? (
-              // HERO STATE
-              <div className="min-h-full flex flex-col items-center justify-center p-8 pb-32">
-                <div className="max-w-2xl w-full text-center space-y-8">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-900/5 text-gray-900 rounded-full text-xs font-medium border border-gray-200 mb-4">
-                    <Sparkles className="w-3 h-3" />
-                    <span>New: Multi-source Verification Engine</span>
-                  </div>
+              {/* CONDITIONAL CONTENT: HERO vs ACTIVE */}
+              {showHero ? (
+                // HERO STATE
+                <div className="min-h-full flex flex-col items-center justify-center p-8 pb-32">
+                  <div className="max-w-2xl w-full text-center space-y-8">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-900/5 text-gray-900 rounded-full text-xs font-medium border border-gray-200 mb-4">
+                      <Sparkles className="w-3 h-3" />
+                      <span>New: Multi-source Verification Engine</span>
+                    </div>
 
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
-                    Research at the Speed of <span className="underline decoration-gray-900/50 decoration-4 underline-offset-8">Thought.</span>
-                  </h1>
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
+                      Research at the Speed of <span className="underline decoration-gray-900/50 decoration-4 underline-offset-8">Thought.</span>
+                    </h1>
 
-                  <p className="text-lg text-gray-600 max-w-xl mx-auto">
-                    Access real-time intelligence from trusted sources. Generate briefings, analyze trends, and verify facts in seconds.
-                  </p>
+                    <p className="text-lg text-gray-600 max-w-xl mx-auto">
+                      Access real-time intelligence from trusted sources. Generate briefings, analyze trends, and verify facts in seconds.
+                    </p>
 
-                  <div className="pt-8 w-full max-w-xl mx-auto">
-                    <MagicInputContainer
-                      onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
-                      onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep" })}
-                      defaultValue={researchPrompt}
-                      mode={researchMode}
-                    />
+                    <div className="pt-8 w-full max-w-xl mx-auto">
+                      <MagicInputContainer
+                        onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                        onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep" })}
+                        defaultValue={researchPrompt}
+                        mode={researchMode}
+                      />
 
-                    <div className="mt-6 flex gap-3 justify-center">
-                      {[
-                        {
-                          id: "quick",
-                          title: "⚡ Quick Brief",
-                          description: "30-second answer, key facts only",
-                          mode: "quick" as const,
-                        },
-                        {
-                          id: "deep",
-                          title: "🔬 Deep Dossier",
-                          description: "Comprehensive research with cross-verification",
-                          mode: "deep" as const,
-                        },
-                      ].map((intent) => {
-                        const isActive = researchMode === intent.mode;
-                        return (
+                      <div className="mt-6 flex gap-3 justify-center">
+                        {[
+                          {
+                            id: "quick",
+                            title: "⚡ Quick Brief",
+                            description: "30-second answer, key facts only",
+                            mode: "quick" as const,
+                          },
+                          {
+                            id: "deep",
+                            title: "🔬 Deep Dossier",
+                            description: "Comprehensive research with cross-verification",
+                            mode: "deep" as const,
+                          },
+                        ].map((intent) => {
+                          const isActive = researchMode === intent.mode;
+                          return (
+                            <button
+                              key={intent.id}
+                              type="button"
+                              onClick={() => handleRunPrompt(undefined, { mode: intent.mode })}
+                              className={`relative text-center rounded-lg border px-6 py-3 transition-all ${isActive
+                                ? "border-gray-900 bg-gray-900 text-white shadow-sm"
+                                : "border-gray-200 bg-white hover:border-gray-300"
+                                }`}
+                            >
+                              <div className="text-sm font-semibold">{intent.title}</div>
+                              <p className={`mt-1 text-xs ${isActive ? "text-gray-300" : "text-gray-500"}`}>
+                                {intent.description}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Source Category Pills - Simplified */}
+                      <div className="flex flex-wrap justify-center gap-2 mt-6">
+                        {SOURCE_PRESETS.map(preset => (
                           <button
-                            key={intent.id}
-                            type="button"
-                            onClick={() => handleRunPrompt(undefined, { mode: intent.mode })}
-                            className={`relative text-center rounded-lg border px-6 py-3 transition-all ${isActive
-                              ? "border-gray-900 bg-gray-900 text-white shadow-sm"
-                              : "border-gray-200 bg-white hover:border-gray-300"
+                            key={preset.id}
+                            onClick={() => applyPreset(preset.id)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
+                              ? 'bg-gray-900 text-white border-gray-900'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                               }`}
                           >
-                            <div className="text-sm font-semibold">{intent.title}</div>
-                            <p className={`mt-1 text-xs ${isActive ? "text-gray-300" : "text-gray-500"}`}>
-                              {intent.description}
-                            </p>
+                            <span>{preset.icon}</span>
+                            <span>{preset.name}</span>
                           </button>
-                        );
-                      })}
+                        ))}
+                      </div>
+
+                      {/* View Last Results Button */}
+                      {threadId && hasReceivedResponse && (
+                        <div className="mt-6">
+                          <button
+                            onClick={handleViewLastResults}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
+                          >
+                            <Clock className="w-4 h-4" />
+                            View Last Results
+                          </button>
+                        </div>
+                      )}
+
+                      {cacheHistory.length > 0 && (
+                        <div className="mt-8 text-left">
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recent searches</div>
+                          <div className="space-y-2">
+                            {cacheHistory.map((entry, idx) => (
+                              <button
+                                key={`${entry.threadId}-${idx}`}
+                                onClick={() => {
+                                  setThreadId(entry.threadId);
+                                  setShowHero(false);
+                                  setHasReceivedResponse(true);
+                                  setIsFromCache(true);
+                                  setIsRunning(false);
+                                }}
+                                className="w-full text-left px-3 py-2 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="text-sm font-medium text-gray-900 line-clamp-1">{entry.prompt}</div>
+                                <div className="text-[11px] text-gray-500">Cached: {entry.date}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // ACTIVE DOSSIER STATE
+                <div className="min-h-full bg-gray-50/50">
+                  {/* Sticky Input Bar for Active State */}
+                  <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <MagicInputContainer
+                            onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                            onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
+                            compact={true}
+                            defaultValue={researchPrompt}
+                            mode={researchMode}
+                          />
+                        </div>
+                        {/* Unified Action Button with Mode Toggle */}
+                        <div className="flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
+                            disabled={isRunning}
+                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
+                              ? "bg-black text-white border-black cursor-wait"
+                              : "bg-black text-white border-black hover:bg-gray-800"
+                              }`}
+                            title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
+                          >
+                            <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
+                            {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
+                          </button>
+                          {/* Mode Dropdown */}
+                          <div className="relative group">
+                            <button
+                              type="button"
+                              className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            </button>
+                            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
+                              <button
+                                type="button"
+                                onClick={() => setFollowUpMode("append")}
+                                className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
+                              >
+                                <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
+                                Append
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setFollowUpMode("new")}
+                                className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
+                              >
+                                <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
+                                Replace
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <ThoughtStreamTicker isActive={isRunning} />
                     </div>
 
-                    {/* Source Category Pills - Simplified */}
-                    <div className="flex flex-wrap justify-center gap-2 mt-6">
-                      {SOURCE_PRESETS.map(preset => (
-                        <button
-                          key={preset.id}
-                          onClick={() => applyPreset(preset.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
-                            ? 'bg-gray-900 text-white border-gray-900'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                            }`}
-                        >
-                          <span>{preset.icon}</span>
-                          <span>{preset.name}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* View Last Results Button */}
-                    {threadId && hasReceivedResponse && (
-                      <div className="mt-6">
-                        <button
-                          onClick={handleViewLastResults}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
-                        >
-                          <Clock className="w-4 h-4" />
-                          View Last Results
-                        </button>
+                    {/* Cache Indicator */}
+                    {isFromCache && (
+                      <div className="max-w-4xl mx-auto mt-2 px-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
+                          <Zap className="w-3 h-3 text-gray-900" />
+                          Loaded from cache (instant results)
+                        </div>
                       </div>
                     )}
+                  </div>
 
-                    {cacheHistory.length > 0 && (
-                      <div className="mt-8 text-left">
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recent searches</div>
-                        <div className="space-y-2">
-                          {cacheHistory.map((entry, idx) => (
-                            <button
-                              key={`${entry.threadId}-${idx}`}
-                              onClick={() => {
-                                setThreadId(entry.threadId);
-                                setShowHero(false);
-                                setHasReceivedResponse(true);
-                                setIsFromCache(true);
-                                setIsRunning(false);
-                              }}
-                              className="w-full text-left px-3 py-2 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
-                            >
-                              <div className="text-sm font-medium text-gray-900 line-clamp-1">{entry.prompt}</div>
-                              <div className="text-[11px] text-gray-500">Cached: {entry.date}</div>
-                            </button>
+                  <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
+                    {/* Follow-up history drawer (compact) */}
+                    {followUpHistory.length > 0 && (
+                      <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
+                        <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          <span>Follow-up history</span>
+                          <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
+                        </div>
+                        <div className="space-y-1">
+                          {followUpHistory.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
+                              <div className="flex items-center gap-2">
+                                <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
+                                <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
+                              </div>
+                              <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
+                              <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
+                            </div>
                           ))}
                         </div>
                       </div>
                     )}
+                    {/* Tabs */}
+                    <div className="flex border-b border-gray-200 mb-8">
+                      <button
+                        onClick={() => setActiveTab('dossier')}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dossier' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
+                          }`}
+                      >
+                        Live Dossier
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('newsletter')}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'newsletter' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
+                          }`}
+                      >
+                        Newsletter Preview
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('media')}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'media' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
+                          }`}
+                      >
+                        Media Gallery <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{mediaAssets.length}</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('artifacts')}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'artifacts' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
+                          }`}
+                      >
+                        Artifacts <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{totalArtifacts}</span>
+                      </button>
+                    </div>
+
+                    {/* View Content */}
+                    {activeTab === 'dossier' && (<div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      {/* Executive Summary Block (Only show if we have some content) */}
+                      {citations.length > 0 && <ExecutiveSummaryBlock />}
+
+                      {/* Reasoning Chain */}
+                      <CollapsibleReasoningChain steps={toolParts} />
+
+                      {/* The Main Document */}
+                      <LiveDossierDocument
+                        threadId={threadId}
+                        isLoading={isRunning || (hasReceivedResponse && !responseText)}
+                        onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
+                      />
+                    </div>
+                    )}
+
+                    {activeTab === 'newsletter' && (
+                      <MockNewsletterView
+                        responseText={responseText}
+                        isLoading={isRunning || (hasReceivedResponse && !responseText)}
+                        mediaAssets={mediaAssets}
+                        citations={citations}
+                        sourceAnalytics={sourceAnalytics}
+                      />
+                    )}
+
+                    {activeTab === 'media' && (
+                      <MockMediaView
+                        mediaAssets={mediaAssets}
+                        aggregatedMedia={aggregatedMedia}
+                        onGenerateVisualization={() =>
+                          handleRunPrompt(
+                            "Create a funding comparison chart for the mentioned companies and pull any logos or screenshots that support the findings.",
+                            { appendToThread: true, mode: "deep" }
+                          )
+                        }
+                      />
+                    )}
+
+                    {activeTab === 'artifacts' && (
+                      <LandingArtifactsView
+                        media={aggregatedMedia}
+                        documents={aggregatedDocumentActions}
+                        hasThread={Boolean(threadId)}
+                        onDocumentSelect={onDocumentSelect}
+                        onGenerateArtifact={() =>
+                          handleRunPrompt(
+                            "Generate a CSV of key funding or filing data and produce a PDF-ready executive summary with citations.",
+                            { appendToThread: Boolean(threadId), mode: "deep" }
+                          )
+                        }
+                        onStartResearch={() => handleRunPrompt(undefined, { appendToThread: false, mode: researchMode })}
+                      />
+                    )}
                   </div>
                 </div>
-              </div>
-            ) : (
-              // ACTIVE DOSSIER STATE
-              <div className="min-h-full bg-gray-50/50">
-                {/* Sticky Input Bar for Active State */}
-                <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <MagicInputContainer
-                          onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
-                          onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
-                          compact={true}
-                          defaultValue={researchPrompt}
-                          mode={researchMode}
-                        />
-                      </div>
-                      {/* Unified Action Button with Mode Toggle */}
-                      <div className="flex items-center">
-                        <button
-                          type="button"
-                          onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
-                          disabled={isRunning}
-                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
-                            ? "bg-black text-white border-black cursor-wait"
-                            : "bg-black text-white border-black hover:bg-gray-800"
-                            }`}
-                          title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
-                        >
-                          <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
-                          {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
-                        </button>
-                        {/* Mode Dropdown */}
-                        <div className="relative group">
-                          <button
-                            type="button"
-                            className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
-                          >
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </button>
-                          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
-                            <button
-                              type="button"
-                              onClick={() => setFollowUpMode("append")}
-                              className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
-                            >
-                              <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
-                              Append
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setFollowUpMode("new")}
-                              className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
-                            >
-                              <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
-                              Replace
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <ThoughtStreamTicker isActive={isRunning} />
-                  </div>
-
-                  {/* Cache Indicator */}
-                  {isFromCache && (
-                    <div className="max-w-4xl mx-auto mt-2 px-2">
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
-                        <Zap className="w-3 h-3 text-gray-900" />
-                        Loaded from cache (instant results)
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
-                  {/* Follow-up history drawer (compact) */}
-                  {followUpHistory.length > 0 && (
-                    <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
-                      <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                        <span>Follow-up history</span>
-                        <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
-                      </div>
-                      <div className="space-y-1">
-                        {followUpHistory.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
-                            <div className="flex items-center gap-2">
-                              <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
-                              <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
-                            </div>
-                            <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
-                            <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {/* Tabs */}
-                  <div className="flex border-b border-gray-200 mb-8">
-                    <button
-                      onClick={() => setActiveTab('dossier')}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dossier' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
-                        }`}
-                    >
-                      Live Dossier
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('newsletter')}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'newsletter' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
-                        }`}
-                    >
-                      Newsletter Preview
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('media')}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'media' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
-                        }`}
-                    >
-                      Media Gallery <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{mediaAssets.length}</span>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('artifacts')}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'artifacts' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
-                        }`}
-                    >
-                      Artifacts <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{totalArtifacts}</span>
-                    </button>
-                  </div>
-
-                  {/* View Content */}
-                  {activeTab === 'dossier' && (<div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {/* Executive Summary Block (Only show if we have some content) */}
-                    {citations.length > 0 && <ExecutiveSummaryBlock />}
-
-                    {/* Reasoning Chain */}
-                    <CollapsibleReasoningChain steps={toolParts} />
-
-                    {/* The Main Document */}
-                    <LiveDossierDocument
-                      threadId={threadId}
-                      isLoading={isRunning || (hasReceivedResponse && !responseText)}
-                      onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
-                    />
-                  </div>
-                  )}
-
-                  {activeTab === 'newsletter' && (
-                    <MockNewsletterView
-                      responseText={responseText}
-                      isLoading={isRunning || (hasReceivedResponse && !responseText)}
-                      mediaAssets={mediaAssets}
-                      citations={citations}
-                      sourceAnalytics={sourceAnalytics}
-                    />
-                  )}
-
-                  {activeTab === 'media' && (
-                    <MockMediaView
-                      mediaAssets={mediaAssets}
-                      aggregatedMedia={aggregatedMedia}
-                      onGenerateVisualization={() =>
-                        handleRunPrompt(
-                          "Create a funding comparison chart for the mentioned companies and pull any logos or screenshots that support the findings.",
-                          { appendToThread: true, mode: "deep" }
-                        )
-                      }
-                    />
-                  )}
-
-                  {activeTab === 'artifacts' && (
-                    <LandingArtifactsView
-                      media={aggregatedMedia}
-                      documents={aggregatedDocumentActions}
-                      hasThread={Boolean(threadId)}
-                      onDocumentSelect={onDocumentSelect}
-                      onGenerateArtifact={() =>
-                        handleRunPrompt(
-                          "Generate a CSV of key funding or filing data and produce a PDF-ready executive summary with citations.",
-                          { appendToThread: Boolean(threadId), mode: "deep" }
-                        )
-                      }
-                      onStartResearch={() => handleRunPrompt(undefined, { appendToThread: false, mode: researchMode })}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
+              )}
             </main>
 
-            {/* LIVE EVENTS PANEL */}
-            {showEventsPanel && (
-              <div className="w-80 flex-shrink-0 border-l border-gray-200 bg-white">
-                <LiveEventsPanel
-                  events={liveEvents}
-                  onClose={() => setShowEventsPanel(false)}
-                  onClear={() => setLiveEvents([])}
-                />
-              </div>
-            )}
+            {/* LIVE EVENTS PANEL - REMOVED (events now inline in LiveDossierDocument) */}
           </div>
         </div>
       </div>
@@ -1881,18 +1811,18 @@ function MockNewsletterView({
   );
 }
 
-function MockMediaView({ 
-  mediaAssets, 
+function MockMediaView({
+  mediaAssets,
   aggregatedMedia,
-  onGenerateVisualization 
-}: { 
-  mediaAssets: ExtractedAsset[]; 
+  onGenerateVisualization
+}: {
+  mediaAssets: ExtractedAsset[];
   aggregatedMedia?: ExtractedMedia;
-  onGenerateVisualization?: () => void; 
+  onGenerateVisualization?: () => void;
 }) {
   // Calculate total media count from both sources
-  const totalCount = mediaAssets.length + 
-    (aggregatedMedia?.youtubeVideos.length || 0) + 
+  const totalCount = mediaAssets.length +
+    (aggregatedMedia?.youtubeVideos.length || 0) +
     (aggregatedMedia?.images.length || 0) +
     (aggregatedMedia?.webSources.length || 0) +
     (aggregatedMedia?.profiles.length || 0);
@@ -1965,7 +1895,7 @@ function MockMediaView({
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all">
                     <svg className="w-5 h-5 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
+                      <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
                 </div>

@@ -25,19 +25,19 @@ interface LiveEventsPanelProps {
 function filterEvents(events: LiveEvent[], filter: FilterType): LiveEvent[] {
   switch (filter) {
     case 'tools':
-      return events.filter(e => 
-        e.type === 'tool_start' || 
-        e.type === 'tool_end' || 
+      return events.filter(e =>
+        e.type === 'tool_start' ||
+        e.type === 'tool_end' ||
         e.type === 'tool_error'
       );
     case 'agents':
-      return events.filter(e => 
-        e.type === 'agent_spawn' || 
+      return events.filter(e =>
+        e.type === 'agent_spawn' ||
         e.type === 'agent_complete'
       );
     case 'memory':
-      return events.filter(e => 
-        e.type === 'memory_read' || 
+      return events.filter(e =>
+        e.type === 'memory_read' ||
         e.type === 'memory_write'
       );
     case 'all':
@@ -70,7 +70,7 @@ interface FilterButtonProps {
 
 function FilterButton({ filter, currentFilter, count, icon, label, onClick }: FilterButtonProps) {
   const isActive = currentFilter === filter;
-  
+
   return (
     <button
       onClick={onClick}
@@ -127,7 +127,7 @@ export function LiveEventsPanel({ events, onClose, onClear }: LiveEventsPanelPro
   const runningCount = events.filter(e => e.status === 'running').length;
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-primary)] border-l border-[var(--border-color)]">
+    <div className="flex flex-col h-full w-[360px] bg-[var(--bg-primary)] border-l border-[var(--border-color)]">
       {/* Header */}
       <div className="flex-shrink-0 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
         <div className="flex items-center justify-between mb-2">
@@ -190,16 +190,39 @@ export function LiveEventsPanel({ events, onClose, onClear }: LiveEventsPanelPro
       </div>
 
       {/* Events list */}
-      <div 
+      <div
         ref={scrollRef}
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-3"
       >
         {filteredEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-            <Activity className="w-8 h-8 mb-2 opacity-50" />
-            <p className="text-xs">No events yet</p>
-            <p className="text-[10px] text-gray-500 mt-1">Events will appear as the agent works</p>
+          <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
+              <Activity className="w-6 h-6 text-blue-500 animate-pulse" />
+            </div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Listening for Events
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Events will appear as the agent works
+            </p>
+            <div className="text-[10px] text-gray-400 dark:text-gray-500 space-y-1">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-gray-400" />
+                <span>Tool calls</span>
+              </div>
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-gray-400" />
+                <span>Agent spawns</span>
+              </div>
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-gray-400" />
+                <span>Memory updates</span>
+              </div>
+            </div>
+            <p className="text-[9px] text-gray-400 dark:text-gray-600 mt-3 italic">
+              💡 Tip: Cached results won't generate events
+            </p>
           </div>
         ) : (
           <div className="space-y-0">

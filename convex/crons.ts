@@ -36,4 +36,24 @@ crons.daily(
 //   {}
 // );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Artifact persistence cleanup crons
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Cleanup old persist jobs daily (done: 7 days, failed: 14 days)
+crons.daily(
+  "cleanup artifact persist jobs",
+  { hourUTC: 4, minuteUTC: 30 },
+  internal.lib.artifactPersistence.cleanupArtifactJobs,
+  {}
+);
+
+// Cleanup old dead-letters daily (keep 30 days)
+crons.daily(
+  "cleanup artifact dead-letters",
+  { hourUTC: 4, minuteUTC: 45 },
+  internal.lib.artifactPersistence.cleanupDeadLetters,
+  {}
+);
+
 export default crons;

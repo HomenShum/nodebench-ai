@@ -1728,4 +1728,159 @@ const spreadsheets = defineTable({
       .index("by_clusterId", ["clusterId"])
       .index("by_memberCount", ["memberCount"]),
 
+    /* ------------------------------------------------------------------ */
+    /* ARTIFACT RUN META - Sharded write mutex for artifact upserts       */
+    /* Touched before every artifact write to serialize concurrent ops    */
+    /* Sharded by artifactId hash to reduce contention (K=8 shards)       */
+    /* ------------------------------------------------------------------ */
+    artifactRunMeta: defineTable({
+      runId: v.string(),
+      shardId: v.optional(v.number()),  // 0..K-1, where K=8 shards (optional for migration)
+      bump: v.number(),                  // Incremented on every artifact write
+      updatedAt: v.number(),
+    })
+      .index("by_run_shard", ["runId", "shardId"])
+      .index("by_run", ["runId"]), // For maintenance scans
+
+    /* ------------------------------------------------------------------ */
+    /* ARTIFACT DEAD LETTERS - Failed persistence jobs for visibility     */
+    /* ------------------------------------------------------------------ */
+    artifactDeadLetters: defineTable({
+      runId: v.string(),
+      toolName: v.optional(v.string()),
+      attempt: v.number(),
+      errorType: v.union(
+        v.literal("OCC"),
+        v.literal("VALIDATION"),
+        v.literal("EXTRACTOR"),
+        v.literal("SCHEDULER"),
+        v.literal("UNKNOWN")
+      ),
+      errorMessage: v.string(),         // Truncated to ~2KB
+      artifactCount: v.number(),
+      sampleUrls: v.array(v.string()),  // Cap 3-5 URLs for debugging
+      createdAt: v.number(),
+    })
+      .index("by_run", ["runId"])
+      .index("by_run_createdAt", ["runId", "createdAt"]),
+
+    /* ------------------------------------------------------------------ */
+    /* ARTIFACT PERSIST JOBS - Idempotency tracking for scheduled jobs    */
+    /* ------------------------------------------------------------------ */
+    artifactPersistJobs: defineTable({
+      runId: v.string(),
+      idempotencyKey: v.string(),
+      status: v.union(
+        v.literal("started"),
+        v.literal("done"),
+        v.literal("failed")
+      ),
+      attempts: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_run_key", ["runId", "idempotencyKey"])
+      .index("by_status_createdAt", ["status", "createdAt"]),
+
+    /* ------------------------------------------------------------------ */
+    /* ARTIFACT RUN STATS (SHARDED) - Observability counters per run      */
+    /* Sharded to match mutex shards (K=8), avoiding new contention       */
+    /* ------------------------------------------------------------------ */
+    artifactRunStatsShards: defineTable({
+      runId: v.string(),
+      shardId: v.number(),             // 0..K-1, matches mutex shards
+      jobsScheduled: v.number(),
+      jobsDeduped: v.number(),
+      deadLetters: v.number(),
+      occRetries: v.number(),
+      noopsSkipped: v.number(),
+      artifactsInserted: v.number(),
+      artifactsPatched: v.number(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_run_shard", ["runId", "shardId"])
+      .index("by_run", ["runId"]),
+
+    /* ------------------------------------------------------------------ */
+    /* ARTIFACTS - First-class streaming artifacts for dossiers            */
+    /* ------------------------------------------------------------------ */
+    artifacts: defineTable({
+      runId: v.string(),              // agentThreadId - stable for whole dossier
+      artifactId: v.string(),         // Stable hash: art_<sha256_prefix>
+      userId: v.id("users"),
+      
+      // Core (immutable after creation)
+      kind: v.union(
+        v.literal("url"),
+        v.literal("file"),
+        v.literal("video"),
+        v.literal("image"),
+        v.literal("document")
+      ),
+      provider: v.optional(v.union(
+        v.literal("youtube"),
+        v.literal("sec"),
+        v.literal("arxiv"),
+        v.literal("news"),
+        v.literal("web"),
+        v.literal("local")
+      )),
+      canonicalUrl: v.string(),
+      
+      // Display (mutable via enrich)
+      title: v.string(),
+      host: v.optional(v.string()),
+      snippet: v.optional(v.string()),
+      thumbnail: v.optional(v.string()),
+      
+      // Enrichment data (arrives later)
+      transcript: v.optional(v.string()),
+      pageRefs: v.optional(v.array(v.string())),
+      
+      // Metadata
+      discoveredAt: v.number(),
+      toolName: v.optional(v.string()),
+      rev: v.number(),                // Monotonic version for safe merges
+      
+      // Boolean flags (GAM philosophy)
+      flags: v.object({
+        hasThumbnail: v.boolean(),
+        hasTranscript: v.boolean(),
+        hasPageRefs: v.boolean(),
+        isPinned: v.boolean(),
+        isCited: v.boolean(),
+        isEnriched: v.boolean(),
+      }),
+    })
+      .index("by_run", ["runId"])
+      .index("by_run_artifact", ["runId", "artifactId"])
+      .index("by_user_run", ["userId", "runId"])
+      .index("by_user", ["userId"]),
+
+    /* ------------------------------------------------------------------ */
+    /* ARTIFACT LINKS - Artifact-to-section assignments                    */
+    /* ------------------------------------------------------------------ */
+    artifactLinks: defineTable({
+      runId: v.string(),
+      artifactId: v.string(),
+      sectionId: v.string(),
+      createdAt: v.number(),
+    })
+      .index("by_run_section", ["runId", "sectionId"])
+      .index("by_run_artifact", ["runId", "artifactId"])
+      .index("by_run", ["runId"]),
+
+    /* ------------------------------------------------------------------ */
+    /* EVIDENCE LINKS - Fact-to-artifact citations                         */
+    /* ------------------------------------------------------------------ */
+    evidenceLinks: defineTable({
+      runId: v.string(),
+      factId: v.string(),
+      artifactIds: v.array(v.string()),
+      createdAt: v.number(),
+    })
+      .index("by_run_fact", ["runId", "factId"])
+      .index("by_run", ["runId"]),
+
   });

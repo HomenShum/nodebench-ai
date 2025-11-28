@@ -72,6 +72,10 @@ export const scratchpadSchema = z.object({
   completedTasks: z.array(taskSchema).default([]),
   currentIntent: z.string().nullable().default(null),
   
+  // Section tracking for per-section artifact linking
+  activeSectionKey: z.string().nullable().default(null).describe("Human-readable section key (e.g., 'market_landscape')"),
+  activeSectionId: z.string().nullable().default(null).describe("Stable machine ID for linking artifacts"),
+  
   // Safety limits tracking
   stepCount: z.number().default(0),
   toolCallCount: z.number().default(0),
@@ -142,6 +146,10 @@ Generates a unique messageId that all subsequent tools must match.`,
       pendingTasks: [],
       completedTasks: [],
       currentIntent: args.currentIntent || null,
+      
+      // Section tracking (null until setActiveSection is called)
+      activeSectionKey: null,
+      activeSectionId: null,
       
       // Safety limits (fresh counters)
       stepCount: 0,
@@ -261,6 +269,61 @@ Call this AFTER each tool to maintain state continuity.`,
     }
 
     return { ok: true, scratchpad: updated };
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOOL #2B: setActiveSection
+// Set the current section for artifact linking
+// Called before generating or researching each dossier section
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const setActiveSection = createTool({
+  description: `Set the active section for artifact linking.
+Call this BEFORE running tools or generating content for a dossier section.
+All artifacts discovered in that section will be automatically linked to it.
+
+Example section keys: executive_summary, market_landscape, funding_signals, risk_flags`,
+
+  args: z.object({
+    messageId: z.string().describe("REQUIRED: Must match scratchpad.messageId"),
+    currentScratchpad: scratchpadSchema.describe("Current scratchpad state"),
+    sectionKey: z.string().describe("Section key (e.g., 'market_landscape')"),
+    runId: z.string().describe("The run/thread ID for stable ID generation"),
+  }),
+
+  handler: async (_ctx, args) => {
+    // INVARIANT A: Guard messageId
+    if (args.currentScratchpad.messageId !== args.messageId) {
+      return {
+        ok: false,
+        reason: "messageId_mismatch",
+        scratchpad: null,
+      };
+    }
+    
+    // Generate stable section ID
+    // Using simple hash here - matches shared/sectionIds.ts hashSync
+    const input = `${args.runId}|${args.sectionKey}`;
+    let hash = 5381;
+    for (let i = 0; i < input.length; i++) {
+      hash = ((hash << 5) + hash) ^ input.charCodeAt(i);
+    }
+    const sectionId = `sec_${Math.abs(hash).toString(36)}`;
+    
+    const updated: Scratchpad = {
+      ...args.currentScratchpad,
+      activeSectionKey: args.sectionKey,
+      activeSectionId: sectionId,
+      updatedAt: Date.now(),
+    };
+    
+    return {
+      ok: true,
+      scratchpad: updated,
+      sectionKey: args.sectionKey,
+      sectionId,
+    };
   },
 });
 
