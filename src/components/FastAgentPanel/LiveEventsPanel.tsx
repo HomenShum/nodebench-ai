@@ -1,221 +1,136 @@
-// src/components/FastAgentPanel/LiveEventsPanel.tsx
-// Right sidebar showing real-time event stream with AG-UI styling
-
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { 
-  Activity, 
-  X, 
-  Filter, 
-  ChevronDown,
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Activity,
+  Filter,
   Pause,
   Play,
-  Trash2
+  ArrowDown,
+  X,
+  Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LiveEventCard, type LiveEvent, type EventType } from './LiveEventCard';
+import { LiveEvent, LiveEventCard, EventType } from './LiveEventCard';
 
 interface LiveEventsPanelProps {
   events: LiveEvent[];
-  onClose?: () => void;
-  className?: string;
-  isStreaming?: boolean;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-// Event type filter options
-const EVENT_FILTERS: { type: EventType | 'all'; label: string }[] = [
-  { type: 'all', label: 'All Events' },
-  { type: 'tool_start', label: 'Tools' },
-  { type: 'text_content', label: 'Messages' },
-  { type: 'state_update', label: 'State' },
-  { type: 'delegation', label: 'Delegation' },
-  { type: 'memory_update', label: 'Memory' },
-];
-
-/**
- * LiveEventsPanel - Real-time event stream sidebar
- * Shows all agent events as they happen with filtering and auto-scroll
- */
-export function LiveEventsPanel({ 
-  events, 
-  onClose,
-  className,
-  isStreaming = false,
-}: LiveEventsPanelProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+export function LiveEventsPanel({ events, isOpen, onClose }: LiveEventsPanelProps) {
+  const [filter, setFilter] = useState<EventType | 'all'>('all');
+  const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
-  const [filterType, setFilterType] = useState<EventType | 'all'>('all');
-  const [showFilters, setShowFilters] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   // Filter events
-  const filteredEvents = useMemo(() => {
-    if (filterType === 'all') return events;
-    
-    // Group related event types
-    const typeGroups: Record<string, EventType[]> = {
-      'tool_start': ['tool_start', 'tool_end', 'tool_error'],
-      'text_content': ['text_start', 'text_content', 'text_end'],
-      'state_update': ['state_update'],
-      'step_start': ['step_start', 'step_end'],
-      'delegation': ['delegation'],
-      'memory_update': ['memory_update'],
-    };
-    
-    const allowedTypes = typeGroups[filterType] || [filterType];
-    return events.filter(e => allowedTypes.includes(e.type));
-  }, [events, filterType]);
+  const filteredEvents = events.filter(e =>
+    filter === 'all' ? true : e.type === filter
+  );
 
-  // Auto-scroll to bottom when new events arrive
+  // Auto-scroll logic
   useEffect(() => {
-    if (autoScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (autoScroll && !isPaused && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [filteredEvents.length, autoScroll]);
+  }, [filteredEvents.length, autoScroll, isPaused]);
 
-  // Detect manual scroll to disable auto-scroll
+  // Handle manual scroll interaction
   const handleScroll = () => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
-    setAutoScroll(isNearBottom);
+    const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 50;
+
+    if (!isAtBottom && autoScroll) {
+      setAutoScroll(false);
+    } else if (isAtBottom && !autoScroll) {
+      setAutoScroll(true);
+    }
   };
 
-  // Get count of running events
-  const runningCount = events.filter(e => e.status === 'running').length;
+  if (!isOpen) return null;
 
   return (
-    <div className={cn(
-      "flex flex-col h-full bg-gray-50 border-l border-gray-200",
-      className
-    )}>
+    <div className="w-80 border-l border-[var(--border-color)] bg-[var(--bg-primary)] flex flex-col h-full animate-in slide-in-from-right duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+      <div className="p-3 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-secondary)]/50 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <Activity className={cn(
-            "w-4 h-4",
-            isStreaming ? "text-blue-500 animate-pulse" : "text-gray-500"
-          )} />
-          <span className="font-semibold text-sm text-gray-900">Live Events</span>
-          {runningCount > 0 && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full">
-              {runningCount} active
-            </span>
-          )}
+          <Activity className="w-4 h-4 text-purple-500" />
+          <span className="text-sm font-semibold text-[var(--text-primary)]">Live Events</span>
+          <span className="text-xs bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded-full text-[var(--text-secondary)] border border-[var(--border-color)]">
+            {filteredEvents.length}
+          </span>
         </div>
-        
         <div className="flex items-center gap-1">
-          {/* Filter button */}
           <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(
-              "p-1.5 rounded hover:bg-gray-100 transition-colors",
-              showFilters && "bg-gray-100"
-            )}
-            title="Filter events"
+            onClick={() => setIsPaused(!isPaused)}
+            className="p-1.5 hover:bg-[var(--bg-hover)] rounded text-[var(--text-secondary)]"
+            title={isPaused ? "Resume auto-scroll" : "Pause auto-scroll"}
           >
-            <Filter className="w-4 h-4 text-gray-500" />
+            {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
           </button>
-          
-          {/* Auto-scroll toggle */}
           <button
-            onClick={() => setAutoScroll(!autoScroll)}
-            className={cn(
-              "p-1.5 rounded hover:bg-gray-100 transition-colors",
-              autoScroll && "bg-blue-50"
-            )}
-            title={autoScroll ? "Pause auto-scroll" : "Resume auto-scroll"}
+            onClick={onClose}
+            className="p-1.5 hover:bg-[var(--bg-hover)] rounded text-[var(--text-secondary)]"
           >
-            {autoScroll ? (
-              <Pause className="w-4 h-4 text-blue-500" />
-            ) : (
-              <Play className="w-4 h-4 text-gray-500" />
-            )}
+            <X className="w-4 h-4" />
           </button>
-          
-          {/* Close button */}
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded hover:bg-gray-100 transition-colors"
-              title="Close panel"
-            >
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Filter dropdown */}
-      {showFilters && (
-        <div className="px-3 py-2 bg-white border-b border-gray-200">
-          <div className="flex flex-wrap gap-1">
-            {EVENT_FILTERS.map(filter => (
-              <button
-                key={filter.type}
-                onClick={() => setFilterType(filter.type)}
-                className={cn(
-                  "px-2 py-1 text-xs rounded-full transition-colors",
-                  filterType === filter.type
-                    ? "bg-blue-100 text-blue-700 font-medium"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                )}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Filters */}
+      <div className="p-2 border-b border-[var(--border-color)] flex gap-1 overflow-x-auto scrollbar-none">
+        {(['all', 'tool', 'message', 'state', 'delegation', 'memory'] as const).map((type) => (
+          <button
+            key={type}
+            onClick={() => setFilter(type)}
+            className={cn(
+              "px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors border",
+              filter === type
+                ? "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800"
+                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-transparent hover:border-[var(--border-color)]"
+            )}
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
+      </div>
 
-      {/* Events list */}
-      <div 
+      {/* Events List */}
+      <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-3"
+        className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-[var(--border-color)] scrollbar-track-transparent"
       >
         {filteredEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <Activity className="w-8 h-8 mb-2 opacity-50" />
-            <p className="text-sm">No events yet</p>
-            <p className="text-xs">Events will appear as the agent works</p>
+          <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] gap-2">
+            <Search className="w-8 h-8 opacity-20" />
+            <p className="text-xs">No events found</p>
           </div>
         ) : (
-          <>
-            {filteredEvents.map((event, index) => (
-              <LiveEventCard
-                key={event.id}
-                event={event}
-                isLatest={index === filteredEvents.length - 1}
-              />
-            ))}
-          </>
+          filteredEvents.map((event) => (
+            <LiveEventCard key={event.id} event={event} />
+          ))
         )}
+        <div ref={bottomRef} />
       </div>
 
-      {/* Footer with stats */}
-      <div className="px-4 py-2 bg-white border-t border-gray-200 text-xs text-gray-500">
-        <div className="flex items-center justify-between">
-          <span>
-            {filteredEvents.length} events
-            {filterType !== 'all' && ` (filtered)`}
-          </span>
-          {!autoScroll && (
-            <button
-              onClick={() => {
-                setAutoScroll(true);
-                if (scrollRef.current) {
-                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                }
-              }}
-              className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
-            >
-              <ChevronDown className="w-3 h-3" />
-              Jump to latest
-            </button>
-          )}
+      {/* Jump to latest button */}
+      {!autoScroll && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+          <button
+            onClick={() => {
+              setAutoScroll(true);
+              bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-full text-xs font-medium shadow-lg hover:bg-purple-700 transition-colors animate-in fade-in slide-in-from-bottom-2"
+          >
+            <ArrowDown className="w-3 h-3" />
+            Jump to latest
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
-
-export default LiveEventsPanel;
