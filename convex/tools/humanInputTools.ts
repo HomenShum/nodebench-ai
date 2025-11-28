@@ -31,10 +31,14 @@ export const askHuman = createTool({
 
     handler: async (ctx: any, args) => {
         // Get userId from agent tool context (required for internal mutation)
-        const userId = ctx.userId;
+        // Note: In Convex Agent SDK, userId is passed as evaluationUserId in the context
+        const userId = ctx.evaluationUserId || ctx.userId;
         if (!userId) {
+            console.warn('[askHuman] No userId in context. ctx keys:', Object.keys(ctx));
             return `ERROR: Cannot ask human - no userId in context. User may not be authenticated.`;
         }
+        
+        console.log('[askHuman] Using userId:', userId);
 
         // Try to get threadId from context
         const threadId = ctx.threadId || "unknown_thread";

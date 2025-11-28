@@ -1,240 +1,131 @@
-// src/components/FastAgentPanel/LiveEventCard.tsx
-// Compact card for individual agent events with AG-UI styling
-
 import React, { useState } from 'react';
-import { 
-  Wrench, 
-  MessageSquare, 
-  Database, 
-  Play, 
-  CheckCircle2, 
-  XCircle, 
-  ChevronDown, 
-  ChevronRight,
+import {
+  CheckCircle2,
+  XCircle,
   Loader2,
-  Brain,
-  Users,
-  FileText
+  Clock,
+  ChevronDown,
+  ChevronRight,
+  Wrench,
+  MessageSquare,
+  BrainCircuit,
+  Database,
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
 
-export type EventType = 
-  | 'tool_start' 
-  | 'tool_end' 
-  | 'tool_error'
-  | 'text_start'
-  | 'text_content'
-  | 'text_end'
-  | 'state_update'
-  | 'step_start'
-  | 'step_end'
-  | 'delegation'
-  | 'memory_update';
-
-export type EventStatus = 'running' | 'done' | 'error';
+export type EventType = 'tool' | 'message' | 'state' | 'delegation' | 'memory' | 'other';
 
 export interface LiveEvent {
   id: string;
   type: EventType;
-  status: EventStatus;
   title: string;
-  details?: string;
-  timestamp: number;
-  metadata?: Record<string, unknown>;
-  toolName?: string;
-  agentName?: string;
+  description?: string;
+  status: 'running' | 'success' | 'error' | 'pending';
+  timestamp: Date;
+  metadata?: Record<string, any>;
+  agentRole?: string;
 }
 
 interface LiveEventCardProps {
   event: LiveEvent;
-  isLatest?: boolean;
+  isExpanded?: boolean;
+  onToggle?: () => void;
 }
 
-// Format time ago
-function formatTimeAgo(timestamp: number): string {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
-  if (seconds < 5) return 'just now';
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  return `${Math.floor(minutes / 60)}h ago`;
-}
+export function LiveEventCard({ event, isExpanded: defaultExpanded = false, onToggle }: LiveEventCardProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
-// Get icon for event type
-function getEventIcon(type: EventType, status: EventStatus) {
-  const iconClass = "w-3.5 h-3.5";
-  
-  switch (type) {
-    case 'tool_start':
-    case 'tool_end':
-    case 'tool_error':
-      return <Wrench className={iconClass} />;
-    case 'text_start':
-    case 'text_content':
-    case 'text_end':
-      return <MessageSquare className={iconClass} />;
-    case 'state_update':
-      return <Database className={iconClass} />;
-    case 'step_start':
-    case 'step_end':
-      return <Play className={iconClass} />;
-    case 'delegation':
-      return <Users className={iconClass} />;
-    case 'memory_update':
-      return <Brain className={iconClass} />;
-    default:
-      return <FileText className={iconClass} />;
-  }
-}
-
-// Get status color
-function getStatusColor(status: EventStatus, isLatest: boolean) {
-  switch (status) {
-    case 'running':
-      return 'bg-blue-500';
-    case 'done':
-      return 'bg-green-500';
-    case 'error':
-      return 'bg-red-500';
-    default:
-      return 'bg-gray-400';
-  }
-}
-
-// Get event type label
-function getEventLabel(type: EventType): string {
-  const labels: Record<EventType, string> = {
-    tool_start: 'Tool Started',
-    tool_end: 'Tool Completed',
-    tool_error: 'Tool Error',
-    text_start: 'Response Started',
-    text_content: 'Streaming',
-    text_end: 'Response Complete',
-    state_update: 'State Updated',
-    step_start: 'Step Started',
-    step_end: 'Step Completed',
-    delegation: 'Delegating',
-    memory_update: 'Memory Updated',
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle();
+    } else {
+      setIsExpanded(!isExpanded);
+    }
   };
-  return labels[type] || type;
-}
 
-/**
- * LiveEventCard - Compact card for individual agent events
- * AG-UI inspired styling with status indicators and expandable details
- */
-export function LiveEventCard({ event, isLatest = false }: LiveEventCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const hasDetails = event.details || event.metadata;
+  const getIcon = () => {
+    switch (event.type) {
+      case 'tool': return <Wrench className="w-3.5 h-3.5" />;
+      case 'message': return <MessageSquare className="w-3.5 h-3.5" />;
+      case 'state': return <Zap className="w-3.5 h-3.5" />;
+      case 'delegation': return <ArrowRight className="w-3.5 h-3.5" />;
+      case 'memory': return <Database className="w-3.5 h-3.5" />;
+      default: return <BrainCircuit className="w-3.5 h-3.5" />;
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (event.status) {
+      case 'running': return 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+      case 'success': return 'text-green-500 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+      case 'error': return 'text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+      default: return 'text-gray-500 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800';
+    }
+  };
+
+  const getStatusDot = () => {
+    switch (event.status) {
+      case 'running': return <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>;
+      case 'success': return <div className="h-2 w-2 rounded-full bg-green-500" />;
+      case 'error': return <div className="h-2 w-2 rounded-full bg-red-500" />;
+      default: return <div className="h-2 w-2 rounded-full bg-gray-300" />;
+    }
+  };
 
   return (
-    <div 
-      className={cn(
-        "p-3 rounded-lg border bg-white shadow-sm mb-2 transition-all duration-200",
-        isLatest && event.status === 'running' && "border-blue-300 shadow-blue-100 shadow-md",
-        !isLatest && "border-gray-200 hover:shadow-md hover:border-gray-300",
-        event.status === 'error' && "border-red-200 bg-red-50"
-      )}
-    >
-      <div className="flex items-start gap-3">
-        {/* Status dot with pulse for active */}
-        <div className="flex-shrink-0 mt-0.5">
+    <div className="group relative pl-4 pb-4 last:pb-0">
+      {/* Timeline line */}
+      <div className="absolute left-[7px] top-2 bottom-0 w-px bg-gray-200 dark:bg-gray-800 group-last:hidden" />
+
+      {/* Timeline dot */}
+      <div className="absolute left-0 top-2.5">
+        {getStatusDot()}
+      </div>
+
+      <div className={cn(
+        "rounded-lg border transition-all duration-200 hover:shadow-sm",
+        isExpanded ? "bg-[var(--bg-secondary)] border-[var(--border-color)]" : "bg-[var(--bg-primary)] border-transparent hover:border-[var(--border-color)]"
+      )}>
+        <button
+          onClick={handleToggle}
+          className="w-full text-left p-2 flex items-start gap-3"
+        >
           <div className={cn(
-            "w-2.5 h-2.5 rounded-full",
-            getStatusColor(event.status, isLatest),
-            event.status === 'running' && "animate-pulse"
-          )} />
-        </div>
-        
-        {/* Event content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            {/* Icon */}
-            <div className={cn(
-              "p-1 rounded",
-              event.status === 'running' && "text-blue-600 bg-blue-50",
-              event.status === 'done' && "text-green-600 bg-green-50",
-              event.status === 'error' && "text-red-600 bg-red-50"
-            )}>
-              {getEventIcon(event.type, event.status)}
+            "flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center border",
+            getStatusColor()
+          )}>
+            {getIcon()}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-[var(--text-primary)] truncate">
+                {event.title}
+              </span>
+              <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 tabular-nums">
+                {formatDistanceToNow(event.timestamp, { addSuffix: true })}
+              </span>
             </div>
-            
-            {/* Title */}
-            <span className="font-medium text-sm text-gray-900 truncate">
-              {event.toolName || event.title}
-            </span>
-            
-            {/* Status badge */}
-            {event.status === 'running' && (
-              <Loader2 className="w-3 h-3 text-blue-500 animate-spin flex-shrink-0" />
-            )}
-            {event.status === 'done' && (
-              <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
-            )}
-            {event.status === 'error' && (
-              <XCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
+
+            {event.description && (
+              <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
+                {event.description}
+              </p>
             )}
           </div>
-          
-          {/* Subtitle */}
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-gray-500">
-              {getEventLabel(event.type)}
-            </span>
-            <span className="text-xs text-gray-400">•</span>
-            <span className="text-xs text-gray-400">
-              {formatTimeAgo(event.timestamp)}
-            </span>
-            {event.agentName && (
-              <>
-                <span className="text-xs text-gray-400">•</span>
-                <span className="text-xs text-purple-600 font-medium">
-                  {event.agentName}
-                </span>
-              </>
-            )}
+        </button>
+
+        {isExpanded && event.metadata && (
+          <div className="px-2 pb-2 pl-11">
+            <div className="text-[10px] font-mono bg-[var(--bg-tertiary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto">
+              <pre>{JSON.stringify(event.metadata, null, 2)}</pre>
+            </div>
           </div>
-          
-          {/* Preview of details */}
-          {event.details && !isExpanded && (
-            <p className="text-xs text-gray-600 mt-1 truncate">
-              {event.details}
-            </p>
-          )}
-        </div>
-        
-        {/* Expand button */}
-        {hasDetails && (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
-          >
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
         )}
       </div>
-      
-      {/* Expanded details */}
-      {isExpanded && hasDetails && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          {event.details && (
-            <p className="text-xs text-gray-700 whitespace-pre-wrap">
-              {event.details}
-            </p>
-          )}
-          {event.metadata && (
-            <pre className="mt-2 text-[10px] text-gray-500 bg-gray-50 p-2 rounded overflow-x-auto">
-              {JSON.stringify(event.metadata, null, 2)}
-            </pre>
-          )}
-        </div>
-      )}
     </div>
   );
 }
-
-export default LiveEventCard;
