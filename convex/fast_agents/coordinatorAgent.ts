@@ -621,25 +621,19 @@ RETRY LIMITS:
 
 If limits exceeded, fall back to best judgment with available information.
 
-# SECTION TRACKING FOR ARTIFACTS (PER-SECTION LINKING)
+# SECTION TRACKING + CITATIONS (MUST FOLLOW)
 
-When building dossiers or research reports, call \`setActiveSection\` before researching or writing each section.
-This links artifacts (URLs, sources) to the correct section for the MediaRail display.
+## A) Section Tracking (MUST)
 
-## When to Call setActiveSection
+You MUST set the active section before calling any artifact-producing tool.
 
-BEFORE any tool calls for each section, call:
+Before any call to: \`linkupSearch\`, \`youtubeSearch\`, \`searchHashtag\`, \`searchTodaysFunding\`, \`enrichCompanyDossier\`, \`enrichFounderInfo\`, \`enrichInvestmentThesis\`, \`searchSecFilings\`, \`downloadSecFiling\`, or any other tool that returns URLs/sources, you MUST first call:
+
 \`\`\`
-setActiveSection({
-  messageId: scratchpad.messageId,
-  currentScratchpad: scratchpad,
-  sectionKey: "section_name",
-  runId: "<current_run_id>"
-})
+setActiveSection({ sectionKey: "<one of DOSSIER_SECTION_KEYS>", runId })
 \`\`\`
 
-## Section Keys (use these exact strings)
-
+**DOSSIER_SECTION_KEYS** (use these exact strings):
 - \`executive_summary\` - Executive summary / overview
 - \`company_overview\` - Company background and basics
 - \`market_landscape\` - Market analysis and positioning
@@ -652,16 +646,36 @@ setActiveSection({
 - \`open_questions\` - Unanswered questions
 - \`sources_and_media\` - Final sweep / catch-all
 
-## Example Flow
+If you do not know which section you are in, you MUST choose the closest matching sectionKey and call setActiveSection anyway.
+Do NOT assume prior section state is still correct.
 
-1. Call \`setActiveSection({ sectionKey: "market_landscape", ... })\`
-2. Call \`linkupSearch\` or other research tools
-3. Artifacts from those tools are linked to "market_landscape"
-4. Call \`setActiveSection({ sectionKey: "funding_signals", ... })\`
-5. Research funding with tools
-6. Artifacts linked to "funding_signals"
+## B) Fact Anchors (MUST)
 
-**IMPORTANT**: Always call setActiveSection when switching sections, even mid-research.
+Whenever you state a claim that should be supported by sources, you MUST attach a fact anchor immediately after the claim:
+
+\`{{fact:<sectionKey>:<short_slug>}}\`
+
+**Rules:**
+- sectionKey MUST match the most recent setActiveSection sectionKey
+- short_slug MUST be short, stable, lowercase, and underscore-separated
+- One claim can have one anchor; multiple claims require multiple anchors
+- Do NOT invent sources, but DO create anchors even if evidence linking is not yet available
+
+**Examples:**
+- "Tesla delivered ~X vehicles in Q3 2025. {{fact:company_overview:q3_2025_deliveries}}"
+- "Competitors include X, Y, and Z. {{fact:market_landscape:competitor_set}}"
+- "The company raised $50M in Series B. {{fact:funding_signals:series_b_raise}}"
+
+## C) Evidence Linking (When Available)
+
+If/when the tool \`linkEvidence\` becomes available in your toolset:
+- After producing a fact anchor, you SHOULD call \`linkEvidence({ runId, factId, artifactIds })\`
+  where factId is the exact string inside the \`{{fact:...}}\` anchor
+
+## D) Guardrails
+
+- NEVER call artifact-producing tools without setActiveSection first
+- If you realize you forgot setActiveSection, immediately call it, then continue (do not rewrite prior text)
 
 # CRITICAL BEHAVIOR RULES
 
