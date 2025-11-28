@@ -6,8 +6,9 @@
  */
 
 import React from 'react';
-import { Brain, Wrench, FileText, Loader2 } from 'lucide-react';
+import { Brain, Wrench, FileText, Loader2, Sparkles } from 'lucide-react';
 import type { ThinkingStep, ToolCall, Source } from './types';
+import { cn } from '@/lib/utils';
 
 interface LiveThinkingProps {
   thinkingSteps?: ThinkingStep[];
@@ -24,79 +25,75 @@ export function LiveThinking({
 }: LiveThinkingProps) {
   const hasContent = thinkingSteps.length > 0 || toolCalls.length > 0 || sources.length > 0;
 
-  if (!hasContent && !isStreaming) {
+  if (!isStreaming && !hasContent) {
+    return null;
+  }
+
+  // Determine the most recent activity to show
+  let activeIcon = <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-500" />;
+  let activeText = "Processing...";
+  let activeType: 'thinking' | 'tool' | 'source' | 'idle' = 'idle';
+
+  // Check sources first (usually last step of research)
+  if (sources.length > 0) {
+    const lastSource = sources[sources.length - 1];
+    activeIcon = <FileText className="h-3.5 w-3.5 text-blue-500" />;
+    activeText = `Found source: ${lastSource.title}`;
+    activeType = 'source';
+  }
+
+  // Check tool calls (usually intermediate)
+  if (toolCalls.length > 0) {
+    const lastTool = toolCalls[toolCalls.length - 1];
+    if (lastTool.status === 'running') {
+      activeIcon = <Wrench className="h-3.5 w-3.5 animate-pulse text-orange-500" />;
+      activeText = `Using tool: ${lastTool.toolName}...`;
+      activeType = 'tool';
+    }
+  }
+
+  // Check thinking steps (usually continuous)
+  if (thinkingSteps.length > 0) {
+    const lastStep = thinkingSteps[thinkingSteps.length - 1];
+    // If we have a very recent thinking step, it might be the most relevant
+    // But usually we prefer showing active tools if they are running
+    if (activeType !== 'tool') {
+      activeIcon = <Brain className="h-3.5 w-3.5 animate-pulse text-purple-500" />;
+      activeText = lastStep.type || "Reasoning...";
+      activeType = 'thinking';
+    }
+  }
+
+  // If just streaming but no specific data yet
+  if (isStreaming && !hasContent) {
+    activeIcon = <Sparkles className="h-3.5 w-3.5 animate-pulse text-purple-500" />;
+    activeText = "Agent is starting...";
+  }
+
+  // If finished streaming and has content, show "Completed" briefly or hide?
+  // The parent component usually handles hiding this when done, but let's be safe
+  if (!isStreaming && hasContent) {
     return null;
   }
 
   return (
-    <div className="live-thinking-container mt-3 space-y-2">
-      {/* Thinking Steps */}
-      {thinkingSteps.length > 0 && (
-        <div className="thinking-steps space-y-1">
-          {thinkingSteps.map((step, idx) => (
-            <div
-              key={idx}
-              className="thinking-step flex items-start gap-2 text-xs text-[var(--text-secondary)] bg-[var(--bg-tertiary)] rounded px-2 py-1.5"
-            >
-              <Brain className="h-3 w-3 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                {step.title && <div className="font-medium">{step.title}</div>}
-                {step.content && <div className="opacity-80">{step.content}</div>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Tool Calls */}
-      {toolCalls.length > 0 && (
-        <div className="tool-calls space-y-1">
-          {toolCalls.map((call, idx) => (
-            <div
-              key={idx}
-              className="tool-call flex items-start gap-2 text-xs text-[var(--text-secondary)] bg-[var(--bg-tertiary)] rounded px-2 py-1.5"
-            >
-              <Wrench className="h-3 w-3 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="font-medium">{call.name}</div>
-                {call.status && (
-                  <div className="opacity-80">
-                    {call.status === 'running' && <span className="text-blue-500">Running...</span>}
-                    {call.status === 'success' && <span className="text-green-500">Success</span>}
-                    {call.status === 'error' && <span className="text-red-500">Error</span>}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Sources */}
-      {sources.length > 0 && (
-        <div className="sources space-y-1">
-          {sources.map((source, idx) => (
-            <div
-              key={idx}
-              className="source flex items-start gap-2 text-xs text-[var(--text-secondary)] bg-[var(--bg-tertiary)] rounded px-2 py-1.5"
-            >
-              <FileText className="h-3 w-3 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="font-medium">{source.title || source.name}</div>
-                {source.snippet && <div className="opacity-80 line-clamp-2">{source.snippet}</div>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Streaming Indicator */}
-      {isStreaming && (
-        <div className="streaming-indicator flex items-center gap-2 text-xs text-[var(--text-secondary)] px-2 py-1">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>Processing...</span>
-        </div>
-      )}
+    <div className="mt-4 flex justify-center">
+      <div className={cn(
+        "inline-flex items-center gap-2.5 px-4 py-2 rounded-full",
+        "bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-color)] shadow-sm",
+        "text-xs font-medium text-[var(--text-secondary)]",
+        "animate-in fade-in slide-in-from-bottom-2 duration-300"
+      )}>
+        {activeIcon}
+        <span className="max-w-[200px] truncate">{activeText}</span>
+        {isStreaming && (
+          <div className="flex gap-0.5 ml-1">
+            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full animate-bounce"></span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
