@@ -22,12 +22,15 @@ import {
   Search,
   Filter,
   Image as ImageIcon,
+  Activity,
 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { extractMediaFromMessages, ExtractedAsset } from "../../../convex/lib/dossierHelpers";
 import { RichMediaSection } from "../FastAgentPanel/RichMediaSection";
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from "../FastAgentPanel/DocumentActionCard";
 import { extractMediaFromText, type ExtractedMedia } from "../FastAgentPanel/utils/mediaExtractor";
+import { LiveEventsPanel } from "../FastAgentPanel/LiveEventsPanel";
+import type { LiveEvent, LiveEventType, LiveEventStatus } from "../FastAgentPanel/LiveEventCard";
 import React, { useMemo, useState, useEffect } from "react";
 import ReactMarkdown from 'react-markdown';
 import LiveDossierDocument from "./LiveDossierDocument";
@@ -158,6 +161,10 @@ function WelcomeLandingInner({
   const [cacheHistory, setCacheHistory] = useState<Array<{ prompt: string; date: string; threadId: string; timestamp: number }>>([]);
   const [followUpMode, setFollowUpMode] = useState<"append" | "new">("append");
   const [followUpHistory, setFollowUpHistory] = useState<Array<{ prompt: string; mode: "append" | "new"; status: "queued" | "done"; timestamp: number }>>([]);
+
+  // Live Events Panel state
+  const [showEventsPanel, setShowEventsPanel] = useState(false);
+  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
 
   // Persist state changes
   useEffect(() => {
@@ -406,6 +413,57 @@ function WelcomeLandingInner({
     () => (latestContentMessage as any)?.parts?.filter?.((p: any) => p?.type?.startsWith?.("tool-")) ?? [],
     [latestContentMessage]
   );
+
+  // Extract live events from tool parts for the LiveEventsPanel
+  useEffect(() => {
+    if (!contentToolParts || contentToolParts.length === 0) {
+      return;
+    }
+
+    const events: LiveEvent[] = contentToolParts.map((part: any, index: number) => {
+      const isInvocation = part.type === 'tool-invocation';
+      const isResult = part.type === 'tool-result';
+      const isError = part.type === 'tool-error' || (isResult && part.output?.type === 'error-text');
+      
+      let eventType: LiveEventType = 'tool_start';
+      let status: LiveEventStatus = 'pending';
+      
+      if (isInvocation) {
+        eventType = 'tool_start';
+        status = 'running';
+      } else if (isResult) {
+        eventType = 'tool_end';
+        status = isError ? 'error' : 'success';
+      } else if (isError) {
+        eventType = 'tool_error';
+        status = 'error';
+      }
+
+      const toolName = part.toolName || part.name || 'unknown';
+      
+      // Generate a more descriptive title
+      let title = toolName;
+      if (toolName.toLowerCase().includes('search')) {
+        title = isResult ? 'Search completed' : 'Searching...';
+      } else if (toolName.toLowerCase().includes('delegate')) {
+        title = isResult ? 'Agent completed' : 'Delegating to agent...';
+      } else if (toolName.toLowerCase().includes('memory')) {
+        title = isResult ? 'Memory updated' : 'Accessing memory...';
+      }
+
+      return {
+        id: part.toolCallId || `event-${index}-${Date.now()}`,
+        type: eventType,
+        status,
+        title,
+        toolName,
+        details: part.args ? `Args: ${JSON.stringify(part.args).slice(0, 100)}...` : undefined,
+        timestamp: Date.now() - (contentToolParts.length - index) * 1000, // Approximate timestamps
+      };
+    });
+
+    setLiveEvents(events);
+  }, [contentToolParts]);
 
   const reasoningText = useMemo(
     () =>
@@ -1241,11 +1299,32 @@ function WelcomeLandingInner({
               <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <Filter className="w-4 h-4" />
               </button>
+              <div className="h-4 w-px bg-gray-200"></div>
+              {/* Live Events Toggle */}
+              <button
+                onClick={() => setShowEventsPanel(!showEventsPanel)}
+                className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  showEventsPanel
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                }`}
+                title="Toggle Live Events"
+              >
+                <Activity className="w-4 h-4" />
+                {liveEvents.filter(e => e.status === 'running').length > 0 && (
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    {liveEvents.filter(e => e.status === 'running').length}
+                  </span>
+                )}
+              </button>
             </div>
           </header>
 
-          {/* SCROLLABLE CANVAS */}
-          <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+          {/* CONTENT + EVENTS PANEL CONTAINER */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* SCROLLABLE CANVAS */}
+            <main className="flex-1 overflow-y-auto custom-scrollbar relative">
 
             {/* CONDITIONAL CONTENT: HERO vs ACTIVE */}
             {showHero ? (
@@ -1550,7 +1629,19 @@ function WelcomeLandingInner({
                 </div>
               </div>
             )}
-          </main>
+            </main>
+
+            {/* LIVE EVENTS PANEL */}
+            {showEventsPanel && (
+              <div className="w-80 flex-shrink-0 border-l border-gray-200 bg-white">
+                <LiveEventsPanel
+                  events={liveEvents}
+                  onClose={() => setShowEventsPanel(false)}
+                  onClear={() => setLiveEvents([])}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>
