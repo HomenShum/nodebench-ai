@@ -198,6 +198,72 @@ User Query
 
 ---
 
+## Knowledge Graph System
+
+The platform includes a **claim-based Knowledge Graph** for entity analysis, clustering, and outlier detection:
+
+### Core Concepts
+
+- **Claim Graphs**: Represent knowledge as SPO (Subject-Predicate-Object) triples with provenance
+- **Graph Fingerprints**: Semantic (embedding) and structural (WL hash) fingerprints for similarity
+- **Clustering**: HDBSCAN for natural grouping with automatic outlier detection
+- **Novelty Detection**: One-Class SVM "soft hull" for identifying unusual entities
+
+### Tables
+
+| Table | Purpose |
+|-------|---------|
+| `knowledgeGraphs` | Top-level graph container with fingerprints |
+| `graphClaims` | Individual claims (SPO triples) with embeddings |
+| `graphEdges` | Relations between claims (supports, contradicts, etc.) |
+| `graphClusters` | HDBSCAN clustering results with centroids |
+
+### Tools
+
+| Tool | Purpose |
+|------|---------|
+| `buildKnowledgeGraph` | Extract claims from entity/theme/artifact |
+| `fingerprintKnowledgeGraph` | Generate semantic + structural fingerprints |
+| `groupAndDetectOutliers` | Run HDBSCAN clustering, mark odd-ones-out |
+| `checkNovelty` | Test if new graph fits cluster support region |
+| `explainSimilarity` | Compare two graphs with shared/different claims |
+
+### Boolean Outputs
+
+All clustering results use **boolean flags** (no magic scores):
+- `isOddOneOut` - HDBSCAN noise label
+- `isInClusterSupport` - One-Class SVM inlier/outlier
+- `clusterId` - Assigned cluster (null = outlier)
+
+---
+
+## AG-UI Live Events
+
+Modern agentic UI with real-time event streaming:
+
+### Components
+
+- **LiveEventCard** - Individual event card with status, icons, timeline
+- **LiveEventsPanel** - Filterable sidebar with auto-scroll
+
+### Event Types
+
+| Type | Description |
+|------|-------------|
+| `tool_start` / `tool_end` | Tool execution lifecycle |
+| `agent_spawn` / `agent_complete` | Sub-agent delegation |
+| `memory_read` / `memory_write` | GAM operations |
+| `thinking` | Agent reasoning steps |
+
+### Features
+
+- Status indicators (running=pulse, success=green, error=red)
+- Filter by category (All / Tools / Agents / Memory)
+- Auto-scroll with manual override
+- Timeline connector visualization
+
+---
+
 ## Tech Stack
 
 - **Frontend**: React, TypeScript, Vite, TailwindCSS

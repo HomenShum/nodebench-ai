@@ -1,131 +1,255 @@
-import React, { useState } from 'react';
-import {
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Clock,
-  ChevronDown,
-  ChevronRight,
-  Wrench,
-  MessageSquare,
-  BrainCircuit,
-  Database,
+// src/components/FastAgentPanel/LiveEventCard.tsx
+// Modern AG-UI card component for displaying live agent events
+
+import React from 'react';
+import { 
+  Wrench, 
+  CheckCircle2, 
+  XCircle, 
+  Bot, 
+  Loader2, 
   Zap,
-  ArrowRight
+  Search,
+  FileText,
+  Database,
+  Globe,
+  Brain
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
 
-export type EventType = 'tool' | 'message' | 'state' | 'delegation' | 'memory' | 'other';
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type LiveEventType = 
+  | 'tool_start' 
+  | 'tool_end' 
+  | 'tool_error'
+  | 'agent_spawn' 
+  | 'agent_complete'
+  | 'step_complete'
+  | 'thinking'
+  | 'memory_read'
+  | 'memory_write';
+
+export type LiveEventStatus = 'running' | 'success' | 'error' | 'pending';
 
 export interface LiveEvent {
   id: string;
-  type: EventType;
+  type: LiveEventType;
+  status: LiveEventStatus;
   title: string;
-  description?: string;
-  status: 'running' | 'success' | 'error' | 'pending';
-  timestamp: Date;
-  metadata?: Record<string, any>;
-  agentRole?: string;
+  details?: string;
+  toolName?: string;
+  agentName?: string;
+  timestamp: number;
+  duration?: number; // ms
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getEventIcon(event: LiveEvent) {
+  const iconClass = "w-3.5 h-3.5";
+  
+  switch (event.type) {
+    case 'tool_start':
+    case 'tool_end':
+    case 'tool_error':
+      // Try to guess icon based on tool name
+      if (event.toolName?.toLowerCase().includes('search')) {
+        return <Search className={iconClass} />;
+      }
+      if (event.toolName?.toLowerCase().includes('document')) {
+        return <FileText className={iconClass} />;
+      }
+      if (event.toolName?.toLowerCase().includes('memory')) {
+        return <Database className={iconClass} />;
+      }
+      if (event.toolName?.toLowerCase().includes('web') || event.toolName?.toLowerCase().includes('linkup')) {
+        return <Globe className={iconClass} />;
+      }
+      return <Wrench className={iconClass} />;
+    
+    case 'agent_spawn':
+    case 'agent_complete':
+      return <Bot className={iconClass} />;
+    
+    case 'thinking':
+      return <Brain className={iconClass} />;
+    
+    case 'memory_read':
+    case 'memory_write':
+      return <Database className={iconClass} />;
+    
+    case 'step_complete':
+      return <Zap className={iconClass} />;
+    
+    default:
+      return <Zap className={iconClass} />;
+  }
+}
+
+function getStatusStyles(status: LiveEventStatus) {
+  switch (status) {
+    case 'running':
+      return {
+        bg: 'bg-blue-50 dark:bg-blue-900/20',
+        border: 'border-blue-200 dark:border-blue-800',
+        text: 'text-blue-700 dark:text-blue-400',
+        icon: 'text-blue-500',
+        dot: 'bg-blue-500',
+      };
+    case 'success':
+      return {
+        bg: 'bg-green-50 dark:bg-green-900/20',
+        border: 'border-green-200 dark:border-green-800',
+        text: 'text-green-700 dark:text-green-400',
+        icon: 'text-green-500',
+        dot: 'bg-green-500',
+      };
+    case 'error':
+      return {
+        bg: 'bg-red-50 dark:bg-red-900/20',
+        border: 'border-red-200 dark:border-red-800',
+        text: 'text-red-700 dark:text-red-400',
+        icon: 'text-red-500',
+        dot: 'bg-red-500',
+      };
+    case 'pending':
+    default:
+      return {
+        bg: 'bg-gray-50 dark:bg-gray-800/50',
+        border: 'border-gray-200 dark:border-gray-700',
+        text: 'text-gray-600 dark:text-gray-400',
+        icon: 'text-gray-400',
+        dot: 'bg-gray-400',
+      };
+  }
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+}
+
+function formatTimestamp(ts: number): string {
+  const date = new Date(ts);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface LiveEventCardProps {
   event: LiveEvent;
-  isExpanded?: boolean;
-  onToggle?: () => void;
+  showTimeline?: boolean;
+  isLast?: boolean;
 }
 
-export function LiveEventCard({ event, isExpanded: defaultExpanded = false, onToggle }: LiveEventCardProps) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-
-  const handleToggle = () => {
-    if (onToggle) {
-      onToggle();
-    } else {
-      setIsExpanded(!isExpanded);
-    }
-  };
-
-  const getIcon = () => {
-    switch (event.type) {
-      case 'tool': return <Wrench className="w-3.5 h-3.5" />;
-      case 'message': return <MessageSquare className="w-3.5 h-3.5" />;
-      case 'state': return <Zap className="w-3.5 h-3.5" />;
-      case 'delegation': return <ArrowRight className="w-3.5 h-3.5" />;
-      case 'memory': return <Database className="w-3.5 h-3.5" />;
-      default: return <BrainCircuit className="w-3.5 h-3.5" />;
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (event.status) {
-      case 'running': return 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
-      case 'success': return 'text-green-500 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
-      case 'error': return 'text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
-      default: return 'text-gray-500 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800';
-    }
-  };
-
-  const getStatusDot = () => {
-    switch (event.status) {
-      case 'running': return <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>;
-      case 'success': return <div className="h-2 w-2 rounded-full bg-green-500" />;
-      case 'error': return <div className="h-2 w-2 rounded-full bg-red-500" />;
-      default: return <div className="h-2 w-2 rounded-full bg-gray-300" />;
-    }
-  };
+export function LiveEventCard({ event, showTimeline = true, isLast = false }: LiveEventCardProps) {
+  const styles = getStatusStyles(event.status);
+  const icon = getEventIcon(event);
 
   return (
-    <div className="group relative pl-4 pb-4 last:pb-0">
-      {/* Timeline line */}
-      <div className="absolute left-[7px] top-2 bottom-0 w-px bg-gray-200 dark:bg-gray-800 group-last:hidden" />
-
-      {/* Timeline dot */}
-      <div className="absolute left-0 top-2.5">
-        {getStatusDot()}
-      </div>
-
-      <div className={cn(
-        "rounded-lg border transition-all duration-200 hover:shadow-sm",
-        isExpanded ? "bg-[var(--bg-secondary)] border-[var(--border-color)]" : "bg-[var(--bg-primary)] border-transparent hover:border-[var(--border-color)]"
-      )}>
-        <button
-          onClick={handleToggle}
-          className="w-full text-left p-2 flex items-start gap-3"
-        >
+    <div className={cn(
+      "relative",
+      showTimeline && "pl-6"
+    )}>
+      {/* Timeline connector */}
+      {showTimeline && (
+        <>
+          {/* Vertical line */}
+          {!isLast && (
+            <div className="absolute left-[9px] top-5 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
+          )}
+          {/* Status dot */}
           <div className={cn(
-            "flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center border",
-            getStatusColor()
+            "absolute left-1 top-2 w-4 h-4 rounded-full border-2 flex items-center justify-center bg-white dark:bg-gray-900 z-10",
+            event.status === 'running' && "border-blue-500 animate-pulse",
+            event.status === 'success' && "border-green-500",
+            event.status === 'error' && "border-red-500",
+            event.status === 'pending' && "border-gray-400"
           )}>
-            {getIcon()}
+            <div className={cn("w-1.5 h-1.5 rounded-full", styles.dot)} />
           </div>
+        </>
+      )}
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-[var(--text-primary)] truncate">
-                {event.title}
-              </span>
-              <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 tabular-nums">
-                {formatDistanceToNow(event.timestamp, { addSuffix: true })}
-              </span>
-            </div>
-
-            {event.description && (
-              <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
-                {event.description}
-              </p>
+      {/* Card */}
+      <div className={cn(
+        "mb-2 rounded-lg border p-2.5 transition-all duration-200",
+        "hover:shadow-sm",
+        styles.bg,
+        styles.border,
+        event.status === 'running' && "animate-in fade-in slide-in-from-left-2 duration-300"
+      )}>
+        {/* Header row */}
+        <div className="flex items-center gap-2">
+          {/* Icon */}
+          <div className={cn(
+            "flex-shrink-0 p-1 rounded",
+            styles.bg,
+            styles.icon
+          )}>
+            {event.status === 'running' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : event.status === 'success' ? (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            ) : event.status === 'error' ? (
+              <XCircle className="w-3.5 h-3.5" />
+            ) : (
+              icon
             )}
           </div>
-        </button>
 
-        {isExpanded && event.metadata && (
-          <div className="px-2 pb-2 pl-11">
-            <div className="text-[10px] font-mono bg-[var(--bg-tertiary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto">
-              <pre>{JSON.stringify(event.metadata, null, 2)}</pre>
+          {/* Title */}
+          <div className="flex-1 min-w-0">
+            <div className={cn(
+              "text-xs font-medium truncate",
+              styles.text
+            )}>
+              {event.title}
             </div>
+            {event.toolName && (
+              <div className="text-[10px] font-mono text-gray-500 dark:text-gray-400 truncate">
+                {event.toolName}
+              </div>
+            )}
+          </div>
+
+          {/* Status badge / Duration */}
+          <div className="flex-shrink-0 flex items-center gap-1.5">
+            {event.duration !== undefined && event.status === 'success' && (
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                {formatDuration(event.duration)}
+              </span>
+            )}
+            {event.status === 'running' && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium">
+                Running
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Details (if any) */}
+        {event.details && (
+          <div className="mt-1.5 text-[10px] text-gray-600 dark:text-gray-400 line-clamp-2">
+            {event.details}
           </div>
         )}
+
+        {/* Timestamp */}
+        <div className="mt-1 text-[9px] text-gray-400 dark:text-gray-500">
+          {formatTimestamp(event.timestamp)}
+        </div>
       </div>
     </div>
   );
 }
+
+export default LiveEventCard;

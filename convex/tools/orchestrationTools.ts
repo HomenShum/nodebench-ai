@@ -11,7 +11,7 @@ import { GoogleGenAI, createUserContent, Type } from "@google/genai";
 // Capabilities version - bump when tools change
 // ═══════════════════════════════════════════════════════════════════════════
 
-const CAPABILITIES_VERSION = "v1.1";
+const CAPABILITIES_VERSION = "v1.2"; // Added KG + Clustering tools
 const CAPABILITIES_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -90,6 +90,16 @@ Result includes version + timestamp for caching validation.`,
         { name: "compactContext", purpose: "Compress tool output into structured format", category: "context", writesMemory: false },
         { name: "markMemoryUpdated", purpose: "Track that entity was updated (for dedupe)", category: "context", writesMemory: false },
         { name: "isMemoryUpdated", purpose: "Check if entity was already updated", category: "context", writesMemory: false },
+        
+        // Knowledge Graph Tools (NEW)
+        { name: "buildKnowledgeGraph", purpose: "Build a claim graph from entity/theme/artifact with SPO triples + provenance", category: "kg", writesMemory: true, writes: "knowledgeGraphs" },
+        { name: "fingerprintKnowledgeGraph", purpose: "Generate semantic + structural fingerprints for a graph (required for clustering)", category: "kg", writesMemory: true, writes: "knowledgeGraphs" },
+        { name: "getGraphSummary", purpose: "Get overview of a knowledge graph (claims, edges, clustering status)", category: "kg", writesMemory: false },
+        
+        // Clustering Tools (NEW)
+        { name: "groupAndDetectOutliers", purpose: "Run HDBSCAN clustering on graphs. Returns clusterId + isOddOneOut (boolean)", category: "clustering", writesMemory: true, writes: "graphClusters" },
+        { name: "checkNovelty", purpose: "Check if graph is inlier/outlier vs clusters (One-Class SVM soft hull)", category: "clustering", writesMemory: true, writes: "knowledgeGraphs" },
+        { name: "explainSimilarity", purpose: "Compare two graphs and explain shared/different claims + structure", category: "clustering", writesMemory: false },
       ],
 
       delegationAgents: [

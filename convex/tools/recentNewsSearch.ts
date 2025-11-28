@@ -6,6 +6,62 @@ import { v } from "convex/values";
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
+// ═══════════════════════════════════════════════════════════════════════════
+// VALIDATORS - Extracted to avoid "Type instantiation is excessively deep"
+// ═══════════════════════════════════════════════════════════════════════════
+
+const articleBaseValidator = {
+  id: v.string(),
+  headline: v.string(),
+  source: v.optional(v.string()),
+  date: v.optional(v.string()),
+  snippet: v.string(),
+  url: v.optional(v.string()),
+  credibility: v.optional(v.string()),
+};
+
+const articleObjectValidator = v.object(articleBaseValidator);
+const articleArrayValidator = v.array(articleObjectValidator);
+
+const validatedArticleValidator = v.object({
+  ...articleBaseValidator,
+  validationResult: v.union(v.literal("PASS"), v.literal("FAIL")),
+  reasoning: v.string(),
+});
+
+const validatedArticleArrayValidator = v.array(validatedArticleValidator);
+
+const confirmedNewsValidator = v.object({
+  id: v.string(),
+  headline: v.string(),
+  source: v.optional(v.string()),
+  date: v.optional(v.string()),
+  url: v.optional(v.string()),
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface ArticleBase {
+  id: string;
+  headline: string;
+  source?: string;
+  date?: string;
+  snippet: string;
+  url?: string;
+  credibility?: string;
+}
+
+interface ValidatedArticle extends ArticleBase {
+  validationResult: "PASS" | "FAIL";
+  reasoning: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
 /**
  * Search for recent news articles by topic
  * This is a placeholder - in production, integrate with real news APIs
@@ -16,15 +72,7 @@ export const searchNews = internalAction({
     newsQuery: v.string(),
     conversationContext: v.optional(v.string()),
   },
-  returns: v.array(v.object({
-    id: v.string(),
-    headline: v.string(),
-    source: v.optional(v.string()),
-    date: v.optional(v.string()),
-    snippet: v.string(),
-    url: v.optional(v.string()),
-    credibility: v.optional(v.string()),
-  })),
+  returns: articleArrayValidator,
   handler: async (ctx, args) => {
     console.log(`[searchNews] Searching for: ${args.newsQuery}`);
 
@@ -151,33 +199,16 @@ export const validateNewsMatches = internalAction({
   args: {
     userQuery: v.string(),
     conversationContext: v.optional(v.string()),
-    articles: v.array(v.object({
-      id: v.string(),
-      headline: v.string(),
-      source: v.optional(v.string()),
-      date: v.optional(v.string()),
-      snippet: v.string(),
-      url: v.optional(v.string()),
-      credibility: v.optional(v.string()),
-    })),
+    articles: articleArrayValidator,
   },
-  returns: v.array(v.object({
-    id: v.string(),
-    headline: v.string(),
-    source: v.optional(v.string()),
-    date: v.optional(v.string()),
-    snippet: v.string(),
-    url: v.optional(v.string()),
-    credibility: v.optional(v.string()),
-    validationResult: v.union(v.literal("PASS"), v.literal("FAIL")),
-    reasoning: v.string(),
-  })),
+  returns: validatedArticleArrayValidator,
   handler: async (ctx, args) => {
-    console.log(`[validateNewsMatches] Validating ${args.articles.length} articles for query: "${args.userQuery}"`);
+    const articles = args.articles as ArticleBase[];
+    console.log(`[validateNewsMatches] Validating ${articles.length} articles for query: "${args.userQuery}"`);
 
     try {
       // Build context-aware validation prompt
-      const contextSection = args.conversationContext 
+      const contextSection = args.conversationContext
         ? `\n\nConversation Context:\n${args.conversationContext}\n\nUse this context to determine which articles are most relevant to the user's information needs.`
         : '';
 
@@ -186,7 +217,7 @@ export const validateNewsMatches = internalAction({
 User Query: "${args.userQuery}"${contextSection}
 
 Articles to validate:
-${args.articles.map((a, i) => `${i + 1}. ${a.headline}
+${articles.map((a: ArticleBase, i: number) => `${i + 1}. ${a.headline}
    Source: ${a.source || 'Unknown'}
    Date: ${a.date || 'Unknown'}
    Snippet: ${a.snippet}
@@ -235,16 +266,16 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
       const validationResults = JSON.parse(result.text);
 
       // Merge validation results with article data
-      const validatedArticles = args.articles.map(article => {
-        const validation = validationResults.find((v: any) => v.id === article.id);
+      const validatedArticles: ValidatedArticle[] = articles.map((article: ArticleBase) => {
+        const validation = validationResults.find((v: { id: string }) => v.id === article.id);
         return {
           ...article,
-          validationResult: validation?.validationResult || "FAIL" as "PASS" | "FAIL",
+          validationResult: (validation?.validationResult || "FAIL") as "PASS" | "FAIL",
           reasoning: validation?.reasoning || "No validation result",
         };
       });
 
-      const passCount = validatedArticles.filter(a => a.validationResult === "PASS").length;
+      const passCount = validatedArticles.filter((a: ValidatedArticle) => a.validationResult === "PASS").length;
       console.log(`[validateNewsMatches] Validation complete: ${passCount} PASS, ${validatedArticles.length - passCount} FAIL`);
 
       return validatedArticles;
@@ -252,9 +283,9 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
     } catch (error) {
       console.error("[validateNewsMatches] Error:", error);
       // If validation fails, mark all as FAIL
-      return args.articles.map(article => ({
+      return articles.map((article: ArticleBase): ValidatedArticle => ({
         ...article,
-        validationResult: "FAIL" as "PASS" | "FAIL",
+        validationResult: "FAIL",
         reasoning: "Validation error occurred",
       }));
     }
@@ -269,20 +300,11 @@ export const getConfirmedNewsTopic = internalQuery({
     threadId: v.string(),
     newsQuery: v.string(),
   },
-  returns: v.union(
-    v.object({
-      id: v.string(),
-      headline: v.string(),
-      source: v.optional(v.string()),
-      date: v.optional(v.string()),
-      url: v.optional(v.string()),
-    }),
-    v.null()
-  ),
+  returns: v.union(confirmedNewsValidator, v.null()),
   handler: async (ctx, args) => {
     const confirmed = await ctx.db
       .query("confirmedNewsTopics")
-      .withIndex("by_thread_and_query", (q) =>
+      .withIndex("by_thread_and_query", (q: any) =>
         q.eq("threadId", args.threadId).eq("newsQuery", args.newsQuery.toLowerCase())
       )
       .first();
@@ -319,7 +341,7 @@ export const confirmNewsTopic = internalMutation({
     // Check if already confirmed
     const existing = await ctx.db
       .query("confirmedNewsTopics")
-      .withIndex("by_thread_and_query", (q) =>
+      .withIndex("by_thread_and_query", (q: any) =>
         q.eq("threadId", args.threadId).eq("newsQuery", args.newsQuery.toLowerCase())
       )
       .first();

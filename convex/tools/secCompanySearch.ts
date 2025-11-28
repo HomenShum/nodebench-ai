@@ -6,6 +6,46 @@ import { v } from "convex/values";
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
+// ═══════════════════════════════════════════════════════════════════════════
+// VALIDATORS - Extracted to avoid "Type instantiation is excessively deep"
+// ═══════════════════════════════════════════════════════════════════════════
+
+const companyBaseValidator = {
+  cik: v.string(),
+  name: v.string(),
+  ticker: v.optional(v.string()),
+};
+
+const companyObjectValidator = v.object(companyBaseValidator);
+const companyArrayValidator = v.array(companyObjectValidator);
+
+const validatedCompanyValidator = v.object({
+  ...companyBaseValidator,
+  validationResult: v.union(v.literal("PASS"), v.literal("FAIL")),
+  reasoning: v.string(),
+});
+
+const validatedCompanyArrayValidator = v.array(validatedCompanyValidator);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface CompanyBase {
+  cik: string;
+  name: string;
+  ticker?: string;
+}
+
+interface ValidatedCompany extends CompanyBase {
+  validationResult: "PASS" | "FAIL";
+  reasoning: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
 /**
  * Search for companies by name using SEC company tickers JSON
  * Returns multiple potential matches for disambiguation
@@ -14,11 +54,7 @@ export const searchCompanies = internalAction({
   args: {
     companyName: v.string(),
   },
-  returns: v.array(v.object({
-    cik: v.string(),
-    name: v.string(),
-    ticker: v.optional(v.string()),
-  })),
+  returns: companyArrayValidator,
   handler: async (ctx, args) => {
     console.log(`[searchCompanies] Searching for: ${args.companyName}`);
 
@@ -82,21 +118,12 @@ export const searchCompanies = internalAction({
 export const validateCompanyMatches = internalAction({
   args: {
     userQuery: v.string(),
-    companies: v.array(v.object({
-      cik: v.string(),
-      name: v.string(),
-      ticker: v.optional(v.string()),
-    })),
+    companies: companyArrayValidator,
   },
-  returns: v.array(v.object({
-    cik: v.string(),
-    name: v.string(),
-    ticker: v.optional(v.string()),
-    validationResult: v.union(v.literal("PASS"), v.literal("FAIL")),
-    reasoning: v.string(),
-  })),
+  returns: validatedCompanyArrayValidator,
   handler: async (ctx, args) => {
-    console.log(`[validateCompanyMatches] Validating ${args.companies.length} companies for query: "${args.userQuery}"`);
+    const companies = args.companies as CompanyBase[];
+    console.log(`[validateCompanyMatches] Validating ${companies.length} companies for query: "${args.userQuery}"`);
 
     try {
       // Use LLM to validate each company match
@@ -105,7 +132,7 @@ export const validateCompanyMatches = internalAction({
 User Query: "${args.userQuery}"
 
 Companies to validate:
-${args.companies.map((c, i) => `${i + 1}. ${c.name} (${c.ticker || 'No ticker'}) - CIK: ${c.cik}`).join('\n')}
+${companies.map((c: CompanyBase, i: number) => `${i + 1}. ${c.name} (${c.ticker || 'No ticker'}) - CIK: ${c.cik}`).join('\n')}
 
 For each company, determine if it is a PASS or FAIL based on semantic similarity to the user's query.
 
@@ -145,16 +172,16 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
       const validationResults = JSON.parse(result.text);
 
       // Merge validation results with company data
-      const validatedCompanies = args.companies.map(company => {
-        const validation = validationResults.find((v: any) => v.cik === company.cik);
+      const validatedCompanies: ValidatedCompany[] = companies.map((company: CompanyBase) => {
+        const validation = validationResults.find((v: { cik: string }) => v.cik === company.cik);
         return {
           ...company,
-          validationResult: validation?.validationResult || "FAIL" as "PASS" | "FAIL",
+          validationResult: (validation?.validationResult || "FAIL") as "PASS" | "FAIL",
           reasoning: validation?.reasoning || "No validation result",
         };
       });
 
-      const passCount = validatedCompanies.filter(c => c.validationResult === "PASS").length;
+      const passCount = validatedCompanies.filter((c: ValidatedCompany) => c.validationResult === "PASS").length;
       console.log(`[validateCompanyMatches] Validation complete: ${passCount} PASS, ${validatedCompanies.length - passCount} FAIL`);
 
       return validatedCompanies;
@@ -162,9 +189,9 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
     } catch (error) {
       console.error("[validateCompanyMatches] Error:", error);
       // If validation fails, mark all as FAIL
-      return args.companies.map(company => ({
+      return companies.map((company: CompanyBase): ValidatedCompany => ({
         ...company,
-        validationResult: "FAIL" as "PASS" | "FAIL",
+        validationResult: "FAIL",
         reasoning: "Validation error occurred",
       }));
     }
@@ -179,18 +206,11 @@ export const getConfirmedCompany = internalQuery({
     threadId: v.string(),
     companyName: v.string(),
   },
-  returns: v.union(
-    v.object({
-      cik: v.string(),
-      name: v.string(),
-      ticker: v.optional(v.string()),
-    }),
-    v.null()
-  ),
+  returns: v.union(companyObjectValidator, v.null()),
   handler: async (ctx, args) => {
     const confirmed = await ctx.db
       .query("confirmedCompanies")
-      .withIndex("by_thread_and_name", (q) =>
+      .withIndex("by_thread_and_name", (q: any) =>
         q.eq("threadId", args.threadId).eq("companyName", args.companyName.toLowerCase())
       )
       .first();
@@ -223,7 +243,7 @@ export const confirmCompany = internalMutation({
     // Check if already confirmed
     const existing = await ctx.db
       .query("confirmedCompanies")
-      .withIndex("by_thread_and_name", (q) =>
+      .withIndex("by_thread_and_name", (q: any) =>
         q.eq("threadId", args.threadId).eq("companyName", args.companyName.toLowerCase())
       )
       .first();

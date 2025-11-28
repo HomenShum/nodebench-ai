@@ -156,6 +156,7 @@ import type * as http_mcpMemory from "../http/mcpMemory.js";
 import type * as http_mcpPlans from "../http/mcpPlans.js";
 import type * as humanInTheLoop from "../humanInTheLoop.js";
 import type * as integrations from "../integrations.js";
+import type * as knowledgeGraph from "../knowledgeGraph.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_dossierHelpers from "../lib/dossierHelpers.js";
 import type * as lib_entityResolution from "../lib/entityResolution.js";
@@ -203,6 +204,7 @@ import type * as tags_actions from "../tags_actions.js";
 import type * as tasks from "../tasks.js";
 import type * as testHelpers from "../testHelpers.js";
 import type * as tests_fastAgentPanelStreamingTests from "../tests/fastAgentPanelStreamingTests.js";
+import type * as tools_clusteringTools from "../tools/clusteringTools.js";
 import type * as tools_confirmCompanySelection from "../tools/confirmCompanySelection.js";
 import type * as tools_confirmEventSelection from "../tools/confirmEventSelection.js";
 import type * as tools_confirmNewsSelection from "../tools/confirmNewsSelection.js";
@@ -221,6 +223,7 @@ import type * as tools_fundingResearchTools from "../tools/fundingResearchTools.
 import type * as tools_geminiFileSearch from "../tools/geminiFileSearch.js";
 import type * as tools_hashtagSearchTools from "../tools/hashtagSearchTools.js";
 import type * as tools_humanInputTools from "../tools/humanInputTools.js";
+import type * as tools_knowledgeGraphTools from "../tools/knowledgeGraphTools.js";
 import type * as tools_linkupSearch from "../tools/linkupSearch.js";
 import type * as tools_mediaTools from "../tools/mediaTools.js";
 import type * as tools_newsletterTools from "../tools/newsletterTools.js";
@@ -398,6 +401,7 @@ declare const fullApi: ApiFromModules<{
   "http/mcpPlans": typeof http_mcpPlans;
   humanInTheLoop: typeof humanInTheLoop;
   integrations: typeof integrations;
+  knowledgeGraph: typeof knowledgeGraph;
   "lib/crypto": typeof lib_crypto;
   "lib/dossierHelpers": typeof lib_dossierHelpers;
   "lib/entityResolution": typeof lib_entityResolution;
@@ -445,6 +449,7 @@ declare const fullApi: ApiFromModules<{
   tasks: typeof tasks;
   testHelpers: typeof testHelpers;
   "tests/fastAgentPanelStreamingTests": typeof tests_fastAgentPanelStreamingTests;
+  "tools/clusteringTools": typeof tools_clusteringTools;
   "tools/confirmCompanySelection": typeof tools_confirmCompanySelection;
   "tools/confirmEventSelection": typeof tools_confirmEventSelection;
   "tools/confirmNewsSelection": typeof tools_confirmNewsSelection;
@@ -463,6 +468,7 @@ declare const fullApi: ApiFromModules<{
   "tools/geminiFileSearch": typeof tools_geminiFileSearch;
   "tools/hashtagSearchTools": typeof tools_hashtagSearchTools;
   "tools/humanInputTools": typeof tools_humanInputTools;
+  "tools/knowledgeGraphTools": typeof tools_knowledgeGraphTools;
   "tools/linkupSearch": typeof tools_linkupSearch;
   "tools/mediaTools": typeof tools_mediaTools;
   "tools/newsletterTools": typeof tools_newsletterTools;

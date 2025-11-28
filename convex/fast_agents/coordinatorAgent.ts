@@ -77,6 +77,20 @@ import {
 import { askHuman } from "../tools/humanInputTools";
 import { externalOrchestratorTool } from "./tools/externalOrchestratorTools";
 
+// Import Knowledge Graph tools (claim-based graphs for entity/theme research)
+import {
+  buildKnowledgeGraph,
+  fingerprintKnowledgeGraph,
+  getGraphSummary,
+} from "../tools/knowledgeGraphTools";
+
+// Import Clustering tools (HDBSCAN + One-Class SVM)
+import {
+  groupAndDetectOutliers,
+  checkNovelty,
+  explainSimilarity,
+} from "../tools/clusteringTools";
+
 export const DEFAULT_MODEL = "gpt-5-chat-latest";
 
 // Note: Subagent definitions and delegation tools have been moved to:
@@ -552,6 +566,18 @@ Structure your responses clearly:
     enrichInvestmentThesis,
     enrichPatentsAndResearch,
     enrichCompanyDossier,
+    
+    // === KNOWLEDGE GRAPH TOOLS ===
+    // Build claim-based graphs from entities/themes/artifacts
+    buildKnowledgeGraph,
+    fingerprintKnowledgeGraph,
+    getGraphSummary,
+    
+    // === CLUSTERING TOOLS ===
+    // Group entities and detect outliers (boolean outputs)
+    groupAndDetectOutliers,
+    checkNovelty,
+    explainSimilarity,
   },
 
   // Allow up to 25 steps for complex orchestration workflows
