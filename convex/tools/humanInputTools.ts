@@ -30,6 +30,12 @@ export const askHuman = createTool({
     }),
 
     handler: async (ctx: any, args) => {
+        // Get userId from agent tool context (required for internal mutation)
+        const userId = ctx.userId;
+        if (!userId) {
+            return `ERROR: Cannot ask human - no userId in context. User may not be authenticated.`;
+        }
+
         // Try to get threadId from context
         const threadId = ctx.threadId || "unknown_thread";
 
@@ -39,6 +45,7 @@ export const askHuman = createTool({
         const toolCallId = "pending_tool_call_id";
 
         await ctx.runMutation(internal.humanInTheLoop.createRequest, {
+            userId,
             threadId,
             messageId,
             toolCallId,
