@@ -10,7 +10,8 @@
       "@/*": ["./src/*"],
       "@features/*": ["./src/features/*"],
       "@shared/*": ["./src/shared/*"],
-      "@shared/ui/*": ["./src/shared/ui/*"]
+      "@shared/ui/*": ["./src/shared/ui/*"],
+      "shared/*": ["./shared/*"]
     }
   }
 }

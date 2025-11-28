@@ -42,5 +42,19 @@ js.configs.recommended, ...tseslint.configs.recommended, // Project rules
       "warn",
       { allowConstantExport: true },
     ],
+
+    // Prevent importing from src/shared/* - use shared/* instead
+    // The canonical source is the root shared/ folder
+    "no-restricted-imports": [
+      "error",
+      {
+        patterns: [
+          {
+            group: ["**/src/shared/*"],
+            message: "Import from 'shared/*' instead of 'src/shared/*'. The canonical source is the root shared/ folder.",
+          },
+        ],
+      },
+    ],
   },
 }, ...storybook.configs["flat/recommended"]];

@@ -48,6 +48,7 @@ import {
   getScratchpadSummary,
   markMemoryUpdated,
   isMemoryUpdated,
+  setActiveSection,
 } from "../tools/contextTools";
 
 // Import direct-access tools (for simple operations)
@@ -91,7 +92,60 @@ import {
   explainSimilarity,
 } from "../tools/clusteringTools";
 
+// Artifact persistence wrapper
+import { wrapAllToolsWithArtifactPersistence } from "../lib/withArtifactPersistence";
+import type { Id } from "../_generated/dataModel";
+
+// Section ID generation for artifact linking
+import { generateSectionId } from "../../shared/sectionIds";
+
 export const DEFAULT_MODEL = "gpt-5-chat-latest";
+
+/** Mutable reference for dynamic section ID */
+type SectionIdRef = { current: string | undefined };
+
+/**
+ * Optional dependencies for artifact persistence
+ * When provided, all tools will be wrapped to extract and persist artifacts
+ */
+export interface ArtifactDeps {
+  runId: string;
+  userId: Id<"users">;
+  sectionIdRef?: SectionIdRef;
+}
+
+/**
+ * Wraps setActiveSection to update the mutable sectionIdRef
+ * This ensures artifact-producing tools pick up the current section
+ * Works with @convex-dev/agent tools which use execute() not handler()
+ */
+function withSectionRefUpdate(
+  artifactDeps: ArtifactDeps | undefined,
+  tool: any
+): any {
+  // @convex-dev/agent tools use execute, not handler
+  const originalExecute = tool.execute ?? tool.handler;
+  if (!originalExecute) return tool;
+  
+  return {
+    ...tool,
+    execute: async (args: any, options: any) => {
+      // Compute sectionId deterministically
+      const runId = args.runId ?? artifactDeps?.runId;
+      const sectionKey = args.sectionKey;
+      
+      if (runId && sectionKey && artifactDeps?.sectionIdRef) {
+        const sectionId = generateSectionId(runId, sectionKey);
+        artifactDeps.sectionIdRef.current = sectionId;
+        console.log(`[setActiveSection] Updated sectionIdRef to ${sectionKey} -> ${sectionId}`);
+      }
+      
+      return await originalExecute(args, options);
+    },
+    // Also wrap handler for compatibility
+    handler: originalExecute,
+  };
+}
 
 // Note: Subagent definitions and delegation tools have been moved to:
 // - convex/fast_agents/subagents/document_subagent/documentAgent.ts
@@ -105,13 +159,96 @@ export const DEFAULT_MODEL = "gpt-5-chat-latest";
  * Create a Deep Agents 2.0 Coordinator Agent
  *
  * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-5-chat-latest")
+ * @param artifactDeps - Optional: If provided, all tools will be wrapped for artifact extraction
  * @returns Orchestrator agent configured with delegation and planning tools
  */
-export const createCoordinatorAgent = (model: string): Agent => new Agent(components.agent, {
-  name: "CoordinatorAgent",
-  languageModel: openai.chat(model),
-  textEmbeddingModel: openai.embedding("text-embedding-3-small"),
-  instructions: `You are the Coordinator Agent for NodeBench AI, an orchestrator in a Deep Agents 2.0 architecture.
+export const createCoordinatorAgent = (model: string, artifactDeps?: ArtifactDeps): Agent => {
+  // Build base tools registry
+  const baseTools = {
+    // === DELEGATION TOOLS (Deep Agents 2.0) ===
+    ...buildDelegationTools(model),
+
+    // === HUMAN TOOLS ===
+    askHuman,
+
+    // === PLANNING TOOLS (MCP: core_agent_server) ===
+    createPlan,
+    updatePlanStep,
+    getPlan,
+
+    // === MEMORY TOOLS (MCP: core_agent_server) ===
+    writeAgentMemory,
+    readAgentMemory,
+    listAgentMemory,
+    deleteAgentMemory,
+
+    // === GAM UNIFIED MEMORY TOOLS (Memory-First Protocol) ===
+    queryMemory,
+    getOrBuildMemory,
+    updateMemoryFromReview,
+
+    // === ORCHESTRATION META-TOOLS (Self-Awareness + Planning) ===
+    discoverCapabilities,
+    sequentialThinking,
+    decomposeQuery,
+
+    // === CONTEXT TOOLS (Scratchpad + Compaction + Memory Dedupe) ===
+    initScratchpad,
+    updateScratchpad,
+    compactContext,
+    getScratchpadSummary,
+    markMemoryUpdated,
+    isMemoryUpdated,
+    // setActiveSection is wrapped below to update sectionIdRef
+
+    // === DIRECT ACCESS TOOLS ===
+    linkupSearch,
+    youtubeSearch,
+    externalOrchestratorTool,
+    ...dataAccessTools,
+
+    // Hashtag and dossier tools
+    searchHashtag,
+    createHashtagDossier,
+    getOrCreateHashtagDossier,
+
+    // Funding research tools
+    searchTodaysFunding,
+    enrichFounderInfo,
+    enrichInvestmentThesis,
+    enrichPatentsAndResearch,
+    enrichCompanyDossier,
+    
+    // === KNOWLEDGE GRAPH TOOLS ===
+    buildKnowledgeGraph,
+    fingerprintKnowledgeGraph,
+    getGraphSummary,
+    
+    // === CLUSTERING TOOLS ===
+    groupAndDetectOutliers,
+    checkNovelty,
+    explainSimilarity,
+  };
+
+  // Wrap all tools for artifact extraction if deps provided
+  const wrappedTools = artifactDeps 
+    ? wrapAllToolsWithArtifactPersistence(baseTools, artifactDeps)
+    : baseTools;
+  
+  // Add setActiveSection with sectionIdRef update wrapper
+  // This ensures artifact-producing tools pick up the current section
+  const tools: Record<string, any> = {
+    ...wrappedTools,
+    setActiveSection: withSectionRefUpdate(artifactDeps, setActiveSection),
+  };
+
+  return new Agent(components.agent, {
+    name: "CoordinatorAgent",
+    languageModel: openai.chat(model),
+    textEmbeddingModel: openai.embedding("text-embedding-3-small"),
+    tools,
+    stopWhen: stepCountIs(25),
+    instructions: `You are the Coordinator Agent for NodeBench AI, an orchestrator in a Deep Agents 2.0 architecture.
 
 # RESPONSE MODE (YOU DECIDE)
 
@@ -484,6 +621,48 @@ RETRY LIMITS:
 
 If limits exceeded, fall back to best judgment with available information.
 
+# SECTION TRACKING FOR ARTIFACTS (PER-SECTION LINKING)
+
+When building dossiers or research reports, call \`setActiveSection\` before researching or writing each section.
+This links artifacts (URLs, sources) to the correct section for the MediaRail display.
+
+## When to Call setActiveSection
+
+BEFORE any tool calls for each section, call:
+\`\`\`
+setActiveSection({
+  messageId: scratchpad.messageId,
+  currentScratchpad: scratchpad,
+  sectionKey: "section_name",
+  runId: "<current_run_id>"
+})
+\`\`\`
+
+## Section Keys (use these exact strings)
+
+- \`executive_summary\` - Executive summary / overview
+- \`company_overview\` - Company background and basics
+- \`market_landscape\` - Market analysis and positioning
+- \`funding_signals\` - Funding, investors, valuations
+- \`product_analysis\` - Products, technology, offerings
+- \`competitive_analysis\` - Competitors and comparison
+- \`founder_background\` - Founder/team research
+- \`investment_thesis\` - Investment angle and thesis
+- \`risk_flags\` - Risks and concerns
+- \`open_questions\` - Unanswered questions
+- \`sources_and_media\` - Final sweep / catch-all
+
+## Example Flow
+
+1. Call \`setActiveSection({ sectionKey: "market_landscape", ... })\`
+2. Call \`linkupSearch\` or other research tools
+3. Artifacts from those tools are linked to "market_landscape"
+4. Call \`setActiveSection({ sectionKey: "funding_signals", ... })\`
+5. Research funding with tools
+6. Artifacts linked to "funding_signals"
+
+**IMPORTANT**: Always call setActiveSection when switching sections, even mid-research.
+
 # CRITICAL BEHAVIOR RULES
 
 1. **DELEGATE FIRST** - Always check if a subagent can handle the task before using direct tools
@@ -503,86 +682,8 @@ Structure your responses clearly:
 - Present the agent's findings
 - Add your own synthesis if needed
 `,
-
-  // Tool registry organized by category
-  tools: {
-    // === DELEGATION TOOLS (Deep Agents 2.0) ===
-    // These are the primary tools - delegate to specialists first
-    ...buildDelegationTools(model),
-
-    // === HUMAN TOOLS ===
-    askHuman,
-
-    // === PLANNING TOOLS (MCP: core_agent_server) ===
-    createPlan,
-    updatePlanStep,
-    getPlan,
-
-    // === MEMORY TOOLS (MCP: core_agent_server) ===
-    writeAgentMemory,
-    readAgentMemory,
-    listAgentMemory,
-    deleteAgentMemory,
-
-    // === GAM UNIFIED MEMORY TOOLS (Memory-First Protocol) ===
-    queryMemory,
-    getOrBuildMemory,
-    updateMemoryFromReview,
-
-    // === ORCHESTRATION META-TOOLS (Self-Awareness + Planning) ===
-    discoverCapabilities,
-    sequentialThinking,
-    decomposeQuery,
-
-    // === CONTEXT TOOLS (Scratchpad + Compaction + Memory Dedupe) ===
-    initScratchpad,
-    updateScratchpad,
-    compactContext,
-    getScratchpadSummary,
-    markMemoryUpdated,
-    isMemoryUpdated,
-
-    // === DIRECT ACCESS TOOLS ===
-    // Use these only when delegation is not appropriate
-
-    // Web search (use MediaAgent for media-focused searches)
-    linkupSearch,
-    youtubeSearch,
-
-    // External orchestrators (OpenAI / Gemini)
-    externalOrchestratorTool,
-
-    // Data access (tasks, events, folders)
-    ...dataAccessTools,
-
-    // Hashtag and dossier tools (Legacy - prefer EntityResearchAgent)
-    searchHashtag,
-    createHashtagDossier,
-    getOrCreateHashtagDossier,
-
-    // Funding research tools (Legacy - prefer EntityResearchAgent)
-    searchTodaysFunding,
-    enrichFounderInfo,
-    enrichInvestmentThesis,
-    enrichPatentsAndResearch,
-    enrichCompanyDossier,
-    
-    // === KNOWLEDGE GRAPH TOOLS ===
-    // Build claim-based graphs from entities/themes/artifacts
-    buildKnowledgeGraph,
-    fingerprintKnowledgeGraph,
-    getGraphSummary,
-    
-    // === CLUSTERING TOOLS ===
-    // Group entities and detect outliers (boolean outputs)
-    groupAndDetectOutliers,
-    checkNovelty,
-    explainSimilarity,
-  },
-
-  // Allow up to 25 steps for complex orchestration workflows
-  stopWhen: stepCountIs(25),
-});
+  });
+};
 
 /**
  * Export the coordinator agent as an action for workflow usage.

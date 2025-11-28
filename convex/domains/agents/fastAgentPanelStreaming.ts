@@ -1117,13 +1117,27 @@ export const streamAsync = internalAction({
     // OPTION A: Always use CoordinatorAgent directly (no planner overhead)
     // The Coordinator decides internally whether to use tools or answer directly
     if (args.useCoordinator !== false) {
-      const coordinatorBuilder = (await import("../../fast_agents/coordinatorAgent")).createCoordinatorAgent;
+      const { createCoordinatorAgent } = await import("../../fast_agents/coordinatorAgent");
+
+      // Create mutable ref for dynamic section tracking
+      // This allows setActiveSection to update the current section at runtime
+      // and artifact-producing tools to read it at invocation time
+      const sectionIdRef = { current: undefined as string | undefined };
+
+      // Build artifact deps if we have userId
+      // runId = threadId (agent thread), userId for artifact ownership
+      const artifactDeps = userId ? {
+        runId: args.threadId,
+        userId,
+        sectionIdRef, // Mutable ref for per-section artifact linking
+      } : undefined;
 
       // Always use CoordinatorAgent - it has GAM tools and decides internally when to use them
-      agent = coordinatorBuilder(args.model);
+      // Pass artifactDeps to wrap all tools for artifact extraction
+      agent = createCoordinatorAgent(args.model, artifactDeps);
       agentType = "coordinator";
       
-      console.log(`[streamAsync:${executionId}] Using CoordinatorAgent directly - GAM memory tools available, agent decides simple vs complex`);
+      console.log(`[streamAsync:${executionId}] Using CoordinatorAgent directly - GAM memory tools available, artifacts=${!!artifactDeps}, sectionRef=enabled`);
     } else {
       console.log(`[streamAsync:${executionId}] Using SIMPLE AGENT (legacy mode)`);
       agent = createSimpleChatAgent(args.model);
@@ -1699,7 +1713,18 @@ export const sendMessageInternal = internalAction({
     if (args.useCoordinator !== false) { // Default to coordinator
       console.log('[sendMessageInternal] Using COORDINATOR AGENT for intelligent delegation');
       const { createCoordinatorAgent } = await import("../../fast_agents/coordinatorAgent");
-      chatAgent = createCoordinatorAgent(modelName);
+      
+      // Create mutable ref for dynamic section tracking
+      const sectionIdRef = { current: undefined as string | undefined };
+      
+      // Build artifact deps if we have userId
+      const artifactDeps = args.userId ? {
+        runId: args.threadId ?? "temp-thread",
+        userId: args.userId,
+        sectionIdRef,
+      } : undefined;
+      
+      chatAgent = createCoordinatorAgent(modelName, artifactDeps);
     } else {
       console.log('[sendMessageInternal] Using SINGLE AGENT (legacy mode)');
       chatAgent = createChatAgent(modelName);
