@@ -138,7 +138,7 @@ function SourceItem({ artifact }: SourceItemProps) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h4 className="font-medium text-sm line-clamp-1">
+          <h4 className="font-medium text-sm line-clamp-1 break-words">
             {title}
           </h4>
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -148,7 +148,7 @@ function SourceItem({ artifact }: SourceItemProps) {
         </div>
         
         {snippet && (
-          <p className="text-xs opacity-70 line-clamp-1 mt-0.5">
+          <p className="text-xs opacity-70 line-clamp-1 mt-0.5 break-words overflow-hidden">
             {snippet}
           </p>
         )}

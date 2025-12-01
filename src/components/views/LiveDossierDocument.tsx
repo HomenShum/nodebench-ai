@@ -7,204 +7,26 @@ import { useUIMessages } from "@convex-dev/agent/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEffect, useRef, useMemo, useState } from "react";
-import { Sparkles, TrendingUp, Users, Briefcase, FileText, Lightbulb, ChevronRight, Loader2, Radio, Activity, Bot, Globe, Database, Zap, CheckCircle2, AlertCircle, Link2 } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Briefcase, FileText, Lightbulb, ChevronRight, Loader2, Radio, Activity, Bot, Globe, Database, Zap, CheckCircle2, AlertCircle, Link2, ExternalLink, Calendar, Youtube, FileSearch, Copy, Check } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { toolPartsToTimelineSteps, type TimelineStep } from "../FastAgentPanel/StepTimeline";
 
 // Artifact streaming integration
-import { ArtifactStoreProvider, useAllArtifacts, useSectionArtifacts } from "../../hooks/useArtifactStore";
+import { ArtifactStoreProvider } from "../../hooks/useArtifactStore";
 import { useArtifactStreamConsumer } from "../../hooks/useArtifactStreamConsumer";
-import { SourcesLibrary, MediaRail } from "../artifacts";
-import { EvidenceChips } from "../artifacts/EvidenceChips";
-import { FACT_ANCHOR_REGEX, matchSectionKey, generateSectionId } from "../../../shared/sectionIds";
+import { EvidenceDrawer, WhatChangedStrip, type EvidenceSource } from "../newsletter";
+import { useInlineCitations, useSourcesList } from "../../hooks/useInlineCitations";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FACT ANCHOR PROCESSING
+// HELPER UTILITIES
 // ═══════════════════════════════════════════════════════════════════════════
-
-interface MarkdownPart {
-    type: "text" | "fact";
-    content: string; // For text: the markdown, for fact: the factId
-}
-
-/**
- * Split markdown into text blocks and fact anchor tokens.
- * {{fact:abc123}} becomes a separate "fact" part.
- */
-function splitByFactAnchors(markdown: string): MarkdownPart[] {
-    const parts: MarkdownPart[] = [];
-    let lastIndex = 0;
-    
-    // Reset regex index
-    FACT_ANCHOR_REGEX.lastIndex = 0;
-    
-    let match;
-    while ((match = FACT_ANCHOR_REGEX.exec(markdown)) !== null) {
-        // Add text before the match
-        if (match.index > lastIndex) {
-            parts.push({ type: "text", content: markdown.slice(lastIndex, match.index) });
-        }
-        // Add the fact anchor
-        parts.push({ type: "fact", content: match[1] }); // match[1] is the factId
-        lastIndex = match.index + match[0].length;
-    }
-    
-    // Add remaining text
-    if (lastIndex < markdown.length) {
-        parts.push({ type: "text", content: markdown.slice(lastIndex) });
-    }
-    
-    return parts;
-}
-
-/**
- * Extract all h3 headings and their positions from markdown.
- * Returns sections with their content and derived sectionKey.
- */
-interface MarkdownSection {
-    heading: string;
-    sectionKey: string;
-    content: string;
-    startIndex: number;
-}
-
-function extractSections(markdown: string): MarkdownSection[] {
-    const sections: MarkdownSection[] = [];
-    const h3Regex = /^###\s+(.+)$/gm;
-    let match;
-    const matches: Array<{ heading: string; index: number }> = [];
-    
-    while ((match = h3Regex.exec(markdown)) !== null) {
-        matches.push({ heading: match[1], index: match.index });
-    }
-    
-    for (let i = 0; i < matches.length; i++) {
-        const current = matches[i];
-        const nextIndex = i < matches.length - 1 ? matches[i + 1].index : markdown.length;
-        const content = markdown.slice(current.index, nextIndex);
-        
-        sections.push({
-            heading: current.heading,
-            sectionKey: matchSectionKey(current.heading),
-            content,
-            startIndex: current.index,
-        });
-    }
-    
-    return sections;
-}
 
 const truncateText = (text: string, max = 160) => {
     if (!text) return "";
     return text.length > max ? `${text.slice(0, max)}...` : text;
 };
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SECTION MEDIA RAIL (conditional rendering)
-// ═══════════════════════════════════════════════════════════════════════════
-
-interface SectionMediaRailProps {
-    runId: string;
-    sectionId: string;
-}
-
-/**
- * Renders MediaRail for a section only if it has artifacts.
- */
-function SectionMediaRail({ runId, sectionId }: SectionMediaRailProps) {
-    const artifacts = useSectionArtifacts(sectionId);
-    
-    if (artifacts.length === 0) {
-        return null;
-    }
-    
-    return (
-        <div className="mt-4 mb-6">
-            <MediaRail sectionId={sectionId} maxVisible={6} compact />
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// MARKDOWN WITH FACT ANCHORS
-// ═══════════════════════════════════════════════════════════════════════════
-
-interface MarkdownWithFactsProps {
-    markdown: string;
-    runId: string;
-    isStreaming?: boolean;
-    markdownComponents: any;
-}
-
-/**
- * Renders markdown content with fact anchor chips and section MediaRails.
- * - Fact anchors {{fact:xxx}} become EvidenceChips
- * - After each h3 section, MediaRail is rendered (if it has artifacts)
- */
-function MarkdownWithFacts({ markdown, runId, isStreaming, markdownComponents }: MarkdownWithFactsProps) {
-    // Extract sections for MediaRail injection
-    const sections = useMemo(() => extractSections(markdown), [markdown]);
-    
-    // If no sections detected, render as single block
-    if (sections.length === 0) {
-        const parts = splitByFactAnchors(markdown);
-        return (
-            <>
-                {parts.map((part, idx) => {
-                    if (part.type === "fact") {
-                        return <EvidenceChips key={idx} factId={part.content} />;
-                    }
-                    return (
-                        <ReactMarkdown key={idx} remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                            {part.content}
-                        </ReactMarkdown>
-                    );
-                })}
-            </>
-        );
-    }
-    
-    // Render content before first section
-    const contentBeforeFirst = sections[0].startIndex > 0 
-        ? markdown.slice(0, sections[0].startIndex) 
-        : "";
-    
-    return (
-        <>
-            {/* Content before first h3 */}
-            {contentBeforeFirst && (
-                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                    {contentBeforeFirst}
-                </ReactMarkdown>
-            )}
-            
-            {/* Each section with MediaRail */}
-            {sections.map((section, idx) => {
-                const sectionId = generateSectionId(runId, section.sectionKey);
-                const parts = splitByFactAnchors(section.content);
-                
-                return (
-                    <div key={idx}>
-                        {/* Section content with fact anchors */}
-                        {parts.map((part, partIdx) => {
-                            if (part.type === "fact") {
-                                return <EvidenceChips key={partIdx} factId={part.content} />;
-                            }
-                            return (
-                                <ReactMarkdown key={partIdx} remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                                    {part.content}
-                                </ReactMarkdown>
-                            );
-                        })}
-                        
-                        {/* MediaRail after section (conditional) */}
-                        <SectionMediaRail runId={runId} sectionId={sectionId} />
-                    </div>
-                );
-            })}
-        </>
-    );
-}
 
 // QuickActionButton Component - Refined Look
 interface QuickActionButtonProps {
@@ -397,6 +219,24 @@ function LiveDossierDocumentInner({
     const [isAppending, setIsAppending] = useState(false);
     const [justAppended, setJustAppended] = useState(false);
 
+    // Citation sanitization schema - allows our injected sup/a elements
+    const citationSchema = useMemo(() => ({
+        ...defaultSchema,
+        tagNames: [...(defaultSchema.tagNames ?? []), "sup"],
+        attributes: {
+            ...(defaultSchema.attributes ?? {}),
+            a: ["href", "data-artifact-id", "className"],
+            sup: ["className", "aria-label"],
+        },
+        protocols: {
+            ...(defaultSchema.protocols ?? {}),
+            href: ["#", "http", "https"],
+        },
+    }), []);
+
+    // Evidence drawer state
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
     const assistantMessages = useMemo(() => {
         if (!uiMessages || uiMessages.length === 0) return [] as { raw: any; text: string }[];
         return uiMessages
@@ -413,6 +253,10 @@ function LiveDossierDocumentInner({
         if (!assistantMessages.length) return "";
         return assistantMessages.map(({ text }) => text).join("\n\n---\n\n");
     }, [assistantMessages]);
+
+    // Process inline citations for newsletter-style footnotes
+    const { injectedMarkdown, numToArtifactId, artifactIdToNum } = useInlineCitations(combinedContent);
+    const sourcesList = useSourcesList(numToArtifactId);
 
     const latestAssistantMessage = assistantMessages.length ? assistantMessages[assistantMessages.length - 1].raw : null;
     const hasContent = combinedContent.length > 0;
@@ -446,6 +290,29 @@ function LiveDossierDocumentInner({
         runId: agentThreadId || null,
         debug: false,
     });
+
+    // Convert artifacts to EvidenceSource format for drawer
+    const evidenceSources: EvidenceSource[] = useMemo(() => {
+        return allArtifacts.map(a => ({
+            id: a.id,
+            title: a.title || 'Untitled',
+            url: a.url || '',
+            domain: a.domain || '',
+            type: a.url?.includes('youtube') ? 'youtube' as const :
+                  a.url?.includes('sec.gov') ? 'sec' as const :
+                  a.url?.endsWith('.pdf') ? 'pdf' as const : 'web' as const,
+            snippet: a.snippet,
+            verified: a.flags?.isCited ?? false,
+            discoveredAt: a.discoveredAt,
+        }));
+    }, [allArtifacts]);
+
+    // Extract entity name from first heading in content
+    const entityName = useMemo(() => {
+        const match = combinedContent.match(/^#\s+(.+?)(?:\n|$)/m) || 
+                      combinedContent.match(/^##\s+(.+?)(?:\n|$)/m);
+        return match ? match[1].trim() : 'Research Dossier';
+    }, [combinedContent]);
 
     const observationStep = useMemo(() => {
         for (let i = timelineSteps.length - 1; i >= 0; i--) {
@@ -601,24 +468,63 @@ function LiveDossierDocumentInner({
 
     if (!threadId) return <EmptyState />;
 
+    // Click handler for citation links
+    const handleCitationClick = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        const link = target.closest('a[data-artifact-id]') as HTMLAnchorElement | null;
+        if (!link) return;
+        
+        const artifactId = link.getAttribute('data-artifact-id');
+        if (artifactId) {
+            e.preventDefault();
+            // Open the evidence drawer with the artifact highlighted
+            setIsDrawerOpen(true);
+        }
+    };
+
     return (
-        <div className="bg-white min-h-[900px] shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)] mx-auto max-w-4xl relative animate-in fade-in duration-700">
+        <div className="w-full animate-in fade-in duration-700">
+            {/* Newsletter Container - Max width for readability */}
+            <div className="mx-auto max-w-[720px] px-5 sm:px-6 lg:px-8 py-10 sm:py-12">
+                
+                {/* Clean Newsletter Masthead */}
+                <header className="mb-8 pb-6 border-b border-border/50">
+                    {/* Date line */}
+                    <div className="text-xs text-muted-foreground mb-3">
+                        {new Date().toLocaleDateString('en-US', { 
+                            weekday: 'long',
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        })}
+                        {isStreaming && (
+                            <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-[10px] font-medium">
+                                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
+                                Live
+                            </span>
+                        )}
+                    </div>
 
-            {/* Decorative Top Bar */}
-            <div className="h-1.5 w-full bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900"></div>
-
-            <div className="p-12 md:p-16">
-                {/* Newspaper Header */}
-                <header className="text-center border-b border-gray-200 pb-8 mb-10">
-                    <h1 className="font-serif text-5xl md:text-6xl font-black tracking-tight mb-4 text-gray-900 uppercase">
+                    {/* Title */}
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                         The Daily Dossier
                     </h1>
-                    <div className="flex justify-between items-center text-[10px] md:text-xs font-mono font-semibold uppercase tracking-[0.2em] text-gray-500 pt-2">
-                        <span>Vol. 24, No. 142</span>
-                        <span className="flex items-center gap-1 text-purple-600">
-                            <Sparkles className="w-3 h-3" /> Live Intelligence
-                        </span>
-                        <span>Confidential</span>
+
+                    {/* Subtitle: Entity • Source count */}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">{entityName}</span>
+                        {allArtifacts.length > 0 && (
+                            <>
+                                <span className="opacity-40">•</span>
+                                <button 
+                                    onClick={() => setIsDrawerOpen(true)}
+                                    className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                                >
+                                    <Link2 className="w-3 h-3" />
+                                    {allArtifacts.length} sources
+                                </button>
+                            </>
+                        )}
                     </div>
                 </header>
 
@@ -634,94 +540,89 @@ function LiveDossierDocumentInner({
                     />
                 )}
 
-                {/* Content Area - Render each message as a separate section but visually seamless */}
-                {assistantMessages.map((msgObj, idx) => {
-                    const isFirstMessage = idx === 0;
-                    const isLatest = idx === assistantMessages.length - 1;
-                    const isHighlighted = highlightedIndex === idx;
+                {/* What Changed Strip - Show when there are new sources */}
+                {hasContent && allArtifacts.length > 0 && (
+                    <WhatChangedStrip
+                        newSources={allArtifacts.filter(a => a.discoveredAt && Date.now() - a.discoveredAt < 60000).length}
+                        updates={0}
+                        contradictions={0}
+                        lastUpdated={new Date()}
+                        onViewDiff={() => setIsDrawerOpen(true)}
+                        className="mb-6"
+                    />
+                )}
 
-                    return (
-                        <div
-                            key={idx}
-                            ref={isLatest ? latestSectionRef : null}
-                            className={`transition-all duration-500 ${
-                                // Subtle spacing instead of harsh borders
-                                !isFirstMessage ? 'mt-8' : 'mb-8'
-                                } ${isHighlighted ? 'animate-in fade-in duration-700' : ''
-                                }`}
-                        >
-                            {/* Subtle "New" Indicator for the latest appended content */}
-                            {!isFirstMessage && isHighlighted && (
-                                <div className="flex items-center gap-2 mb-4 text-blue-600 animate-pulse">
-                                    <Sparkles className="w-4 h-4" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">
-                                        New Information Added
-                                    </span>
-                                </div>
-                            )}
+                {/* Main Content - Clean prose aligned with BlockNote typography */}
+                <article 
+                    className="prose prose-neutral dark:prose-invert max-w-none
+                        prose-p:leading-relaxed prose-p:text-base prose-p:text-foreground
+                        prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                        prose-headings:text-foreground prose-headings:font-semibold
+                        prose-h1:text-2xl prose-h1:mt-8 prose-h1:mb-4
+                        prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3
+                        prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2
+                        prose-ul:my-3 prose-ol:my-3 prose-li:my-0.5
+                        prose-blockquote:border-l-2 prose-blockquote:border-muted-foreground/30 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-muted-foreground
+                        prose-hr:my-8 prose-hr:border-border
+                        prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                        prose-table:text-sm
+                        [&_.nb-cite]:align-super [&_.nb-cite]:text-[0.7em] [&_.nb-cite]:font-medium
+                        [&_.nb-cite-link]:text-primary [&_.nb-cite-link]:no-underline [&_.nb-cite-link:hover]:underline"
+                    onClick={handleCitationClick}
+                    ref={latestSectionRef}
+                >
+                    <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw, [rehypeSanitize, citationSchema]]}
+                    >
+                        {injectedMarkdown}
+                    </ReactMarkdown>
+                    
+                    {/* Streaming cursor */}
+                    {isStreaming && (
+                        <span className="inline-block w-2 h-5 bg-purple-500 ml-1 animate-pulse align-middle rounded-sm"></span>
+                    )}
+                </article>
 
-                            {/* Message Content with fact anchors and per-section MediaRails */}
-                            <div className="prose prose-base max-w-none 
-                                prose-headings:font-sans prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-900
-                                prose-p:font-serif prose-p:text-[1.05rem] prose-p:leading-[1.75] prose-p:text-gray-800
-                                prose-strong:font-sans prose-strong:font-bold prose-strong:text-gray-900
-                                prose-li:font-serif prose-li:text-gray-800
-                                prose-blockquote:border-l-2 prose-blockquote:border-purple-500 prose-blockquote:bg-purple-50/50 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:text-gray-700
-                            ">
-                                {agentThreadId ? (
-                                    <MarkdownWithFacts
-                                        markdown={msgObj.text}
-                                        runId={agentThreadId}
-                                        isStreaming={isStreaming && isLatest}
-                                        markdownComponents={{
-                                            // Custom "Entity Chip" for bold text (High-End Look)
-                                            strong: ({ node, ...props }: any) => (
-                                                <span className="font-semibold text-gray-900 bg-gray-100/80 px-1 py-0.5 rounded border border-gray-200/50 text-[0.95em]">
-                                                    {props.children}
-                                                </span>
-                                            ),
-                                            // Cleaner Headers
-                                            h3: ({ node, ...props }: any) => (
-                                                <div className="mt-10 mb-4 pb-2 border-b border-gray-100">
-                                                    <h3 className="text-lg uppercase tracking-wider font-bold text-gray-900 m-0">{props.children}</h3>
-                                                </div>
-                                            ),
-                                            // Remove default bullets, use custom ones
-                                            ul: ({ node, ...props }: any) => <ul className="space-y-2 my-6 list-none pl-0">{props.children}</ul>,
-                                            li: ({ node, ...props }: any) => (
-                                                <li className="flex gap-3 items-start">
-                                                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-purple-500 shrink-0"></span>
-                                                    <span>{props.children}</span>
-                                                </li>
-                                            ),
-                                            table: ({ node, ...props }: any) => (
-                                                <div className="overflow-x-auto overflow-y-auto max-h-96 my-6 rounded-lg border border-gray-200 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
-                                                    <table className="min-w-full border-collapse text-sm">{props.children}</table>
-                                                </div>
-                                            ),
-                                            thead: ({ node, ...props }: any) => (
-                                                <thead className="bg-gray-50 text-left text-gray-700 font-semibold border-b border-gray-200 sticky top-0">{props.children}</thead>
-                                            ),
-                                            tbody: ({ node, ...props }: any) => <tbody className="divide-y divide-gray-100">{props.children}</tbody>,
-                                            tr: ({ node, ...props }: any) => <tr className="align-top">{props.children}</tr>,
-                                            th: ({ node, ...props }: any) => <th className="px-3 py-2 border-r border-gray-200 last:border-r-0 whitespace-nowrap">{props.children}</th>,
-                                            td: ({ node, ...props }: any) => <td className="px-3 py-2 border-r border-gray-200 last:border-r-0 align-top">{props.children}</td>
-                                        }}
-                                    />
-                                ) : (
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {msgObj.text}
-                                    </ReactMarkdown>
-                                )}
-
-                                {/* The Blinking Cursor (Only when streaming on latest message) */}
-                                {isStreaming && isLatest && (
-                                    <span className="inline-block w-2 h-5 bg-purple-500 ml-1 animate-pulse align-middle rounded-sm"></span>
-                                )}
-                            </div>
+                {/* Sources Section */}
+                {hasContent && sourcesList.length > 0 && (
+                    <section id="sources" className="mt-10 pt-6 border-t border-border scroll-mt-24">
+                        <h3 className="text-sm font-semibold text-foreground mb-4">Sources</h3>
+                        <div className="space-y-2">
+                            {sourcesList.map((source) => {
+                                // Determine source type icon
+                                const isVideo = source.domain?.includes('youtube') || source.domain?.includes('vimeo');
+                                const isPdf = source.url?.endsWith('.pdf') || source.kind === 'file';
+                                const isSec = source.domain?.includes('sec.gov');
+                                
+                                const SourceIcon = isVideo ? Youtube : 
+                                                   isPdf ? FileText : 
+                                                   isSec ? FileSearch : 
+                                                   Globe;
+                                
+                                return (
+                                    <div 
+                                        key={source.artifactId} 
+                                        id={`source-${source.num}`} 
+                                        className="flex items-center gap-2 text-sm group"
+                                    >
+                                        <span className="w-5 text-muted-foreground font-mono text-xs text-right shrink-0">
+                                            {source.num}
+                                        </span>
+                                        <SourceIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                        <button
+                                            className="text-left truncate hover:text-primary transition-colors flex-1"
+                                            onClick={() => source.url && window.open(source.url, '_blank')}
+                                        >
+                                            <span className="text-foreground">{source.title}</span>
+                                            <span className="text-muted-foreground text-xs ml-2">{source.domain}</span>
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    );
-                })}
+                    </section>
+                )}
 
                 {/* Deep Agent Progress - Task Plan Panel with Metrics */}
                 {streamingThread?.workflowProgress && (
@@ -763,23 +664,25 @@ function LiveDossierDocumentInner({
                     />
                 )}
 
-                {/* Sources Library - Shows all extracted artifacts */}
-                {hasContent && allArtifacts.length > 0 && (
-                    <SourcesLibrary 
-                        title="Research Sources"
-                        defaultCollapsed={false}
-                    />
-                )}
-
                 <div ref={bottomRef} />
+
+                {/* Footer */}
+                <footer className="mt-12 pt-4 border-t border-border text-center">
+                    <p className="text-xs text-muted-foreground">
+                        NodeBench AI • {new Date().toLocaleTimeString()}
+                    </p>
+                </footer>
             </div>
 
-            {/* Footer Watermark */}
-            <div className="absolute bottom-0 w-full p-4 border-t border-gray-50 bg-gray-50/30">
-                <p className="font-mono text-[10px] text-center text-gray-400 uppercase tracking-widest">
-                    Generated via Nodebench AI • {new Date().toLocaleTimeString()}
-                </p>
-            </div>
+            {/* Evidence Drawer - Right sidebar (for deep dive) */}
+            <EvidenceDrawer
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+                sources={evidenceSources}
+                onSourceClick={(source) => {
+                    if (source.url) window.open(source.url, '_blank');
+                }}
+            />
         </div>
     );
 }

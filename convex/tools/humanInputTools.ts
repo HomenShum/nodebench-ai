@@ -30,34 +30,39 @@ export const askHuman = createTool({
     }),
 
     handler: async (ctx: any, args) => {
-        // Get userId from agent tool context (required for internal mutation)
-        // Note: In Convex Agent SDK, userId is passed as evaluationUserId in the context
-        const userId = ctx.evaluationUserId || ctx.userId;
-        if (!userId) {
-            console.warn('[askHuman] No userId in context. ctx keys:', Object.keys(ctx));
-            return `ERROR: Cannot ask human - no userId in context. User may not be authenticated.`;
+        try {
+            // Get userId from agent tool context (required for internal mutation)
+            // Note: In Convex Agent SDK, userId is passed as evaluationUserId in the context
+            const userId = ctx.evaluationUserId || ctx.userId;
+            if (!userId) {
+                console.warn('[askHuman] No userId in context. ctx keys:', Object.keys(ctx));
+                return `ERROR: Cannot ask human - no userId in context. User may not be authenticated. Please ensure you are logged in.`;
+            }
+            
+            console.log('[askHuman] Using userId:', userId);
+
+            // Try to get threadId from context
+            const threadId = ctx.threadId || "unknown_thread";
+
+            // We don't have easy access to messageId/toolCallId in the tool handler context
+            // In a real implementation, these would be passed or available in the context
+            const messageId = "pending_message_id";
+            const toolCallId = "pending_tool_call_id";
+
+            await ctx.runMutation(internal.humanInTheLoop.createRequest, {
+                userId,
+                threadId,
+                messageId,
+                toolCallId,
+                question: args.question,
+                context: args.context,
+                options: args.options,
+            });
+
+            return `REQUEST_FOR_HUMAN: ${args.question} ${args.options ? `[Options: ${args.options.join(", ")}]` : ""}`;
+        } catch (error: any) {
+            console.error('[askHuman] Error creating human request:', error);
+            return `ERROR: Failed to create human request - ${error.message || 'Unknown error'}. Please try again or contact support.`;
         }
-        
-        console.log('[askHuman] Using userId:', userId);
-
-        // Try to get threadId from context
-        const threadId = ctx.threadId || "unknown_thread";
-
-        // We don't have easy access to messageId/toolCallId in the tool handler context
-        // In a real implementation, these would be passed or available in the context
-        const messageId = "pending_message_id";
-        const toolCallId = "pending_tool_call_id";
-
-        await ctx.runMutation(internal.humanInTheLoop.createRequest, {
-            userId,
-            threadId,
-            messageId,
-            toolCallId,
-            question: args.question,
-            context: args.context,
-            options: args.options,
-        });
-
-        return `REQUEST_FOR_HUMAN: ${args.question} ${args.options ? `[Options: ${args.options.join(", ")}]` : ""}`;
     },
 });

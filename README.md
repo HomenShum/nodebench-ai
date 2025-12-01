@@ -461,6 +461,40 @@ npx convex deploy
 3. Build trending searches UI component
 4. Add changelog rendering to dossier view
 
+### 2025-11-30 - Daily Dossier Newsletter UI Revamp ✅
+
+**Status**: ✅ Complete
+
+#### Overview
+Revamped "The Daily Dossier" UI to a modern, flowing newsletter layout (Substack/Medium style) optimized for email delivery and cross-compatibility with the BlockNote UnifiedEditor.
+
+#### Key Changes
+
+##### 1. Newsletter Layout
+- Single-column flowing prose (720px max-width)
+- Clean masthead: Date • "The Daily Dossier" title • Entity • Source count
+- Typography aligned with BlockNote defaults for consistency
+- Removed card components and grid layouts
+
+##### 2. Inline Citation System
+- New `shared/citations/injectInlineCitations.ts` - parses `{{fact:xxx}}` anchors
+- New `src/hooks/useInlineCitations.ts` - React hook for stable numbering during streaming
+- Citations render as superscript links (¹²³) that scroll to footnotes
+- Stable numbering maintained across streaming updates
+
+##### 3. Sources Section
+- Footnote-style source list at bottom
+- Type-specific icons: 🎬 YouTube, 📄 PDF, 🔍 SEC, 🌐 Web
+- Click to open source in new tab
+
+##### 4. Files Modified
+- `src/components/views/LiveDossierDocument.tsx` - Complete layout refactor
+- `src/index.css` - Citation styling with CSS variables for theme support
+- `src/components/newsletter/NewsletterComponents.tsx` - Fixed corrupted file
+- `src/components/newsletter/index.ts` - Updated exports
+
+---
+
 ###2 025-11-10 (Latest) - TypeScript Fixes for Human-in-the-Loop ✅
 
 **Status**: ✅ **FIXED AND TESTED**

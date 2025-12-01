@@ -3,7 +3,7 @@
 // Used for hydration (page reload) and newsletter generation
 
 import { v } from "convex/values";
-import { query, mutation, internalMutation } from "../_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "../_generated/server";
 import { Doc, Id } from "../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import {
@@ -505,5 +505,31 @@ export const pinArtifact = mutation({
     });
     
     return { action: args.pinned ? "pinned" : "unpinned", id: existing._id };
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INTERNAL QUERIES - For citation scrubbing (no auth, called from actions)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get all allowed canonical URLs for a run (internal, for citation scrubber)
+ * Returns array of canonical URLs from artifacts for this run
+ */
+export const getAllowedUrlsForRun = internalQuery({
+  args: {
+    runId: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("artifacts")
+      .withIndex("by_user_run", (q) => 
+        q.eq("userId", args.userId).eq("runId", args.runId)
+      )
+      .collect();
+    
+    // Return canonical URLs
+    return rows.map(r => r.canonicalUrl);
   },
 });

@@ -156,6 +156,7 @@ export function withArtifactPersistence<T extends ToolLike>(
 export const ARTIFACT_PRODUCERS = new Set([
   // Search tools that return URLs
   "linkupSearch",
+  "linkupStructuredSearch", // NEW: Structured output search
   "youtubeSearch",
   "searchHashtag",
   "searchTodaysFunding",

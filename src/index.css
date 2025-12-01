@@ -269,3 +269,77 @@
 .stagger-children > *:nth-child(4) { animation-delay: 0.15s; }
 .stagger-children > *:nth-child(5) { animation-delay: 0.2s; }
 .stagger-children > *:nth-child(6) { animation-delay: 0.25s; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROSE TABLE & TEXT OVERFLOW FIXES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Force word-breaking in prose elements */
+.prose {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+/* Table overflow handling */
+.prose table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.prose th,
+.prose td {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  max-width: 300px;
+}
+
+/* Long URLs and inline code */
+.prose a,
+.prose code {
+  word-break: break-all;
+}
+
+/* Ensure inline elements don't overflow */
+.prose p,
+.prose li {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Handle raw table text that didn't parse as markdown tables */
+.prose p {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Make pipe-separated text more readable */
+.prose {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NEWSLETTER INLINE CITATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Citation superscript container */
+.nb-cite {
+  vertical-align: super;
+  font-size: 0.7em;
+  font-weight: 500;
+  margin-left: 1px;
+}
+
+/* Citation link styling */
+.nb-cite-link {
+  padding: 0 2px;
+  text-decoration: none;
+  color: hsl(var(--primary));
+  transition: opacity 0.15s ease;
+}
+
+.nb-cite-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}

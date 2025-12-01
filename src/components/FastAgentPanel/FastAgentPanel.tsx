@@ -20,6 +20,7 @@ import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
 import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
+import { LiveAgentLanes } from '../views/LiveAgentLanes';
 import { LiveEventsPanel } from './LiveEventsPanel';
 import type { LiveEvent } from './LiveEventCard';
 import { RichMediaSection } from './RichMediaSection';
@@ -858,8 +859,8 @@ export function FastAgentPanel({
                 <button
                   onClick={() => setShowEventsPanel(!showEventsPanel)}
                   className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${showEventsPanel
-                      ? 'bg-blue-50 border-blue-200 text-blue-700'
-                      : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
                     }`}
                   title="Toggle Live Events Panel"
                 >
@@ -927,6 +928,16 @@ export function FastAgentPanel({
               />
             ) : (
               <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+                {/* Parallel Agent Lanes (Live Activity) */}
+                {chatMode === 'agent-streaming' && streamingThread?.agentThreadId && (
+                  <div className="mb-4">
+                    <LiveAgentLanes
+                      runId={streamingThread.agentThreadId}
+                      className="mb-4"
+                    />
+                  </div>
+                )}
+
                 {/* Welcome / Empty State */}
                 {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
                   <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[var(--text-secondary)]">
