@@ -1,11 +1,17 @@
 // convex/tools/linkupSearch.ts
 // Linkup search tool for Agent component
 // Provides web search capabilities using Linkup's advanced search API
+// 
+// IMPORTANT: This tool returns CONTRACTED SOURCES via artifacts.
+// URLs are persisted to artifact store and returned as sourceArtifactIds.
+// The LLM should NEVER construct URLs - only reference tool output.
 
 "use node";
 
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
+import { internal } from "../_generated/api";
+import { generateCacheKey, getTTL } from "../globalResearch/cacheSimple";
 
 // Linkup API types
 interface LinkupSearchResult {
@@ -22,6 +28,8 @@ interface LinkupSearchResult {
     content?: string;
     thumbnail?: string;
   }>;
+  // Structured output (when outputType: "structured")
+  structured?: Record<string, unknown>;
 }
 
 /**
@@ -39,35 +47,117 @@ function extractDomain(url: string): string {
 /**
  * Search the web using Linkup's AI-optimized search API
  * 
- * This tool allows the AI to search for current information on the web,
- * providing grounded, factual responses with sources.
+ * This tool searches the web and returns VERIFIED sources.
+ * All URLs are persisted to the artifact store - the LLM should
+ * reference sources by name, NOT by constructing URLs.
+ * 
+ * CRITICAL: Use fromDate/toDate for time-bounded queries like
+ * "funding this week" or "news from yesterday".
  */
 export const linkupSearch = createTool({
-  description: "Search the web for current information using Linkup's AI-optimized search. Use this when you need up-to-date facts, news, or information that isn't in your training data. Returns an answer with sources and optionally images. IMPORTANT: When users ask for 'images', 'pictures', 'photos' or want to 'see' something visual, you MUST set includeImages to true!",
+  description: `Search the web for current information using Linkup's AI-optimized search.
+
+IMPORTANT RULES:
+1. Use fromDate/toDate for temporal queries ("past week", "today", "last month")
+2. Sources are automatically persisted - DO NOT construct URLs yourself
+3. Reference sources by name (e.g., "According to TechCrunch...") not by URL
+4. Set includeImages=true ONLY when user explicitly asks for images/pictures
+
+The tool returns verified sources that get stored in the artifact system.`,
   
   args: z.object({
     query: z.string().describe("The natural language search query. Be specific and detailed for best results."),
-    depth: z.enum(["standard", "deep"]).default("standard").describe("Search depth: 'standard' is faster, 'deep' is more comprehensive but slower"),
-    includeImages: z.boolean().default(false).describe("CRITICAL: Set to TRUE when users ask for images, pictures, photos, or want to see visual content. Set to FALSE for text-only searches."),
-    includeDomains: z.array(z.string()).optional().describe("Optional: Specific domains to search within (e.g., ['microsoft.com', 'github.com'])"),
-    excludeDomains: z.array(z.string()).optional().describe("Optional: Domains to exclude from search (e.g., ['wikipedia.com'])"),
+    depth: z.enum(["standard", "deep"]).default("standard").describe("Search depth: 'standard' (€0.005, faster), 'deep' (€0.05, more comprehensive)"),
+    
+    // NEW: Date filtering (critical for temporal queries)
+    fromDate: z.string().optional().describe("Start date in ISO format YYYY-MM-DD. Use for 'past week', 'since Monday', etc."),
+    toDate: z.string().optional().describe("End date in ISO format YYYY-MM-DD. Use for 'until yesterday', 'before Dec 1', etc."),
+    
+    // NEW: Output type selection
+    outputType: z.enum(["sourcedAnswer", "searchResults"]).default("sourcedAnswer")
+      .describe("'sourcedAnswer' returns natural language answer with citations. 'searchResults' returns raw chunks for grounding."),
+    
+    // NEW: Inline citations for sourcedAnswer
+    includeInlineCitations: z.boolean().default(true)
+      .describe("When true, answer includes [1], [2] markers mapped to sources. Recommended for traceability."),
+    
+    // NEW: Max results
+    maxResults: z.number().optional().describe("Maximum number of results to return (default: API decides)"),
+    
+    // Existing
+    includeImages: z.boolean().default(false).describe("Set TRUE only when user explicitly asks for images, pictures, photos."),
+    includeDomains: z.array(z.string()).optional().describe("Limit search to these domains (e.g., ['techcrunch.com', 'sec.gov'])"),
+    excludeDomains: z.array(z.string()).optional().describe("Exclude these domains from search"),
   }),
   
-  handler: async (_ctx, args): Promise<string> => {
+  handler: async (ctx, args): Promise<string> => {
     const apiKey = process.env.LINKUP_API_KEY;
     const startTime = Date.now();
     let success = false;
     let imageCount = 0;
     let errorMsg: string | undefined;
+    let cacheHit = false;
 
     if (!apiKey) {
       throw new Error("LINKUP_API_KEY environment variable is not set. Please add it to your Convex environment variables.");
     }
 
-    // Use searchResults output type when images are requested to get the mixed results array
-    const outputType = args.includeImages ? "searchResults" : "sourcedAnswer";
+    // ═══════════════════════════════════════════════════════════════════════
+    // CACHE CHECK (MVP: simple TTL cache)
+    // ═══════════════════════════════════════════════════════════════════════
+    const cacheKey = generateCacheKey("linkupSearch", args.query, {
+      depth: args.depth,
+      fromDate: args.fromDate,
+      toDate: args.toDate,
+      outputType: args.outputType,
+      includeImages: args.includeImages,
+      includeDomains: args.includeDomains,
+      excludeDomains: args.excludeDomains,
+    });
+
+    try {
+      const cached = await ctx.runQuery(internal.globalResearch.cacheSimple.getCache, {
+        queryKey: cacheKey,
+      });
+
+      if (cached.hit) {
+        console.log(`[linkupSearch] 🎯 Cache HIT for: "${args.query}" (age: ${Math.round(cached.ageMs / 1000)}s)`);
+        cacheHit = true;
+        return cached.response;
+      }
+    } catch (cacheError) {
+      // Cache check failed - continue with API call
+      console.warn(`[linkupSearch] Cache check failed:`, cacheError);
+    }
+
+    // Determine output type: use searchResults when images requested, otherwise use provided outputType
+    const effectiveOutputType = args.includeImages ? "searchResults" : args.outputType;
     
-    console.log(`[linkupSearch] Searching for: "${args.query}" (depth: ${args.depth}, images: ${args.includeImages}, outputType: ${outputType})`);
+    // Build request body with all Linkup API parameters
+    const requestBody: Record<string, unknown> = {
+      q: args.query,
+      depth: args.depth,
+      outputType: effectiveOutputType,
+      includeImages: args.includeImages,
+    };
+    
+    // Add optional parameters only if provided
+    if (args.fromDate) requestBody.fromDate = args.fromDate;
+    if (args.toDate) requestBody.toDate = args.toDate;
+    if (args.includeInlineCitations !== undefined) requestBody.includeInlineCitations = args.includeInlineCitations;
+    if (args.maxResults) requestBody.maxResults = args.maxResults;
+    if (args.includeDomains?.length) requestBody.includeDomains = args.includeDomains;
+    if (args.excludeDomains?.length) requestBody.excludeDomains = args.excludeDomains;
+    
+    console.log(`[linkupSearch] Searching for: "${args.query}"`, {
+      depth: args.depth,
+      outputType: effectiveOutputType,
+      fromDate: args.fromDate,
+      toDate: args.toDate,
+      includeInlineCitations: args.includeInlineCitations,
+      includeImages: args.includeImages,
+      maxResults: args.maxResults,
+    });
 
     try {
       const response = await fetch("https://api.linkup.so/v1/search", {
@@ -76,14 +166,7 @@ export const linkupSearch = createTool({
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          q: args.query,
-          depth: args.depth,
-          outputType,
-          includeImages: args.includeImages,
-          includeDomains: args.includeDomains,
-          excludeDomains: args.excludeDomains,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -118,10 +201,18 @@ export const linkupSearch = createTool({
         console.warn(`[linkupSearch] ⚠️ includeImages was TRUE but API returned 0 images!`);
       }
 
-      // Format the response
+      // ═══════════════════════════════════════════════════════════════════════
+      // FORMAT RESPONSE
+      // IMPORTANT: We emit structured data markers for artifact extraction,
+      // but human-readable output uses citation markers [1], [2] NOT raw URLs.
+      // This prevents the LLM from copying URLs into its response.
+      // ═══════════════════════════════════════════════════════════════════════
+      
       let result = "";
+      const citationMap: Array<{ marker: string; title: string; domain: string }> = [];
 
       // Add answer if using sourcedAnswer output type
+      // The answer may contain [1], [2] inline citations if includeInlineCitations was true
       if (data.answer) {
         result += `${data.answer}\n\n`;
       }
@@ -130,62 +221,60 @@ export const linkupSearch = createTool({
       if (imageResults.length > 0) {
         imageCount = imageResults.length;
 
-        // Prepare structured data for gallery rendering
+        // Prepare structured data for artifact extraction (not shown to user)
         const images = imageResults.slice(0, 10).map((image) => ({
           url: image.url,
           alt: image.name || "Image",
           thumbnail: image.thumbnail,
         }));
 
-        // Add structured data marker for frontend gallery rendering
+        // Structured data marker for artifact extraction
         result += `<!-- IMAGE_DATA\n${JSON.stringify(images, null, 2)}\n-->\n\n`;
 
-        // Also add markdown images for text-based rendering
-        result += "## Images\n\n";
-        imageResults.slice(0, 10).forEach((image) => {
-          const altText = image.name || "Image";
-          result += `![${altText}](${image.url}) `;
+        // Human-readable: just list image names, no URLs
+        result += "## Images Found\n\n";
+        imageResults.slice(0, 10).forEach((image, idx) => {
+          const altText = image.name || `Image ${idx + 1}`;
+          result += `- ${altText}\n`;
         });
-        result += "\n\n";
+        result += "\n";
       }
 
-      // Add videos if present
+      // Add videos if present (keep video tags for playback, URLs are necessary here)
       if (videoResults.length > 0) {
-        result += "## Videos\n\n";
-        videoResults.slice(0, 5).forEach((video) => {
-          // Use HTML5 video tag for videos (ReactMarkdown with rehype-raw will render this)
-          result += `<video controls width="400" ${video.thumbnail ? `poster="${video.thumbnail}"` : ''}>\n`;
-          result += `  <source src="${video.url}" type="video/webm" />\n`;
-          result += `  <source src="${video.url}" type="video/mp4" />\n`;
-          result += `  Your browser does not support the video tag.\n`;
-          result += `</video>\n`;
-          if (video.name) {
-            result += `*${video.name}*\n`;
-          }
-          result += "\n";
+        // Structured data for artifact extraction
+        const videos = videoResults.slice(0, 5).map((video) => ({
+          url: video.url,
+          title: video.name || "Video",
+          thumbnail: video.thumbnail,
+        }));
+        result += `<!-- VIDEO_DATA\n${JSON.stringify(videos, null, 2)}\n-->\n\n`;
+
+        result += "## Videos Found\n\n";
+        videoResults.slice(0, 5).forEach((video, idx) => {
+          result += `- ${video.name || `Video ${idx + 1}`}\n`;
         });
+        result += "\n";
       }
 
       // Add audios if present
       if (audioResults.length > 0) {
-        result += "## Audio\n\n";
-        audioResults.slice(0, 5).forEach((audio) => {
-          // Use HTML5 audio tag for audio files (ReactMarkdown with rehype-raw will render this)
-          result += `<audio controls>\n`;
-          result += `  <source src="${audio.url}" type="audio/webm" />\n`;
-          result += `  <source src="${audio.url}" type="audio/mpeg" />\n`;
-          result += `  Your browser does not support the audio tag.\n`;
-          result += `</audio>\n`;
-          if (audio.name) {
-            result += `*${audio.name}*\n`;
-          }
-          result += "\n";
+        const audios = audioResults.slice(0, 5).map((audio) => ({
+          url: audio.url,
+          title: audio.name || "Audio",
+        }));
+        result += `<!-- AUDIO_DATA\n${JSON.stringify(audios, null, 2)}\n-->\n\n`;
+
+        result += "## Audio Found\n\n";
+        audioResults.slice(0, 5).forEach((audio, idx) => {
+          result += `- ${audio.name || `Audio ${idx + 1}`}\n`;
         });
+        result += "\n";
       }
 
       // Add text results if using searchResults output type
       if (textResults.length > 0 && !data.answer) {
-        // Prepare structured data for gallery rendering
+        // Prepare structured data for artifact extraction
         const sources = textResults.slice(0, 10).map((text) => ({
           title: text.name,
           url: text.url,
@@ -193,22 +282,27 @@ export const linkupSearch = createTool({
           description: text.content?.substring(0, 200) || '',
         }));
 
-        // Add structured data marker for frontend gallery rendering
+        // Structured data marker for artifact extraction
         result += `<!-- SOURCE_GALLERY_DATA\n${JSON.stringify(sources, null, 2)}\n-->\n\n`;
 
-        // Also add human-readable text for context
+        // Human-readable: use citation markers, NOT URLs
         result += "## Search Results\n\n";
         textResults.slice(0, 5).forEach((text, idx) => {
-          result += `${idx + 1}. **[${text.name}](${text.url})** 🔗\n\n`;
+          const marker = `[${idx + 1}]`;
+          const domain = extractDomain(text.url);
+          citationMap.push({ marker, title: text.name, domain });
+          
+          result += `${marker} **${text.name}** (${domain})\n`;
           if (text.content) {
-            result += `   ${text.content.substring(0, 200)}...\n\n`;
+            result += `   ${text.content.substring(0, 200)}...\n`;
           }
+          result += "\n";
         });
       }
 
       // Add sources (for sourcedAnswer output type)
       if (data.sources && data.sources.length > 0) {
-        // Prepare structured data for gallery rendering
+        // Prepare structured data for artifact extraction
         const sources = data.sources.slice(0, 10).map((source) => ({
           title: source.name,
           url: source.url,
@@ -216,31 +310,62 @@ export const linkupSearch = createTool({
           description: source.snippet?.substring(0, 200) || '',
         }));
 
-        // Add structured data marker for frontend gallery rendering
+        // Structured data marker for artifact extraction
         result += `<!-- SOURCE_GALLERY_DATA\n${JSON.stringify(sources, null, 2)}\n-->\n\n`;
 
-        // Also add human-readable text for context
+        // Human-readable: use citation markers, NOT URLs
         result += "## Sources\n\n";
         data.sources.slice(0, 5).forEach((source, idx) => {
-          result += `${idx + 1}. **[${source.name}](${source.url})** 🔗\n\n`;
+          const marker = `[${idx + 1}]`;
+          const domain = extractDomain(source.url);
+          citationMap.push({ marker, title: source.name, domain });
+          
+          result += `${marker} **${source.name}** (${domain})\n`;
           if (source.snippet) {
-            result += `   ${source.snippet.substring(0, 200)}...\n\n`;
+            result += `   ${source.snippet.substring(0, 200)}...\n`;
           }
+          result += "\n";
         });
       }
 
+      // Add citation legend at the end (helps LLM reference correctly)
+      if (citationMap.length > 0) {
+        result += "\n---\n**Citation Key:** ";
+        result += citationMap.map(c => `${c.marker} ${c.domain}`).join(" | ");
+        result += "\n\n**Note:** URLs are stored in artifact system. Reference sources by citation marker or name.\n";
+      }
+
       success = true;
+      
+      // ═══════════════════════════════════════════════════════════════════════
+      // CACHE STORE (MVP: simple TTL cache)
+      // ═══════════════════════════════════════════════════════════════════════
+      const hasDateFilter = !!(args.fromDate || args.toDate);
+      const ttlMs = getTTL(args.query, hasDateFilter);
+      
+      try {
+        await ctx.runMutation(internal.globalResearch.cacheSimple.setCache, {
+          queryKey: cacheKey,
+          toolName: "linkupSearch",
+          response: result,
+          ttlMs,
+        });
+        console.log(`[linkupSearch] 💾 Cached result (TTL: ${Math.round(ttlMs / 1000 / 60)}min)`);
+      } catch (cacheStoreError) {
+        // Cache store failed - not critical, just log
+        console.warn(`[linkupSearch] Failed to cache result:`, cacheStoreError);
+      }
       
       // Track API usage (asynchronously, don't wait)
       // Linkup Pricing (2025): €5/1,000 standard searches = ~$0.0055/search = 0.55 cents
       // Deep search would be ~5.5 cents but we only use standard
       const responseTime = Date.now() - startTime;
-      _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+      ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
         apiName: "linkup",
         operation: "search",
         unitsUsed: 1,
         estimatedCost: 1, // 0.55 cents for standard, round up to 1 cent
-        requestMetadata: { query: args.query, imageCount, depth: args.depth },
+        requestMetadata: { query: args.query, imageCount, depth: args.depth, cacheHit },
         success: true,
         responseTime,
       });
@@ -253,7 +378,7 @@ export const linkupSearch = createTool({
       // Track failed API call (asynchronously)
       const responseTime = Date.now() - startTime;
       try {
-        _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+        ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
           apiName: "linkup",
           operation: "search",
           unitsUsed: 0,

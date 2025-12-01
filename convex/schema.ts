@@ -439,6 +439,77 @@ const agentRunEvents = defineTable({
   .index("by_run", ["runId", "seq"]);
 
 /* ------------------------------------------------------------------ */
+/* AGENT DELEGATIONS - Tracking parallel subagent execution           */
+/* ------------------------------------------------------------------ */
+const agentDelegations = defineTable({
+  // Identity & isolation
+  runId: v.string(),                      // coordinatorThreadId (for UI scoping)
+  delegationId: v.string(),               // UUID, stable ID for this delegation
+  userId: v.id("users"),                  // Multi-user isolation
+  
+  // Agent info
+  agentName: v.union(
+    v.literal("DocumentAgent"),
+    v.literal("MediaAgent"),
+    v.literal("SECAgent"),
+    v.literal("OpenBBAgent"),
+    v.literal("EntityResearchAgent"),
+  ),
+  query: v.string(),                      // Original task description
+  
+  // Lifecycle
+  status: v.union(
+    v.literal("scheduled"),               // Scheduler accepted
+    v.literal("running"),                 // generateText started
+    v.literal("completed"),               // Finished successfully
+    v.literal("failed"),                  // Error
+    v.literal("cancelled"),               // User cancelled
+  ),
+  
+  // Timing
+  scheduledAt: v.number(),
+  startedAt: v.optional(v.number()),
+  finishedAt: v.optional(v.number()),
+  
+  // Results (refs, not inline - avoids OCC on streaming)
+  subagentThreadId: v.optional(v.string()),
+  finalPatchRef: v.optional(v.string()),  // Pointer to patch document
+  errorMessage: v.optional(v.string()),
+  
+  // Merge tracking
+  mergeStatus: v.optional(v.union(
+    v.literal("pending"),
+    v.literal("merged"),
+    v.literal("rejected"),
+  )),
+})
+  .index("by_run", ["runId"])
+  .index("by_run_status", ["runId", "status"])
+  .index("by_user_run", ["userId", "runId"])
+  .index("by_delegation", ["delegationId"]);
+
+/* ------------------------------------------------------------------ */
+/* AGENT WRITE EVENTS - Append-only streaming chunks (OCC-safe)       */
+/* Mirrors agentRunEvents pattern: seq owned by action, not mutated   */
+/* ------------------------------------------------------------------ */
+const agentWriteEvents = defineTable({
+  delegationId: v.string(),               // FK to agentDelegations
+  seq: v.number(),                        // Monotonic per delegation (action-owned)
+  kind: v.union(
+    v.literal("delta"),                   // Streaming text chunk
+    v.literal("tool_start"),              // Tool invocation started
+    v.literal("tool_end"),                // Tool completed
+    v.literal("note"),                    // Status update
+    v.literal("final"),                   // Final output chunk
+  ),
+  textChunk: v.optional(v.string()),      // For delta/final
+  toolName: v.optional(v.string()),       // For tool_start/tool_end
+  metadata: v.optional(v.any()),          // Extra data (citations, artifactIds)
+  createdAt: v.number(),
+})
+  .index("by_delegation", ["delegationId", "seq"]);  // Compound for range queries
+
+/* ------------------------------------------------------------------ */
 /* CHAT - Now using @convex-dev/agent component                       */
 /* Legacy chatThreads and chatMessages tables removed                 */
 /* ------------------------------------------------------------------ */
@@ -513,1374 +584,1750 @@ const searchCache = defineTable({
   .index("by_updated", ["lastUpdated"])    // Recent updates
   .index("by_public", ["isPublic", "searchCount"]); // Public trending queries
 
-  /* ------------------------------------------------------------------ */
-  /* MCP TOOLS - Available tools from connected MCP servers             */
-  /* ------------------------------------------------------------------ */
-  const mcpTools = defineTable({
-    serverId: v.id("mcpServers"),           // which server provides this tool
-    name: v.string(),                       // tool name
-    description: v.optional(v.string()),    // tool description
-    schema: v.optional(v.any()),            // tool parameter schema
-    isAvailable: v.boolean(),               // whether tool is currently available
-    isEnabled: v.optional(v.boolean()),     // whether tool is enabled for use (user-controlled)
-    lastUsed: v.optional(v.number()),       // last time tool was used
-    usageCount: v.optional(v.number()),     // how many times tool has been used
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_server", ["serverId"])
-    .index("by_server_available", ["serverId", "isAvailable"])
-    .index("by_name", ["name"])
-    .index("by_server_name", ["serverId", "name"]);
+/* ------------------------------------------------------------------ */
+/* MCP TOOLS - Available tools from connected MCP servers             */
+/* ------------------------------------------------------------------ */
+const mcpTools = defineTable({
+  serverId: v.id("mcpServers"),           // which server provides this tool
+  name: v.string(),                       // tool name
+  description: v.optional(v.string()),    // tool description
+  schema: v.optional(v.any()),            // tool parameter schema
+  isAvailable: v.boolean(),               // whether tool is currently available
+  isEnabled: v.optional(v.boolean()),     // whether tool is enabled for use (user-controlled)
+  lastUsed: v.optional(v.number()),       // last time tool was used
+  usageCount: v.optional(v.number()),     // how many times tool has been used
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_server", ["serverId"])
+  .index("by_server_available", ["serverId", "isAvailable"])
+  .index("by_name", ["name"])
+  .index("by_server_name", ["serverId", "name"]);
 
-  /* ------------------------------------------------------------------ */
-  /* MCP SESSIONS - Active MCP client sessions                          */
-  /* ------------------------------------------------------------------ */
-  const mcpSessions = defineTable({
-    serverId: v.id("mcpServers"),           // which server this session connects to
-    userId: v.id("users"),                 // session owner
-    sessionId: v.string(),                  // unique session identifier
-    status: v.union(v.literal("connecting"), v.literal("connected"), v.literal("disconnected"), v.literal("error")),
-    connectedAt: v.optional(v.number()),    // when session was established
-    disconnectedAt: v.optional(v.number()), // when session ended
-    errorMessage: v.optional(v.string()),   // error details if status is error
-    toolsAvailable: v.optional(v.array(v.string())), // available tool names
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_server", ["serverId"])
-    .index("by_user", ["userId"])
-    .index("by_session_id", ["sessionId"])
-    .index("by_status", ["status"]);
+/* ------------------------------------------------------------------ */
+/* MCP SESSIONS - Active MCP client sessions                          */
+/* ------------------------------------------------------------------ */
+const mcpSessions = defineTable({
+  serverId: v.id("mcpServers"),           // which server this session connects to
+  userId: v.id("users"),                 // session owner
+  sessionId: v.string(),                  // unique session identifier
+  status: v.union(v.literal("connecting"), v.literal("connected"), v.literal("disconnected"), v.literal("error")),
+  connectedAt: v.optional(v.number()),    // when session was established
+  disconnectedAt: v.optional(v.number()), // when session ended
+  errorMessage: v.optional(v.string()),   // error details if status is error
+  toolsAvailable: v.optional(v.array(v.string())), // available tool names
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_server", ["serverId"])
+  .index("by_user", ["userId"])
+  .index("by_session_id", ["sessionId"])
+  .index("by_status", ["status"]);
 
-  /* ------------------------------------------------------------------ */
-  /* USER PREFERENCES - UI settings and customizations                  */
-  /* ------------------------------------------------------------------ */
-  const userPreferences = defineTable({
-    userId: v.id("users"),
-    // Sidebar preferences
-    ungroupedSectionName: v.optional(v.string()),     // custom name for ungrouped documents section
-    isUngroupedExpanded: v.optional(v.boolean()),     // expand/collapse state for ungrouped section
-    organizationMode: v.optional(v.string()),         // 'flat' | 'folders' | 'smart' | 'filetype'
-    iconOrder: v.optional(v.array(v.string())),       // persisted order of Integrate section icons
-    docOrderByGroup: v.optional(
-      v.record(v.string(), v.array(v.id("documents")))
-    ), // persisted per-group document order for Sidebar
-    // Documents grid ordering (server-side persistence)
-    docOrderByFilter: v.optional(
-      v.record(v.string(), v.array(v.id("documents")))
-    ), // persisted per-filter document order for Documents grid (list/cards)
-    docOrderBySegmented: v.optional(
-      v.record(v.string(), v.array(v.id("documents")))
-    ), // persisted per-group document order for Documents grid segmented view
-    // Account reminders/preferences
-    linkReminderOptOut: v.optional(v.boolean()),      // true => do not show anonymous link reminders
-    // Calendar & planner UI preferences
-    calendarHubSizePct: v.optional(v.number()),       // preferred % height for Calendar panel (20-80)
-    plannerMode: v.optional(
-      v.union(
-        v.literal("list"),
-        v.literal("calendar"),
-        v.literal("kanban"),
-        v.literal("weekly"),
-      ),
+/* ------------------------------------------------------------------ */
+/* USER PREFERENCES - UI settings and customizations                  */
+/* ------------------------------------------------------------------ */
+const userPreferences = defineTable({
+  userId: v.id("users"),
+  // Sidebar preferences
+  ungroupedSectionName: v.optional(v.string()),     // custom name for ungrouped documents section
+  isUngroupedExpanded: v.optional(v.boolean()),     // expand/collapse state for ungrouped section
+  organizationMode: v.optional(v.string()),         // 'flat' | 'folders' | 'smart' | 'filetype'
+  iconOrder: v.optional(v.array(v.string())),       // persisted order of Integrate section icons
+  docOrderByGroup: v.optional(
+    v.record(v.string(), v.array(v.id("documents")))
+  ), // persisted per-group document order for Sidebar
+  // Documents grid ordering (server-side persistence)
+  docOrderByFilter: v.optional(
+    v.record(v.string(), v.array(v.id("documents")))
+  ), // persisted per-filter document order for Documents grid (list/cards)
+  docOrderBySegmented: v.optional(
+    v.record(v.string(), v.array(v.id("documents")))
+  ), // persisted per-group document order for Documents grid segmented view
+  // Account reminders/preferences
+  linkReminderOptOut: v.optional(v.boolean()),      // true => do not show anonymous link reminders
+  // Calendar & planner UI preferences
+  calendarHubSizePct: v.optional(v.number()),       // preferred % height for Calendar panel (20-80)
+  plannerMode: v.optional(
+    v.union(
+      v.literal("list"),
+      v.literal("calendar"),
+      v.literal("kanban"),
+      v.literal("weekly"),
     ),
-    // Timezone preference (IANA name, e.g. "America/Los_Angeles")
-    timeZone: v.optional(v.string()),
-    // Planner view preferences
-    plannerDensity: v.optional(
-      v.union(
-        v.literal("comfortable"),
-        v.literal("compact"),
-      ),
+  ),
+  // Timezone preference (IANA name, e.g. "America/Los_Angeles")
+  timeZone: v.optional(v.string()),
+  // Planner view preferences
+  plannerDensity: v.optional(
+    v.union(
+      v.literal("comfortable"),
+      v.literal("compact"),
     ),
-    showWeekInAgenda: v.optional(v.boolean()),
-    agendaMode: v.optional(
-      v.union(
-        v.literal("list"),
-        v.literal("kanban"),
-        v.literal("weekly"),
-        v.literal("mini"),
-      ),
+  ),
+  showWeekInAgenda: v.optional(v.boolean()),
+  agendaMode: v.optional(
+    v.union(
+      v.literal("list"),
+      v.literal("kanban"),
+      v.literal("weekly"),
+      v.literal("mini"),
     ),
-    // Persisted selected day for Agenda (UTC ms of local day start)
-    agendaSelectedDateMs: v.optional(v.number()),
-    // Upcoming list-specific view preference
-    upcomingMode: v.optional(
-      v.union(
-        v.literal("list"),
-        v.literal("mini"),
-      ),
+  ),
+  // Persisted selected day for Agenda (UTC ms of local day start)
+  agendaSelectedDateMs: v.optional(v.number()),
+  // Upcoming list-specific view preference
+  upcomingMode: v.optional(
+    v.union(
+      v.literal("list"),
+      v.literal("mini"),
     ),
-    // Per-user Kanban lane titles (display labels for status lanes)
-    kanbanLaneTitles: v.optional(
-      v.object({
-        todo: v.string(),
-        in_progress: v.string(),
-        done: v.string(),
-        blocked: v.string(),
-      }),
-    ),
-    // Persisted ordering for Today's Agenda (list) and Upcoming lists
-    agendaListOrder: v.optional(v.array(v.string())),
-    upcomingListOrder: v.optional(v.array(v.string())),
-    // Agents module preferences (generic key/value store)
-    agentsPrefs: v.optional(v.record(v.string(), v.string())),
-    // Tracked hashtags/topics for daily dossier/newsletter
-    trackedHashtags: v.optional(v.array(v.string())),
-    // Onboarding status
-    onboardingSeededAt: v.optional(v.number()),
-    // Future: more UI preferences can be added here
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user", ["userId"]);
+  ),
+  // Per-user Kanban lane titles (display labels for status lanes)
+  kanbanLaneTitles: v.optional(
+    v.object({
+      todo: v.string(),
+      in_progress: v.string(),
+      done: v.string(),
+      blocked: v.string(),
+    }),
+  ),
+  // Persisted ordering for Today's Agenda (list) and Upcoming lists
+  agendaListOrder: v.optional(v.array(v.string())),
+  upcomingListOrder: v.optional(v.array(v.string())),
+  // Agents module preferences (generic key/value store)
+  agentsPrefs: v.optional(v.record(v.string(), v.string())),
+  // Tracked hashtags/topics for daily dossier/newsletter
+  trackedHashtags: v.optional(v.array(v.string())),
+  // Onboarding status
+  onboardingSeededAt: v.optional(v.number()),
+  // Future: more UI preferences can be added here
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"]);
 
-  /* ------------------------------------------------------------------ */
-  /* GOOGLE ACCOUNTS - OAuth tokens for Gmail integration               */
-  /* ------------------------------------------------------------------ */
-  const googleAccounts = defineTable({
-    userId: v.id("users"),
-    provider: v.literal("google"),
-    email: v.optional(v.string()),
-    accessToken: v.string(),
-    refreshToken: v.optional(v.string()),
-    scope: v.optional(v.string()),
-    expiryDate: v.optional(v.number()), // ms since epoch
-    tokenType: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_provider", ["userId", "provider"]);
+/* ------------------------------------------------------------------ */
+/* GOOGLE ACCOUNTS - OAuth tokens for Gmail integration               */
+/* ------------------------------------------------------------------ */
+const googleAccounts = defineTable({
+  userId: v.id("users"),
+  provider: v.literal("google"),
+  email: v.optional(v.string()),
+  accessToken: v.string(),
+  refreshToken: v.optional(v.string()),
+  scope: v.optional(v.string()),
+  expiryDate: v.optional(v.number()), // ms since epoch
+  tokenType: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_provider", ["userId", "provider"]);
 
-  /* ------------------------------------------------------------------ */
-  /* INTEGRATIONS - Slack, GitHub, Notion OAuth tokens                   */
-  /* ------------------------------------------------------------------ */
-  const slackAccounts = defineTable({
-    userId: v.id("users"),
-    provider: v.literal("slack"),
-    teamId: v.optional(v.string()),
-    teamName: v.optional(v.string()),
-    botUserId: v.optional(v.string()),
-    authedUserId: v.optional(v.string()),
-    accessToken: v.string(),             // bot token
-    userAccessToken: v.optional(v.string()), // authed_user.access_token if granted
-    scope: v.optional(v.string()),
-    tokenType: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_provider", ["userId", "provider"]);
+/* ------------------------------------------------------------------ */
+/* INTEGRATIONS - Slack, GitHub, Notion OAuth tokens                   */
+/* ------------------------------------------------------------------ */
+const slackAccounts = defineTable({
+  userId: v.id("users"),
+  provider: v.literal("slack"),
+  teamId: v.optional(v.string()),
+  teamName: v.optional(v.string()),
+  botUserId: v.optional(v.string()),
+  authedUserId: v.optional(v.string()),
+  accessToken: v.string(),             // bot token
+  userAccessToken: v.optional(v.string()), // authed_user.access_token if granted
+  scope: v.optional(v.string()),
+  tokenType: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_provider", ["userId", "provider"]);
 
-  const githubAccounts = defineTable({
-    userId: v.id("users"),
-    provider: v.literal("github"),
-    username: v.optional(v.string()),
-    accessToken: v.string(),
-    scope: v.optional(v.string()),
-    tokenType: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_provider", ["userId", "provider"]);
+const githubAccounts = defineTable({
+  userId: v.id("users"),
+  provider: v.literal("github"),
+  username: v.optional(v.string()),
+  accessToken: v.string(),
+  scope: v.optional(v.string()),
+  tokenType: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_provider", ["userId", "provider"]);
 
-  const notionAccounts = defineTable({
-    userId: v.id("users"),
-    provider: v.literal("notion"),
-    workspaceId: v.optional(v.string()),
-    workspaceName: v.optional(v.string()),
-    botId: v.optional(v.string()),
-    accessToken: v.string(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_provider", ["userId", "provider"]);
+const notionAccounts = defineTable({
+  userId: v.id("users"),
+  provider: v.literal("notion"),
+  workspaceId: v.optional(v.string()),
+  workspaceName: v.optional(v.string()),
+  botId: v.optional(v.string()),
+  accessToken: v.string(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_provider", ["userId", "provider"]);
 
-  /* ------------------------------------------------------------------ */
-  /* API KEYS - Per-user API keys for providers                        */
-  /* ------------------------------------------------------------------ */
-  const userApiKeys = defineTable({
-    userId: v.id("users"),
-    provider: v.string(),
-    encryptedApiKey: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user_provider", ["userId", "provider"]);
+/* ------------------------------------------------------------------ */
+/* API KEYS - Per-user API keys for providers                        */
+/* ------------------------------------------------------------------ */
+const userApiKeys = defineTable({
+  userId: v.id("users"),
+  provider: v.string(),
+  encryptedApiKey: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user_provider", ["userId", "provider"]);
 
-  /* ------------------------------------------------------------------ */
-  /* DAILY USAGE - Per-user, per-provider daily counts                  */
-  /* ------------------------------------------------------------------ */
-  const dailyUsage = defineTable({
-    userId: v.optional(v.id("users")),
-    provider: v.string(),
-    date: v.string(), // YYYY-MM-DD
-    count: v.optional(v.number()),
-    limit: v.optional(v.number()),
-    updatedAt: v.optional(v.number()),
-  })
-    .index("by_provider_date", ["provider", "date"])
-    .index("by_user_provider_date", ["userId", "provider", "date"]);
+/* ------------------------------------------------------------------ */
+/* DAILY USAGE - Per-user, per-provider daily counts                  */
+/* ------------------------------------------------------------------ */
+const dailyUsage = defineTable({
+  userId: v.optional(v.id("users")),
+  provider: v.string(),
+  date: v.string(), // YYYY-MM-DD
+  count: v.optional(v.number()),
+  limit: v.optional(v.number()),
+  updatedAt: v.optional(v.number()),
+})
+  .index("by_provider_date", ["provider", "date"])
+  .index("by_user_provider_date", ["userId", "provider", "date"]);
 
-  /* ------------------------------------------------------------------ */
-  /* SUBSCRIPTIONS - simple $1 supporter unlock                          */
-  /* ------------------------------------------------------------------ */
-  const subscriptions = defineTable({
-    userId: v.id("users"),
-    plan: v.union(v.literal("free"), v.literal("supporter")),
-    status: v.union(v.literal("active"), v.literal("canceled")),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    stripeSessionId: v.optional(v.string()),
-    stripePaymentIntentId: v.optional(v.string()),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_status", ["userId", "status"]);
+/* ------------------------------------------------------------------ */
+/* SUBSCRIPTIONS - simple $1 supporter unlock                          */
+/* ------------------------------------------------------------------ */
+const subscriptions = defineTable({
+  userId: v.id("users"),
+  plan: v.union(v.literal("free"), v.literal("supporter")),
+  status: v.union(v.literal("active"), v.literal("canceled")),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  stripeSessionId: v.optional(v.string()),
+  stripePaymentIntentId: v.optional(v.string()),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_status", ["userId", "status"]);
 
-  /* ------------------------------------------------------------------ */
-  /* MCP TOOL LEARNING - AI learning data for adaptive guidance          */
-  /* ------------------------------------------------------------------ */
-  const mcpToolLearning = defineTable({
-    toolId: v.id("mcpTools"),              // which tool this learning data is for
-    serverId: v.id("mcpServers"),          // which server provides the tool
-    naturalLanguageQuery: v.string(),      // the natural language input
-    convertedParameters: v.any(),           // the AI-converted parameters
-    executionSuccess: v.boolean(),          // whether the execution succeeded
-    executionResult: v.optional(v.any()),   // the execution result (if successful)
-    errorMessage: v.optional(v.string()),   // error details (if failed)
-    learningType: v.union(
-      v.literal("auto_discovery"),         // automatic learning during tool discovery
-      v.literal("user_interaction"),       // learning from real user interactions
-      v.literal("manual_training")          // manually triggered learning
-    ),
-    qualityScore: v.optional(v.number()),   // 0-1 score of how good this example is
-    timingMs: v.optional(v.number()),       // execution time in milliseconds
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_tool", ["toolId"])
-    .index("by_server", ["serverId"])
-    .index("by_success", ["executionSuccess"])
-    .index("by_learning_type", ["learningType"])
-    .index("by_quality", ["qualityScore"]);
+/* ------------------------------------------------------------------ */
+/* MCP TOOL LEARNING - AI learning data for adaptive guidance          */
+/* ------------------------------------------------------------------ */
+const mcpToolLearning = defineTable({
+  toolId: v.id("mcpTools"),              // which tool this learning data is for
+  serverId: v.id("mcpServers"),          // which server provides the tool
+  naturalLanguageQuery: v.string(),      // the natural language input
+  convertedParameters: v.any(),           // the AI-converted parameters
+  executionSuccess: v.boolean(),          // whether the execution succeeded
+  executionResult: v.optional(v.any()),   // the execution result (if successful)
+  errorMessage: v.optional(v.string()),   // error details (if failed)
+  learningType: v.union(
+    v.literal("auto_discovery"),         // automatic learning during tool discovery
+    v.literal("user_interaction"),       // learning from real user interactions
+    v.literal("manual_training")          // manually triggered learning
+  ),
+  qualityScore: v.optional(v.number()),   // 0-1 score of how good this example is
+  timingMs: v.optional(v.number()),       // execution time in milliseconds
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_tool", ["toolId"])
+  .index("by_server", ["serverId"])
+  .index("by_success", ["executionSuccess"])
+  .index("by_learning_type", ["learningType"])
+  .index("by_quality", ["qualityScore"]);
 
-  /* ------------------------------------------------------------------ */
-  /* MCP GUIDANCE EXAMPLES - Curated examples for user guidance          */
-  /* ------------------------------------------------------------------ */
-  const mcpGuidanceExamples = defineTable({
-    toolId: v.id("mcpTools"),              // which tool these examples are for
-    serverId: v.id("mcpServers"),          // which server provides the tool
-    examples: v.array(v.object({
-      query: v.string(),                   // example natural language query
-      parameters: v.any(),                 // the converted parameters
-      description: v.string(),             // human-readable description
-      successRate: v.optional(v.number()), // success rate for this type of query
-    })),
-    generatedAt: v.number(),               // when these examples were generated
-    lastUpdated: v.number(),               // when examples were last refreshed
-    version: v.number(),                   // version number for cache invalidation
-    isActive: v.boolean(),                 // whether these examples are currently active
-  })
-    .index("by_tool", ["toolId"])
-    .index("by_server", ["serverId"])
-    .index("by_active", ["isActive"]);
+/* ------------------------------------------------------------------ */
+/* MCP GUIDANCE EXAMPLES - Curated examples for user guidance          */
+/* ------------------------------------------------------------------ */
+const mcpGuidanceExamples = defineTable({
+  toolId: v.id("mcpTools"),              // which tool these examples are for
+  serverId: v.id("mcpServers"),          // which server provides the tool
+  examples: v.array(v.object({
+    query: v.string(),                   // example natural language query
+    parameters: v.any(),                 // the converted parameters
+    description: v.string(),             // human-readable description
+    successRate: v.optional(v.number()), // success rate for this type of query
+  })),
+  generatedAt: v.number(),               // when these examples were generated
+  lastUpdated: v.number(),               // when examples were last refreshed
+  version: v.number(),                   // version number for cache invalidation
+  isActive: v.boolean(),                 // whether these examples are currently active
+})
+  .index("by_tool", ["toolId"])
+  .index("by_server", ["serverId"])
+  .index("by_active", ["isActive"]);
 
-  /* ------------------------------------------------------------------ */
-  /* MCP TOOL HISTORY - Per-user usage history for MCP tools             */
-  /* ------------------------------------------------------------------ */
-  const mcpToolHistory = defineTable({
-    userId: v.id("users"),
-    toolId: v.id("mcpTools"),
-    serverId: v.id("mcpServers"),
-    naturalLanguageQuery: v.string(),
-    parameters: v.any(),
-    executionSuccess: v.boolean(),
-    resultPreview: v.optional(v.string()),
-    errorMessage: v.optional(v.string()),
-    createdAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_tool", ["userId", "toolId"])
-    .index("by_user_createdAt", ["userId", "createdAt"])
-    .index("by_user_tool_createdAt", ["userId", "toolId", "createdAt"]);
+/* ------------------------------------------------------------------ */
+/* MCP TOOL HISTORY - Per-user usage history for MCP tools             */
+/* ------------------------------------------------------------------ */
+const mcpToolHistory = defineTable({
+  userId: v.id("users"),
+  toolId: v.id("mcpTools"),
+  serverId: v.id("mcpServers"),
+  naturalLanguageQuery: v.string(),
+  parameters: v.any(),
+  executionSuccess: v.boolean(),
+  resultPreview: v.optional(v.string()),
+  errorMessage: v.optional(v.string()),
+  createdAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_tool", ["userId", "toolId"])
+  .index("by_user_createdAt", ["userId", "createdAt"])
+  .index("by_user_tool_createdAt", ["userId", "toolId", "createdAt"]);
 
-  /* ------------------------------------------------------------------ */
-  /* DOCUMENT SNAPSHOTS – periodic snapshots to prevent step accumulation */
-  /* ------------------------------------------------------------------ */
-  const documentSnapshots = defineTable({
-    documentId: v.id("documents"),
-    content: v.string(),
-    version: v.number(),
-    createdBy: v.id("users"),
-    createdAt: v.number(),
-    stepCount: v.number(),
+/* ------------------------------------------------------------------ */
+/* DOCUMENT SNAPSHOTS – periodic snapshots to prevent step accumulation */
+/* ------------------------------------------------------------------ */
+const documentSnapshots = defineTable({
+  documentId: v.id("documents"),
+  content: v.string(),
+  version: v.number(),
+  createdBy: v.id("users"),
+  createdAt: v.number(),
+  stepCount: v.number(),
 
-    // NEW FIELDS for enhanced management
-    contentSize: v.optional(v.number()),        // Track content size in bytes
-    isEmergency: v.optional(v.boolean()),       // Flag emergency snapshots
-    isManual: v.optional(v.boolean()),          // Flag manually triggered snapshots
-    compressionRatio: v.optional(v.number()),   // Track compression effectiveness
-    triggerReason: v.optional(v.string()),      // Why this snapshot was created
-  })
-    .index("by_document", ["documentId"])
-    .index("by_document_version", ["documentId", "version"])
-    .index("by_created_at", ["createdAt"])
-    .index("by_size", ["contentSize"])           // NEW: Index by content size
-    .index("by_emergency", ["isEmergency"])      // NEW: Quick access to emergency snapshots
+  // NEW FIELDS for enhanced management
+  contentSize: v.optional(v.number()),        // Track content size in bytes
+  isEmergency: v.optional(v.boolean()),       // Flag emergency snapshots
+  isManual: v.optional(v.boolean()),          // Flag manually triggered snapshots
+  compressionRatio: v.optional(v.number()),   // Track compression effectiveness
+  triggerReason: v.optional(v.string()),      // Why this snapshot was created
+})
+  .index("by_document", ["documentId"])
+  .index("by_document_version", ["documentId", "version"])
+  .index("by_created_at", ["createdAt"])
+  .index("by_size", ["contentSize"])           // NEW: Index by content size
+  .index("by_emergency", ["isEmergency"])      // NEW: Quick access to emergency snapshots
 
 /* ------------------------------------------------------------------ */
 /* SPREADSHEETS – sheet metadata and individual cells                  */
 /* ------------------------------------------------------------------ */
 const spreadsheets = defineTable({
-      name: v.string(),
-      userId: v.id("users"),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-    .index("by_user", ["userId"])
-    .index("by_name", ["name"]);
+  name: v.string(),
+  userId: v.id("users"),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_name", ["name"]);
 
-  const sheetCells = defineTable({
-    sheetId: v.id("spreadsheets"),
-    row: v.number(),
-    col: v.number(),
-    value: v.optional(v.string()),
-    type: v.optional(v.string()),      // e.g. "text", "number", "formula"
-    comment: v.optional(v.string()),
-    updatedAt: v.number(),
-    updatedBy: v.optional(v.id("users")),
-  })
-    .index("by_sheet", ["sheetId"]) // broad queries
-    .index("by_sheet_row_col", ["sheetId", "row", "col"]); // precise cell lookup
+const sheetCells = defineTable({
+  sheetId: v.id("spreadsheets"),
+  row: v.number(),
+  col: v.number(),
+  value: v.optional(v.string()),
+  type: v.optional(v.string()),      // e.g. "text", "number", "formula"
+  comment: v.optional(v.string()),
+  updatedAt: v.number(),
+  updatedBy: v.optional(v.id("users")),
+})
+  .index("by_sheet", ["sheetId"]) // broad queries
+  .index("by_sheet_row_col", ["sheetId", "row", "col"]); // precise cell lookup
 
-  /* ------------------------------------------------------------------ */
-  /* TASKS – personal task management                                   */
-  /* ------------------------------------------------------------------ */
-  const events = defineTable({
-    userId: v.id("users"),
-    title: v.string(),
-    description: v.optional(v.string()),
-    // Canonical Editor.js JSON (stringified) for event description
-    descriptionJson: v.optional(v.string()),
-    startTime: v.number(),                 // ms since epoch
-    endTime: v.optional(v.number()),       // ms since epoch
-    allDay: v.optional(v.boolean()),
-    location: v.optional(v.string()),
-    status: v.optional(
+/* ------------------------------------------------------------------ */
+/* TASKS – personal task management                                   */
+/* ------------------------------------------------------------------ */
+const events = defineTable({
+  userId: v.id("users"),
+  title: v.string(),
+  description: v.optional(v.string()),
+  // Canonical Editor.js JSON (stringified) for event description
+  descriptionJson: v.optional(v.string()),
+  startTime: v.number(),                 // ms since epoch
+  endTime: v.optional(v.number()),       // ms since epoch
+  allDay: v.optional(v.boolean()),
+  location: v.optional(v.string()),
+  status: v.optional(
+    v.union(
+      v.literal("confirmed"),
+      v.literal("tentative"),
+      v.literal("cancelled"),
+    ),
+  ),
+  color: v.optional(v.string()),
+  documentId: v.optional(v.id("documents")),
+  tags: v.optional(v.array(v.string())),
+  recurrence: v.optional(v.string()),    // simple RRULE or custom text for now
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_status", ["userId", "status"]) // status filtering
+  .index("by_user_start", ["userId", "startTime"]) // for range queries
+  .index("by_document", ["documentId"]);
+
+
+/* ------------------------------------------------------------------ */
+/* HOLIDAYS – cached public holidays by country                        */
+/* ------------------------------------------------------------------ */
+const holidays = defineTable({
+  country: v.string(),                 // e.g. "US"
+  name: v.string(),                    // Holiday display name
+  dateMs: v.number(),                  // UTC ms for the holiday date (00:00Z of that date)
+  dateKey: v.string(),                 // "YYYY-MM-DD" (as provided by API)
+  types: v.optional(v.array(v.string())),
+  year: v.number(),
+  raw: v.optional(v.any()),            // Raw provider payload
+  updatedAt: v.number(),
+})
+  .index("by_country_date", ["country", "dateMs"])
+  .index("by_country_year", ["country", "year"])
+  .index("by_date", ["dateMs"]);
+
+/* ------------------------------------------------------------------ */
+/* FINANCIAL EVENTS – macro releases and earnings (cached)             */
+/* ------------------------------------------------------------------ */
+const financialEvents = defineTable({
+  market: v.string(),                  // e.g. "US"
+  category: v.string(),                // e.g. "CPI" | "FOMC" | "NFP" | "GDP" | "PCE" | "EARNINGS"
+  title: v.string(),                   // Display title
+  dateMs: v.number(),                  // UTC ms of the calendar day (00:00Z)
+  dateKey: v.string(),                 // "YYYY-MM-DD"
+  time: v.optional(v.string()),        // e.g. "08:30 ET"
+  symbol: v.optional(v.string()),      // For earnings: ticker
+  raw: v.optional(v.any()),            // Raw provider payload
+  updatedAt: v.number(),
+})
+  .index("by_market_date", ["market", "dateMs"])
+  .index("by_category_date", ["category", "dateMs"]);
+
+/* ------------------------------------------------------------------ */
+/* TASKS – personal task management                                   */
+/* ------------------------------------------------------------------ */
+const tasks = defineTable({
+  userId: v.id("users"),
+  title: v.string(),
+  description: v.optional(v.string()),
+  // New: canonical Editor.js JSON (stringified); plain description kept for search/snippets
+  descriptionJson: v.optional(v.string()),
+  status: v.union(
+    v.literal("todo"),
+    v.literal("in_progress"),
+    v.literal("done"),
+    v.literal("blocked"),
+  ),
+  priority: v.optional(
+    v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("urgent"),
+    ),
+  ),
+  dueDate: v.optional(v.number()),       // ms since epoch
+  startDate: v.optional(v.number()),     // ms since epoch
+  documentId: v.optional(v.id("documents")),
+  eventId: v.optional(v.id("events")),  // optional link to a scheduled event
+  assigneeId: v.optional(v.id("users")), // optional assignee separate from owner
+  refs: v.optional(
+    v.array(
       v.union(
-        v.literal("confirmed"),
-        v.literal("tentative"),
-        v.literal("cancelled"),
+        v.object({ kind: v.literal("document"), id: v.id("documents") }),
+        v.object({ kind: v.literal("task"), id: v.id("tasks") }),
+        v.object({ kind: v.literal("event"), id: v.id("events") }),
       ),
     ),
-    color: v.optional(v.string()),
-    documentId: v.optional(v.id("documents")),
-    tags: v.optional(v.array(v.string())),
-    recurrence: v.optional(v.string()),    // simple RRULE or custom text for now
-    createdAt: v.number(),
-    updatedAt: v.number(),
+  ),
+  tags: v.optional(v.array(v.string())),
+  color: v.optional(v.string()),
+  isFavorite: v.optional(v.boolean()),
+  order: v.optional(v.number()),         // for Kanban ordering
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_status", ["userId", "status"]) // Kanban, filters
+  .index("by_user_dueDate", ["userId", "dueDate"]) // Today/Week queries
+  .index("by_user_priority", ["userId", "priority"]) // prioritization
+  .index("by_user_updatedAt", ["userId", "updatedAt"]) // recent activity
+  .index("by_user_assignee", ["userId", "assigneeId"]) // filtering by assignee
+  .index("by_document", ["documentId"]);
+
+
+
+/* ------------------------------------------------------------------ */
+/* AGENT TIMELINES – timeline docs + tasks + links                     */
+/* ------------------------------------------------------------------ */
+const agentTimelines = defineTable({
+  // Associate a timeline with a document so it can render in DocumentView
+  documentId: v.id("documents"),
+  name: v.string(),
+  // Base start used to compute absolute times: absoluteStart = baseStartMs + startOffsetMs
+  baseStartMs: v.optional(v.number()),
+  createdBy: v.id("users"),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  // Latest run result (persisted for UI readout)
+  latestRunInput: v.optional(v.string()),
+  latestRunOutput: v.optional(v.string()),
+  latestRunAt: v.optional(v.number()),
+}).index("by_document", ["documentId"])
+  .index("by_user", ["createdBy"]);
+
+const agentTasks = defineTable({
+  timelineId: v.id("agentTimelines"),
+  parentId: v.optional(v.id("agentTasks")),
+  name: v.string(),
+  // Offsets, not absolute times (backward-compatible with legacy startMs)
+  startOffsetMs: v.optional(v.number()),
+  startMs: v.optional(v.number()),
+  durationMs: v.number(),
+  progress: v.optional(v.number()), // 0..1
+  status: v.optional(v.union(
+    v.literal("pending"),
+    v.literal("running"),
+    v.literal("complete"),
+    v.literal("paused"),
+    v.literal("error"),
+  )),
+  agentType: v.optional(v.union(
+    v.literal("orchestrator"),
+    v.literal("main"),
+    v.literal("leaf")
+  )),
+  assigneeId: v.optional(v.id("users")),
+  // Visual metadata and runtime stats for richer timeline rendering
+  icon: v.optional(v.string()),
+  color: v.optional(v.string()),
+  sequence: v.optional(v.union(v.literal("parallel"), v.literal("sequential"))),
+  description: v.optional(v.string()),
+  inputTokens: v.optional(v.number()),
+  outputTokens: v.optional(v.number()),
+  outputSizeBytes: v.optional(v.number()),
+  elapsedMs: v.optional(v.number()),
+  startedAtMs: v.optional(v.number()),
+  completedAtMs: v.optional(v.number()),
+  // New: per-phase and retry/error markers
+  phaseBoundariesMs: v.optional(v.array(v.number())),
+  retryOffsetsMs: v.optional(v.array(v.number())),
+  failureOffsetMs: v.optional(v.number()),
+  order: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+}).index("by_timeline", ["timelineId"]).index("by_parent", ["parentId"]);
+
+const agentLinks = defineTable({
+  timelineId: v.id("agentTimelines"),
+  sourceTaskId: v.id("agentTasks"),
+  targetTaskId: v.id("agentTasks"),
+  type: v.optional(v.union(
+    v.literal("e2e"),
+    v.literal("s2s"),
+    v.literal("s2e"),
+    v.literal("e2s")
+  )),
+  createdAt: v.number(),
+}).index("by_timeline", ["timelineId"]);
+
+
+/* ------------------------------------------------------------------ */
+/* AGENT TIMELINE RUNS – per-run history                               */
+/* ------------------------------------------------------------------ */
+const agentTimelineRuns = defineTable({
+  timelineId: v.id("agentTimelines"),
+  input: v.string(),
+  output: v.string(),
+  retryCount: v.optional(v.number()),
+  modelUsed: v.optional(v.string()),
+  createdAt: v.number(),
+  meta: v.optional(v.any()),
+})
+  .index("by_timeline", ["timelineId"])
+  .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
+
+/* ------------------------------------------------------------------ */
+/* AGENT IMAGE RESULTS – images found during agent execution          */
+/* ------------------------------------------------------------------ */
+const agentImageResults = defineTable({
+  timelineId: v.id("agentTimelines"),
+  taskId: v.optional(v.id("agentTasks")),
+  imageUrl: v.string(),
+  sourceUrl: v.optional(v.string()),        // Source page URL
+  title: v.optional(v.string()),            // Image title/description
+  thumbnailUrl: v.optional(v.string()),     // Thumbnail URL
+  width: v.optional(v.number()),            // Image width
+  height: v.optional(v.number()),           // Image height
+  format: v.optional(v.string()),           // Image format (jpg, png, etc.)
+  classification: v.optional(v.string()),   // Classification result
+  classificationConfidence: v.optional(v.number()), // Confidence score
+  classificationDetails: v.optional(v.any()), // Detailed classification data
+  metadata: v.optional(v.any()),            // Additional metadata
+  createdAt: v.number(),
+})
+  .index("by_timeline", ["timelineId"])
+  .index("by_task", ["taskId"])
+  .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
+
+/* ------------------------------------------------------------------ */
+/* VOICE SESSIONS - Real-time voice agent sessions (RTVI/Daily Bots) */
+/* ------------------------------------------------------------------ */
+const voiceSessions = defineTable({
+  sessionId: v.string(),           // Unique session identifier
+  userId: v.id("users"),           // User who owns this session
+  threadId: v.string(),            // Agent thread ID for conversation continuity
+  createdAt: v.number(),           // Session creation timestamp
+  lastActivityAt: v.number(),      // Last interaction timestamp
+  metadata: v.optional(v.object({  // Optional session metadata
+    clientType: v.optional(v.string()),    // "daily-bots", "rtvi", etc.
+    deviceInfo: v.optional(v.string()),    // Device/browser info
+    model: v.optional(v.string()),         // AI model used
+  })),
+})
+  .index("by_user", ["userId"])
+  .index("by_session_id", ["sessionId"])
+  .index("by_thread_id", ["threadId"])
+  .index("by_last_activity", ["lastActivityAt"]);
+
+export default defineSchema({
+  ...authTables,       // `users`, `sessions`
+  documents,
+  nodes,
+  relations,
+  relationTypes,
+  tags,
+  tagRefs,
+  smsLogs,
+  embeddings,
+  gridProjects,
+  files,
+  urlAnalyses,
+  chunks,
+  folders,
+  documentFolders,
+  userPreferences,
+  events,
+  tasks,
+  holidays,
+  financialEvents,
+  mcpServers,
+  mcpTools,
+  mcpSessions,
+  mcpPlans,
+  mcpMemoryEntries,
+  agentRuns,
+  agentRunEvents,
+  agentDelegations,
+  agentWriteEvents,
+  fileSearchStores,
+  // chatThreads and chatMessages removed - using @convex-dev/agent component
+  chatThreadsStream,
+  chatMessagesStream,
+  searchCache,
+  mcpToolLearning,
+  mcpGuidanceExamples,
+  mcpToolHistory,
+  documentSnapshots,
+  spreadsheets,
+  sheetCells,
+  googleAccounts,
+  slackAccounts,
+  githubAccounts,
+  notionAccounts,
+  userApiKeys,
+  dailyUsage,
+  subscriptions,
+  agentTimelines,
+  agentTasks,
+  agentLinks,
+  agentTimelineRuns,
+  agentImageResults,
+  voiceSessions,
+
+  // API Usage Tracking
+  apiUsage: defineTable({
+    userId: v.id("users"),
+    apiName: v.string(),
+    operation: v.string(),
+    timestamp: v.number(),
+    unitsUsed: v.optional(v.number()),
+    estimatedCost: v.optional(v.number()),
+    requestMetadata: v.optional(v.any()),
+    success: v.boolean(),
+    errorMessage: v.optional(v.string()),
+    responseTime: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
-    .index("by_user_status", ["userId", "status"]) // status filtering
-    .index("by_user_start", ["userId", "startTime"]) // for range queries
-    .index("by_document", ["documentId"]);
+    .index("by_user_and_api", ["userId", "apiName"])
+    .index("by_user_and_timestamp", ["userId", "timestamp"]),
 
-
-  /* ------------------------------------------------------------------ */
-  /* HOLIDAYS – cached public holidays by country                        */
-  /* ------------------------------------------------------------------ */
-  const holidays = defineTable({
-    country: v.string(),                 // e.g. "US"
-    name: v.string(),                    // Holiday display name
-    dateMs: v.number(),                  // UTC ms for the holiday date (00:00Z of that date)
-    dateKey: v.string(),                 // "YYYY-MM-DD" (as provided by API)
-    types: v.optional(v.array(v.string())),
-    year: v.number(),
-    raw: v.optional(v.any()),            // Raw provider payload
-    updatedAt: v.number(),
-  })
-    .index("by_country_date", ["country", "dateMs"])
-    .index("by_country_year", ["country", "year"])
-    .index("by_date", ["dateMs"]);
-
-  /* ------------------------------------------------------------------ */
-  /* FINANCIAL EVENTS – macro releases and earnings (cached)             */
-  /* ------------------------------------------------------------------ */
-  const financialEvents = defineTable({
-    market: v.string(),                  // e.g. "US"
-    category: v.string(),                // e.g. "CPI" | "FOMC" | "NFP" | "GDP" | "PCE" | "EARNINGS"
-    title: v.string(),                   // Display title
-    dateMs: v.number(),                  // UTC ms of the calendar day (00:00Z)
-    dateKey: v.string(),                 // "YYYY-MM-DD"
-    time: v.optional(v.string()),        // e.g. "08:30 ET"
-    symbol: v.optional(v.string()),      // For earnings: ticker
-    raw: v.optional(v.any()),            // Raw provider payload
-    updatedAt: v.number(),
-  })
-    .index("by_market_date", ["market", "dateMs"])
-    .index("by_category_date", ["category", "dateMs"]);
-
-  /* ------------------------------------------------------------------ */
-  /* TASKS – personal task management                                   */
-  /* ------------------------------------------------------------------ */
-  const tasks = defineTable({
+  apiUsageDaily: defineTable({
     userId: v.id("users"),
-    title: v.string(),
-    description: v.optional(v.string()),
-    // New: canonical Editor.js JSON (stringified); plain description kept for search/snippets
-    descriptionJson: v.optional(v.string()),
+    apiName: v.string(),
+    date: v.string(),
+    totalCalls: v.number(),
+    successfulCalls: v.number(),
+    failedCalls: v.number(),
+    totalUnitsUsed: v.number(),
+    totalCost: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_date", ["userId", "date"])
+    .index("by_user_api_date", ["userId", "apiName", "date"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CONFIRMED COMPANIES - User-confirmed company selections for SEC    */
+  /* ------------------------------------------------------------------ */
+  confirmedCompanies: defineTable({
+    threadId: v.string(),                    // Links to conversation thread
+    companyName: v.string(),                 // User's original query term (e.g., "Dasher")
+    confirmedCik: v.string(),                // The CIK of the confirmed company
+    confirmedName: v.string(),               // Full legal name of the confirmed company
+    confirmedTicker: v.optional(v.string()), // Ticker symbol if available
+    createdAt: v.number(),                   // Timestamp of confirmation
+  })
+    .index("by_thread_and_name", ["threadId", "companyName"])
+    .index("by_thread", ["threadId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* HUMAN-IN-THE-LOOP - Agent requests for human input                */
+  /* ------------------------------------------------------------------ */
+  humanRequests: defineTable({
+    userId: v.id("users"),                       // User who owns this request (for security)
+    threadId: v.string(),                        // Agent thread ID
+    messageId: v.string(),                       // Message ID where request was made
+    toolCallId: v.string(),                      // Tool call ID for askHuman
+    question: v.string(),                        // Question to ask human
+    context: v.optional(v.string()),             // Context about why asking
+    options: v.optional(v.array(v.string())),    // Suggested options
     status: v.union(
-      v.literal("todo"),
-      v.literal("in_progress"),
-      v.literal("done"),
-      v.literal("blocked"),
-    ),
-    priority: v.optional(
-      v.union(
-        v.literal("low"),
-        v.literal("medium"),
-        v.literal("high"),
-        v.literal("urgent"),
-      ),
-    ),
-    dueDate: v.optional(v.number()),       // ms since epoch
-    startDate: v.optional(v.number()),     // ms since epoch
-    documentId: v.optional(v.id("documents")),
-    eventId: v.optional(v.id("events")),  // optional link to a scheduled event
-    assigneeId: v.optional(v.id("users")), // optional assignee separate from owner
-    refs: v.optional(
-      v.array(
-        v.union(
-          v.object({ kind: v.literal("document"), id: v.id("documents") }),
-          v.object({ kind: v.literal("task"), id: v.id("tasks") }),
-          v.object({ kind: v.literal("event"), id: v.id("events") }),
-        ),
-      ),
-    ),
-    tags: v.optional(v.array(v.string())),
-    color: v.optional(v.string()),
-    isFavorite: v.optional(v.boolean()),
-    order: v.optional(v.number()),         // for Kanban ordering
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_status", ["userId", "status"]) // Kanban, filters
-    .index("by_user_dueDate", ["userId", "dueDate"]) // Today/Week queries
-    .index("by_user_priority", ["userId", "priority"]) // prioritization
-    .index("by_user_updatedAt", ["userId", "updatedAt"]) // recent activity
-    .index("by_user_assignee", ["userId", "assigneeId"]) // filtering by assignee
-    .index("by_document", ["documentId"]);
-
-
-
-  /* ------------------------------------------------------------------ */
-  /* AGENT TIMELINES – timeline docs + tasks + links                     */
-  /* ------------------------------------------------------------------ */
-  const agentTimelines = defineTable({
-    // Associate a timeline with a document so it can render in DocumentView
-    documentId: v.id("documents"),
-    name: v.string(),
-    // Base start used to compute absolute times: absoluteStart = baseStartMs + startOffsetMs
-    baseStartMs: v.optional(v.number()),
-    createdBy: v.id("users"),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    // Latest run result (persisted for UI readout)
-    latestRunInput: v.optional(v.string()),
-    latestRunOutput: v.optional(v.string()),
-    latestRunAt: v.optional(v.number()),
-  }).index("by_document", ["documentId"])
-    .index("by_user", ["createdBy"]);
-
-  const agentTasks = defineTable({
-    timelineId: v.id("agentTimelines"),
-    parentId: v.optional(v.id("agentTasks")),
-    name: v.string(),
-    // Offsets, not absolute times (backward-compatible with legacy startMs)
-    startOffsetMs: v.optional(v.number()),
-    startMs: v.optional(v.number()),
-    durationMs: v.number(),
-    progress: v.optional(v.number()), // 0..1
-    status: v.optional(v.union(
       v.literal("pending"),
-      v.literal("running"),
-      v.literal("complete"),
-      v.literal("paused"),
-      v.literal("error"),
-    )),
-    agentType: v.optional(v.union(
-      v.literal("orchestrator"),
-      v.literal("main"),
-      v.literal("leaf")
-    )),
-    assigneeId: v.optional(v.id("users")),
-    // Visual metadata and runtime stats for richer timeline rendering
-    icon: v.optional(v.string()),
-    color: v.optional(v.string()),
-    sequence: v.optional(v.union(v.literal("parallel"), v.literal("sequential"))),
-    description: v.optional(v.string()),
-    inputTokens: v.optional(v.number()),
-    outputTokens: v.optional(v.number()),
-    outputSizeBytes: v.optional(v.number()),
-    elapsedMs: v.optional(v.number()),
-    startedAtMs: v.optional(v.number()),
-    completedAtMs: v.optional(v.number()),
-    // New: per-phase and retry/error markers
-    phaseBoundariesMs: v.optional(v.array(v.number())),
-    retryOffsetsMs: v.optional(v.array(v.number())),
-    failureOffsetMs: v.optional(v.number()),
-    order: v.optional(v.number()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("by_timeline", ["timelineId"]).index("by_parent", ["parentId"]);
-
-  const agentLinks = defineTable({
-    timelineId: v.id("agentTimelines"),
-    sourceTaskId: v.id("agentTasks"),
-    targetTaskId: v.id("agentTasks"),
-    type: v.optional(v.union(
-      v.literal("e2e"),
-      v.literal("s2s"),
-      v.literal("s2e"),
-      v.literal("e2s")
-    )),
-    createdAt: v.number(),
-  }).index("by_timeline", ["timelineId"]);
-
-
-  /* ------------------------------------------------------------------ */
-  /* AGENT TIMELINE RUNS – per-run history                               */
-  /* ------------------------------------------------------------------ */
-  const agentTimelineRuns = defineTable({
-    timelineId: v.id("agentTimelines"),
-    input: v.string(),
-    output: v.string(),
-    retryCount: v.optional(v.number()),
-    modelUsed: v.optional(v.string()),
-    createdAt: v.number(),
-    meta: v.optional(v.any()),
-  })
-    .index("by_timeline", ["timelineId"])
-    .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
-
-  /* ------------------------------------------------------------------ */
-  /* AGENT IMAGE RESULTS – images found during agent execution          */
-  /* ------------------------------------------------------------------ */
-  const agentImageResults = defineTable({
-    timelineId: v.id("agentTimelines"),
-    taskId: v.optional(v.id("agentTasks")),
-    imageUrl: v.string(),
-    sourceUrl: v.optional(v.string()),        // Source page URL
-    title: v.optional(v.string()),            // Image title/description
-    thumbnailUrl: v.optional(v.string()),     // Thumbnail URL
-    width: v.optional(v.number()),            // Image width
-    height: v.optional(v.number()),           // Image height
-    format: v.optional(v.string()),           // Image format (jpg, png, etc.)
-    classification: v.optional(v.string()),   // Classification result
-    classificationConfidence: v.optional(v.number()), // Confidence score
-    classificationDetails: v.optional(v.any()), // Detailed classification data
-    metadata: v.optional(v.any()),            // Additional metadata
-    createdAt: v.number(),
-  })
-    .index("by_timeline", ["timelineId"])
-    .index("by_task", ["taskId"])
-    .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
-
-  /* ------------------------------------------------------------------ */
-  /* VOICE SESSIONS - Real-time voice agent sessions (RTVI/Daily Bots) */
-  /* ------------------------------------------------------------------ */
-  const voiceSessions = defineTable({
-    sessionId: v.string(),           // Unique session identifier
-    userId: v.id("users"),           // User who owns this session
-    threadId: v.string(),            // Agent thread ID for conversation continuity
-    createdAt: v.number(),           // Session creation timestamp
-    lastActivityAt: v.number(),      // Last interaction timestamp
-    metadata: v.optional(v.object({  // Optional session metadata
-      clientType: v.optional(v.string()),    // "daily-bots", "rtvi", etc.
-      deviceInfo: v.optional(v.string()),    // Device/browser info
-      model: v.optional(v.string()),         // AI model used
-    })),
+      v.literal("answered"),
+      v.literal("cancelled")
+    ),
+    response: v.optional(v.string()),            // Human's response
+    respondedAt: v.optional(v.number()),         // When human responded
   })
     .index("by_user", ["userId"])
-    .index("by_session_id", ["sessionId"])
-    .index("by_thread_id", ["threadId"])
-    .index("by_last_activity", ["lastActivityAt"]);
+    .index("by_thread", ["threadId"])
+    .index("by_status", ["status"])
+    .index("by_thread_and_status", ["threadId", "status"]),
 
-  export default defineSchema({
-    ...authTables,       // `users`, `sessions`
-    documents,
-    nodes,
-    relations,
-    relationTypes,
-    tags,
-    tagRefs,
-    smsLogs,
-    embeddings,
-    gridProjects,
-    files,
-    urlAnalyses,
-    chunks,
-    folders,
-    documentFolders,
-    userPreferences,
-    events,
-    tasks,
-    holidays,
-    financialEvents,
-    mcpServers,
-    mcpTools,
-    mcpSessions,
-    mcpPlans,
-    mcpMemoryEntries,
-    agentRuns,
-    agentRunEvents,
-    fileSearchStores,
-    // chatThreads and chatMessages removed - using @convex-dev/agent component
-    chatThreadsStream,
-    chatMessagesStream,
-    searchCache,
-    mcpToolLearning,
-    mcpGuidanceExamples,
-    mcpToolHistory,
-    documentSnapshots,
-    spreadsheets,
-    sheetCells,
-    googleAccounts,
-    slackAccounts,
-    githubAccounts,
-    notionAccounts,
-    userApiKeys,
-    dailyUsage,
-    subscriptions,
-    agentTimelines,
-    agentTasks,
-    agentLinks,
-    agentTimelineRuns,
-    agentImageResults,
-    voiceSessions,
+  /* ------------------------------------------------------------------ */
+  /* CONFIRMED PEOPLE - User-confirmed person selections                */
+  /* ------------------------------------------------------------------ */
+  confirmedPeople: defineTable({
+    threadId: v.string(),                    // Links to conversation thread
+    personName: v.string(),                  // User's original query term (e.g., "Michael Jordan")
+    confirmedId: v.string(),                 // Unique identifier for the person
+    confirmedName: v.string(),               // Full name of the confirmed person
+    confirmedProfession: v.optional(v.string()), // Profession/occupation
+    confirmedOrganization: v.optional(v.string()), // Organization/company
+    confirmedLocation: v.optional(v.string()), // Location
+    createdAt: v.number(),                   // Timestamp of confirmation
+  })
+    .index("by_thread_and_name", ["threadId", "personName"])
+    .index("by_thread", ["threadId"]),
 
-    // API Usage Tracking
-    apiUsage: defineTable({
-      userId: v.id("users"),
-      apiName: v.string(),
-      operation: v.string(),
-      timestamp: v.number(),
-      unitsUsed: v.optional(v.number()),
-      estimatedCost: v.optional(v.number()),
-      requestMetadata: v.optional(v.any()),
-      success: v.boolean(),
-      errorMessage: v.optional(v.string()),
-      responseTime: v.optional(v.number()),
-    })
-      .index("by_user", ["userId"])
-      .index("by_user_and_api", ["userId", "apiName"])
-      .index("by_user_and_timestamp", ["userId", "timestamp"]),
+  /* ------------------------------------------------------------------ */
+  /* CONFIRMED EVENTS - User-confirmed event selections                 */
+  /* ------------------------------------------------------------------ */
+  confirmedEvents: defineTable({
+    threadId: v.string(),                    // Links to conversation thread
+    eventQuery: v.string(),                  // User's original query term (e.g., "Apple Event")
+    confirmedId: v.string(),                 // Unique identifier for the event
+    confirmedName: v.string(),               // Full name of the confirmed event
+    confirmedDate: v.optional(v.string()),   // Event date
+    confirmedLocation: v.optional(v.string()), // Event location
+    confirmedDescription: v.optional(v.string()), // Event description
+    createdAt: v.number(),                   // Timestamp of confirmation
+  })
+    .index("by_thread_and_query", ["threadId", "eventQuery"])
+    .index("by_thread", ["threadId"]),
 
-    apiUsageDaily: defineTable({
-      userId: v.id("users"),
-      apiName: v.string(),
-      date: v.string(),
-      totalCalls: v.number(),
-      successfulCalls: v.number(),
-      failedCalls: v.number(),
-      totalUnitsUsed: v.number(),
-      totalCost: v.number(),
-    })
-      .index("by_user", ["userId"])
-      .index("by_user_and_date", ["userId", "date"])
-      .index("by_user_api_date", ["userId", "apiName", "date"]),
+  /* ------------------------------------------------------------------ */
+  /* CONFIRMED NEWS TOPICS - User-confirmed news article selections     */
+  /* ------------------------------------------------------------------ */
+  confirmedNewsTopics: defineTable({
+    threadId: v.string(),                    // Links to conversation thread
+    newsQuery: v.string(),                   // User's original query term (e.g., "Tesla news")
+    confirmedId: v.string(),                 // Unique identifier for the article
+    confirmedHeadline: v.string(),           // Article headline
+    confirmedSource: v.optional(v.string()), // News source
+    confirmedDate: v.optional(v.string()),   // Publication date
+    confirmedUrl: v.optional(v.string()),    // Article URL
+    createdAt: v.number(),                   // Timestamp of confirmation
+  })
+    .index("by_thread_and_query", ["threadId", "newsQuery"])
+    .index("by_thread", ["threadId"]),
 
-    /* ------------------------------------------------------------------ */
-    /* CONFIRMED COMPANIES - User-confirmed company selections for SEC    */
-    /* ------------------------------------------------------------------ */
-    confirmedCompanies: defineTable({
-      threadId: v.string(),                    // Links to conversation thread
-      companyName: v.string(),                 // User's original query term (e.g., "Dasher")
-      confirmedCik: v.string(),                // The CIK of the confirmed company
-      confirmedName: v.string(),               // Full legal name of the confirmed company
-      confirmedTicker: v.optional(v.string()), // Ticker symbol if available
-      createdAt: v.number(),                   // Timestamp of confirmation
-    })
-      .index("by_thread_and_name", ["threadId", "companyName"])
-      .index("by_thread", ["threadId"]),
-
-    /* ------------------------------------------------------------------ */
-    /* HUMAN-IN-THE-LOOP - Agent requests for human input                */
-    /* ------------------------------------------------------------------ */
-    humanRequests: defineTable({
-      userId: v.id("users"),                       // User who owns this request (for security)
-      threadId: v.string(),                        // Agent thread ID
-      messageId: v.string(),                       // Message ID where request was made
-      toolCallId: v.string(),                      // Tool call ID for askHuman
-      question: v.string(),                        // Question to ask human
-      context: v.optional(v.string()),             // Context about why asking
-      options: v.optional(v.array(v.string())),    // Suggested options
-      status: v.union(
-        v.literal("pending"),
-        v.literal("answered"),
-        v.literal("cancelled")
-      ),
-      response: v.optional(v.string()),            // Human's response
-      respondedAt: v.optional(v.number()),         // When human responded
-    })
-      .index("by_user", ["userId"])
-      .index("by_thread", ["threadId"])
-      .index("by_status", ["status"])
-      .index("by_thread_and_status", ["threadId", "status"]),
-
-    /* ------------------------------------------------------------------ */
-    /* CONFIRMED PEOPLE - User-confirmed person selections                */
-    /* ------------------------------------------------------------------ */
-    confirmedPeople: defineTable({
-      threadId: v.string(),                    // Links to conversation thread
-      personName: v.string(),                  // User's original query term (e.g., "Michael Jordan")
-      confirmedId: v.string(),                 // Unique identifier for the person
-      confirmedName: v.string(),               // Full name of the confirmed person
-      confirmedProfession: v.optional(v.string()), // Profession/occupation
-      confirmedOrganization: v.optional(v.string()), // Organization/company
-      confirmedLocation: v.optional(v.string()), // Location
-      createdAt: v.number(),                   // Timestamp of confirmation
-    })
-      .index("by_thread_and_name", ["threadId", "personName"])
-      .index("by_thread", ["threadId"]),
-
-    /* ------------------------------------------------------------------ */
-    /* CONFIRMED EVENTS - User-confirmed event selections                 */
-    /* ------------------------------------------------------------------ */
-    confirmedEvents: defineTable({
-      threadId: v.string(),                    // Links to conversation thread
-      eventQuery: v.string(),                  // User's original query term (e.g., "Apple Event")
-      confirmedId: v.string(),                 // Unique identifier for the event
-      confirmedName: v.string(),               // Full name of the confirmed event
-      confirmedDate: v.optional(v.string()),   // Event date
-      confirmedLocation: v.optional(v.string()), // Event location
-      confirmedDescription: v.optional(v.string()), // Event description
-      createdAt: v.number(),                   // Timestamp of confirmation
-    })
-      .index("by_thread_and_query", ["threadId", "eventQuery"])
-      .index("by_thread", ["threadId"]),
-
-    /* ------------------------------------------------------------------ */
-    /* CONFIRMED NEWS TOPICS - User-confirmed news article selections     */
-    /* ------------------------------------------------------------------ */
-    confirmedNewsTopics: defineTable({
-      threadId: v.string(),                    // Links to conversation thread
-      newsQuery: v.string(),                   // User's original query term (e.g., "Tesla news")
-      confirmedId: v.string(),                 // Unique identifier for the article
-      confirmedHeadline: v.string(),           // Article headline
-      confirmedSource: v.optional(v.string()), // News source
-      confirmedDate: v.optional(v.string()),   // Publication date
-      confirmedUrl: v.optional(v.string()),    // Article URL
-      createdAt: v.number(),                   // Timestamp of confirmation
-    })
-      .index("by_thread_and_query", ["threadId", "newsQuery"])
-      .index("by_thread", ["threadId"]),
-
-    /* ------------------------------------------------------------------ */
-    /* ENTITY CONTEXTS - Cached entity research data (companies, people)  */
-    /* ------------------------------------------------------------------ */
-    entityContexts: defineTable({
-      entityName: v.string(),                  // Name of the entity (company/person)
-      entityType: v.union(
-        v.literal("company"),
-        v.literal("person")
-      ),
-      linkupData: v.optional(v.any()),         // Raw LinkUp API response
-      summary: v.string(),                     // Brief summary of the entity
-      keyFacts: v.array(v.string()),           // Array of key facts/highlights
-      sources: v.array(v.object({
-        name: v.string(),
-        url: v.string(),
-        snippet: v.optional(v.string()),
-      })),
-      // CRM Fields (NEW)
-      crmFields: v.optional(v.object({
-        companyName: v.string(),
-        description: v.string(),
-        headline: v.string(),
-        hqLocation: v.string(),
-        city: v.string(),
-        state: v.string(),
-        country: v.string(),
-        website: v.string(),
-        email: v.string(),
-        phone: v.string(),
-        founders: v.array(v.string()),
-        foundersBackground: v.string(),
-        keyPeople: v.array(v.object({
-          name: v.string(),
-          title: v.string(),
-        })),
-        industry: v.string(),
-        companyType: v.string(),
-        foundingYear: v.optional(v.number()),
-        product: v.string(),
-        targetMarket: v.string(),
-        businessModel: v.string(),
-        fundingStage: v.string(),
-        totalFunding: v.string(),
-        lastFundingDate: v.string(),
-        investors: v.array(v.string()),
-        investorBackground: v.string(),
-        competitors: v.array(v.string()),
-        competitorAnalysis: v.string(),
-        fdaApprovalStatus: v.string(),
-        fdaTimeline: v.string(),
-        newsTimeline: v.array(v.object({
-          date: v.string(),
-          headline: v.string(),
-          source: v.string(),
-        })),
-        recentNews: v.string(),
-        keyEntities: v.array(v.string()),
-        researchPapers: v.array(v.string()),
-        partnerships: v.array(v.string()),
-        completenessScore: v.number(),
-        dataQuality: v.union(
-          v.literal("verified"),
-          v.literal("partial"),
-          v.literal("incomplete")
-        ),
-      })),
-      spreadsheetId: v.optional(v.id("documents")), // Optional link to source spreadsheet
-      rowIndex: v.optional(v.number()),        // Optional row index in spreadsheet
-      researchedAt: v.number(),                // Timestamp when researched
-      researchedBy: v.id("users"),            // User who triggered the research
-      lastAccessedAt: v.number(),              // Last time this context was accessed
-      accessCount: v.number(),                 // Number of times accessed (cache hits)
-      version: v.number(),                     // Version number for cache invalidation
-      isStale: v.optional(v.boolean()),        // Flag for stale data (> 7 days)
-
-      // ═══════════════════════════════════════════════════════════════════
-      // GAM: STRUCTURED MEMORY FIELDS
-      // ═══════════════════════════════════════════════════════════════════
-      
-      /** Canonical key for disambiguation (e.g., "company:TSLA") */
-      canonicalKey: v.optional(v.string()),
-      
-      /** Structured facts with boolean confidence flags */
-      structuredFacts: v.optional(v.array(v.object({
-        id: v.string(),
-        subject: v.string(),
-        predicate: v.string(),
-        object: v.string(),
-        /** Boolean: does this fact meet confidence threshold? */
-        isHighConfidence: v.boolean(),
-        sourceIds: v.array(v.string()),
-        timestamp: v.string(),
-        isOutdated: v.optional(v.boolean()),
-      }))),
-      
-      /** Narrative interpretations (growth story, bear case, etc.) */
-      narratives: v.optional(v.array(v.object({
-        label: v.string(),
-        description: v.string(),
-        supportingFactIds: v.array(v.string()),
-        /** Boolean: is this narrative well-supported? */
-        isWellSupported: v.boolean(),
-        lastUpdated: v.string(),
-      }))),
-      
-      /** Actionable heuristics for agents */
-      heuristics: v.optional(v.array(v.string())),
-      
-      /** Conflict tracking */
-      conflicts: v.optional(v.array(v.object({
-        factIds: v.array(v.string()),
-        description: v.string(),
-        status: v.union(v.literal("unresolved"), v.literal("resolved")),
-        detectedAt: v.string(),
-      }))),
-      
-      /** Boolean quality flags (not arbitrary scores) */
-      quality: v.optional(v.object({
-        hasSufficientFacts: v.boolean(),
-        hasRecentResearch: v.boolean(),
-        hasNoConflicts: v.boolean(),
-        hasVerifiedSources: v.boolean(),
-        hasHighConfidenceFacts: v.boolean(),
-        hasNarratives: v.boolean(),
-        hasHeuristics: v.boolean(),
-      })),
-      
-      /** Quality tier derived from flags */
-      qualityTier: v.optional(v.union(
-        v.literal("excellent"),
-        v.literal("good"),
-        v.literal("fair"),
-        v.literal("poor")
-      )),
-      
-      /** Fact count for quick checks */
-      factCount: v.optional(v.number()),
-      
-      /** Cross-references */
-      relatedEntityNames: v.optional(v.array(v.string())),
-      linkedDocIds: v.optional(v.array(v.id("documents"))),
-      
-      /** Research job tracking */
-      lastResearchJobId: v.optional(v.string()),
-      researchDepth: v.optional(v.union(
-        v.literal("shallow"),
-        v.literal("standard"),
-        v.literal("deep")
-      )),
-      
-      // ═══════════════════════════════════════════════════════════════════
-      // KNOWLEDGE GRAPH INTEGRATION
-      // ═══════════════════════════════════════════════════════════════════
-      
-      /** Link to the entity's knowledge graph */
-      knowledgeGraphId: v.optional(v.id("knowledgeGraphs")),
-      
-      /** Cluster assignment from HDBSCAN (null = noise/odd-one-out) */
-      clusterId: v.optional(v.string()),
-      
-      /** Boolean: is this entity an outlier? (HDBSCAN noise label) */
-      isOddOneOut: v.optional(v.boolean()),
-      
-      /** Boolean: is this entity within cluster support region? (One-Class SVM) */
-      isInClusterSupport: v.optional(v.boolean()),
-    })
-      .index("by_entity", ["entityName", "entityType"])
-      .index("by_spreadsheet", ["spreadsheetId", "rowIndex"])
-      .index("by_user", ["researchedBy"])
-      .index("by_researched_at", ["researchedAt"])
-      .index("by_canonicalKey", ["canonicalKey"])
-      .index("by_user_accessedAt", ["researchedBy", "lastAccessedAt"])
-      .index("by_qualityTier", ["qualityTier"])
-      .searchIndex("search_entity", {
-        searchField: "entityName",
-        filterFields: ["entityType", "researchedBy"],
-      }),
-
-    // Visitor tracking for analytics
-    visitors: defineTable({
-      userId: v.optional(v.id("users")),
-      sessionId: v.string(),
-      page: v.string(),
-      lastSeen: v.number(),
-    })
-      .index("by_session", ["sessionId"])
-      .index("by_user", ["userId"]),
-
-    // Email tracking
-    emailsSent: defineTable({
-      email: v.string(),
-      userId: v.optional(v.id("users")),
-      subject: v.string(),
-      success: v.boolean(),
-      sentAt: v.number(),
-    })
-      .index("by_email", ["email"])
-      .index("by_user", ["userId"])
-      .index("by_sent_at", ["sentAt"]),
-
-    /* ------------------------------------------------------------------ */
-    /* AGENT PLANS - Task plans created by Deep Agents                    */
-    /* ------------------------------------------------------------------ */
-    agentPlans: defineTable({
-      userId: v.id("users"),
-      goal: v.string(),
-      steps: v.array(v.object({
-        description: v.string(),
-        status: v.union(
-          v.literal("pending"),
-          v.literal("in_progress"),
-          v.literal("completed")
-        ),
-      })),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-      .index("by_user", ["userId"])
-      .index("by_user_updated", ["userId", "updatedAt"]),
-
-    /* ------------------------------------------------------------------ */
-    /* AGENT MEMORY - Persistent memory for Deep Agents                   */
-    /* ------------------------------------------------------------------ */
-    agentMemory: defineTable({
-      userId: v.id("users"),
-      key: v.string(),
-      content: v.string(),
-      metadata: v.optional(v.any()),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-      .index("by_user", ["userId"])
-      .index("by_user_key", ["userId", "key"]),
-
-    /* ------------------------------------------------------------------ */
-    /* GAM: RESEARCH JOBS - Background research job queue                 */
-    /* ------------------------------------------------------------------ */
-    researchJobs: defineTable({
-      userId: v.id("users"),
-      targetType: v.union(v.literal("entity"), v.literal("theme")),
-      /** Canonical key (e.g., "company:TSLA" or "theme:agent-memory") */
-      targetId: v.string(),
-      /** Human-readable name for display */
-      targetDisplayName: v.string(),
-      jobType: v.union(
-        v.literal("initial"),
-        v.literal("refresh"),
-        v.literal("merge_review"),
-        v.literal("deep_upgrade")
-      ),
-      researchDepth: v.optional(v.union(
-        v.literal("shallow"),
-        v.literal("standard"),
-        v.literal("deep")
-      )),
-      status: v.union(
-        v.literal("pending"),
-        v.literal("running"),
-        v.literal("completed"),
-        v.literal("failed")
-      ),
-      priority: v.number(),
-      triggerSource: v.optional(v.string()),
-      error: v.optional(v.string()),
-      /** Job duration tracking */
-      durationMs: v.optional(v.number()),
-      createdAt: v.number(),
-      startedAt: v.optional(v.number()),
-      completedAt: v.optional(v.number()),
-    })
-      .index("by_user_status", ["userId", "status"])
-      .index("by_target", ["targetType", "targetId"])
-      .index("by_createdAt", ["createdAt"]),
-
-    /* ------------------------------------------------------------------ */
-    /* GAM: MEMORY METRICS - Usage and quality tracking                   */
-    /* ------------------------------------------------------------------ */
-    memoryMetrics: defineTable({
-      date: v.string(),                       // YYYY-MM-DD
-      userId: v.optional(v.id("users")),      // null for global metrics
-      
-      // Query metrics (boolean outcomes)
-      queryMemoryCalls: v.number(),
-      queryMemoryHits: v.number(),            // found=true
-      queryMemoryMisses: v.number(),          // found=false
-      queryMemoryStaleHits: v.number(),       // found but stale
-      
-      // Job metrics
-      researchJobsCreated: v.number(),
-      researchJobsCompleted: v.number(),
-      researchJobsFailed: v.number(),
-      
-      // Memory state counts
-      totalEntityMemories: v.number(),
-      totalThemeMemories: v.number(),
-      
-      // Write metrics
-      factsAdded: v.number(),
-      factsRejected: v.number(),
-      conflictsDetected: v.number(),
-    })
-      .index("by_date", ["date"])
-      .index("by_user_date", ["userId", "date"]),
-
-    /* ------------------------------------------------------------------ */
-    /* KNOWLEDGE GRAPHS - Claim-based graphs for entity/theme research     */
-    /* ------------------------------------------------------------------ */
-    knowledgeGraphs: defineTable({
-      // Identity
+  /* ------------------------------------------------------------------ */
+  /* ENTITY CONTEXTS - Cached entity research data (companies, people)  */
+  /* ------------------------------------------------------------------ */
+  entityContexts: defineTable({
+    entityName: v.string(),                  // Name of the entity (company/person)
+    entityType: v.union(
+      v.literal("company"),
+      v.literal("person")
+    ),
+    linkupData: v.optional(v.any()),         // Raw LinkUp API response
+    summary: v.string(),                     // Brief summary of the entity
+    keyFacts: v.array(v.string()),           // Array of key facts/highlights
+    sources: v.array(v.object({
       name: v.string(),
-      sourceType: v.union(
-        v.literal("entity"),      // from entityContexts
-        v.literal("theme"),       // from themeMemory
-        v.literal("artifact"),    // from document/file
-        v.literal("session")      // from chat session research
+      url: v.string(),
+      snippet: v.optional(v.string()),
+    })),
+    // CRM Fields (NEW)
+    crmFields: v.optional(v.object({
+      companyName: v.string(),
+      description: v.string(),
+      headline: v.string(),
+      hqLocation: v.string(),
+      city: v.string(),
+      state: v.string(),
+      country: v.string(),
+      website: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      founders: v.array(v.string()),
+      foundersBackground: v.string(),
+      keyPeople: v.array(v.object({
+        name: v.string(),
+        title: v.string(),
+      })),
+      industry: v.string(),
+      companyType: v.string(),
+      foundingYear: v.optional(v.number()),
+      product: v.string(),
+      targetMarket: v.string(),
+      businessModel: v.string(),
+      fundingStage: v.string(),
+      totalFunding: v.string(),
+      lastFundingDate: v.string(),
+      investors: v.array(v.string()),
+      investorBackground: v.string(),
+      competitors: v.array(v.string()),
+      competitorAnalysis: v.string(),
+      fdaApprovalStatus: v.string(),
+      fdaTimeline: v.string(),
+      newsTimeline: v.array(v.object({
+        date: v.string(),
+        headline: v.string(),
+        source: v.string(),
+      })),
+      recentNews: v.string(),
+      keyEntities: v.array(v.string()),
+      researchPapers: v.array(v.string()),
+      partnerships: v.array(v.string()),
+      completenessScore: v.number(),
+      dataQuality: v.union(
+        v.literal("verified"),
+        v.literal("partial"),
+        v.literal("incomplete")
       ),
-      sourceId: v.string(),       // canonicalKey or documentId
-      userId: v.id("users"),
-      
-      // Graph-level embeddings (fingerprints)
-      semanticFingerprint: v.optional(v.array(v.float64())),
-      wlSignature: v.optional(v.string()),        // Weisfeiler-Lehman hash
-      
-      // Clustering results (boolean outputs)
-      clusterId: v.optional(v.string()),          // null = noise/odd-one-out
-      isOddOneOut: v.boolean(),                   // HDBSCAN noise label
-      isInClusterSupport: v.optional(v.boolean()), // One-Class SVM inlier
-      
-      // Provenance
-      claimCount: v.number(),
-      edgeCount: v.number(),
-      lastBuilt: v.number(),
-      lastClustered: v.optional(v.number()),
-      lastFingerprinted: v.optional(v.number()),
-      
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-      .index("by_user", ["userId"])
-      .index("by_source", ["sourceType", "sourceId"])
-      .index("by_cluster", ["clusterId"])
-      .index("by_oddOneOut", ["isOddOneOut"])
-      .index("by_user_source", ["userId", "sourceType"]),
+    })),
+    spreadsheetId: v.optional(v.id("documents")), // Optional link to source spreadsheet
+    rowIndex: v.optional(v.number()),        // Optional row index in spreadsheet
+    researchedAt: v.number(),                // Timestamp when researched
+    researchedBy: v.id("users"),            // User who triggered the research
+    lastAccessedAt: v.number(),              // Last time this context was accessed
+    accessCount: v.number(),                 // Number of times accessed (cache hits)
+    version: v.number(),                     // Version number for cache invalidation
+    isStale: v.optional(v.boolean()),        // Flag for stale data (> 7 days)
 
-    /* ------------------------------------------------------------------ */
-    /* GRAPH CLAIMS - Individual claims (SPO triples) within a graph       */
-    /* ------------------------------------------------------------------ */
-    graphClaims: defineTable({
-      graphId: v.id("knowledgeGraphs"),
-      
-      // Claim content (SPO triple)
+    // ═══════════════════════════════════════════════════════════════════
+    // GAM: STRUCTURED MEMORY FIELDS
+    // ═══════════════════════════════════════════════════════════════════
+
+    /** Canonical key for disambiguation (e.g., "company:TSLA") */
+    canonicalKey: v.optional(v.string()),
+
+    /** Structured facts with boolean confidence flags */
+    structuredFacts: v.optional(v.array(v.object({
+      id: v.string(),
       subject: v.string(),
       predicate: v.string(),
       object: v.string(),
-      claimText: v.string(),                      // Full sentence form
-      
-      // Provenance
-      sourceDocIds: v.array(v.string()),
-      sourceSnippets: v.optional(v.array(v.string())),
-      extractedAt: v.number(),
-      
-      // Boolean quality flags (no arbitrary scores)
+      /** Boolean: does this fact meet confidence threshold? */
       isHighConfidence: v.boolean(),
-      isVerified: v.optional(v.boolean()),
+      sourceIds: v.array(v.string()),
+      timestamp: v.string(),
       isOutdated: v.optional(v.boolean()),
-      
-      // Embedding for semantic similarity
-      embedding: v.optional(v.array(v.float64())),
-      
-      createdAt: v.number(),
-    })
-      .index("by_graph", ["graphId"])
-      .index("by_graph_subject", ["graphId", "subject"])
-      .index("by_graph_predicate", ["graphId", "predicate"])
-      .index("by_confidence", ["isHighConfidence"])
-      .searchIndex("search_claims", {
-        searchField: "claimText",
-        filterFields: ["graphId", "isHighConfidence"],
-      }),
+    }))),
 
-    /* ------------------------------------------------------------------ */
-    /* GRAPH EDGES - Relations between claims                              */
-    /* ------------------------------------------------------------------ */
-    graphEdges: defineTable({
-      graphId: v.id("knowledgeGraphs"),
-      fromClaimId: v.id("graphClaims"),
-      toClaimId: v.id("graphClaims"),
-      
-      // Edge type
-      edgeType: v.union(
-        v.literal("supports"),
-        v.literal("contradicts"),
-        v.literal("mentions"),
-        v.literal("causes"),
-        v.literal("relatedTo"),
-        v.literal("partOf"),
-        v.literal("precedes")
-      ),
-      
-      // Strength (boolean, not score)
-      isStrong: v.boolean(),
-      
-      // Provenance
-      sourceDocId: v.optional(v.string()),
-      
-      createdAt: v.number(),
-    })
-      .index("by_graph", ["graphId"])
-      .index("by_from", ["fromClaimId"])
-      .index("by_to", ["toClaimId"])
-      .index("by_type", ["edgeType"]),
+    /** Narrative interpretations (growth story, bear case, etc.) */
+    narratives: v.optional(v.array(v.object({
+      label: v.string(),
+      description: v.string(),
+      supportingFactIds: v.array(v.string()),
+      /** Boolean: is this narrative well-supported? */
+      isWellSupported: v.boolean(),
+      lastUpdated: v.string(),
+    }))),
 
-    /* ------------------------------------------------------------------ */
-    /* GRAPH CLUSTERS - HDBSCAN clustering results                         */
-    /* ------------------------------------------------------------------ */
-    graphClusters: defineTable({
-      clusterId: v.string(),                      // UUID
-      userId: v.id("users"),
-      name: v.optional(v.string()),               // Auto-generated or user label
-      description: v.optional(v.string()),
-      
-      // Members
-      memberGraphIds: v.array(v.id("knowledgeGraphs")),
-      memberCount: v.number(),
-      
-      // Cluster fingerprint (centroid)
-      centroidVector: v.optional(v.array(v.float64())),
-      
-      // One-Class SVM "soft hull" model reference
-      svmModelRef: v.optional(v.string()),
-      
-      // Shared characteristics (for explainability)
-      sharedPredicates: v.optional(v.array(v.string())),
-      sharedSubjects: v.optional(v.array(v.string())),
-      dominantSourceType: v.optional(v.string()),
-      
-      // Metadata
-      algorithmUsed: v.optional(v.string()),      // "hdbscan", "kmeans", etc.
-      minClusterSize: v.optional(v.number()),
-      
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-      .index("by_user", ["userId"])
-      .index("by_clusterId", ["clusterId"])
-      .index("by_memberCount", ["memberCount"]),
+    /** Actionable heuristics for agents */
+    heuristics: v.optional(v.array(v.string())),
 
-    /* ------------------------------------------------------------------ */
-    /* ARTIFACT RUN META - Sharded write mutex for artifact upserts       */
-    /* Touched before every artifact write to serialize concurrent ops    */
-    /* Sharded by artifactId hash to reduce contention (K=8 shards)       */
-    /* ------------------------------------------------------------------ */
-    artifactRunMeta: defineTable({
-      runId: v.string(),
-      shardId: v.optional(v.number()),  // 0..K-1, where K=8 shards (optional for migration)
-      bump: v.number(),                  // Incremented on every artifact write
-      updatedAt: v.number(),
-    })
-      .index("by_run_shard", ["runId", "shardId"])
-      .index("by_run", ["runId"]), // For maintenance scans
+    /** Conflict tracking */
+    conflicts: v.optional(v.array(v.object({
+      factIds: v.array(v.string()),
+      description: v.string(),
+      status: v.union(v.literal("unresolved"), v.literal("resolved")),
+      detectedAt: v.string(),
+    }))),
 
-    /* ------------------------------------------------------------------ */
-    /* ARTIFACT DEAD LETTERS - Failed persistence jobs for visibility     */
-    /* ------------------------------------------------------------------ */
-    artifactDeadLetters: defineTable({
-      runId: v.string(),
-      toolName: v.optional(v.string()),
-      attempt: v.number(),
-      errorType: v.union(
-        v.literal("OCC"),
-        v.literal("VALIDATION"),
-        v.literal("EXTRACTOR"),
-        v.literal("SCHEDULER"),
-        v.literal("UNKNOWN")
-      ),
-      errorMessage: v.string(),         // Truncated to ~2KB
-      artifactCount: v.number(),
-      sampleUrls: v.array(v.string()),  // Cap 3-5 URLs for debugging
-      createdAt: v.number(),
-    })
-      .index("by_run", ["runId"])
-      .index("by_run_createdAt", ["runId", "createdAt"]),
+    /** Boolean quality flags (not arbitrary scores) */
+    quality: v.optional(v.object({
+      hasSufficientFacts: v.boolean(),
+      hasRecentResearch: v.boolean(),
+      hasNoConflicts: v.boolean(),
+      hasVerifiedSources: v.boolean(),
+      hasHighConfidenceFacts: v.boolean(),
+      hasNarratives: v.boolean(),
+      hasHeuristics: v.boolean(),
+    })),
 
-    /* ------------------------------------------------------------------ */
-    /* ARTIFACT PERSIST JOBS - Idempotency tracking for scheduled jobs    */
-    /* ------------------------------------------------------------------ */
-    artifactPersistJobs: defineTable({
-      runId: v.string(),
-      idempotencyKey: v.string(),
+    /** Quality tier derived from flags */
+    qualityTier: v.optional(v.union(
+      v.literal("excellent"),
+      v.literal("good"),
+      v.literal("fair"),
+      v.literal("poor")
+    )),
+
+    /** Fact count for quick checks */
+    factCount: v.optional(v.number()),
+
+    /** Cross-references */
+    relatedEntityNames: v.optional(v.array(v.string())),
+    linkedDocIds: v.optional(v.array(v.id("documents"))),
+
+    /** Research job tracking */
+    lastResearchJobId: v.optional(v.string()),
+    researchDepth: v.optional(v.union(
+      v.literal("shallow"),
+      v.literal("standard"),
+      v.literal("deep")
+    )),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // KNOWLEDGE GRAPH INTEGRATION
+    // ═══════════════════════════════════════════════════════════════════
+
+    /** Link to the entity's knowledge graph */
+    knowledgeGraphId: v.optional(v.id("knowledgeGraphs")),
+
+    /** Cluster assignment from HDBSCAN (null = noise/odd-one-out) */
+    clusterId: v.optional(v.string()),
+
+    /** Boolean: is this entity an outlier? (HDBSCAN noise label) */
+    isOddOneOut: v.optional(v.boolean()),
+
+    /** Boolean: is this entity within cluster support region? (One-Class SVM) */
+    isInClusterSupport: v.optional(v.boolean()),
+  })
+    .index("by_entity", ["entityName", "entityType"])
+    .index("by_spreadsheet", ["spreadsheetId", "rowIndex"])
+    .index("by_user", ["researchedBy"])
+    .index("by_researched_at", ["researchedAt"])
+    .index("by_canonicalKey", ["canonicalKey"])
+    .index("by_user_accessedAt", ["researchedBy", "lastAccessedAt"])
+    .index("by_qualityTier", ["qualityTier"])
+    .searchIndex("search_entity", {
+      searchField: "entityName",
+      filterFields: ["entityType", "researchedBy"],
+    }),
+
+  // Visitor tracking for analytics
+  visitors: defineTable({
+    userId: v.optional(v.id("users")),
+    sessionId: v.string(),
+    page: v.string(),
+    lastSeen: v.number(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_user", ["userId"]),
+
+  // Email tracking
+  emailsSent: defineTable({
+    email: v.string(),
+    userId: v.optional(v.id("users")),
+    subject: v.string(),
+    success: v.boolean(),
+    sentAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_user", ["userId"])
+    .index("by_sent_at", ["sentAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* AGENT PLANS - Task plans created by Deep Agents                    */
+  /* ------------------------------------------------------------------ */
+  agentPlans: defineTable({
+    userId: v.id("users"),
+    goal: v.string(),
+    steps: v.array(v.object({
+      description: v.string(),
       status: v.union(
-        v.literal("started"),
-        v.literal("done"),
-        v.literal("failed")
+        v.literal("pending"),
+        v.literal("in_progress"),
+        v.literal("completed")
       ),
-      attempts: v.number(),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-      .index("by_run_key", ["runId", "idempotencyKey"])
-      .index("by_status_createdAt", ["status", "createdAt"]),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_updated", ["userId", "updatedAt"]),
 
-    /* ------------------------------------------------------------------ */
-    /* ARTIFACT RUN STATS (SHARDED) - Observability counters per run      */
-    /* Sharded to match mutex shards (K=8), avoiding new contention       */
-    /* ------------------------------------------------------------------ */
-    artifactRunStatsShards: defineTable({
-      runId: v.string(),
-      shardId: v.number(),             // 0..K-1, matches mutex shards
-      jobsScheduled: v.number(),
-      jobsDeduped: v.number(),
-      deadLetters: v.number(),
-      occRetries: v.number(),
-      noopsSkipped: v.number(),
-      artifactsInserted: v.number(),
-      artifactsPatched: v.number(),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-      .index("by_run_shard", ["runId", "shardId"])
-      .index("by_run", ["runId"]),
+  /* ------------------------------------------------------------------ */
+  /* AGENT MEMORY - Persistent memory for Deep Agents                   */
+  /* ------------------------------------------------------------------ */
+  agentMemory: defineTable({
+    userId: v.id("users"),
+    key: v.string(),
+    content: v.string(),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_key", ["userId", "key"]),
 
-    /* ------------------------------------------------------------------ */
-    /* ARTIFACTS - First-class streaming artifacts for dossiers            */
-    /* ------------------------------------------------------------------ */
-    artifacts: defineTable({
-      runId: v.string(),              // agentThreadId - stable for whole dossier
-      artifactId: v.string(),         // Stable hash: art_<sha256_prefix>
-      userId: v.id("users"),
-      
-      // Core (immutable after creation)
-      kind: v.union(
-        v.literal("url"),
-        v.literal("file"),
-        v.literal("video"),
-        v.literal("image"),
-        v.literal("document")
-      ),
-      provider: v.optional(v.union(
-        v.literal("youtube"),
-        v.literal("sec"),
-        v.literal("arxiv"),
-        v.literal("news"),
-        v.literal("web"),
-        v.literal("local")
-      )),
-      canonicalUrl: v.string(),
-      
-      // Display (mutable via enrich)
-      title: v.string(),
-      host: v.optional(v.string()),
-      snippet: v.optional(v.string()),
-      thumbnail: v.optional(v.string()),
-      
-      // Enrichment data (arrives later)
-      transcript: v.optional(v.string()),
-      pageRefs: v.optional(v.array(v.string())),
-      
-      // Metadata
-      discoveredAt: v.number(),
-      toolName: v.optional(v.string()),
-      rev: v.number(),                // Monotonic version for safe merges
-      
-      // Boolean flags (GAM philosophy)
-      flags: v.object({
-        hasThumbnail: v.boolean(),
-        hasTranscript: v.boolean(),
-        hasPageRefs: v.boolean(),
-        isPinned: v.boolean(),
-        isCited: v.boolean(),
-        isEnriched: v.boolean(),
-      }),
-    })
-      .index("by_run", ["runId"])
-      .index("by_run_artifact", ["runId", "artifactId"])
-      .index("by_user_run", ["userId", "runId"])
-      .index("by_user", ["userId"]),
+  /* ------------------------------------------------------------------ */
+  /* GAM: RESEARCH JOBS - Background research job queue                 */
+  /* ------------------------------------------------------------------ */
+  researchJobs: defineTable({
+    userId: v.id("users"),
+    targetType: v.union(v.literal("entity"), v.literal("theme")),
+    /** Canonical key (e.g., "company:TSLA" or "theme:agent-memory") */
+    targetId: v.string(),
+    /** Human-readable name for display */
+    targetDisplayName: v.string(),
+    jobType: v.union(
+      v.literal("initial"),
+      v.literal("refresh"),
+      v.literal("merge_review"),
+      v.literal("deep_upgrade")
+    ),
+    researchDepth: v.optional(v.union(
+      v.literal("shallow"),
+      v.literal("standard"),
+      v.literal("deep")
+    )),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    priority: v.number(),
+    triggerSource: v.optional(v.string()),
+    error: v.optional(v.string()),
+    /** Job duration tracking */
+    durationMs: v.optional(v.number()),
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_user_status", ["userId", "status"])
+    .index("by_target", ["targetType", "targetId"])
+    .index("by_createdAt", ["createdAt"]),
 
-    /* ------------------------------------------------------------------ */
-    /* ARTIFACT LINKS - Artifact-to-section assignments                    */
-    /* ------------------------------------------------------------------ */
-    artifactLinks: defineTable({
-      runId: v.string(),
-      artifactId: v.string(),
-      sectionId: v.string(),
-      createdAt: v.number(),
-    })
-      .index("by_run_section", ["runId", "sectionId"])
-      .index("by_run_artifact", ["runId", "artifactId"])
-      .index("by_run", ["runId"]),
+  /* ------------------------------------------------------------------ */
+  /* GAM: MEMORY METRICS - Usage and quality tracking                   */
+  /* ------------------------------------------------------------------ */
+  memoryMetrics: defineTable({
+    date: v.string(),                       // YYYY-MM-DD
+    userId: v.optional(v.id("users")),      // null for global metrics
 
-    /* ------------------------------------------------------------------ */
-    /* EVIDENCE LINKS - Fact-to-artifact citations                         */
-    /* ------------------------------------------------------------------ */
-    evidenceLinks: defineTable({
-      runId: v.string(),
-      factId: v.string(),
-      artifactIds: v.array(v.string()),
-      createdAt: v.number(),
-    })
-      .index("by_run_fact", ["runId", "factId"])
-      .index("by_run", ["runId"]),
+    // Query metrics (boolean outcomes)
+    queryMemoryCalls: v.number(),
+    queryMemoryHits: v.number(),            // found=true
+    queryMemoryMisses: v.number(),          // found=false
+    queryMemoryStaleHits: v.number(),       // found but stale
 
-  });
+    // Job metrics
+    researchJobsCreated: v.number(),
+    researchJobsCompleted: v.number(),
+    researchJobsFailed: v.number(),
+
+    // Memory state counts
+    totalEntityMemories: v.number(),
+    totalThemeMemories: v.number(),
+
+    // Write metrics
+    factsAdded: v.number(),
+    factsRejected: v.number(),
+    conflictsDetected: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_user_date", ["userId", "date"]),
+
+  /* ------------------------------------------------------------------ */
+  /* KNOWLEDGE GRAPHS - Claim-based graphs for entity/theme research     */
+  /* ------------------------------------------------------------------ */
+  knowledgeGraphs: defineTable({
+    // Identity
+    name: v.string(),
+    sourceType: v.union(
+      v.literal("entity"),      // from entityContexts
+      v.literal("theme"),       // from themeMemory
+      v.literal("artifact"),    // from document/file
+      v.literal("session")      // from chat session research
+    ),
+    sourceId: v.string(),       // canonicalKey or documentId
+    userId: v.id("users"),
+
+    // Graph-level embeddings (fingerprints)
+    semanticFingerprint: v.optional(v.array(v.float64())),
+    wlSignature: v.optional(v.string()),        // Weisfeiler-Lehman hash
+
+    // Clustering results (boolean outputs)
+    clusterId: v.optional(v.string()),          // null = noise/odd-one-out
+    isOddOneOut: v.boolean(),                   // HDBSCAN noise label
+    isInClusterSupport: v.optional(v.boolean()), // One-Class SVM inlier
+
+    // Provenance
+    claimCount: v.number(),
+    edgeCount: v.number(),
+    lastBuilt: v.number(),
+    lastClustered: v.optional(v.number()),
+    lastFingerprinted: v.optional(v.number()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_source", ["sourceType", "sourceId"])
+    .index("by_cluster", ["clusterId"])
+    .index("by_oddOneOut", ["isOddOneOut"])
+    .index("by_user_source", ["userId", "sourceType"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GRAPH CLAIMS - Individual claims (SPO triples) within a graph       */
+  /* ------------------------------------------------------------------ */
+  graphClaims: defineTable({
+    graphId: v.id("knowledgeGraphs"),
+
+    // Claim content (SPO triple)
+    subject: v.string(),
+    predicate: v.string(),
+    object: v.string(),
+    claimText: v.string(),                      // Full sentence form
+
+    // Provenance
+    sourceDocIds: v.array(v.string()),
+    sourceSnippets: v.optional(v.array(v.string())),
+    extractedAt: v.number(),
+
+    // Boolean quality flags (no arbitrary scores)
+    isHighConfidence: v.boolean(),
+    isVerified: v.optional(v.boolean()),
+    isOutdated: v.optional(v.boolean()),
+
+    // Embedding for semantic similarity
+    embedding: v.optional(v.array(v.float64())),
+
+    createdAt: v.number(),
+  })
+    .index("by_graph", ["graphId"])
+    .index("by_graph_subject", ["graphId", "subject"])
+    .index("by_graph_predicate", ["graphId", "predicate"])
+    .index("by_confidence", ["isHighConfidence"])
+    .searchIndex("search_claims", {
+      searchField: "claimText",
+      filterFields: ["graphId", "isHighConfidence"],
+    }),
+
+  /* ------------------------------------------------------------------ */
+  /* GRAPH EDGES - Relations between claims                              */
+  /* ------------------------------------------------------------------ */
+  graphEdges: defineTable({
+    graphId: v.id("knowledgeGraphs"),
+    fromClaimId: v.id("graphClaims"),
+    toClaimId: v.id("graphClaims"),
+
+    // Edge type
+    edgeType: v.union(
+      v.literal("supports"),
+      v.literal("contradicts"),
+      v.literal("mentions"),
+      v.literal("causes"),
+      v.literal("relatedTo"),
+      v.literal("partOf"),
+      v.literal("precedes")
+    ),
+
+    // Strength (boolean, not score)
+    isStrong: v.boolean(),
+
+    // Provenance
+    sourceDocId: v.optional(v.string()),
+
+    createdAt: v.number(),
+  })
+    .index("by_graph", ["graphId"])
+    .index("by_from", ["fromClaimId"])
+    .index("by_to", ["toClaimId"])
+    .index("by_type", ["edgeType"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GRAPH CLUSTERS - HDBSCAN clustering results                         */
+  /* ------------------------------------------------------------------ */
+  graphClusters: defineTable({
+    clusterId: v.string(),                      // UUID
+    userId: v.id("users"),
+    name: v.optional(v.string()),               // Auto-generated or user label
+    description: v.optional(v.string()),
+
+    // Members
+    memberGraphIds: v.array(v.id("knowledgeGraphs")),
+    memberCount: v.number(),
+
+    // Cluster fingerprint (centroid)
+    centroidVector: v.optional(v.array(v.float64())),
+
+    // One-Class SVM "soft hull" model reference
+    svmModelRef: v.optional(v.string()),
+
+    // Shared characteristics (for explainability)
+    sharedPredicates: v.optional(v.array(v.string())),
+    sharedSubjects: v.optional(v.array(v.string())),
+    dominantSourceType: v.optional(v.string()),
+
+    // Metadata
+    algorithmUsed: v.optional(v.string()),      // "hdbscan", "kmeans", etc.
+    minClusterSize: v.optional(v.number()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_clusterId", ["clusterId"])
+    .index("by_memberCount", ["memberCount"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ARTIFACT RUN META - Sharded write mutex for artifact upserts       */
+  /* Touched before every artifact write to serialize concurrent ops    */
+  /* Sharded by artifactId hash to reduce contention (K=8 shards)       */
+  /* ------------------------------------------------------------------ */
+  artifactRunMeta: defineTable({
+    runId: v.string(),
+    shardId: v.optional(v.number()),  // 0..K-1, where K=8 shards (optional for migration)
+    bump: v.number(),                  // Incremented on every artifact write
+    updatedAt: v.number(),
+  })
+    .index("by_run_shard", ["runId", "shardId"])
+    .index("by_run", ["runId"]), // For maintenance scans
+
+  /* ------------------------------------------------------------------ */
+  /* ARTIFACT DEAD LETTERS - Failed persistence jobs for visibility     */
+  /* ------------------------------------------------------------------ */
+  artifactDeadLetters: defineTable({
+    runId: v.string(),
+    toolName: v.optional(v.string()),
+    attempt: v.number(),
+    errorType: v.union(
+      v.literal("OCC"),
+      v.literal("VALIDATION"),
+      v.literal("EXTRACTOR"),
+      v.literal("SCHEDULER"),
+      v.literal("UNKNOWN")
+    ),
+    errorMessage: v.string(),         // Truncated to ~2KB
+    artifactCount: v.number(),
+    sampleUrls: v.array(v.string()),  // Cap 3-5 URLs for debugging
+    createdAt: v.number(),
+  })
+    .index("by_run", ["runId"])
+    .index("by_run_createdAt", ["runId", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ARTIFACT PERSIST JOBS - Idempotency tracking for scheduled jobs    */
+  /* ------------------------------------------------------------------ */
+  artifactPersistJobs: defineTable({
+    runId: v.string(),
+    idempotencyKey: v.string(),
+    status: v.union(
+      v.literal("started"),
+      v.literal("done"),
+      v.literal("failed")
+    ),
+    attempts: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_run_key", ["runId", "idempotencyKey"])
+    .index("by_status_createdAt", ["status", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ARTIFACT RUN STATS (SHARDED) - Observability counters per run      */
+  /* Sharded to match mutex shards (K=8), avoiding new contention       */
+  /* ------------------------------------------------------------------ */
+  artifactRunStatsShards: defineTable({
+    runId: v.string(),
+    shardId: v.number(),             // 0..K-1, matches mutex shards
+    jobsScheduled: v.number(),
+    jobsDeduped: v.number(),
+    deadLetters: v.number(),
+    occRetries: v.number(),
+    noopsSkipped: v.number(),
+    artifactsInserted: v.number(),
+    artifactsPatched: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_run_shard", ["runId", "shardId"])
+    .index("by_run", ["runId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ARTIFACTS - First-class streaming artifacts for dossiers            */
+  /* ------------------------------------------------------------------ */
+  artifacts: defineTable({
+    runId: v.string(),              // agentThreadId - stable for whole dossier
+    artifactId: v.string(),         // Stable hash: art_<sha256_prefix>
+    userId: v.id("users"),
+
+    // Core (immutable after creation)
+    kind: v.union(
+      v.literal("url"),
+      v.literal("file"),
+      v.literal("video"),
+      v.literal("image"),
+      v.literal("document")
+    ),
+    provider: v.optional(v.union(
+      v.literal("youtube"),
+      v.literal("sec"),
+      v.literal("arxiv"),
+      v.literal("news"),
+      v.literal("web"),
+      v.literal("local")
+    )),
+    canonicalUrl: v.string(),
+
+    // Display (mutable via enrich)
+    title: v.string(),
+    host: v.optional(v.string()),
+    snippet: v.optional(v.string()),
+    thumbnail: v.optional(v.string()),
+
+    // Enrichment data (arrives later)
+    transcript: v.optional(v.string()),
+    pageRefs: v.optional(v.array(v.string())),
+
+    // Metadata
+    discoveredAt: v.number(),
+    toolName: v.optional(v.string()),
+    rev: v.number(),                // Monotonic version for safe merges
+
+    // Boolean flags (GAM philosophy)
+    flags: v.object({
+      hasThumbnail: v.boolean(),
+      hasTranscript: v.boolean(),
+      hasPageRefs: v.boolean(),
+      isPinned: v.boolean(),
+      isCited: v.boolean(),
+      isEnriched: v.boolean(),
+    }),
+    
+    // Verification health (light indicator, claim-specific verdicts in claimVerifications)
+    verificationHealth: v.optional(v.union(
+      v.literal("unknown"),
+      v.literal("has_supported"),   // At least one claim was supported
+      v.literal("has_not_found"),   // No claims found in source
+      v.literal("has_contradicted") // At least one claim was contradicted
+    )),
+    lastVerificationAt: v.optional(v.number()),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // GLOBAL RESEARCH LEDGER: Sync fields for write-through
+    // ═══════════════════════════════════════════════════════════════════
+
+    /** Monotonic sequence number within run (for sync cursor) */
+    seq: v.optional(v.number()),
+
+    /** Query fingerprint if from a cached query */
+    queryKey: v.optional(v.string()),
+
+    /** Entity scope ("" if unscoped) */
+    entityKey: v.optional(v.string()),
+
+    /** Section this artifact was discovered in */
+    sectionId: v.optional(v.string()),
+
+    /** Provenance: only "tool" sources are eligible for global store */
+    sourceType: v.optional(v.union(
+      v.literal("tool"),   // From GLOBAL_ARTIFACT_PRODUCERS (Linkup, SEC, etc.)
+      v.literal("agent"),  // Agent-generated (may be hallucinated)
+      v.literal("user")    // User-provided
+    )),
+
+    /** Reference to global artifact (set after write-through) */
+    globalArtifactKey: v.optional(v.string()),
+  })
+    .index("by_run", ["runId"])
+    .index("by_run_artifact", ["runId", "artifactId"])
+    .index("by_user_run", ["userId", "runId"])
+    .index("by_user", ["userId"])
+    .index("by_runId_seq", ["runId", "seq"])        // For write-through sync
+    .index("by_createdAt", ["discoveredAt"]),       // For diagnostics
+
+  /* ------------------------------------------------------------------ */
+  /* ARTIFACT LINKS - Artifact-to-section assignments                    */
+  /* ------------------------------------------------------------------ */
+  artifactLinks: defineTable({
+    runId: v.string(),
+    artifactId: v.string(),
+    sectionId: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_run_section", ["runId", "sectionId"])
+    .index("by_run_artifact", ["runId", "artifactId"])
+    .index("by_run", ["runId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* EVIDENCE LINKS - Fact-to-artifact citations                         */
+  /* ------------------------------------------------------------------ */
+  evidenceLinks: defineTable({
+    runId: v.string(),
+    factId: v.string(),
+    artifactIds: v.array(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_run_fact", ["runId", "factId"])
+    .index("by_run", ["runId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* FACTS - Claim text from {{fact:...}} anchors                        */
+  /* Stores the exact claim text for verification                        */
+  /* ------------------------------------------------------------------ */
+  facts: defineTable({
+    runId: v.string(),
+    factId: v.string(),           // e.g., "funding_signals:etched_series_c"
+    sectionKey: v.string(),       // e.g., "funding_signals"
+    claimText: v.string(),        // The exact claim text to verify
+    artifactIds: v.array(v.string()), // Linked evidence (from evidenceLinks)
+    createdAt: v.number(),
+  })
+    .index("by_run", ["runId"])
+    .index("by_run_fact", ["runId", "factId"])
+    .index("by_run_section", ["runId", "sectionKey"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CLAIM VERIFICATIONS - LLM-as-a-judge verdicts per claim+artifact    */
+  /* Keyed by (runId, factId, artifactId) for claim-specific verdicts    */
+  /* ------------------------------------------------------------------ */
+  claimVerifications: defineTable({
+    runId: v.string(),
+    factId: v.string(),           // Links to facts table
+    artifactId: v.string(),       // Which artifact was checked
+    
+    // Verdict from LLM-as-a-judge
+    verdict: v.union(
+      v.literal("supported"),     // Source explicitly states the claim
+      v.literal("not_found"),     // Source doesn't mention the claim
+      v.literal("contradicted"),  // Source contradicts the claim
+      v.literal("inaccessible")   // Source is error page, paywall, blocked
+    ),
+    confidence: v.number(),       // 0-1 confidence score
+    explanation: v.optional(v.string()), // Short explanation (max 60 words)
+    snippet: v.optional(v.string()),     // Cached source excerpt for display
+    
+    createdAt: v.number(),
+  })
+    .index("by_run", ["runId"])
+    .index("by_run_fact", ["runId", "factId"])
+    .index("by_artifact", ["artifactId"])
+    .index("by_run_fact_artifact", ["runId", "factId", "artifactId"]),
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * GLOBAL RESEARCH LEDGER
+   * Shared research cache with append-only progression tracking.
+   * See: convex/globalResearch/ for mutations/queries.
+   * ══════════════════════════════════════════════════════════════════════ */
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL ARTIFACTS - URL-deduplicated source store                    */
+  /* One row per unique canonicalUrl across all users/runs               */
+  /* ------------------------------------------------------------------ */
+  globalArtifacts: defineTable({
+    /** Deterministic key: "ga_" + sha256(canonicalUrl) */
+    artifactKey: v.string(),
+    canonicalUrl: v.string(),
+    domain: v.string(),                // Extracted host
+    title: v.optional(v.string()),
+    snippet: v.optional(v.string()),
+    thumbnail: v.optional(v.string()),
+    /** Hash of title+snippet for change detection */
+    contentHash: v.optional(v.string()),
+    firstSeenAt: v.number(),
+    lastSeenAt: v.number(),
+    seenCount: v.number(),
+  })
+    .index("by_artifactKey", ["artifactKey"])
+    .index("by_canonicalUrl", ["canonicalUrl"]) // For dedupe cron
+    .index("by_domain_lastSeenAt", ["domain", "lastSeenAt"])
+    .index("by_lastSeenAt", ["lastSeenAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL QUERY CACHE - Simple TTL cache for search results            */
+  /* MVP: Caches full response string; deduplication comes later         */
+  /* ------------------------------------------------------------------ */
+  globalQueryCache: defineTable({
+    /** Deterministic: hash(query + toolName + params) */
+    queryKey: v.string(),
+    /** Full formatted response (ready to return) */
+    cachedResponse: v.string(),
+    /** Tool that produced this result */
+    toolName: v.string(),
+    /** When the cache was populated */
+    completedAt: v.number(),
+    /** TTL in ms (varies by query type) */
+    ttlMs: v.number(),
+  })
+    .index("by_queryKey", ["queryKey"])
+    .index("by_completedAt", ["completedAt"]), // For cleanup
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL QUERIES - Query fingerprints for cache lookup                */
+  /* ------------------------------------------------------------------ */
+  globalQueries: defineTable({
+    /** Deterministic key: "qk_" + hash(query + config + versions) */
+    queryKey: v.string(),
+    normalizedQuery: v.string(),
+    toolName: v.string(),
+    /** Frozen tool args (for debugging) */
+    toolConfig: v.any(),
+    /** Hash of toolConfig for reliable comparisons */
+    toolConfigHash: v.string(),
+    /** Tool version (e.g., "linkup-v2") */
+    toolVersion: v.string(),
+    /** Fingerprint algorithm version (bump when algo changes) */
+    fingerprintVersion: v.number(),
+    /**
+     * Entity scope. Use "" for unscoped queries.
+     * WARNING: Never query by_entityKey when entityKey === "" (hot partition).
+     */
+    entityKey: v.string(),
+    /** Chosen TTL for this query type */
+    ttlMs: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_queryKey", ["queryKey"])
+    // WARNING: Only use by_entityKey when entityKey !== ""
+    .index("by_entityKey", ["entityKey"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL ARTIFACT MENTIONS - Append-only ledger of sightings          */
+  /* Raw mentions kept 30 days, then compacted to globalMentionAgg       */
+  /* ------------------------------------------------------------------ */
+  globalArtifactMentions: defineTable({
+    artifactKey: v.string(),
+    queryKey: v.string(),
+    /**
+     * Entity scope. Use "" for unscoped.
+     * WARNING: Never query by_entityKey_seenAt when entityKey === "".
+     */
+    entityKey: v.string(),
+    seenAt: v.number(),
+    toolName: v.string(),
+    /** globalResearchRunId, "" if backfill */
+    runId: v.string(),
+    /** Section context, "" if none */
+    sectionId: v.string(),
+    rank: v.optional(v.number()),
+    score: v.optional(v.number()),
+  })
+    .index("by_artifactKey_seenAt", ["artifactKey", "seenAt"])
+    .index("by_queryKey_seenAt", ["queryKey", "seenAt"])
+    // WARNING: Only use when entityKey !== ""
+    .index("by_entityKey_seenAt", ["entityKey", "seenAt"])
+    .index("by_seenAt", ["seenAt"]), // Retention cleanup
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL MENTION AGGREGATES - Compacted daily summaries               */
+  /* Prevents unbounded growth of raw mentions                           */
+  /* ------------------------------------------------------------------ */
+  globalMentionAgg: defineTable({
+    /** Deterministic: hash(artifactKey + queryKey + dayBucket) */
+    aggKey: v.string(),
+    artifactKey: v.string(),
+    queryKey: v.string(),
+    /** Use "" for unscoped */
+    entityKey: v.string(),
+    /** Date bucket: "2024-01-15" */
+    dayBucket: v.string(),
+    mentionCount: v.number(),
+    bestRank: v.optional(v.number()),
+    firstSeenAt: v.number(),
+    lastSeenAt: v.number(),
+  })
+    .index("by_aggKey", ["aggKey"])           // Upsert lookup
+    .index("by_queryKey_day", ["queryKey", "dayBucket"])
+    // WARNING: Only use when entityKey !== ""
+    .index("by_entityKey_day", ["entityKey", "dayBucket"])
+    .index("by_artifactKey_day", ["artifactKey", "dayBucket"])
+    .index("by_dayBucket", ["dayBucket"]),    // "Top today" queries
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL RESEARCH RUNS - Research job snapshots                       */
+  /* Each run = one attempt to refresh a query's results                 */
+  /* ------------------------------------------------------------------ */
+  globalResearchRuns: defineTable({
+    /** Unique run ID: "grr_" + uuid */
+    researchRunId: v.string(),
+    queryKey: v.string(),
+    /**
+     * Entity scope. Use "" for unscoped.
+     * WARNING: Never query by_entityKey_* when entityKey === "".
+     */
+    entityKey: v.string(),
+    status: v.union(
+      v.literal("scheduled"),
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    /** Monotonic version per queryKey */
+    version: v.number(),
+    ttlMs: v.number(),
+    /** startedAt + ttlMs (for cache expiry checks) */
+    expiresAt: v.number(),
+    /**
+     * Always set (= scheduledAt initially, overwritten on start).
+     * Used for reliable sorting since startedAt can be optional.
+     */
+    sortTs: v.number(),
+    scheduledAt: v.number(),
+    startedAt: v.optional(v.number()),
+    finishedAt: v.optional(v.number()),
+    artifactCount: v.optional(v.number()),
+    error: v.optional(v.string()),
+  })
+    .index("by_researchRunId", ["researchRunId"])
+    .index("by_queryKey_sortTs", ["queryKey", "sortTs"])
+    .index("by_queryKey_status_sortTs", ["queryKey", "status", "sortTs"])
+    // WARNING: Only use when entityKey !== ""
+    .index("by_entityKey_sortTs", ["entityKey", "sortTs"])
+    .index("by_status", ["status"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL RESEARCH EVENTS - Append-only changelog                      */
+  /* Only the run-owner action writes events (prevents race conditions)  */
+  /* ------------------------------------------------------------------ */
+  globalResearchEvents: defineTable({
+    researchRunId: v.string(),
+    /** For dedup on read: hash(kind + artifactKey + version) */
+    eventKey: v.string(),
+    /** Monotonic within run */
+    seq: v.number(),
+    kind: v.union(
+      v.literal("artifact_added"),
+      v.literal("artifact_updated"),
+      v.literal("artifact_removed"),
+      v.literal("fact_extracted"),
+      v.literal("run_started"),
+      v.literal("run_completed"),
+      v.literal("run_failed")
+    ),
+    payload: v.any(),
+    createdAt: v.number(),
+  })
+    .index("by_runId_seq", ["researchRunId", "seq"])
+    .index("by_createdAt", ["createdAt"]), // Retention
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL QUERY LOCKS - Nonce-owned single-flight cache                */
+  /* Prevents N concurrent users from running the same query N times     */
+  /* ------------------------------------------------------------------ */
+  globalQueryLocks: defineTable({
+    queryKey: v.string(),
+    status: v.union(
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    runId: v.string(),
+    /** Random UUID for ownership verification */
+    lockNonce: v.string(),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    failedAt: v.optional(v.number()),
+    error: v.optional(v.string()),
+    /** Default 10 minutes */
+    staleAfterMs: v.number(),
+  })
+    .index("by_queryKey", ["queryKey"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RESEARCH SUBSCRIPTIONS - User subscriptions for email digests       */
+  /* ------------------------------------------------------------------ */
+  researchSubscriptions: defineTable({
+    userId: v.id("users"),
+    subscriptionType: v.union(
+      v.literal("entity"),
+      v.literal("query"),
+      v.literal("hashtag")
+    ),
+    /** entityKey, queryKey, or hashtag */
+    targetKey: v.string(),
+    displayName: v.string(),
+    frequency: v.union(
+      v.literal("daily"),
+      v.literal("weekly"),
+      v.literal("monthly")
+    ),
+    deliveryMethod: v.union(v.literal("email"), v.literal("in_app")),
+    /** Timezone for delivery (default "UTC") */
+    timezone: v.string(),
+    /** Hour of day for delivery (0-23, default 8) */
+    deliveryHourLocal: v.number(),
+    /** Max artifacts per digest (default 20) */
+    maxItems: v.number(),
+    /** Precomputed next send time (for efficient cron query) */
+    nextDueAt: v.number(),
+    lastSentAt: v.optional(v.number()),
+    lastSeenVersion: v.optional(v.number()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_active", ["userId", "isActive"])
+    .index("by_nextDueAt_active", ["nextDueAt", "isActive"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL COMPACTION STATE - Singleton for incremental compaction      */
+  /* ------------------------------------------------------------------ */
+  globalCompactionState: defineTable({
+    /** Singleton key: "mentions" | "artifacts" */
+    compactionType: v.string(),
+    /** Last processed seenAt timestamp */
+    lastProcessedAt: v.number(),
+    /** Stats for monitoring */
+    lastRunAt: v.number(),
+    mentionsCompacted: v.optional(v.number()),
+    mentionsPurged: v.optional(v.number()),
+    duplicatesMerged: v.optional(v.number()),
+  })
+    .index("by_type", ["compactionType"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GLOBAL BACKFILL STATE - Resumable migration state                   */
+  /* ------------------------------------------------------------------ */
+  globalBackfillState: defineTable({
+    backfillRunId: v.string(),
+    status: v.union(
+      v.literal("running"),
+      v.literal("paused"),
+      v.literal("completed")
+    ),
+    /** Last processed run ID */
+    lastRunId: v.optional(v.string()),
+    /** Last processed seq within that run */
+    lastSeq: v.optional(v.number()),
+    processedCount: v.number(),
+    eligibleCount: v.number(),
+    startedAt: v.number(),
+    lastUpdatedAt: v.number(),
+  })
+    .index("by_backfillRunId", ["backfillRunId"])
+    .index("by_status", ["status"]),
+
+});

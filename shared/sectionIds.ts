@@ -45,6 +45,34 @@ export const SECTION_LABELS: Record<DossierSectionKey, string> = {
   sources_and_media: "Sources & Media",
 };
 
+/**
+ * Common aliases to map ad-hoc headings to canonical keys.
+ */
+const SECTION_ALIASES: Record<string, DossierSectionKey> = {
+  "market_analysis": "market_landscape",
+  "market_trends": "market_landscape",
+  "industry_analysis": "market_landscape",
+  "competitive_landscape": "competitive_analysis",
+  "competitors": "competitive_analysis",
+  "competition": "competitive_analysis",
+  "funding": "funding_signals",
+  "investors": "funding_signals",
+  "financing": "funding_signals",
+  "valuation": "funding_signals",
+  "team": "founder_background",
+  "founders": "founder_background",
+  "management": "founder_background",
+  "leadership": "founder_background",
+  "product": "product_analysis",
+  "technology": "product_analysis",
+  "solution": "product_analysis",
+  "risks": "risk_flags",
+  "challenges": "risk_flags",
+  "summary": "executive_summary",
+  "overview": "company_overview",
+  "introduction": "company_overview",
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION ID GENERATION
 // ═══════════════════════════════════════════════════════════════════════════
@@ -79,7 +107,7 @@ export function slugifySectionHeading(heading: string): string {
  */
 export function matchSectionKey(heading: string): string {
   const normalized = heading.toLowerCase().replace(/[^a-z0-9]/g, "");
-  
+
   // Try to match canonical keys
   for (const key of DOSSIER_SECTION_KEYS) {
     const keyNormalized = key.replace(/_/g, "");
@@ -87,7 +115,15 @@ export function matchSectionKey(heading: string): string {
       return key;
     }
   }
-  
+
+  // Try aliases
+  for (const [alias, key] of Object.entries(SECTION_ALIASES)) {
+    const aliasNormalized = alias.replace(/_/g, "");
+    if (normalized.includes(aliasNormalized)) {
+      return key;
+    }
+  }
+
   // Fallback to slugified heading
   return slugifySectionHeading(heading);
 }
@@ -127,12 +163,12 @@ export function stripFactAnchors(markdown: string): {
 } {
   const factPositions: Array<{ factId: string; position: number }> = [];
   let offset = 0;
-  
+
   const cleanMarkdown = markdown.replace(FACT_ANCHOR_REGEX, (match, factId, index) => {
     factPositions.push({ factId, position: index - offset });
     offset += match.length;
     return "";
   });
-  
+
   return { cleanMarkdown, factPositions };
 }

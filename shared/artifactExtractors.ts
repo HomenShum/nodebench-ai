@@ -49,7 +49,7 @@ export function extractArtifacts(toolName: string, result: unknown): RawArtifact
 
 /**
  * Extract from linkupSearch results
- * Looks for IMAGE_DATA and SOURCE_GALLERY_DATA markers
+ * Looks for IMAGE_DATA, VIDEO_DATA, AUDIO_DATA, and SOURCE_GALLERY_DATA markers
  */
 function extractFromLinkupSearch(text: string): RawArtifact[] {
   const artifacts: RawArtifact[] = [];
@@ -64,10 +64,51 @@ function extractFromLinkupSearch(text: string): RawArtifact[] {
           if (img.url) {
             artifacts.push({
               url: img.url,
-              title: img.name || img.title || "Image",
+              title: img.name || img.title || img.alt || "Image",
               thumbnail: img.thumbnail || img.url,
               kind: "image",
               provider: classifyProvider(img.url),
+            });
+          }
+        }
+      }
+    } catch { /* ignore parse errors */ }
+  }
+  
+  // Extract VIDEO_DATA
+  const videoMatch = text.match(/<!--\s*VIDEO_DATA\s*\n([\s\S]*?)\n\s*-->/);
+  if (videoMatch) {
+    try {
+      const videos = JSON.parse(videoMatch[1]);
+      if (Array.isArray(videos)) {
+        for (const video of videos) {
+          if (video.url) {
+            artifacts.push({
+              url: video.url,
+              title: video.title || video.name || "Video",
+              thumbnail: video.thumbnail,
+              kind: "video",
+              provider: classifyProvider(video.url),
+            });
+          }
+        }
+      }
+    } catch { /* ignore parse errors */ }
+  }
+  
+  // Extract AUDIO_DATA
+  const audioMatch = text.match(/<!--\s*AUDIO_DATA\s*\n([\s\S]*?)\n\s*-->/);
+  if (audioMatch) {
+    try {
+      const audios = JSON.parse(audioMatch[1]);
+      if (Array.isArray(audios)) {
+        for (const audio of audios) {
+          if (audio.url) {
+            artifacts.push({
+              url: audio.url,
+              title: audio.title || audio.name || "Audio",
+              kind: "file", // Audio files are stored as file kind
+              provider: classifyProvider(audio.url),
             });
           }
         }
@@ -96,8 +137,9 @@ function extractFromLinkupSearch(text: string): RawArtifact[] {
     } catch { /* ignore parse errors */ }
   }
   
-  // Also scan for markdown links as fallback
-  artifacts.push(...extractMarkdownLinks(text));
+  // NOTE: We intentionally do NOT extract markdown links anymore.
+  // This prevents the LLM from "laundering" fabricated URLs into artifacts.
+  // Only structured data markers (from tool output) are trusted.
   
   return artifacts;
 }

@@ -56,4 +56,48 @@ crons.daily(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Global Research Ledger: Compaction and maintenance crons
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Compact raw mentions to aggregates daily (process 24h window per run)
+crons.daily(
+  "compact global mentions",
+  { hourUTC: 2, minuteUTC: 0 },
+  internal.globalResearch.compaction.compactMentions,
+  {}
+);
+
+// Purge old raw mentions beyond 30-day retention
+crons.daily(
+  "purge old global mentions",
+  { hourUTC: 2, minuteUTC: 30 },
+  internal.globalResearch.compaction.purgeMentions,
+  {}
+);
+
+// Deduplicate global artifacts (merge race-condition duplicates)
+crons.daily(
+  "dedupe global artifacts",
+  { hourUTC: 3, minuteUTC: 30 },
+  internal.globalResearch.compaction.dedupeArtifacts,
+  {}
+);
+
+// Cleanup stale locks hourly (locks stuck in "running" > 1 hour)
+crons.interval(
+  "cleanup stale global locks",
+  { hours: 1 },
+  internal.globalResearch.compaction.cleanupStaleLocks,
+  { maxAgeMs: 60 * 60 * 1000 }
+);
+
+// Purge old research events weekly (keep 90 days)
+crons.weekly(
+  "purge old research events",
+  { dayOfWeek: "sunday", hourUTC: 3, minuteUTC: 0 },
+  internal.globalResearch.compaction.purgeOldEvents,
+  { retentionDays: 90 }
+);
+
 export default crons;

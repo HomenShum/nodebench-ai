@@ -335,87 +335,79 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
   });
 
   /**
-   * Parallel Delegation
+   * Parallel Delegation (Scheduler-based, OCC-safe)
    * Use for: running multiple subagents simultaneously
+   * 
+   * Architecture: Fire-and-forget scheduling
+   * - Creates delegation records immediately
+   * - Schedules separate actions for each agent (no OCC fights)
+   * - Returns tracking info immediately (non-blocking)
+   * - UI subscribes to agentDelegations + agentWriteEvents for live updates
    */
   const parallelDelegate: DelegationTool = createTool({
-    description: `Delegate to multiple agents simultaneously.
+    description: `Delegate to multiple agents simultaneously using scheduler-based execution.
     
-    Use this when:
-    - You need to compare two different things (e.g. "Compare Tesla and Rivian")
-    - You need information from different domains at once (e.g. "Get Apple stock price and recent news")
-    - The tasks are independent of each other
-    
-    Returns an array of results from each agent.`,
+Use this when:
+- You need to compare two different things (e.g. "Compare Tesla and Rivian")
+- You need information from different domains at once (e.g. "Get Apple stock price and recent news")
+- The tasks are independent of each other
+
+Returns immediately with delegation tracking info. Results stream via agentWriteEvents.
+UI can subscribe to live updates using the returned runId and delegationIds.`,
 
     args: z.object({
       tasks: z.array(z.object({
         agentName: z.enum(["DocumentAgent", "MediaAgent", "SECAgent", "OpenBBAgent", "EntityResearchAgent"]),
         query: z.string(),
-        threadId: z.string().optional(),
-      })).describe("List of tasks to delegate"),
+      })).describe("List of tasks to delegate (max 5 for cost control)"),
     }),
 
     handler: async (ctx: DelegationCtx, args) => {
-      const nextDepth = enforceSafety(ctx);
-
-      const promises = args.tasks.map(async (task) => {
-        let agent;
-        switch (task.agentName) {
-          case "DocumentAgent": agent = documentAgent; break;
-          case "MediaAgent": agent = mediaAgent; break;
-          case "SECAgent": agent = secAgent; break;
-          case "OpenBBAgent": agent = openbbAgent; break;
-          case "EntityResearchAgent": agent = entityResearchAgent; break;
-          default: throw new Error(`Unknown agent: ${task.agentName}`);
-        }
-
-        const threadId = await ensureThreadHelper(agent, ctx, task.threadId);
-        const { prompt, temporalContext } = buildDelegationPrompt(task.query, ctx.temporalContext);
-
-        try {
-          const generation = agent.generateText(
-            { ...ctx, depth: nextDepth } as any,
-            { threadId, userId: pickUserIdHelper(ctx) },
-            {
-              prompt,
-              stopWhen: stepCountIs(8), // Slightly lower limit for parallel tasks
-            }
-          ) as Promise<any>;
-
-          const result: any = await runWithTimeout<any>(generation);
-
-          return {
-            task: task.query,
-            agent: task.agentName,
-            status: "success",
-            result: formatResult(task.agentName, threadId, result.messageId || "", result.text, extractTools(result))
-          };
-        } catch (error: any) {
-          return {
-            task: task.query,
-            agent: task.agentName,
-            status: "error",
-            error: error.message
-          };
-        }
+      // Safety: enforce max parallel to prevent cost/rate limit spikes
+      const MAX_PARALLEL = 5;
+      if (args.tasks.length > MAX_PARALLEL) {
+        return JSON.stringify({
+          status: "error",
+          error: `Too many parallel tasks. Maximum is ${MAX_PARALLEL}, got ${args.tasks.length}.`,
+        });
+      }
+      
+      enforceSafety(ctx);
+      
+      const userId = pickUserIdHelper(ctx);
+      // Use coordinator's threadId as runId for UI scoping
+      const runId = ctx.threadId ?? crypto.randomUUID();
+      
+      // Generate unique delegationIds for each task
+      const tasks = args.tasks.map(task => ({
+        delegationId: crypto.randomUUID(),
+        agentName: task.agentName as "DocumentAgent" | "MediaAgent" | "SECAgent" | "OpenBBAgent" | "EntityResearchAgent",
+        query: task.query,
+      }));
+      
+      // Schedule via ctx.scheduler.runAfter (durable, won't be dropped)
+      // Using scheduler instead of runAction ensures the job persists
+      // even if this handler exits early or errors after returning
+      const { internal } = await import("../../_generated/api");
+      
+      await (ctx as any).scheduler.runAfter(0, internal.actions.parallelDelegation.scheduleDelegations, {
+        runId,
+        userId,
+        model: "gpt-4o-mini", // Could be passed from coordinator config
+        tasks,
       });
-
-      const results = await Promise.all(promises);
-      return JSON.stringify(results, null, 2);
+      
+      return JSON.stringify({
+        status: "delegations_scheduled",
+        runId,
+        delegationIds: tasks.map(t => t.delegationId),
+        agentCount: tasks.length,
+        agents: tasks.map(t => t.agentName),
+        message: `Scheduled ${tasks.length} parallel agents. Track via agentDelegations.listByRun({ runId: "${runId}" })`,
+        uiHint: "Subscribe to agentWriteEvents for live streaming text from each agent.",
+      }, null, 2);
     }
   });
-
-  // Update existing handlers to use safety checks
-  // Note: We are wrapping the existing handlers to add safety. 
-  // Since we can't easily wrap them in-place without rewriting the whole file, 
-  // we will just return the new set which includes the new tools.
-  // Ideally we should update the existing tools to use `enforceSafety` and `runWithTimeout` too.
-  // For this refactor, I will assume the user wants me to update the existing ones as well.
-  // I will rewrite the return statement to include the new tools and I will rely on the fact that I am replacing the end of the file.
-  // Wait, I need to update the existing tools in the file to use the safety checks.
-  // The `replace_file_content` tool replaces a block. I should probably replace the whole `buildDelegationTools` function body or large chunks of it.
-  // Given the file size (234 lines), I can replace the whole function `buildDelegationTools`.
 
   return {
     delegateToDocumentAgent,

@@ -163,12 +163,12 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
       
       {/* Content */}
       <div className={`flex-1 ${compact ? 'p-2' : 'p-3'}`}>
-        <h4 className={`font-medium text-gray-900 line-clamp-2 ${compact ? 'text-xs' : 'text-sm'}`}>
+        <h4 className={`font-medium text-gray-900 line-clamp-2 break-words ${compact ? 'text-xs' : 'text-sm'}`}>
           {title}
         </h4>
         
         {!compact && snippet && (
-          <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+          <p className="mt-1 text-xs text-gray-500 line-clamp-2 break-words overflow-hidden">
             {snippet}
           </p>
         )}
