@@ -24,7 +24,6 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { Id } from "../../../../convex/_generated/dataModel";
-import { extractMediaFromMessages, ExtractedAsset } from "../../../../convex/lib/dossierHelpers";
 import { RichMediaSection } from "@features/agents/components/FastAgentPanel/RichMediaSection";
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from "@features/agents/components/FastAgentPanel/DocumentActionCard";
 import { extractMediaFromText, type ExtractedMedia } from "@features/agents/components/FastAgentPanel/utils/mediaExtractor";
@@ -93,15 +92,7 @@ function WelcomeLandingInner({
   const { signIn } = useAuthActions();
   const createThread = useAction(api.domains.agents.fastAgentPanelStreaming.createThread);
   const sendStreaming = useMutation(api.domains.agents.fastAgentPanelStreaming.initiateAsyncStreaming);
-  // State with persistence
-  const [activeTab, setActiveTab] = useState<'dossier' | 'newsletter' | 'media' | 'artifacts'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('nodebench_landing_activeTab');
-      return (saved as 'dossier' | 'newsletter' | 'media' | 'artifacts') || 'dossier';
-    }
-    return 'dossier';
-  });
-
+  // State with persistence (tabs removed - unified view)
   const [researchPrompt, setResearchPrompt] = useState(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('nodebench_landing_prompt') || "Summarize last week's top funding news and any SEC filings for AI infrastructure startups.";
@@ -167,10 +158,6 @@ function WelcomeLandingInner({
   // const [liveEvents, setLiveEvents] = useState([]);
 
   // Persist state changes
-  useEffect(() => {
-    sessionStorage.setItem('nodebench_landing_activeTab', activeTab);
-  }, [activeTab]);
-
   useEffect(() => {
     sessionStorage.setItem('nodebench_landing_prompt', researchPrompt);
   }, [researchPrompt]);
@@ -461,18 +448,6 @@ While commercial fusion is still years away, the pace of innovation has accelera
     [latestAssistantMessage]
   );
 
-  // Extract media assets from the CONTENT message (persistent)
-  const mediaAssets = useMemo(() => {
-    if (!latestContentMessage) return [];
-
-    try {
-      return extractMediaFromMessages([latestContentMessage]);
-    } catch (error) {
-      console.error("[WelcomeLanding] Failed to extract media from messages", error);
-      return [];
-    }
-  }, [latestContentMessage]);
-
   // Extract citations from CONTENT tool parts (persistent)
   const citations = useMemo(() => {
     try {
@@ -613,13 +588,6 @@ While commercial fusion is still years away, the pace of innovation has accelera
       return [];
     }
   }, [assistantTexts]);
-
-  const totalArtifacts = aggregatedMedia.youtubeVideos.length +
-    aggregatedMedia.secDocuments.length +
-    aggregatedMedia.webSources.length +
-    aggregatedMedia.profiles.length +
-    aggregatedMedia.images.length +
-    aggregatedDocumentActions.length;
 
   const toggleSource = (sourceId: string) => {
     setActiveSources(prev =>
@@ -1272,9 +1240,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
               <div className="flex items-center text-sm text-gray-500">
                 <span>Research</span>
                 <ChevronRight className="w-4 h-4 mx-1" />
-                <span className="text-gray-900 font-medium">
-                  {activeTab === 'dossier' ? 'Live Dossier' : activeTab === 'newsletter' ? 'Newsletter' : 'Media Gallery'}
-                </span>
+                <span className="text-gray-900 font-medium">Live Dossier</span>
               </div>
             </div>
 
@@ -1520,93 +1486,24 @@ While commercial fusion is still years away, the pace of innovation has accelera
                         </div>
                       </div>
                     )}
-                    {/* Tabs */}
-                    <div className="flex border-b border-gray-200 mb-8">
-                      <button
-                        onClick={() => setActiveTab('dossier')}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dossier' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
-                          }`}
-                      >
-                        Live Dossier
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('newsletter')}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'newsletter' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
-                          }`}
-                      >
-                        Newsletter Preview
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('media')}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'media' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
-                          }`}
-                      >
-                        Media Gallery <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{mediaAssets.length}</span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('artifacts')}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'artifacts' ? 'border-black text-black' : 'border-transparent text-gray-600 hover:text-gray-800'
-                          }`}
-                      >
-                        Artifacts <span className="ml-1 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">{totalArtifacts}</span>
-                      </button>
-                    </div>
-
-                    {/* View Content */}
-                    {activeTab === 'dossier' && (<div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {/* Unified Live Dossier View - All content in one place */}
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                       {/* Executive Summary Block (Only show if we have some content) */}
                       {citations.length > 0 && <ExecutiveSummaryBlock />}
 
                       {/* Reasoning Chain */}
                       <CollapsibleReasoningChain steps={toolParts} />
 
-                      {/* The Main Document */}
+                      {/* The Main Document with inline media and documents */}
                       <LiveDossierDocument
                         threadId={threadId}
                         isLoading={isRunning || (hasReceivedResponse && !responseText)}
                         onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
-                      />
-                    </div>
-                    )}
-
-                    {activeTab === 'newsletter' && (
-                      <MockNewsletterView
-                        responseText={responseText}
-                        isLoading={isRunning || (hasReceivedResponse && !responseText)}
-                        mediaAssets={mediaAssets}
-                        citations={citations}
-                        sourceAnalytics={sourceAnalytics}
-                      />
-                    )}
-
-                    {activeTab === 'media' && (
-                      <MockMediaView
-                        mediaAssets={mediaAssets}
-                        aggregatedMedia={aggregatedMedia}
-                        onGenerateVisualization={() =>
-                          handleRunPrompt(
-                            "Create a funding comparison chart for the mentioned companies and pull any logos or screenshots that support the findings.",
-                            { appendToThread: true, mode: "deep" }
-                          )
-                        }
-                      />
-                    )}
-
-                    {activeTab === 'artifacts' && (
-                      <LandingArtifactsView
                         media={aggregatedMedia}
                         documents={aggregatedDocumentActions}
-                        hasThread={Boolean(threadId)}
                         onDocumentSelect={onDocumentSelect}
-                        onGenerateArtifact={() =>
-                          handleRunPrompt(
-                            "Generate a CSV of key funding or filing data and produce a PDF-ready executive summary with citations.",
-                            { appendToThread: Boolean(threadId), mode: "deep" }
-                          )
-                        }
-                        onStartResearch={() => handleRunPrompt(undefined, { appendToThread: false, mode: researchMode })}
                       />
-                    )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1682,499 +1579,6 @@ export default function WelcomeLanding(props: WelcomeLandingProps) {
   );
 }
 
-// --- Mock Views for Tabs ---
-
-function MockNewsletterView({
-  responseText,
-  isLoading,
-  mediaAssets = [],
-  citations = [],
-  sourceAnalytics = {},
-}: {
-  responseText?: string;
-  isLoading?: boolean;
-  mediaAssets?: ExtractedAsset[];
-  citations?: any[];
-  sourceAnalytics?: Record<string, number>;
-}) {
-  // Loading state
-  if (isLoading && !responseText) {
-    return (
-      <div className="mx-auto max-w-3xl bg-white shadow-sm min-h-full border border-gray-200/60 p-20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center animate-pulse">
-            <Layout className="w-6 h-6 text-blue-600" />
-          </div>
-          <p className="text-sm font-medium text-gray-600">Formatting newsletter...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-2xl bg-white shadow-sm min-h-full border border-gray-200/60">
-      {/* Email Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-10 text-center">
-        <div className="inline-flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-white/90 text-sm font-medium tracking-wide">NODEBENCH INSIGHTS</span>
-        </div>
-        <h1 className="text-3xl font-bold text-white mb-2">
-          Your Research Digest
-        </h1>
-        <p className="text-blue-100 text-sm">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-        </p>
-      </div>
-
-      {/* Email Body */}
-      <div className="px-8 py-8 space-y-6">
-        {/* Main Content - Rendered as Markdown */}
-        <div className="prose prose-sm max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-600 prose-p:leading-relaxed prose-li:text-gray-600 prose-strong:text-gray-900">
-          <ReactMarkdown
-            components={{
-              h1: ({ children }) => <h2 className="text-xl font-bold text-gray-900 mt-6 mb-3">{children}</h2>,
-              h2: ({ children }) => <h3 className="text-lg font-semibold text-gray-900 mt-5 mb-2">{children}</h3>,
-              h3: ({ children }) => <h4 className="text-base font-semibold text-gray-800 mt-4 mb-2">{children}</h4>,
-              p: ({ children }) => <p className="text-gray-600 leading-relaxed text-[15px] mb-3">{children}</p>,
-              ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-3">{children}</ul>,
-              ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-3">{children}</ol>,
-              li: ({ children }) => <li className="text-gray-600 text-[15px]">{children}</li>,
-              strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
-              a: ({ href, children }) => (
-                <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                  {children}
-                </a>
-              ),
-              blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-blue-300 pl-4 py-1 my-3 bg-blue-50/50 italic text-gray-700">
-                  {children}
-                </blockquote>
-              ),
-            }}
-          >
-            {responseText || ''}
-          </ReactMarkdown>
-        </div>
-
-        {/* Featured Media */}
-        {mediaAssets.length > 0 && (
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Featured Research</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {mediaAssets.slice(0, 4).map((asset, idx) => (
-                <a
-                  key={idx}
-                  href={asset.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group border border-gray-200 rounded-lg overflow-hidden hover:border-blue-300 transition-colors"
-                >
-                  {asset.thumbnail && (
-                    <div className="aspect-video bg-gray-100 overflow-hidden">
-                      <img
-                        src={asset.thumbnail}
-                        alt={asset.title || 'Asset'}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div className="p-3 bg-white">
-                    <p className="text-xs font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                      {asset.title || 'View Asset'}
-                    </p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Citations */}
-        {citations.length > 0 && (
-          <div className="border-t border-gray-200 pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Sources</h3>
-              {/* SourceAnalytics component removed/inline if needed, or assume it's defined elsewhere. 
-                  Wait, previous code had SourceAnalytics. I should keep it or mock it. 
-                  The previous code had a missing SourceAnalytics definition error. 
-                  I will inline a simple one here to be safe. */}
-              <div className="flex gap-1">
-                {Object.entries(sourceAnalytics).map(([source, count]) => (
-                  <span key={source} className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-                    {source}: {count}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              {citations.map((citation: any, idx) => {
-                const source = SOURCES.find(s => s.id === citation.source);
-                return (
-                  <a
-                    key={idx}
-                    href={citation.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-2 text-xs text-blue-600 hover:text-blue-800 hover:underline group"
-                  >
-                    <span className="text-gray-400 font-mono">[{idx + 1}]</span>
-                    <span className="flex-1">{citation.title}</span>
-                    {source && (
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${source.activeBgColor} ${source.color} opacity-0 group-hover:opacity-100 transition-opacity`}>
-                        {source.shortName}
-                      </span>
-                    )}
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Email Footer */}
-      <div className="bg-gray-50 px-8 py-6 border-t border-gray-200 text-center">
-        <p className="text-xs text-gray-500 mb-2">
-          Generated by Nodebench AI • Research made simple
-        </p>
-        <div className="flex items-center justify-center gap-4 text-[10px] text-gray-400">
-          <span>Privacy Policy</span>
-          <span>•</span>
-          <span>Unsubscribe</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MockMediaView({
-  mediaAssets,
-  aggregatedMedia,
-  onGenerateVisualization
-}: {
-  mediaAssets: ExtractedAsset[];
-  aggregatedMedia?: ExtractedMedia;
-  onGenerateVisualization?: () => void;
-}) {
-  // Calculate total media count from both sources
-  const totalCount = mediaAssets.length +
-    (aggregatedMedia?.youtubeVideos.length || 0) +
-    (aggregatedMedia?.images.length || 0) +
-    (aggregatedMedia?.webSources.length || 0) +
-    (aggregatedMedia?.profiles.length || 0);
-
-  if (totalCount === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500 border-2 border-dashed border-gray-200 rounded-xl space-y-3 bg-white">
-        <ImageIcon className="w-8 h-8 opacity-50" />
-        <div className="text-center space-y-1">
-          <p className="text-sm font-medium text-gray-900">No visuals captured yet.</p>
-          <p className="text-xs text-gray-500">Ask the agent to pull charts, screenshots, or logos from the sources.</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onGenerateVisualization}
-            className="px-3 py-1.5 text-xs rounded-lg bg-gray-900 text-white hover:bg-black transition-colors"
-          >
-            Generate visualization
-          </button>
-          <button
-            type="button"
-            onClick={onGenerateVisualization}
-            className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Capture screenshots
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Stats bar */}
-      <div className="flex items-center gap-4 text-xs text-gray-500 border-b border-gray-200 pb-3">
-        <span className="font-semibold text-gray-900">Media Gallery</span>
-        <span>{aggregatedMedia?.youtubeVideos.length || 0} videos</span>
-        <span>•</span>
-        <span>{aggregatedMedia?.images.length || mediaAssets.length} images</span>
-        <span>•</span>
-        <span>{aggregatedMedia?.webSources.length || 0} sources</span>
-        <span>•</span>
-        <span>{aggregatedMedia?.profiles.length || 0} profiles</span>
-      </div>
-
-      {/* YouTube Videos Section */}
-      {aggregatedMedia?.youtubeVideos && aggregatedMedia.youtubeVideos.length > 0 && (
-        <div>
-          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Videos ({aggregatedMedia.youtubeVideos.length})</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {aggregatedMedia.youtubeVideos.map((video, idx) => (
-              <a
-                key={idx}
-                href={video.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
-              >
-                <img
-                  src={video.thumbnail || `https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`}
-                  alt={video.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3">
-                  <p className="text-white text-sm font-medium line-clamp-2">{video.title}</p>
-                  <p className="text-white/70 text-xs mt-1">{video.channel}</p>
-                </div>
-                {/* Play button overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all">
-                    <svg className="w-5 h-5 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Images Section */}
-      {((aggregatedMedia?.images && aggregatedMedia.images.length > 0) || mediaAssets.length > 0) && (
-        <div>
-          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
-            Images ({(aggregatedMedia?.images.length || 0) + mediaAssets.length})
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {/* From aggregated media */}
-            {aggregatedMedia?.images.map((img, idx) => (
-              <a
-                key={`agg-${idx}`}
-                href={img.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
-              >
-                <img
-                  src={img.url}
-                  alt={img.alt || 'Image'}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                  <p className="text-white text-xs line-clamp-2">{img.alt}</p>
-                </div>
-              </a>
-            ))}
-            {/* From mediaAssets */}
-            {mediaAssets.map((asset, idx) => (
-              <a
-                key={`asset-${idx}`}
-                href={asset.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
-              >
-                {asset.thumbnail ? (
-                  <img
-                    src={asset.thumbnail}
-                    alt={asset.title || 'Media Asset'}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                    <ImageIcon className="w-8 h-8 text-gray-300" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                  <p className="text-white text-sm font-medium line-clamp-2">{asset.title}</p>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Web Sources Section */}
-      {aggregatedMedia?.webSources && aggregatedMedia.webSources.length > 0 && (
-        <div>
-          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Sources ({aggregatedMedia.webSources.length})</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {aggregatedMedia.webSources.slice(0, 8).map((source, idx) => (
-              <a
-                key={idx}
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-              >
-                {source.favicon && (
-                  <img src={source.favicon} alt="" className="w-5 h-5 rounded mt-0.5" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 line-clamp-1">{source.title}</p>
-                  <p className="text-xs text-gray-500 line-clamp-1">{source.domain || new URL(source.url).hostname}</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              </a>
-            ))}
-          </div>
-          {aggregatedMedia.webSources.length > 8 && (
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              + {aggregatedMedia.webSources.length - 8} more sources
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Profiles Section */}
-      {aggregatedMedia?.profiles && aggregatedMedia.profiles.length > 0 && (
-        <div>
-          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">People ({aggregatedMedia.profiles.length})</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {aggregatedMedia.profiles.map((profile, idx) => (
-              <a
-                key={idx}
-                href={profile.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-              >
-                {profile.imageUrl ? (
-                  <img src={profile.imageUrl} alt={profile.name} className="w-10 h-10 rounded-full object-cover" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold">
-                    {profile.name?.charAt(0) || '?'}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 line-clamp-1">{profile.name}</p>
-                  {profile.profession && (
-                    <p className="text-xs text-gray-500 line-clamp-1">{profile.profession}</p>
-                  )}
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LandingArtifactsView({
-  media,
-  documents,
-  hasThread,
-  onDocumentSelect,
-  onGenerateArtifact,
-  onStartResearch,
-}: {
-  media: ExtractedMedia;
-  documents: DocumentAction[];
-  hasThread: boolean;
-  onDocumentSelect?: (documentId: string) => void;
-  onGenerateArtifact?: () => void;
-  onStartResearch?: () => void;
-}) {
-  try {
-    const safeMedia = sanitizeMedia(media || baseMedia);
-    const safeDocuments = sanitizeDocumentActions(documents);
-
-    const totalSources = safeMedia.webSources.length + safeMedia.secDocuments.length;
-    const totalVideos = safeMedia.youtubeVideos.length;
-    const totalProfiles = safeMedia.profiles.length;
-    const totalImages = safeMedia.images.length;
-    const totalDocs = safeDocuments.length;
-    const totalArtifacts = totalSources + totalVideos + totalProfiles + totalImages + totalDocs;
-
-    if (totalArtifacts === 0) {
-      return (
-        <div className="bg-white shadow-sm min-h-full border border-gray-200/60 p-10 text-center rounded-xl">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center border border-gray-200">
-            <Layout className="w-5 h-5 text-gray-500" />
-          </div>
-          <p className="text-sm font-semibold text-gray-900">No artifacts yet</p>
-          <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-            {hasThread
-              ? "Run or finish a query to see the sources, filings, media, and generated docs the agent found."
-              : "Start a dossier to collect sources, filings, media, and generated docs as the agent works."}
-          </p>
-          <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={onGenerateArtifact}
-              className="px-3 py-1.5 text-xs rounded-lg bg-gray-900 text-white hover:bg-black transition-colors"
-            >
-              Generate first artifact
-            </button>
-            <button
-              type="button"
-              onClick={onStartResearch}
-              className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Start new research
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {[{ label: 'Sources & Filings', value: totalSources }, { label: 'Videos', value: totalVideos }, { label: 'People', value: totalProfiles }, { label: 'Images', value: totalImages }, { label: 'Doc actions', value: totalDocs }]
-            .filter(card => card.value > 0)
-            .map((card) => (
-              <div
-                key={card.label}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 flex items-center justify-between text-xs shadow-sm"
-              >
-                <span className="font-medium text-gray-900">{card.label}</span>
-                <span className="text-blue-600 font-semibold">{card.value}</span>
-              </div>
-            ))}
-        </div>
-
-        <div className="bg-white shadow-sm border border-gray-200 rounded-xl p-4 space-y-4">
-          <div>
-            <p className="text-sm font-semibold text-gray-900">Artifacts</p>
-            <p className="text-xs text-gray-500">Evidence with timestamps, URLs, and generated outputs.</p>
-          </div>
-
-          <RichMediaSection media={safeMedia} showCitations={true} />
-
-          {safeDocuments.length > 0 && (
-            <div className="border-t border-gray-100 pt-3">
-              <DocumentActionGrid
-                documents={safeDocuments}
-                title="Generated Documents"
-                onDocumentSelect={onDocumentSelect || (() => { })}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  } catch (error) {
-    console.error("[WelcomeLanding] Failed to render artifacts tab", error);
-    return (
-      <div className="bg-white shadow-sm min-h-full border border-gray-200/60 p-10 text-center rounded-xl">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-50 flex items-center justify-center border border-red-100">
-          <AlertCircle className="w-5 h-5 text-red-500" />
-        </div>
-        <p className="text-sm font-semibold text-gray-900">Artifacts temporarily unavailable</p>
-        <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-          We hit a rendering error while loading evidence. Please try again or switch back to the dossier tab.
-        </p>
-      </div>
-    );
-  }
-}
+// --- Mock Views for Tabs (REMOVED - Unified view now used) ---
+// MockNewsletterView, MockMediaView, and LandingArtifactsView have been removed.
+// All content is now displayed inline in LiveDossierDocument with collapsible sections.
