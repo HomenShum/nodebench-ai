@@ -10,11 +10,11 @@ import { toast } from "sonner";
  */
 export function useTaskActions() {
     // Get current user
-    const user = useQuery(api.auth.loggedInUser);
+    const user = useQuery(api.domains.auth.auth.loggedInUser);
 
     // Mutations
-    const createTaskMutation = useMutation(api.tasks.createTask);
-    const updateTaskMutation = useMutation(api.tasks.updateTask);
+    const createTaskMutation = useMutation(api.domains.tasks.tasks.createTask);
+    const updateTaskMutation = useMutation(api.domains.tasks.tasks.updateTask);
 
     // Create Task Handler
     const handleCreateTask = useCallback(async (onSuccess?: (taskId: Id<"tasks">) => void) => {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
-import PopoverMiniEditor from "./editors/mini/PopoverMiniEditor";
+import PopoverMiniEditor from "@/features/documents/editors/PopoverMiniEditor";
 
 interface MentionHoverPreviewProps {
   editorContainer: HTMLElement | null;
@@ -23,7 +23,7 @@ export function MentionHoverPreview({ editorContainer, sourceDocumentId }: Menti
 
   // Fetch preview when we have a documentId
   const preview = useQuery(
-    api.documents.getPreviewById,
+    api.domains.documents.documents.getPreviewById,
     hover ? { documentId: hover.documentId, maxLen: 200 } : "skip"
   );
 

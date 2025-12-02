@@ -8,6 +8,7 @@ import { mutation, query } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id } from "../../_generated/dataModel";
 import { api } from "../../_generated/api";
+import { parseDocumentMetadata } from "./documentMetadataParser";
 
 /**
  * Create a new event as a document
@@ -69,7 +70,7 @@ export const createEvent = mutation({
     });
 
     // Add tags
-    await ctx.runMutation(api.tags.addTagsToDocument, {
+    await ctx.runMutation(api.domains.knowledge.tags.addTagsToDocument, {
       documentId,
       tags: [
         { name: "event", kind: "type" },
@@ -199,13 +200,13 @@ export const listEvents = query({
     if (!userId) return [];
 
     // Get all documents tagged with "event"
-    const eventDocs: any[] = await ctx.runQuery(api.documents.listDocumentsByTag, {
+    const eventDocs: any[] = await ctx.runQuery(api.domains.documents.documents.listDocumentsByTag, {
       tag: "event",
     });
 
     // If date range is specified, filter by parsed metadata
     if (args.start !== undefined && args.end !== undefined) {
-      const { parseDocumentMetadata } = await import("./documentMetadataParser");
+      // Use statically imported parseDocumentMetadata - dynamic imports are not supported in queries
       return eventDocs
         .map((doc: any) => {
           const metadata = parseDocumentMetadata(doc.content, doc.title);

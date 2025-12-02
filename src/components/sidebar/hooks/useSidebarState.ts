@@ -126,8 +126,8 @@ export function useSidebarState() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // User Preferences
-    const userPreferences = useQuery(api.userPreferences.getUserPreferences);
-    const updateUserPrefs = useMutation(api.userPreferences.updateUserPreferences);
+    const userPreferences = useQuery(api.domains.auth.userPreferences.getUserPreferences);
+    const updateUserPrefs = useMutation(api.domains.auth.userPreferences.updateUserPreferences);
 
     // Initialize icon order from preferences
     useEffect(() => {

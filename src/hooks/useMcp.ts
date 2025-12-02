@@ -23,12 +23,12 @@ export function useMcp() {
   const [invoking, setInvoking] = useState(false);
 
   // Convex mutations and actions
-  const addMcpServer = useMutation(api.mcp.addMcpServer);
-  const callTool = useAction(api.mcpClient.callMcpTool);
+  const addMcpServer = useMutation(api.domains.mcp.mcp.addMcpServer);
+  const callTool = useAction(api.domains.mcp.mcpClient.callMcpTool);
   
   // Get MCP servers and tools for current server
-  const servers = useQuery(api.mcp.listMcpServers, {}) || [];
-  const tools = useQuery(api.mcp.getMcpTools, serverId ? { serverId } : "skip") || [];
+  const servers = useQuery(api.domains.mcp.mcp.listMcpServers, {}) || [];
+  const tools = useQuery(api.domains.mcp.mcp.getMcpTools, serverId ? { serverId } : "skip") || [];
 
   const pickPreferredServer = useCallback((list: McpServer[]) => {
     if (!list || list.length === 0) return null;

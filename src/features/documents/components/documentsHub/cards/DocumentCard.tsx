@@ -1,0 +1,369 @@
+/**
+ * DocumentCard Component
+ * 
+ * A card component for displaying individual documents with:
+ * - Visual theming based on document type
+ * - Quick actions (edit, favorite, delete)
+ * - Selection support (checkbox)
+ * - Single/double click handling
+ * - Metadata pills display
+ */
+
+import { useRef, memo } from "react";
+import type { Id } from "../../../../../../convex/_generated/dataModel";
+import { Calendar, Edit3, Star, Trash2, Link2 } from "lucide-react";
+import { FileTypeIcon } from "@/shared/components/FileTypeIcon";
+import MetaPills from "@/shared/components/MetaPills";
+import { docToPills } from "@/lib/metaPillMappers";
+import { inferFileType, type FileType } from "@/lib/fileTypes";
+import { getThemeForFileType } from "@/lib/documentThemes";
+import type { DocumentCardData } from "../utils/documentHelpers";
+import { useQuery } from "convex/react";
+import { api } from "../../../../../../convex/_generated/api";
+
+export interface DocumentCardProps {
+  doc: DocumentCardData;
+  onSelect: (documentId: Id<"documents">) => void;
+  onDelete?: (documentId: Id<"documents">) => void;
+  onToggleFavorite?: (documentId: Id<"documents">) => void;
+  hybrid?: boolean;
+  isDragging?: boolean;
+  onOpenMiniEditor?: (documentId: Id<"documents">, anchorEl: HTMLElement) => void;
+  openOnSingleClick?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (documentId: Id<"documents">) => void;
+  onCardMouseClick?: (documentId: Id<"documents">, e: React.MouseEvent) => boolean | void;
+  onAnalyzeFile?: (doc: DocumentCardData) => void;
+  analyzeRunning?: boolean;
+}
+
+/**
+ * Get the appropriate icon for a document type
+ */
+const getDocumentTypeIcon = (doc: DocumentCardData) => {
+  let t: FileType;
+
+  if (doc.documentType === "file") {
+    const ft = String(doc.fileType || "").toLowerCase();
+
+    if (
+      [
+        "video",
+        "audio",
+        "image",
+        "csv",
+        "pdf",
+        "excel",
+        "json",
+        "text",
+        "code",
+        "web",
+        "document",
+      ].includes(ft)
+    ) {
+      t = ft as FileType;
+    } else {
+      const nameGuess = doc.fileName || doc.title;
+      t = inferFileType({ name: nameGuess });
+    }
+  } else {
+    const lower = String(doc.title || "").toLowerCase();
+    const looksLikeFile =
+      /\.(csv|xlsx|xls|pdf|mp4|mov|webm|avi|mkv|jpg|jpeg|png|webp|gif|json|txt|md|markdown|js|ts|tsx|jsx|py|rb|go|rs|html|css|scss|sh)$/.test(
+        lower,
+      );
+
+    t = looksLikeFile
+      ? inferFileType({ name: doc.title })
+      : inferFileType({ name: doc.title, isNodebenchDoc: true });
+  }
+
+  return <FileTypeIcon type={t} className="h-5 w-5" />;
+};
+
+export function DocumentCard({
+  doc,
+  onSelect,
+  onDelete,
+  onToggleFavorite,
+  hybrid = true,
+  isDragging = false,
+  onOpenMiniEditor,
+  openOnSingleClick = false,
+  isSelected = false,
+  onToggleSelect,
+  onCardMouseClick,
+  onAnalyzeFile,
+  analyzeRunning,
+}: DocumentCardProps) {
+  const clickTimerRef = useRef<number | null>(null);
+  const clickDelay = 250; // ms to distinguish single vs double click
+
+  // Check if this is a linked asset and get parent dossier info
+  const parentDossier = useQuery(
+    api.domains.documents.documents.getById,
+    (doc as any).parentDossierId ? { documentId: (doc as any).parentDossierId } : "skip"
+  );
+
+  const isLinkedAsset = !!(doc as any).dossierType && (doc as any).dossierType === "media-asset";
+  const isDossier = !!(doc as any).dossierType && (doc as any).dossierType === "primary";
+
+  const handlePinClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleFavorite?.(doc._id);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.(doc._id);
+  };
+
+  // Subtle styling for calendar documents to improve visual hierarchy
+  const isCalendarDoc =
+    (!doc.documentType || doc.documentType === "text") &&
+    (doc.title.toLowerCase().includes("calendar") ||
+      doc.title.toLowerCase().includes("schedule"));
+
+  // Theme by document type for consistent visuals across cards
+  const typeGuess: FileType =
+    doc.documentType === "file"
+      ? (() => {
+          const ft = String(doc.fileType || "").toLowerCase();
+
+          if (
+            [
+              "video",
+              "audio",
+              "image",
+              "csv",
+              "pdf",
+              "excel",
+              "json",
+              "text",
+              "code",
+              "web",
+              "document",
+            ].includes(ft)
+          )
+            return ft as FileType;
+
+          return inferFileType({ name: doc.fileName || doc.title });
+        })()
+      : (() => {
+          const lower = String(doc.title || "").toLowerCase();
+
+          const looksLikeFile =
+            /\.(csv|xlsx|xls|pdf|mp4|mov|webm|avi|mkv|jpg|jpeg|png|webp|gif|json|txt|md|markdown|js|ts|tsx|jsx|py|rb|go|rs|html|css|scss|sh)$/.test(
+              lower,
+            );
+
+          return looksLikeFile
+            ? inferFileType({ name: doc.title })
+            : inferFileType({ name: doc.title, isNodebenchDoc: true });
+        })();
+
+  const theme = getThemeForFileType(typeGuess);
+
+  return (
+    <div className="group relative">
+      <div
+        onClick={(e) => {
+          // Let parent handle modifier-key selection first
+          if (onCardMouseClick) {
+            const handled = onCardMouseClick(doc._id, e);
+            if (handled) return;
+          }
+
+          // If configured, open the document immediately on single click
+          if (openOnSingleClick) {
+            onSelect(doc._id);
+            return;
+          }
+
+          // Defer single-click to allow dblclick to cancel it
+          if (clickTimerRef.current) {
+            window.clearTimeout(clickTimerRef.current);
+            clickTimerRef.current = null;
+          }
+
+          const anchor = e.currentTarget as HTMLElement;
+
+          clickTimerRef.current = window.setTimeout(() => {
+            clickTimerRef.current = null;
+            onOpenMiniEditor?.(doc._id, anchor);
+          }, clickDelay) as unknown as number;
+        }}
+        onDoubleClick={(_e) => {
+          if (clickTimerRef.current) {
+            window.clearTimeout(clickTimerRef.current);
+            clickTimerRef.current = null;
+          }
+          onSelect(doc._id);
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect(doc._id);
+          }
+        }}
+        aria-selected={isSelected || undefined}
+        className={`bg-white rounded-xl border border-gray-200/80 p-5 h-56 flex flex-col transition-all duration-200 ease-out cursor-pointer relative overflow-hidden shadow-sm hover:shadow-md hover:border-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 focus-visible:ring-offset-2 ${isDragging ? "opacity-90 scale-[1.01] shadow-lg" : ""} ${isSelected ? "ring-2 ring-gray-900 ring-offset-2 ring-offset-white bg-gray-50/50 border-gray-300" : ""}`}
+      >
+        {/* Selection checkbox (top-left) */}
+        <div
+          className={`absolute top-2 left-2 z-10 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+        >
+          <input
+            type="checkbox"
+            aria-label={isSelected ? "Deselect" : "Select"}
+            checked={!!isSelected}
+            onChange={(e) => {
+              e.stopPropagation();
+              onToggleSelect?.(doc._id);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500/50 bg-white"
+          />
+        </div>
+
+        {/* Linked Asset Badge (top-right) */}
+        {isLinkedAsset && (
+          <div
+            className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-md bg-purple-500/10 border border-purple-500/30 backdrop-blur-sm"
+            title={parentDossier ? `Linked to ${parentDossier.title}` : "Linked to dossier"}
+          >
+            <Link2 className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+            <span className="text-[10px] font-medium text-purple-700 dark:text-purple-300">
+              Linked
+            </span>
+          </div>
+        )}
+
+        {/* Decorative background watermark */}
+        {isCalendarDoc ? (
+          <Calendar className="document-card__bg document-row__bg h-14 w-14 text-amber-400 rotate-12" />
+        ) : (
+          <span
+            className={`document-card__bg document-row__bg ${theme.watermarkText}`}
+          >
+            <FileTypeIcon type={typeGuess} className="h-14 w-14 rotate-12" />
+          </span>
+        )}
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col">
+          {/* Header: Big Icon + Actions */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCalendarDoc ? "bg-amber-500" : theme.iconBg}`}
+              >
+                {isCalendarDoc ? (
+                  <Calendar className="h-5 w-5 text-white" />
+                ) : (doc as any).icon ? (
+                  <span className="text-lg">{(doc as any).icon}</span>
+                ) : (
+                  <div className="text-white">{getDocumentTypeIcon(doc)}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-1 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
+              {/* Quick Edit Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenMiniEditor?.(doc._id, e.currentTarget as HTMLElement);
+                }}
+                className="w-7 h-7 rounded-lg flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+                title="Quick edit"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Pin/Favorite Button */}
+              <button
+                onClick={handlePinClick}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 ${
+                  (doc as any).isFavorite
+                    ? "bg-amber-100 text-amber-600"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-amber-500"
+                }`}
+                title={(doc as any).isFavorite ? "Unpin document" : "Pin document"}
+              >
+                <Star
+                  className={`h-3.5 w-3.5 ${(doc as any).isFavorite ? "fill-current" : ""}`}
+                />
+              </button>
+
+              {/* Delete Button */}
+              <button
+                onClick={handleDeleteClick}
+                className="w-7 h-7 rounded-lg flex items-center justify-center bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20"
+                title="Delete document"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Title */}
+          <h3 className="font-semibold text-gray-900 text-[15px] line-clamp-2 leading-relaxed tracking-tight">
+            {doc.title}
+          </h3>
+
+          {/* Pills Metadata Container */}
+          <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+            {(() => {
+              const pills = docToPills({
+                ...doc,
+                meta: { ...((doc as any).meta ?? {}), type: typeGuess },
+                typeGuess,
+              } as any);
+
+              return (
+                <MetaPills
+                  pills={pills}
+                  typePillClassName={
+                    isCalendarDoc
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-700"
+                      : theme.label
+                  }
+                />
+              );
+            })()}
+
+            {doc.documentType === "timeline" && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-gray-200 bg-gray-50 text-gray-600">
+                Timeline
+              </span>
+            )}
+
+            {isDossier && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300">
+                Dossier
+              </span>
+            )}
+
+            {isLinkedAsset && parentDossier && (
+              <span
+                className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md border border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300 truncate max-w-[120px]"
+                title={`Linked to ${parentDossier.title}`}
+              >
+                <Link2 className="h-2.5 w-2.5 flex-shrink-0" />
+                <span className="truncate">{parentDossier.title}</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Memoized wrapper to prevent unnecessary re-renders
+export const DocumentCardMemo = memo(DocumentCard);
+

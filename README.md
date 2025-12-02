@@ -330,25 +330,79 @@ Modern agentic UI with real-time event streaming:
 
 ```
 nodebench-ai/
-├── convex/                 # Backend (Convex functions)
-│   ├── agents/            # AI agent implementations
-│   │   ├── specializedAgents.ts
-│   │   ├── humanInTheLoop.ts
-│   │   ├── agentComposition.ts
-│   │   └── ...
-│   ├── workflows/         # Workflow-based operations
-│   ├── schema.ts          # Database schema
-│   └── ...
-├── src/                   # Frontend (React)
-│   ├── components/        # UI components
-│   │   ├── FastAgentPanel/
-│   │   ├── MiniNoteAgentChat.tsx
-│   │   └── ...
-│   ├── features/          # Feature-specific code
-│   ├── hooks/             # React hooks
-│   └── ...
-├── tests/                 # E2E tests (Playwright)
-└── docs/                  # Documentation (see Changelog)
+├── convex/                      # Backend (Convex functions)
+│   ├── 📄 Root Config (7 files)
+│   │   ├── auth.ts              # Auth re-exports
+│   │   ├── auth.config.ts       # Auth configuration
+│   │   ├── convex.config.ts     # Convex configuration
+│   │   ├── crons.ts             # Scheduled jobs
+│   │   ├── http.ts              # HTTP routes
+│   │   ├── router.ts            # API router
+│   │   └── schema.ts            # Database schema
+│   │
+│   ├── domains/                 # Domain-driven organization (136 files)
+│   │   ├── agents/              # Agent orchestration, memory, planning
+│   │   │   └── core/            # Fast agent implementation
+│   │   ├── ai/                  # AI/LLM integrations
+│   │   ├── analytics/           # Usage analytics
+│   │   ├── auth/                # Authentication, users, presence
+│   │   ├── billing/             # API usage tracking
+│   │   ├── calendar/            # Events, holidays
+│   │   ├── documents/           # Documents, files, sync
+│   │   ├── integrations/        # Email, Gmail, SMS, voice
+│   │   ├── knowledge/           # Knowledge graph, entities
+│   │   ├── mcp/                 # MCP protocol
+│   │   ├── search/              # RAG, hashtag dossiers
+│   │   ├── tasks/               # Tasks, daily notes
+│   │   ├── utilities/           # Migrations, seed data
+│   │   └── verification/        # Claim verification
+│   │
+│   ├── tools/                   # Capability-based tools (27 files)
+│   │   ├── calendar/            # Calendar tools
+│   │   ├── document/            # Document tools
+│   │   ├── evaluation/          # Evaluation tools
+│   │   ├── financial/           # OpenBB, financial tools
+│   │   ├── integration/         # Integration tools
+│   │   ├── knowledge/           # Knowledge tools
+│   │   ├── media/               # Media/search tools
+│   │   ├── sec/                 # SEC filing tools
+│   │   ├── spreadsheet/         # Spreadsheet tools
+│   │   └── wrappers/            # Tool wrappers
+│   │
+│   ├── lib/                     # Shared utilities
+│   ├── http/                    # HTTP handlers
+│   ├── actions/                 # Workflow actions
+│   ├── globalResearch/          # Research system
+│   └── workflows/               # Workflow definitions
+│
+├── src/                         # Frontend (React)
+│   ├── features/                # Feature-based organization (150 files)
+│   │   ├── agents/              # FastAgentPanel, streaming, tools (65)
+│   │   ├── calendar/            # CalendarView, agenda, events (14)
+│   │   ├── documents/           # DocumentsHub, editors, views (45)
+│   │   ├── editor/              # UnifiedEditor (4)
+│   │   ├── research/            # DossierViewer, newsletter (13)
+│   │   ├── onboarding/          # TutorialPage (2)
+│   │   ├── search/              # SearchCommand (2)
+│   │   ├── chat/                # Chat components (2)
+│   │   └── verification/        # Claim verification hooks (3)
+│   │
+│   ├── shared/                  # Shared components (22 files)
+│   │   ├── components/          # Reusable UI components
+│   │   └── ui/                  # Base UI components
+│   │
+│   ├── components/              # Core layout components (46 files)
+│   │   ├── sidebar/             # Sidebar components
+│   │   ├── kanban/              # Kanban board
+│   │   └── tasks/               # Task components
+│   │
+│   ├── hooks/                   # Custom React hooks (17 files)
+│   ├── lib/                     # Shared utilities (13 files)
+│   └── app/                     # App providers, routes
+│
+├── docs/                        # Documentation
+│   └── prototypes/              # HTML/Markdown prototypes
+└── tests/                       # E2E tests (Playwright)
 ```
 
 ---
@@ -390,6 +444,55 @@ npx convex deploy
 
 ---
 
+
+### 2025-12-02 - Major Codebase Reorganization ✅
+
+**Status**: ✅ Complete
+
+#### Overview
+Comprehensive 7-phase reorganization of the entire codebase to establish clean, domain-driven architecture for both backend (Convex) and frontend (React).
+
+#### Phases Completed
+
+| Phase | Description | Impact |
+|-------|-------------|--------|
+| **Phase 1** | Quick Wins - Deleted shims, fixed naming, moved misplaced files | ~15 files |
+| **Phase 2** | Tools Organization - Reorganized flat tools/ into capability-based subdirs | 27 files |
+| **Phase 3** | Agent Consolidation - Moved fast_agents/ to domains/agents/core/ | ~34 files |
+| **Phase 4** | Frontend Restructure - Moved hub components to src/features/ | ~30 files |
+| **Phase 5** | Immediate Cleanup - Deleted shims, removed empty dirs, archived prototypes | ~14 files |
+| **Phase 6** | Component Migration - Moved newsletter, onboarding, shared components | ~20 files |
+| **Phase 7** | Testing & Validation - Fixed all import paths, verified builds | ~15 fixes |
+
+#### Key Changes
+
+**Backend (Convex):**
+- Reduced root-level files from ~100+ to 7 essential config files
+- Created 14 domain directories under `convex/domains/`
+- Organized tools into 10 capability-based subdirectories
+- Updated 184+ API call sites to use domain-based paths
+- Deleted 84 shim/re-export files
+
+**Frontend (React):**
+- Created 9 feature directories under `src/features/`
+- Moved hub components to their respective feature domains
+- Created `src/shared/components/` for reusable UI
+- Updated all import paths to use path aliases
+- Moved HTML prototypes to `docs/prototypes/`
+
+#### Verification
+- ✅ TypeScript compilation passes (`npx tsc --noEmit`)
+- ✅ Convex build passes (`npx convex dev --once`)
+- ✅ Dev server runs without import errors
+- ✅ Frontend loads correctly in browser
+
+#### Architecture Benefits
+- **Discoverability**: Related code is grouped together
+- **Maintainability**: Clear boundaries between domains
+- **Scalability**: Easy to add new features in isolated directories
+- **Onboarding**: New developers can understand structure quickly
+
+---
 
 ##### 1. UI Flickering Fixes
 - **Stable View State Management**:

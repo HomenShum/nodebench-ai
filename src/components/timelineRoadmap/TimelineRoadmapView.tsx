@@ -2,12 +2,12 @@ import { useMemo, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, TrendingUp, Activity, FileText, CheckSquare, Calendar as CalendarIcon, Zap, Database } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { TopDividerBar } from "@/components/shared/TopDividerBar";
-import { UnifiedHubPills } from "@/components/shared/UnifiedHubPills";
-import { PageHeroHeader } from "@/components/shared/PageHeroHeader";
-import { PresetChip } from "@/components/shared/PresetChip";
-import { SidebarMiniCalendar } from "@/components/shared/SidebarMiniCalendar";
-import { SidebarUpcoming } from "@/components/shared/SidebarUpcoming";
+import { TopDividerBar } from "@shared/ui/TopDividerBar";
+import { UnifiedHubPills } from "@shared/ui/UnifiedHubPills";
+import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
+import { PresetChip } from "@shared/ui/PresetChip";
+import { SidebarMiniCalendar } from "@shared/ui/SidebarMiniCalendar";
+import { SidebarUpcoming } from "@shared/ui/SidebarUpcoming";
 import { usePlannerState } from "@/hooks/usePlannerState";
 
 export type RoadmapSlice = {
@@ -97,7 +97,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
   const data = slices ?? useMockRoadmap();
 
   // Fetch analytics data
-  const analytics = useQuery(api.analytics.getRoadmapAnalytics, {});
+  const analytics = useQuery(api.domains.analytics.analytics.getRoadmapAnalytics, {});
 
   // Shared planner state for sidebar
   const { handleViewDay, handleViewWeek, upcoming } = usePlannerState();

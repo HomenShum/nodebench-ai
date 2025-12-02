@@ -14,7 +14,7 @@ export const saveApiKeyEncrypted = action({
 
     // Deprecated: this action now expects the input to already be encrypted on the client.
     const encryptedApiKey = apiKey;
-    await ctx.runMutation(internal.apiKeys.saveEncryptedApiKey, { provider, encryptedApiKey });
+    await ctx.runMutation(internal.domains.auth.apiKeys.saveEncryptedApiKey, { provider, encryptedApiKey });
     return null;
   },
 });

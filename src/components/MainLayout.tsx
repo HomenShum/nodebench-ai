@@ -4,11 +4,11 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
-import { FastAgentPanel } from "./FastAgentPanel";
-import { PublicDocuments } from "@/components/views/PublicDocuments";
+import { FastAgentPanel } from "@features/agents/components/FastAgentPanel";
+import { PublicDocuments } from "@/features/documents/views/PublicDocuments";
 import { TabManager } from "./TabManager";
-import { DocumentsHomeHub } from "./DocumentsHomeHub";
-import { CalendarHomeHub } from "./CalendarHomeHub";
+import { DocumentsHomeHub } from "@/features/documents/components/DocumentsHomeHub";
+import { CalendarHomeHub } from "@/features/calendar/components/CalendarHomeHub";
 
 import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
 
@@ -16,7 +16,7 @@ import { Zap, Menu, X as CloseIcon } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
-import MiniEditorPopover from "./MiniEditorPopover";
+import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
 
 interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
@@ -128,7 +128,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     setSelectedTaskSource(null);
   };
 
-  const user = useQuery(api.auth.loggedInUser);
+  const user = useQuery(api.domains.auth.auth.loggedInUser);
   // Preferences and API key status for reminder UI
   // Settings modal control
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -143,7 +143,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   };
 
   const selectedDoc = useQuery(
-    api.documents.getById,
+    api.domains.documents.documents.getById,
     selectedDocumentId ? { documentId: selectedDocumentId } : "skip"
   );
   const { setViewingDocs, addPreviouslyViewed, setFocused } = useContextPills();

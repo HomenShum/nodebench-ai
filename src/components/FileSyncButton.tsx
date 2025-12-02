@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 export const FileSyncButton: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
-  const syncFiles = useMutation(api.fileDocuments.syncFilesToDocuments);
+  const syncFiles = useMutation(api.domains.documents.fileDocuments.syncFilesToDocuments);
 
   const handleSync = async () => {
     setIsSyncing(true);

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import MetaPills from "../MetaPills";
+import MetaPills from "@/shared/components/MetaPills";
 import { taskToPills } from "../../lib/metaPillMappers";
 import { shapeTaskForPills, reorderTaskPillsForTightRows } from "../../lib/tasks";
 import { ListTodo } from "lucide-react";

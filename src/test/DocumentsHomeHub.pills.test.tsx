@@ -14,7 +14,7 @@ vi.mock('convex/react', async () => {
     useConvex: () => ({ query: vi.fn(), mutation: vi.fn(), action: vi.fn() }),
   };
 });
-vi.mock('@/components/views/CalendarView', () => ({ CalendarView: () => <div /> }));
+vi.mock('@/features/calendar/views/CalendarView', () => ({ CalendarView: () => <div /> }));
 vi.mock('@/components/shared/SidebarMiniCalendar', () => ({ SidebarMiniCalendar: () => <div /> }));
 vi.mock('@/components/shared/SidebarUpcoming', () => ({ SidebarUpcoming: () => <div /> }));
 vi.mock('@/components/shared/PageHeroHeader', () => ({ PageHeroHeader: () => <div /> }));
@@ -24,7 +24,7 @@ vi.mock('@/components/shared/TopDividerBar', () => ({ TopDividerBar: (p: any) =>
 // So we actually render the real UnifiedHubPills
 // no mock for it
 
-import { DocumentsHomeHub } from '@/components/DocumentsHomeHub';
+import { DocumentsHomeHub } from '@/features/documents/components/DocumentsHomeHub';
 
 function Wrapper() {
   return (<DocumentsHomeHub onDocumentSelect={() => {}} />);

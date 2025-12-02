@@ -134,7 +134,7 @@ export const saveApiKey = mutation({
     // Deprecated in favor of client-side E2E encryption via saveEncryptedApiKeyPublic.
     // Keeping the endpoint for backward compatibility but fail fast with guidance.
     throw new Error(
-      "api.apiKeys.saveApiKey is deprecated. Use api.apiKeys.saveEncryptedApiKeyPublic with a client-encrypted value (see src/lib/e2eCrypto.ts)."
+      "api.domains.auth.apiKeys.saveApiKey is deprecated. Use api.domains.auth.apiKeys.saveEncryptedApiKeyPublic with a client-encrypted value (see src/lib/e2eCrypto.ts)."
     );
   },
 });

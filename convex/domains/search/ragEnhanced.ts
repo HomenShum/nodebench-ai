@@ -106,7 +106,7 @@ export const addDocumentToEnhancedRag = internalAction({
   handler: async (ctx, { documentId, userId }) => {
     try {
       // Fetch document
-      const doc = await ctx.runQuery(api.documents.getById, { documentId });
+      const doc = await ctx.runQuery(api.domains.documents.documents.getById, { documentId });
       if (!doc) {
         console.error(`[addDocumentToEnhancedRag] Document not found: ${documentId}`);
         return { success: false };
@@ -125,7 +125,7 @@ export const addDocumentToEnhancedRag = internalAction({
 
       // Gather additional text sources: nodes content, quick notes metadata, file analysis summaries
       let nodesText = "";
-      const docNodes = await ctx.runQuery(api.nodes.by_document, { docId: documentId });
+      const docNodes = await ctx.runQuery(api.domains.knowledge.nodes.by_document, { docId: documentId });
       if (docNodes.length > 0) {
         nodesText = docNodes.map((n: any) => n.text || "").filter(Boolean).join("\n");
       }
@@ -134,9 +134,9 @@ export const addDocumentToEnhancedRag = internalAction({
       let quickNotesText = "";
       if ((doc as any).documentType === "dossier" && (doc as any).dossierType === "primary") {
         try {
-          const quickNotes: any = await ctx.runMutation(api.documents.getOrCreateQuickNotes, { dossierId: documentId });
+          const quickNotes: any = await ctx.runMutation(api.domains.documents.documents.getOrCreateQuickNotes, { dossierId: documentId });
           if (quickNotes) {
-            const qnNodes = await ctx.runQuery(api.nodes.by_document, { docId: quickNotes._id });
+            const qnNodes = await ctx.runQuery(api.domains.knowledge.nodes.by_document, { docId: quickNotes._id });
             if (qnNodes.length > 0) {
               quickNotesText = qnNodes.map((n: any) => n.text || "").filter(Boolean).join("\n");
             }
@@ -150,7 +150,7 @@ export const addDocumentToEnhancedRag = internalAction({
       // If this is a file document, include extracted file summaries/analysis if available
       let fileMetaText = "";
       if ((doc as any).documentType === "file" && (doc as any).fileId) {
-        const file = await ctx.runQuery(internal.files.getFile, { fileId: (doc as any).fileId });
+        const file = await ctx.runQuery(internal.domains.documents.files.getFile, { fileId: (doc as any).fileId });
 
         if (file) {
           fileMetaText = [file.contentSummary, file.textPreview, file.analysis]
@@ -194,7 +194,7 @@ export const addDocumentToEnhancedRag = internalAction({
       console.log(`[addDocumentToEnhancedRag] Added document ${documentId} with ${chunks.length} chunks`);
 
       // Mark document as indexed for lazy indexing
-      await ctx.runMutation(internal.documents.markRagIndexed, { documentId, timestamp: Date.now() });
+      await ctx.runMutation(internal.domains.documents.documents.markRagIndexed, { documentId, timestamp: Date.now() });
 
 
       return {
@@ -518,7 +518,7 @@ export const hybridSearchWithValidation = internalAction({
     const limit = args.limit || 10;
 
     // 1. Vector search with enhanced RAG
-    const vectorResults = await ctx.runAction(internal.ragEnhanced.enhancedSearch, {
+    const vectorResults = await ctx.runAction(internal.domains.search.ragEnhanced.enhancedSearch, {
       query: args.query,
       userId: args.userId,
       filters: args.filters,
@@ -527,7 +527,7 @@ export const hybridSearchWithValidation = internalAction({
     });
 
     // 2. Keyword search (BM25)
-    const keywordResults = await ctx.runQuery(api.rag_queries.keywordSearch, {
+    const keywordResults = await ctx.runQuery(api.domains.search.ragQueries.keywordSearch, {
       query: args.query,
       limit: 5,
     });
@@ -556,7 +556,7 @@ export const hybridSearchWithValidation = internalAction({
         // Fetch document title
         let title = "Untitled";
         try {
-          const doc = await ctx.runQuery(api.documents.getById, { documentId: k.documentId });
+          const doc = await ctx.runQuery(api.domains.documents.documents.getById, { documentId: k.documentId });
           title = doc?.title || title;
         } catch {
           // Document not found or error fetching, use default title - error intentionally ignored
@@ -630,7 +630,7 @@ export const answerQuestionEnhanced = internalAction({
     confidence: number;
   }> => {
     // Perform hybrid search with validation
-    const searchResult: any = await ctx.runAction(internal.ragEnhanced.hybridSearchWithValidation, {
+    const searchResult: any = await ctx.runAction(internal.domains.search.ragEnhanced.hybridSearchWithValidation, {
       query: args.prompt,
       userId: args.userId,
       filters: args.filters,

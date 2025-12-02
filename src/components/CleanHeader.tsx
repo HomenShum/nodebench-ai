@@ -29,7 +29,7 @@ export function CleanHeader({
   onOpenSettings,
   onHelp,
 }: CleanHeaderProps) {
-  const user = useQuery(api.auth.loggedInUser);
+  const user = useQuery(api.domains.auth.auth.loggedInUser);
 
   return (
     <div className="bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border-color)] px-4 py-2 flex items-center gap-4 transition-colors duration-200">

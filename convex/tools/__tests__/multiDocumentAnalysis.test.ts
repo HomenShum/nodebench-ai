@@ -18,20 +18,20 @@ describe('analyzeMultipleDocuments Tool', () => {
 
   describe('Tool Definition', () => {
     it('should have correct description', async () => {
-      const { analyzeMultipleDocuments } = await import('../documentTools');
+      const { analyzeMultipleDocuments } = await import('../document/documentTools');
       expect(analyzeMultipleDocuments.description).toContain('multiple documents');
       expect(analyzeMultipleDocuments.description).toContain('compare');
     });
 
     it('should accept array of document IDs', async () => {
-      const { analyzeMultipleDocuments } = await import('../documentTools');
+      const { analyzeMultipleDocuments } = await import('../document/documentTools');
       // Tool should be defined
       expect(analyzeMultipleDocuments).toBeDefined();
       expect(analyzeMultipleDocuments.description).toBeDefined();
     });
 
     it('should support multiple analysis types', async () => {
-      const { analyzeMultipleDocuments } = await import('../documentTools');
+      const { analyzeMultipleDocuments } = await import('../document/documentTools');
       // Tool should be defined and have description mentioning analyze
       expect(analyzeMultipleDocuments).toBeDefined();
       expect(analyzeMultipleDocuments.description).toContain('analyze');

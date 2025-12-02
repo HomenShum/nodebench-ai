@@ -48,7 +48,7 @@ export const searchForHashtag = action({
 
     // Ensure enhanced RAG index is up to date (lazy indexing)
     try {
-      await ctx.runAction(internal.ragEnhancedBatchIndex.ensureUpToDateIndexForUser, { userId });
+      await ctx.runAction(internal.domains.search.ragEnhancedBatchIndex.ensureUpToDateIndexForUser, { userId });
     } catch (e) {
       console.warn("[searchForHashtag] Lazy indexing skipped due to error:", e);
     }
@@ -56,7 +56,7 @@ export const searchForHashtag = action({
     // 1. Use enhanced hybrid search with LLM validation
     let enhancedResults: any = null;
     try {
-      enhancedResults = await ctx.runAction(internal.ragEnhanced.hybridSearchWithValidation, {
+      enhancedResults = await ctx.runAction(internal.domains.search.ragEnhanced.hybridSearchWithValidation, {
         query: normalizedHashtag,
         userId,
         limit: 20,
@@ -70,13 +70,13 @@ export const searchForHashtag = action({
       console.log("[searchForHashtag] Using fallback legacy search");
 
       // Exact match search in document titles
-      const exactTitleMatches = await ctx.runQuery(api.documents.getSearch, {
+      const exactTitleMatches = await ctx.runQuery(api.domains.documents.documents.getSearch, {
         query: normalizedHashtag,
         userId,
       });
 
       // Exact match search in document content (via nodes)
-      const exactContentMatches = await ctx.runQuery(api.rag_queries.keywordSearch, {
+      const exactContentMatches = await ctx.runQuery(api.domains.search.ragQueries.keywordSearch, {
         query: normalizedHashtag,
         limit: 10,
       });
@@ -84,7 +84,7 @@ export const searchForHashtag = action({
       // Semantic search using legacy RAG
       let semanticMatches: any[] = [];
       try {
-        const ragResult = await ctx.runAction(internal.rag.answerQuestionViaRAG, {
+        const ragResult = await ctx.runAction(internal.domains.search.rag.answerQuestionViaRAG, {
           prompt: normalizedHashtag,
         });
         semanticMatches = ragResult.candidateDocs || [];

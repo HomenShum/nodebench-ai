@@ -2,7 +2,7 @@
 // Test suite for YouTube search tool
 
 import { describe, it, expect } from "vitest";
-import { youtubeSearch } from "../youtubeSearch";
+import { youtubeSearch } from "../media/youtubeSearch";
 
 describe("youtubeSearch tool", () => {
   it("should have correct tool structure", () => {

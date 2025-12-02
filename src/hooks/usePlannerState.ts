@@ -21,8 +21,8 @@ export function usePlannerState() {
   const [focusedDateMs, setFocusedDateMs] = useState<number>(todayLocal);
 
   // Convex base data
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-  const prefs = useQuery(api.userPreferences.getCalendarUiPrefs);
+  const loggedInUser = useQuery(api.domains.auth.auth.loggedInUser);
+  const prefs = useQuery(api.domains.auth.userPreferences.getCalendarUiPrefs);
 
   // Compute timezone offset (minutes east of UTC) honoring user preference when available
   const tzOffsetMinutes = useMemo(() => {
@@ -107,7 +107,7 @@ export function usePlannerState() {
   } as const;
 
   // Convex mutations (can be no-ops if not used by the consumer)
-  const createTask = useMutation(api.tasks.createTask);
+  const createTask = useMutation(api.domains.tasks.tasks.createTask);
 
   const startOfLocalDay = useCallback((ms: number) => {
     const d = new Date(ms);

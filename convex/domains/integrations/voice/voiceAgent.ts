@@ -14,11 +14,11 @@ import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { components } from "../../../_generated/api";
-import { createCoordinatorAgent } from "../../../fast_agents/coordinatorAgent";
+import { createCoordinatorAgent } from "../../agents/core/coordinatorAgent";
 
 // Import all tools for voice agent access
-import { linkupSearch } from "../../../tools/linkupSearch";
-import { youtubeSearch } from "../../../tools/youtubeSearch";
+import { linkupSearch } from "../../../tools/media/linkupSearch";
+import { youtubeSearch } from "../../../tools/media/youtubeSearch";
 import {
   findDocument,
   getDocumentContent,
@@ -28,13 +28,13 @@ import {
   createDocument,
   generateEditProposals,
   createDocumentFromAgentContentTool,
-} from "../../../tools/documentTools";
+} from "../../../tools/document/documentTools";
 import {
   searchMedia,
   analyzeMediaFile,
   getMediaDetails,
   listMediaFiles
-} from "../../../tools/mediaTools";
+} from "../../../tools/media/mediaTools";
 import {
   listTasks,
   createTask,
@@ -42,17 +42,17 @@ import {
   listEvents,
   createEvent,
   getFolderContents
-} from "../../../tools/dataAccessTools";
+} from "../../../tools/integration/dataAccessTools";
 import {
   searchSecFilings,
   downloadSecFiling,
   getCompanyInfo
-} from "../../../tools/secFilingTools";
+} from "../../../tools/sec/secFilingTools";
 import {
   searchHashtag,
   createHashtagDossier,
   getOrCreateHashtagDossier
-} from "../../../tools/hashtagSearchTools";
+} from "../../../tools/document/hashtagSearchTools";
 
 /**
  * Voice plan schema - determines routing strategy

@@ -9,7 +9,7 @@ function todayISO(): string {
 
 async function getEffectiveLimit(ctx: any): Promise<number> {
   try {
-    const sub = await ctx.runQuery(api.billing.getSubscription, {});
+    const sub = await ctx.runQuery(api.domains.billing.billing.getSubscription, {});
     return sub.status === "active" ? 50 : 5;
   } catch {
     return 5;

@@ -56,7 +56,7 @@ export const sendSms = action({
   returns: v.null(),
   handler: async (ctx, args) => {
     const status = await twilio.sendMessage(ctx, args);
-    await ctx.runMutation(internal.sms.logSms, {
+    await ctx.runMutation(internal.domains.integrations.sms.logSms, {
       to: args.to,
       body: args.body,
       status: status.status ?? "unknown",

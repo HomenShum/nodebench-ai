@@ -55,7 +55,7 @@ export const getOrCreateEventDocument = mutation({
     });
 
     // Add tags to mark this as an event document
-    await ctx.runMutation(api.tags.addTagsToDocument, {
+    await ctx.runMutation(api.domains.knowledge.tags.addTagsToDocument, {
       documentId,
       tags: [
         { name: "event", kind: "type" },
@@ -135,7 +135,7 @@ export const getOrCreateTaskDocument = mutation({
     });
 
     // Add tags to mark this as a task document
-    await ctx.runMutation(api.tags.addTagsToDocument, {
+    await ctx.runMutation(api.domains.knowledge.tags.addTagsToDocument, {
       documentId,
       tags: [
         { name: "task", kind: "type" },

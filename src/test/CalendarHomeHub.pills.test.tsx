@@ -13,13 +13,13 @@ vi.mock('convex/react', async () => {
     useConvex: () => ({ query: vi.fn(), mutation: vi.fn(), action: vi.fn() }),
   };
 });
-vi.mock('@/components/views/CalendarView', () => ({ CalendarView: () => <div /> }));
+vi.mock('@/features/calendar/views/CalendarView', () => ({ CalendarView: () => <div /> }));
 vi.mock('@/components/shared/SidebarMiniCalendar', () => ({ SidebarMiniCalendar: () => <div /> }));
 vi.mock('@/components/shared/SidebarUpcoming', () => ({ SidebarUpcoming: () => <div /> }));
 vi.mock('@/components/shared/TopDividerBar', () => ({ TopDividerBar: (p: any) => <div>{p.left}{p.right}</div> }));
 vi.mock('@/components/agentDashboard/AgentDashboard', () => ({ AgentDashboard: () => <div /> }));
 
-import { CalendarHomeHub } from '@/components/CalendarHomeHub';
+import { CalendarHomeHub } from '@/features/calendar/components/CalendarHomeHub';
 
 describe('CalendarHomeHub pills + hash sync', () => {
   afterEach(() => cleanup());

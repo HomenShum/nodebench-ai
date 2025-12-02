@@ -73,7 +73,7 @@ export const bulkUpdateSpreadsheet = action({
     const userId = identity.subject as any;
 
     // 2. Fetch file document
-    const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
+    const fileDoc = await ctx.runQuery(api.domains.documents.fileDocuments.getFileDocument, {
       documentId: args.documentId,
       userId,
     });
@@ -205,7 +205,7 @@ export const bulkUpdateSpreadsheet = action({
       newline: "\n",
     });
 
-    const uploadUrl: string = await ctx.runMutation(api.files.generateUploadUrl);
+    const uploadUrl: string = await ctx.runMutation(api.domains.documents.files.generateUploadUrl);
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const uploadRes: Response = await fetch(uploadUrl, {
       method: "POST",
@@ -223,7 +223,7 @@ export const bulkUpdateSpreadsheet = action({
     }
 
     // 9. Finalize file update
-    await ctx.runMutation(api.files.finalizeCsvReplace, {
+    await ctx.runMutation(api.domains.documents.files.finalizeCsvReplace, {
       fileId: fileDoc.file._id,
       newStorageId: storageId,
       newFileSize: blob.size,
@@ -304,7 +304,7 @@ export const testBulkUpdateSpreadsheet = internalAction({
     }
 
     // 1. Fetch file document with optional userId (for testing)
-    const fileDoc = await ctx.runQuery(api.fileDocuments.getFileDocument, {
+    const fileDoc = await ctx.runQuery(api.domains.documents.fileDocuments.getFileDocument, {
       documentId: args.documentId,
       userId: args.userId,
     });
@@ -463,7 +463,7 @@ export const testBulkUpdateSpreadsheet = internalAction({
       data: modifiedRows,
     });
 
-    const uploadUrl: string = await ctx.runMutation(api.files.generateUploadUrl);
+    const uploadUrl: string = await ctx.runMutation(api.domains.documents.files.generateUploadUrl);
     const blob = new Blob([modifiedCsv], { type: "text/csv;charset=utf-8" });
     const uploadResponse = await fetch(uploadUrl, {
       method: "POST",
@@ -481,7 +481,7 @@ export const testBulkUpdateSpreadsheet = internalAction({
     }
 
     // 8. Finalize file update
-    await ctx.runMutation(api.files.finalizeCsvReplace, {
+    await ctx.runMutation(api.domains.documents.files.finalizeCsvReplace, {
       fileId: fileDoc.file._id,
       newStorageId: storageId,
       newFileSize: blob.size,
