@@ -7,7 +7,7 @@ import { useUIMessages } from "@convex-dev/agent/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEffect, useRef, useMemo, useState } from "react";
-import { Sparkles, TrendingUp, Users, Briefcase, FileText, Lightbulb, ChevronRight, Loader2, Radio, Activity, Bot, Globe, Database, Zap, CheckCircle2, AlertCircle, Link2, ExternalLink, Calendar, Youtube, FileSearch, Copy, Check } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Briefcase, FileText, Lightbulb, ChevronRight, ChevronDown, Loader2, Radio, Activity, Bot, Globe, Database, Zap, CheckCircle2, AlertCircle, Link2, ExternalLink, Calendar, Youtube, FileSearch, Copy, Check, Image as ImageIcon, Play, User } from "lucide-react";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { toolPartsToTimelineSteps, type TimelineStep } from "@features/agents/components/FastAgentPanel/StepTimeline";
 
@@ -18,6 +18,11 @@ import { EvidenceDrawer, WhatChangedStrip, type EvidenceSource } from "@/feature
 import { useInlineCitations, useSourcesList } from "@/hooks/useInlineCitations";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+
+// Media and Document components for unified view
+import { RichMediaSection } from "@features/agents/components/FastAgentPanel/RichMediaSection";
+import { DocumentActionGrid, type DocumentAction } from "@features/agents/components/FastAgentPanel/DocumentActionCard";
+import type { ExtractedMedia } from "@features/agents/components/FastAgentPanel/utils/mediaExtractor";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER UTILITIES
@@ -39,14 +44,15 @@ interface QuickActionButtonProps {
 function QuickActionButton({ icon, label, query, onClick }: QuickActionButtonProps) {
     return (
         <button
+            type="button"
             onClick={() => onClick(query)}
-            className="group flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 text-gray-700 hover:text-purple-900 rounded-xl font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 text-left w-full"
+            className="group flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:bg-primary/5 text-foreground rounded-xl font-medium text-base shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 text-left w-full"
         >
-            <span className="flex-shrink-0 p-1.5 bg-gray-50 group-hover:bg-purple-100 rounded-lg text-gray-500 group-hover:text-purple-600 transition-colors">
+            <span className="flex-shrink-0 p-2 bg-gray-100 dark:bg-gray-700 group-hover:bg-primary/10 rounded-lg text-gray-600 dark:text-gray-300 group-hover:text-primary transition-colors">
                 {icon}
             </span>
             <span className="flex-1">{label}</span>
-            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-purple-400 opacity-0 group-hover:opacity-100 transition-all -ml-1" />
+            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all" />
         </button>
     );
 }
@@ -91,22 +97,24 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
     }, [isCompany, isPerson, entityName]);
 
     return (
-        <div className="mt-12 mb-8 p-6 bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl border border-gray-200/60">
-            <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-gray-900" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900">
-                    💡 Suggested Next Steps
+        <div className="mt-14 mb-10 p-6 bg-gradient-to-br from-gray-50 to-purple-50/30 dark:from-gray-800/50 dark:to-purple-900/10 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">
+                    Suggested Next Steps
                 </h3>
             </div>
-            <div className="flex items-center gap-2 mb-3 text-xs text-gray-700 flex-wrap">
-                <span>Runs a focused follow-up and appends results to this live dossier.</span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-900 text-white rounded-full border border-gray-900">
-                    <span className="h-2 w-2 rounded-full bg-white"></span>
-                    No refresh
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 flex items-center gap-2 flex-wrap">
+                <span>Run a focused follow-up and append results to this live dossier.</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full text-xs font-medium">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white dark:bg-gray-900"></span>
+                    No refresh needed
                 </span>
-            </div>
+            </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {followUps.map((followUp, idx) => (
                     <QuickActionButton
                         key={idx}
@@ -121,12 +129,21 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
     );
 }
 
-// Wrapper component with ArtifactStoreProvider
-export default function LiveDossierDocument(props: {
+// Props for unified Live Dossier view
+interface LiveDossierDocumentProps {
     threadId: string | null;
     isLoading?: boolean;
     onRunFollowUp?: (query: string) => void;
-}) {
+    /** Extracted media from agent results (videos, images, sources, profiles) */
+    media?: ExtractedMedia;
+    /** Document actions (created/updated documents) */
+    documents?: DocumentAction[];
+    /** Handler for document selection */
+    onDocumentSelect?: (documentId: string) => void;
+}
+
+// Wrapper component with ArtifactStoreProvider
+export default function LiveDossierDocument(props: LiveDossierDocumentProps) {
     return (
         <ArtifactStoreProvider>
             <LiveDossierDocumentInner {...props} />
@@ -138,12 +155,11 @@ export default function LiveDossierDocument(props: {
 function LiveDossierDocumentInner({
     threadId,
     isLoading = false,
-    onRunFollowUp
-}: {
-    threadId: string | null;
-    isLoading?: boolean;
-    onRunFollowUp?: (query: string) => void;
-}) {
+    onRunFollowUp,
+    media,
+    documents = [],
+    onDocumentSelect
+}: LiveDossierDocumentProps) {
     // 1. Subscribe to the Agent's Output
     const streamingThread = useQuery(
         api.domains.agents.fastAgentPanelStreaming.getThreadByStreamId,
@@ -176,14 +192,34 @@ function LiveDossierDocumentInner({
         return "";
     };
 
-    // Filter out planner-only JSON artifacts that shouldn't render in the dossier
+    // Filter out planner-only JSON artifacts and agent process messages
     const isPlannerArtifact = (text: string) => {
         const trimmed = text.trim();
 
-        // Must start with JSON brackets
+        // Filter agent process/meta messages that clutter the output
+        const agentProcessPatterns = [
+            /^I've launched\s+(two|three|four|multiple|coordinated|the)/i,
+            /^I've initiated\s/i,
+            /^I'm now\s+(launching|running|searching|gathering)/i,
+            /^I'll\s+(now|begin|start)\s/i,
+            /^Once\s+(these|both|all|the)\s+(complete|return|finish)/i,
+            /^Let me\s+(now|start|begin|search|gather)/i,
+            /^Now\s+(let me|I'll|searching)/i,
+            /^Starting\s+(the|my|to)\s/i,
+            /^Initiating\s/i,
+            /^Gathering\s+(information|data|details)/i,
+            /^Searching\s+(for|across|through)/i,
+        ];
+
+        // Check if it's a short agent process message (< 500 chars and matches pattern)
+        if (trimmed.length < 500 && agentProcessPatterns.some(p => p.test(trimmed))) {
+            return true;
+        }
+
+        // Must start with JSON brackets for JSON filtering
         if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) return false;
 
-        // Check for common planner/metadata JSON patterns that shouldn't be shown to users
+        // Check for common planner/metadata JSON patterns
         const plannerPatterns = [
             /"queryClassification"|"query_classification"/i,
             /"mode"\s*:\s*"(simple|complex)"/i,
@@ -191,7 +227,6 @@ function LiveDossierDocumentInner({
             /"delegationStrategy"|"agentAssignments"/i,
             /"workflowPhase"|"executionPlan"/i,
             /"toolSequence"|"nextSteps"/i,
-            // Additional patterns for compiled/verified JSON blocks
             /"Compiled and Verified"|"Primary Agents"|"secundary"/i,
             /"InvestorSignals"|"AnnouncementMentions"/i,
             /"Late stage"|"completedTPC"|"memoryUpdated"/i,
@@ -201,12 +236,10 @@ function LiveDossierDocumentInner({
             /"RegulatoryFootprint"|"entityName"\s*:\s*".*funding.*week/i,
         ];
 
-        // Check if matches any planner pattern
         if (plannerPatterns.some(pattern => pattern.test(trimmed))) return true;
 
-        // Also filter large JSON blocks (>300 chars) that don't contain prose paragraphs
+        // Filter large JSON blocks without prose
         if (trimmed.length > 300 && /{[\s\S]*"[^"]+"\s*:/.test(trimmed)) {
-            // Check if it's mostly JSON (no prose paragraphs - sentences with 20+ consecutive letters)
             const withoutJsonStrings = trimmed.replace(/"[^"]*"/g, '');
             const hasProse = /[a-z]{20,}/i.test(withoutJsonStrings);
             if (!hasProse) return true;
@@ -299,8 +332,8 @@ function LiveDossierDocumentInner({
             url: a.url || '',
             domain: a.domain || '',
             type: a.url?.includes('youtube') ? 'youtube' as const :
-                  a.url?.includes('sec.gov') ? 'sec' as const :
-                  a.url?.endsWith('.pdf') ? 'pdf' as const : 'web' as const,
+                a.url?.includes('sec.gov') ? 'sec' as const :
+                    a.url?.endsWith('.pdf') ? 'pdf' as const : 'web' as const,
             snippet: a.snippet,
             verified: a.flags?.isCited ?? false,
             discoveredAt: a.discoveredAt,
@@ -309,8 +342,8 @@ function LiveDossierDocumentInner({
 
     // Extract entity name from first heading in content
     const entityName = useMemo(() => {
-        const match = combinedContent.match(/^#\s+(.+?)(?:\n|$)/m) || 
-                      combinedContent.match(/^##\s+(.+?)(?:\n|$)/m);
+        const match = combinedContent.match(/^#\s+(.+?)(?:\n|$)/m) ||
+            combinedContent.match(/^##\s+(.+?)(?:\n|$)/m);
         return match ? match[1].trim() : 'Research Dossier';
     }, [combinedContent]);
 
@@ -450,18 +483,92 @@ function LiveDossierDocumentInner({
         }
     }, [combinedContent, isStreaming]);
 
-    // 2. The "Skeleton" Loader (Prevents Visual Jump on Start)
-    // Show loading skeleton only when explicitly loading AND no content yet
+    // 2. Enhanced Skeleton Loader with shimmer effect
     if (isLoading && !hasContent) {
         return (
-            <div className="max-w-3xl mx-auto mt-10 space-y-8 animate-pulse p-12 bg-white shadow-sm border border-gray-100">
-                <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto mb-8"></div> {/* Date */}
-                <div className="h-12 bg-gray-200 rounded w-3/4 mx-auto mb-12"></div> {/* Title */}
-                <div className="space-y-4">
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+            <div className="mx-auto max-w-[860px] px-6 sm:px-8 lg:px-10 py-10">
+                {/* Shimmer animation container */}
+                <div className="relative overflow-hidden">
+                    {/* Shimmer overlay */}
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+
+                    {/* Masthead skeleton - matches newspaper style */}
+                    <div className="mb-10">
+                        {/* Top rules */}
+                        <div className="h-1 bg-gray-200 dark:bg-gray-700 mb-3 rounded" />
+                        <div className="h-0.5 bg-gray-100 dark:bg-gray-800 mb-4 rounded" />
+
+                        {/* Edition & Date row */}
+                        <div className="flex justify-between items-center mb-5">
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32" />
+                            <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-40" />
+                        </div>
+
+                        {/* Title skeleton - centered, large */}
+                        <div className="flex justify-center mb-4">
+                            <div className="h-12 sm:h-14 bg-gray-300 dark:bg-gray-600 rounded-lg w-3/4 sm:w-2/3" />
+                        </div>
+
+                        {/* Decorative divider */}
+                        <div className="flex items-center gap-4 my-5">
+                            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                            <div className="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                        </div>
+
+                        {/* Entity name skeleton */}
+                        <div className="flex flex-col items-center gap-2 mb-6">
+                            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48" />
+                            <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-24" />
+                        </div>
+
+                        {/* Bottom rules */}
+                        <div className="h-0.5 bg-gray-100 dark:bg-gray-800 mb-1 rounded" />
+                        <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded" />
+                    </div>
+
+                    {/* Content paragraphs skeleton */}
+                    <div className="space-y-6">
+                        {/* Paragraph 1 */}
+                        <div className="space-y-3">
+                            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-11/12" />
+                            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-10/12" />
+                            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                        </div>
+
+                        {/* Paragraph 2 */}
+                        <div className="space-y-3">
+                            <div className="h-5 bg-gray-100 dark:bg-gray-800 rounded w-full" />
+                            <div className="h-5 bg-gray-100 dark:bg-gray-800 rounded w-9/12" />
+                            <div className="h-5 bg-gray-100 dark:bg-gray-800 rounded w-11/12" />
+                        </div>
+                    </div>
+
+                    {/* Source cards skeleton */}
+                    <div className="mt-10 pt-8 border-t border-gray-200 dark:border-gray-700">
+                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-40 mb-4" />
+                        <div className="space-y-3">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
+                                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0" />
+                                    <div className="w-5 h-5 bg-gray-100 dark:bg-gray-800 rounded shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                                        <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
+
+                {/* Add shimmer keyframes via style tag */}
+                <style>{`
+                    @keyframes shimmer {
+                        100% { transform: translateX(100%); }
+                    }
+                `}</style>
             </div>
         );
     }
@@ -473,7 +580,7 @@ function LiveDossierDocumentInner({
         const target = e.target as HTMLElement;
         const link = target.closest('a[data-artifact-id]') as HTMLAnchorElement | null;
         if (!link) return;
-        
+
         const artifactId = link.getAttribute('data-artifact-id');
         if (artifactId) {
             e.preventDefault();
@@ -482,50 +589,80 @@ function LiveDossierDocumentInner({
         }
     };
 
+    // Format edition label based on time of day
+    const hour = new Date().getHours();
+    const editionLabel = hour < 12 ? 'MORNING EDITION' : hour < 17 ? 'AFTERNOON EDITION' : 'EVENING EDITION';
+    const formattedDate = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
     return (
         <div className="w-full animate-in fade-in duration-700">
-            {/* Newsletter Container - Max width for readability */}
-            <div className="mx-auto max-w-[720px] px-5 sm:px-6 lg:px-8 py-10 sm:py-12">
-                
-                {/* Clean Newsletter Masthead */}
-                <header className="mb-8 pb-6 border-b border-border/50">
-                    {/* Date line */}
-                    <div className="text-xs text-muted-foreground mb-3">
-                        {new Date().toLocaleDateString('en-US', { 
-                            weekday: 'long',
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                        })}
-                        {isStreaming && (
-                            <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-[10px] font-medium">
-                                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
-                                Live
+            {/* Newsletter Container - Wider for better readability */}
+            <div className="mx-auto max-w-[860px] px-6 sm:px-8 lg:px-10 py-8 sm:py-10">
+
+                {/* ═══════════════════════════════════════════════════════════════
+                    NEWSPAPER-STYLE MASTHEAD
+                    Classic newspaper design with serif fonts and decorative rules
+                ═══════════════════════════════════════════════════════════════ */}
+                <header className="mb-10">
+                    {/* Top decorative rule */}
+                    <div className="h-1 bg-gray-900 dark:bg-gray-100 mb-3" />
+                    <div className="h-0.5 bg-gray-400 dark:bg-gray-600 mb-4" />
+
+                    {/* Edition & Date Row */}
+                    <div className="flex justify-between items-center text-xs sm:text-sm mb-5">
+                        <div className="flex items-center gap-3">
+                            <span className="font-bold tracking-[0.2em] text-gray-700 dark:text-gray-300 uppercase">
+                                {editionLabel}
                             </span>
-                        )}
+                            {isStreaming && (
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                                    <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                                    Live
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-gray-500 dark:text-gray-400 font-medium">
+                            {formattedDate}
+                        </span>
                     </div>
 
-                    {/* Title */}
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                    {/* Masthead Title - Serif font for newspaper feel */}
+                    <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 dark:text-gray-50 text-center mb-4">
                         The Daily Dossier
                     </h1>
 
-                    {/* Subtitle: Entity • Source count */}
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-medium text-foreground">{entityName}</span>
+                    {/* Decorative divider */}
+                    <div className="flex items-center gap-4 my-5">
+                        <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600" />
+                        <span className="text-gray-400 dark:text-gray-500">✦</span>
+                        <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600" />
+                    </div>
+
+                    {/* Entity Name as Subhead */}
+                    <div className="text-center mb-6">
+                        <h2 className="font-serif text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-200 italic">
+                            {entityName}
+                        </h2>
                         {allArtifacts.length > 0 && (
-                            <>
-                                <span className="opacity-40">•</span>
-                                <button 
-                                    onClick={() => setIsDrawerOpen(true)}
-                                    className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-                                >
-                                    <Link2 className="w-3 h-3" />
-                                    {allArtifacts.length} sources
-                                </button>
-                            </>
+                            <button
+                                type="button"
+                                onClick={() => setIsDrawerOpen(true)}
+                                className="mt-2 inline-flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-sm font-medium"
+                            >
+                                <Link2 className="w-3.5 h-3.5" />
+                                {allArtifacts.length} sources cited
+                            </button>
                         )}
                     </div>
+
+                    {/* Bottom double border */}
+                    <div className="h-0.5 bg-gray-400 dark:bg-gray-600 mb-1" />
+                    <div className="h-1 bg-gray-900 dark:bg-gray-100" />
                 </header>
 
                 {(isAppending || isStreaming) && (
@@ -552,76 +689,102 @@ function LiveDossierDocumentInner({
                     />
                 )}
 
-                {/* Main Content - Clean prose aligned with BlockNote typography */}
-                <article 
-                    className="prose prose-neutral dark:prose-invert max-w-none
-                        prose-p:leading-relaxed prose-p:text-base prose-p:text-foreground
-                        prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                        prose-headings:text-foreground prose-headings:font-semibold
-                        prose-h1:text-2xl prose-h1:mt-8 prose-h1:mb-4
-                        prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3
-                        prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2
-                        prose-ul:my-3 prose-ol:my-3 prose-li:my-0.5
-                        prose-blockquote:border-l-2 prose-blockquote:border-muted-foreground/30 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-muted-foreground
-                        prose-hr:my-8 prose-hr:border-border
-                        prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
-                        prose-table:text-sm
-                        [&_.nb-cite]:align-super [&_.nb-cite]:text-[0.7em] [&_.nb-cite]:font-medium
+                {/* Main Content - Optimized for readability */}
+                <article
+                    className="prose prose-lg prose-neutral dark:prose-invert max-w-none
+                        prose-p:leading-[1.8] prose-p:text-[17px] prose-p:text-foreground prose-p:mb-5
+                        prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline
+                        prose-headings:text-foreground prose-headings:font-bold prose-headings:tracking-tight prose-headings:font-serif
+                        prose-h1:text-3xl prose-h1:mt-10 prose-h1:mb-5
+                        prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-border/30
+                        prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+                        prose-h4:text-lg prose-h4:mt-6 prose-h4:mb-2
+                        prose-ul:my-4 prose-ul:space-y-1.5 prose-ol:my-4 prose-ol:space-y-1.5 prose-li:my-0 prose-li:leading-relaxed
+                        prose-blockquote:border-l-4 prose-blockquote:border-purple-400 dark:prose-blockquote:border-purple-600 prose-blockquote:bg-purple-50/50 dark:prose-blockquote:bg-purple-900/10 prose-blockquote:pl-5 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:rounded-r-lg prose-blockquote:text-gray-700 dark:prose-blockquote:text-gray-300 prose-blockquote:not-italic
+                        prose-hr:my-10 prose-hr:border-border/50
+                        prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
+                        prose-table:text-base
+                        prose-strong:text-foreground prose-strong:font-semibold
+                        prose-em:text-gray-600 dark:prose-em:text-gray-400
+                        [&_.nb-cite]:align-super [&_.nb-cite]:text-[0.65em] [&_.nb-cite]:font-semibold
                         [&_.nb-cite-link]:text-primary [&_.nb-cite-link]:no-underline [&_.nb-cite-link:hover]:underline"
                     onClick={handleCitationClick}
                     ref={latestSectionRef}
                 >
-                    <ReactMarkdown 
+                    <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeRaw, [rehypeSanitize, citationSchema]]}
                     >
                         {injectedMarkdown}
                     </ReactMarkdown>
-                    
+
                     {/* Streaming cursor */}
                     {isStreaming && (
-                        <span className="inline-block w-2 h-5 bg-purple-500 ml-1 animate-pulse align-middle rounded-sm"></span>
+                        <span className="inline-block w-2.5 h-6 bg-purple-500 ml-1 animate-pulse align-middle rounded-sm"></span>
                     )}
                 </article>
 
-                {/* Sources Section */}
+                {/* Sources Section - Improved visual design */}
                 {hasContent && sourcesList.length > 0 && (
-                    <section id="sources" className="mt-10 pt-6 border-t border-border scroll-mt-24">
-                        <h3 className="text-sm font-semibold text-foreground mb-4">Sources</h3>
-                        <div className="space-y-2">
+                    <section id="sources" className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 scroll-mt-24">
+                        <h3 className="text-base font-bold text-foreground mb-5 flex items-center gap-2">
+                            <Link2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                            Sources & References
+                        </h3>
+                        <div className="grid gap-2.5">
                             {sourcesList.map((source) => {
-                                // Determine source type icon
                                 const isVideo = source.domain?.includes('youtube') || source.domain?.includes('vimeo');
                                 const isPdf = source.url?.endsWith('.pdf') || source.kind === 'file';
                                 const isSec = source.domain?.includes('sec.gov');
-                                
-                                const SourceIcon = isVideo ? Youtube : 
-                                                   isPdf ? FileText : 
-                                                   isSec ? FileSearch : 
-                                                   Globe;
-                                
+
+                                const SourceIcon = isVideo ? Youtube :
+                                    isPdf ? FileText :
+                                        isSec ? FileSearch :
+                                            Globe;
+
                                 return (
-                                    <div 
-                                        key={source.artifactId} 
-                                        id={`source-${source.num}`} 
-                                        className="flex items-center gap-2 text-sm group"
+                                    <button
+                                        type="button"
+                                        key={source.artifactId}
+                                        id={`source-${source.num}`}
+                                        className="flex items-center gap-3 p-4 text-left rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                                        onClick={() => source.url && window.open(source.url, '_blank')}
                                     >
-                                        <span className="w-5 text-muted-foreground font-mono text-xs text-right shrink-0">
+                                        <span className="w-7 h-7 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 shrink-0">
                                             {source.num}
                                         </span>
-                                        <SourceIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                        <button
-                                            className="text-left truncate hover:text-primary transition-colors flex-1"
-                                            onClick={() => source.url && window.open(source.url, '_blank')}
-                                        >
-                                            <span className="text-foreground">{source.title}</span>
-                                            <span className="text-muted-foreground text-xs ml-2">{source.domain}</span>
-                                        </button>
-                                    </div>
+                                        <SourceIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0 group-hover:text-primary transition-colors" />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                                                {source.title}
+                                            </div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                {source.domain}
+                                            </div>
+                                        </div>
+                                        <ExternalLink className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                    </button>
                                 );
                             })}
                         </div>
                     </section>
+                )}
+
+                {/* Inline Media Section - Collapsible */}
+                {media && hasAnyMedia(media) && (
+                    <CollapsibleMediaSection
+                        media={media}
+                        defaultExpanded={false}
+                    />
+                )}
+
+                {/* Inline Documents Section - Collapsible */}
+                {documents && documents.length > 0 && (
+                    <CollapsibleDocumentsSection
+                        documents={documents}
+                        onDocumentSelect={onDocumentSelect}
+                        defaultExpanded={false}
+                    />
                 )}
 
                 {/* Deep Agent Progress - Task Plan Panel with Metrics */}
@@ -638,11 +801,12 @@ function LiveDossierDocumentInner({
 
                 {/* Final Synthesis Action - Refined */}
                 {hasContent && onRunFollowUp && !isStreaming && (
-                    <div className="mb-12 flex justify-center">
+                    <div className="mt-12 mb-10 flex justify-center">
                         <button
+                            type="button"
                             onClick={() => handleFollowUp("Synthesize all the above information into a single, comprehensive, and well-structured final report. Remove redundancies and organize logically.")}
                             disabled={isAppending}
-                            className={`group flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-full font-medium shadow-xl hover:bg-gray-800 hover:scale-105 transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
+                            className={`group flex items-center gap-3 px-8 py-4 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full font-semibold text-base shadow-xl hover:bg-gray-800 dark:hover:bg-white hover:scale-105 transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
                         >
                             {isAppending ? (
                                 <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
@@ -667,8 +831,8 @@ function LiveDossierDocumentInner({
                 <div ref={bottomRef} />
 
                 {/* Footer */}
-                <footer className="mt-12 pt-4 border-t border-border text-center">
-                    <p className="text-xs text-muted-foreground">
+                <footer className="mt-12 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                         NodeBench AI • {new Date().toLocaleTimeString()}
                     </p>
                 </footer>
@@ -688,7 +852,186 @@ function LiveDossierDocumentInner({
 }
 
 function EmptyState() {
-    return null; // Handle empty state in parent to prevent flash
+    return (
+        <div className="mx-auto max-w-[860px] px-6 sm:px-8 lg:px-10 py-16">
+            <div className="text-center">
+                {/* Icon container - rounded-xl for consistency */}
+                <div className="inline-flex items-center justify-center p-6 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 mb-6">
+                    <FileText className="w-10 h-10 text-purple-600 dark:text-purple-400" />
+                </div>
+
+                {/* Heading */}
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-50 mb-3">
+                    Your Live Dossier Awaits
+                </h2>
+
+                {/* Description */}
+                <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-8 leading-relaxed">
+                    Start a research query to generate a comprehensive live dossier with verified sources,
+                    rich media, and actionable insights—all updated in real-time.
+                </p>
+
+                {/* Feature hints */}
+                <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        <span>Multi-source verification</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                        <Youtube className="w-4 h-4 text-red-500" />
+                        <span>Media discovery</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                        <Link2 className="w-4 h-4 text-blue-500" />
+                        <span>Inline citations</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COLLAPSIBLE MEDIA SECTION - Unified inline display
+// ═══════════════════════════════════════════════════════════════════════════
+
+function hasAnyMedia(media: ExtractedMedia): boolean {
+    return (
+        (media.youtubeVideos?.length || 0) > 0 ||
+        (media.images?.length || 0) > 0 ||
+        (media.webSources?.length || 0) > 0 ||
+        (media.secDocuments?.length || 0) > 0 ||
+        (media.profiles?.length || 0) > 0
+    );
+}
+
+function getMediaCounts(media: ExtractedMedia) {
+    return {
+        videos: media.youtubeVideos?.length || 0,
+        images: media.images?.length || 0,
+        sources: (media.webSources?.length || 0) + (media.secDocuments?.length || 0),
+        profiles: media.profiles?.length || 0,
+    };
+}
+
+interface CollapsibleMediaSectionProps {
+    media: ExtractedMedia;
+    defaultExpanded?: boolean;
+}
+
+function CollapsibleMediaSection({ media, defaultExpanded = false }: CollapsibleMediaSectionProps) {
+    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const counts = getMediaCounts(media);
+    const totalCount = counts.videos + counts.images + counts.sources + counts.profiles;
+
+    if (totalCount === 0) return null;
+
+    return (
+        <section className="mt-8 mb-6 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50/50 dark:bg-gray-800/30">
+            {/* Header - Always visible */}
+            <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+                        <ImageIcon className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground">Media & Evidence</h3>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {counts.videos > 0 && `${counts.videos} videos`}
+                            {counts.videos > 0 && counts.images > 0 && ' · '}
+                            {counts.images > 0 && `${counts.images} images`}
+                            {(counts.videos > 0 || counts.images > 0) && counts.sources > 0 && ' · '}
+                            {counts.sources > 0 && `${counts.sources} sources`}
+                            {(counts.videos > 0 || counts.images > 0 || counts.sources > 0) && counts.profiles > 0 && ' · '}
+                            {counts.profiles > 0 && `${counts.profiles} people`}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-2.5 py-1 rounded-full">
+                        {totalCount}
+                    </span>
+                    {isExpanded ? (
+                        <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    ) : (
+                        <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    )}
+                </div>
+            </button>
+
+            {/* Content - Collapsible */}
+            {isExpanded && (
+                <div className="px-4 pb-4 pt-2 border-t border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-2 duration-200">
+                    <RichMediaSection media={media} showCitations />
+                </div>
+            )}
+        </section>
+    );
+}
+
+interface CollapsibleDocumentsSectionProps {
+    documents: DocumentAction[];
+    onDocumentSelect?: (documentId: string) => void;
+    defaultExpanded?: boolean;
+}
+
+function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpanded = false }: CollapsibleDocumentsSectionProps) {
+    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+    if (documents.length === 0) return null;
+
+    const createdCount = documents.filter(d => d.action === 'created').length;
+    const updatedCount = documents.filter(d => d.action === 'updated').length;
+
+    return (
+        <section className="mt-6 mb-6 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50/50 dark:bg-gray-800/30">
+            {/* Header - Always visible */}
+            <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-500/10">
+                        <FileText className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground">Generated Documents</h3>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {createdCount > 0 && `${createdCount} created`}
+                            {createdCount > 0 && updatedCount > 0 && ' · '}
+                            {updatedCount > 0 && `${updatedCount} updated`}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-2.5 py-1 rounded-full">
+                        {documents.length}
+                    </span>
+                    {isExpanded ? (
+                        <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    ) : (
+                        <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    )}
+                </div>
+            </button>
+
+            {/* Content - Collapsible */}
+            {isExpanded && (
+                <div className="px-4 pb-4 pt-2 border-t border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-2 duration-200">
+                    <DocumentActionGrid
+                        documents={documents}
+                        onDocumentSelect={onDocumentSelect}
+                        title=""
+                    />
+                </div>
+            )}
+        </section>
+    );
 }
 
 interface LiveAgentTickerProps {
@@ -840,17 +1183,17 @@ function LiveAgentTicker({
 
     return (
         <div className="sticky top-20 z-30 mb-8 pointer-events-none">
-            <div className={`pointer-events-auto relative overflow-hidden rounded-2xl transition-all duration-500 ${isActive ? 'active-glow' : ''}`}>
+            <div className={`pointer-events-auto relative overflow-hidden rounded-xl transition-all duration-500 ${isActive ? 'active-glow' : ''}`}>
                 {/* Animated gradient border */}
                 {isActive && (
-                    <div className="absolute inset-0 rounded-2xl gradient-border" />
+                    <div className="absolute inset-0 rounded-xl gradient-border" />
                 )}
 
                 {/* Glass container */}
-                <div className="relative glass-container rounded-2xl p-5 md:p-6 flowing-gradient">
+                <div className="relative glass-container rounded-xl p-4 md:p-6 flowing-gradient">
                     {/* Shimmer overlay when active */}
                     {isActive && (
-                        <div className="absolute inset-0 shimmer-bg pointer-events-none rounded-2xl" />
+                        <div className="absolute inset-0 shimmer-bg pointer-events-none rounded-xl" />
                     )}
 
                     {/* Header Row */}

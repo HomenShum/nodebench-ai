@@ -113,15 +113,15 @@ export function NewsletterSectionBlock({
     return (
         <div className="mb-8 group">
             {/* Header - Simple H2 style */}
-            <div 
+            <div
                 className="flex items-center gap-2 mb-3 cursor-pointer select-none"
                 onClick={onToggleExpand}
             >
                 <div className="p-1 rounded text-gray-400 group-hover:text-gray-600 transition-colors">
                     {section.icon}
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 flex-1">{section.title}</h2>
-                
+                <h2 className="text-xl font-semibold font-serif text-gray-900 flex-1">{section.title}</h2>
+
                 {/* Confidence Badge - Subtle */}
                 {section.confidence && (
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">

@@ -851,6 +851,79 @@ is the single source of truth.
 
 ---
 
+### 2025-12-02 - Live Dossier UI Enhancements & Editorial Polish ✅
+
+**Status**: ✅ Complete - Browser Tested & Verified
+
+#### Overview
+Comprehensive UI improvements to the Live Dossier view to enhance readability, visual polish, and professional appearance with an editorial/newspaper aesthetic.
+
+#### Changes Implemented
+
+##### 1. **Newspaper-Style Masthead Redesign**
+- Serif font (`font-serif`) for "The Daily Dossier" title (responsive: 4xl → 6xl)
+- Decorative horizontal rules: thick top rule + thin secondary rule
+- Dynamic edition labels: "MORNING EDITION", "AFTERNOON EDITION", "EVENING EDITION" based on time of day
+- Entity name styled as italic serif subheading
+- Double border-bottom for classic newspaper look
+- Centered decorative divider with ✦ symbol
+- "Live" badge redesigned as red pill-style indicator for better visibility
+
+##### 2. **Unified Border Radius & Padding**
+- **Border Radius Standardization**:
+  - `rounded-xl` (12px) for cards and sections (SuggestedFollowUps, LiveAgentTicker, source cards, empty state icon)
+  - `rounded-lg` (8px) for buttons, badges, and inner elements
+  - `rounded-full` for pills and circular elements
+
+- **Padding Scale Standardization**:
+  - `p-6` for section containers (SuggestedFollowUps)
+  - `p-4` for card content (source cards, LiveAgentTicker)
+  - `px-4 py-3` for button content (QuickActionButton)
+  - `p-3` for compact items (feature hints in empty state)
+
+##### 3. **Enhanced Skeleton Loader**
+- Shimmer animation effect with CSS keyframes for smooth loading perception
+- Skeleton structure matching actual content layout:
+  - Masthead skeleton (decorative rules, edition row, title, divider, entity name)
+  - Content paragraph skeletons with varied widths for realism
+  - Source card skeletons (3 cards with icon, title, description)
+- Proper gray color scale for light/dark mode support
+
+##### 4. **Better Empty State**
+- Icon container with gradient background and FileText icon
+- Serif heading "Your Live Dossier Awaits"
+- Descriptive paragraph explaining what to expect
+- Feature hints with icons in pill-style badges:
+  - Multi-source verification (green checkmark)
+  - Media discovery (YouTube icon)
+  - Inline citations (link icon)
+
+##### 5. **Typography Consistency**
+- Content headings (h1, h2, h3) now use serif font to match masthead
+- Improved visual hierarchy with consistent font styling
+- Better alignment with editorial/newspaper aesthetic
+
+#### Files Modified
+- `src/features/research/views/LiveDossierDocument.tsx` - All UI improvements
+- `src/features/research/components/NewsletterComponents.tsx` - Serif typography for section titles
+
+#### Browser Testing Results
+✅ Masthead displays correctly with serif fonts and decorative elements
+✅ Skeleton loader shows shimmer animation during content load
+✅ Empty state displays helpful guidance with proper styling
+✅ Border radius and padding consistent across all components
+✅ Dark mode support verified for all color changes
+✅ Typography hierarchy clear and professional
+
+#### Verification
+- ✅ TypeScript compilation passes (`npx tsc --noEmit`)
+- ✅ No console errors in browser
+- ✅ Responsive design verified (mobile, tablet, desktop)
+- ✅ Dark mode colors verified
+- ✅ All interactive elements functional
+
+---
+
 ### Previous Updates
 
 Earlier sessions produced several standalone markdown reports for agent
