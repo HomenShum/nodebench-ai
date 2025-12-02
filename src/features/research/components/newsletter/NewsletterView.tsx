@@ -3,7 +3,7 @@
 // FIX: Now uses smart artifact-section matching instead of broken store lookup
 
 import React, { useState, useMemo } from 'react';
-import { parseMarkdownToDossier } from '@/utils/dossierParser';
+import { parseMarkdownToDossier } from '../../utils/newsletterParser';
 import { NewsletterSectionBlock, DigestHero, type NewsletterSection, type NewsletterMediaItem } from './NewsletterComponents';
 import { EvidenceDrawer, type EvidenceSource } from './EvidenceDrawer';
 import { TrendingUp, Users, Briefcase, AlertTriangle, Lightbulb, FileText, Target, DollarSign, ShieldAlert, HelpCircle, Link2 } from 'lucide-react';
