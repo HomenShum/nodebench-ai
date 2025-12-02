@@ -12,7 +12,7 @@ interface UserProfileProps {
  * Styled with gradient background similar to Welcome Landing
  */
 export function UserProfile({ onOpenSettings }: UserProfileProps) {
-    const user = useQuery(api.auth.loggedInUser);
+    const user = useQuery(api.domains.auth.auth.loggedInUser);
 
     return (
         <div className="p-4 border-t border-[var(--border-color)] bg-gradient-to-r from-[var(--bg-secondary)] via-[var(--bg-tertiary)] to-[var(--bg-secondary)]">

@@ -212,7 +212,7 @@ async function processEntityResearch(
   console.log(`[processEntityResearch] Processing ${targetDisplayName} (${jobType}, ${researchDepth})`);
 
   // Check if entity already exists
-  const entity = await ctx.runQuery(api.entityContexts.getEntityContext, {
+  const entity = await ctx.runQuery(api.domains.knowledge.entityContexts.getEntityContext, {
     entityName: targetDisplayName,
     entityType: "company",
   });
@@ -245,7 +245,7 @@ async function processEntityResearch(
       `Consider ${targetDisplayName}'s competitive landscape`,
     ];
 
-    await ctx.runMutation(internal.entityContexts.upgradeToDeepMemory, {
+    await ctx.runMutation(internal.domains.knowledge.entityContexts.upgradeToDeepMemory, {
       entityId: entity._id,
       narratives,
       heuristics,

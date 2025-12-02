@@ -40,7 +40,7 @@ export const chatWithAgentModern = action({
 
       // Update run status to running
       if (runId) {
-        await ctx.runMutation(internal.fastAgentChatHelpers.updateRunStatus, {
+        await ctx.runMutation(internal.domains.agents.fastAgentChatHelpers.updateRunStatus, {
           runId,
           status: "running",
         });
@@ -76,19 +76,19 @@ export const chatWithAgentModern = action({
 
       // Update run status to completed
       if (runId) {
-        await ctx.runMutation(internal.fastAgentChatHelpers.updateRunStatus, {
+        await ctx.runMutation(internal.domains.agents.fastAgentChatHelpers.updateRunStatus, {
           runId,
           status: "completed",
           finalResponse: response,
         });
 
         // Update the assistant message with the response
-        const messages: any[] = await ctx.runQuery(internal.fastAgentChatHelpers.getMessagesByRun, {
+        const messages: any[] = await ctx.runQuery(internal.domains.agents.fastAgentChatHelpers.getMessagesByRun, {
           runId,
         });
 
         if (messages.length > 0) {
-          await ctx.runMutation(internal.fastAgentChatHelpers.updateMessageContent, {
+          await ctx.runMutation(internal.domains.agents.fastAgentChatHelpers.updateMessageContent, {
             messageId: messages[0]._id,
             content: response,
           });
@@ -101,19 +101,19 @@ export const chatWithAgentModern = action({
 
       // Update run status to error
       if (runId) {
-        await ctx.runMutation(internal.fastAgentChatHelpers.updateRunStatus, {
+        await ctx.runMutation(internal.domains.agents.fastAgentChatHelpers.updateRunStatus, {
           runId,
           status: "error",
           errorMessage: error.message || "Unknown error",
         });
 
         // Update the assistant message with error
-        const messages: any[] = await ctx.runQuery(internal.fastAgentChatHelpers.getMessagesByRun, {
+        const messages: any[] = await ctx.runQuery(internal.domains.agents.fastAgentChatHelpers.getMessagesByRun, {
           runId,
         });
 
         if (messages.length > 0) {
-          await ctx.runMutation(internal.fastAgentChatHelpers.updateMessageContent, {
+          await ctx.runMutation(internal.domains.agents.fastAgentChatHelpers.updateMessageContent, {
             messageId: messages[0]._id,
             content: `Error: ${error.message || "Unknown error"}`,
             status: "error",
@@ -163,7 +163,7 @@ async function handleDocumentEdit(
     }
 
     // Get document context
-    const doc = await ctx.runQuery(api.documents.getById, { documentId });
+    const doc = await ctx.runQuery(api.domains.documents.documents.getById, { documentId });
     if (!doc) throw new Error("Document not found");
 
     // Emit thinking event
@@ -213,13 +213,13 @@ async function handleDocumentEdit(
     for (const proposal of validationOutput.approvedProposals) {
       try {
         if (proposal.type === "title") {
-          await ctx.runMutation(api.documents.update, {
+          await ctx.runMutation(api.domains.documents.documents.update, {
             id: documentId,
             title: proposal.newValue,
           });
           appliedCount++;
         } else if (proposal.type === "content") {
-          await ctx.runMutation(api.documents.update, {
+          await ctx.runMutation(api.domains.documents.documents.update, {
             id: documentId,
             content: proposal.newValue,
           });
@@ -227,7 +227,7 @@ async function handleDocumentEdit(
         } else if (proposal.type === "append") {
           // Append to existing content
           const newContent = (doc.content || "") + "\n\n" + proposal.newValue;
-          await ctx.runMutation(api.documents.update, {
+          await ctx.runMutation(api.domains.documents.documents.update, {
             id: documentId,
             content: newContent,
           });
@@ -239,7 +239,7 @@ async function handleDocumentEdit(
               new RegExp(proposal.target, "gi"),
               proposal.newValue
             );
-            await ctx.runMutation(api.documents.update, {
+            await ctx.runMutation(api.domains.documents.documents.update, {
               id: documentId,
               content: newContent,
             });
@@ -300,7 +300,7 @@ async function handleChatResponse(
   // Get document context if provided
   let context = "";
   if (documentId) {
-    const doc = await ctx.runQuery(api.documents.getById, { documentId });
+    const doc = await ctx.runQuery(api.domains.documents.documents.getById, { documentId });
     if (doc) {
       context = `\n\nCurrent document context:\nTitle: ${doc.title}\nContent: ${doc.content || "(empty)"}`;
     }
@@ -344,7 +344,7 @@ async function emitEvent(
   message: string,
   data?: any
 ): Promise<void> {
-  await ctx.runMutation(internal.fastAgentChatHelpers.appendRunEvent, {
+  await ctx.runMutation(internal.domains.agents.fastAgentChatHelpers.appendRunEvent, {
     runId,
     kind,
     message,

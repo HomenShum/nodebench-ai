@@ -78,7 +78,7 @@ export const runSingleTest = internalAction({
 
     try {
       // Use OpenAI function-calling implementation directly
-      const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
+      const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
         threadId: args.threadId,
         message: testCase.userQuery,
         userId: args.userId, // Pass userId to agent
@@ -255,7 +255,7 @@ export const runAllTestsParallel = action({
     let userId = args.userId;
     if (!userId) {
       // Get the test user from golden dataset
-      const testUser = await ctx.runQuery(api.seedGoldenDataset.getTestUser, {});
+      const testUser = await ctx.runQuery(api.domains.utilities.seedGoldenDataset.getTestUser, {});
       if (testUser) {
         userId = testUser._id;
         console.log(`Using test user: ${userId}\n`);

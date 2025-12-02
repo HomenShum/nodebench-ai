@@ -10,7 +10,7 @@ import { stepCountIs } from "@convex-dev/agent";
 import type { Id } from "../_generated/dataModel";
 
 // Import validators from agentDelegations
-import { agentNameValidator } from "../agentDelegations";
+import { agentNameValidator } from "../domains/agents/agentDelegations";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -25,23 +25,23 @@ type AgentName = "DocumentAgent" | "MediaAgent" | "SECAgent" | "OpenBBAgent" | "
 async function createSubagent(agentName: AgentName, model: string) {
   switch (agentName) {
     case "DocumentAgent": {
-      const { createDocumentAgent } = await import("../fast_agents/subagents/document_subagent/documentAgent");
+      const { createDocumentAgent } = await import("../domains/agents/core/subagents/document_subagent/documentAgent");
       return createDocumentAgent(model);
     }
     case "MediaAgent": {
-      const { createMediaAgent } = await import("../fast_agents/subagents/media_subagent/mediaAgent");
+      const { createMediaAgent } = await import("../domains/agents/core/subagents/media_subagent/mediaAgent");
       return createMediaAgent(model);
     }
     case "SECAgent": {
-      const { createSECAgent } = await import("../fast_agents/subagents/sec_subagent/secAgent");
+      const { createSECAgent } = await import("../domains/agents/core/subagents/sec_subagent/secAgent");
       return createSECAgent(model);
     }
     case "OpenBBAgent": {
-      const { createOpenBBAgent } = await import("../fast_agents/subagents/openbb_subagent/openbbAgent");
+      const { createOpenBBAgent } = await import("../domains/agents/core/subagents/openbb_subagent/openbbAgent");
       return createOpenBBAgent(model);
     }
     case "EntityResearchAgent": {
-      const { createEntityResearchAgent } = await import("../fast_agents/subagents/entity_subagent/entityResearchAgent");
+      const { createEntityResearchAgent } = await import("../domains/agents/core/subagents/entity_subagent/entityResearchAgent");
       return createEntityResearchAgent(model);
     }
     default:
@@ -87,7 +87,7 @@ export const executeDelegation = internalAction({
       kind: "delta" | "tool_start" | "tool_end" | "note" | "final",
       opts: { textChunk?: string; toolName?: string; metadata?: any } = {}
     ) => {
-      await ctx.runMutation(internal.agentDelegations.emitWriteEvent, {
+      await ctx.runMutation(internal.domains.agents.agentDelegations.emitWriteEvent, {
         delegationId,
         seq: seq++,
         kind,
@@ -99,7 +99,7 @@ export const executeDelegation = internalAction({
     
     try {
       // 1. Update status to running
-      await ctx.runMutation(internal.agentDelegations.updateStatus, {
+      await ctx.runMutation(internal.domains.agents.agentDelegations.updateStatus, {
         delegationId,
         status: "running",
       });
@@ -114,7 +114,7 @@ export const executeDelegation = internalAction({
       const threadId = await ensureThread(ctx, agent, userId);
       
       // Update delegation with thread ID
-      await ctx.runMutation(internal.agentDelegations.updateStatus, {
+      await ctx.runMutation(internal.domains.agents.agentDelegations.updateStatus, {
         delegationId,
         status: "running",
         subagentThreadId: threadId,
@@ -165,7 +165,7 @@ export const executeDelegation = internalAction({
       });
       
       // 8. Update status to completed
-      await ctx.runMutation(internal.agentDelegations.updateStatus, {
+      await ctx.runMutation(internal.domains.agents.agentDelegations.updateStatus, {
         delegationId,
         status: "completed",
       });
@@ -179,7 +179,7 @@ export const executeDelegation = internalAction({
       await emit("note", { textChunk: `Error: ${error.message}` });
       
       // Update status to failed
-      await ctx.runMutation(internal.agentDelegations.updateStatus, {
+      await ctx.runMutation(internal.domains.agents.agentDelegations.updateStatus, {
         delegationId,
         status: "failed",
         errorMessage: error.message,
@@ -211,7 +211,7 @@ export const scheduleDelegations = internalAction({
     
     for (const task of tasks) {
       // 1. Create delegation record
-      await ctx.runMutation(internal.agentDelegations.createDelegation, {
+      await ctx.runMutation(internal.domains.agents.agentDelegations.createDelegation, {
         runId,
         delegationId: task.delegationId,
         userId,

@@ -17,7 +17,7 @@ export const runCoordinatorWorkflow = workflowManager.define({
   handler: async (step, args): Promise<{ text: string; messageId?: string; toolCalls?: any }> => {
     // Run the coordinator agent as a durable action step
     const result = await step.runAction(
-      internal.fast_agents.coordinatorAgent.runCoordinatorAgent,
+      internal.domains.agents.core.coordinatorAgent.runCoordinatorAgent,
       {
         threadId: args.threadId,
         prompt: args.prompt,

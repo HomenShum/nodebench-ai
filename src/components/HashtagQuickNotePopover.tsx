@@ -4,7 +4,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { X, ExternalLink } from "lucide-react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 interface HashtagQuickNotePopoverProps {
   isOpen: boolean;
@@ -129,7 +129,7 @@ function HashtagContent({
   hashtag: string;
   onClose: () => void;
 }) {
-  const reindexMyDocuments = useAction(api.ragEnhancedBatchIndex.reindexMyDocuments);
+  const reindexMyDocuments = useAction(api.domains.search.ragEnhancedBatchIndex.reindexMyDocuments);
   const [isReindexing, setIsReindexing] = React.useState(false);
 
   const handleReindex = async () => {
@@ -145,7 +145,7 @@ function HashtagContent({
     }
   };
 
-  const document = useQuery(api.documents.getById, { documentId: dossierId });
+  const document = useQuery(api.domains.documents.documents.getById, { documentId: dossierId });
 
   const handleOpenFullDossier = () => {
     window.dispatchEvent(

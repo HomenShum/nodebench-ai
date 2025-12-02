@@ -77,7 +77,7 @@ export const batchReindexUserDocuments = internalAction({
 
     do {
       // Get batch of documents
-      const batch: any = await ctx.runQuery(internal.ragEnhancedBatchIndex.getDocumentsToIndex, {
+      const batch: any = await ctx.runQuery(internal.domains.search.ragEnhancedBatchIndex.getDocumentsToIndex, {
         cursor,
         limit,
       });
@@ -90,7 +90,7 @@ export const batchReindexUserDocuments = internalAction({
       // Index each document
       for (const doc of userDocs) {
         try {
-          const result: any = await ctx.runAction(internal.ragEnhanced.addDocumentToEnhancedRag, {
+          const result: any = await ctx.runAction(internal.domains.search.ragEnhanced.addDocumentToEnhancedRag, {
             documentId: doc._id,
             userId: args.userId,
           });
@@ -145,7 +145,7 @@ export const batchReindexAllDocuments = internalAction({
     console.log(`[batchReindexAllDocuments] Starting FULL batch re-index of all documents`);
 
     do {
-      const batch: any = await ctx.runQuery(internal.ragEnhancedBatchIndex.getDocumentsToIndex, {
+      const batch: any = await ctx.runQuery(internal.domains.search.ragEnhancedBatchIndex.getDocumentsToIndex, {
         cursor,
         limit,
       });
@@ -159,7 +159,7 @@ export const batchReindexAllDocuments = internalAction({
         }
 
         try {
-          const result: any = await ctx.runAction(internal.ragEnhanced.addDocumentToEnhancedRag, {
+          const result: any = await ctx.runAction(internal.domains.search.ragEnhanced.addDocumentToEnhancedRag, {
             documentId: doc._id,
             userId: doc.createdBy,
           });
@@ -204,7 +204,7 @@ export const reindexSingleDocument = internalAction({
   },
   handler: async (ctx, args): Promise<any> => {
     // Get document to find userId
-    const doc: any = await ctx.runQuery(internal.ragEnhancedBatchIndex.getDocumentInfo, {
+    const doc: any = await ctx.runQuery(internal.domains.search.ragEnhancedBatchIndex.getDocumentInfo, {
       documentId: args.documentId,
     });
 
@@ -218,7 +218,7 @@ export const reindexSingleDocument = internalAction({
 
     console.log(`[reindexSingleDocument] Re-indexing: ${doc.title}`);
 
-    const result: any = await ctx.runAction(internal.ragEnhanced.addDocumentToEnhancedRag, {
+    const result: any = await ctx.runAction(internal.domains.search.ragEnhanced.addDocumentToEnhancedRag, {
       documentId: args.documentId,
       userId: doc.createdBy,
     });
@@ -272,7 +272,7 @@ export const ensureUpToDateIndexForUser = internalAction({
     const limit = args.limit ?? 200;
 
     // Fetch this user's documents via internal query (actions cannot access ctx.db)
-    const userDocs: any[] = await ctx.runQuery(internal.ragEnhancedBatchIndex.listUserDocsNotArchived, { userId: args.userId });
+    const userDocs: any[] = await ctx.runQuery(internal.domains.search.ragEnhancedBatchIndex.listUserDocsNotArchived, { userId: args.userId });
 
     // Narrow to recently modified or never-indexed docs
     const candidates = userDocs
@@ -295,16 +295,16 @@ export const ensureUpToDateIndexForUser = internalAction({
         // Step A: Ensure metadata is present/up-to-date before indexing (lazy analysis)
         try {
           if (doc.documentType === "dossier" && (doc as any).dossierType === "primary") {
-            await ctx.runAction(api.metadataAnalyzer.buildDossierMetadata, { dossierId: doc._id as Id<"documents"> });
+            await ctx.runAction(api.domains.ai.metadataAnalyzer.buildDossierMetadata, { dossierId: doc._id as Id<"documents"> });
           } else {
-            await ctx.runAction(api.metadataAnalyzer.analyzeDocumentMetadata, { documentId: doc._id as Id<"documents"> });
+            await ctx.runAction(api.domains.ai.metadataAnalyzer.analyzeDocumentMetadata, { documentId: doc._id as Id<"documents"> });
           }
         } catch (metaErr) {
           console.warn("[ensureUpToDateIndexForUser] Metadata analysis skipped", { docId: doc._id, err: metaErr });
         }
 
         // Step B: Index into Enhanced RAG
-        await ctx.runAction(internal.ragEnhanced.addDocumentToEnhancedRag, {
+        await ctx.runAction(internal.domains.search.ragEnhanced.addDocumentToEnhancedRag, {
           documentId: doc._id as Id<"documents">,
           userId: args.userId,
         });
@@ -335,7 +335,7 @@ export const reindexMyDocuments = action({
 
     console.log(`[reindexMyDocuments] User ${userId} requested re-indexing of their documents`);
 
-    const result: any = await ctx.runAction(internal.ragEnhancedBatchIndex.batchReindexUserDocuments, {
+    const result: any = await ctx.runAction(internal.domains.search.ragEnhancedBatchIndex.batchReindexUserDocuments, {
       userId,
     });
 

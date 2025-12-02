@@ -23,7 +23,7 @@ export const sendEmail = action({
       console.error("[sendEmail] RESEND_API_KEY not configured");
 
       // Track failed email
-      await ctx.runMutation(api.analytics.trackEmailSent, {
+      await ctx.runMutation(api.domains.analytics.analytics.trackEmailSent, {
         email: args.to,
         userId: args.userId,
         subject: args.subject,
@@ -37,7 +37,7 @@ export const sendEmail = action({
     const fromAddress = process.env.EMAIL_FROM || "NodeBench AI <research@nodebench.ai>";
 
     try {
-      const response = await fetch("https://api.resend.com/emails", {
+      const response = await fetch("https://api.domains.integrations.resend.com/emails", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
@@ -56,7 +56,7 @@ export const sendEmail = action({
         console.error("[sendEmail] Resend API error:", response.status, errorText);
         
         // Track failed email
-        await ctx.runMutation(api.analytics.trackEmailSent, {
+        await ctx.runMutation(api.domains.analytics.analytics.trackEmailSent, {
           email: args.to,
           userId: args.userId,
           subject: args.subject,
@@ -70,7 +70,7 @@ export const sendEmail = action({
       console.log("[sendEmail] Email sent successfully:", data);
       
       // Track successful email
-      await ctx.runMutation(api.analytics.trackEmailSent, {
+      await ctx.runMutation(api.domains.analytics.analytics.trackEmailSent, {
         email: args.to,
         userId: args.userId,
         subject: args.subject,
@@ -85,7 +85,7 @@ export const sendEmail = action({
       console.error("[sendEmail] Error:", error);
       
       // Track failed email
-      await ctx.runMutation(api.analytics.trackEmailSent, {
+      await ctx.runMutation(api.domains.analytics.analytics.trackEmailSent, {
         email: args.to,
         userId: args.userId,
         subject: args.subject,

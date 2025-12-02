@@ -10,13 +10,13 @@ interface NodeEditPopoverProps {
 }
 
 export function NodeEditPopover({ documentId, nodeId, isVisible, position }: NodeEditPopoverProps) {
-  const nodeEditInfo = useQuery(api.documents.getNodeEditInfo, {
+  const nodeEditInfo = useQuery(api.domains.documents.documents.getNodeEditInfo, {
     documentId,
     nodeId,
   });
   
   const user = useQuery(
-    api.documents.getUserById,
+    api.domains.documents.documents.getUserById,
     nodeEditInfo?.editedBy ? { userId: nodeEditInfo.editedBy } : "skip"
   );
 

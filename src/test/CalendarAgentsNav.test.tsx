@@ -22,7 +22,7 @@ vi.mock('convex/react', async () => {
   };
 });
 
-import { CalendarHomeHub } from '@/components/CalendarHomeHub';
+import { CalendarHomeHub } from '@/features/calendar/components/CalendarHomeHub';
 
 
 describe('CalendarHomeHub Agents deep-link', () => {

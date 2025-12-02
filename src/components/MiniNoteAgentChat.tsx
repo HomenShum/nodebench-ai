@@ -8,11 +8,11 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Bot, User, Loader2, ChevronDown, ChevronRight, Wrench, AlertCircle } from 'lucide-react';
 import type { ToolUIPart } from 'ai';
-import { extractMediaFromText, removeMediaMarkersFromText } from './FastAgentPanel/utils/mediaExtractor';
+import { extractMediaFromText, removeMediaMarkersFromText } from '@features/agents/components/FastAgentPanel/utils/mediaExtractor';
 import { toast } from 'sonner';
-import { RichMediaSection } from './FastAgentPanel/RichMediaSection';
-import { StepTimeline, toolPartsToTimelineSteps } from './FastAgentPanel/StepTimeline';
-import { HumanRequestList } from './FastAgentPanel/HumanRequestCard';
+import { RichMediaSection } from '@features/agents/components/FastAgentPanel/RichMediaSection';
+import { StepTimeline, toolPartsToTimelineSteps } from '@features/agents/components/FastAgentPanel/StepTimeline';
+import { HumanRequestList } from '@features/agents/components/FastAgentPanel/HumanRequestCard';
 
 interface MiniNoteAgentChatProps {
   user: any | null | undefined;
@@ -67,19 +67,19 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
   }, []);
 
 
-  const createThread = useAction(api.fastAgentPanelStreaming.createThread);
-  const sendStreaming = useMutation(api.fastAgentPanelStreaming.initiateAsyncStreaming);
-  const cancelStreaming = useMutation(api.fastAgentPanelStreaming.requestStreamCancel);
+  const createThread = useAction(api.domains.agents.fastAgentPanelStreaming.createThread);
+  const sendStreaming = useMutation(api.domains.agents.fastAgentPanelStreaming.initiateAsyncStreaming);
+  const cancelStreaming = useMutation(api.domains.agents.fastAgentPanelStreaming.requestStreamCancel);
 
   // Resolve agent thread for UI messages
   const streamingThread = useQuery(
-    api.fastAgentPanelStreaming.getThreadByStreamId,
+    api.domains.agents.fastAgentPanelStreaming.getThreadByStreamId,
     threadId ? { threadId } : 'skip'
   ) as any;
 
   const agentThreadId = streamingThread?.agentThreadId as string | undefined;
   const { results: uiMessages } = useUIMessages(
-    api.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
+    api.domains.agents.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
     agentThreadId ? { threadId: agentThreadId } : 'skip',
     { initialNumItems: 100, stream: true }
   );

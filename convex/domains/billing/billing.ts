@@ -66,7 +66,7 @@ export const createPolarCheckout = action({
 
     if (POLAR_PRODUCT_ID) {
       try {
-        const { url } = await ctx.runAction(api.polar.generateCheckoutLink, {
+        const { url } = await ctx.runAction(api.domains.integrations.polar.generateCheckoutLink, {
           productIds: [POLAR_PRODUCT_ID],
           successUrl,
           origin,
@@ -89,7 +89,7 @@ export const createPolarCheckout = action({
     const cancel = retOrigin ? `${retOrigin}/?billing=canceled` : "/?billing=canceled";
 
     if (!STRIPE_SECRET_KEY) {
-      const _result: null = await ctx.runMutation(internal.billing.activateSubscription, {
+      const _result: null = await ctx.runMutation(internal.domains.billing.billing.activateSubscription, {
         userId,
         source: "dev",
       });
@@ -154,7 +154,7 @@ export const createCheckoutSession = action({
     // Free-tier friendly DEV fallback: no Stripe configured
     if (!STRIPE_SECRET_KEY) {
       // Activate immediately server-side, then send user back to the app.
-      const _result: null = await ctx.runMutation(internal.billing.activateSubscription, {
+      const _result: null = await ctx.runMutation(internal.domains.billing.billing.activateSubscription, {
         userId,
         source: "dev",
       });

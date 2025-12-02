@@ -12,8 +12,8 @@ import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 // Import tools
-import { linkupSearch } from "../../tools/linkupSearch";
-import { youtubeSearch } from "../../tools/youtubeSearch";
+import { linkupSearch } from "../../tools/media/linkupSearch";
+import { youtubeSearch } from "../../tools/media/youtubeSearch";
 import {
   findDocument,
   getDocumentContent,
@@ -23,13 +23,13 @@ import {
   createDocument,
   generateEditProposals,
   createDocumentFromAgentContentTool,
-} from "../../tools/documentTools";
+} from "../../tools/document/documentTools";
 import {
   searchMedia,
   analyzeMediaFile,
   getMediaDetails,
   listMediaFiles
-} from "../../tools/mediaTools";
+} from "../../tools/media/mediaTools";
 import {
   listTasks,
   createTask,
@@ -37,27 +37,27 @@ import {
   listEvents,
   createEvent,
   getFolderContents
-} from "../../tools/dataAccessTools";
+} from "../../tools/integration/dataAccessTools";
 import {
   searchSecFilings,
   downloadSecFiling,
   getCompanyInfo
-} from "../../tools/secFilingTools";
+} from "../../tools/sec/secFilingTools";
 import {
   searchHashtag,
   createHashtagDossier,
   getOrCreateHashtagDossier
-} from "../../tools/hashtagSearchTools";
+} from "../../tools/document/hashtagSearchTools";
 import {
   searchTodaysFunding
-} from "../../tools/fundingResearchTools";
+} from "../../tools/financial/fundingResearchTools";
 import {
   enrichFounderInfo,
   enrichInvestmentThesis,
   enrichPatentsAndResearch,
   enrichCompanyDossier
-} from "../../tools/enhancedFundingTools";
-import { searchFiles } from "../../tools/geminiFileSearch";
+} from "../../tools/financial/enhancedFundingTools";
+import { searchFiles } from "../../tools/document/geminiFileSearch";
 
 const streamCancellationControllers = new Map<string, AbortController>();
 
@@ -347,7 +347,7 @@ Always provide clear, helpful responses and confirm actions you take.`,
       return;
     }
 
-    await ctx.runMutation(internal.fastAgentPanelStreaming.insertApiUsage, {
+    await ctx.runMutation(internal.domains.agents.fastAgentPanelStreaming.insertApiUsage, {
       userId: args.userId,
       apiName: "openai",
       operation: "generate",
@@ -620,7 +620,7 @@ export const createThread = action({
 
     // Create streaming thread linked to agent thread
     const now = Date.now();
-    const threadId = await ctx.runMutation(internal.fastAgentPanelStreaming.createThreadInternal, {
+    const threadId = await ctx.runMutation(internal.domains.agents.fastAgentPanelStreaming.createThreadInternal, {
       userId,
       title,
       model: modelName,
@@ -1038,7 +1038,7 @@ export const initiateAsyncStreaming = mutation({
     console.log(`[initiateAsyncStreaming:${requestId}] 🔍 No duplicates found, proceeding with stream scheduling`);
 
     // Schedule async streaming
-    await ctx.scheduler.runAfter(0, internal.fastAgentPanelStreaming.streamAsync, {
+    await ctx.scheduler.runAfter(0, internal.domains.agents.fastAgentPanelStreaming.streamAsync, {
       threadId: streamingThread.agentThreadId,
       promptMessageId: messageId,
       model: modelName,
@@ -1092,7 +1092,7 @@ export const streamAsync = internalAction({
     console.log(`[streamAsync:${executionId}] Thread retrieved:`, { threadId: args.threadId, hasUserId: !!thread?.userId });
 
     // Get our custom thread data for cancel flag
-    const customThread = await ctx.runQuery(internal.fastAgentPanelStreaming.getThreadByAgentId, {
+    const customThread = await ctx.runQuery(internal.domains.agents.fastAgentPanelStreaming.getThreadByAgentId, {
       agentThreadId: args.threadId
     });
 
@@ -1117,7 +1117,7 @@ export const streamAsync = internalAction({
     // OPTION A: Always use CoordinatorAgent directly (no planner overhead)
     // The Coordinator decides internally whether to use tools or answer directly
     if (args.useCoordinator !== false) {
-      const { createCoordinatorAgent } = await import("../../fast_agents/coordinatorAgent");
+      const { createCoordinatorAgent } = await import("./core/coordinatorAgent");
 
       // Create mutable ref for dynamic section tracking
       // This allows setActiveSection to update the current section at runtime
@@ -1239,7 +1239,7 @@ export const streamAsync = internalAction({
       // Reset cancel flag via mutation (actions can't use ctx.db directly)
       if (customThread?._id) {
         try {
-          await ctx.runMutation(internal.fastAgentPanelStreaming.resetCancelFlag, {
+          await ctx.runMutation(internal.domains.agents.fastAgentPanelStreaming.resetCancelFlag, {
             threadId: customThread._id
           });
         } catch (patchErr) {
@@ -1712,7 +1712,7 @@ export const sendMessageInternal = internalAction({
     let chatAgent;
     if (args.useCoordinator !== false) { // Default to coordinator
       console.log('[sendMessageInternal] Using COORDINATOR AGENT for intelligent delegation');
-      const { createCoordinatorAgent } = await import("../../fast_agents/coordinatorAgent");
+      const { createCoordinatorAgent } = await import("./core/coordinatorAgent");
       
       // Create mutable ref for dynamic section tracking
       const sectionIdRef = { current: undefined as string | undefined };
@@ -2073,7 +2073,7 @@ export const uploadFile = action({
     // Mirror into Gemini File Search for retrieval
     let fileSearchStore: string | undefined;
     try {
-      const result: { store: string } | null = await ctx.runAction(internal.fileSearch.uploadFileToSearch, {
+      const result: { store: string } | null = await ctx.runAction(internal.domains.documents.fileSearch.uploadFileToSearch, {
         userId,
         bytes: args.bytes,
         mimeType: args.mimeType,
@@ -2156,7 +2156,7 @@ export const submitFileQuestion = mutation({
     });
 
     // Trigger async response generation
-    await ctx.scheduler.runAfter(0, internal.fastAgentPanelStreaming.generateFileResponse, {
+    await ctx.scheduler.runAfter(0, internal.domains.agents.fastAgentPanelStreaming.generateFileResponse, {
       threadId: thread.agentThreadId,
       promptMessageId: messageId,
       streamThreadId: args.threadId,

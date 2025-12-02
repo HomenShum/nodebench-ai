@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import InlineRichEditor from "../common/InlineRichEditor";
+import InlineRichEditor from "@shared/editors/InlineRichEditor";
 import { MentionHoverPreview } from "../MentionHoverPreview";
 import { TagHoverPreview } from "../TagHoverPreview";
-import UnifiedEditor, { type EditorMode } from "../UnifiedEditor";
+import UnifiedEditor, { type EditorMode } from "@features/editor/components/UnifiedEditor";
 import "./editor-blocks.css";
 
 interface EditorProps {
@@ -164,8 +164,8 @@ const extractPlainFromEditorJS = (data: any): string => {
 };
 
 export function Editor({ documentId, isGridMode, isFullscreen, engine, mode, editable }: EditorProps) {
-  const document = useQuery(api.documents.getById, { documentId });
-  const updateDocument = useMutation(api.documents.update);
+  const document = useQuery(api.domains.documents.documents.getById, { documentId });
+  const updateDocument = useMutation(api.domains.documents.documents.update);
 
   const [text, setText] = useState<string>("");
   const saveTimerRef = useRef<number | null>(null);

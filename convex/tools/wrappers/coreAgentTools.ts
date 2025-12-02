@@ -8,18 +8,18 @@
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { api } from "../../_generated/api";
-import { callCoreAgentMcp } from "../../lib/mcpClient";
-import { MemoryEntry, PlanPayload, PlanStep, PlanStepStatus } from "../../types/agents";
+import { callCoreAgentMcp } from "../../lib/mcpTransport";
+import { MemoryEntry, PlanPayload, PlanStep, PlanStepStatus } from "../../domains/agents/types";
 
 async function createPlanConvex(ctx: any, args: { goal: string; steps: PlanStep[] }) {
-  const planId = await ctx.runMutation(api.agentPlanning.createPlan, {
+  const planId = await ctx.runMutation(api.domains.agents.agentPlanning.createPlan, {
     goal: args.goal,
     steps: args.steps.map((s) => ({
       description: s.step,
       status: s.status,
     })),
   });
-  const plan = await ctx.runQuery(api.agentPlanning.getPlan, { planId });
+  const plan = await ctx.runQuery(api.domains.agents.agentPlanning.getPlan, { planId });
   return {
     source: "convex" as const,
     planId: String(planId),
@@ -30,12 +30,12 @@ async function createPlanConvex(ctx: any, args: { goal: string; steps: PlanStep[
 }
 
 async function updatePlanStepConvex(ctx: any, args: { planId: string; stepIndex: number; status: PlanStepStatus }) {
-  await ctx.runMutation(api.agentPlanning.updatePlanStep, {
+  await ctx.runMutation(api.domains.agents.agentPlanning.updatePlanStep, {
     planId: args.planId as any,
     stepIndex: args.stepIndex,
     status: args.status,
   });
-  const plan = await ctx.runQuery(api.agentPlanning.getPlan, { planId: args.planId });
+  const plan = await ctx.runQuery(api.domains.agents.agentPlanning.getPlan, { planId: args.planId });
   return {
     source: "convex" as const,
     planId: args.planId,
@@ -50,7 +50,7 @@ async function updatePlanStepConvex(ctx: any, args: { planId: string; stepIndex:
 }
 
 async function getPlanConvex(ctx: any, args: { planId: string }) {
-  const plan = await ctx.runQuery(api.agentPlanning.getPlan, { planId: args.planId as any });
+  const plan = await ctx.runQuery(api.domains.agents.agentPlanning.getPlan, { planId: args.planId as any });
   if (!plan) {
     throw new Error(`Plan not found: ${args.planId}`);
   }
@@ -65,7 +65,7 @@ async function getPlanConvex(ctx: any, args: { planId: string }) {
 }
 
 async function writeMemoryConvex(ctx: any, entry: MemoryEntry) {
-  const id = await ctx.runMutation(api.agentMemory.writeMemory, {
+  const id = await ctx.runMutation(api.domains.agents.agentMemory.writeMemory, {
     key: entry.key,
     content: entry.content,
     metadata: entry.metadata,
@@ -74,7 +74,7 @@ async function writeMemoryConvex(ctx: any, entry: MemoryEntry) {
 }
 
 async function readMemoryConvex(ctx: any, key: string) {
-  const entry = await ctx.runQuery(api.agentMemory.readMemory, { key });
+  const entry = await ctx.runQuery(api.domains.agents.agentMemory.readMemory, { key });
   if (!entry) return { source: "convex" as const, entry: null };
   return {
     source: "convex" as const,
@@ -89,7 +89,7 @@ async function readMemoryConvex(ctx: any, key: string) {
 }
 
 async function listMemoryConvex(ctx: any) {
-  const entries = await ctx.runQuery(api.agentMemory.listMemory, {});
+  const entries = await ctx.runQuery(api.domains.agents.agentMemory.listMemory, {});
   return {
     source: "convex" as const,
     entries: entries.map((e: any) => ({
@@ -103,7 +103,7 @@ async function listMemoryConvex(ctx: any) {
 }
 
 async function deleteMemoryConvex(ctx: any, key: string) {
-  await ctx.runMutation(api.agentMemory.deleteMemory, { key });
+  await ctx.runMutation(api.domains.agents.agentMemory.deleteMemory, { key });
   return { source: "convex" as const, deleted: true, key };
 }
 

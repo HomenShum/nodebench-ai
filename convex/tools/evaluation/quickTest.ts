@@ -136,7 +136,7 @@ export const testTool = action({
     console.log(`Coordinator: ${args.useCoordinator !== false ? "ENABLED" : "DISABLED"}\n`);
 
     try {
-      const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
+      const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
         message: args.userQuery,
         useCoordinator: args.useCoordinator,
       });
@@ -174,7 +174,7 @@ export const testDocumentTools = action({
       console.log(`Expected: ${test.expectedTool}`);
 
       try {
-        const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
+        const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
           message: test.query,
         });
 
@@ -233,7 +233,7 @@ export const testWebSearch = action({
       console.log(`\nQuery: "${query}"`);
 
       try {
-        const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
+        const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
           message: query,
         });
 
@@ -323,7 +323,7 @@ export const testCoordinator = action({
       console.log("-".repeat(80));
 
       try {
-        const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
+        const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
           message: test.query,
           useCoordinator: true, // Enable coordinator
         });
@@ -438,7 +438,7 @@ export const testWorkflow = action({
     console.log(`Workflow: "${workflow}"\n`);
 
     try {
-      const result = await ctx.runAction(internal.fastAgentPanelStreaming.sendMessageInternal, {
+      const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
         message: workflow,
         useCoordinator: true, // Enable coordinator
       });

@@ -24,14 +24,14 @@ export const listAgendaInRange = query({
 
     // Fetch documents tagged as events and tasks
     const [eventDocs, taskDocs, holidays, notes]: [any[], any[], any[], any[]] = await Promise.all([
-      ctx.runQuery(api.documents.listDocumentsByTag, { tag: "event" }),
-      ctx.runQuery(api.documents.listDocumentsByTag, { tag: "task" }),
+      ctx.runQuery(api.domains.documents.documents.listDocumentsByTag, { tag: "event" }),
+      ctx.runQuery(api.domains.documents.documents.listDocumentsByTag, { tag: "task" }),
       ctx.runQuery((api as any).holidays.listHolidaysInRange, {
         country,
         start: args.holidaysStartUtc ?? args.start,
         end: args.holidaysEndUtc ?? args.end,
       }),
-      ctx.runQuery(api.documents.listNotesInRange, { start: args.start, end: args.end }),
+      ctx.runQuery(api.domains.documents.documents.listNotesInRange, { start: args.start, end: args.end }),
     ]);
 
     // Parse metadata from event documents and filter by date range

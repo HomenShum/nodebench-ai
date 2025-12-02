@@ -48,7 +48,7 @@ export const addContextPublic = action({
   args: { title: v.string(), text: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await ctx.runAction(internal.rag.addContext, args);
+    await ctx.runAction(internal.domains.search.rag.addContext, args);
     return null;
   },
 });
@@ -64,7 +64,7 @@ export const askQuestion = action({
     candidateDocs: v.array(candidateDocValidator),
   }),
   handler: async (ctx, { prompt }): Promise<{ answer: string; contextText: string; candidateDocs: any[] }> => {
-    return await ctx.runAction(internal.rag.answerQuestionViaRAG, { prompt });
+    return await ctx.runAction(internal.domains.search.rag.answerQuestionViaRAG, { prompt });
   },
 });
 
@@ -94,7 +94,7 @@ export const addDocumentToRag = internalAction({
   },
   returns: v.null(),
   handler: async (ctx, { documentId }) => {
-    const doc = await ctx.runQuery(api.documents.getById, { documentId });
+    const doc = await ctx.runQuery(api.domains.documents.documents.getById, { documentId });
     if (!doc) throw new Error("document not found");
 
     // Attempt to extract plain text from TipTap JSON; fallback to raw content
@@ -119,7 +119,7 @@ export const addDocumentToRag = internalAction({
   },
 });
 
-/* keywordSearch moved to V8 file convex/rag_queries.ts */
+/* keywordSearch moved to V8 file convex/domains/search/ragQueries.ts */
 
 /* ------------------------------------------------------------------ */
 /* InternalAction: answerQuestionViaRAG (hybrid vector + keyword)      */
@@ -142,9 +142,9 @@ export const answerQuestionViaRAG = internalAction({
       chunkContext: { before: 1, after: 1 },
     });
 
-    // 2) Keyword search via index on nodes.text (defined in rag_queries.ts)
+    // 2) Keyword search via index on nodes.text (defined in ragQueries.ts)
     const keyword: Array<{ nodeId: Id<"nodes">; documentId: Id<"documents">; text?: string }>
-      = await ctx.runQuery(api.rag_queries.keywordSearch, { query: prompt, limit: 5 });
+      = await ctx.runQuery(api.domains.search.ragQueries.keywordSearch, { query: prompt, limit: 5 });
     const keywordText: string = keyword
       .map((k: { documentId: Id<"documents">; text?: string }) => `• [doc ${k.documentId}] ${k.text ?? ""}`)
       .filter(Boolean)
@@ -242,7 +242,7 @@ export const answerQuestionViaRAG = internalAction({
     // Hydrate titles
     for (const [, cand] of Array.from(byDoc.entries())) {
       try {
-        const doc = await ctx.runQuery(api.documents.getById, { documentId: cand.documentId });
+        const doc = await ctx.runQuery(api.domains.documents.documents.getById, { documentId: cand.documentId });
         if (doc?.title) {
           cand.title = doc.title;
         }

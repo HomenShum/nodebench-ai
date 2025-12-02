@@ -1,7 +1,7 @@
-import { auth } from "./auth";
+import { auth } from "./domains/auth/auth";
 import router from "./router";
-import { polar } from "./polar";
-import { ossStats } from "./ossStats";
+import { polar } from "./domains/integrations/polar";
+import { ossStats } from "./domains/analytics/ossStats";
 
 const http = router;
 

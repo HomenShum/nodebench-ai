@@ -62,7 +62,7 @@ export const analyzeFileWithGenAI = action({
       if (args.fileId) {
         // --- PATH 1: Handle File Input ---
         persistenceId = args.fileId;
-        const file = await ctx.runQuery(internal.files.getFile, {
+        const file = await ctx.runQuery(internal.domains.documents.files.getFile, {
           fileId: args.fileId,
         });
         
@@ -146,7 +146,7 @@ export const analyzeFileWithGenAI = action({
       // Save analysis results - handle files vs URLs differently
       if (args.fileId && persistenceId) {
         // For file analysis, update the file record
-        await ctx.runMutation(internal.files.updateFileAnalysis, {
+        await ctx.runMutation(internal.domains.documents.files.updateFileAnalysis, {
           fileId: persistenceId,
           analysis: analysisResult.analysis,
           structuredData: analysisResult.structuredData,
@@ -155,7 +155,7 @@ export const analyzeFileWithGenAI = action({
         });
       } else if (args.url) {
         // For URL analysis, create a URL analysis record
-        await ctx.runMutation(internal.files.createUrlAnalysis, {
+        await ctx.runMutation(internal.domains.documents.files.createUrlAnalysis, {
           url: args.url,
           analysis: analysisResult.analysis,
           structuredData: analysisResult.structuredData,

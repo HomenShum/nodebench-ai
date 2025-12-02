@@ -2,7 +2,7 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { UnifiedHubPills } from '@/components/shared/UnifiedHubPills';
+import { UnifiedHubPills } from '@shared/ui/UnifiedHubPills';
 
 describe('UnifiedHubPills', () => {
   afterEach(() => cleanup());

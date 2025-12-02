@@ -10,16 +10,16 @@ import { toast } from "sonner";
  */
 export function useDocumentActions() {
     // Mutations
-    const createDocument = useMutation(api.documents.create);
-    const createWithSnapshot = useMutation(api.prosemirror.createDocumentWithInitialSnapshot);
-    const updateDocument = useMutation(api.documents.update);
-    const archiveDocument = useMutation(api.documents.archive);
-    const restoreDocument = useMutation(api.documents.restore);
-    const removeDocument = useMutation(api.documents.remove);
-    const clearTrash = useMutation(api.documents.clearTrash);
-    const toggleFavorite = useMutation(api.documents.toggleFavorite);
-    const addTagsToDocument = useMutation(api.documents.addTags);
-    const addDocumentToFolder = useMutation(api.documents.addToFolder);
+    const createDocument = useMutation(api.domains.documents.documents.create);
+    const createWithSnapshot = useMutation(api.domains.documents.prosemirror.createDocumentWithInitialSnapshot);
+    const updateDocument = useMutation(api.domains.documents.documents.update);
+    const archiveDocument = useMutation(api.domains.documents.documents.archive);
+    const restoreDocument = useMutation(api.domains.documents.documents.restore);
+    const removeDocument = useMutation(api.domains.documents.documents.remove);
+    const clearTrash = useMutation(api.domains.documents.documents.clearTrash);
+    const toggleFavorite = useMutation(api.domains.documents.documents.toggleFavorite);
+    const addTagsToDocument = useMutation(api.domains.documents.documents.addTags);
+    const addDocumentToFolder = useMutation(api.domains.documents.documents.addToFolder);
 
     // Archive Handler
     const handleArchive = useCallback((id: Id<"documents">) => {

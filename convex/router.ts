@@ -39,8 +39,8 @@ function base64EncodeAscii(input: string): string {
   return output;
 }
 
-// Voice agent helpers - Import from dedicated voice module
-import { voiceAction, voiceConnect } from "./voice/voiceActions";
+// Voice agent helpers - Import from integrations domain
+import { voiceAction, voiceConnect } from "./domains/integrations/voice/voiceActions";
 
 // JSON-RPC 2.0 MCP-compatible endpoint (minimal, JSON-only)
 // Methods supported:
@@ -165,7 +165,7 @@ http.route({
           // Dispatch tools
           if (name === "list_files") {
             const { fileType, limit } = args as { fileType?: string; limit?: number };
-            const files = await ctx.runQuery(api.files.getUserFiles, {
+            const files = await ctx.runQuery(api.domains.documents.files.getUserFiles, {
               fileType: fileType,
               limit: limit,
             });
@@ -175,7 +175,7 @@ http.route({
           if (name === "get_file_metadata") {
             const { fileId } = args as { fileId?: string };
             if (!fileId) return err(id ?? null, -32602, "fileId is required");
-            const file = await ctx.runQuery(internal.files.getFile, { fileId: fileId as unknown as Id<"files"> });
+            const file = await ctx.runQuery(internal.domains.documents.files.getFile, { fileId: fileId as unknown as Id<"files"> });
             if (!file || file.userId !== identity.subject) {
               return err(id ?? null, -32001, "File not found or access denied", undefined, 404);
             }
@@ -184,21 +184,21 @@ http.route({
 
           if (name === "get_recent_analyses") {
             const { limit } = args as { limit?: number };
-            const analyses = await ctx.runQuery(api.files.getRecentAnalyses, { limit });
+            const analyses = await ctx.runQuery(api.domains.documents.files.getRecentAnalyses, { limit });
             return ok(id ?? null, { tool: name, data: analyses });
           }
 
           if (name === "semantic_search") {
             const { query, limit } = args as { query?: string; limit?: number };
             if (!query) return err(id ?? null, -32602, "query is required");
-            const results = await ctx.runAction(api.rag.semanticSearch, { query, limit });
+            const results = await ctx.runAction(api.domains.search.rag.semanticSearch, { query, limit });
             return ok(id ?? null, { tool: name, data: results });
           }
 
           if (name === "ask_rag") {
             const { prompt } = args as { prompt?: string };
             if (!prompt) return err(id ?? null, -32602, "prompt is required");
-            const result = await ctx.runAction(api.rag.askQuestion, { prompt });
+            const result = await ctx.runAction(api.domains.search.rag.askQuestion, { prompt });
             return ok(id ?? null, { tool: name, data: result });
           }
 
@@ -206,7 +206,7 @@ http.route({
         }
         case "resources/list": {
           // Expose user files as resources (metadata only for now)
-          const files = await ctx.runQuery(api.files.getUserFiles, { limit: 100 });
+          const files = await ctx.runQuery(api.domains.documents.files.getUserFiles, { limit: 100 });
           const resources = files.map((f: any) => ({
             uri: `nodebench://file/${f._id}`,
             name: f.fileName,
@@ -446,7 +446,7 @@ http.route({
     }
 
     const refs = await import("./_generated/api");
-    await ctx.runMutation((refs as any).internal.gmail.saveTokens, {
+    await ctx.runMutation((refs as any).internal.domains.integrations.gmail.saveTokens, {
       email,
       accessToken,
       refreshToken,
@@ -455,7 +455,7 @@ http.route({
       tokenType,
     });
     // Enqueue Gmail sync
-    await ctx.runMutation((refs as any).internal.sync_mutations.enqueueGmailSync, {});
+    await ctx.runMutation((refs as any).internal.domains.documents.syncMutations.enqueueGmailSync, {});
 
     const postRedirect = process.env.GOOGLE_POST_LOGIN_REDIRECT || "/";
     return new Response(null, { status: 302, headers: { Location: postRedirect } });
@@ -522,7 +522,7 @@ http.route({
     const authed_user = tokenJson.authed_user as { id?: string; access_token?: string } | undefined;
 
     const refs = await import("./_generated/api");
-    await ctx.runMutation((refs as any).internal.integrations.slackSaveTokens, {
+    await ctx.runMutation((refs as any).internal.domains.integrations.integrations.slackSaveTokens, {
       teamId: team?.id,
       teamName: team?.name,
       botUserId: bot_user_id,
@@ -533,7 +533,7 @@ http.route({
       tokenType: token_type,
     });
     // Enqueue Slack sync
-    await ctx.runMutation((refs as any).internal.sync_mutations.enqueueSlackSync, {});
+    await ctx.runMutation((refs as any).internal.domains.documents.syncMutations.enqueueSlackSync, {});
 
     const postRedirect = process.env.SLACK_POST_LOGIN_REDIRECT || "/";
     return new Response(null, { status: 302, headers: { Location: postRedirect } });
@@ -609,14 +609,14 @@ http.route({
     }
 
     const refs = await import("./_generated/api");
-    await ctx.runMutation((refs as any).internal.integrations.githubSaveTokens, {
+    await ctx.runMutation((refs as any).internal.domains.integrations.integrations.githubSaveTokens, {
       username,
       accessToken: access_token,
       scope,
       tokenType: token_type,
     });
     // Enqueue GitHub sync
-    await ctx.runMutation((refs as any).internal.sync_mutations.enqueueGithubSync, {});
+    await ctx.runMutation((refs as any).internal.domains.documents.syncMutations.enqueueGithubSync, {});
 
     const postRedirect = process.env.GITHUB_POST_LOGIN_REDIRECT || "/";
     return new Response(null, { status: 302, headers: { Location: postRedirect } });
@@ -684,14 +684,14 @@ http.route({
     if (!access_token) return new Response("No access token", { status: 500 });
 
     const refs = await import("./_generated/api");
-    await ctx.runMutation((refs as any).internal.integrations.notionSaveTokens, {
+    await ctx.runMutation((refs as any).internal.domains.integrations.integrations.notionSaveTokens, {
       workspaceId: workspace_id,
       workspaceName: workspace_name,
       botId: bot_id,
       accessToken: access_token,
     });
     // Enqueue Notion sync
-    await ctx.runMutation((refs as any).internal.sync_mutations.enqueueNotionSync, {});
+    await ctx.runMutation((refs as any).internal.domains.documents.syncMutations.enqueueNotionSync, {});
 
     const postRedirect = process.env.NOTION_POST_LOGIN_REDIRECT || "/";
     return new Response(null, { status: 302, headers: { Location: postRedirect } });
@@ -724,13 +724,13 @@ http.route({
       // Try to create the server; if it already exists, fall back to the existing id.
       let serverId: Id<"mcpServers"> | null = null;
       try {
-        serverId = await ctx.runMutation(api.mcp.addMcpServer, { name, url, apiKey });
+        serverId = await ctx.runMutation(api.domains.mcp.mcp.addMcpServer, { name, url, apiKey });
       } catch (err: any) {
         const alreadyExists = err instanceof Error && err.message?.includes("already exists");
         if (!alreadyExists) {
           throw err;
         }
-        const existing = await ctx.runQuery(api.mcp.listMcpServers, {});
+        const existing = await ctx.runQuery(api.domains.mcp.mcp.listMcpServers, {});
         const match = existing.find((s: any) => s.name === name);
         serverId = match?._id ?? null;
       }
@@ -743,10 +743,10 @@ http.route({
       }
 
       // Kick off connection and tool discovery (non-blocking)
-      await ctx.runAction(internal.mcp.connectToServer, { serverId });
+      await ctx.runAction(internal.domains.mcp.mcp.connectToServer, { serverId });
 
       // Return currently discovered tools
-      const tools = await ctx.runQuery(api.mcp.getMcpTools, { serverId, availableOnly: true });
+      const tools = await ctx.runQuery(api.domains.mcp.mcp.getMcpTools, { serverId, availableOnly: true });
 
       return new Response(
         JSON.stringify({
@@ -787,7 +787,7 @@ http.route({
         });
       }
 
-      await ctx.runAction(internal.mcp.disconnectFromServer, { serverId });
+      await ctx.runAction(internal.domains.mcp.mcp.disconnectFromServer, { serverId });
       return new Response(JSON.stringify({ message: "Disconnected from MCP server", serverId }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -822,7 +822,7 @@ http.route({
         });
       }
 
-      const result = await ctx.runAction((api as any).mcpClient.callMcpTool, {
+      const result = await ctx.runAction((api as any).domains.mcp.mcpClient.callMcpTool, {
         serverId,
         toolName,
         parameters: args ?? {},
@@ -877,7 +877,7 @@ http.route({
     };
 
     try {
-      const streamingMessage = await ctx.runQuery(api.fastAgentPanelStreaming.getMessageByStreamId, {
+      const streamingMessage = await ctx.runQuery(api.domains.agents.fastAgentPanelStreaming.getMessageByStreamId, {
         streamId,
       });
 
@@ -891,7 +891,7 @@ http.route({
         });
       }
 
-      const streamingThread = await ctx.runQuery(api.fastAgentPanelStreaming.getThreadByStreamId, {
+      const streamingThread = await ctx.runQuery(api.domains.agents.fastAgentPanelStreaming.getThreadByStreamId, {
         threadId: streamingMessage.threadId,
       });
 
@@ -905,7 +905,7 @@ http.route({
         });
       }
 
-      const messages = await ctx.runQuery(internal.fastAgentPanelStreaming.getThreadMessagesForStreaming, {
+      const messages = await ctx.runQuery(internal.domains.agents.fastAgentPanelStreaming.getThreadMessagesForStreaming, {
         threadId: streamingMessage.threadId,
       });
 
@@ -953,7 +953,7 @@ http.route({
             await chunkAppender(chunk);
           }
 
-          await ctx.runMutation(internal.fastAgentPanelStreaming.markStreamComplete, {
+          await ctx.runMutation(internal.domains.agents.fastAgentPanelStreaming.markStreamComplete, {
             messageId: streamingMessage._id,
             finalContent: fullResponse,
             status: "complete",
@@ -962,7 +962,7 @@ http.route({
           const errorMsg = error instanceof Error ? error.message : String(error);
           await chunkAppender(`Error: ${errorMsg}`);
 
-          await ctx.runMutation(internal.fastAgentPanelStreaming.markStreamComplete, {
+          await ctx.runMutation(internal.domains.agents.fastAgentPanelStreaming.markStreamComplete, {
             messageId: streamingMessage._id,
             finalContent: fullResponse || `Error: ${errorMsg}`,
             status: "error",
@@ -1023,7 +1023,7 @@ http.route({
     }
     try {
       const refs = await import("./_generated/api");
-      await ctx.runMutation((refs as any).internal.billing.activateSubscription, {
+      await ctx.runMutation((refs as any).internal.domains.billing.billing.activateSubscription, {
         userId: identity.subject as Id<"users">,
         source: "dev",
       });
@@ -1088,7 +1088,7 @@ http.route({
 
     try {
       const refs = await import("./_generated/api");
-      await ctx.runMutation((refs as any).internal.billing.activateSubscription, {
+      await ctx.runMutation((refs as any).internal.domains.billing.billing.activateSubscription, {
         userId: targetUserId,
         source: STRIPE_SECRET_KEY ? "stripe" : "dev",
         sessionId,

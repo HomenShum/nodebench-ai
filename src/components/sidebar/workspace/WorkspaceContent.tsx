@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "../../../../convex/_generated/dataModel";
 
 export interface WorkspaceContentProps {
     // We'll populate this as we extract the full implementation

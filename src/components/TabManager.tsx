@@ -2,9 +2,9 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
-import { DocumentGrid, type GridTab } from "./DocumentGrid";
-import { DocumentView } from "@/components/views/DocumentView";
-import { CalendarHomeHub } from "./CalendarHomeHub";
+import { DocumentGrid, type GridTab } from "@/features/documents/components/DocumentGrid";
+import { DocumentView } from "@/features/documents/views/DocumentView";
+import { CalendarHomeHub } from "@/features/calendar/components/CalendarHomeHub";
 import { X } from "lucide-react";
 
 interface TabManagerProps {
@@ -39,7 +39,7 @@ export function TabManager({
   const iconOnly = containerWidth < 520;
   const compact = !iconOnly && containerWidth < 760;
 
-  const documents = useQuery(api.documents.getSidebar);
+  const documents = useQuery(api.domains.documents.documents.getSidebar);
 
   const addDocumentTab = useCallback(
     (documentId: Id<"documents">) => {

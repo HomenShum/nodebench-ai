@@ -3,8 +3,8 @@ import { toast } from "sonner";
 // SignInForm intentionally not used on the landing anymore.
 import { api } from "../convex/_generated/api";
 import { MainLayout } from "./components/MainLayout";
-import { TutorialPage } from "@/components/views/TutorialPage";
-import WelcomeLanding from "@/components/views/WelcomeLanding";
+import { TutorialPage } from "@/features/onboarding/views/TutorialPage";
+import WelcomeLanding from "@/features/research/views/WelcomeLanding";
 import { useState, useEffect, useRef } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
@@ -14,9 +14,9 @@ function App() {
   const [showWelcomeLanding, setShowWelcomeLanding] = useState(true);
   const [selectedDocumentId, setSelectedDocumentId] = useState<Id<"documents"> | null>(null);
 
-  const user = useQuery(api.auth.loggedInUser);
-  const documents = useQuery(api.documents.getSidebar);
-  const ensureSeedOnLogin = useMutation(api.onboarding.ensureSeedOnLogin);
+  const user = useQuery(api.domains.auth.auth.loggedInUser);
+  const documents = useQuery(api.domains.documents.documents.getSidebar);
+  const ensureSeedOnLogin = useMutation(api.domains.auth.onboarding.ensureSeedOnLogin);
   const didEnsureRef = useRef(false);
 
   // Note: We no longer auto-show tutorial for new users

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import PopoverMiniEditor from "./editors/mini/PopoverMiniEditor";
+import PopoverMiniEditor from "@/features/documents/editors/PopoverMiniEditor";
 
 interface TagHoverPreviewProps {
   editorContainer: HTMLElement | null;
@@ -31,7 +31,7 @@ export function TagHoverPreview({ editorContainer }: TagHoverPreviewProps) {
   const [quickEditDocId, setQuickEditDocId] = useState<Id<"documents"> | null>(null);
 
   const preview = useQuery(
-    api.tags.getPreviewByName,
+    api.domains.knowledge.tags.getPreviewByName,
     hover ? { name: hover.name, limit: 5 } : "skip"
   );
 

@@ -16,7 +16,7 @@ function getGeminiKey(): string {
 }
 
 async function ensureStoreForUser(ctx: any, userId: Id<"users">): Promise<string> {
-  const existing = await ctx.runQuery(internal.fileSearchData.getFileSearchStoreForUser, { userId });
+  const existing = await ctx.runQuery(internal.domains.documents.fileSearchData.getFileSearchStoreForUser, { userId });
   if (existing?.storeName) return existing.storeName;
 
   const apiKey = getGeminiKey();
@@ -30,7 +30,7 @@ async function ensureStoreForUser(ctx: any, userId: Id<"users">): Promise<string
 
   const storeName = fileSearchStore.name || displayName;
 
-  await ctx.runMutation(internal.fileSearchData.createFileSearchStore, {
+  await ctx.runMutation(internal.domains.documents.fileSearchData.createFileSearchStore, {
     userId,
     storeName,
   });
@@ -124,7 +124,7 @@ export const upsertDocument = internalAction({
     v.null()
   ),
   handler: async (ctx, { documentId }) => {
-    const data = await ctx.runQuery(internal.fileSearchData.getDocumentForUpsert, { documentId });
+    const data = await ctx.runQuery(internal.domains.documents.fileSearchData.getDocumentForUpsert, { documentId });
     if (!data || !data.doc) return null;
 
     const { doc, fileData } = data;
@@ -162,7 +162,7 @@ export const upsertDocument = internalAction({
         }
       }
 
-      await ctx.runMutation(internal.fileSearchData.updateDocumentIndexedAt, { documentId });
+      await ctx.runMutation(internal.domains.documents.fileSearchData.updateDocumentIndexedAt, { documentId });
       return { store: storeName };
     } catch (err) {
       console.error("[fileSearch.upsertDocument] upload failed", err);
@@ -221,7 +221,7 @@ export const searchUserFiles = internalAction({
     }
 
     // Get the user's file search store
-    const store = await ctx.runQuery(internal.fileSearchData.getFileSearchStoreForUser, { userId });
+    const store = await ctx.runQuery(internal.domains.documents.fileSearchData.getFileSearchStoreForUser, { userId });
 
     if (!store) {
       return {

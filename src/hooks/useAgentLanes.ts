@@ -76,7 +76,7 @@ export interface AgentLane {
  */
 export function useAgentLanes(runId: string | undefined) {
   const delegations = useQuery(
-    api.agentDelegations.listByRun,
+    api.domains.agents.agentDelegations.listByRun,
     runId ? { runId } : "skip"
   ) as Delegation[] | undefined;
   
@@ -129,7 +129,7 @@ export function useLaneEvents(delegationId: string | undefined) {
   
   // Query for events after lastSeq (incremental fetch)
   const events = useQuery(
-    api.agentDelegations.getWriteEvents,
+    api.domains.agents.agentDelegations.getWriteEvents,
     delegationId ? { 
       delegationId, 
       afterSeq: lastSeqRef.current >= 0 ? lastSeqRef.current : undefined,
@@ -205,7 +205,7 @@ export function useLaneEvents(delegationId: string | undefined) {
  */
 export function useAgentLane(delegationId: string | undefined) {
   const delegation = useQuery(
-    api.agentDelegations.getByDelegationId,
+    api.domains.agents.agentDelegations.getByDelegationId,
     delegationId ? { delegationId } : "skip"
   ) as Delegation | null | undefined;
   

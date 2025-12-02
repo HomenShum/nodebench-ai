@@ -29,7 +29,7 @@ export const runComprehensiveTest = action({
     console.log("\n🚀 Running Comprehensive Test Suite (33 tests in parallel)\n");
 
     // Get test user ID
-    const testUser = await ctx.runQuery(api.seedGoldenDataset.getTestUser, {});
+    const testUser = await ctx.runQuery(api.domains.utilities.seedGoldenDataset.getTestUser, {});
     if (!testUser) {
       throw new Error("No test user found. Please run seedGoldenDataset:seedAll first.");
     }

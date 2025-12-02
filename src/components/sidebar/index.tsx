@@ -29,7 +29,7 @@ import { UserProfile } from "./footer/UserProfile";
 import { TagPickerModal } from "./modals/TagPickerModal";
 import { MoveFolderModal } from "./modals/MoveFolderModal";
 import { ShareModal } from "./modals/ShareModal";
-import TaskEditorPanel from "../TaskEditorPanel";
+import TaskEditorPanel from "@/features/calendar/components/TaskEditorPanel";
 
 export function Sidebar({
     onDocumentSelect,
@@ -51,13 +51,13 @@ export function Sidebar({
     const taskActions = useTaskActions();
 
     // Data queries
-    const documents = useQuery(api.documents.getSidebarWithOptions, {
+    const documents = useQuery(api.domains.documents.documents.getSidebarWithOptions, {
         sortBy: state.sortBy,
         sortOrder: state.sortOrder
     });
-    const publicDocuments = useQuery(api.documents.getPublic);
-    const trash = useQuery(api.documents.getTrash);
-    const userFolders = useQuery(api.folders.getUserFolders);
+    const publicDocuments = useQuery(api.domains.documents.documents.getPublic);
+    const trash = useQuery(api.domains.documents.documents.getTrash);
+    const userFolders = useQuery(api.domains.documents.folders.getUserFolders);
 
     // Handlers for modals
     const handleAddTags = () => {

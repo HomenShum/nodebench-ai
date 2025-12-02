@@ -71,7 +71,7 @@ export const voiceConnect = httpAction(async (ctx, request) => {
     });
 
     // Store session in DB
-    await ctx.runMutation(internal.voice.voiceMutations.createVoiceSession, {
+    await ctx.runMutation(internal.domains.integrations.voice.voiceMutations.createVoiceSession, {
       sessionId,
       userId,
       threadId,
@@ -146,7 +146,7 @@ export const voiceAction = httpAction(async (ctx, request) => {
     let threadId = providedThreadId;
     
     if (!threadId && sessionId) {
-      const session = await ctx.runQuery(internal.voice.voiceMutations.getVoiceSession, {
+      const session = await ctx.runQuery(internal.domains.integrations.voice.voiceMutations.getVoiceSession, {
         sessionId,
       });
       threadId = session?.threadId;
@@ -193,7 +193,7 @@ export const voiceAction = httpAction(async (ctx, request) => {
 
     // Update session activity
     if (sessionId) {
-      await ctx.runMutation(internal.voice.voiceMutations.updateVoiceSessionActivity, {
+      await ctx.runMutation(internal.domains.integrations.voice.voiceMutations.updateVoiceSessionActivity, {
         sessionId,
       });
     }

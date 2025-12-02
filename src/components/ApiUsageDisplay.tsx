@@ -7,7 +7,7 @@ import { api } from '../../convex/_generated/api';
 import { Activity, TrendingUp, DollarSign, AlertCircle } from 'lucide-react';
 
 export function ApiUsageDisplay() {
-  const usageSummary = useQuery(api.apiUsageTracking.getUserApiUsageSummary);
+  const usageSummary = useQuery(api.domains.billing.apiUsageTracking.getUserApiUsageSummary);
 
   if (!usageSummary) {
     return (

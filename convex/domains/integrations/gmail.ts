@@ -205,7 +205,7 @@ async function refreshAccessTokenIfNeeded(ctx: any, account: any) {
   const expiryDate = expiresIn ? Date.now() + expiresIn * 1000 : undefined;
 
   const refs = await import("../../_generated/api");
-  await ctx.runMutation((refs as any).internal.gmail.updateTokens, {
+  await ctx.runMutation((refs as any).internal.domains.integrations.gmail.updateTokens, {
     accessToken: newAccess,
     expiryDate,
     tokenType: data.token_type,
@@ -240,7 +240,7 @@ export const fetchInbox = action({
     if (!userId) return { success: false, error: "Not authenticated" };
 
     const refs = await import("../../_generated/api");
-    const account = await ctx.runQuery((refs as any).internal.gmail.getAccount, {});
+    const account = await ctx.runQuery((refs as any).internal.domains.integrations.gmail.getAccount, {});
     if (!account) {
       return { success: false, error: "No Google account connected" };
     }

@@ -51,9 +51,9 @@ export function CleanSidebar({
   onDocumentSelect,
 }: CleanSidebarProps) {
   const [isDocsOpen, setIsDocsOpen] = useState(true);
-  const user = useQuery(api.auth.loggedInUser);
-  const trash = useQuery(api.documents.getTrash);
-  const documents = useQuery(api.documents.getSidebar);
+  const user = useQuery(api.domains.auth.auth.loggedInUser);
+  const trash = useQuery(api.domains.documents.documents.getTrash);
+  const documents = useQuery(api.domains.documents.documents.getSidebar);
   
   // Get recent documents (limit to 8)
   const recentDocs = (documents ?? []).slice(0, 8);

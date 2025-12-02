@@ -63,29 +63,29 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     }
   }, [isOpen, initialTab]);
 
-  const keyStatuses = useQuery(api.apiKeys.listApiKeyStatuses, {
+  const keyStatuses = useQuery(api.domains.auth.apiKeys.listApiKeyStatuses, {
     providers: PROVIDERS,
   });
 
   // Auth state to gate saving/deleting keys and show hints
-  const user = useQuery(api.auth.loggedInUser);
+  const user = useQuery(api.domains.auth.auth.loggedInUser);
 
   // Usage (daily + 14-day series) per provider
-  const dailyOpenAI = useQuery(api.usage.getDailyUsagePublic, { provider: "openai" });
-  const dailyGemini = useQuery(api.usage.getDailyUsagePublic, { provider: "gemini" });
-  const seriesOpenAI = useQuery(api.usage.getUsageSeries, { provider: "openai", days: 14 });
-  const seriesGemini = useQuery(api.usage.getUsageSeries, { provider: "gemini", days: 14 });
+  const dailyOpenAI = useQuery(api.domains.auth.usage.getDailyUsagePublic, { provider: "openai" });
+  const dailyGemini = useQuery(api.domains.auth.usage.getDailyUsagePublic, { provider: "gemini" });
+  const seriesOpenAI = useQuery(api.domains.auth.usage.getUsageSeries, { provider: "openai", days: 14 });
+  const seriesGemini = useQuery(api.domains.auth.usage.getUsageSeries, { provider: "gemini", days: 14 });
 
   // Billing
-  const subscription = useQuery(api.billing.getSubscription);
+  const subscription = useQuery(api.domains.billing.billing.getSubscription);
 
-  const saveEncryptedApiKey = useMutation(api.apiKeys.saveEncryptedApiKeyPublic);
-  const deleteApiKey = useMutation(api.apiKeys.deleteApiKey);
-  const createPolarCheckout = useAction(api.billing.createPolarCheckout);
+  const saveEncryptedApiKey = useMutation(api.domains.auth.apiKeys.saveEncryptedApiKeyPublic);
+  const deleteApiKey = useMutation(api.domains.auth.apiKeys.deleteApiKey);
+  const createPolarCheckout = useAction(api.domains.billing.billing.createPolarCheckout);
   
   // Calendar UI prefs (timezone)
-  const calendarPrefs = useQuery(api.userPreferences.getCalendarUiPrefs, {});
-  const _saveTimeZone = useMutation(api.userPreferences.setTimeZonePreference);
+  const calendarPrefs = useQuery(api.domains.auth.userPreferences.getCalendarUiPrefs, {});
+  const _saveTimeZone = useMutation(api.domains.auth.userPreferences.setTimeZonePreference);
   const browserTz = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone as string | undefined;
@@ -140,19 +140,19 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   }, [calendarPrefs, browserTz, selectedTz]);
   
   // User preferences (for reminders)
-  const userPreferences = useQuery(api.userPreferences.getUserPreferences);
-  const updateUserPreferences = useMutation(api.userPreferences.updateUserPreferences);
-  const updateUngroupedSectionName = useMutation(api.userPreferences.updateUngroupedSectionName);
-  const updateUngroupedExpandedState = useMutation(api.userPreferences.updateUngroupedExpandedState);
-  const setPlannerViewPrefs = useMutation(api.userPreferences.setPlannerViewPrefs);
-  const setPlannerMode = useMutation(api.userPreferences.setPlannerMode);
-  const upsertCalendarHubSizePct = useMutation(api.userPreferences.upsertCalendarHubSizePct);
+  const userPreferences = useQuery(api.domains.auth.userPreferences.getUserPreferences);
+  const updateUserPreferences = useMutation(api.domains.auth.userPreferences.updateUserPreferences);
+  const updateUngroupedSectionName = useMutation(api.domains.auth.userPreferences.updateUngroupedSectionName);
+  const updateUngroupedExpandedState = useMutation(api.domains.auth.userPreferences.updateUngroupedExpandedState);
+  const setPlannerViewPrefs = useMutation(api.domains.auth.userPreferences.setPlannerViewPrefs);
+  const setPlannerMode = useMutation(api.domains.auth.userPreferences.setPlannerMode);
+  const upsertCalendarHubSizePct = useMutation(api.domains.auth.userPreferences.upsertCalendarHubSizePct);
   // OSS Stats integration
-  const githubOwner = useQuery(api.ossStats.getGithubOwner, { owner: "get-convex" });
-  const npmOrg = useQuery(api.ossStats.getNpmOrg, { name: "convex-dev" });
-  const syncOssStats = useAction(api.ossStats.syncDefault);
-  const syncOssStatsWithUserToken = useAction(api.ossStats.syncPreferUserToken);
-  const ghEncryptedKey = useQuery(api.apiKeys.getEncryptedApiKeyPublic, { provider: "github_access_token" });
+  const githubOwner = useQuery(api.domains.analytics.ossStats.getGithubOwner, { owner: "get-convex" });
+  const npmOrg = useQuery(api.domains.analytics.ossStats.getNpmOrg, { name: "convex-dev" });
+  const syncOssStats = useAction(api.domains.analytics.ossStats.syncDefault);
+  const syncOssStatsWithUserToken = useAction(api.domains.analytics.ossStats.syncPreferUserToken);
+  const ghEncryptedKey = useQuery(api.domains.auth.apiKeys.getEncryptedApiKeyPublic, { provider: "github_access_token" });
   const [syncingStats, setSyncingStats] = useState(false);
   const [savingReminder, setSavingReminder] = useState(false);
   const [savingSectionName, setSavingSectionName] = useState(false);
@@ -161,10 +161,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const [showGithubConfig, setShowGithubConfig] = useState(false);
   
   // Account & Security
-  const sessions = useQuery(api.account.listSessions);
-  const linkedAccounts = useQuery(api.account.listLinkedAccounts);
-  const signOutOtherSessions = useAction(api.account.signOutOtherSessions);
-  const signOutSession = useMutation(api.account.signOutSession);
+  const sessions = useQuery(api.domains.auth.account.listSessions);
+  const linkedAccounts = useQuery(api.domains.auth.account.listLinkedAccounts);
+  const signOutOtherSessions = useAction(api.domains.auth.account.signOutOtherSessions);
+  const signOutSession = useMutation(api.domains.auth.account.signOutSession);
   const [signingOutOthers, setSigningOutOthers] = useState(false);
   const [signingOutSessionId, setSigningOutSessionId] = useState<string | null>(null);
   

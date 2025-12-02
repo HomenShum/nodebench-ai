@@ -71,8 +71,8 @@ export const createFileDocument = mutation({
     });
 
     // Index file document into Gemini File Search asynchronously
-    const api = await import("../../_generated/api");
-    await ctx.scheduler.runAfter(0, api.internal.fileSearch.upsertDocument, { documentId });
+    // Use statically imported 'internal' - dynamic imports are not supported in mutations
+    await ctx.scheduler.runAfter(0, internal.domains.documents.fileSearch.upsertDocument, { documentId });
 
     return documentId;
   },

@@ -11,7 +11,7 @@ const crons = cronJobs();
 crons.interval(
   "refresh US holidays",
   { hours: 24 },
-  (internal as any).holidays_actions.refreshUSCron,
+  internal.domains.calendar.holidaysActions.refreshUSCron,
   {}
 );
 
@@ -23,7 +23,7 @@ crons.interval(
 crons.daily(
   "mark stale entity contexts",
   { hourUTC: 3, minuteUTC: 0 },
-  internal.entityContexts.markStaleContexts,
+  internal.domains.knowledge.entityContexts.markStaleContexts,
   {}
 );
 
