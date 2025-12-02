@@ -3,13 +3,16 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
+import storybook from "eslint-plugin-storybook";
 
 export default tseslint.config(
   {
     ignores: [
-      "dist",
+      "node_modules/**",
+      "dist/**",
+      "build/**",
       "eslint.config.js",
-      "convex/_generated",
+      "convex/_generated/**",
       "postcss.config.js",
       "tailwind.config.js",
       "vite.config.ts",
@@ -72,6 +75,28 @@ export default tseslint.config(
       // Allow async functions without await
       // for consistency (esp. Convex `handler`s)
       "@typescript-eslint/require-await": "off",
+
+      // Prevents referencing hook results before they are declared
+      "no-use-before-define": "off",
+      "@typescript-eslint/no-use-before-define": [
+        "error",
+        { functions: false, classes: true, variables: true },
+      ],
+
+      // Prevent importing from src/shared/* - use shared/* instead
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/src/shared/*"],
+              message: "Import from 'shared/*' instead of 'src/shared/*'. The canonical source is the root shared/ folder.",
+            },
+          ],
+        },
+      ],
     },
   },
+  // Storybook configuration
+  ...storybook.configs["flat/recommended"],
 );

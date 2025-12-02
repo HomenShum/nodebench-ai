@@ -49,3 +49,7 @@ docs/
 !docs/FEATURES.md
 !docs/DESIGN_SYSTEM.md
 !docs/CODESTYLE.md
+!docs/QA_MANUAL.md
+!docs/agents/
+!docs/architecture/
+!docs/prototypes/
