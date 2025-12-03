@@ -30,6 +30,12 @@ import {
   getOrCreateHashtagDossier,
 } from "./tools/hashtagSearchTools";
 import { searchFiles } from "./tools/geminiFileSearch";
+import {
+  readDocumentSections,
+  createDocumentEdit,
+  checkEditStatus,
+  getFailedEdit,
+} from "./tools/deepAgentEditTools";
 
 /**
  * Create a Document Agent instance
@@ -62,7 +68,15 @@ export function createDocumentAgent(model: string) {
    - Use generateEditProposals for suggesting changes
    - Use createDocumentFromAgentContentTool to create documents from your responses
 
-4. **Hashtag-Based Discovery**
+4. **Deep Agent Editing (Anchor-Based)**
+   - When user requests document edits via /edit command, use Deep Agent tools:
+   - First use readDocumentSections to understand document structure
+   - Use createDocumentEdit to create anchor-based SEARCH/REPLACE edits
+   - Use checkEditStatus to monitor edit application
+   - Use getFailedEdit to retrieve failed edits for self-correction
+   - Be PRECISE with anchors and search text - they must match exactly
+
+5. **Hashtag-Based Discovery**
    - Use searchHashtag to find documents by hashtag
    - Use createHashtagDossier or getOrCreateHashtagDossier for hashtag collections
    - Explain hashtag relationships when relevant
@@ -100,6 +114,11 @@ Always structure responses with:
       createHashtagDossier,
       getOrCreateHashtagDossier,
       searchFiles,
+      // Deep Agent editing tools
+      readDocumentSections,
+      createDocumentEdit,
+      checkEditStatus,
+      getFailedEdit,
     },
     stopWhen: stepCountIs(10),
   });

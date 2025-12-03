@@ -100,4 +100,16 @@ crons.weekly(
   { retentionDays: 90 }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Meta-Tool Discovery: Cache maintenance crons
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Cleanup expired tool search cache entries hourly (TTL: 1 hour)
+crons.interval(
+  "cleanup tool search cache",
+  { hours: 1 },
+  internal.tools.meta.hybridSearchQueries.invalidateExpiredCache,
+  {}
+);
+
 export default crons;

@@ -1,6 +1,6 @@
 /**
  * Media Agent - Specialized agent for media discovery and analysis
- * 
+ *
  * Responsibilities:
  * - YouTube video search and discovery
  * - Web content search via LinkUp
@@ -21,6 +21,14 @@ import {
 } from "./tools/mediaTools";
 import { youtubeSearch } from "./tools/youtubeSearch";
 import { linkupSearch } from "./tools/linkupSearch";
+
+// Import meta-tools for hybrid search discovery
+import {
+  searchAvailableTools,
+  listToolCategories,
+  describeTools,
+  invokeTool,
+} from "../../../../../tools/meta";
 
 /**
  * Create a Media Agent instance
@@ -101,6 +109,91 @@ Always structure responses with:
       linkupSearch,
     },
     stopWhen: stepCountIs(8),
+  });
+}
+
+/**
+ * Create a Media Agent with meta-tool discovery (Hybrid Search)
+ *
+ * Uses Convex-native hybrid search combining:
+ * - BM25 keyword search for exact matches
+ * - Vector semantic search for conceptual similarity
+ * - Reciprocal Rank Fusion for optimal ranking
+ *
+ * @param model - Language model to use ("gpt-4o", "gpt-5-chat-latest", etc.)
+ * @returns Configured Media Agent with meta-tools
+ */
+export function createMediaAgentWithMetaTools(model: string) {
+  return new Agent(components.agent, {
+    name: "MediaAgent",
+    languageModel: openai.chat(model),
+    textEmbeddingModel: openai.embedding("text-embedding-3-small"),
+    instructions: `You are a specialized media discovery and analysis agent for NodeBench AI.
+
+## Tool Discovery Workflow (Hybrid Search)
+
+You have access to 50+ tools organized into categories. Use the meta-tools to discover and invoke them:
+
+1. **searchAvailableTools** - Find tools using hybrid search (keyword + semantic)
+   Example: searchAvailableTools({ query: "youtube video" })
+
+2. **listToolCategories** - Browse all tool categories
+   Example: listToolCategories({ showTools: true })
+
+3. **describeTools** - Get full schemas for specific tools
+   Example: describeTools({ toolNames: ["youtubeSearch", "linkupSearch"] })
+
+4. **invokeTool** - Execute a tool after describing it
+   Example: invokeTool({ toolName: "youtubeSearch", arguments: { query: "AI tutorials" } })
+
+## Available Tool Categories
+
+- **media**: Search/analyze images, videos, files
+- **search**: Web search, YouTube, news
+- **document**: Create, read, edit, search documents
+- **sec**: SEC filings and regulatory documents
+- **financial**: Funding research, company financial data
+
+## Core Responsibilities
+
+1. **Video Discovery**
+   - Search: searchAvailableTools({ query: "youtube video" }) → youtubeSearch
+   - Execute: invokeTool({ toolName: "youtubeSearch", arguments: {...} })
+
+2. **Image & Media Discovery**
+   - Search: searchAvailableTools({ query: "search images" }) → searchMedia, linkupSearch
+   - Use internal library first, then web search
+
+3. **Web Content Search**
+   - Search: searchAvailableTools({ query: "web search" }) → linkupSearch
+   - Support text, images, and mixed content
+
+4. **Media File Analysis**
+   - Search: searchAvailableTools({ query: "analyze media" }) → analyzeMediaFile
+   - Get metadata and insights from uploaded files
+
+## Response Format
+
+Always structure responses with:
+- **Summary**: Brief overview of findings
+- **Results**: List of media/content with details
+- **Sources**: Clear indication of where content came from
+- **URLs**: Direct links to videos, images, or articles
+
+## Best Practices
+
+- ALWAYS call searchAvailableTools first when unsure which tool to use
+- Call describeTools before invokeTool to ensure correct arguments
+- Always cite sources (YouTube, web, internal library)
+- Provide clickable URLs when available
+- Use bullet points for clarity`,
+    tools: {
+      searchAvailableTools,
+      listToolCategories,
+      describeTools,
+      invokeTool,
+    },
+    stopWhen: stepCountIs(15),
   });
 }
 

@@ -1283,6 +1283,39 @@ export default defineSchema({
     .index("by_thread", ["threadId"]),
 
   /* ------------------------------------------------------------------ */
+  /* PENDING DOCUMENT EDITS - Deep Agent edit instructions for client   */
+  /* ------------------------------------------------------------------ */
+  pendingDocumentEdits: defineTable({
+    documentId: v.id("documents"),              // Target document
+    userId: v.id("users"),                      // User who initiated the edit
+    agentThreadId: v.string(),                  // Agent thread for correlation
+    documentVersion: v.number(),                // Document version at time of read (OCC)
+    operation: v.object({
+      type: v.literal("anchoredReplace"),       // Edit operation type
+      anchor: v.string(),                       // Text anchor to find position
+      search: v.string(),                       // Text to search for and replace
+      replace: v.string(),                      // Replacement text
+      sectionHint: v.optional(v.string()),      // Human-readable section name
+    }),
+    status: v.union(
+      v.literal("pending"),                     // Awaiting client application
+      v.literal("applied"),                     // Successfully applied
+      v.literal("failed"),                      // Client failed to apply
+      v.literal("cancelled"),                   // User cancelled
+      v.literal("stale"),                       // Document changed since planning
+    ),
+    errorMessage: v.optional(v.string()),       // Error details if failed
+    retryCount: v.number(),                     // Number of retry attempts
+    createdAt: v.number(),                      // When edit was created
+    appliedAt: v.optional(v.number()),          // When edit was applied
+  })
+    .index("by_document", ["documentId"])
+    .index("by_document_status", ["documentId", "status"])
+    .index("by_thread", ["agentThreadId"])
+    .index("by_user", ["userId"])
+    .index("by_document_version", ["documentId", "documentVersion"]),
+
+  /* ------------------------------------------------------------------ */
   /* HUMAN-IN-THE-LOOP - Agent requests for human input                */
   /* ------------------------------------------------------------------ */
   humanRequests: defineTable({
@@ -2329,5 +2362,95 @@ export default defineSchema({
   })
     .index("by_backfillRunId", ["backfillRunId"])
     .index("by_status", ["status"]),
+
+  /* ------------------------------------------------------------------ */
+  /* TOOL REGISTRY - Hybrid Search for Meta-Tool Discovery              */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Central catalog of all tools with BM25 + vector search capabilities
+   */
+  toolRegistry: defineTable({
+    // Core identity
+    toolName: v.string(),           // Unique tool identifier (e.g., "createDocument")
+
+    // Searchable content
+    description: v.string(),        // Full description for BM25 search
+    keywords: v.array(v.string()),  // Keywords for keyword matching
+    keywordsText: v.string(),       // Joined keywords for searchIndex
+
+    // Classification
+    category: v.string(),           // Category key (e.g., "document", "media")
+    categoryName: v.string(),       // Human-readable category name
+
+    // Module location
+    module: v.string(),             // Import path (e.g., "document/documentTools")
+
+    // Optional enhancements
+    examples: v.optional(v.array(v.string())),  // Usage examples
+
+    // Vector embedding for semantic search (1536-dim OpenAI text-embedding-3-small)
+    embedding: v.optional(v.array(v.float64())),
+
+    // Usage & ranking
+    usageCount: v.number(),         // Times this tool was invoked
+    successRate: v.optional(v.number()), // Success rate 0-1
+    avgExecutionMs: v.optional(v.number()), // Average execution time
+
+    // Status
+    isEnabled: v.boolean(),         // Whether tool is available
+
+    // Metadata
+    metadata: v.optional(v.any()),
+  })
+    .index("by_toolName", ["toolName"])
+    .index("by_category", ["category"])
+    .index("by_usage", ["usageCount"])
+    .index("by_enabled", ["isEnabled"])
+    .index("by_enabled_category", ["isEnabled", "category"])
+    .searchIndex("search_description", {
+      searchField: "description",
+      filterFields: ["category", "isEnabled"],
+    })
+    .searchIndex("search_keywords", {
+      searchField: "keywordsText",
+      filterFields: ["category", "isEnabled"],
+    })
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 1536,
+      filterFields: ["category", "isEnabled"],
+    }),
+
+  /**
+   * Tracks individual tool invocations for analytics and popularity ranking
+   */
+  toolUsage: defineTable({
+    toolName: v.string(),           // Tool that was invoked
+    queryText: v.string(),          // Original search query
+    wasSuccessful: v.boolean(),     // Whether execution succeeded
+    executionTimeMs: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    userId: v.optional(v.id("users")),
+  })
+    .index("by_tool", ["toolName"])
+    .index("by_tool_success", ["toolName", "wasSuccessful"]),
+
+  /**
+   * Caches hybrid search results to reduce latency
+   */
+  toolSearchCache: defineTable({
+    queryHash: v.string(),          // SHA-256 hash of normalized query
+    queryText: v.string(),          // Original query text
+    category: v.optional(v.string()),
+    results: v.array(v.object({
+      toolName: v.string(),
+      score: v.number(),
+      matchType: v.string(),
+    })),
+    expiresAt: v.number(),          // Unix timestamp for expiration
+  })
+    .index("by_hash", ["queryHash"])
+    .index("by_expiry", ["expiresAt"]),
 
 });

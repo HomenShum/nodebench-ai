@@ -15,175 +15,39 @@ import { useQuery, useMutation, useConvex } from "convex/react";
 
 import {
   BlockNoteEditor,
-  BlockNoteSchema,
-  defaultInlineContentSpecs,
-  filterSuggestionItems,
   type PartialBlock,
 } from "@blocknote/core";
+import { filterSuggestionItems } from "@blocknote/core/extensions";
 import {
   DefaultReactSuggestionItem,
   SuggestionMenuController,
-  createReactInlineContentSpec,
   getDefaultReactSlashMenuItems,
 } from "@blocknote/react";
 
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
-import ListItem from "@tiptap/extension-list-item";
+// Note: TipTap extensions (TaskList, TaskItem, etc.) removed to fix
+// "Every schema needs a 'text' type" error. BlockNote's default schema
+// already includes list support via bulletListItem, numberedListItem, checkListItem.
 
 import { ProposalProvider, useProposal } from "@/components/proposals/ProposalProvider";
 import { ProposalBar } from "@/components/proposals/ProposalBar";
 import { useInlineFastAgent } from "./UnifiedEditor/useInlineFastAgent";
 import { InlineAgentProgress } from "./UnifiedEditor/InlineAgentProgress";
+import { DeepAgentProgress } from "./UnifiedEditor/DeepAgentProgress";
+import { PendingEditHighlights } from "./UnifiedEditor/PendingEditHighlights";
+import { usePendingEdits } from "../hooks/usePendingEdits";
 
 import { computeStructuredOps, prismHighlight, detectFenceLang, diffWords, annotateMoves, type AnnotatedOp, type MovePair } from "@/components/proposals/diffUtils";
 
 const seededDocCache = new Map<string, string>();
 const restoreCache = new Map<string, { seed: string; signal: number }>();
 
-// Custom Mention inline content for @mentions
-const Mention = createReactInlineContentSpec(
-  {
-    type: "mention",
-    propSchema: {
-      documentId: {
-        default: "",
-      },
-      label: {
-        default: "Unknown",
-      },
-    },
-    content: "none",
-  },
-  {
-    render: (props) => (
-      <span
-        style={{
-          backgroundColor: "#8400ff33",
-          cursor: "pointer",
-          color: "#8400ff",
-          padding: "2px 6px",
-          borderRadius: "6px",
-          fontWeight: 500,
-          border: "1px solid transparent",
-          transition: "all 0.2s",
-        }}
-        data-document-id={props.inlineContent.props.documentId}
-        className="mention"
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--accent-primary)";
-          e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "transparent";
-          e.currentTarget.style.boxShadow = "none";
-        }}
-        onClick={(e: React.MouseEvent) => {
-          e.preventDefault();
-          const docId = props.inlineContent.props.documentId;
-
-          if (!docId) return;
-
-          if (e.detail === 2) {
-            // Double click - open full document
-            window.dispatchEvent(
-              new CustomEvent('nodebench:openDocument', {
-                detail: { documentId: docId }
-              })
-            );
-          } else {
-            // Single click - show mini editor popover
-            window.dispatchEvent(
-              new CustomEvent('nodebench:showMentionPopover', {
-                detail: { documentId: docId }
-              })
-            );
-          }
-        }}
-      >
-        @{props.inlineContent.props.label}
-      </span>
-    ),
-  }
-);
-
-// Custom Hashtag inline content for #hashtags
-const Hashtag = createReactInlineContentSpec(
-  {
-    type: "hashtag",
-    propSchema: {
-      dossierId: {
-        default: "",
-      },
-      hashtag: {
-        default: "",
-      },
-    },
-    content: "none",
-  },
-  {
-    render: (props) => (
-      <span
-        style={{
-          backgroundColor: "#0ea5e933",
-          cursor: "pointer",
-          color: "#0ea5e9",
-          padding: "2px 6px",
-          borderRadius: "6px",
-          fontWeight: 500,
-          border: "1px solid transparent",
-          transition: "all 0.2s",
-        }}
-        data-dossier-id={props.inlineContent.props.dossierId}
-        className="hashtag"
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--accent-primary)";
-          e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "transparent";
-          e.currentTarget.style.boxShadow = "none";
-        }}
-        onClick={(e: React.MouseEvent) => {
-          e.preventDefault();
-          const dossierId = props.inlineContent.props.dossierId;
-          const hashtag = props.inlineContent.props.hashtag;
-
-          if (e.detail === 2) {
-            // Double click - open full dossier
-            if (dossierId) {
-              window.dispatchEvent(
-                new CustomEvent('nodebench:openDocument', {
-                  detail: { documentId: dossierId }
-                })
-              );
-            }
-          } else {
-            // Single click - show quick note popover
-            window.dispatchEvent(
-              new CustomEvent('nodebench:showHashtagQuickNote', {
-                detail: { dossierId, hashtag }
-              })
-            );
-          }
-        }}
-      >
-        #{props.inlineContent.props.hashtag}
-      </span>
-    ),
-  }
-);
-
-// Custom schema with mention and hashtag support
-const schema = BlockNoteSchema.create({
-  inlineContentSpecs: {
-    ...defaultInlineContentSpecs,
-    mention: Mention,
-    hashtag: Hashtag,
-  },
-});
+// Note: Custom mention and hashtag inline content specs removed to fix
+// "Every schema needs a 'text' type" error. The useBlockNoteSync hook creates
+// a headless BlockNoteEditor internally, and React-based inline content specs
+// cannot be initialized in headless mode.
+//
+// Instead, we use plain text with styles for mentions and hashtags.
+// This provides visual distinction while avoiding schema compilation errors.
 
 const extractPlainText = (node: any): string => {
   if (!node) return '';
@@ -346,20 +210,19 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     }
   }, [generateUploadUrl, createFileRecord, convex]);
 
+  // Note: We intentionally do NOT pass the custom schema to editorOptions here.
+  // The useBlockNoteSync hook creates a headless BlockNoteEditor internally,
+  // and passing React-based inline content specs (mention, hashtag) to a headless
+  // editor causes "Every schema needs a 'text' type" errors because the React
+  // rendering parts can't be initialized in headless mode.
+  //
+  // Instead, we'll apply the schema after the editor is created by using
+  // the editor's built-in schema or by recreating the editor with the schema.
   const editorOptions = useMemo(() => ({
-    schema,
     uploadFile, // Add file upload handler
-    _tiptapOptions: {
-      extensions: [
-        // Task/checklist support
-        TaskList,
-        TaskItem.configure({ nested: true }),
-        // Standard list nodes for legacy content
-        ListItem,
-        BulletList,
-        OrderedList,
-      ],
-    },
+    // Note: TipTap extensions (TaskList, TaskItem, etc.) removed to fix
+    // "Every schema needs a 'text' type" error. BlockNote's default schema
+    // already includes list support via bulletListItem, numberedListItem, checkListItem.
   }), [uploadFile]);
 
   // Initialize sync hook
@@ -383,6 +246,40 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     documentId,
   });
 
+  // Subscribe to pending Deep Agent edits and apply them via PmBridge
+  const {
+    pendingEdits,
+    hasFailedEdits,
+    pendingCount,
+    staleCount,
+    isAgentEditing,
+    isProcessing: isDeepAgentProcessing,
+    currentEdit,
+    editsByThread,
+    retryEdit,
+    cancelThreadEdits,
+    cancelAllEdits,
+  } = usePendingEdits(documentId);
+
+  // State for DeepAgentProgress panel
+  const [deepAgentMinimized, setDeepAgentMinimized] = useState(false);
+
+  // Ref for editor container (used for edit highlights)
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
+  // Log Deep Agent edit activity for debugging
+  useEffect(() => {
+    if (isAgentEditing) {
+      console.log(`[UnifiedEditor] Deep Agent editing: ${pendingCount} pending, processing: ${isDeepAgentProcessing}`);
+    }
+    if (hasFailedEdits) {
+      console.warn("[UnifiedEditor] Deep Agent has failed edits - may require user intervention");
+    }
+    if (staleCount > 0) {
+      console.warn(`[UnifiedEditor] ${staleCount} stale edits detected - document may have changed`);
+    }
+  }, [isAgentEditing, pendingCount, hasFailedEdits, staleCount, isDeepAgentProcessing]);
+
   // Add keyboard handler for /ai {question} pattern and prefix replacement
   useEffect(() => {
     if (!sync.editor) return;
@@ -398,6 +295,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         const blockText = rawText.trim();
 
         // 1) SPACE: If user typed exactly "/ai" then pressing space converts it to "🤖 "
+        //    Also handle "/edit" -> "✏️ Edit: "
         if (event.key === ' ' || event.code === 'Space') {
           if (/^\/ai$/i.test(blockText)) {
             console.log('[UnifiedEditor] Replacing "/ai" with "🤖 " on space');
@@ -407,6 +305,21 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               type: 'paragraph',
               content: [
                 { type: 'text', text: '🤖 ', styles: {} },
+              ],
+            });
+            editor.setTextCursorPosition(currentBlock, 'end');
+            return;
+          }
+
+          // Handle /edit -> "✏️ Edit: "
+          if (/^\/edit$/i.test(blockText)) {
+            console.log('[UnifiedEditor] Replacing "/edit" with "✏️ Edit: " on space');
+            event.preventDefault();
+            event.stopPropagation();
+            editor.updateBlock(currentBlock, {
+              type: 'paragraph',
+              content: [
+                { type: 'text', text: '✏️ Edit: ', styles: { bold: true, textColor: 'purple' } },
               ],
             });
             editor.setTextCursorPosition(currentBlock, 'end');
@@ -454,6 +367,72 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             });
             return;
           }
+
+          // 3) ENTER for /edit or ✏️ Edit: patterns - Deep Agent editing mode
+          const editSlash = rawText.match(/^\s*\/edit\s+(.+)$/i);
+          const editEmoji = rawText.match(/^\s*✏️\s*Edit:\s*(.+)$/i);
+          const editMatch = editSlash || editEmoji;
+
+          if (editMatch) {
+            const instruction = editMatch[1].trim();
+            if (!instruction) return;
+            console.log('[UnifiedEditor] ✅ Detected Deep Agent edit instruction:', instruction);
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Get document context for editing
+            let documentContext = "";
+            try {
+              const allBlocks = editor.document;
+              documentContext = allBlocks.slice(0, 20).map((block: any) => {
+                if (block.content && Array.isArray(block.content)) {
+                  return block.content.map((c: any) => c.text || "").join("");
+                }
+                return "";
+              }).filter(Boolean).join("\n").substring(0, 2000);
+            } catch (e) {
+              console.warn("[UnifiedEditor] Could not extract document context:", e);
+            }
+
+            // Show editing indicator
+            editor.updateBlock(currentBlock, {
+              type: 'paragraph',
+              content: [
+                { type: 'text', text: '✏️ ', styles: {} },
+                { type: 'text', text: 'Deep Agent editing: ', styles: { bold: true, textColor: 'purple' } },
+                { type: 'text', text: instruction, styles: { italic: true } },
+              ],
+            });
+
+            // Call Fast Agent with edit-specific prompt
+            const editPrompt = `You are in DOCUMENT EDITING mode. The user wants to edit this document.
+
+INSTRUCTION: ${instruction}
+
+DOCUMENT CONTEXT (first 2000 chars):
+${documentContext}
+
+Use the document editing tools (readDocumentSections, createDocumentEdit) to:
+1. First read the document structure to understand where to make edits
+2. Create anchor-based SEARCH/REPLACE edits for each change
+3. Report on edit status after creating them
+
+Be precise with anchors and search text - they must match exactly what's in the document.`;
+
+            askFastAgent(editPrompt, '').catch((error) => {
+              console.error('[UnifiedEditor] Deep Agent edit error:', error);
+              editor.insertBlocks([
+                {
+                  type: 'paragraph',
+                  content: [
+                    { type: 'text', text: '❌ Deep Agent editing failed. Please try again.', styles: { bold: true, textColor: 'red' } },
+                  ],
+                },
+              ], currentBlock, 'after');
+            });
+            return;
+          }
         }
       } catch (error) {
         console.error('[UnifiedEditor] Error in /ai keyboard handler:', error);
@@ -487,12 +466,14 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
           title: doc.title || 'Untitled',
           onItemClick: () => {
             if (sync.editor) {
+              // Insert mention as styled text instead of custom inline content
               sync.editor.insertInlineContent([
                 {
-                  type: "mention",
-                  props: {
-                    documentId: doc._id,
-                    label: doc.title || 'Untitled',
+                  type: "text",
+                  text: `@${doc.title || 'Untitled'}`,
+                  styles: {
+                    backgroundColor: "#8400ff33",
+                    textColor: "#8400ff",
                   },
                 },
                 " ", // add a space after the mention
@@ -525,12 +506,14 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               subtext: 'Existing hashtag dossier',
               onItemClick: () => {
                 if (sync.editor) {
+                  // Insert hashtag as styled text instead of custom inline content
                   sync.editor.insertInlineContent([
                     {
-                      type: "hashtag",
-                      props: {
-                        dossierId: h._id,
-                        hashtag: h.hashtag,
+                      type: "text",
+                      text: `#${h.hashtag}`,
+                      styles: {
+                        backgroundColor: "#0ea5e933",
+                        textColor: "#0ea5e9",
                       },
                     },
                     " ",
@@ -554,12 +537,14 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             subtext: 'Existing hashtag dossier - click to insert',
             onItemClick: () => {
               if (sync.editor) {
+                // Insert hashtag as styled text instead of custom inline content
                 sync.editor.insertInlineContent([
                   {
-                    type: "hashtag",
-                    props: {
-                      dossierId: existingDossier._id,
-                      hashtag: trimmed,
+                    type: "text",
+                    text: `#${trimmed}`,
+                    styles: {
+                      backgroundColor: "#0ea5e933",
+                      textColor: "#0ea5e9",
                     },
                   },
                   " ",
@@ -620,12 +605,13 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
                 // Remove last 3 items (the placeholder we just inserted)
                 content.splice(-3, 3);
 
-                // Add the actual hashtag
+                // Add the actual hashtag as styled text
                 content.push({
-                  type: "hashtag",
-                  props: {
-                    dossierId,
-                    hashtag: trimmed,
+                  type: "text",
+                  text: `#${trimmed}`,
+                  styles: {
+                    backgroundColor: "#0ea5e933",
+                    textColor: "#0ea5e9",
                   },
                 });
                 content.push(" ");
@@ -764,6 +750,107 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         icon: "🤖",
         subtext: "Type '/ai {your question}' for instant response",
       },
+      {
+        title: "Edit with Deep Agent",
+        onItemClick: () => {
+          // Get current block to check if user typed inline edit instruction
+          const currentBlock = editor.getTextCursorPosition().block;
+          let editInstruction = "";
+
+          // Extract text from current block
+          if (currentBlock.content && Array.isArray(currentBlock.content)) {
+            const blockText = currentBlock.content
+              .map((c: any) => c.text || "")
+              .join("")
+              .trim();
+
+            // Check for "/ai edit " or "/edit " followed by instruction
+            const editMatch = blockText.match(/^\/(?:ai\s+)?edit\s+(.+)$/i);
+            if (editMatch) {
+              editInstruction = editMatch[1].trim();
+            }
+          }
+
+          // If no inline instruction, show placeholder and let user type
+          if (!editInstruction) {
+            editor.updateBlock(currentBlock, {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "✏️ Edit: ",
+                  styles: { bold: true, textColor: "purple" },
+                },
+              ],
+            });
+            editor.setTextCursorPosition(currentBlock, "end");
+            return;
+          }
+
+          // Get document content as context for editing
+          let documentContext = "";
+          try {
+            const allBlocks = editor.document;
+            documentContext = allBlocks.slice(0, 20).map((block: any) => {
+              if (block.content && Array.isArray(block.content)) {
+                return block.content.map((c: any) => c.text || "").join("");
+              }
+              return "";
+            }).filter(Boolean).join("\n").substring(0, 2000);
+          } catch (e) {
+            console.warn("[UnifiedEditor] Could not extract document context:", e);
+          }
+
+          // Show editing indicator
+          editor.updateBlock(currentBlock, {
+            type: "paragraph",
+            content: [
+              { type: "text", text: "✏️ ", styles: {} },
+              { type: "text", text: "Deep Agent editing: ", styles: { bold: true, textColor: "purple" } },
+              { type: "text", text: editInstruction, styles: { italic: true } },
+            ],
+          });
+
+          // Call Fast Agent with edit-specific context and instruction
+          const editPrompt = `You are in DOCUMENT EDITING mode. The user wants to edit this document.
+
+INSTRUCTION: ${editInstruction}
+
+DOCUMENT CONTEXT (first 2000 chars):
+${documentContext}
+
+Use the document editing tools (readDocumentSections, createDocumentEdit) to:
+1. First read the document structure to understand where to make edits
+2. Create anchor-based SEARCH/REPLACE edits for each change
+3. Report on edit status after creating them
+
+Be precise with anchors and search text - they must match exactly what's in the document.`;
+
+          askFastAgent(editPrompt, "").catch((error) => {
+            console.error("[UnifiedEditor] Deep Agent edit error:", error);
+            editor.insertBlocks(
+              [
+                {
+                  type: "paragraph",
+                  content: [
+                    {
+                      type: "text",
+                      text: "❌ Deep Agent editing failed. Please try again.",
+                      styles: { bold: true, textColor: "red" },
+                    },
+                  ],
+                },
+              ],
+              currentBlock,
+              "after"
+            );
+          });
+        },
+        aliases: ["edit", "aiedit", "deepedit"],
+        group: "AI",
+        icon: "✏️",
+        subtext: "Type '/edit {instruction}' to edit document with AI",
+      },
     ];
   }, [askFastAgent]);
 
@@ -818,8 +905,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   const attemptedAutoCreateRef = useRef(false);
   const attemptedSeedRef = useRef(false);
 
-  const editorContainerRef = useRef<HTMLDivElement | null>(null);
-
   // Ensure file/doc notes exist without requiring a manual click
   useEffect(() => {
     if (
@@ -866,6 +951,8 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
 
 
 
+  // Use default BlockNoteEditor for markdown parsing (no custom schema needed)
+  // The custom schema with mention/hashtag is only needed for the main editor
   const parserEditor = useMemo(() => BlockNoteEditor.create(), []);
 
   const blocksFromMarkdown = useCallback(async (md?: string): Promise<any[]> => {
@@ -1142,10 +1229,52 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       };
 
       const onApply = (evt: Event) => {
-        const e = evt as CustomEvent<{ operations?: any[]; documentId?: string }>; // loose type
+        // Extended type for Deep Agent edit support with result callback
+        interface ApplyOperationsDetail {
+          operations?: any[];
+          documentId?: string;
+          documentVersion?: number; // Version at time of edit creation (OCC)
+          editId?: string; // Deep Agent edit ID for tracking
+          anchorOccurrenceStrategy?: "nearest" | "next" | "prev";
+          onResult?: (success: boolean, error?: string) => void; // Callback for result reporting
+        }
+        const e = evt as CustomEvent<ApplyOperationsDetail>;
         const ops: any[] = Array.isArray(e.detail?.operations) ? e.detail?.operations : [];
-        const anchorOccurrenceStrategy = (e.detail as any)?.anchorOccurrenceStrategy as ("nearest" | "next" | "prev" | undefined);
-        if (!ops.length) return;
+        const anchorOccurrenceStrategy = e.detail?.anchorOccurrenceStrategy;
+        const onResult = e.detail?.onResult;
+        const editId = e.detail?.editId;
+        const editDocVersion = e.detail?.documentVersion;
+
+        if (!ops.length) {
+          onResult?.(false, "No operations provided");
+          return;
+        }
+
+        // Optimistic Locking Validation: Check if document version has changed
+        // The edit was created at a specific version - if the document has changed since,
+        // the edit may be stale and could cause conflicts
+        if (typeof editDocVersion === 'number' && typeof safeLatestVersion === 'number') {
+          if (editDocVersion < safeLatestVersion) {
+            const versionDiff = safeLatestVersion - editDocVersion;
+            console.warn(`[PM Bridge] Version mismatch detected: edit version ${editDocVersion}, current version ${safeLatestVersion} (${versionDiff} versions behind)`);
+
+            // Allow small version differences (user may have made minor edits)
+            // but reject if too far behind (document has changed significantly)
+            const MAX_VERSION_DRIFT = 10; // Allow up to 10 versions of drift
+            if (versionDiff > MAX_VERSION_DRIFT) {
+              const errMsg = `Edit is stale: document has changed significantly (${versionDiff} versions behind). Please retry the edit.`;
+              console.error(`[PM Bridge] Rejecting stale edit ${editId}:`, errMsg);
+              onResult?.(false, errMsg);
+              return;
+            } else {
+              console.log(`[PM Bridge] Allowing edit with minor version drift (${versionDiff} versions)`);
+            }
+          }
+        }
+
+        // Track operation results for Deep Agent feedback
+        const operationErrors: string[] = [];
+
         try {
           editor.chain().focus();
 
@@ -1218,9 +1347,10 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               });
 
             } else if (op.type === 'anchoredReplace' && typeof op.anchor === 'string') {
+              // Support both old format (delete/insert) and new format (search/replace)
               const anchor: string = op.anchor;
-              const toDelete: string = typeof op.delete === 'string' ? op.delete : '';
-              const toInsert: string = typeof op.insert === 'string' ? op.insert : '';
+              const toDelete: string = typeof op.delete === 'string' ? op.delete : (typeof op.search === 'string' ? op.search : '');
+              const toInsert: string = typeof op.insert === 'string' ? op.insert : (typeof op.replace === 'string' ? op.replace : '');
 
               // Find all occurrences of the anchor in the flattened plain text
               const occ: number[] = [];
@@ -1235,7 +1365,9 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               }
 
               if (occ.length === 0) {
+                const errMsg = `Anchor not found: "${anchor.slice(0, 50)}${anchor.length > 50 ? '...' : ''}"`;
                 console.warn('[PM Bridge] anchoredReplace: anchor not found', { anchor });
+                operationErrors.push(errMsg);
                 continue;
               }
 
@@ -1267,7 +1399,9 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
                 if (toInsert) chain.insertContentAt(pmFrom, toInsert);
                 chain.run();
               } else {
+                const errMsg = `Failed to map offsets for anchor: "${anchor.slice(0, 30)}..."`;
                 console.warn('[PM Bridge] anchoredReplace: failed to map plain offsets', { fromPlain, toPlain, anchor });
+                operationErrors.push(errMsg);
               }
 
             } else if (op.type === 'replaceDocument' && typeof op.content === 'string') {
@@ -1275,8 +1409,20 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               if (op.content) editor.chain().insertContent(op.content).run();
             }
           }
+
+          // Report success/failure to Deep Agent via callback
+          if (onResult) {
+            if (operationErrors.length > 0) {
+              onResult(false, operationErrors.join("; "));
+            } else {
+              onResult(true);
+            }
+          }
         } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
           console.warn('[PM Bridge] apply operations failed', err);
+          // Report failure to Deep Agent
+          onResult?.(false, `Operation failed: ${errorMsg}`);
         }
       };
 
@@ -1286,7 +1432,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         window.removeEventListener('nodebench:ai:requestPmContext', onRequest as EventListener);
         window.removeEventListener('nodebench:ai:applyPmOperations', onApply as EventListener);
       };
-    }, [editor, documentId]);
+    }, [editor, documentId, safeLatestVersion]);
 
     // Broadcast editor focus/selection with a lightweight preview for Chat auto-selection and chips
     useEffect(() => {
@@ -1977,42 +2123,77 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         </div>
       )}
 
-          <BlockNoteView
-            editor={sync.editor}
-            theme={document?.documentElement?.classList?.contains?.("dark") ? "dark" : "light"}
-            slashMenu={false}
-            editable={editable as any}
-            data-block-id-attribute="data-block-id"
-          >
-            {/* Custom slash menu with Fast Agent integration */}
-            {!disableSlashMenu && (
+      {/* Deep Agent Progress Indicator */}
+      {isAgentEditing && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '20px',
+            zIndex: 1000,
+          }}
+        >
+          <DeepAgentProgress
+            pendingEdits={pendingEdits}
+            isProcessing={isDeepAgentProcessing}
+            currentEdit={currentEdit}
+            editsByThread={editsByThread}
+            onRetryEdit={retryEdit}
+            onCancelThread={cancelThreadEdits}
+            onCancelAll={cancelAllEdits}
+            minimized={deepAgentMinimized}
+            onToggleMinimized={() => setDeepAgentMinimized(!deepAgentMinimized)}
+          />
+        </div>
+      )}
+
+          {/* Editor container with pending edit highlights */}
+          <div ref={editorContainerRef} style={{ position: 'relative' }}>
+            {/* Pending Edit Highlights Overlay */}
+            <PendingEditHighlights
+              editor={sync.editor}
+              pendingEdits={pendingEdits}
+              currentEdit={currentEdit}
+              containerRef={editorContainerRef}
+            />
+
+            <BlockNoteView
+              editor={sync.editor}
+              theme={document?.documentElement?.classList?.contains?.("dark") ? "dark" : "light"}
+              slashMenu={false}
+              editable={editable as any}
+              data-block-id-attribute="data-block-id"
+            >
+              {/* Custom slash menu with Fast Agent integration */}
+              {!disableSlashMenu && (
+                <SuggestionMenuController
+                  triggerCharacter={"/"}
+                  getItems={async (query) =>
+                    filterSuggestionItems(
+                      sync.editor ? getCustomSlashMenuItems(sync.editor) : [],
+                      query
+                    )
+                  }
+                />
+              )}
+
+              {/* Adds a mentions menu which opens with the "@" key */}
               <SuggestionMenuController
-                triggerCharacter={"/"}
+                triggerCharacter={"@"}
                 getItems={async (query) =>
-                  filterSuggestionItems(
-                    sync.editor ? getCustomSlashMenuItems(sync.editor) : [],
-                    query
-                  )
+                  filterSuggestionItems(await getMentionMenuItems(query), query)
                 }
               />
-            )}
 
-            {/* Adds a mentions menu which opens with the "@" key */}
-            <SuggestionMenuController
-              triggerCharacter={"@"}
-              getItems={async (query) =>
-                filterSuggestionItems(await getMentionMenuItems(query), query)
-              }
-            />
-
-            {/* Adds a hashtags menu which opens with the "#" key */}
-            <SuggestionMenuController
-              triggerCharacter={"#"}
-              getItems={async (query) =>
-                filterSuggestionItems(await getHashtagMenuItems(query), query)
-              }
-            />
-          </BlockNoteView>
+              {/* Adds a hashtags menu which opens with the "#" key */}
+              <SuggestionMenuController
+                triggerCharacter={"#"}
+                getItems={async (query) =>
+                  filterSuggestionItems(await getHashtagMenuItems(query), query)
+                }
+              />
+            </BlockNoteView>
+          </div>
 
 
         </div>

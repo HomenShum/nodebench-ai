@@ -81,11 +81,11 @@ export function usePlannerState() {
 
   // Aggregated agenda for today and week
   const todayAgendaRaw = useQuery(
-    (api as any).calendar.listAgendaInRange,
+    api.domains.calendar.calendar.listAgendaInRange,
     loggedInUser ? { start: agendaStartUtc, end: agendaEndUtc, country: "US", holidaysStartUtc: todayHolidayRange.startUtc, holidaysEndUtc: todayHolidayRange.endUtc } : "skip",
   );
   const weekAgendaRaw = useQuery(
-    (api as any).calendar.listAgendaInRange,
+    api.domains.calendar.calendar.listAgendaInRange,
     loggedInUser ? { start: weekStartUtc, end: weekEndUtc, country: "US", holidaysStartUtc: weekHolidayRange.startUtc, holidaysEndUtc: weekHolidayRange.endUtc } : "skip",
   );
 

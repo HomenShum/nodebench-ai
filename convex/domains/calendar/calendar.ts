@@ -26,7 +26,7 @@ export const listAgendaInRange = query({
     const [eventDocs, taskDocs, holidays, notes]: [any[], any[], any[], any[]] = await Promise.all([
       ctx.runQuery(api.domains.documents.documents.listDocumentsByTag, { tag: "event" }),
       ctx.runQuery(api.domains.documents.documents.listDocumentsByTag, { tag: "task" }),
-      ctx.runQuery((api as any).holidays.listHolidaysInRange, {
+      ctx.runQuery(api.domains.calendar.holidays.listHolidaysInRange, {
         country,
         start: args.holidaysStartUtc ?? args.start,
         end: args.holidaysEndUtc ?? args.end,

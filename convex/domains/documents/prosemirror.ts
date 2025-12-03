@@ -2,12 +2,13 @@ import { components } from "../../_generated/api";
 import { ProsemirrorSync } from "@convex-dev/prosemirror-sync";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { DataModel, Id } from "../../_generated/dataModel";
-import { mutation } from "../../_generated/server";
+import { mutation, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { api } from "../../_generated/api";
 
 /**
  * Sanitize ProseMirror content to remove unsupported node types
+ * Converts mentions and hashtags to styled text nodes
  */
 const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
   try {
@@ -16,6 +17,9 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
     type PMLikeNode = {
       type?: unknown;
       content?: unknown;
+      attrs?: Record<string, unknown>;
+      marks?: unknown[];
+      text?: string;
       [key: string]: unknown;
     };
 
@@ -34,7 +38,33 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
         const pmNode = node as PMLikeNode;
         const nodeType = typeof pmNode.type === "string" ? pmNode.type : undefined;
         if (nodeType) {
-          // Remove unsupported node types
+          // Convert mention inline content to styled text
+          if (nodeType === "mention") {
+            const label = pmNode.attrs?.label || pmNode.attrs?.id || "";
+            return {
+              type: "text",
+              text: `@${label}`,
+              marks: [
+                { type: "textColor", attrs: { stringValue: "#8400ff" } },
+                { type: "backgroundColor", attrs: { stringValue: "#8400ff33" } },
+              ],
+            };
+          }
+
+          // Convert hashtag inline content to styled text
+          if (nodeType === "hashtag") {
+            const name = pmNode.attrs?.name || pmNode.attrs?.hashtag || pmNode.attrs?.label || "";
+            return {
+              type: "text",
+              text: `#${name}`,
+              marks: [
+                { type: "textColor", attrs: { stringValue: "#0ea5e9" } },
+                { type: "backgroundColor", attrs: { stringValue: "#0ea5e933" } },
+              ],
+            };
+          }
+
+          // Remove unsupported block node types
           const unsupportedTypes = ["horizontalRule"];
           if (unsupportedTypes.includes(nodeType)) {
             return null;
@@ -264,5 +294,196 @@ export const createDocumentWithInitialSnapshot = mutation({
     await prosemirrorSync.create(ctx, docId, safeDoc);
 
     return docId;
+  },
+});
+
+/**
+ * Migration mutation to sanitize all existing document content
+ * Converts mentions and hashtags to styled text nodes
+ */
+export const migrateDocumentContent = mutation({
+  args: {},
+  returns: v.object({
+    processed: v.number(),
+    updated: v.number(),
+    errors: v.array(v.string()),
+  }),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const documents = await ctx.db.query("documents").collect();
+    let processed = 0;
+    let updated = 0;
+    const errors: string[] = [];
+
+    for (const doc of documents) {
+      processed++;
+      if (!doc.content) continue;
+
+      try {
+        const sanitized = sanitizeProseMirrorSnapshot(doc.content);
+        if (sanitized !== doc.content) {
+          await ctx.db.patch(doc._id, { content: sanitized });
+          updated++;
+          console.log(`[migration] Sanitized document ${doc._id}: ${doc.title}`);
+        }
+      } catch (err) {
+        const errMsg = `Error processing ${doc._id}: ${err}`;
+        errors.push(errMsg);
+        console.error(`[migration] ${errMsg}`);
+      }
+    }
+
+    console.log(`[migration] Complete: ${processed} processed, ${updated} updated, ${errors.length} errors`);
+    return { processed, updated, errors };
+  },
+});
+
+/**
+ * Reset prosemirror-sync snapshots for a specific document
+ * This deletes the cached snapshot so it will be recreated from the sanitized document content
+ */
+export const resetDocumentSnapshot = mutation({
+  args: {
+    documentId: v.id("documents"),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const doc = await ctx.db.get(args.documentId);
+    if (!doc) {
+      throw new Error("Document not found");
+    }
+
+    // First sanitize the document content
+    if (doc.content) {
+      const sanitized = sanitizeProseMirrorSnapshot(doc.content);
+      if (sanitized !== doc.content) {
+        await ctx.db.patch(args.documentId, { content: sanitized });
+        console.log(`[resetSnapshot] Sanitized document ${args.documentId}`);
+      }
+    }
+
+    // Delete the prosemirror-sync snapshot using the component API
+    // This will cause the editor to create a new snapshot from the document content
+    try {
+      await ctx.runMutation(components.prosemirrorSync.lib.deleteDocument, {
+        id: args.documentId,
+      });
+      console.log(`[resetSnapshot] Deleted snapshot for ${args.documentId}`);
+      return true;
+    } catch (err) {
+      console.error(`[resetSnapshot] Error deleting snapshot: ${err}`);
+      return false;
+    }
+  },
+});
+
+/**
+ * Reset ALL prosemirror-sync snapshots
+ * This is a nuclear option - use with caution
+ */
+export const resetAllSnapshots = mutation({
+  args: {},
+  returns: v.object({
+    processed: v.number(),
+    reset: v.number(),
+    errors: v.array(v.string()),
+  }),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const documents = await ctx.db.query("documents").collect();
+    let processed = 0;
+    let reset = 0;
+    const errors: string[] = [];
+
+    for (const doc of documents) {
+      processed++;
+
+      try {
+        // First sanitize the document content
+        if (doc.content) {
+          const sanitized = sanitizeProseMirrorSnapshot(doc.content);
+          if (sanitized !== doc.content) {
+            await ctx.db.patch(doc._id, { content: sanitized });
+          }
+        }
+
+        // Delete the prosemirror-sync snapshot
+        await ctx.runMutation(components.prosemirrorSync.lib.deleteDocument, {
+          id: doc._id,
+        });
+        reset++;
+      } catch (err) {
+        // Ignore errors for documents that don't have snapshots
+        const errStr = String(err);
+        if (!errStr.includes("not found")) {
+          errors.push(`${doc._id}: ${errStr}`);
+        }
+      }
+    }
+
+    console.log(`[resetAllSnapshots] Complete: ${processed} processed, ${reset} reset, ${errors.length} errors`);
+    return { processed, reset, errors };
+  },
+});
+
+/**
+ * Internal migration - no auth required
+ * Use this from the Convex dashboard or CLI
+ */
+export const internalResetAllSnapshots = internalMutation({
+  args: {},
+  returns: v.object({
+    processed: v.number(),
+    reset: v.number(),
+    errors: v.array(v.string()),
+  }),
+  handler: async (ctx) => {
+    const documents = await ctx.db.query("documents").collect();
+    let processed = 0;
+    let reset = 0;
+    const errors: string[] = [];
+
+    for (const doc of documents) {
+      processed++;
+
+      try {
+        // First sanitize the document content
+        if (doc.content) {
+          const sanitized = sanitizeProseMirrorSnapshot(doc.content);
+          if (sanitized !== doc.content) {
+            await ctx.db.patch(doc._id, { content: sanitized });
+            console.log(`[migration] Sanitized document ${doc._id}: ${doc.title}`);
+          }
+        }
+
+        // Delete the prosemirror-sync snapshot
+        await ctx.runMutation(components.prosemirrorSync.lib.deleteDocument, {
+          id: doc._id,
+        });
+        reset++;
+      } catch (err) {
+        // Ignore errors for documents that don't have snapshots
+        const errStr = String(err);
+        if (!errStr.includes("not found")) {
+          errors.push(`${doc._id}: ${errStr}`);
+        }
+      }
+    }
+
+    console.log(`[internalResetAllSnapshots] Complete: ${processed} processed, ${reset} reset, ${errors.length} errors`);
+    return { processed, reset, errors };
   },
 });

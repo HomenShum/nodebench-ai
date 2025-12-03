@@ -60,6 +60,49 @@ export const listForUser = query({
 });
 
 /**
+ * Get timeline by document ID
+ */
+export const getByDocumentId = query({
+  args: { documentId: v.id("documents") },
+  handler: async (ctx, args) => {
+    const userId = await getSafeUserId(ctx);
+
+    // Find timeline for this document
+    const timeline = await ctx.db
+      .query("agentTimelines")
+      .filter((q) => q.eq(q.field("documentId"), args.documentId))
+      .first();
+
+    if (!timeline) {
+      return null;
+    }
+
+    // Check authorization
+    if (timeline.createdBy !== userId) {
+      return null; // Return null instead of throwing for non-owner
+    }
+
+    // Get associated tasks
+    const tasks = await ctx.db
+      .query("agentTasks")
+      .filter((q) => q.eq(q.field("timelineId"), timeline._id))
+      .collect();
+
+    // Get associated links
+    const links = await ctx.db
+      .query("agentLinks")
+      .filter((q) => q.eq(q.field("timelineId"), timeline._id))
+      .collect();
+
+    return {
+      ...timeline,
+      tasks,
+      links,
+    };
+  },
+});
+
+/**
  * Get a specific timeline by ID
  */
 export const getByTimelineId = query({
