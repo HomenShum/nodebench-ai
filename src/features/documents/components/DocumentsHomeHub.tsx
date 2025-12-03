@@ -596,7 +596,7 @@ export function DocumentsHomeHub({
   );
 
   const agendaSelectedWeekRaw = useQuery(
-    (api as any).calendar.listAgendaInRange,
+    api.domains.calendar.calendar.listAgendaInRange,
 
     loggedInUser
       ? {

@@ -259,7 +259,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
   }, [monthStart, offsetMs, selectedTz]);
 
   // Canonical agenda for the entire visible grid range (not just the month)
-  const agendaMonth = useQuery((api as any).calendar.listAgendaInRange, {
+  const agendaMonth = useQuery(api.domains.calendar.calendar.listAgendaInRange, {
     start: gridRangeUtc.startUtc,
     end: gridRangeUtc.endUtc,
     country: "US",
@@ -420,7 +420,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     setEditTarget({ kind: "createBoth", dateMs: localMidnightMs, defaultAllDay: true, defaultTitle: name });
   };
   const previewAgenda = useQuery(
-    (api as any).calendar.listAgendaInRange,
+    api.domains.calendar.calendar.listAgendaInRange,
     activeStartUtc !== null && activeEndUtc !== null && previewHolidayRange !== null
       ? {
           start: activeStartUtc,

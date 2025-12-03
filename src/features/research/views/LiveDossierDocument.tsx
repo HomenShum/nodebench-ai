@@ -616,7 +616,7 @@ function LiveDossierDocumentInner({
                     {/* Edition & Date Row */}
                     <div className="flex justify-between items-center text-xs sm:text-sm mb-5">
                         <div className="flex items-center gap-3">
-                            <span className="font-bold tracking-[0.2em] text-gray-700 dark:text-gray-300 uppercase">
+                            <span className="font-bold tracking-[0.2em] text-muted-foreground uppercase">
                                 {editionLabel}
                             </span>
                             {isStreaming && (
@@ -626,13 +626,13 @@ function LiveDossierDocumentInner({
                                 </span>
                             )}
                         </div>
-                        <span className="text-gray-500 dark:text-gray-400 font-medium">
+                        <span className="text-muted-foreground font-medium">
                             {formattedDate}
                         </span>
                     </div>
 
                     {/* Masthead Title - Serif font for newspaper feel */}
-                    <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 dark:text-gray-50 text-center mb-4">
+                    <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground text-center mb-4">
                         The Daily Dossier
                     </h1>
 
@@ -645,7 +645,7 @@ function LiveDossierDocumentInner({
 
                     {/* Entity Name as Subhead */}
                     <div className="text-center mb-6">
-                        <h2 className="font-serif text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-200 italic">
+                        <h2 className="font-serif text-xl sm:text-2xl font-semibold text-foreground italic">
                             {entityName}
                         </h2>
                         {allArtifacts.length > 0 && (
@@ -861,27 +861,27 @@ function EmptyState() {
                 </div>
 
                 {/* Heading */}
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-50 mb-3">
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
                     Your Live Dossier Awaits
                 </h2>
 
                 {/* Description */}
-                <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-8 leading-relaxed">
+                <p className="text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
                     Start a research query to generate a comprehensive live dossier with verified sources,
                     rich media, and actionable insights—all updated in real-time.
                 </p>
 
                 {/* Feature hints */}
-                <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
                         <CheckCircle2 className="w-4 h-4 text-green-500" />
                         <span>Multi-source verification</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
                         <Youtube className="w-4 h-4 text-red-500" />
                         <span>Media discovery</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
                         <Link2 className="w-4 h-4 text-blue-500" />
                         <span>Inline citations</span>
                     </div>
