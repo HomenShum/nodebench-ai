@@ -851,6 +851,97 @@ is the single source of truth.
 
 ---
 
+### 2025-12-03 - BlockNote Editor Schema Fix & Deep Agent Concurrent Edit System ✅
+
+**Status**: ✅ Complete - Editor Fully Functional
+
+#### Overview
+Fixed critical BlockNote editor schema error and implemented comprehensive concurrent edit system for Deep Agent document modifications with sequential processing, visual indicators, and version validation.
+
+#### Issues Fixed
+
+##### 1. **BlockNote "Every schema needs a 'text' type" Error**
+- **Root Cause**: Client code expected Convex API re-exports at `convex/` root level, but implementations were in domain-organized directories
+- **Solution**: Created re-export files for backward compatibility:
+  - `convex/prosemirror.ts` - Re-exports prosemirror sync functions
+  - `convex/tags.ts` - Re-exports tag functions
+  - `convex/presence.ts` - Re-exports presence functions
+  - `convex/agentsPrefs.ts` - Agent preferences API
+- **Result**: Editor now initializes correctly without schema errors
+
+##### 2. **BlockNote Import Path Issue**
+- **Problem**: `filterSuggestionItems` import from `@blocknote/core` was failing
+- **Solution**: Updated import to `@blocknote/core/extensions` (API change in newer versions)
+- **File**: `src/features/editor/components/UnifiedEditor.tsx` line 20
+
+#### Deep Agent Concurrent Edit System
+
+##### Architecture
+Implemented a 4-component system for managing concurrent document edits from Deep Agent:
+
+1. **Edit Queue with Sequential Processing** (`src/features/editor/hooks/usePendingEdits.ts`)
+   - Maintains queue of pending edits from agent
+   - Processes edits sequentially to prevent conflicts
+   - Tracks edit status (pending, applied, failed)
+   - Handles optimistic updates and rollback
+
+2. **Visual Edit Indicators** (`src/features/editor/components/UnifiedEditor/PendingEditHighlights.tsx`)
+   - Highlights anchor regions being edited by agent
+   - Shows edit progress with color-coded states
+   - Smooth animations for edit application
+   - Prevents user interaction during critical edits
+
+3. **Per-Thread Progress Tracking** (`src/features/editor/components/UnifiedEditor/DeepAgentProgress.tsx`)
+   - Displays agent progress for each document thread
+   - Shows tool execution timeline
+   - Tracks edit count and status
+   - Collapsible UI for clean presentation
+
+4. **Optimistic Locking Validation** (`src/features/editor/components/UnifiedEditor.tsx`)
+   - Validates document version before applying edits
+   - Detects manual user edits during agent operations
+   - Prevents conflicting modifications
+   - Graceful error handling with user notification
+
+##### Backend Support
+- `convex/domains/documents/pendingEdits.ts` - Convex-based edit tracking
+- `convex/tools/document/deepAgentEditTools.ts` - Document editing tools
+- `convex/domains/agents/core/subagents/document_subagent/tools/deepAgentEditTools.ts` - Agent-specific edit tools
+
+#### Files Created
+- `convex/prosemirror.ts` - Prosemirror API re-exports
+- `convex/tags.ts` - Tags API re-exports
+- `convex/presence.ts` - Presence API re-exports
+- `convex/agentsPrefs.ts` - Agent preferences API
+- `convex/domains/documents/pendingEdits.ts` - Edit tracking
+- `convex/tools/document/deepAgentEditTools.ts` - Edit tools
+- `src/features/editor/hooks/usePendingEdits.ts` - Edit queue hook
+- `src/features/editor/components/UnifiedEditor/DeepAgentProgress.tsx` - Progress UI
+- `src/features/editor/components/UnifiedEditor/PendingEditHighlights.tsx` - Edit highlights
+- `src/features/agents/components/FastAgentPanel/EditProgressCard.tsx` - Progress card
+
+#### Files Modified
+- `src/features/editor/components/UnifiedEditor.tsx` - Integrated concurrent edit system
+- `convex/domains/documents/prosemirror.ts` - Updated prosemirror sync
+- `convex/domains/agents/agentTimelines.ts` - Added missing queries
+- `convex/schema.ts` - Updated schema for edit tracking
+
+#### Verification
+✅ Editor opens without "Every schema needs a 'text' type" error
+✅ BlockNote initializes correctly with proper schema
+✅ Text input works in editor
+✅ Block menu buttons visible and functional
+✅ No console errors
+✅ Concurrent edit system ready for testing
+
+#### Testing Status
+- ✅ Manual editor verification complete
+- ✅ Document opening and editing functional
+- ✅ No schema errors
+- ✅ Ready for Deep Agent concurrent edit testing
+
+---
+
 ### 2025-12-02 - Live Dossier UI Enhancements & Editorial Polish ✅
 
 **Status**: ✅ Complete - Browser Tested & Verified
