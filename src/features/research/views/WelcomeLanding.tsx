@@ -24,6 +24,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage } from "@/components/SidebarGlobalNav";
+import { SourceNode, type SourceStatus } from "@/components/SourceNode";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { RichMediaSection } from "@features/agents/components/FastAgentPanel/RichMediaSection";
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from "@features/agents/components/FastAgentPanel/DocumentActionCard";
@@ -90,8 +91,22 @@ function WelcomeLandingInner({
 }: WelcomeLandingProps) {
   const { isAuthenticated } = useConvexAuth();
   const user = useQuery(api.domains.auth.auth.loggedInUser);
+  const documents = useQuery(api.domains.documents.documents.getSidebar);
   const { signIn } = useAuthActions();
   const createThread = useAction(api.domains.agents.fastAgentPanelStreaming.createThread);
+
+  // Get recent dossiers for the expandable nav menu
+  const recentDossiers = useMemo(() => {
+    return (documents ?? [])
+      .filter((doc: any) => doc.type === 'dossier')
+      .slice(0, 5)
+      .map((doc: any) => ({
+        id: doc._id,
+        title: doc.title || 'Untitled Dossier',
+        updatedAt: doc.updatedAt ? new Date(doc.updatedAt) : undefined,
+        isAgentUpdating: false,
+      }));
+  }, [documents]);
   const sendStreaming = useMutation(api.domains.agents.fastAgentPanelStreaming.initiateAsyncStreaming);
   // State with persistence (tabs removed - unified view)
   const [researchPrompt, setResearchPrompt] = useState(() => {
@@ -1186,39 +1201,96 @@ While commercial fusion is still years away, the pace of innovation has accelera
                 }
                 // 'research' is already active, no navigation needed
               }}
+              recentDossiers={recentDossiers}
+              onDossierSelect={(dossierIdStr) => {
+                onDocumentSelect?.(dossierIdStr);
+                onEnterWorkspace?.();
+              }}
             />
           </div>
 
           {/* Divider */}
           <div className="h-px bg-gray-200 mx-5 my-2" />
 
-          {/* Context Area: Active Knowledge Bases (Live Sources) */}
+          {/* Context Area: Source Nodes (Active Knowledge Bases) */}
           <div className="flex-1 overflow-y-auto py-2 px-3 custom-scrollbar">
             <div className="px-2 mb-3 flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Active Knowledge Bases
+                Source Nodes
               </span>
-              <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                LIVE
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">
+                  {activeSources.length}/{SOURCES.length}
+                </span>
+                <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                  LIVE
+                </span>
+              </div>
             </div>
 
-            {/* Live Sources - Styled as Knowledge Base Toggles */}
-            <div className="space-y-1">
-              {SOURCES.map(source => (
-                <SidebarItem
-                  key={source.id}
-                  icon={<span className={`font-bold ${source.color}`}>{source.icon}</span>}
-                  title={source.name}
-                  time={<TrustBadge score={source.trustScore} />}
-                  active={activeSources.includes(source.id)}
-                  onClick={() => toggleSource(source.id)}
-                  isLive={source.freshness === 'realtime'}
-                  activityCount={sourceAnalytics[source.id] || 0}
-                  isQuerying={isRunning && activeSources.includes(source.id)}
-                />
-              ))}
+            {/* Source Nodes - Draggable & Configurable */}
+            <div className="space-y-2">
+              {SOURCES.map(source => {
+                const isActive = activeSources.includes(source.id);
+                const isQuerying = isRunning && isActive;
+                const activityCount = sourceAnalytics[source.id] || 0;
+
+                // Determine status
+                let status: SourceStatus = 'paused';
+                if (isQuerying) status = 'querying';
+                else if (isActive && source.freshness === 'realtime') status = 'live';
+                else if (isActive) status = 'syncing';
+
+                return (
+                  <SourceNode
+                    key={source.id}
+                    id={source.id}
+                    name={source.name}
+                    icon={<span className={`font-bold ${source.color}`}>{source.icon}</span>}
+                    status={status}
+                    trustScore={source.trustScore}
+                    activityCount={activityCount}
+                    active={isActive}
+                    onToggle={() => toggleSource(source.id)}
+                    onConfigure={() => {
+                      // TODO: Open source configuration modal
+                      console.log('Configure source:', source.id);
+                    }}
+                    onDragStart={(e, sourceId) => {
+                      e.dataTransfer.setData('application/x-source-node', sourceId);
+                      e.dataTransfer.effectAllowed = 'link';
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="mt-4 pt-3 border-t border-gray-100">
+              <div className="flex items-center justify-between px-2">
+                <span className="text-[10px] text-gray-400">
+                  Drag a node to Agent to monitor
+                </span>
+                <button
+                  type="button"
+                  className="text-[10px] text-blue-600 hover:text-blue-700 font-medium"
+                  onClick={() => {
+                    // Toggle all sources
+                    if (activeSources.length === SOURCES.length) {
+                      SOURCES.forEach(s => {
+                        if (activeSources.includes(s.id)) toggleSource(s.id);
+                      });
+                    } else {
+                      SOURCES.forEach(s => {
+                        if (!activeSources.includes(s.id)) toggleSource(s.id);
+                      });
+                    }
+                  }}
+                >
+                  {activeSources.length === SOURCES.length ? 'Pause All' : 'Activate All'}
+                </button>
+              </div>
             </div>
           </div>
 
