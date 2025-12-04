@@ -45,8 +45,8 @@ export function UnifiedHubPills({
   };
   const goAgents = () => {
     try {
-      window.location.hash = "#calendar/agents";
-      window.dispatchEvent(new CustomEvent("navigate:calendar"));
+      window.location.hash = "#agents";
+      window.dispatchEvent(new CustomEvent("navigate:agents"));
     } catch {}
   };
   const goRoadmap = () => {
