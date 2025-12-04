@@ -102,6 +102,7 @@ import type * as domains_documents_gridProjects from "../domains/documents/gridP
 import type * as domains_documents_index from "../domains/documents/index.js";
 import type * as domains_documents_pendingEdits from "../domains/documents/pendingEdits.js";
 import type * as domains_documents_prosemirror from "../domains/documents/prosemirror.js";
+import type * as domains_documents_smartDateExtraction from "../domains/documents/smartDateExtraction.js";
 import type * as domains_documents_sync from "../domains/documents/sync.js";
 import type * as domains_documents_syncMutations from "../domains/documents/syncMutations.js";
 import type * as domains_integrations_email from "../domains/integrations/email.js";
@@ -328,6 +329,7 @@ declare const fullApi: ApiFromModules<{
   "domains/documents/index": typeof domains_documents_index;
   "domains/documents/pendingEdits": typeof domains_documents_pendingEdits;
   "domains/documents/prosemirror": typeof domains_documents_prosemirror;
+  "domains/documents/smartDateExtraction": typeof domains_documents_smartDateExtraction;
   "domains/documents/sync": typeof domains_documents_sync;
   "domains/documents/syncMutations": typeof domains_documents_syncMutations;
   "domains/integrations/email": typeof domains_integrations_email;

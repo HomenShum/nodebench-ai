@@ -691,11 +691,11 @@ export const autoNameThread = action({
     threadId: v.id("chatThreadsStream"),
     firstMessage: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ title: string; skipped: boolean }> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const thread = await ctx.runQuery(internal.domains.agents.fastAgentPanelStreaming.getThreadById, {
+    const thread: { userId: string; title?: string } | null = await ctx.runQuery(internal.domains.agents.fastAgentPanelStreaming.getThreadById, {
       threadId: args.threadId,
     });
 
