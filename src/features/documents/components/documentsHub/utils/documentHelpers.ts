@@ -26,7 +26,26 @@ export type DocumentCardData = {
   createdBy?: string;
   coverImage?: string;
   icon?: string;
+  // AI indexing status fields
+  ragIndexedAt?: number;
+  fileSearchIndexedAt?: number;
+  analyzedAt?: number;
+  // File metadata
+  fileSize?: number;
+  rowCount?: number; // For CSV/spreadsheets
 };
+
+/** AI indexing status for visual indicators */
+export type AIStatus = 'indexed' | 'processing' | 'raw';
+
+/** Get the AI indexing status for a document */
+export function getAIStatus(doc: DocumentCardData): AIStatus {
+  if (doc.ragIndexedAt || doc.fileSearchIndexedAt || doc.analyzedAt) {
+    return 'indexed';
+  }
+  // Could add logic for "processing" state if we track that
+  return 'raw';
+}
 
 /**
  * Normalize a document object to DocumentCardData format
@@ -67,6 +86,13 @@ export function normalizeDocument(d: any): DocumentCardData {
     createdBy: d?.createdBy,
     coverImage: d?.coverImage,
     icon: d?.icon,
+    // AI indexing status
+    ragIndexedAt: d?.ragIndexedAt,
+    fileSearchIndexedAt: d?.fileSearchIndexedAt,
+    analyzedAt: d?.analyzedAt,
+    // File metadata
+    fileSize: d?.fileSize,
+    rowCount: d?.rowCount,
   };
 }
 
