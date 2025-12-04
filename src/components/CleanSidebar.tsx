@@ -1,11 +1,10 @@
 /**
  * CleanSidebar - Simplified Dashboard Sidebar
- * 
- * Implements the "ruthless simplification" approach:
- * - Workspace navigation (My Workspace, Recent Research, Saved Dossiers)
- * - Recent Documents for quick navigation
- * - User profile with Settings at bottom
- * 
+ *
+ * Uses SidebarGlobalNav for consistent navigation across the app.
+ * Top Section: Global navigation (Home, My Workspace, Saved Dossiers)
+ * Bottom Section: Contextual content (Recent Documents, File Explorer)
+ *
  * Removed: Integration panel (12 icons), Docs/Messages/Reports tabs,
  * Source category buttons, Live Sources (moved to Welcome Landing)
  */
@@ -15,15 +14,14 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import {
-  Home,
-  Briefcase,
-  Clock,
   FileText,
   ChevronDown,
   ChevronRight,
   Settings,
   Trash2,
+  FolderOpen,
 } from "lucide-react";
+import { SidebarGlobalNav, type ActivePage } from "./SidebarGlobalNav";
 
 type AppMode = 'workspace' | 'fast-agent' | 'deep-agent' | 'dossier';
 
@@ -54,9 +52,27 @@ export function CleanSidebar({
   const user = useQuery(api.domains.auth.auth.loggedInUser);
   const trash = useQuery(api.domains.documents.documents.getTrash);
   const documents = useQuery(api.domains.documents.documents.getSidebar);
-  
+
   // Get recent documents (limit to 8)
   const recentDocs = (documents ?? []).slice(0, 8);
+
+  // Handle global navigation
+  const handleNavigate = (page: ActivePage) => {
+    if (page === 'research') {
+      // Go back to WelcomeLanding/Research view
+      onGoHome?.();
+    } else if (page === 'workspace') {
+      onModeChange('workspace');
+    } else if (page === 'saved') {
+      onModeChange('dossier');
+    }
+  };
+
+  // Map appMode to ActivePage for highlighting
+  const getActivePage = (): ActivePage => {
+    if (appMode === 'dossier') return 'saved';
+    return 'workspace'; // workspace, fast-agent, deep-agent all show as workspace
+  };
 
   return (
     <div className="h-full flex flex-col bg-[#FBFBFB]">
@@ -70,128 +86,80 @@ export function CleanSidebar({
         </div>
       </div>
 
-      {/* Home Button - Returns to Welcome Landing */}
-      {onGoHome && (
-        <div className="px-3 pt-4">
-          <button
-            onClick={onGoHome}
-            className="group w-full flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
-          >
-            <Home className="w-4 h-4 shrink-0 text-gray-500 group-hover:text-gray-700" />
-            <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900">
-              Home
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* Workspace Navigation */}
-      <div className="pt-5 pb-4 px-3 space-y-1">
-        <div className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          Workspace
-        </div>
-
-        <button
-          onClick={() => onModeChange('workspace')}
-          className={`group relative w-full flex items-center gap-3 py-2 px-2.5 rounded-lg cursor-pointer transition-colors ${
-            appMode === 'workspace' ? 'bg-gray-100' : 'hover:bg-gray-50'
-          }`}
-        >
-          <Briefcase className={`w-4 h-4 shrink-0 transition-opacity ${
-            appMode === 'workspace' ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'
-          }`} />
-          <span className={`text-sm font-medium truncate transition-colors ${
-            appMode === 'workspace' ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
-          }`}>
-            My Workspace
-          </span>
-        </button>
-
-        <button
-          onClick={() => onModeChange('fast-agent')}
-          className={`group relative w-full flex items-center gap-3 py-2 px-2.5 rounded-lg cursor-pointer transition-colors ${
-            appMode === 'fast-agent' ? 'bg-gray-100' : 'hover:bg-gray-50'
-          }`}
-        >
-          <Clock className={`w-4 h-4 shrink-0 transition-opacity ${
-            appMode === 'fast-agent' ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'
-          }`} />
-          <span className={`text-sm font-medium truncate transition-colors ${
-            appMode === 'fast-agent' ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
-          }`}>
-            Recent Research
-          </span>
-        </button>
-
-        <button
-          onClick={() => onModeChange('dossier')}
-          className={`group relative w-full flex items-center gap-3 py-2 px-2.5 rounded-lg cursor-pointer transition-colors ${
-            appMode === 'dossier' ? 'bg-gray-100' : 'hover:bg-gray-50'
-          }`}
-        >
-          <FileText className={`w-4 h-4 shrink-0 transition-opacity ${
-            appMode === 'dossier' ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'
-          }`} />
-          <span className={`text-sm font-medium truncate transition-colors ${
-            appMode === 'dossier' ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
-          }`}>
-            Saved Dossiers
-          </span>
-        </button>
+      {/* Unified Global Navigation */}
+      <div className="px-3 pt-4">
+        <SidebarGlobalNav
+          activePage={getActivePage()}
+          onNavigate={handleNavigate}
+        />
       </div>
 
-      {/* Recent Documents */}
-      {recentDocs.length > 0 && (
-        <div className="px-3 py-2">
-          <button
-            onClick={() => setIsDocsOpen(!isDocsOpen)}
-            className="flex items-center justify-between w-full text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 hover:text-gray-600"
-          >
-            <span>Recent Documents</span>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-400 font-normal normal-case">
-                {recentDocs.length}
-              </span>
-              {isDocsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            </div>
-          </button>
+      {/* Divider */}
+      <div className="h-px bg-gray-200 mx-5 my-2" />
 
-          {isDocsOpen && (
-            <div className="space-y-0.5">
-              {recentDocs.map((doc) => {
-                const isSelected = selectedDocumentId === doc._id;
-                return (
-                  <button
-                    key={doc._id}
-                    onClick={() => onDocumentSelect?.(doc._id)}
-                    className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
-                      isSelected
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                    title={doc.title || 'Untitled'}
-                  >
-                    <FileText className={`w-3.5 h-3.5 shrink-0 ${
-                      isSelected ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-                    }`} />
-                    <span className="truncate text-left">
-                      {doc.title || 'Untitled'}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+      {/* Context Area: File Explorer */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Context Header */}
+        <div className="px-5 mb-3 flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            File Explorer
+          </span>
+          <FolderOpen className="w-3.5 h-3.5 text-gray-400" />
         </div>
-      )}
 
-      {/* Flex spacer to push trash and profile to bottom */}
-      <div className="flex-1" />
+        {/* Recent Documents */}
+        {recentDocs.length > 0 && (
+          <div className="px-3 py-2">
+            <button
+              type="button"
+              onClick={() => setIsDocsOpen(!isDocsOpen)}
+              className="flex items-center justify-between w-full text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 hover:text-gray-700 px-2"
+            >
+              <span>Recent Documents</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium normal-case">
+                  {recentDocs.length}
+                </span>
+                {isDocsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              </div>
+            </button>
+
+            {isDocsOpen && (
+              <div className="space-y-0.5">
+                {recentDocs.map((doc) => {
+                  const isSelected = selectedDocumentId === doc._id;
+                  return (
+                    <button
+                      type="button"
+                      key={doc._id}
+                      onClick={() => onDocumentSelect?.(doc._id)}
+                      className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
+                        isSelected
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                      title={doc.title || 'Untitled'}
+                    >
+                      <FileText className={`w-3.5 h-3.5 shrink-0 ${
+                        isSelected ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                      }`} />
+                      <span className="truncate text-left">
+                        {doc.title || 'Untitled'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Trash button */}
       {trash && trash.length > 0 && (
         <div className="px-3 pb-2">
           <button
+            type="button"
             className="w-full flex items-center gap-2 px-2.5 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-lg transition-colors"
           >
             <Trash2 className="h-4 w-4" />
@@ -211,7 +179,7 @@ export function CleanSidebar({
             const initial = (displayName || "U").trim().charAt(0).toUpperCase();
             const rawImage = (user as any)?.image;
             const imgSrc = typeof rawImage === "string" ? rawImage : undefined;
-            
+
             return imgSrc ? (
               <img
                 src={imgSrc}
@@ -233,8 +201,11 @@ export function CleanSidebar({
             </div>
           </div>
           <button
+            type="button"
             onClick={() => onOpenSettings?.('profile')}
             className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            title="Settings"
+            aria-label="Open settings"
           >
             <Settings className="w-4 h-4" />
           </button>
