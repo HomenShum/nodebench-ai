@@ -445,6 +445,55 @@ npx convex deploy
 ---
 
 
+### 2025-12-04 - UnifiedEditor Modularization ✅
+
+**Status**: ✅ Complete
+
+#### Overview
+Major refactoring of the UnifiedEditor.tsx monolith from ~2200 lines to ~980 lines (55% reduction) through extraction of reusable modules, hooks, and components.
+
+#### Extracted Modules
+
+**Types & Utilities:**
+| File | Purpose | Lines |
+|------|---------|-------|
+| `src/features/editor/types.ts` | EditorMode, UnifiedEditorProps, AIToolAction types | 48 |
+| `src/features/editor/utils/blockUtils.ts` | extractPlainText, blocksAreTriviallyEmpty, getBlockText, bnEnsureTopLevelBlock | 55 |
+| `src/features/editor/utils/sanitize.ts` | sanitizeProseMirrorContent | 55 |
+
+**Hooks:**
+| File | Purpose | Lines |
+|------|---------|-------|
+| `src/features/editor/hooks/useFileUpload.ts` | File upload handler with Convex storage | ~50 |
+| `src/features/editor/hooks/useMentionMenu.ts` | @mention suggestions for users | ~80 |
+| `src/features/editor/hooks/useHashtagMenu.ts` | #hashtag dossier creation | ~100 |
+| `src/features/editor/hooks/useAIKeyboard.ts` | /ai and /edit keyboard handlers | ~120 |
+| `src/features/editor/hooks/useSlashMenuItems.ts` | Custom slash menu items | ~80 |
+| `src/features/editor/hooks/useEditorSeeding.ts` | Seed/restore logic | ~60 |
+| `src/features/editor/hooks/useProposalSystem.ts` | Proposal state management | ~150 |
+
+**Components:**
+| File | Purpose | Lines |
+|------|---------|-------|
+| `src/features/editor/components/UnifiedEditor/ProposalInlineDecorations.tsx` | Inline diff overlays for AI proposals | 303 |
+| `src/features/editor/components/UnifiedEditor/PmBridge.tsx` | ProseMirror operations bridge | 283 |
+| `src/features/editor/components/UnifiedEditor/ShadowTiptap.tsx` | Hidden TipTap for PM context | ~50 |
+| `src/features/editor/components/UnifiedEditor/InspectorPanel.tsx` | Debug panel | ~30 |
+
+#### Benefits
+- **Maintainability**: Each module has single responsibility
+- **Testability**: Hooks and utilities can be unit tested in isolation
+- **Reusability**: Components and hooks can be used across the codebase
+- **Developer Experience**: Faster navigation and smaller cognitive load
+
+#### Verification
+- ✅ TypeScript compilation passes
+- ✅ Build successful
+- ✅ No duplicate code between main file and extracted modules
+- ✅ All editor functionality preserved
+
+---
+
 ### 2025-12-02 - Major Codebase Reorganization ✅
 
 **Status**: ✅ Complete

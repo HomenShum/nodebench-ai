@@ -1316,6 +1316,23 @@ export default defineSchema({
     .index("by_document_version", ["documentId", "documentVersion"]),
 
   /* ------------------------------------------------------------------ */
+  /* CALENDAR DATE MARKERS - Auto-detected dates from files            */
+  /* ------------------------------------------------------------------ */
+  calendarDateMarkers: defineTable({
+    userId: v.id("users"),                        // User who owns this marker
+    documentId: v.id("documents"),                // Document that triggered the marker
+    fileName: v.string(),                         // Original filename
+    detectedDate: v.number(),                     // Detected date timestamp
+    confidence: v.string(),                       // 'high', 'medium', 'low'
+    pattern: v.string(),                          // Pattern used to detect (ISO, US, MonthDay, etc.)
+    createdAt: v.number(),                        // When marker was created
+    updatedAt: v.number(),                        // When marker was last updated
+  })
+    .index("by_user", ["userId"])
+    .index("by_document", ["documentId"])
+    .index("by_user_and_date", ["userId", "detectedDate"]),
+
+  /* ------------------------------------------------------------------ */
   /* HUMAN-IN-THE-LOOP - Agent requests for human input                */
   /* ------------------------------------------------------------------ */
   humanRequests: defineTable({

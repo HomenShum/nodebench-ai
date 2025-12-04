@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "../../_generated/api";
 
 export const generateUploadUrl = mutation(async (ctx) => {
   const identity = await ctx.auth.getUserIdentity();
@@ -132,7 +133,7 @@ export const createFile = mutation({
     const now = Date.now();
 
     // Auto-create the file document
-    await ctx.db.insert("documents", {
+    const documentId = await ctx.db.insert("documents", {
       title: args.fileName,
       isPublic: false,
       createdBy: userId,
@@ -142,6 +143,13 @@ export const createFile = mutation({
       fileType: documentFileType,
       mimeType: args.mimeType,
       lastModified: now,
+    });
+
+    // Schedule smart date extraction as background job
+    await ctx.scheduler.runAfter(0, internal.domains.documents.smartDateExtraction.extractAndMarkDates, {
+      fileId,
+      documentId,
+      userId,
     });
 
     return fileId;

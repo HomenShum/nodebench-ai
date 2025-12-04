@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { Save, X } from "lucide-react";
+import { Save, X, Maximize2, Minimize2, Download, Sparkles, Loader2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import Papa from "papaparse";
-import Spreadsheet from "react-spreadsheet";
+import Spreadsheet, { type Selection, type Point } from "react-spreadsheet";
 import * as XLSX from 'xlsx';
+import { useSelection } from "@/features/agents/context/SelectionContext";
+import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 
 
 // Build a display matrix from a worksheet, expanding merged cells so content shows up
@@ -54,6 +56,8 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
   const [fileName, setFileName] = useState("");
   const [saveHint, setSaveHint] = useState<"idle" | "saving" | "saved" | "unsaved">("idle");
   const [isSaving, setIsSaving] = useState(false);
+  const [isCinemaMode, setIsCinemaMode] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const genUploadUrl = useMutation(api.domains.documents.files.generateUploadUrl);
   const finalizeExcel = useMutation(api.domains.documents.files.finalizeExcelReplace);
 
@@ -69,11 +73,87 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
   const [subsetHeaders, setSubsetHeaders] = useState<string[]>([]);
   const [subsetRows, setSubsetRows] = useState<string[][]>([]);
 
+  // Selection state for "Chat with Selection" feature
+  const [currentSelection, setCurrentSelection] = useState<Selection | null>(null);
+  const { setSelection } = useSelection();
+  const { open: openFastAgent } = useFastAgent();
+
   const isExcel = (() => {
     const name = (fileDoc?.file?.fileName || '').toLowerCase();
     const ft = String(fileDoc?.document?.fileType || '').toLowerCase();
     return ft === 'excel' || /\.(xlsx?)$/.test(name);
   })();
+
+  // Convert cell selection to text content for AI analysis
+  const getSelectedContent = useCallback(() => {
+    if (!currentSelection || subsetRows.length === 0) return null;
+
+    // Handle range selection
+    const range = currentSelection as { start: Point; end: Point };
+    if (!range.start || !range.end) return null;
+
+    const startRow = Math.min(range.start.row, range.end.row);
+    const endRow = Math.max(range.start.row, range.end.row);
+    const startCol = Math.min(range.start.column, range.end.column);
+    const endCol = Math.max(range.start.column, range.end.column);
+
+    // Extract selected headers
+    const selectedHeaders = subsetHeaders.slice(startCol, endCol + 1);
+
+    // Extract selected rows
+    const selectedRows = subsetRows.slice(startRow, endRow + 1).map(row =>
+      row.slice(startCol, endCol + 1)
+    );
+
+    // Format as markdown table
+    const headerRow = `| ${selectedHeaders.join(' | ')} |`;
+    const separatorRow = `| ${selectedHeaders.map(() => '---').join(' | ')} |`;
+    const dataRows = selectedRows.map(row => `| ${row.join(' | ')} |`).join('\n');
+
+    const content = `${headerRow}\n${separatorRow}\n${dataRows}`;
+
+    // Create range description (e.g., "A1:C5")
+    const startColLetter = String.fromCharCode(65 + startCol);
+    const endColLetter = String.fromCharCode(65 + endCol);
+    const rangeDescription = `${startColLetter}${startRow + 1}:${endColLetter}${endRow + 1}`;
+
+    return {
+      content,
+      rangeDescription,
+      selectedHeaders,
+      rowRange: { start: startRow, end: endRow },
+      rowCount: endRow - startRow + 1,
+      colCount: endCol - startCol + 1,
+    };
+  }, [currentSelection, subsetHeaders, subsetRows]);
+
+  // Handle "Analyze Selection" button click
+  const handleAnalyzeSelection = useCallback(() => {
+    const selected = getSelectedContent();
+    if (!selected) {
+      toast.error('Please select cells to analyze');
+      return;
+    }
+
+    // Set selection in context
+    setSelection({
+      content: selected.content,
+      metadata: {
+        sourceType: 'spreadsheet',
+        documentId,
+        filename: fileName || 'spreadsheet',
+        rangeDescription: selected.rangeDescription,
+        columnHeaders: selected.selectedHeaders,
+        rowRange: selected.rowRange,
+      },
+      timestamp: Date.now(),
+    });
+
+    // Open Fast Agent panel
+    openFastAgent();
+
+    toast.success(`Selected ${selected.rowCount} rows × ${selected.colCount} columns ready for analysis`);
+  }, [getSelectedContent, setSelection, documentId, fileName, openFastAgent]);
 
 
   useEffect(() => {
@@ -303,6 +383,94 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
   }
   if (!fileDoc) return null;
 
+  // Cinema Mode - Full screen modal
+  if (isCinemaMode) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-[var(--bg-primary)]/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden w-[90vw] h-[85vh] max-w-7xl">
+          {/* Glassy Header */}
+          <div className="flex-shrink-0 px-6 py-4 bg-gradient-to-r from-[var(--bg-secondary)]/80 to-[var(--bg-primary)]/80 backdrop-blur-md border-b border-white/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex-1 min-w-0">
+                  <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full text-lg font-semibold bg-transparent border-none text-[var(--text-primary)] focus:outline-none focus:ring-0 placeholder:text-[var(--text-muted)]" placeholder="Untitled Spreadsheet" />
+                  <div className="flex items-center gap-2 mt-1">
+                    <input value={fileName} onChange={(e) => setFileName(e.target.value)} className="text-sm bg-transparent border-none text-[var(--text-secondary)] focus:outline-none focus:ring-0 placeholder:text-[var(--text-muted)]" placeholder="filename.csv" />
+                    {saveHint === "unsaved" && <span className="text-xs text-amber-500 font-medium">• Unsaved</span>}
+                    {saveHint === "saving" && <span className="text-xs text-[var(--text-muted)]">Saving...</span>}
+                    {saveHint === "saved" && <span className="text-xs text-green-500">✓ Saved</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Analyze Selection Button - only visible when cells are selected */}
+                {currentSelection && getSelectedContent() && (
+                  <button
+                    type="button"
+                    onClick={handleAnalyzeSelection}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-emerald-500/25"
+                    title="Analyze selected cells with AI"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Chat with Selection
+                  </button>
+                )}
+                <button type="button" onClick={() => { setIsAnalyzing(true); toast.info('AI analysis coming soon!'); setIsAnalyzing(false); }} disabled={isAnalyzing} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-500/25 disabled:opacity-50">
+                  {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  Analyze All
+                </button>
+                <button type="button" onClick={() => { void handleSaveSubset({ headers: subsetHeaders, rows: subsetRows }); }} className="p-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)] transition-colors" title="Download"><Download className="w-4 h-4" /></button>
+                <button type="button" onClick={() => setIsCinemaMode(false)} className="p-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)] transition-colors" title="Exit Cinema Mode"><Minimize2 className="w-4 h-4" /></button>
+                <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed"}`}><Save className="w-4 h-4" />Save</button>
+                <button type="button" onClick={onClose} className="p-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-red-500/20 hover:text-red-500 text-[var(--text-secondary)] border border-[var(--border-color)] transition-colors" title="Close"><X className="w-4 h-4" /></button>
+              </div>
+            </div>
+          </div>
+
+          {/* Sheet Tabs (for Excel) */}
+          {isExcel && workbookSheets.length > 1 && (
+            <div className="flex-shrink-0 px-4 py-2 bg-[var(--bg-secondary)]/50 border-b border-[var(--border-color)] flex items-center gap-1 overflow-x-auto">
+              {workbookSheets.map((s, i) => (
+                <button key={`cinema-${s.name}-${i}`} type="button" onClick={() => { setActiveSheetIndex(i); setSubsetHeaders(workbookSheets[i].csv.headers); setSubsetRows(workbookSheets[i].csv.rows); }} className={`px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors ${i === activeSheetIndex ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]'}`}>{s.name}</button>
+              ))}
+            </div>
+          )}
+
+          {/* Spreadsheet Content */}
+          <div className="flex-1 overflow-auto p-4 bg-[var(--bg-secondary)]/30">
+            {subsetHeaders.length > 0 ? (
+              <div className="cinema-spreadsheet rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] overflow-hidden">
+                <Spreadsheet
+                  data={subsetRows.map((r) => r.map((c) => ({ value: c })))}
+                  columnLabels={subsetHeaders}
+                  onChange={(d: any[][]) => {
+                    setSubsetRows(d.map((row) => row.map((cell: any) => String(cell?.value ?? ""))));
+                    setSaveHint("unsaved");
+                  }}
+                  onSelect={(selection: Selection) => setCurrentSelection(selection)}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-[var(--text-muted)]">
+                <div className="text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" /><p>Loading spreadsheet data...</p></div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer with Keyboard Shortcuts */}
+          <div className="flex-shrink-0 px-6 py-3 bg-[var(--bg-secondary)]/50 border-t border-[var(--border-color)] flex items-center justify-between">
+            <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
+              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm font-mono text-[10px]">Esc</kbd>Close</span>
+              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm font-mono text-[10px]">⌘S</kbd>Save changes</span>
+            </div>
+            <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-lg ${saveHint === "unsaved" && !isSaving ? "bg-gray-900 text-white hover:bg-black shadow-gray-200" : "bg-gray-200 text-gray-500 cursor-not-allowed shadow-none"}`}>Save Changes</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mini Mode (default)
   return (
     <div
       className="mt-1 rounded-md p-2 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 transition-all relative z-10 pointer-events-auto"
@@ -317,7 +485,17 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           <div className="text-[11px] text-[var(--text-muted)]">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </div>
+          {/* Cinema Mode Toggle */}
           <button
+            type="button"
+            onClick={() => setIsCinemaMode(true)}
+            className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+            title="Cinema Mode"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
             onClick={() => { void handleSave(); }}
             disabled={saveHint !== "unsaved" || isSaving}
             className={`h-7 px-2 rounded-md flex items-center justify-center border text-[11px] ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
@@ -326,6 +504,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>
           <button
+            type="button"
             onClick={() => { void handleSaveSubset({ headers: subsetHeaders, rows: subsetRows }); }}
             disabled={subsetHeaders.length === 0}
             className={`h-7 px-2 rounded-md flex items-center justify-center border text-[11px] ${subsetHeaders.length > 0 ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
@@ -335,6 +514,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           </button>
 
           <button
+            type="button"
             onClick={() => onClose()}
             className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
             title="Close"
@@ -385,6 +565,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
         <div className="mb-2 flex items-center gap-1 overflow-x-auto">
           {workbookSheets.map((s, i) => (
             <button
+              type="button"
               key={`${s.name}-${i}`}
               onClick={() => { setActiveSheetIndex(i); setSubsetHeaders(workbookSheets[i].csv.headers); setSubsetRows(workbookSheets[i].csv.rows); }}
               className={`px-2 py-1 text-[11px] rounded ${i === activeSheetIndex ? 'bg-[var(--bg-secondary)] border border-[var(--border-color)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}

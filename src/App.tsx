@@ -8,6 +8,8 @@ import WelcomeLanding from "@/features/research/views/WelcomeLanding";
 import { useState, useEffect, useRef } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
+import { FastAgentProvider } from "@/features/agents/context/FastAgentContext";
+import { SelectionProvider } from "@/features/agents/context/SelectionContext";
 
 function App() {
   const [showTutorial, setShowTutorial] = useState(false);
@@ -55,34 +57,38 @@ function App() {
         <WelcomeLanding />
       </Unauthenticated>
       <Authenticated>
-        <ContextPillsProvider>
-          {showTutorial ? (
-            <TutorialPage
-              onGetStarted={handleGetStarted}
-              onDocumentSelect={handleDocumentSelect}
-            />
-          ) : documents && documents.length > 0 && !showWelcomeLanding ? (
-            <MainLayout
-              selectedDocumentId={selectedDocumentId}
-              onDocumentSelect={setSelectedDocumentId}
-              onShowWelcome={handleShowTutorial}
-              onShowWelcomeLanding={handleShowWelcomeLanding}
-            />
-          ) : !showWelcomeLanding ? (
-            <MainLayout
-              selectedDocumentId={selectedDocumentId}
-              onDocumentSelect={setSelectedDocumentId}
-              onShowWelcome={handleShowTutorial}
-              onShowWelcomeLanding={handleShowWelcomeLanding}
-            />
-          ) : (
-            /* Authenticated users land on WelcomeLanding by default */
-            <WelcomeLanding
-              onDocumentSelect={handleDocumentSelect}
-              onEnterWorkspace={handleEnterWorkspace}
-            />
-          )}
-        </ContextPillsProvider>
+        <FastAgentProvider>
+          <SelectionProvider>
+            <ContextPillsProvider>
+              {showTutorial ? (
+                <TutorialPage
+                  onGetStarted={handleGetStarted}
+                  onDocumentSelect={handleDocumentSelect}
+                />
+              ) : documents && documents.length > 0 && !showWelcomeLanding ? (
+                <MainLayout
+                  selectedDocumentId={selectedDocumentId}
+                  onDocumentSelect={setSelectedDocumentId}
+                  onShowWelcome={handleShowTutorial}
+                  onShowWelcomeLanding={handleShowWelcomeLanding}
+                />
+              ) : !showWelcomeLanding ? (
+                <MainLayout
+                  selectedDocumentId={selectedDocumentId}
+                  onDocumentSelect={setSelectedDocumentId}
+                  onShowWelcome={handleShowTutorial}
+                  onShowWelcomeLanding={handleShowWelcomeLanding}
+                />
+              ) : (
+                /* Authenticated users land on WelcomeLanding by default */
+                <WelcomeLanding
+                  onDocumentSelect={handleDocumentSelect}
+                  onEnterWorkspace={handleEnterWorkspace}
+                />
+              )}
+            </ContextPillsProvider>
+          </SelectionProvider>
+        </FastAgentProvider>
       </Authenticated>
     </main>
   );

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity } from 'lucide-react';
+import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 
@@ -95,6 +95,12 @@ export function FastAgentPanel({
   // Thread list collapse state
   const [showSidebar, setShowSidebar] = useState(false);
 
+  // Minimize mode state - persisted to localStorage
+  const [isMinimized, setIsMinimized] = useState(() => {
+    const saved = localStorage.getItem('fastAgentPanel.isMinimized');
+    return saved === 'true';
+  });
+
   // Live Events Panel state
   const [showEventsPanel, setShowEventsPanel] = useState(false);
   const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
@@ -102,12 +108,59 @@ export function FastAgentPanel({
   // File attachment state
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
+  // Context documents from drag-and-drop
+  const [contextDocuments, setContextDocuments] = useState<Array<{
+    id: string;
+    title: string;
+    type?: 'document' | 'dossier' | 'note';
+    analyzing?: boolean;
+  }>>([]);
+
+  // Calendar events context from drag-and-drop
+  const [contextCalendarEvents, setContextCalendarEvents] = useState<Array<{
+    id: string;
+    title: string;
+    startTime: number;
+    endTime?: number;
+    allDay?: boolean;
+    location?: string;
+    description?: string;
+  }>>([]);
+
   const handleAttachFiles = (files: File[]) => {
     setAttachedFiles(prev => [...prev, ...files]);
   };
 
   const handleRemoveFile = (index: number) => {
     setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddContextDocument = (doc: { id: string; title: string; type?: 'document' | 'dossier' | 'note'; analyzing?: boolean }) => {
+    setContextDocuments(prev => {
+      // Update existing or add new
+      const existing = prev.find(d => d.id === doc.id);
+      if (existing) {
+        return prev.map(d => d.id === doc.id ? doc : d);
+      }
+      return [...prev, doc];
+    });
+  };
+
+  const handleRemoveContextDocument = (docId: string) => {
+    setContextDocuments(prev => prev.filter(d => d.id !== docId));
+  };
+
+  const handleAddCalendarEvent = (event: { id: string; title: string; startTime: number; endTime?: number; allDay?: boolean; location?: string; description?: string }) => {
+    setContextCalendarEvents(prev => {
+      // Avoid duplicates
+      const existing = prev.find(e => e.id === event.id);
+      if (existing) return prev;
+      return [...prev, event];
+    });
+  };
+
+  const handleRemoveCalendarEvent = (eventId: string) => {
+    setContextCalendarEvents(prev => prev.filter(e => e.id !== eventId));
   };
 
   // Live streaming state
@@ -215,6 +268,8 @@ export function FastAgentPanel({
   const saveChatSessionToDossier = useMutation(api.domains.documents.documents.saveChatSessionToDossier);
   // NEW: Unified document generation and creation action
   const generateAndCreateDocument = useAction(api.domains.agents.fastAgentDocumentCreation.generateAndCreateDocument);
+  // Auto-naming action for threads
+  const autoNameThread = useAction(api.domains.agents.fastAgentPanelStreaming.autoNameThread);
   // Client does not trigger server workflows directly; coordinator handles routing via useCoordinator: true
 
   // Use the appropriate data based on mode
@@ -244,6 +299,11 @@ export function FastAgentPanel({
   useEffect(() => {
     localStorage.setItem('fastAgentPanel.chatMode', chatMode);
   }, [chatMode]);
+
+  // Persist minimize mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('fastAgentPanel.isMinimized', String(isMinimized));
+  }, [isMinimized]);
 
   // Reset active thread when switching chat modes
   useEffect(() => {
@@ -444,17 +504,34 @@ export function FastAgentPanel({
       }
     }
 
-    // Build message with document context if documents are selected
+    // Build message with document context if documents are selected or dragged
     let messageContent = text;
+
+    // Include drag-and-drop context documents
+    if (contextDocuments.length > 0) {
+      const contextInfo = contextDocuments
+        .filter(doc => !doc.analyzing) // Only include analyzed documents
+        .map(doc => `${doc.title} (ID: ${doc.id})`)
+        .join(', ');
+      if (contextInfo) {
+        messageContent = `[CONTEXT: Analyzing documents: ${contextInfo}]\n\n${text}`;
+      }
+    }
+
+    // Also include selected document IDs (legacy)
     if (selectedDocumentIds.size > 0) {
       const docIdArray = Array.from(selectedDocumentIds);
-      messageContent = `[CONTEXT: Analyzing ${docIdArray.length} document(s): ${docIdArray.join(', ')}]\n\n${text}`;
+      messageContent = `[CONTEXT: Analyzing ${docIdArray.length} document(s): ${docIdArray.join(', ')}]\n\n${messageContent}`;
     }
 
     setInput('');
     setLiveTokens("");
     setLiveAgents([]);
     setIsStreaming(true);
+
+    // Clear context documents and calendar events after sending
+    setContextDocuments([]);
+    setContextCalendarEvents([]);
 
     // Clear live state
     setLiveThinking([]);
@@ -487,6 +564,7 @@ export function FastAgentPanel({
       } else {
         // Agent streaming mode chat flow - uses agent component's native streaming
         let threadId = activeThreadId;
+        const isNewThread = !threadId;
 
         // Create thread if needed
         if (!threadId) {
@@ -509,6 +587,20 @@ export function FastAgentPanel({
 
         console.log('[FastAgentPanel] Streaming initiated');
         setIsStreaming(false);
+
+        // Auto-name the thread if it's new (fire and forget)
+        if (isNewThread && threadId) {
+          autoNameThread({
+            threadId: threadId as Id<"chatThreadsStream">,
+            firstMessage: text,
+          }).then((result) => {
+            if (!result.skipped) {
+              console.log('[FastAgentPanel] Thread auto-named:', result.title);
+            }
+          }).catch((err) => {
+            console.warn('[FastAgentPanel] Failed to auto-name thread:', err);
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -523,6 +615,7 @@ export function FastAgentPanel({
     selectedModel,
     chatMode,
     selectedDocumentIds,
+    contextDocuments,
     createThreadWithMessage,
     continueThreadAction,
     createStreamingThread,
@@ -530,6 +623,7 @@ export function FastAgentPanel({
     generateAndCreateDocument,
     streamingThreads,
     streamingThread,
+    autoNameThread,
   ]);
 
   // No client heuristics; coordinator-only routing
@@ -778,6 +872,69 @@ export function FastAgentPanel({
 
   if (!isOpen) return null;
 
+  // Minimized mode - compact vertical strip
+  if (isMinimized) {
+    return (
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[1000] flex flex-col items-center gap-2 p-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-l-xl shadow-lg">
+        {/* Expand button */}
+        <button
+          type="button"
+          onClick={() => setIsMinimized(false)}
+          className="p-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
+          title="Expand panel"
+        >
+          <Maximize2 className="w-5 h-5 text-[var(--text-primary)]" />
+        </button>
+
+        {/* Status indicator */}
+        <div className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
+
+        {/* Recent threads icons */}
+        {threads?.slice(0, 3).map((thread) => (
+          <button
+            key={thread._id}
+            type="button"
+            onClick={() => {
+              setActiveThreadId(thread._id);
+              setIsMinimized(false);
+            }}
+            className={`p-2 rounded-lg transition-colors ${
+              activeThreadId === thread._id
+                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
+                : 'hover:bg-[var(--bg-hover)] text-[var(--text-muted)]'
+            }`}
+            title={thread.title || 'Untitled Thread'}
+          >
+            <MessageSquare className="w-4 h-4" />
+          </button>
+        ))}
+
+        {/* New chat button */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveThreadId(null);
+            setIsMinimized(false);
+          }}
+          className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-colors"
+          title="New chat"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-[var(--text-muted)] hover:text-red-600 transition-colors mt-2"
+          title="Close panel"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Backdrop for mobile */}
@@ -796,6 +953,7 @@ export function FastAgentPanel({
             <div className="flex items-center justify-between mb-3">
               <div className="relative">
                 <button
+                  type="button"
                   onClick={() => setIsThreadDropdownOpen(!isThreadDropdownOpen)}
                   className="flex items-center gap-2 px-2 py-1.5 -ml-2 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors text-left max-w-[200px]"
                 >
@@ -822,6 +980,7 @@ export function FastAgentPanel({
                     />
                     <div className="absolute top-full left-0 mt-1 w-64 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg z-50 py-1 max-h-[300px] overflow-y-auto">
                       <button
+                        type="button"
                         onClick={() => {
                           setActiveThreadId(null);
                           setInput('');
@@ -844,6 +1003,7 @@ export function FastAgentPanel({
 
                       {threads?.map((thread) => (
                         <button
+                          type="button"
                           key={thread._id}
                           onClick={() => {
                             setActiveThreadId(thread._id);
@@ -864,6 +1024,7 @@ export function FastAgentPanel({
               <div className="flex items-center gap-2">
                 {/* Live Events toggle */}
                 <button
+                  type="button"
                   onClick={() => setShowEventsPanel(!showEventsPanel)}
                   className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${showEventsPanel
                     ? 'bg-blue-50 border-blue-200 text-blue-700'
@@ -880,6 +1041,7 @@ export function FastAgentPanel({
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => {
                     setActiveThreadId(null);
                     setInput('');
@@ -890,6 +1052,26 @@ export function FastAgentPanel({
                   <Plus className="w-3.5 h-3.5" />
                   New
                 </button>
+
+                {/* Minimize button */}
+                <button
+                  type="button"
+                  onClick={() => setIsMinimized(true)}
+                  className="p-1.5 hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+                  title="Minimize panel"
+                >
+                  <Minimize2 className="w-4 h-4 text-[var(--text-muted)]" />
+                </button>
+
+                {/* Close button */}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                  title="Close panel"
+                >
+                  <X className="w-4 h-4 text-[var(--text-muted)] hover:text-red-600" />
+                </button>
               </div>
             </div>
 
@@ -897,6 +1079,7 @@ export function FastAgentPanel({
             <div className="flex p-1 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
               {(['thread', 'artifacts', 'tasks', 'edits'] as const).map((tab) => (
                 <button
+                  type="button"
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === tab
@@ -998,6 +1181,12 @@ export function FastAgentPanel({
                 onAttachFiles={handleAttachFiles}
                 onRemoveFile={handleRemoveFile}
                 selectedDocumentIds={selectedDocumentIds}
+                contextDocuments={contextDocuments}
+                onAddContextDocument={handleAddContextDocument}
+                onRemoveContextDocument={handleRemoveContextDocument}
+                contextCalendarEvents={contextCalendarEvents}
+                onAddCalendarEvent={handleAddCalendarEvent}
+                onRemoveCalendarEvent={handleRemoveCalendarEvent}
               />
             </div>
           </div>

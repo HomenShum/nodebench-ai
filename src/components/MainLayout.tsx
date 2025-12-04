@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -17,6 +17,7 @@ import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
+import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 
 interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
@@ -62,6 +63,18 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   // Fast Agent thread navigation (for inline agent "View in Panel" link)
   const [fastAgentThreadId, setFastAgentThreadId] = useState<string | null>(null);
   // Removed MCP panel persistence and shortcut (no AIChatPanel)
+
+  // Sync Fast Agent panel state with global context
+  const { registerExternalState } = useFastAgent();
+  const showFastAgentRef = useRef(showFastAgent);
+  showFastAgentRef.current = showFastAgent;
+
+  useEffect(() => {
+    registerExternalState(
+      setShowFastAgent,
+      () => showFastAgentRef.current
+    );
+  }, [registerExternalState]);
 
   // Removed quick prompt handoff (AIChatPanel removed)
 
