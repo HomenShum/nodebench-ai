@@ -1230,7 +1230,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
             </div>
 
             {/* Source Nodes - Draggable & Configurable */}
-            <div className="space-y-2">
+            <div className="space-y-1">
               {SOURCES.map(source => {
                 const isActive = activeSources.includes(source.id);
                 const isQuerying = isRunning && isActive;
