@@ -9,6 +9,7 @@ import { api } from "../../_generated/api";
 /**
  * Sanitize ProseMirror content to remove unsupported node types
  * Converts mentions and hashtags to styled text nodes
+ * Converts TipTap taskItem/taskList to BlockNote checkListItem
  */
 const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
   try {
@@ -29,8 +30,10 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
       }
 
       if (Array.isArray(node)) {
+        // Flatten arrays (from taskList conversion) and filter nulls
         return node
           .map((child: unknown) => sanitize(child))
+          .flat()
           .filter((child: unknown) => child !== null);
       }
 
@@ -64,6 +67,36 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
             };
           }
 
+          // Convert TipTap taskList - return sanitized children (taskItems become checkListItems)
+          if (nodeType === "taskList") {
+            if (Array.isArray(pmNode.content)) {
+              return pmNode.content
+                .map((child: unknown) => sanitize(child))
+                .flat()
+                .filter((child: unknown) => child !== null);
+            }
+            return null;
+          }
+
+          // Convert TipTap taskItem to BlockNote checkListItem
+          if (nodeType === "taskItem") {
+            const checked = pmNode.attrs?.checked ?? false;
+            const sanitizedContent = Array.isArray(pmNode.content)
+              ? pmNode.content
+                  .map((child: unknown) => sanitize(child))
+                  .flat()
+                  .filter((child: unknown) => child !== null)
+              : [];
+
+            return {
+              type: "checkListItem",
+              attrs: {
+                checked: checked,
+              },
+              content: sanitizedContent.length > 0 ? sanitizedContent : undefined,
+            };
+          }
+
           // Remove unsupported block node types
           const unsupportedTypes = ["horizontalRule"];
           if (unsupportedTypes.includes(nodeType)) {
@@ -73,6 +106,7 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
           if (Array.isArray(pmNode.content)) {
             const sanitizedContent = pmNode.content
               .map((child: unknown) => sanitize(child))
+              .flat()
               .filter((child: unknown) => child !== null);
 
             return {

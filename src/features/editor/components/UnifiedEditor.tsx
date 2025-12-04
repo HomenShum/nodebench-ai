@@ -12,7 +12,7 @@ import { Id } from "../../../../convex/_generated/dataModel";
 import { useBlockNoteSync } from "@convex-dev/prosemirror-sync/blocknote";
 import { useQuery, useMutation, useConvex } from "convex/react";
 
-import { type PartialBlock } from "@blocknote/core";
+import { type PartialBlock, BlockNoteEditor } from "@blocknote/core";
 import { filterSuggestionItems } from "@blocknote/core/extensions";
 import { SuggestionMenuController } from "@blocknote/react";
 
