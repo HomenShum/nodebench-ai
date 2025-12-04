@@ -31,6 +31,8 @@ import { MoveFolderModal } from "./modals/MoveFolderModal";
 import { ShareModal } from "./modals/ShareModal";
 import TaskEditorPanel from "@/features/calendar/components/TaskEditorPanel";
 
+import { Home } from "lucide-react"; // Add import
+
 export function Sidebar({
     onDocumentSelect,
     selectedDocumentId,
@@ -41,7 +43,8 @@ export function Sidebar({
     appMode,
     onModeChange,
     activeSources,
-    onToggleSource
+    onToggleSource,
+    onGoHome // Add prop
 }: SidebarProps) {
     // Centralized state management
     const state = useSidebarState();
@@ -85,6 +88,21 @@ export function Sidebar({
 
     return (
         <div className="h-full flex flex-col bg-[var(--bg-primary)] border-r border-[var(--border-color)]">
+            {/* Home Button - Returns to Welcome Landing */}
+            {onGoHome && (
+                <div className="px-3 pt-4">
+                    <button
+                        onClick={onGoHome}
+                        className="group w-full flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+                    >
+                        <Home className="w-4 h-4 shrink-0 text-gray-500 group-hover:text-gray-700" />
+                        <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900">
+                            Home
+                        </span>
+                    </button>
+                </div>
+            )}
+
             {/* Navigation */}
             <AppModeNavigation appMode={appMode} onModeChange={onModeChange} />
 

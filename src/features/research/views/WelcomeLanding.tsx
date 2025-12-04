@@ -23,6 +23,7 @@ import {
   Filter,
   Image as ImageIcon,
 } from "lucide-react";
+import { SidebarGlobalNav, type ActivePage } from "@/components/SidebarGlobalNav";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { RichMediaSection } from "@features/agents/components/FastAgentPanel/RichMediaSection";
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from "@features/agents/components/FastAgentPanel/DocumentActionCard";
@@ -1175,22 +1176,36 @@ While commercial fusion is still years away, the pace of innovation has accelera
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6 custom-scrollbar">
-            {/* Main Nav */}
-            <div className="space-y-1">
-              <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Workspace</div>
-              <SidebarItem icon={<Layout className="w-4 h-4" />} title="Dashboard" time="" active onClick={onEnterWorkspace} />
-              <SidebarItem icon={<Clock className="w-4 h-4" />} title="Recent Research" time="" onClick={onEnterWorkspace} />
-              <SidebarItem icon={<FileText className="w-4 h-4" />} title="Saved Dossiers" time="" onClick={onEnterWorkspace} />
+          {/* Unified Global Navigation */}
+          <div className="px-3 pt-4">
+            <SidebarGlobalNav
+              activePage="research"
+              onNavigate={(page: ActivePage) => {
+                if (page === 'workspace' || page === 'saved') {
+                  onEnterWorkspace?.();
+                }
+                // 'research' is already active, no navigation needed
+              }}
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gray-200 mx-5 my-2" />
+
+          {/* Context Area: Active Knowledge Bases (Live Sources) */}
+          <div className="flex-1 overflow-y-auto py-2 px-3 custom-scrollbar">
+            <div className="px-2 mb-3 flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Active Knowledge Bases
+              </span>
+              <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                LIVE
+              </span>
             </div>
 
-            {/* Live Sources */}
+            {/* Live Sources - Styled as Knowledge Base Toggles */}
             <div className="space-y-1">
-              <div className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex justify-between items-center">
-                <span>Live Sources</span>
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              </div>
               {SOURCES.map(source => (
                 <SidebarItem
                   key={source.id}

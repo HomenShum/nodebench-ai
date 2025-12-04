@@ -18,6 +18,7 @@ export interface SidebarProps {
     onModeChange: (mode: 'workspace' | 'fast-agent' | 'deep-agent' | 'dossier') => void;
     activeSources: string[];
     onToggleSource: (sourceId: string) => void;
+    onGoHome?: () => void;
 }
 
 // App Mode Type
