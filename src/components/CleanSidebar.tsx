@@ -9,7 +9,7 @@
  * Source category buttons, Live Sources (moved to Welcome Landing)
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -21,7 +21,7 @@ import {
   Trash2,
   FolderOpen,
 } from "lucide-react";
-import { SidebarGlobalNav, type ActivePage } from "./SidebarGlobalNav";
+import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 
 type AppMode = 'workspace' | 'fast-agent' | 'deep-agent' | 'dossier';
 
@@ -56,6 +56,19 @@ export function CleanSidebar({
   // Get recent documents (limit to 8)
   const recentDocs = (documents ?? []).slice(0, 8);
 
+  // Get recent dossiers for the expandable menu
+  const recentDossiers: RecentDossier[] = useMemo(() => {
+    return (documents ?? [])
+      .filter((doc: any) => doc.type === 'dossier')
+      .slice(0, 5)
+      .map((doc: any) => ({
+        id: doc._id,
+        title: doc.title || 'Untitled Dossier',
+        updatedAt: doc.updatedAt ? new Date(doc.updatedAt) : undefined,
+        isAgentUpdating: false, // TODO: Check if agent is actively updating this dossier
+      }));
+  }, [documents]);
+
   // Handle global navigation
   const handleNavigate = (page: ActivePage) => {
     if (page === 'research') {
@@ -72,6 +85,13 @@ export function CleanSidebar({
   const getActivePage = (): ActivePage => {
     if (appMode === 'dossier') return 'saved';
     return 'workspace'; // workspace, fast-agent, deep-agent all show as workspace
+  };
+
+  // Handle dossier selection from expandable menu
+  const handleDossierSelect = (dossierIdStr: string) => {
+    const dossierId = dossierIdStr as Id<"documents">;
+    onDocumentSelect?.(dossierId);
+    onModeChange('dossier');
   };
 
   return (
@@ -91,6 +111,8 @@ export function CleanSidebar({
         <SidebarGlobalNav
           activePage={getActivePage()}
           onNavigate={handleNavigate}
+          recentDossiers={recentDossiers}
+          onDossierSelect={handleDossierSelect}
         />
       </div>
 
