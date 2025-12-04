@@ -9,6 +9,7 @@ import { PublicDocuments } from "@/features/documents/views/PublicDocuments";
 import { TabManager } from "./TabManager";
 import { DocumentsHomeHub } from "@/features/documents/components/DocumentsHomeHub";
 import { CalendarHomeHub } from "@/features/calendar/components/CalendarHomeHub";
+import { AgentsHub } from "@/features/agents/views/AgentsHub";
 
 import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
 
@@ -29,7 +30,7 @@ interface MainLayoutProps {
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowWelcomeLanding }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public'>('documents');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents'>('documents');
   const [isGridMode, setIsGridMode] = useState(false);
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -426,15 +427,18 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     const toTimeline = () => setCurrentView('documents'); // legacy
     const toDocuments = () => setCurrentView('documents');
     const toRoadmap = () => setCurrentView('roadmap');
+    const toAgents = () => setCurrentView('agents');
     window.addEventListener('navigate:calendar', toCalendar as unknown as EventListener);
     window.addEventListener('navigate:timeline', toTimeline as unknown as EventListener);
     window.addEventListener('navigate:documents', toDocuments as unknown as EventListener);
     window.addEventListener('navigate:roadmap', toRoadmap as unknown as EventListener);
+    window.addEventListener('navigate:agents', toAgents as unknown as EventListener);
     return () => {
       window.removeEventListener('navigate:calendar', toCalendar as unknown as EventListener);
       window.removeEventListener('navigate:timeline', toTimeline as unknown as EventListener);
       window.removeEventListener('navigate:documents', toDocuments as unknown as EventListener);
       window.removeEventListener('navigate:roadmap', toRoadmap as unknown as EventListener);
+      window.removeEventListener('navigate:agents', toAgents as unknown as EventListener);
     };
   }, []);
 
@@ -443,7 +447,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     const applyFromHash = () => {
       try {
         const h = (window.location.hash || '').toLowerCase();
-        if (h.startsWith('#calendar')) {
+        if (h.startsWith('#agents')) {
+          setCurrentView('agents');
+        } else if (h.startsWith('#calendar')) {
           setCurrentView('calendar');
         } else if (h.startsWith('#roadmap')) {
           setCurrentView('roadmap');
@@ -594,6 +600,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           <div className="flex-1 overflow-hidden" data-main-content>
             {currentView === 'public' ? (
               <PublicDocuments onDocumentSelect={handleDocumentSelect} />
+            ) : currentView === 'agents' ? (
+              <AgentsHub />
             ) : currentView === 'calendar' ? (
               <CalendarHomeHub
                 onDocumentSelect={handleDocumentSelect}

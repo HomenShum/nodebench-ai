@@ -13,13 +13,32 @@ import { SelectionProvider } from "@/features/agents/context/SelectionContext";
 
 function App() {
   const [showTutorial, setShowTutorial] = useState(false);
-  const [showWelcomeLanding, setShowWelcomeLanding] = useState(true);
+  // Check if URL hash indicates a specific workspace view
+  const initialHash = typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '';
+  const hashIndicatesWorkspace = initialHash.startsWith('#agents') ||
+    initialHash.startsWith('#calendar') ||
+    initialHash.startsWith('#documents') ||
+    initialHash.startsWith('#roadmap');
+  const [showWelcomeLanding, setShowWelcomeLanding] = useState(!hashIndicatesWorkspace);
   const [selectedDocumentId, setSelectedDocumentId] = useState<Id<"documents"> | null>(null);
 
   const user = useQuery(api.domains.auth.auth.loggedInUser);
   const documents = useQuery(api.domains.documents.documents.getSidebar);
   const ensureSeedOnLogin = useMutation(api.domains.auth.onboarding.ensureSeedOnLogin);
   const didEnsureRef = useRef(false);
+
+  // Listen for hash changes to switch between WelcomeLanding and MainLayout
+  useEffect(() => {
+    const handleHashChange = () => {
+      const h = window.location.hash.toLowerCase();
+      if (h.startsWith('#agents') || h.startsWith('#calendar') || h.startsWith('#documents') || h.startsWith('#roadmap')) {
+        setShowWelcomeLanding(false);
+        setShowTutorial(false);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Note: We no longer auto-show tutorial for new users
   // Users stay on WelcomeLanding and can access tutorial manually if needed
