@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback, useRef, Fragment } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useTiptapSync } from "@convex-dev/prosemirror-sync/tiptap";
 import { EditorProvider, useCurrentEditor } from "@tiptap/react";
@@ -13,132 +12,37 @@ import { Id } from "../../../../convex/_generated/dataModel";
 import { useBlockNoteSync } from "@convex-dev/prosemirror-sync/blocknote";
 import { useQuery, useMutation, useConvex } from "convex/react";
 
-import {
-  BlockNoteEditor,
-  type PartialBlock,
-} from "@blocknote/core";
+import { type PartialBlock } from "@blocknote/core";
 import { filterSuggestionItems } from "@blocknote/core/extensions";
-import {
-  DefaultReactSuggestionItem,
-  SuggestionMenuController,
-  getDefaultReactSlashMenuItems,
-} from "@blocknote/react";
+import { SuggestionMenuController } from "@blocknote/react";
 
-// Note: TipTap extensions (TaskList, TaskItem, etc.) removed to fix
-// "Every schema needs a 'text' type" error. BlockNote's default schema
-// already includes list support via bulletListItem, numberedListItem, checkListItem.
-
-import { ProposalProvider, useProposal } from "@/components/proposals/ProposalProvider";
+import { ProposalProvider } from "@/components/proposals/ProposalProvider";
 import { ProposalBar } from "@/components/proposals/ProposalBar";
 import { useInlineFastAgent } from "./UnifiedEditor/useInlineFastAgent";
 import { InlineAgentProgress } from "./UnifiedEditor/InlineAgentProgress";
 import { DeepAgentProgress } from "./UnifiedEditor/DeepAgentProgress";
 import { PendingEditHighlights } from "./UnifiedEditor/PendingEditHighlights";
+import { ProposalInlineDecorations } from "./UnifiedEditor/ProposalInlineDecorations";
 import { usePendingEdits } from "../hooks/usePendingEdits";
 
-import { computeStructuredOps, prismHighlight, detectFenceLang, diffWords, annotateMoves, type AnnotatedOp, type MovePair } from "@/components/proposals/diffUtils";
+import { computeStructuredOps } from "@/components/proposals/diffUtils";
 
+// Import extracted utilities and types
+import type { EditorMode, UnifiedEditorProps, AIToolAction } from "../types";
+import { extractPlainText, blocksAreTriviallyEmpty, getBlockText, bnEnsureTopLevelBlock } from "../utils/blockUtils";
+import { sanitizeProseMirrorContent } from "../utils/sanitize";
+import { useFileUpload } from "../hooks/useFileUpload";
+import { useAIKeyboard } from "../hooks/useAIKeyboard";
+import { useMentionMenu } from "../hooks/useMentionMenu";
+import { useHashtagMenu } from "../hooks/useHashtagMenu";
+import { useSlashMenuItems } from "../hooks/useSlashMenuItems";
+
+// Re-export types for backwards compatibility
+export type { EditorMode, UnifiedEditorProps };
+
+// Caches for seeding state
 const seededDocCache = new Map<string, string>();
 const restoreCache = new Map<string, { seed: string; signal: number }>();
-
-// Note: Custom mention and hashtag inline content specs removed to fix
-// "Every schema needs a 'text' type" error. The useBlockNoteSync hook creates
-// a headless BlockNoteEditor internally, and React-based inline content specs
-// cannot be initialized in headless mode.
-//
-// Instead, we use plain text with styles for mentions and hashtags.
-// This provides visual distinction while avoiding schema compilation errors.
-
-const extractPlainText = (node: any): string => {
-  if (!node) return '';
-  if (typeof node === 'string') return node;
-  if (Array.isArray(node)) return node.map(extractPlainText).join('');
-  if (node.type === 'text' && typeof node.text === 'string') return node.text;
-  if (Array.isArray(node.content)) return node.content.map(extractPlainText).join('');
-  if (Array.isArray(node.children)) return node.children.map(extractPlainText).join('');
-  return '';
-};
-
-const blocksAreTriviallyEmpty = (blocks: any[]): boolean => {
-  const plain = (blocks || []).map(extractPlainText).join('');
-  return plain.replace(/\s+/g, '').length === 0;
-};
-
-/**
- * Sanitize ProseMirror content to remove unsupported node types
- * Converts unsupported nodes (like horizontalRule, mention, hashtag) to supported alternatives
- */
-const sanitizeProseMirrorContent = (content: any): any => {
-  if (!content) return content;
-
-  if (Array.isArray(content)) {
-    return content
-      .map(node => sanitizeProseMirrorContent(node))
-      .filter(node => node !== null);
-  }
-
-  if (typeof content === 'object' && content.type) {
-    // Convert mentions and hashtags to plain text
-    if (content.type === 'mention') {
-      const label = content.attrs?.label || content.attrs?.id || '';
-      return {
-        type: 'text',
-        text: `@${label}`,
-        marks: content.marks || [],
-      };
-    }
-
-    if (content.type === 'hashtag') {
-      const name = content.attrs?.name || content.attrs?.label || '';
-      return {
-        type: 'text',
-        text: `#${name}`,
-        marks: content.marks || [],
-      };
-    }
-
-    // Remove unsupported block types
-    const unsupportedTypes = ['horizontalRule'];
-    if (unsupportedTypes.includes(content.type)) {
-      return null; // Filter out
-    }
-
-    // Recursively sanitize nested content
-    if (content.content && Array.isArray(content.content)) {
-      const sanitized = content.content
-        .map(node => sanitizeProseMirrorContent(node))
-        .filter(node => node !== null);
-
-      return {
-        ...content,
-        content: sanitized.length > 0 ? sanitized : undefined,
-      };
-    }
-  }
-
-  return content;
-};
-
-export type EditorMode = "quickEdit" | "quickNote" | "full";
-
-export interface UnifiedEditorProps {
-  documentId: Id<"documents">;
-  mode?: EditorMode;
-  isGridMode?: boolean;
-  isFullscreen?: boolean;
-  // If false, editor renders in view-only mode (no edits, no slash menu)
-  editable?: boolean;
-  // If true, automatically initialize an empty document when none exists (skips the "Create document" button)
-  autoCreateIfEmpty?: boolean;
-  // Optional: when creating a new doc (or when empty), seed from this markdown (e.g., last output)
-  seedMarkdown?: string;
-  // Signal to force-restore from provided markdown (increments to trigger)
-  restoreSignal?: number;
-  // Markdown to use for restore/seed operations
-  restoreMarkdown?: string;
-  // Provide a way for parent to extract plain text from the editor
-  registerExporter?: (fn: () => Promise<{ plain: string }>) => void;
-}
 
 /**
  * UnifiedEditor
@@ -166,49 +70,8 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   const isCompact = mode === "quickEdit" || mode === "quickNote";
   const disableSlashMenu = mode === "quickNote" || !editable; // keep super light or when view-only
 
-  // File upload handler for BlockNote
-  const generateUploadUrl = useMutation(api.domains.documents.files.generateUploadUrl);
-  const createFileRecord = useMutation(api.domains.documents.files.createFile);
-
-  const uploadFile = useCallback(async (file: File): Promise<string> => {
-    try {
-      console.log('[UnifiedEditor] Uploading file:', file.name, file.type, file.size);
-
-      // Generate upload URL from Convex
-      const uploadUrl = await generateUploadUrl();
-
-      // Upload file to Convex storage
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status}`);
-      }
-
-      const { storageId } = await response.json() as { storageId: string };
-
-      // Create file record in database
-      await createFileRecord({
-        storageId,
-        fileName: file.name,
-        fileType: file.type.startsWith('image/') ? 'image' : 'document',
-        mimeType: file.type,
-        fileSize: file.size,
-      });
-
-      // Get the public URL for the uploaded file
-      const fileUrl = await convex.query(api.domains.documents.files.getUrl, { storageId });
-
-      console.log('[UnifiedEditor] File uploaded successfully:', fileUrl);
-      return fileUrl || '';
-    } catch (error) {
-      console.error('[UnifiedEditor] File upload error:', error);
-      throw error;
-    }
-  }, [generateUploadUrl, createFileRecord, convex]);
+  // File upload handler for BlockNote - using extracted hook
+  const { uploadFile } = useFileUpload();
 
   // Note: We intentionally do NOT pass the custom schema to editorOptions here.
   // The useBlockNoteSync hook creates a headless BlockNoteEditor internally,
@@ -280,579 +143,17 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     }
   }, [isAgentEditing, pendingCount, hasFailedEdits, staleCount, isDeepAgentProcessing]);
 
-  // Add keyboard handler for /ai {question} pattern and prefix replacement
-  useEffect(() => {
-    if (!sync.editor) return;
+  // AI keyboard handler for /ai and /edit patterns - using extracted hook
+  useAIKeyboard({ editor: sync.editor, askFastAgent });
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      try {
-        const editor = sync.editor;
-        if (!editor) return;
-        const currentBlock = editor.getTextCursorPosition().block;
-        if (!(currentBlock?.content && Array.isArray(currentBlock.content))) return;
+  // Mention menu items - using extracted hook
+  const { getMentionMenuItems } = useMentionMenu({ editor: sync.editor });
 
-        const rawText = currentBlock.content.map((c: any) => c.text || "").join("");
-        const blockText = rawText.trim();
+  // Hashtag menu items - using extracted hook
+  const { getHashtagMenuItems } = useHashtagMenu({ editor: sync.editor, documentId });
 
-        // 1) SPACE: If user typed exactly "/ai" then pressing space converts it to "🤖 "
-        //    Also handle "/edit" -> "✏️ Edit: "
-        if (event.key === ' ' || event.code === 'Space') {
-          if (/^\/ai$/i.test(blockText)) {
-            console.log('[UnifiedEditor] Replacing "/ai" with "🤖 " on space');
-            event.preventDefault();
-            event.stopPropagation();
-            editor.updateBlock(currentBlock, {
-              type: 'paragraph',
-              content: [
-                { type: 'text', text: '🤖 ', styles: {} },
-              ],
-            });
-            editor.setTextCursorPosition(currentBlock, 'end');
-            return;
-          }
-
-          // Handle /edit -> "✏️ Edit: "
-          if (/^\/edit$/i.test(blockText)) {
-            console.log('[UnifiedEditor] Replacing "/edit" with "✏️ Edit: " on space');
-            event.preventDefault();
-            event.stopPropagation();
-            editor.updateBlock(currentBlock, {
-              type: 'paragraph',
-              content: [
-                { type: 'text', text: '✏️ Edit: ', styles: { bold: true, textColor: 'purple' } },
-              ],
-            });
-            editor.setTextCursorPosition(currentBlock, 'end');
-            return;
-          }
-        }
-
-        // 2) ENTER: If line starts with "/ai " OR "🤖 ", treat the rest as the question
-        if (event.key === 'Enter') {
-          console.log('[UnifiedEditor] Enter pressed, block text:', rawText);
-
-          const aiSlash = rawText.match(/^\s*\/ai\s+(.+)$/i);
-          const aiRobot = rawText.match(/^\s*🤖\s+(.+)$/);
-          const match = aiSlash || aiRobot;
-
-          if (match) {
-            const question = match[1].trim();
-            if (!question) return; // nothing to ask yet
-            console.log('[UnifiedEditor] ✅ Detected AI inline question:', question);
-
-            event.preventDefault();
-            event.stopPropagation();
-
-            // Replace the input line with a visible "User asked:" block
-            editor.updateBlock(currentBlock, {
-              type: 'paragraph',
-              content: [
-                { type: 'text', text: '💬 You: ', styles: { bold: true, textColor: 'blue' } },
-                { type: 'text', text: question, styles: { italic: true } },
-              ],
-            });
-
-            // Trigger Fast Agent (it will insert its own "Thinking..." block below)
-            askFastAgent(question, '').catch((error) => {
-              console.error('[UnifiedEditor] Fast Agent error:', error);
-              // Insert error block
-              editor.insertBlocks([
-                {
-                  type: 'paragraph',
-                  content: [
-                    { type: 'text', text: '❌ Failed to get response from Fast Agent. Please try again.', styles: { bold: true, textColor: 'red' } },
-                  ],
-                },
-              ], currentBlock, 'after');
-            });
-            return;
-          }
-
-          // 3) ENTER for /edit or ✏️ Edit: patterns - Deep Agent editing mode
-          const editSlash = rawText.match(/^\s*\/edit\s+(.+)$/i);
-          const editEmoji = rawText.match(/^\s*✏️\s*Edit:\s*(.+)$/i);
-          const editMatch = editSlash || editEmoji;
-
-          if (editMatch) {
-            const instruction = editMatch[1].trim();
-            if (!instruction) return;
-            console.log('[UnifiedEditor] ✅ Detected Deep Agent edit instruction:', instruction);
-
-            event.preventDefault();
-            event.stopPropagation();
-
-            // Get document context for editing
-            let documentContext = "";
-            try {
-              const allBlocks = editor.document;
-              documentContext = allBlocks.slice(0, 20).map((block: any) => {
-                if (block.content && Array.isArray(block.content)) {
-                  return block.content.map((c: any) => c.text || "").join("");
-                }
-                return "";
-              }).filter(Boolean).join("\n").substring(0, 2000);
-            } catch (e) {
-              console.warn("[UnifiedEditor] Could not extract document context:", e);
-            }
-
-            // Show editing indicator
-            editor.updateBlock(currentBlock, {
-              type: 'paragraph',
-              content: [
-                { type: 'text', text: '✏️ ', styles: {} },
-                { type: 'text', text: 'Deep Agent editing: ', styles: { bold: true, textColor: 'purple' } },
-                { type: 'text', text: instruction, styles: { italic: true } },
-              ],
-            });
-
-            // Call Fast Agent with edit-specific prompt
-            const editPrompt = `You are in DOCUMENT EDITING mode. The user wants to edit this document.
-
-INSTRUCTION: ${instruction}
-
-DOCUMENT CONTEXT (first 2000 chars):
-${documentContext}
-
-Use the document editing tools (readDocumentSections, createDocumentEdit) to:
-1. First read the document structure to understand where to make edits
-2. Create anchor-based SEARCH/REPLACE edits for each change
-3. Report on edit status after creating them
-
-Be precise with anchors and search text - they must match exactly what's in the document.`;
-
-            askFastAgent(editPrompt, '').catch((error) => {
-              console.error('[UnifiedEditor] Deep Agent edit error:', error);
-              editor.insertBlocks([
-                {
-                  type: 'paragraph',
-                  content: [
-                    { type: 'text', text: '❌ Deep Agent editing failed. Please try again.', styles: { bold: true, textColor: 'red' } },
-                  ],
-                },
-              ], currentBlock, 'after');
-            });
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('[UnifiedEditor] Error in /ai keyboard handler:', error);
-      }
-    };
-
-    console.log('[UnifiedEditor] Adding /ai keyboard handler');
-    document.addEventListener('keydown', handleKeyDown, { capture: true });
-    return () => {
-      console.log('[UnifiedEditor] Removing /ai keyboard handler');
-      document.removeEventListener('keydown', handleKeyDown, { capture: true });
-    };
-  }, [sync.editor, askFastAgent]);
-
-  // Function to get mention menu items (documents to suggest)
-  const getMentionMenuItems = useCallback(
-    async (query: string): Promise<DefaultReactSuggestionItem[]> => {
-      try {
-        const trimmed = (query ?? '').trim();
-        let documents: any[] = [];
-
-        if (trimmed.length < 1) {
-          // Show recent documents
-          documents = await convex.query(api.domains.documents.documents.getRecentForMentions, { limit: 8 });
-        } else {
-          // Search documents
-          documents = await convex.query(api.domains.documents.documents.getSearch, { query: trimmed });
-        }
-
-        return (documents || []).map((doc: any) => ({
-          title: doc.title || 'Untitled',
-          onItemClick: () => {
-            if (sync.editor) {
-              // Insert mention as styled text instead of custom inline content
-              sync.editor.insertInlineContent([
-                {
-                  type: "text",
-                  text: `@${doc.title || 'Untitled'}`,
-                  styles: {
-                    backgroundColor: "#8400ff33",
-                    textColor: "#8400ff",
-                  },
-                },
-                " ", // add a space after the mention
-              ]);
-            }
-          },
-        }));
-      } catch (error) {
-        console.error("[UnifiedEditor] Error fetching mention items:", error);
-        return [];
-      }
-    },
-    [convex, sync.editor]
-  );
-
-  // Function to get hashtag menu items (shows matching documents preview + create new)
-  const getHashtagMenuItems = useCallback(
-    async (query: string): Promise<DefaultReactSuggestionItem[]> => {
-      try {
-        const trimmed = (query ?? '').trim().toLowerCase();
-        const items: DefaultReactSuggestionItem[] = [];
-
-        if (trimmed.length === 0) {
-          // Show recent hashtags when no query
-          const recentHashtags = await convex.query(api.domains.search.hashtagDossiers.getRecentHashtags, { limit: 5 });
-
-          recentHashtags.forEach((h: any) => {
-            items.push({
-              title: `#${h.hashtag}`,
-              subtext: 'Existing hashtag dossier',
-              onItemClick: () => {
-                if (sync.editor) {
-                  // Insert hashtag as styled text instead of custom inline content
-                  sync.editor.insertInlineContent([
-                    {
-                      type: "text",
-                      text: `#${h.hashtag}`,
-                      styles: {
-                        backgroundColor: "#0ea5e933",
-                        textColor: "#0ea5e9",
-                      },
-                    },
-                    " ",
-                  ]);
-                }
-              },
-            });
-          });
-
-          return items;
-        }
-
-        // Check if hashtag dossier already exists
-        const existingHashtags = await convex.query(api.domains.search.hashtagDossiers.getRecentHashtags, { limit: 50 });
-        const existingDossier = existingHashtags.find((h: any) => h.hashtag.toLowerCase() === trimmed);
-
-        if (existingDossier) {
-          // Show existing hashtag dossier
-          items.push({
-            title: `#${trimmed}`,
-            subtext: 'Existing hashtag dossier - click to insert',
-            onItemClick: () => {
-              if (sync.editor) {
-                // Insert hashtag as styled text instead of custom inline content
-                sync.editor.insertInlineContent([
-                  {
-                    type: "text",
-                    text: `#${trimmed}`,
-                    styles: {
-                      backgroundColor: "#0ea5e933",
-                      textColor: "#0ea5e9",
-                    },
-                  },
-                  " ",
-                ]);
-              }
-            },
-          });
-        } else {
-          // Show "Search and create dossier" option
-          items.push({
-            title: `Search for "${trimmed}" and create dossier`,
-            subtext: 'Will search documents and create a new hashtag dossier',
-            onItemClick: async () => {
-              if (!sync.editor) return;
-
-              // Show immediate visual feedback with a loading placeholder
-              sync.editor.insertInlineContent([
-                {
-                  type: "text",
-                  text: `#${trimmed}`,
-                  styles: {
-                    textColor: "#94a3b8",
-                    backgroundColor: "#f1f5f933",
-                  },
-                },
-                {
-                  type: "text",
-                  text: " ⏳",
-                  styles: { textColor: "#94a3b8" },
-                },
-                " ",
-              ]);
-
-              try {
-                console.log(`[UnifiedEditor] Searching for documents matching: ${trimmed}`);
-
-                // Search for matching documents
-                const searchResult = await convex.action(api.domains.search.hashtagDossiers.searchForHashtag, {
-                  hashtag: trimmed,
-                });
-
-                console.log(`[UnifiedEditor] Found ${searchResult.totalCount} matching documents`);
-
-                // Create dossier with the matched documents
-                const dossierId = await convex.mutation(api.domains.search.hashtagDossiers.createHashtagDossier, {
-                  hashtag: trimmed,
-                  matchedDocuments: searchResult.matches,
-                });
-
-                // Get current cursor position and block
-                const cursorPos = sync.editor.getTextCursorPosition();
-                const block = cursorPos.block;
-
-                // Remove the loading placeholder and insert the actual hashtag
-                // Find the last text items (our placeholder)
-                const content = [...(block.content || [])];
-
-                // Remove last 3 items (the placeholder we just inserted)
-                content.splice(-3, 3);
-
-                // Add the actual hashtag as styled text
-                content.push({
-                  type: "text",
-                  text: `#${trimmed}`,
-                  styles: {
-                    backgroundColor: "#0ea5e933",
-                    textColor: "#0ea5e9",
-                  },
-                });
-                content.push(" ");
-
-                // Update the block
-                (sync.editor as any).updateBlock(block, { content });
-
-                console.log(`[UnifiedEditor] ✅ Created hashtag dossier #${trimmed} with ${searchResult.totalCount} documents`);
-              } catch (error) {
-                console.error("[UnifiedEditor] Error creating hashtag dossier:", error);
-
-                // Get current block and remove the loading placeholder
-                const cursorPos = sync.editor.getTextCursorPosition();
-                const block = cursorPos.block;
-                const content = [...(block.content || [])];
-
-                // Remove last 3 items (the placeholder)
-                content.splice(-3, 3);
-
-                // Add error indicator
-                content.push({
-                  type: "text",
-                  text: `#${trimmed} ❌`,
-                  styles: { textColor: "#ef4444" },
-                });
-                content.push(" ");
-
-                (sync.editor as any).updateBlock(block, { content });
-
-                alert("Failed to create hashtag dossier. Please try again.");
-              }
-            },
-          });
-        }
-
-        return items;
-      } catch (error) {
-        console.error("[UnifiedEditor] Error fetching hashtag items:", error);
-        return [];
-      }
-    },
-    [convex, sync.editor, documentId]
-  );
-
-  // Custom slash menu items for Fast Agent integration with streaming
-  const getCustomSlashMenuItems = useCallback((editor: BlockNoteEditor) => {
-    const defaultItems = getDefaultReactSlashMenuItems(editor);
-
-    // Add custom Fast Agent item to the slash menu
-    return [
-      ...defaultItems,
-      {
-        title: "Ask Fast Agent",
-        onItemClick: () => {
-          // Get current block to check if user typed inline prompt
-          const currentBlock = editor.getTextCursorPosition().block;
-          let inlinePrompt = "";
-
-          // Extract text from current block
-          if (currentBlock.content && Array.isArray(currentBlock.content)) {
-            const blockText = currentBlock.content
-              .map((c: any) => c.text || "")
-              .join("")
-              .trim();
-
-            // Check if user typed "/ai " followed by text
-            const aiMatch = blockText.match(/^\/ai\s+(.+)$/i);
-            if (aiMatch) {
-              inlinePrompt = aiMatch[1].trim();
-            }
-          }
-
-          // If no inline prompt, just clear the /ai text and let user continue typing
-          if (!inlinePrompt) {
-            // Clear the current block (remove the "/ai" text)
-            editor.updateBlock(currentBlock, {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "🤖 ",
-                  styles: {},
-                },
-              ],
-            });
-
-            // Set cursor at the end so user can continue typing
-            editor.setTextCursorPosition(currentBlock, "end");
-            return;
-          }
-
-          // Get selected text as context (if any)
-          const selection = editor.getSelection();
-          let context = "";
-
-          if (selection) {
-            const blocks = selection.blocks;
-            context = blocks.map((block: any) => {
-              if (block.content && Array.isArray(block.content)) {
-                return block.content.map((c: any) => c.text || "").join("");
-              }
-              return "";
-            }).join("\n");
-          }
-
-          // Clear the current block before inserting response
-          editor.updateBlock(currentBlock, {
-            type: "paragraph",
-            content: [],
-          });
-
-          // Call Fast Agent with streaming
-          askFastAgent(inlinePrompt, context).catch((error) => {
-            console.error("[UnifiedEditor] Fast Agent error:", error);
-            // Insert error message inline instead of alert
-            editor.insertBlocks(
-              [
-                {
-                  type: "paragraph",
-                  content: [
-                    {
-                      type: "text",
-                      text: "❌ Failed to get response from Fast Agent. Please try again.",
-                      styles: { bold: true, textColor: "red" },
-                    },
-                  ],
-                },
-              ],
-              currentBlock,
-              "after"
-            );
-          });
-        },
-        aliases: ["ai", "agent", "ask"],
-        group: "AI",
-        icon: "🤖",
-        subtext: "Type '/ai {your question}' for instant response",
-      },
-      {
-        title: "Edit with Deep Agent",
-        onItemClick: () => {
-          // Get current block to check if user typed inline edit instruction
-          const currentBlock = editor.getTextCursorPosition().block;
-          let editInstruction = "";
-
-          // Extract text from current block
-          if (currentBlock.content && Array.isArray(currentBlock.content)) {
-            const blockText = currentBlock.content
-              .map((c: any) => c.text || "")
-              .join("")
-              .trim();
-
-            // Check for "/ai edit " or "/edit " followed by instruction
-            const editMatch = blockText.match(/^\/(?:ai\s+)?edit\s+(.+)$/i);
-            if (editMatch) {
-              editInstruction = editMatch[1].trim();
-            }
-          }
-
-          // If no inline instruction, show placeholder and let user type
-          if (!editInstruction) {
-            editor.updateBlock(currentBlock, {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "✏️ Edit: ",
-                  styles: { bold: true, textColor: "purple" },
-                },
-              ],
-            });
-            editor.setTextCursorPosition(currentBlock, "end");
-            return;
-          }
-
-          // Get document content as context for editing
-          let documentContext = "";
-          try {
-            const allBlocks = editor.document;
-            documentContext = allBlocks.slice(0, 20).map((block: any) => {
-              if (block.content && Array.isArray(block.content)) {
-                return block.content.map((c: any) => c.text || "").join("");
-              }
-              return "";
-            }).filter(Boolean).join("\n").substring(0, 2000);
-          } catch (e) {
-            console.warn("[UnifiedEditor] Could not extract document context:", e);
-          }
-
-          // Show editing indicator
-          editor.updateBlock(currentBlock, {
-            type: "paragraph",
-            content: [
-              { type: "text", text: "✏️ ", styles: {} },
-              { type: "text", text: "Deep Agent editing: ", styles: { bold: true, textColor: "purple" } },
-              { type: "text", text: editInstruction, styles: { italic: true } },
-            ],
-          });
-
-          // Call Fast Agent with edit-specific context and instruction
-          const editPrompt = `You are in DOCUMENT EDITING mode. The user wants to edit this document.
-
-INSTRUCTION: ${editInstruction}
-
-DOCUMENT CONTEXT (first 2000 chars):
-${documentContext}
-
-Use the document editing tools (readDocumentSections, createDocumentEdit) to:
-1. First read the document structure to understand where to make edits
-2. Create anchor-based SEARCH/REPLACE edits for each change
-3. Report on edit status after creating them
-
-Be precise with anchors and search text - they must match exactly what's in the document.`;
-
-          askFastAgent(editPrompt, "").catch((error) => {
-            console.error("[UnifiedEditor] Deep Agent edit error:", error);
-            editor.insertBlocks(
-              [
-                {
-                  type: "paragraph",
-                  content: [
-                    {
-                      type: "text",
-                      text: "❌ Deep Agent editing failed. Please try again.",
-                      styles: { bold: true, textColor: "red" },
-                    },
-                  ],
-                },
-              ],
-              currentBlock,
-              "after"
-            );
-          });
-        },
-        aliases: ["edit", "aiedit", "deepedit"],
-        group: "AI",
-        icon: "✏️",
-        subtext: "Type '/edit {instruction}' to edit document with AI",
-      },
-    ];
-  }, [askFastAgent]);
+  // Custom slash menu items for Fast Agent integration - using extracted hook
+  const { getCustomSlashMenuItems } = useSlashMenuItems({ askFastAgent });
 
   // Sanitize the loaded content to remove unsupported node types
   useEffect(() => {
@@ -934,22 +235,7 @@ Be precise with anchors and search text - they must match exactly what's in the 
     } catch { return null; }
   }, [sync.editor]);
 
-  // Rich markdown -> BlockNote blocks using BlockNote's own parser
-  const bnEnsureTopLevelBlock = (maybeBlock: any): any => {
-    if (!maybeBlock || typeof maybeBlock !== "object") return { type: "paragraph", content: [] };
-    if ((maybeBlock.type === "doc" || maybeBlock.type === "blockGroup") && Array.isArray(maybeBlock.content)) {
-      return { _flattenFromDoc: true, content: maybeBlock.content } as any;
-    }
-    if (maybeBlock.type === "text" && typeof (maybeBlock.text) === "string") {
-      return { type: "paragraph", content: [{ type: "text", text: String(maybeBlock.text) }] };
-    }
-    if (maybeBlock.type && Array.isArray(maybeBlock.content)) {
-      return { type: maybeBlock.type, content: maybeBlock.content, props: maybeBlock.props };
-    }
-    return { type: "paragraph", content: [] };
-  };
-
-
+  // bnEnsureTopLevelBlock is imported from ../utils/blockUtils
 
   // Use default BlockNoteEditor for markdown parsing (no custom schema needed)
   // The custom schema with mention/hashtag is only needed for the main editor
@@ -1449,22 +735,6 @@ Be precise with anchors and search text - they must match exactly what's in the 
           if (!preview) {
             try {
               const texts: string[] = [];
-  // Expose exporter to parent
-  useEffect(() => {
-    if (!registerExporter) return;
-    const ed: any = sync.editor as any;
-    if (!ed) return;
-    registerExporter(async () => {
-      try {
-        const blocks: any[] = ed?.topLevelBlocks ?? [];
-        const plain = blocks.map(getBlockText).join('\n\n');
-        return { plain };
-      } catch {
-        return { plain: '' };
-      }
-    });
-  }, [registerExporter, sync.editor, getBlockText]);
-
               editor.state.doc.descendants((n: any) => { if (n.isText && typeof n.text === 'string') texts.push(n.text); });
               preview = texts.join(' ').slice(0, 200);
             } catch {}
@@ -1477,8 +747,6 @@ Be precise with anchors and search text - they must match exactly what's in the 
         } catch {}
       };
       try { emit(); } catch {}
-  // Expose exporter to parent
-
       try { editor.on('selectionUpdate', emit); } catch {}
       try { editor.on('update', emit); } catch {}
       return () => {
@@ -1486,6 +754,9 @@ Be precise with anchors and search text - they must match exactly what's in the 
         try { editor.off?.('update', emit); } catch {}
       };
     }, [sync.editor, documentId, getCurrentOrLastBlock, getBlockText]);
+
+    return null;
+  };
 
   // Expose exporter to parent
   useEffect(() => {
@@ -1501,11 +772,7 @@ Be precise with anchors and search text - they must match exactly what's in the 
         return { plain: '' };
       }
     });
-  }, [registerExporter, sync.editor, getBlockText]);
-
-
-    return null;
-  };
+  }, [registerExporter, sync.editor]);
 
   // Hidden Tiptap editor used only for PM context/exact offsets
   const ShadowTiptap: React.FC = () => {
@@ -1556,47 +823,6 @@ Be precise with anchors and search text - they must match exactly what's in the 
 
   // Helpers for diff overlay
 
-  // Inspector state and toggle (header button dispatches nodebench:toggleInspector)
-  const [showInspector, setShowInspector] = useState(false);
-  useEffect(() => {
-    const onToggle = () => setShowInspector((s) => !s);
-    window.addEventListener('nodebench:toggleInspector', onToggle as EventListener);
-    return () => window.removeEventListener('nodebench:toggleInspector', onToggle as EventListener);
-  }, []);
-
-  const getBlockText = useCallback((block: any): string => {
-    const texts: string[] = [];
-    const walk = (n: any) => {
-      if (!n) return;
-      if (Array.isArray(n)) { n.forEach(walk); return; }
-      if (n.type === 'text' && typeof n.text === 'string') { texts.push(n.text); }
-      if (Array.isArray(n.content)) n.content.forEach(walk);
-    };
-    try { walk(block); } catch {}
-    return texts.join('');
-  }, []);
-
-  type LineOp = { type: 'eq' | 'del' | 'add'; line: string; aIdx?: number; bIdx?: number };
-  const diffLines = useCallback((a: string[], b: string[]): LineOp[] => {
-    const m = a.length, n = b.length;
-    const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-    for (let i = m - 1; i >= 0; i--) {
-      for (let j = n - 1; j >= 0; j--) {
-        dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-      }
-    }
-    const ops: LineOp[] = [];
-    let i = 0, j = 0;
-    while (i < m && j < n) {
-      if (a[i] === b[j]) { ops.push({ type: 'eq', line: a[i], aIdx: i, bIdx: j }); i++; j++; }
-      else if (dp[i + 1][j] >= dp[i][j + 1]) { ops.push({ type: 'del', line: a[i], aIdx: i }); i++; }
-      else { ops.push({ type: 'add', line: b[j], bIdx: j }); j++; }
-    }
-    while (i < m) { ops.push({ type: 'del', line: a[i], aIdx: i }); i++; }
-    while (j < n) { ops.push({ type: 'add', line: b[j], bIdx: j }); j++; }
-    return ops;
-  }, []);
-
   const getBlockEl = useCallback((blockId: string): HTMLElement | null => {
     const root = editorContainerRef.current;
     try {
@@ -1605,98 +831,6 @@ Be precise with anchors and search text - they must match exactly what's in the 
       return null;
     }
   }, [editorContainerRef]);
-
-  // Inspector renderer: Builds a ProseMirror-like JSON with from/to offsets
-  const InspectorPanel: React.FC<{ editorRef: any }> = ({ editorRef }) => {
-    const [tick, setTick] = useState(0);
-    const build = useCallback(() => {
-      const ed: any = editorRef as any;
-      const blocks: any[] = ed?.topLevelBlocks ?? [];
-      let pos = 0;
-      const makeMarks = (styles: any): any[] | undefined => {
-        try {
-          const marks: any[] = [];
-          const s = styles || {};
-          if (s.bold) marks.push({ type: 'bold' });
-          if (s.italic) marks.push({ type: 'italic' });
-          if (s.code) marks.push({ type: 'code' });
-          return marks.length ? marks : undefined;
-        } catch { return undefined; }
-      };
-      const walkInline = (nodes: any[]): any[] => {
-        const out: any[] = [];
-        for (const n of (nodes || [])) {
-          if (!n) continue;
-          if (n.type === 'text' && typeof n.text === 'string') {
-            const from = pos; const len = n.text.length; pos += len; const to = pos;
-            const marks = makeMarks(n.styles || n.marks || n.props);
-            const base: any = { type: 'text', from, to, text: n.text };
-            if (marks) base.marks = marks;
-            out.push(base);
-          } else if (n.type === 'lineBreak' || n.type === 'hardBreak') {
-            const from = pos; pos += 1; const to = pos; out.push({ type: 'hardBreak', from, to });
-          } else if (Array.isArray(n.content)) {
-            out.push(...walkInline(n.content));
-          }
-        }
-        return out;
-      };
-      const walkBlock = (b: any): any | null => {
-        if (!b || typeof b !== 'object') return null;
-        const raw = String(b.type || 'paragraph');
-        const allowed = ['heading','paragraph','bulletList','orderedList','listItem','codeBlock','blockquote'];
-        const type = allowed.includes(raw) ? raw : 'paragraph';
-        const attrs: any = (type === 'heading')
-          ? { level: Number(b?.props?.level ?? 1) }
-          : (type === 'codeBlock')
-            ? { language: (b?.props?.language ?? b?.props?.lang ?? null) }
-            : undefined;
-
-        const nodeFrom = pos; pos += 1; // open token
-
-        let content: any[] = [];
-        const maybe = b?.content ?? b?.children ?? [];
-        const looksInline = Array.isArray(maybe) && maybe.some((n: any) => n && (
-          n.type === 'text' || n.type === 'hardBreak' || n.type === 'lineBreak' || typeof n?.text === 'string'
-        ));
-        if (looksInline) {
-          content = walkInline(maybe);
-        } else if (Array.isArray(maybe)) {
-          content = maybe.map(walkBlock).filter(Boolean) as any[];
-        }
-
-        const nodeTo = pos + 1; pos = nodeTo; // close token
-        const node: any = { type, from: nodeFrom, to: nodeTo };
-        if (attrs) node.attrs = attrs;
-        if (content.length) node.content = content;
-        return node;
-      };
-      const content = blocks.map(walkBlock).filter(Boolean);
-      const doc: any = { type: 'doc', from: 0, to: pos, content };
-      return doc;
-    }, [editorRef]);
-
-    const json = useMemo(() => { void tick; return build(); }, [build, tick]);
-
-    const handleCopy = useCallback(() => {
-      try { void navigator.clipboard.writeText(JSON.stringify(json, null, 2)); } catch {}
-    }, [json]);
-
-    return (
-      <div className="mb-3 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]">
-        <div className="px-2 py-1.5 flex items-center justify-between border-b border-[var(--border-color)]">
-          <div className="text-xs font-semibold">Inspect</div>
-          <div className="flex items-center gap-2">
-            <button className="px-2 py-0.5 text-[11px] rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]" onClick={() => setTick((x) => x + 1)}>Refresh</button>
-            <button className="px-2 py-0.5 text-[11px] rounded bg-[var(--accent-primary)] text-white hover:opacity-90" onClick={handleCopy}>Copy</button>
-          </div>
-        </div>
-        <pre className="p-2 overflow-auto text-[12px] leading-tight max-h-64 whitespace-pre-wrap">
-{JSON.stringify(json, null, 2)}
-        </pre>
-      </div>
-    );
-  };
 
   const computeProposalTargets = useCallback(() => {
     const targets: Array<{ blockId: string; nodeId?: string; ops: { type: 'eq'|'add'|'del'; line: string }[]; action: any }> = [];
@@ -1720,7 +854,7 @@ Be precise with anchors and search text - they must match exactly what's in the 
       }
     } catch {}
     return targets;
-  }, [pendingProposal, sync.editor, diffLines, getBlockText]);
+  }, [pendingProposal, sync.editor, getBlockText]);
 
 
 
@@ -1745,257 +879,6 @@ Be precise with anchors and search text - they must match exactly what's in the 
   }, []);
 
   // Revert to a previous local checkpoint by applying inverse actions
-
-
-  const ProposalInlineDecorations = () => {
-    const { selections, toggleLine, setBlockDefaults } = useProposal();
-
-    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-    const overlayIndexRef = useRef(0);
-    useEffect(() => {
-      const onKey = (e: KeyboardEvent) => {
-        if (!pendingProposal) return;
-        const overlays = Array.from(document.querySelectorAll('[data-nodebench-overlay]')) as HTMLElement[];
-        if (e.key === 'j' || e.key === 'J') {
-          if (overlays.length === 0) return;
-          overlayIndexRef.current = (overlayIndexRef.current + 1) % overlays.length;
-
-          overlays[overlayIndexRef.current]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        } else if (e.key === 'k' || e.key === 'K') {
-          if (overlays.length === 0) return;
-          overlayIndexRef.current = (overlayIndexRef.current - 1 + overlays.length) % overlays.length;
-          overlays[overlayIndexRef.current]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        } else if (e.key === 'Enter') {
-          try {
-            const targets = computeProposalTargets();
-            const actions: any[] = [];
-            for (const t of targets) {
-              const sel = selections[t.blockId] || {};
-              const merged: string[] = [];
-              for (let k = 0; k < t.ops.length; k++) {
-                const op = t.ops[k];
-                const accepted = sel[k] ?? (op.type === 'add');
-                if (op.type === 'eq') merged.push(op.line);
-                else if (op.type === 'del') { if (!accepted) merged.push(op.line); }
-                else if (op.type === 'add') { if (accepted) merged.push(op.line); }
-              }
-              const markdown = merged.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-              const base = t.action?.nodeId ? { type: 'updateNode', nodeId: t.action.nodeId, markdown } : { type: 'createNode', markdown };
-              actions.push({ ...base, anchorBlockId: t.blockId });
-            }
-            window.dispatchEvent(new CustomEvent('nodebench:applyActions', { detail: { actions } }));
-            setPendingProposal(null);
-          } catch { /* ignore */ }
-        } else if (e.key === 'Escape') {
-          setPendingProposal(null);
-        }
-      };
-      window.addEventListener('keydown', onKey);
-      return () => window.removeEventListener('keydown', onKey);
-    }, [pendingProposal, selections, computeProposalTargets]);
-
-    // Initialize default line selections (accept adds and moved deletions) after render
-    useEffect(() => {
-      if (!pendingProposal) return;
-      try {
-        const seen = new Set<string>();
-        for (const action of (pendingProposal.actions || []) as any[]) {
-          let blk = findBlockByNodeId(action.nodeId);
-          if (!blk && pendingProposal.anchorBlockId) {
-            try {
-              const anyEd: any = sync.editor as any;
-              const top: any[] = anyEd?.topLevelBlocks ?? [];
-              blk = top.find((b: any) => b.id === pendingProposal.anchorBlockId) ?? null;
-            } catch { /* noop */ }
-          }
-          if (!blk) continue;
-          if (seen.has(blk.id)) continue;
-          seen.add(blk.id);
-          if (selections[blk.id]) continue; // already initialized
-          const current = getBlockText(blk);
-          const proposed = String(action.markdown || '');
-          const { ops } = computeStructuredOps(current, proposed);
-          const { ops: annotatedOps } = annotateMoves(ops);
-          const defaults: Record<number, boolean> = {};
-          annotatedOps.forEach((op: any, idx: number) => {
-            if (op.type === 'add') defaults[idx] = true;
-            if (op.type === 'del' && op.moved) defaults[idx] = true;
-          });
-          setBlockDefaults(blk.id, defaults);
-        }
-      } catch { /* ignore */ }
-    }, [pendingProposal, selections, findBlockByNodeId, getBlockText, computeStructuredOps, annotateMoves, setBlockDefaults, sync.editor]);
-
-
-    const container = editorContainerRef.current;
-    const actions = pendingProposal?.actions?.filter(a => typeof (a as any)?.markdown === 'string') as any[] | undefined;
-    if (!pendingProposal || !actions || actions.length === 0 || !container || typeof window === 'undefined' || !window.document?.body) return null;
-
-    const anyEd: any = sync.editor as any;
-    const allBlocks: any[] = anyEd?.topLevelBlocks ?? [];
-
-
-    // Unique overlay targets by block id
-    const seen = new Set<string>();
-    const overlayTargets: Array<{ action: any; block: any }> = [];
-    for (const action of actions) {
-      let blk: any | null = null;
-      if (action.nodeId) {
-        blk = findBlockByNodeId(String(action.nodeId));
-      }
-      if (!blk && pendingProposal.anchorBlockId) {
-        blk = allBlocks.find(b => b.id === pendingProposal.anchorBlockId) ?? null;
-      }
-      if (!blk) continue;
-      if (seen.has(blk.id)) continue;
-      seen.add(blk.id);
-      overlayTargets.push({ action, block: blk });
-    }
-
-    if (overlayTargets.length === 0) return null;
-
-    const renderOverlay = (action: any, blk: any, i: number) => {
-      const current = getBlockText(blk);
-      const proposed = String(action.markdown || '');
-      const { ops } = computeStructuredOps(current, proposed);
-      const { ops: annotatedOps, pairs } = annotateMoves(ops);
-      // Default selections: accept adds; for moved items, also accept deletion (to avoid duplicates)
-      const defaults: Record<number, boolean> = {};
-      annotatedOps.forEach((op, idx) => {
-        if (op.type === 'add') defaults[idx] = true;
-        if (op.type === 'del' && op.moved) defaults[idx] = true;
-      });
-
-      const toFrom = new Map<number, number>();
-      const fromTo = new Map<number, number>();
-      pairs.forEach(p => { fromTo.set(p.from, p.to); toFrom.set(p.to, p.from); });
-
-      const blockEl = getBlockEl(blk.id);
-      if (!blockEl) return null;
-      const rect = blockEl.getBoundingClientRect();
-      const panelWidth = Math.min(Math.max(280, Math.round(rect.width * 0.6)), 420);
-      const gutter = 12;
-      const left = Math.min(rect.left + window.scrollX + gutter, window.scrollX + window.innerWidth - panelWidth - 16);
-      const top = Math.max(16, rect.top + window.scrollY + 4);
-
-      const sel = selections[blk.id] || {};
-
-      const applySelected = () => {
-        const merged: string[] = [];
-        for (let k = 0; k < ops.length; k++) {
-          const op = ops[k];
-          const accepted = sel[k] ?? (op.type === 'add');
-          if (op.type === 'eq') merged.push(op.line);
-          else if (op.type === 'del') { if (!accepted) merged.push(op.line); }
-          else if (op.type === 'add') { if (accepted) merged.push(op.line); }
-        }
-        const newMarkdown = merged.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-        const actionToDispatch = action.nodeId
-          ? { type: 'updateNode', nodeId: action.nodeId, markdown: newMarkdown }
-          : { type: 'createNode', markdown: newMarkdown };
-        try {
-          window.dispatchEvent(new CustomEvent('nodebench:applyActions', {
-            detail: { actions: [actionToDispatch], anchorBlockId: blk.id },
-          }));
-        } catch { /* ignore */ }
-        setPendingProposal(null);
-      };
-
-      return createPortal(
-        <div
-          key={`inline-proposal-${blk.id}`}
-          contentEditable={false}
-          data-nodebench-overlay
-          className="rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
-          style={{ position: 'fixed', top, left, width: panelWidth, zIndex: 60, pointerEvents: 'auto' }}
-          aria-live="polite"
-          onMouseDown={(e) => { e.stopPropagation(); }}
-          onClick={(e) => { e.stopPropagation(); }}
-        >
-          <div className="px-3 py-2 border-b border-[var(--border-color)] flex items-center justify-between gap-3">
-            <div className="text-xs font-medium truncate">Proposed change</div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setExpanded((prev) => ({ ...prev, [blk.id]: !prev[blk.id] }))} className="text-[11px] px-2 py-0.5 rounded border">
-                {expanded[blk.id] ? 'Collapse' : 'Expand'}
-              </button>
-              <button onClick={applySelected} className="text-[11px] px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white">Apply</button>
-              <button onClick={() => setPendingProposal(null)} className="text-[11px] px-2 py-0.5 rounded border">Dismiss</button>
-            </div>
-          </div>
-          {expanded[blk.id] ? (
-            <div className="p-3 grid grid-cols-2 gap-3 max-h-56 overflow-auto text-[12px] leading-[1.2] nb-code-pane">
-              <pre className="bg-[var(--bg-secondary)]/60 rounded p-2 overflow-auto"><code dangerouslySetInnerHTML={{ __html: prismHighlight(current, detectFenceLang(proposed)) }} /></pre>
-              <pre className="bg-[var(--bg-secondary)]/60 rounded p-2 overflow-auto"><code dangerouslySetInnerHTML={{ __html: prismHighlight(proposed, detectFenceLang(proposed)) }} /></pre>
-            </div>
-          ) : (
-            <div className="max-h-56 overflow-auto text-[12px] leading-[1.2]">
-              <ul className="px-3 py-2 space-y-1">
-                {annotatedOps.slice(0, 200).map((op, idx) => {
-                  // Skip rendering the 'from' half of a moved pair; render only at the 'to' index
-                  if (op.moved && op.role === 'from') return null;
-                  let rowClass = 'text-[var(--text-secondary)] nb-diff-row';
-                  let sym = ' ';
-                  if (op.moved && op.role === 'to') {
-                    rowClass = 'nb-diff-row moved nb-moved text-purple-700 dark:text-purple-300';
-                    sym = '↕';
-                  } else if (op.type === 'add') {
-                    rowClass = 'nb-diff-row add ai-changes--new';
-                    sym = '+';
-                  } else if (op.type === 'del') {
-                    rowClass = 'nb-diff-row del ai-changes--old';
-                    sym = '-';
-                  }
-
-                  const partnerFromIdx = op.moved && op.role === 'to' ? toFrom.get(idx) : undefined;
-                  const partnerFromLine = (typeof partnerFromIdx === 'number') ? annotatedOps[partnerFromIdx].line : undefined;
-                  const words = (partnerFromLine !== undefined) ? diffWords(partnerFromLine, op.line) : undefined;
-
-                  const checked = sel[idx] ?? (op.type === 'add');
-
-                  const onToggle = () => {
-                    if (partnerFromIdx !== undefined) {
-                      toggleLine(blk.id, idx);
-                      toggleLine(blk.id, partnerFromIdx);
-                    } else {
-                      toggleLine(blk.id, idx);
-                    }
-                  };
-
-                  return (
-                    <li key={idx} className={rowClass}>
-                      <label className="inline-flex items-start gap-2 cursor-pointer select-none w-full">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5"
-                          checked={checked}
-                          onChange={onToggle}
-                        />
-                        <span className="flex-1">
-                          <span className="inline-block w-3 select-none" title={op.moved ? 'Moved' : op.type === 'add' ? 'Added' : op.type === 'del' ? 'Deleted' : ''}>{sym}</span>
-                          {words ? (
-                            <span className="whitespace-pre-wrap">
-                              <span className="text-red-700 dark:text-red-300" dangerouslySetInnerHTML={{ __html: words.oldHtml }} />
-                              <span className="mx-1 text-[var(--text-secondary)]">→</span>
-                              <span className="text-green-700 dark:text-green-300" dangerouslySetInnerHTML={{ __html: words.newHtml }} />
-                            </span>
-                          ) : (
-                            <span className="whitespace-pre-wrap">{op.line}</span>
-                          )}
-                        </span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </div>,
-        window.document.body
-      );
-    };
-
-    return <>{overlayTargets.map(({ action, block }, i) => (<Fragment key={block.id}>{renderOverlay(action, block, i)}</Fragment>))}</>;
-  };
 
   if (sync.isLoading) {
     return (
@@ -2092,7 +975,17 @@ Be precise with anchors and search text - they must match exactly what's in the 
       {editable && enableProposalUI && pendingProposal && Array.isArray(proposalTargets) && (proposalTargets as any[]).length > 0 && (
         <ProposalBar targets={proposalTargets as any} onDismiss={() => setPendingProposal(null)} />
       )}
-      {editable && pendingProposal && <ProposalInlineDecorations />}
+      {editable && pendingProposal && (
+        <ProposalInlineDecorations
+          pendingProposal={pendingProposal}
+          setPendingProposal={setPendingProposal}
+          computeProposalTargets={computeProposalTargets}
+          findBlockByNodeId={findBlockByNodeId}
+          syncEditor={sync.editor}
+          editorContainerRef={editorContainerRef}
+          getBlockEl={getBlockEl}
+        />
+      )}
 
       {/* AI Streaming Indicator */}
       {isAIStreaming && (
@@ -2148,7 +1041,7 @@ Be precise with anchors and search text - they must match exactly what's in the 
       )}
 
           {/* Editor container with pending edit highlights */}
-          <div ref={editorContainerRef} style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }}>
             {/* Pending Edit Highlights Overlay */}
             <PendingEditHighlights
               editor={sync.editor}

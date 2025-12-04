@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { internalQuery, internalMutation, internalAction, action, mutation, query } from "../../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { internal, components } from "../../_generated/api";
+import { api, internal, components } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 
 // Import streaming utilities from @convex-dev/agent
@@ -679,6 +679,86 @@ export const updateThreadTitle = mutation({
       title: args.title,
       updatedAt: Date.now(),
     });
+  },
+});
+
+/**
+ * Auto-generate a thread title based on the first user message
+ * Uses AI to create a concise, descriptive title
+ */
+export const autoNameThread = action({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+    firstMessage: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const thread = await ctx.runQuery(internal.domains.agents.fastAgentPanelStreaming.getThreadById, {
+      threadId: args.threadId,
+    });
+
+    if (!thread || thread.userId !== userId) {
+      throw new Error("Thread not found or unauthorized");
+    }
+
+    // Skip if thread already has a custom title (not default)
+    if (thread.title && thread.title !== "New Chat" && thread.title !== "Research Thread") {
+      return { title: thread.title, skipped: true };
+    }
+
+    // Generate title using OpenAI
+    const OpenAI = (await import("openai")).default;
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `Generate a concise, descriptive title (max 50 chars) for a research chat thread based on the user's first message.
+The title should capture the main topic or intent.
+Return ONLY the title, no quotes or extra formatting.
+Examples:
+- "Tesla Q4 Earnings Analysis"
+- "AI Startup Funding Trends"
+- "SEC Filing Review: Apple"
+- "Competitor Analysis: Stripe"`,
+        },
+        {
+          role: "user",
+          content: args.firstMessage.slice(0, 500), // Limit input
+        },
+      ],
+      max_tokens: 60,
+      temperature: 0.3,
+    });
+
+    const generatedTitle = response.choices[0]?.message?.content?.trim() || "Research Thread";
+
+    // Truncate to 50 chars if needed
+    const finalTitle = generatedTitle.slice(0, 50);
+
+    // Update the thread title
+    await ctx.runMutation(api.domains.agents.fastAgentPanelStreaming.updateThreadTitle, {
+      threadId: args.threadId,
+      title: finalTitle,
+    });
+
+    return { title: finalTitle, skipped: false };
+  },
+});
+
+/**
+ * Internal query to get thread by ID
+ */
+export const getThreadById = internalQuery({
+  args: {
+    threadId: v.id("chatThreadsStream"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.threadId);
   },
 });
 

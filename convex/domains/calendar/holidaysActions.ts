@@ -48,7 +48,7 @@ async function refreshCountryYears(
         raw: d,
       };
     });
-    await ctx.runMutation((internal as any).holidays.replaceCountryYear, {
+    await ctx.runMutation(internal.domains.calendar.holidays.replaceCountryYear, {
       country,
       year,
       items,

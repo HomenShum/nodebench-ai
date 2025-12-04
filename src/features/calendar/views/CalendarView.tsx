@@ -576,10 +576,23 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 return (
                   <div
                     key={`allday-${String(e._id)}`}
-                    className="relative m-0.5 rounded-md text-xs px-2 py-1 shadow-sm bg-amber-50 border border-amber-200 text-amber-800 hover:ring-2 hover:ring-amber-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                    className="relative m-0.5 rounded-md text-xs px-2 py-1 shadow-sm bg-amber-50 border border-amber-200 text-amber-800 hover:ring-2 hover:ring-amber-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 cursor-grab active:cursor-grabbing"
                     style={{ gridColumn: `${colStart} / ${colEnd}`, gridRow: rIdx + 1 }}
                     role="button"
                     tabIndex={0}
+                    draggable
+                    onDragStart={(ev) => {
+                      // Set calendar event data for Fast Agent drop
+                      const eventData = {
+                        id: String(e._id),
+                        title: e.title,
+                        startTime: e.startTime,
+                        endTime: e.endTime,
+                        allDay: true,
+                      };
+                      ev.dataTransfer.setData('application/x-nodebench-calendar-event', JSON.stringify(eventData));
+                      ev.dataTransfer.effectAllowed = 'copy';
+                    }}
                     onClick={(ev) => { ev.stopPropagation(); setEditingId(e._id); setEditingTitle(e.title); }}
                     onDoubleClick={(ev) => { ev.stopPropagation(); setSelectedEventId(e._id); }}
                     onKeyDown={(ev) => {
@@ -587,7 +600,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                       if (ev.key.toLowerCase() === 'e') { ev.preventDefault(); setSelectedEventId(e._id); }
                       if (ev.key === 'Delete') { ev.preventDefault(); void onDelete(e._id); }
                     }}
-                    title={e.title}
+                    title={`${e.title} - Drag to Fast Agent to prepare dossier`}
                   >
                     {isEditing ? (
                       <input
@@ -1056,7 +1069,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                     <div
                       key={e._id}
                       ref={(el) => { if (el) eventRefs.current[String(e._id)] = el; }}
-                      className="absolute rounded-md text-xs p-2 shadow-sm transition-shadow duration-150 hover:shadow-md hover:ring-2 hover:ring-blue-500/70 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+                      className="absolute rounded-md text-xs p-2 shadow-sm transition-shadow duration-150 hover:shadow-md hover:ring-2 hover:ring-blue-500/70 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 cursor-grab active:cursor-grabbing"
                       style={{
                         top: pe.top,
                         height: pe.height,
@@ -1065,10 +1078,23 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                         backgroundColor: "#e0f2fe",
                         borderLeft: "3px solid #0284c7",
                       }}
-                      title={`${start.toLocaleTimeString()} - ${end.toLocaleTimeString()}`}
+                      title={`${start.toLocaleTimeString()} - ${end.toLocaleTimeString()} - Drag to Fast Agent to prepare dossier`}
                       data-event-block
                       tabIndex={0}
                       role="button"
+                      draggable
+                      onDragStart={(ev) => {
+                        // Set calendar event data for Fast Agent drop
+                        const eventData = {
+                          id: String(e._id),
+                          title: e.title,
+                          startTime: e.startTime,
+                          endTime: e.endTime,
+                          allDay: allDay,
+                        };
+                        ev.dataTransfer.setData('application/x-nodebench-calendar-event', JSON.stringify(eventData));
+                        ev.dataTransfer.effectAllowed = 'copy';
+                      }}
                       onClick={(ev) => { ev.stopPropagation(); setEditingId(e._id); setEditingTitle(e.title); }}
                       onDoubleClick={(ev) => { ev.stopPropagation(); setEditingId(e._id); setEditingTitle(e.title); }}
                       onMouseDown={(ev) => { ev.stopPropagation(); }}
