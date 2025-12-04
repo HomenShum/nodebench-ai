@@ -8,6 +8,7 @@
 
 import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import type { HybridSearchResult } from "./hybridSearch";
 
 interface TestResult {
   name: string;
@@ -30,11 +31,11 @@ export const testHybridSearch = internalAction({
       if (result.results.length === 0) {
         return { name: testName, passed: false, message: "No results", durationMs: Date.now() - start };
       }
-      const hasDocTool = result.results.some(r =>
+      const hasDocTool = result.results.some((r: HybridSearchResult) =>
         r.toolName.toLowerCase().includes("document") || r.toolName.toLowerCase().includes("create")
       );
       if (!hasDocTool) {
-        return { name: testName, passed: false, message: `Got: ${result.results.map(r => r.toolName).join(", ")}`, durationMs: Date.now() - start };
+        return { name: testName, passed: false, message: `Got: ${result.results.map((r: HybridSearchResult) => r.toolName).join(", ")}`, durationMs: Date.now() - start };
       }
       return {
         name: testName, passed: true,
@@ -94,11 +95,11 @@ export const testSemanticSearch = internalAction({
       if (result.results.length === 0) {
         return { name: testName, passed: false, message: "No results", durationMs: Date.now() - start };
       }
-      const hasSemantic = result.results.some(r =>
+      const hasSemantic = result.results.some((r: HybridSearchResult) =>
         r.toolName.toLowerCase().includes("document") || r.toolName.toLowerCase().includes("create")
       );
       if (!hasSemantic) {
-        return { name: testName, passed: false, message: `Got: ${result.results.map(r => r.toolName).join(", ")}`, durationMs: Date.now() - start };
+        return { name: testName, passed: false, message: `Got: ${result.results.map((r: HybridSearchResult) => r.toolName).join(", ")}`, durationMs: Date.now() - start };
       }
       return {
         name: testName, passed: true,

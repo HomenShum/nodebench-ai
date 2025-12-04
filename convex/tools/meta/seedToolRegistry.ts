@@ -89,7 +89,7 @@ export const generateAllToolEmbeddings = internalAction({
     for (let i = 0; i < toolsNeedingEmbeddings.length; i += batchSize) {
       const batch = toolsNeedingEmbeddings.slice(i, i + batchSize);
       const results = await Promise.allSettled(
-        batch.map(async (toolName) => {
+        batch.map(async (toolName: string) => {
           const summary = toolSummaries[toolName];
           if (!summary) throw new Error(`Tool ${toolName} not found in summaries`);
           const embedding = await ctx.runAction(

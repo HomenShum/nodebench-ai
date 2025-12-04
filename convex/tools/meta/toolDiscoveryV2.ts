@@ -26,6 +26,14 @@ import {
   getAllToolNames,
   type ToolCategory,
 } from "./toolRegistry";
+import type { HybridSearchResult } from "./hybridSearch";
+
+interface CategoryItem {
+  categoryKey: string;
+  categoryName: string;
+  toolCount: number;
+  tools: string[];
+}
 
 // Track which tools have been described (for validation in invokeTool)
 const describedTools = new Set<string>();
@@ -86,15 +94,15 @@ After finding relevant tools, call describeTools to get their full schemas.`,
       
       if (searchResult.results.length === 0) {
         // No results - provide category summary
-        const categories = await ctx.runQuery(
+        const categories: CategoryItem[] = await ctx.runQuery(
           internal.tools.meta.seedToolRegistryQueries.listCategories,
           {}
         );
-        
+
         const categoryList = categories
-          .map(c => `- ${c.categoryKey}: ${c.categoryName} (${c.toolCount} tools)`)
+          .map((c: CategoryItem) => `- ${c.categoryKey}: ${c.categoryName} (${c.toolCount} tools)`)
           .join("\n");
-        
+
         return `No tools found matching "${query}".
 
 Available categories (${getAllToolNames().length} total tools):
@@ -102,9 +110,9 @@ ${categoryList}
 
 Try a more specific query or browse by category using listToolCategories.`;
       }
-      
+
       const toolList = searchResult.results
-        .map((r, i) => {
+        .map((r: HybridSearchResult, i: number) => {
           let matchInfo = "";
           if (includeDebug) {
             matchInfo = ` [${r.matchType}${r.usageCount ? `, used ${r.usageCount}x` : ""}]`;
@@ -172,7 +180,7 @@ Returns category names, descriptions, and tool counts.`,
     const { showTools = false } = args;
 
     try {
-      const categories = await ctx.runQuery(
+      const categories: CategoryItem[] = await ctx.runQuery(
         internal.tools.meta.seedToolRegistryQueries.listCategories,
         {}
       );
@@ -191,7 +199,7 @@ Use searchAvailableTools({ query: "...", category: "document" }) to find tools i
       }
 
       const categoryList = categories
-        .map(c => {
+        .map((c: CategoryItem) => {
           let entry = `- **${c.categoryKey}**: ${c.categoryName} (${c.toolCount} tools)`;
           if (showTools) {
             entry += `\n  Tools: ${c.tools.slice(0, 5).join(", ")}${c.tools.length > 5 ? `, +${c.tools.length - 5} more` : ""}`;
@@ -200,7 +208,7 @@ Use searchAvailableTools({ query: "...", category: "document" }) to find tools i
         })
         .join("\n");
 
-      const totalTools = categories.reduce((sum, c) => sum + c.toolCount, 0);
+      const totalTools = categories.reduce((sum: number, c: CategoryItem) => sum + c.toolCount, 0);
 
       return `Available tool categories (${totalTools} total tools):
 

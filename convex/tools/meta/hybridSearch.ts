@@ -39,6 +39,24 @@ export interface CachedSearchResult {
   matchType: "keyword" | "semantic" | "hybrid";
 }
 
+export interface KeywordSearchItem {
+  toolName: string;
+  description: string;
+  category: string;
+  categoryName: string;
+  usageCount: number;
+  rank: number;
+}
+
+export interface SemanticSearchItem {
+  toolName: string;
+  description: string;
+  category: string;
+  categoryName: string;
+  usageCount: number;
+  score: number;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // RECIPROCAL RANK FUSION (RRF)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -136,7 +154,7 @@ export const hybridSearchTools = internalAction({
           { query, category }
         );
         if (cached.hit && cached.results) {
-          const cachedResults: HybridSearchResult[] = cached.results.slice(0, limit).map((r) => ({
+          const cachedResults: HybridSearchResult[] = cached.results.slice(0, limit).map((r: CachedSearchResult) => ({
             toolName: r.toolName,
             description: "",
             category: "",
@@ -169,21 +187,14 @@ export const hybridSearchTools = internalAction({
     const embeddingTime = Date.now() - embeddingStartTime;
 
     // Run keyword search
-    const keywordResults = await ctx.runQuery(
+    const keywordResults: KeywordSearchItem[] = await ctx.runQuery(
       internal.tools.meta.hybridSearchQueries.keywordSearchTools,
       { query, category, limit: 20 }
     );
 
     // Run semantic search (if embedding was generated)
     // Note: vectorSearch is only available in actions, so we do it inline here
-    let semanticResults: Array<{
-      toolName: string;
-      description: string;
-      category: string;
-      categoryName: string;
-      usageCount: number;
-      score: number;
-    }> = [];
+    let semanticResults: SemanticSearchItem[] = [];
 
     if (queryEmbedding.length > 0) {
       try {
