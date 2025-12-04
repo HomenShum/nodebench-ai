@@ -1,19 +1,16 @@
 /**
- * DocumentCard Component - "Rich Context + AI-Ready" Design
+ * DocumentCard Component - "Pro" Clean Design
  *
- * A modern card component for displaying documents as "Research Assets":
- * - Content-first design with visual "Glimpse" previews
- * - AI indexing status indicators (Indexed/Processing/Raw)
- * - "Chat with File" hover action for agent integration
- * - Draggable affordance for agent workflows
- * - Glass aesthetic with subtle shadows
+ * A refined, content-first card for research assets:
+ * - Clean hierarchy: Icon + Bold Title, Subtle Visual Glimpse, Minimalist Footer
+ * - Interactive "Magic" layer: Glass-morphism hover overlay with "Ask AI" button
+ * - Visual polish: Softer borders, refined shadows, status dot indicator
  */
 
 import { useRef, memo, useMemo } from "react";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import {
-  Calendar, Edit3, Star, Trash2, Link2,
-  Sparkles, GripVertical, MessageCircle, Zap, Table2, FileText
+  Edit3, Star, Trash2, Link2, Sparkles, GripVertical, Table2, FileText, Clock, Play
 } from "lucide-react";
 import { FileTypeIcon } from "@/shared/components/FileTypeIcon";
 import { inferFileType, type FileType } from "@/lib/fileTypes";
@@ -90,71 +87,79 @@ function inferDocFileType(doc: DocumentCardData): FileType {
   return looksLikeFile ? inferFileType({ name: doc.title }) : inferFileType({ name: doc.title, isNodebenchDoc: true });
 }
 
-/** Content Glimpse Component - type-specific preview */
-function ContentGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: FileType }) {
-  // For images with cover, show actual thumbnail
-  if (doc.coverImage) {
-    return (
-      <div className="w-full h-full bg-gray-50 rounded-lg overflow-hidden">
-        <img src={doc.coverImage} alt="" className="w-full h-full object-cover" />
-      </div>
-    );
-  }
+/**
+ * Visual Glimpse Component - Subtle, abstract type-specific patterns
+ * No labels, just visual hints about content type
+ */
+function VisualGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: FileType }) {
+  const theme = getThemeForFileType(typeGuess);
 
-  // For image files with thumbnail URL, show actual image
-  if (typeGuess === 'image' && doc.thumbnailUrl) {
+  // For images with cover or thumbnail, show actual image
+  if (doc.coverImage || (typeGuess === 'image' && doc.thumbnailUrl)) {
     return (
-      <div className="w-full h-full bg-gray-50 rounded-lg overflow-hidden relative group">
+      <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
         <img
-          src={doc.thumbnailUrl}
-          alt={doc.title || 'Image'}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          src={doc.coverImage || doc.thumbnailUrl}
+          alt=""
+          className="w-full h-full object-cover"
           loading="lazy"
         />
-        {/* Subtle overlay on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
       </div>
     );
   }
 
-  // CSV/Excel: Mini grid pattern
+  // Video: Play icon on gradient
+  if (typeGuess === 'video') {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-lg flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-purple-200/60 flex items-center justify-center">
+          <Play className="w-4 h-4 text-purple-500 ml-0.5" />
+        </div>
+      </div>
+    );
+  }
+
+  // CSV/Excel: Faint data grid pattern
   if (typeGuess === 'csv' || typeGuess === 'excel') {
     return (
-      <div className="w-full h-full bg-gradient-to-br from-emerald-50 to-white rounded-lg p-2 flex flex-col gap-1">
-        <div className="flex items-center gap-1 text-[9px] text-emerald-600 font-medium mb-1">
-          <Table2 className="w-3 h-3" />
-          {doc.rowCount ? `${doc.rowCount.toLocaleString()} rows` : 'Spreadsheet'}
-        </div>
-        {/* Mini grid visualization */}
-        <div className="flex-1 grid grid-cols-4 gap-0.5">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="bg-emerald-100/60 rounded-[2px]" />
-          ))}
-        </div>
+      <div className="w-full h-full bg-gradient-to-br from-emerald-50/80 to-white rounded-lg p-3 flex flex-col gap-1.5 opacity-60">
+        {[0, 1, 2, 3].map((row) => (
+          <div key={row} className="flex gap-1">
+            <div className={`h-1.5 rounded-sm bg-emerald-200 ${row === 0 ? 'w-1/3' : 'w-1/4'}`} />
+            <div className={`h-1.5 rounded-sm bg-emerald-100 ${row === 0 ? 'w-1/4' : 'w-1/3'}`} />
+            <div className="h-1.5 flex-1 rounded-sm bg-emerald-100" />
+          </div>
+        ))}
       </div>
     );
   }
 
-  // Text/PDF/Docs: Show content snippet
-  if (doc.contentPreview && ['pdf', 'text', 'document', 'nbdoc'].includes(typeGuess)) {
+  // Text/PDF/Docs: Abstract text lines or actual snippet
+  if (['pdf', 'text', 'document', 'nbdoc'].includes(typeGuess)) {
+    if (doc.contentPreview) {
+      return (
+        <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-2.5 overflow-hidden">
+          <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-4">
+            {doc.contentPreview}
+          </p>
+        </div>
+      );
+    }
+    // Abstract text lines
     return (
-      <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-2 flex flex-col">
-        <div className="flex items-center gap-1 text-[9px] text-gray-500 font-medium mb-1">
-          <FileText className="w-3 h-3" />
-          Preview
-        </div>
-        <p className="text-[10px] text-gray-600 leading-relaxed line-clamp-3 flex-1">
-          {doc.contentPreview}
-        </p>
+      <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-3 flex flex-col gap-2 opacity-50">
+        <div className="h-1.5 w-3/4 bg-gray-200 rounded-sm" />
+        <div className="h-1.5 w-full bg-gray-200 rounded-sm" />
+        <div className="h-1.5 w-5/6 bg-gray-200 rounded-sm" />
+        <div className="h-1.5 w-1/2 bg-gray-200 rounded-sm" />
       </div>
     );
   }
 
-  // Default: Abstract pattern with file type
-  const theme = getThemeForFileType(typeGuess);
+  // Default: Soft gradient with faint icon
   return (
-    <div className={`w-full h-full rounded-lg flex items-center justify-center ${theme.gradient} bg-gray-50/50`}>
-      <FileTypeIcon type={typeGuess} className="h-8 w-8 opacity-30" />
+    <div className={`w-full h-full rounded-lg flex items-center justify-center bg-gradient-to-br ${theme.gradient || 'from-gray-50 to-gray-100/50'}`}>
+      <FileTypeIcon type={typeGuess} className="h-8 w-8 opacity-20" />
     </div>
   );
 }
@@ -232,193 +237,217 @@ export function DocumentCard({
   };
 
   return (
-    <div className="group relative">
-      <div
-        draggable={draggableToAgent}
-        onDragStart={handleDragStart}
-        onClick={(e) => {
-          if (onCardMouseClick) {
-            const handled = onCardMouseClick(doc._id, e);
-            if (handled) return;
-          }
-          if (openOnSingleClick) {
-            onSelect(doc._id);
-            return;
-          }
-          if (clickTimerRef.current) {
-            window.clearTimeout(clickTimerRef.current);
-            clickTimerRef.current = null;
-          }
-          const anchor = e.currentTarget as HTMLElement;
-          clickTimerRef.current = window.setTimeout(() => {
-            clickTimerRef.current = null;
-            onOpenMiniEditor?.(doc._id, anchor);
-          }, clickDelay) as unknown as number;
-        }}
-        onDoubleClick={() => {
-          if (clickTimerRef.current) {
-            window.clearTimeout(clickTimerRef.current);
-            clickTimerRef.current = null;
-          }
+    <div
+      className="group relative"
+      draggable={draggableToAgent}
+      onDragStart={handleDragStart}
+      onClick={(e) => {
+        if (onCardMouseClick) {
+          const handled = onCardMouseClick(doc._id, e);
+          if (handled) return;
+        }
+        if (openOnSingleClick) {
           onSelect(doc._id);
-        }}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onSelect(doc._id);
-          }
-        }}
+          return;
+        }
+        if (clickTimerRef.current) {
+          window.clearTimeout(clickTimerRef.current);
+          clickTimerRef.current = null;
+        }
+        const anchor = e.currentTarget as HTMLElement;
+        clickTimerRef.current = window.setTimeout(() => {
+          clickTimerRef.current = null;
+          onOpenMiniEditor?.(doc._id, anchor);
+        }, clickDelay) as unknown as number;
+      }}
+      onDoubleClick={() => {
+        if (clickTimerRef.current) {
+          window.clearTimeout(clickTimerRef.current);
+          clickTimerRef.current = null;
+        }
+        onSelect(doc._id);
+      }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(doc._id);
+        }
+      }}
+    >
+      {/* Card Container */}
+      <div
         className={`
-          bg-white/90 backdrop-blur-sm rounded-xl border p-3 h-52
+          bg-white rounded-xl border p-3 h-52
           flex flex-col transition-all duration-200 ease-out cursor-pointer relative overflow-hidden
-          shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]
+          shadow-sm hover:shadow-md hover:-translate-y-0.5
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2
           ${isDragging ? "opacity-90 scale-[1.02] shadow-lg ring-2 ring-blue-400" : ""}
           ${isSelected
-            ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-white bg-blue-50/50 border-blue-200"
-            : "border-gray-200/80 hover:border-gray-300"
+            ? "ring-1 ring-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.1)] bg-blue-50/30 border-blue-200"
+            : "border-gray-100 hover:border-gray-200"
           }
-          ${theme.ring}
         `}
       >
         {/* Draggable grip indicator (top-left on hover) */}
         {draggableToAgent && (
-          <div className="absolute top-1.5 left-1.5 z-10 opacity-0 group-hover:opacity-60 transition-opacity">
-            <GripVertical className="w-3.5 h-3.5 text-gray-400" />
+          <div className="absolute top-1.5 left-1.5 z-10 opacity-0 group-hover:opacity-50 transition-opacity">
+            <GripVertical className="w-3 h-3 text-gray-400" />
           </div>
         )}
 
-        {/* Selection checkbox */}
-        <div className={`absolute top-2 left-6 z-10 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-          <input
-            type="checkbox"
-            aria-label={isSelected ? "Deselect" : "Select"}
-            checked={!!isSelected}
-            onChange={(e) => {
-              e.stopPropagation();
-              onToggleSelect?.(doc._id);
-            }}
-            onClick={(e) => e.stopPropagation()}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500/50 bg-white"
-          />
+        {/* Selection checkbox (top-right on hover or when selected) */}
+        <div
+          className={`absolute top-2 right-2 z-20 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+          onClick={(e) => { e.stopPropagation(); onToggleSelect?.(doc._id); }}
+        >
+          <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer ${
+            isSelected
+              ? 'bg-blue-500 border-blue-500'
+              : 'bg-white border-gray-300 hover:border-blue-400'
+          }`}>
+            {isSelected && (
+              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
         </div>
 
-        {/* Header Row: Icon + Title + Actions */}
+        {/* 1. HEADER: Small Icon + Bold 2-line Title */}
         <div className="flex items-start gap-2.5 mb-2">
           {/* Compact file type icon */}
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${theme.iconBg}`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${theme.iconBg}`}>
             {(doc as any).icon ? (
-              <span className="text-sm">{(doc as any).icon}</span>
+              <span className="text-xs">{(doc as any).icon}</span>
             ) : (
               <div className="text-white">
-                <FileTypeIcon type={typeGuess} className="h-4 w-4" />
+                <FileTypeIcon type={typeGuess} className="h-3.5 w-3.5" />
               </div>
             )}
           </div>
 
-          {/* Title & badges */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm line-clamp-1 leading-snug">
+          {/* Title (2-line max, bold) */}
+          <div className="flex-1 min-w-0 pt-0.5">
+            <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 min-h-[2.5rem]" title={doc.title}>
               {doc.title}
             </h3>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {/* AI Status Badge */}
-              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-md border ${statusConfig.bg} ${statusConfig.border} ${statusConfig.text}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
-                {statusConfig.label}
-              </span>
-              {/* Dossier/Linked badges */}
-              {isDossier && (
-                <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-md border border-purple-200 bg-purple-50 text-purple-700">
-                  Dossier
-                </span>
-              )}
-              {isLinkedAsset && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-md border border-purple-200 bg-purple-50 text-purple-700" title={parentDossier ? `Linked to ${parentDossier.title}` : "Linked"}>
-                  <Link2 className="h-2.5 w-2.5" />
-                </span>
-              )}
+          </div>
+        </div>
+
+        {/* 2. BODY: Visual Glimpse with Hover Overlay */}
+        <div className="flex-1 min-h-0 mb-2 relative">
+          <div className="w-full h-full rounded-lg border border-gray-100 overflow-hidden bg-gray-50/50">
+            <VisualGlimpse doc={doc} typeGuess={typeGuess} />
+          </div>
+
+          {/* Glass-morphism "Ask AI" Hover Overlay */}
+          {onChatWithFile && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white/50 backdrop-blur-[2px]">
+              <button
+                type="button"
+                onClick={handleChatClick}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:bg-black hover:scale-105"
+              >
+                <Sparkles className="w-3 h-3 text-purple-300" />
+                Ask AI
+              </button>
             </div>
-          </div>
-
-          {/* Action Buttons (visible on hover) */}
-          <div className="flex items-center gap-0.5 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenMiniEditor?.(doc._id, e.currentTarget as HTMLElement);
-              }}
-              className="w-6 h-6 rounded-md flex items-center justify-center bg-gray-100/80 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
-              title="Quick edit"
-            >
-              <Edit3 className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              onClick={handlePinClick}
-              className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
-                (doc as any).isFavorite
-                  ? "bg-amber-100 text-amber-600"
-                  : "bg-gray-100/80 hover:bg-gray-200 text-gray-500 hover:text-amber-500"
-              }`}
-              title={(doc as any).isFavorite ? "Unpin" : "Pin"}
-            >
-              <Star className={`h-3 w-3 ${(doc as any).isFavorite ? "fill-current" : ""}`} />
-            </button>
-            <button
-              type="button"
-              onClick={handleDeleteClick}
-              className="w-6 h-6 rounded-md flex items-center justify-center bg-gray-100/80 hover:bg-red-100 text-gray-500 hover:text-red-500 transition-colors"
-              title="Delete"
-            >
-              <Trash2 className="h-3 w-3" />
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* Content Glimpse Area */}
-        <div className="flex-1 min-h-0 mb-2">
-          <ContentGlimpse doc={doc} typeGuess={typeGuess} />
-        </div>
-
-        {/* Footer: Meta + Chat Action */}
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100/80">
-          {/* Left: Metadata pills */}
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-500 min-w-0">
-            {/* File size or type indicator */}
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md ${theme.label} text-[10px] font-medium`}>
-              {typeGuess.toUpperCase()}
+        {/* 3. FOOTER: Minimalist Metadata + Status Dot */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-50">
+          {/* Left: Type & Size */}
+          <div className="flex items-center gap-1.5 text-[10px] text-gray-400 min-w-0">
+            <span className="font-semibold uppercase tracking-wider">
+              {typeGuess === 'nbdoc' ? 'DOC' : typeGuess}
             </span>
             {formatFileSize(doc.fileSize) && (
-              <span className="text-gray-400">•</span>
-            )}
-            {formatFileSize(doc.fileSize) && (
-              <span>{formatFileSize(doc.fileSize)}</span>
+              <>
+                <span>•</span>
+                <span className="text-gray-500 font-medium">{formatFileSize(doc.fileSize)}</span>
+              </>
             )}
             {timeAgo && (
               <>
-                <span className="text-gray-400">•</span>
+                <span>•</span>
                 <span className="truncate">{timeAgo}</span>
               </>
             )}
           </div>
 
-          {/* Right: Chat with file button (visible on hover) */}
-          {onChatWithFile && (
-            <button
-              type="button"
-              onClick={handleChatClick}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-all hover:shadow-md hover:scale-105"
-              title="Chat with this file"
-            >
-              <Sparkles className="h-3 w-3" />
-              <span>Chat</span>
-            </button>
-          )}
+          {/* Right: Status Indicator */}
+          <div className="flex items-center">
+            {aiStatus === 'indexed' ? (
+              <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full bg-green-50/80 border border-green-100" title="AI Indexed & Ready">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <span className="text-[9px] font-semibold text-green-700">AI Ready</span>
+              </div>
+            ) : aiStatus === 'processing' ? (
+              <div className="flex items-center gap-1.5 opacity-70" title="Processing...">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <Clock className="w-3 h-3 text-amber-500" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1" title="Not indexed yet">
+                <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Action Buttons (visible on hover, positioned absolutely) */}
+        <div className="absolute bottom-2 right-2 flex items-center gap-0.5 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenMiniEditor?.(doc._id, e.currentTarget as HTMLElement);
+            }}
+            className="w-6 h-6 rounded-md flex items-center justify-center bg-white/90 hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors shadow-sm border border-gray-200"
+            title="Quick edit"
+          >
+            <Edit3 className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={handlePinClick}
+            className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm border ${
+              (doc as any).isFavorite
+                ? "bg-amber-50 border-amber-200 text-amber-600"
+                : "bg-white/90 border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-amber-500"
+            }`}
+            title={(doc as any).isFavorite ? "Unpin" : "Pin"}
+          >
+            <Star className={`h-3 w-3 ${(doc as any).isFavorite ? "fill-current" : ""}`} />
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            className="w-6 h-6 rounded-md flex items-center justify-center bg-white/90 hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors shadow-sm border border-gray-200"
+            title="Delete"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+
+        {/* Dossier/Linked indicator (small badge at bottom-left) */}
+        {(isDossier || isLinkedAsset) && (
+          <div className="absolute bottom-2 left-2">
+            {isDossier && (
+              <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100">
+                Dossier
+              </span>
+            )}
+            {isLinkedAsset && !isDossier && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100" title={parentDossier ? `Linked to ${parentDossier.title}` : "Linked"}>
+                <Link2 className="h-2 w-2" />
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
