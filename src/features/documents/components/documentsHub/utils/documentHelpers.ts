@@ -33,6 +33,8 @@ export type DocumentCardData = {
   // File metadata
   fileSize?: number;
   rowCount?: number; // For CSV/spreadsheets
+  // Image thumbnail URL (for image files)
+  thumbnailUrl?: string | null;
 };
 
 /** AI indexing status for visual indicators */
@@ -93,6 +95,8 @@ export function normalizeDocument(d: any): DocumentCardData {
     // File metadata
     fileSize: d?.fileSize,
     rowCount: d?.rowCount,
+    // Image thumbnail URL
+    thumbnailUrl: d?.thumbnailUrl,
   };
 }
 

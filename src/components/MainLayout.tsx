@@ -89,6 +89,19 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     return () => window.removeEventListener('navigate:fastAgentThread' as any, handler as any);
   }, []);
 
+  // Global event listener for "Chat with Document" - opens Fast Agent with document context
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ documentId: Id<"documents">; documentTitle?: string }>) => {
+      console.log('[MainLayout] Chat with document:', e.detail.documentId, e.detail.documentTitle);
+      // Set the document as context for the agent
+      setSelectedDocumentIdsForAgent([e.detail.documentId]);
+      // Open the Fast Agent panel
+      setShowFastAgent(true);
+    };
+    window.addEventListener('ai:chatWithDocument' as any, handler as any);
+    return () => window.removeEventListener('ai:chatWithDocument' as any, handler as any);
+  }, []);
+
   // Removed global quick prompt listener (AIChatPanel removed)
 
   // Removed open panel listener (AIChatPanel removed)

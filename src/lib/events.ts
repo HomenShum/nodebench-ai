@@ -16,6 +16,25 @@ export function dispatchQuickPrompt(detail: QuickPromptEventDetail): void {
   }
 }
 
+// Typed payload for "chat with document" events
+export type ChatWithDocumentEventDetail = {
+  documentId: Id<"documents">;
+  documentTitle?: string;
+};
+
+/**
+ * Dispatch event to open Fast Agent Panel with a specific document as context
+ * This opens the panel and pre-fills the context with the selected document
+ */
+export function dispatchChatWithDocument(detail: ChatWithDocumentEventDetail): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent<ChatWithDocumentEventDetail>("ai:chatWithDocument", { detail }));
+  } catch {
+    // no-op
+  }
+}
+
 // Generic condition waiter with timeout; resolves even if condition not met by timeout
 export async function waitForCondition(
   predicate: () => boolean,

@@ -2192,6 +2192,22 @@ export function DocumentsHomeHub({
     [toggleFavorite],
   );
 
+  // Handler for "Chat with File" button - opens Fast Agent Panel with document context
+  const handleChatWithFile = useCallback(
+    (doc: { _id: Id<"documents">; title: string }) => {
+      try {
+        window.dispatchEvent(
+          new CustomEvent("ai:chatWithDocument", {
+            detail: { documentId: doc._id, documentTitle: doc.title },
+          }),
+        );
+      } catch {
+        // no-op
+      }
+    },
+    [],
+  );
+
   const handleCompileAaplModel = async () => {
     if (isCompiling) return;
 
@@ -6994,6 +7010,7 @@ export function DocumentsHomeHub({
                               onDelete={handleDeleteDocument}
                               onToggleFavorite={handleToggleFavorite}
                               onOpenMiniEditor={openMiniEditor}
+                              onChatWithFile={handleChatWithFile}
                               hybrid={true}
                               isDragging={isDragging}
                               isSelected={selectedDocIds.has(String(doc._id))}
@@ -7090,6 +7107,7 @@ export function DocumentsHomeHub({
                                       onDelete={handleDeleteDocument}
                                       onToggleFavorite={handleToggleFavorite}
                                       onOpenMiniEditor={openMiniEditor}
+                                      onChatWithFile={handleChatWithFile}
                                       hybrid={true}
                                       isDragging={isDragging}
                                       isSelected={selectedDocIds.has(
@@ -7192,6 +7210,7 @@ export function DocumentsHomeHub({
                                       onDelete={handleDeleteDocument}
                                       onToggleFavorite={handleToggleFavorite}
                                       onOpenMiniEditor={openMiniEditor}
+                                      onChatWithFile={handleChatWithFile}
                                       hybrid={true}
                                       isDragging={isDragging}
                                       isSelected={selectedDocIds.has(
@@ -7294,6 +7313,7 @@ export function DocumentsHomeHub({
                                       onDelete={handleDeleteDocument}
                                       onToggleFavorite={handleToggleFavorite}
                                       onOpenMiniEditor={openMiniEditor}
+                                      onChatWithFile={handleChatWithFile}
                                       hybrid={true}
                                       isDragging={isDragging}
                                       isSelected={selectedDocIds.has(
@@ -7396,6 +7416,7 @@ export function DocumentsHomeHub({
                                       onDelete={handleDeleteDocument}
                                       onToggleFavorite={handleToggleFavorite}
                                       onOpenMiniEditor={openMiniEditor}
+                                      onChatWithFile={handleChatWithFile}
                                       hybrid={true}
                                       isDragging={isDragging}
                                       isSelected={selectedDocIds.has(

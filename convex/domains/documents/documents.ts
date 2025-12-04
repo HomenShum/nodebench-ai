@@ -711,20 +711,41 @@ export const getSidebarWithPreviews = query({
       .order("desc")
       .take(200);
 
-    // Add truncated content preview and sort by lastModified
-    const documentsWithPreviews = documents.map(doc => {
+    // Add truncated content preview, file metadata, and sort by lastModified
+    const documentsWithPreviews = await Promise.all(documents.map(async (doc) => {
       let plainText = "";
       if (doc.content && doc.content.trim()) {
         plainText = extractPlainTextFromRichContent(doc.content);
+      }
+
+      // For file-type documents, fetch analyzedAt, fileSize, and thumbnail URL from the files table
+      let fileAnalyzedAt: number | undefined;
+      let fileSize: number | undefined;
+      let thumbnailUrl: string | null = null;
+      if (doc.documentType === "file" && doc.fileId) {
+        const file = await ctx.db.get(doc.fileId as Id<"files">);
+        if (file) {
+          fileAnalyzedAt = file.analyzedAt;
+          fileSize = file.fileSize;
+          // For image files, generate a thumbnail URL
+          if (file.fileType === "image" && file.storageId) {
+            thumbnailUrl = await ctx.storage.getUrl(file.storageId);
+          }
+        }
       }
 
       return {
         ...doc,
         contentPreview: plainText && plainText.trim()
           ? plainText.substring(0, 150).trim()
-          : null
+          : null,
+        // Include analyzedAt from file if available (for file-type documents)
+        analyzedAt: fileAnalyzedAt ?? (doc as any).analyzedAt,
+        fileSize: fileSize ?? (doc as any).fileSize,
+        // Include thumbnail URL for image files
+        thumbnailUrl,
       };
-    });
+    }));
 
     return documentsWithPreviews.sort((a, b) => {
       const aTime = (a as any).lastModified || a._creationTime;
