@@ -99,7 +99,9 @@ export function FastAgentInputBar({
 
     // Detect drag type for visual feedback
     const hasCalendarData = e.dataTransfer.types.includes('application/x-nodebench-calendar-event');
-    const hasDocumentData = e.dataTransfer.types.includes('application/x-nodebench-document');
+    // Support both MIME types: x-nodebench-document (legacy) and x-document-node (DocumentCard)
+    const hasDocumentData = e.dataTransfer.types.includes('application/x-nodebench-document') ||
+                            e.dataTransfer.types.includes('application/x-document-node');
     const hasFiles = e.dataTransfer.types.includes('Files');
 
     if (hasCalendarData) {
@@ -127,12 +129,24 @@ export function FastAgentInputBar({
     setIsDragOver(false);
     setDragType(null);
 
-    // Handle document drops
-    const documentData = e.dataTransfer.getData('application/x-nodebench-document');
+    // Handle document drops - support both MIME types
+    // x-nodebench-document (legacy) and x-document-node (DocumentCard)
+    let documentData = e.dataTransfer.getData('application/x-nodebench-document');
+    if (!documentData) {
+      documentData = e.dataTransfer.getData('application/x-document-node');
+    }
     if (documentData && onAddContextDocument) {
       try {
-        const doc = JSON.parse(documentData) as DocumentContextItem;
-        onAddContextDocument({ ...doc, analyzing: true });
+        const rawDoc = JSON.parse(documentData);
+        // Normalize the document data structure (x-document-node uses 'id', x-nodebench-document uses 'id')
+        const doc: DocumentContextItem = {
+          id: rawDoc.id || rawDoc._id,
+          title: rawDoc.title,
+          type: rawDoc.type || 'document',
+          analyzing: true,
+        };
+        onAddContextDocument(doc);
+        toast.success(`Added "${doc.title}" to context`);
         // Simulate analysis completion after a delay (would be replaced with actual API call)
         setTimeout(() => {
           onAddContextDocument?.({ ...doc, analyzing: false });
