@@ -2384,6 +2384,111 @@ export default defineSchema({
   /* TOOL REGISTRY - Hybrid Search for Meta-Tool Discovery              */
   /* ------------------------------------------------------------------ */
 
+  /* ------------------------------------------------------------------ */
+  /* SKILLS REGISTRY - Multi-step workflow definitions (Anthropic spec)  */
+  /* ------------------------------------------------------------------ */
+  /**
+   * Skills are pre-defined multi-step workflows that combine tools for common tasks.
+   * Based on Anthropic's Skills specification (v1.0, October 2025).
+   *
+   * Skills follow the progressive disclosure pattern:
+   * - searchAvailableSkills: Returns name + description (low tokens)
+   * - describeSkill: Loads full instructions on-demand (high tokens)
+   *
+   * Format follows SKILL.md spec:
+   * - name: hyphen-case unique identifier
+   * - description: When to use this skill
+   * - fullInstructions: Markdown workflow steps (loaded on-demand)
+   */
+  skills: defineTable({
+    // Identity (Anthropic spec)
+    name: v.string(),              // Unique identifier (hyphen-case, e.g., "company-research")
+    description: v.string(),       // Brief description (shown in search results)
+
+    // Content (loaded on-demand)
+    fullInstructions: v.string(),  // Full markdown body with workflow steps
+
+    // Classification
+    category: v.string(),          // "research", "document", "media", "financial", "workflow"
+    categoryName: v.string(),      // Human-readable category name
+
+    // Search support
+    keywords: v.array(v.string()), // Keywords for keyword matching
+    keywordsText: v.string(),      // Joined keywords for BM25 search index
+
+    // Vector embedding for semantic search (1536-dim OpenAI text-embedding-3-small)
+    embedding: v.optional(v.array(v.float64())),
+
+    // Anthropic spec optional fields
+    license: v.optional(v.string()),           // e.g., "Apache-2.0"
+    allowedTools: v.optional(v.array(v.string())), // Pre-approved tools this skill uses
+    metadata: v.optional(v.any()),             // Custom metadata
+
+    // Usage tracking
+    usageCount: v.number(),        // Times this skill was used
+    lastUsedAt: v.optional(v.number()), // Last usage timestamp
+
+    // Status
+    isEnabled: v.boolean(),        // Whether skill is available
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_name", ["name"])
+    .index("by_category", ["category"])
+    .index("by_usage", ["usageCount"])
+    .index("by_enabled", ["isEnabled"])
+    .index("by_enabled_category", ["isEnabled", "category"])
+    .searchIndex("search_description", {
+      searchField: "description",
+      filterFields: ["category", "isEnabled"],
+    })
+    .searchIndex("search_keywords", {
+      searchField: "keywordsText",
+      filterFields: ["category", "isEnabled"],
+    })
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 1536,
+      filterFields: ["category", "isEnabled"],
+    }),
+
+  /**
+   * Tracks individual skill usages for analytics
+   */
+  skillUsage: defineTable({
+    skillName: v.string(),         // Skill that was used
+    queryText: v.string(),         // Original search query
+    wasSuccessful: v.boolean(),    // Whether execution succeeded
+    executionTimeMs: v.optional(v.number()),
+    toolsInvoked: v.optional(v.array(v.string())), // Tools used during skill execution
+    userId: v.optional(v.id("users")),
+  })
+    .index("by_skill", ["skillName"])
+    .index("by_skill_success", ["skillName", "wasSuccessful"]),
+
+  /**
+   * Caches skill search results to reduce latency
+   */
+  skillSearchCache: defineTable({
+    queryHash: v.string(),         // Hash of normalized query
+    queryText: v.string(),         // Original query text
+    category: v.optional(v.string()),
+    results: v.array(v.object({
+      skillName: v.string(),
+      score: v.number(),
+      matchType: v.string(),
+    })),
+    expiresAt: v.number(),         // Unix timestamp for expiration
+  })
+    .index("by_hash", ["queryHash"])
+    .index("by_expiry", ["expiresAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* TOOL REGISTRY - Atomic tool definitions                             */
+  /* ------------------------------------------------------------------ */
+
   /**
    * Central catalog of all tools with BM25 + vector search capabilities
    */

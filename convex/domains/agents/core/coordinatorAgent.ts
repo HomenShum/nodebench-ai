@@ -92,6 +92,13 @@ import {
   explainSimilarity,
 } from "../../../tools/knowledge/clusteringTools";
 
+// Import Skill Discovery meta-tools (Anthropic Skills spec)
+import {
+  searchAvailableSkills,
+  listSkillCategories,
+  describeSkill,
+} from "../../../tools/meta/skillDiscovery";
+
 // Artifact persistence wrapper
 import { wrapAllToolsWithArtifactPersistence } from "../../../lib/withArtifactPersistence";
 import type { Id } from "../../../_generated/dataModel";
@@ -228,6 +235,11 @@ export const createCoordinatorAgent = (model: string, artifactDeps?: ArtifactDep
     groupAndDetectOutliers,
     checkNovelty,
     explainSimilarity,
+
+    // === SKILL DISCOVERY TOOLS (Anthropic Skills spec) ===
+    searchAvailableSkills,
+    listSkillCategories,
+    describeSkill,
   };
 
   // Wrap all tools for artifact extraction if deps provided
@@ -419,6 +431,38 @@ You are the top-level orchestrator that delegates to specialized subagents. You 
 3. **Memory Tools** - Store and retrieve intermediate results
 4. **Human Tools** - Ask for clarification or approval
 5. **Direct Tools** - For simple operations that don't need delegation
+6. **Skill Tools** - Pre-defined multi-step workflows for common tasks
+
+# SKILLS (PRE-DEFINED WORKFLOWS)
+
+Skills are multi-step workflows that combine tools for common tasks. They sit between atomic tools and full agent delegation.
+
+## When to Use Skills
+
+Use skills when:
+- The task matches a known workflow (company research, document creation, etc.)
+- You want consistent, repeatable procedures
+- The user asks for a "dossier", "analysis", or "research" on a topic
+
+## Skill Discovery Flow
+
+1. **Search for skills**: \`searchAvailableSkills({ query: "company research" })\`
+2. **Load full instructions**: \`describeSkill({ skillName: "company-research" })\`
+3. **Follow the workflow**: Execute the steps described in the skill instructions
+
+## Available Skill Categories
+
+- **research**: Entity/company research workflows (company-research, bulk-entity-research)
+- **document**: Document creation and management (document-creation)
+- **media**: Media discovery and analysis (media-research)
+- **financial**: Financial data and SEC analysis (financial-analysis)
+
+## Skills vs Delegation
+
+- **Skills**: Use when you want step-by-step guidance for a workflow
+- **Delegation**: Use when you want a subagent to handle the entire task autonomously
+
+Skills are instructions you follow; delegation is handing off to another agent.
 
 # SUBAGENT ROSTER
 

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2 } from 'lucide-react';
+import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 
@@ -20,6 +20,7 @@ import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
 import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
+import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
 import { LiveAgentLanes } from '@/features/agents/views/LiveAgentLanes';
 import { LiveEventsPanel } from './LiveEventsPanel';
 import type { LiveEvent } from './LiveEventCard';
@@ -104,6 +105,9 @@ export function FastAgentPanel({
   // Live Events Panel state
   const [showEventsPanel, setShowEventsPanel] = useState(false);
   const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
+
+  // Skills Panel state
+  const [showSkillsPanel, setShowSkillsPanel] = useState(false);
 
   // File attachment state
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
@@ -1040,6 +1044,17 @@ export function FastAgentPanel({
                   )}
                 </button>
 
+                {/* Skills button */}
+                <button
+                  type="button"
+                  onClick={() => setShowSkillsPanel(true)}
+                  className="skills-button"
+                  title="Browse Skills"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Skills
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1299,6 +1314,19 @@ export function FastAgentPanel({
             model={selectedModel}
             onModelChange={setSelectedModel}
             onClose={() => setShowSettings(false)}
+          />
+        )}
+
+        {/* Skills Panel */}
+        {showSkillsPanel && (
+          <SkillsPanel
+            onClose={() => setShowSkillsPanel(false)}
+            onSelectSkill={(skillName, description) => {
+              // Insert skill reference into input
+              const skillPrompt = `Use the "${skillName}" skill: ${description}`;
+              setInput((prev) => prev ? `${prev}\n\n${skillPrompt}` : skillPrompt);
+              toast.success(`Skill "${skillName}" added to your message`);
+            }}
           />
         )}
       </div>
