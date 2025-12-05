@@ -23,11 +23,10 @@ import {
   ChevronLeft,
   StretchHorizontal,
   StretchVertical,
-  Code2,
-  Play
 } from 'lucide-react';
 import Spreadsheet from 'react-spreadsheet';
 import * as XLSX from 'xlsx';
+import { CodeViewer } from '../components/CodeViewer';
 
 
 // Build a display matrix from a worksheet, expanding merged cells so content shows up
@@ -149,10 +148,8 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
   const [sheetList, setSheetList] = useState<Array<{ name: string; data: any[][] }>>([]);
   const [activeSheet, setActiveSheet] = useState(0);
 
-  // Code view mode state (source vs preview for HTML files)
-  const [codeViewMode, setCodeViewMode] = useState<'source' | 'preview'>('source');
-  const [codeContent, setCodeContent] = useState<string | null>(null);
-  const [codeLoading, setCodeLoading] = useState(false);
+  // Code content is now managed by CodeViewer component
+  // We just need to track if we have a code file for type resolution
 
 
 
@@ -273,25 +270,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
 
   }, [fileDocument]);
 
-  // Load code content for code files
-  useEffect(() => {
-    if (!fileDocument?.storageUrl) return;
-    const fileName = fileDocument.file?.fileName || fileDocument.document.title || '';
-    const isCodeFile = /\.(html?|jsx?|tsx?|css|scss|json|xml|ya?ml|md|py|rb|go|rs|java|c|cpp|h|hpp|swift|kt|sh|bash|sql)$/i.test(fileName);
-    if (!isCodeFile) return;
-
-    setCodeLoading(true);
-    fetch(fileDocument.storageUrl)
-      .then(res => res.text())
-      .then(text => {
-        setCodeContent(text);
-        setCodeLoading(false);
-      })
-      .catch(() => {
-        setCodeContent(null);
-        setCodeLoading(false);
-      });
-  }, [fileDocument]);
+  // Code content loading is now handled by CodeViewer component
 
 
   if (!fileDocument) {
@@ -322,9 +301,6 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     if (/\.(mp3|wav|m4a|aac|flac|ogg)$/.test(fileNameLower)) return 'audio';
     return ft || 'file';
   })();
-
-  const isHtmlFile = /\.html?$/.test(fileNameLower);
-
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -380,83 +356,15 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     }
   };
 
-  // Code viewer with source/preview toggle for HTML files
+  // Code viewer using the reusable CodeViewer component
   const renderCodeContent = () => {
-    if (codeLoading) {
-      return (
-        <div className="flex items-center justify-center h-32">
-          <div className="flex items-center gap-2 text-[var(--text-muted)]">
-            <Loader2 strokeWidth={1.25} className="h-4 w-4 animate-spin" />
-            Loading code...
-          </div>
-        </div>
-      );
-    }
-
-    if (!codeContent && !storageUrl) {
-      return renderGenericContent();
-    }
-
-    // For HTML files, show source/preview toggle
-    if (isHtmlFile) {
-      return (
-        <div className="w-full h-full min-h-0 flex flex-col">
-          {/* Source/Preview Toggle */}
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-gray-50 dark:bg-gray-800/50">
-            <button
-              type="button"
-              onClick={() => setCodeViewMode('source')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                codeViewMode === 'source'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <Code2 className="h-3.5 w-3.5" />
-              Source
-            </button>
-            <button
-              type="button"
-              onClick={() => setCodeViewMode('preview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                codeViewMode === 'preview'
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <Play className="h-3.5 w-3.5" />
-              Preview
-            </button>
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {codeViewMode === 'source' ? (
-              <div className="w-full h-full overflow-auto bg-[#1e1e1e] rounded-lg">
-                <pre className="p-4 text-sm font-mono text-gray-200 leading-relaxed whitespace-pre-wrap break-words">
-                  <code>{codeContent}</code>
-                </pre>
-              </div>
-            ) : (
-              <iframe
-                srcDoc={codeContent || ''}
-                className="w-full h-full border border-[var(--border-color)] rounded-lg bg-white"
-                title={file.fileName}
-                sandbox="allow-scripts allow-same-origin"
-              />
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // For non-HTML code files, just show source
+    const fileName = file?.fileName || document.title || 'code.txt';
     return (
-      <div className="w-full h-full min-h-0 overflow-auto bg-[#1e1e1e] rounded-lg">
-        <pre className="p-4 text-sm font-mono text-gray-200 leading-relaxed whitespace-pre-wrap break-words">
-          <code>{codeContent}</code>
-        </pre>
-      </div>
+      <CodeViewer
+        url={storageUrl}
+        fileName={fileName}
+        className="w-full h-full"
+      />
     );
   };
 
