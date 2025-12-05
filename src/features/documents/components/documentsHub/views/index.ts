@@ -12,3 +12,8 @@ export {
     type AgendaListSectionProps,
 } from "./AgendaListSection";
 export { QuickCreateBar, type QuickCreateBarProps } from "./QuickCreateBar";
+export {
+    IntelligenceTable,
+    IntelligenceTableEmpty,
+    type IntelligenceTableProps,
+} from "./IntelligenceTable";
