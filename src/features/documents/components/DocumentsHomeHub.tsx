@@ -3469,6 +3469,33 @@ export function DocumentsHomeHub({
 
   const filteredDocuments = getFilteredDocuments();
 
+  // Count empty files (size === 0) for cleanup button
+  const emptyFileCount = useMemo(() => {
+    return allDocuments.filter((doc) => doc.fileSize === 0).length;
+  }, [allDocuments]);
+
+  // Handler to delete all empty files
+  const handleCleanupEmptyFiles = async () => {
+    const emptyDocs = allDocuments.filter((doc) => doc.fileSize === 0);
+    if (emptyDocs.length === 0) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${emptyDocs.length} empty file${emptyDocs.length > 1 ? "s" : ""}? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    let deleted = 0;
+    for (const doc of emptyDocs) {
+      try {
+        await deleteDocMutation({ documentId: doc._id });
+        deleted++;
+      } catch (e) {
+        console.error("Failed to delete empty doc:", doc._id, e);
+      }
+    }
+    toast.success(`Deleted ${deleted} empty file${deleted > 1 ? "s" : ""}`);
+  };
+
   // Local drag-and-drop ordering for Documents grid (per filter)
 
   const [docOrderByFilter, setDocOrderByFilter] = useState<
@@ -6886,6 +6913,8 @@ export function DocumentsHomeHub({
                       onBulkToggleFavorite={() => void handleBulkToggleFavorite()}
                       onBulkArchive={() => void handleBulkArchive()}
                       onClearSelection={() => clearSelection()}
+                      emptyFileCount={emptyFileCount}
+                      onCleanupEmptyFiles={() => void handleCleanupEmptyFiles()}
                     />
 
                     {(docViewMode === "list" || docViewMode === "cards") &&

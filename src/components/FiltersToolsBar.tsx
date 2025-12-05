@@ -8,7 +8,7 @@
  */
 
 import React from "react";
-import { Star, Trash2, X, Plus, Loader2 } from "lucide-react";
+import { Star, Trash2, X, Plus, Loader2, Sparkles } from "lucide-react";
 
 export type DocumentType = {
   id: string;
@@ -42,6 +42,10 @@ type Props = {
   onBulkToggleFavorite: () => void;
   onBulkArchive: () => void;
   onClearSelection: () => void;
+
+  // Clean up empty files
+  emptyFileCount?: number;
+  onCleanupEmptyFiles?: () => void;
 };
 
 export default function FiltersToolsBar(props: Props) {
@@ -62,6 +66,8 @@ export default function FiltersToolsBar(props: Props) {
     onBulkToggleFavorite,
     onBulkArchive,
     onClearSelection,
+    emptyFileCount = 0,
+    onCleanupEmptyFiles,
   } = props;
 
   return (
@@ -147,11 +153,25 @@ export default function FiltersToolsBar(props: Props) {
           </div>
         )}
 
+        {/* Clean up empty files */}
+        {emptyFileCount > 0 && onCleanupEmptyFiles && selectedCount === 0 && (
+          <button
+            type="button"
+            onClick={onCleanupEmptyFiles}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-200 transition-colors"
+            title={`Remove ${emptyFileCount} empty file${emptyFileCount > 1 ? 's' : ''}`}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Clean {emptyFileCount} Empty</span>
+          </button>
+        )}
+
         {/* Bulk selection actions */}
         {selectedCount > 0 && (
           <div className="flex items-center gap-1 ml-1 pl-3 border-l border-gray-200">
             <span className="text-xs font-medium text-gray-500 mr-2">{selectedCount} selected</span>
             <button
+              type="button"
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               onClick={onBulkToggleFavorite}
               title="Toggle favorite"
@@ -159,6 +179,7 @@ export default function FiltersToolsBar(props: Props) {
               <Star className="h-4 w-4 text-amber-500" />
             </button>
             <button
+              type="button"
               className="p-2 rounded-lg hover:bg-red-50 transition-colors"
               onClick={onBulkArchive}
               title="Move to trash"
@@ -166,6 +187,7 @@ export default function FiltersToolsBar(props: Props) {
               <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
             </button>
             <button
+              type="button"
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               onClick={onClearSelection}
               title="Clear selection"

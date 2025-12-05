@@ -7,7 +7,7 @@
  * - Visual polish: Softer borders, refined shadows, status dot indicator
  */
 
-import { useRef, memo, useMemo } from "react";
+import { useRef, memo, useMemo, useState } from "react";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import {
   Edit3, Star, Trash2, Link2, Sparkles, GripVertical, Table2, FileText, Clock, Play, Eye, Code2
@@ -19,6 +19,13 @@ import { getAIStatus, type DocumentCardData } from "../utils/documentHelpers";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { formatDistanceToNow } from "date-fns";
+import {
+  SpreadsheetPreview,
+  CodePreview,
+  MarkdownPreview,
+  EmptyStateOverlay,
+  ImageFallback,
+} from "../../RichPreviews";
 
 export interface DocumentCardProps {
   doc: DocumentCardData;
@@ -90,35 +97,60 @@ function inferDocFileType(doc: DocumentCardData): FileType {
 }
 
 /**
- * Visual Glimpse Component - Live media previews with fallback patterns
- * Images: Actual thumbnails with zoom on hover
+ * Visual Glimpse Component - High-fidelity "Miniature Twin" previews
+ * Images: Actual thumbnails with zoom on hover + error fallback
  * Videos: Thumbnail/preview with play overlay, loops on hover
- * Others: Abstract type-specific patterns
+ * Spreadsheets: CSS Grid table with cells
+ * Code/HTML: Mini-IDE with syntax coloring
+ * Docs: Typography layout with headings
+ * Empty files: Warning overlay
  */
-function VisualGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: FileType }) {
+function VisualGlimpse({
+  doc,
+  typeGuess,
+  isEmpty = false,
+  onImageError,
+  hasImageError = false,
+}: {
+  doc: DocumentCardData;
+  typeGuess: FileType;
+  isEmpty?: boolean;
+  onImageError?: () => void;
+  hasImageError?: boolean;
+}) {
   const theme = getThemeForFileType(typeGuess);
+
+  // Wrapper with empty state overlay
+  const renderWithEmptyState = (content: React.ReactNode) => (
+    <div className="w-full h-full relative">
+      {content}
+      {isEmpty && <EmptyStateOverlay variant="empty" />}
+    </div>
+  );
 
   // IMAGE: Show actual thumbnail with hover zoom effect
   if (typeGuess === 'image') {
     const imageUrl = doc.thumbnailUrl || doc.mediaUrl || doc.coverImage;
-    if (imageUrl) {
-      return (
-        <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden group/img">
-          <img
-            src={imageUrl}
-            alt={doc.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
-            loading="lazy"
-          />
-        </div>
-      );
+    if (hasImageError || !imageUrl) {
+      return renderWithEmptyState(<ImageFallback />);
     }
+    return renderWithEmptyState(
+      <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden group/img">
+        <img
+          src={imageUrl}
+          alt={doc.title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+          loading="lazy"
+          onError={onImageError}
+        />
+      </div>
+    );
   }
 
   // VIDEO: Show thumbnail with play overlay, loops on hover
   if (typeGuess === 'video') {
     const videoUrl = doc.mediaUrl;
-    return (
+    return renderWithEmptyState(
       <div className="w-full h-full bg-gray-900 rounded-lg overflow-hidden relative group/vid">
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 pointer-events-none" />
@@ -151,33 +183,33 @@ function VisualGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: F
   }
 
   // Cover image for non-media documents
-  if (doc.coverImage) {
-    return (
+  if (doc.coverImage && !hasImageError) {
+    return renderWithEmptyState(
       <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-        <img src={doc.coverImage} alt="" className="w-full h-full object-cover" loading="lazy" />
+        <img
+          src={doc.coverImage}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="lazy"
+          onError={onImageError}
+        />
       </div>
     );
   }
 
-  // CSV/Excel: Faint data grid pattern
+  // CSV/Excel: Rich spreadsheet preview (Miniature Twin)
   if (typeGuess === 'csv' || typeGuess === 'excel') {
-    return (
-      <div className="w-full h-full bg-gradient-to-br from-emerald-50/80 to-white rounded-lg p-3 flex flex-col gap-1.5 opacity-60">
-        {[0, 1, 2, 3].map((row) => (
-          <div key={row} className="flex gap-1">
-            <div className={`h-1.5 rounded-sm bg-emerald-200 ${row === 0 ? 'w-1/3' : 'w-1/4'}`} />
-            <div className={`h-1.5 rounded-sm bg-emerald-100 ${row === 0 ? 'w-1/4' : 'w-1/3'}`} />
-            <div className="h-1.5 flex-1 rounded-sm bg-emerald-100" />
-          </div>
-        ))}
+    return renderWithEmptyState(
+      <div className="w-full h-full rounded-lg overflow-hidden border border-gray-100">
+        <SpreadsheetPreview />
       </div>
     );
   }
 
-  // Text/PDF/Docs: Abstract text lines or actual snippet
+  // Text/PDF/Docs: Typography layout or actual snippet
   if (['pdf', 'text', 'document', 'nbdoc'].includes(typeGuess)) {
     if (doc.contentPreview) {
-      return (
+      return renderWithEmptyState(
         <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-2.5 overflow-hidden">
           <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-4">
             {doc.contentPreview}
@@ -185,48 +217,18 @@ function VisualGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: F
         </div>
       );
     }
-    return (
-      <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-3 flex flex-col gap-2 opacity-50">
-        <div className="h-1.5 w-3/4 bg-gray-200 rounded-sm" />
-        <div className="h-1.5 w-full bg-gray-200 rounded-sm" />
-        <div className="h-1.5 w-5/6 bg-gray-200 rounded-sm" />
-        <div className="h-1.5 w-1/2 bg-gray-200 rounded-sm" />
+    return renderWithEmptyState(
+      <div className="w-full h-full rounded-lg overflow-hidden">
+        <MarkdownPreview hasContent={!!doc.contentPreview} />
       </div>
     );
   }
 
-  // Code/Web/HTML: Dark-mode "Code Studio" preview
+  // Code/Web/HTML: Mini-IDE preview
   if (['code', 'web'].includes(typeGuess)) {
-    return (
-      <div className="w-full h-full bg-[#1e1e1e] rounded-lg p-2.5 flex flex-col gap-1 overflow-hidden relative group/code">
-        {/* Fake Menu Bar (macOS style) */}
-        <div className="flex gap-1 mb-1 opacity-60">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-          <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
-          <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-        </div>
-
-        {/* Syntax Highlighted Lines */}
-        <div className="flex gap-1.5">
-          <div className="w-6 h-1 bg-purple-400 rounded-sm opacity-70" />
-          <div className="w-10 h-1 bg-blue-400 rounded-sm opacity-70" />
-        </div>
-        <div className="flex gap-1.5 ml-3">
-          <div className="w-12 h-1 bg-green-400 rounded-sm opacity-70" />
-          <div className="w-5 h-1 bg-yellow-400 rounded-sm opacity-70" />
-        </div>
-        <div className="flex gap-1.5 ml-3">
-          <div className="w-8 h-1 bg-blue-300 rounded-sm opacity-70" />
-        </div>
-        <div className="flex gap-1.5">
-          <div className="w-4 h-1 bg-purple-400 rounded-sm opacity-70" />
-        </div>
-
-        {/* HTML Tag Decoration */}
-        <div className="absolute bottom-1.5 right-1.5 text-[9px] font-mono text-gray-600 opacity-30 font-bold">
-          &lt;/&gt;
-        </div>
-
+    return renderWithEmptyState(
+      <div className="w-full h-full rounded-lg overflow-hidden relative group/code">
+        <CodePreview />
         {/* Hover: Preview Button */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover/code:opacity-100 transition-opacity backdrop-blur-[1px]">
           <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-[10px] font-medium rounded-full shadow-lg">
@@ -239,7 +241,7 @@ function VisualGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: F
   }
 
   // Default: Soft gradient with faint icon
-  return (
+  return renderWithEmptyState(
     <div className={`w-full h-full rounded-lg flex items-center justify-center bg-gradient-to-br ${theme.gradient || 'from-gray-50 to-gray-100/50'}`}>
       <FileTypeIcon type={typeGuess} className="h-8 w-8 opacity-20" />
     </div>
@@ -275,6 +277,21 @@ export function DocumentCard({
 
   const isLinkedAsset = !!(doc as any).dossierType && (doc as any).dossierType === "media-asset";
   const isDossier = !!(doc as any).dossierType && (doc as any).dossierType === "primary";
+
+  // Image error state for fallback rendering
+  const [hasImageError, setHasImageError] = useState(false);
+  const handleImageError = () => setHasImageError(true);
+
+  // Empty file detection (size is 0 or no content)
+  const isEmpty = useMemo(() => {
+    if (doc.fileSize === 0) return true;
+    // For NodeBench docs, check if content is empty
+    if (doc.documentType === 'document' && !doc.contentPreview) return false; // Assume not empty unless we know
+    return false;
+  }, [doc.fileSize, doc.documentType, doc.contentPreview]);
+
+  // Fetch tags from database
+  const persistedTags = useQuery(api.tags.listForDocument, { documentId: doc._id });
 
   // Memoized computed values
   const typeGuess = useMemo(() => inferDocFileType(doc), [doc]);
@@ -431,10 +448,18 @@ export function DocumentCard({
         {/* 2. BODY: Visual Glimpse with Hover Overlay */}
         <div className="flex-1 min-h-0 mb-2 relative">
           <div
-            className={`w-full h-full rounded-lg border border-gray-100 overflow-hidden bg-gray-50/50 ${isMedia && onOpenMedia ? 'cursor-pointer' : ''}`}
+            className={`w-full h-full rounded-lg border overflow-hidden bg-gray-50/50 ${
+              isEmpty ? 'border-dashed border-amber-200' : 'border-gray-100'
+            } ${isMedia && onOpenMedia ? 'cursor-pointer' : ''}`}
             onClick={isMedia && onOpenMedia ? handleGlimpseClick : undefined}
           >
-            <VisualGlimpse doc={doc} typeGuess={typeGuess} />
+            <VisualGlimpse
+              doc={doc}
+              typeGuess={typeGuess}
+              isEmpty={isEmpty}
+              hasImageError={hasImageError}
+              onImageError={handleImageError}
+            />
           </div>
 
           {/* Glass-morphism Hover Overlay - different for media vs non-media */}
@@ -463,6 +488,35 @@ export function DocumentCard({
             </div>
           ) : null}
         </div>
+
+        {/* 2.5. TAGS ROW: Micro-pills for semantic tags */}
+        {persistedTags && persistedTags.length > 0 && (
+          <div className="flex items-center gap-1 mb-1.5 overflow-x-auto no-scrollbar">
+            {persistedTags.slice(0, 3).map((tag) => {
+              // Semantic color coding by tag kind
+              const kindColors: Record<string, string> = {
+                entity: 'bg-purple-50 text-purple-600 border-purple-100',
+                topic: 'bg-blue-50 text-blue-600 border-blue-100',
+                community: 'bg-green-50 text-green-600 border-green-100',
+                relationship: 'bg-orange-50 text-orange-600 border-orange-100',
+                keyword: 'bg-gray-50 text-gray-600 border-gray-200',
+              };
+              const colorClass = kindColors[tag.kind || 'keyword'] || kindColors.keyword;
+              return (
+                <span
+                  key={tag._id}
+                  className={`px-1.5 py-0.5 text-[8px] font-medium rounded border whitespace-nowrap ${colorClass}`}
+                  title={tag.kind ? `${tag.kind}: ${tag.name}` : tag.name}
+                >
+                  #{tag.name}
+                </span>
+              );
+            })}
+            {persistedTags.length > 3 && (
+              <span className="text-[8px] text-gray-400 whitespace-nowrap">+{persistedTags.length - 3}</span>
+            )}
+          </div>
+        )}
 
         {/* 3. FOOTER: Minimalist Metadata + Status Dot */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-50">
