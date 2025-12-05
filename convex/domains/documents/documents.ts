@@ -718,18 +718,23 @@ export const getSidebarWithPreviews = query({
         plainText = extractPlainTextFromRichContent(doc.content);
       }
 
-      // For file-type documents, fetch analyzedAt, fileSize, and thumbnail URL from the files table
+      // For file-type documents, fetch analyzedAt, fileSize, and media URLs from the files table
       let fileAnalyzedAt: number | undefined;
       let fileSize: number | undefined;
       let thumbnailUrl: string | null = null;
+      let mediaUrl: string | null = null;
       if (doc.documentType === "file" && doc.fileId) {
         const file = await ctx.db.get(doc.fileId as Id<"files">);
         if (file) {
           fileAnalyzedAt = file.analyzedAt;
           fileSize = file.fileSize;
-          // For image files, generate a thumbnail URL
-          if (file.fileType === "image" && file.storageId) {
-            thumbnailUrl = await ctx.storage.getUrl(file.storageId);
+          // For image and video files, generate media URLs
+          if ((file.fileType === "image" || file.fileType === "video") && file.storageId) {
+            const url = await ctx.storage.getUrl(file.storageId);
+            if (file.fileType === "image") {
+              thumbnailUrl = url;
+            }
+            mediaUrl = url;
           }
         }
       }
@@ -744,6 +749,8 @@ export const getSidebarWithPreviews = query({
         fileSize: fileSize ?? (doc as any).fileSize,
         // Include thumbnail URL for image files
         thumbnailUrl,
+        // Include media URL for playable media (images and videos)
+        mediaUrl,
       };
     }));
 
