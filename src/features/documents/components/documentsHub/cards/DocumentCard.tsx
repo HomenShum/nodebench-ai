@@ -38,6 +38,8 @@ export interface DocumentCardProps {
   onChatWithFile?: (doc: DocumentCardData) => void;
   /** Enable drag-and-drop to agent */
   draggableToAgent?: boolean;
+  /** Handler for opening media in cinema viewer (for images/videos) */
+  onOpenMedia?: (doc: DocumentCardData) => void;
 }
 
 /** AI Status badge colors */
@@ -88,33 +90,71 @@ function inferDocFileType(doc: DocumentCardData): FileType {
 }
 
 /**
- * Visual Glimpse Component - Subtle, abstract type-specific patterns
- * No labels, just visual hints about content type
+ * Visual Glimpse Component - Live media previews with fallback patterns
+ * Images: Actual thumbnails with zoom on hover
+ * Videos: Thumbnail/preview with play overlay, loops on hover
+ * Others: Abstract type-specific patterns
  */
 function VisualGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: FileType }) {
   const theme = getThemeForFileType(typeGuess);
 
-  // For images with cover or thumbnail, show actual image
-  if (doc.coverImage || (typeGuess === 'image' && doc.thumbnailUrl)) {
+  // IMAGE: Show actual thumbnail with hover zoom effect
+  if (typeGuess === 'image') {
+    const imageUrl = doc.thumbnailUrl || doc.mediaUrl || doc.coverImage;
+    if (imageUrl) {
+      return (
+        <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden group/img">
+          <img
+            src={imageUrl}
+            alt={doc.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+            loading="lazy"
+          />
+        </div>
+      );
+    }
+  }
+
+  // VIDEO: Show thumbnail with play overlay, loops on hover
+  if (typeGuess === 'video') {
+    const videoUrl = doc.mediaUrl;
     return (
-      <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-        <img
-          src={doc.coverImage || doc.thumbnailUrl}
-          alt=""
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+      <div className="w-full h-full bg-gray-900 rounded-lg overflow-hidden relative group/vid">
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 pointer-events-none" />
+
+        {/* Play button overlay */}
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 transition-all duration-300 group-hover/vid:scale-110 group-hover/vid:bg-white/30 shadow-lg">
+            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+          </div>
+        </div>
+
+        {videoUrl ? (
+          <video
+            src={videoUrl}
+            className="w-full h-full object-cover opacity-80 group-hover/vid:opacity-100 transition-opacity duration-300"
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            onMouseOver={(e) => e.currentTarget.play().catch(() => {})}
+            onMouseOut={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-purple-900/40 to-purple-800/20 flex items-center justify-center">
+            <Play className="w-10 h-10 text-purple-300/50" />
+          </div>
+        )}
       </div>
     );
   }
 
-  // Video: Play icon on gradient
-  if (typeGuess === 'video') {
+  // Cover image for non-media documents
+  if (doc.coverImage) {
     return (
-      <div className="w-full h-full bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-lg flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full bg-purple-200/60 flex items-center justify-center">
-          <Play className="w-4 h-4 text-purple-500 ml-0.5" />
-        </div>
+      <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+        <img src={doc.coverImage} alt="" className="w-full h-full object-cover" loading="lazy" />
       </div>
     );
   }
@@ -145,7 +185,6 @@ function VisualGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: F
         </div>
       );
     }
-    // Abstract text lines
     return (
       <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-3 flex flex-col gap-2 opacity-50">
         <div className="h-1.5 w-3/4 bg-gray-200 rounded-sm" />
@@ -180,6 +219,7 @@ export function DocumentCard({
   analyzeRunning,
   onChatWithFile,
   draggableToAgent = true,
+  onOpenMedia,
 }: DocumentCardProps) {
   const clickTimerRef = useRef<number | null>(null);
   const clickDelay = 250;
@@ -198,6 +238,7 @@ export function DocumentCard({
   const theme = useMemo(() => getThemeForFileType(typeGuess), [typeGuess]);
   const aiStatus = useMemo(() => getAIStatus(doc), [doc]);
   const statusConfig = AI_STATUS_CONFIG[aiStatus];
+  const isMedia = typeGuess === 'image' || typeGuess === 'video';
 
   // Format time ago
   const timeAgo = useMemo(() => {
@@ -223,6 +264,14 @@ export function DocumentCard({
   const handleChatClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChatWithFile?.(doc);
+  };
+
+  // Handle click on the visual glimpse area - opens media viewer for images/videos
+  const handleGlimpseClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMedia && onOpenMedia) {
+      onOpenMedia(doc);
+    }
   };
 
   // Drag handlers for agent integration
@@ -338,12 +387,27 @@ export function DocumentCard({
 
         {/* 2. BODY: Visual Glimpse with Hover Overlay */}
         <div className="flex-1 min-h-0 mb-2 relative">
-          <div className="w-full h-full rounded-lg border border-gray-100 overflow-hidden bg-gray-50/50">
+          <div
+            className={`w-full h-full rounded-lg border border-gray-100 overflow-hidden bg-gray-50/50 ${isMedia && onOpenMedia ? 'cursor-pointer' : ''}`}
+            onClick={isMedia && onOpenMedia ? handleGlimpseClick : undefined}
+          >
             <VisualGlimpse doc={doc} typeGuess={typeGuess} />
           </div>
 
-          {/* Glass-morphism "Ask AI" Hover Overlay */}
-          {onChatWithFile && (
+          {/* Glass-morphism Hover Overlay - different for media vs non-media */}
+          {isMedia && onOpenMedia ? (
+            // Media files: Show "View" overlay that opens cinema viewer
+            <div
+              className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 bg-black/20 backdrop-blur-[1px] cursor-pointer"
+              onClick={handleGlimpseClick}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 text-gray-900 text-xs font-medium rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+                <Play className="w-3 h-3" />
+                {typeGuess === 'video' ? 'Play' : 'View'}
+              </div>
+            </div>
+          ) : onChatWithFile ? (
+            // Non-media files: Show "Ask AI" overlay
             <div className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white/50 backdrop-blur-[2px]">
               <button
                 type="button"
@@ -354,7 +418,7 @@ export function DocumentCard({
                 Ask AI
               </button>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* 3. FOOTER: Minimalist Metadata + Status Dot */}

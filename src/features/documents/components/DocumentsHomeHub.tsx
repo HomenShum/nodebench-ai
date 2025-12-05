@@ -98,6 +98,7 @@ import {
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
 import AgendaEditorPopover from "@features/calendar/components/agenda/AgendaEditorPopover";
 import AgendaHoverPreview from "@features/calendar/components/agenda/AgendaHoverPreview";
+import { MediaCinemaViewer } from "./MediaCinemaViewer";
 
 // Import utility functions from extracted modules
 import {
@@ -283,6 +284,15 @@ export function DocumentsHomeHub({
 
     [documents],
   );
+
+  // Media Cinema Viewer state for images/videos
+  const [viewingMediaDoc, setViewingMediaDoc] = useState<DocumentCardData | null>(null);
+  const handleOpenMedia = useCallback((doc: DocumentCardData) => {
+    setViewingMediaDoc(doc);
+  }, []);
+  const handleCloseMedia = useCallback(() => {
+    setViewingMediaDoc(null);
+  }, []);
 
   // Dashboard (merged) state and data
 
@@ -7011,6 +7021,7 @@ export function DocumentsHomeHub({
                               onToggleFavorite={handleToggleFavorite}
                               onOpenMiniEditor={openMiniEditor}
                               onChatWithFile={handleChatWithFile}
+                              onOpenMedia={handleOpenMedia}
                               hybrid={true}
                               isDragging={isDragging}
                               isSelected={selectedDocIds.has(String(doc._id))}
@@ -7108,6 +7119,7 @@ export function DocumentsHomeHub({
                                       onToggleFavorite={handleToggleFavorite}
                                       onOpenMiniEditor={openMiniEditor}
                                       onChatWithFile={handleChatWithFile}
+                                      onOpenMedia={handleOpenMedia}
                                       hybrid={true}
                                       isDragging={isDragging}
                                       isSelected={selectedDocIds.has(
@@ -7211,6 +7223,7 @@ export function DocumentsHomeHub({
                                       onToggleFavorite={handleToggleFavorite}
                                       onOpenMiniEditor={openMiniEditor}
                                       onChatWithFile={handleChatWithFile}
+                                      onOpenMedia={handleOpenMedia}
                                       hybrid={true}
                                       isDragging={isDragging}
                                       isSelected={selectedDocIds.has(
@@ -7314,6 +7327,7 @@ export function DocumentsHomeHub({
                                       onToggleFavorite={handleToggleFavorite}
                                       onOpenMiniEditor={openMiniEditor}
                                       onChatWithFile={handleChatWithFile}
+                                      onOpenMedia={handleOpenMedia}
                                       hybrid={true}
                                       isDragging={isDragging}
                                       isSelected={selectedDocIds.has(
@@ -7417,6 +7431,7 @@ export function DocumentsHomeHub({
                                       onToggleFavorite={handleToggleFavorite}
                                       onOpenMiniEditor={openMiniEditor}
                                       onChatWithFile={handleChatWithFile}
+                                      onOpenMedia={handleOpenMedia}
                                       hybrid={true}
                                       isDragging={isDragging}
                                       isSelected={selectedDocIds.has(
@@ -7767,6 +7782,13 @@ export function DocumentsHomeHub({
           }}
         />
       )}
+
+      {/* Media Cinema Viewer for images and videos */}
+      <MediaCinemaViewer
+        doc={viewingMediaDoc}
+        isOpen={!!viewingMediaDoc}
+        onClose={handleCloseMedia}
+      />
     </>
   );
 }

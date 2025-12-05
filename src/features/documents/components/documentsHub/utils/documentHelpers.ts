@@ -35,6 +35,8 @@ export type DocumentCardData = {
   rowCount?: number; // For CSV/spreadsheets
   // Image thumbnail URL (for image files)
   thumbnailUrl?: string | null;
+  // Media URL for playable media (images and videos)
+  mediaUrl?: string | null;
 };
 
 /** AI indexing status for visual indicators */
@@ -97,6 +99,8 @@ export function normalizeDocument(d: any): DocumentCardData {
     rowCount: d?.rowCount,
     // Image thumbnail URL
     thumbnailUrl: d?.thumbnailUrl,
+    // Media URL for playable media (images and videos)
+    mediaUrl: d?.mediaUrl,
   };
 }
 
