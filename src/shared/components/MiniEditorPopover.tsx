@@ -109,20 +109,21 @@ export default function MiniEditorPopover({ isOpen, documentId, anchorEl, onClos
       role="dialog"
       aria-modal="false"
       aria-label="Mini editor"
-      className="fixed z-[70] w-[min(640px,calc(100vw-24px))] shadow-2xl rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]"
+      className="fixed z-[70] w-[min(640px,calc(100vw-24px))] shadow-2xl rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
       style={{ top, left }}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-primary)] rounded-t-xl">
-        <div className="text-xs text-[var(--text-secondary)]">Quick Edit</div>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-t-xl">
+        <div className="text-xs text-gray-600 dark:text-gray-400">Quick Edit</div>
         <button
+          type="button"
           aria-label="Close mini editor"
-          className="w-7 h-7 p-1.5 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)]"
+          className="w-7 h-7 p-1.5 rounded-md flex items-center justify-center bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="p-3 max-h-[360px] overflow-auto">
+      <div className="p-3 max-h-[360px] overflow-auto bg-white dark:bg-gray-900 rounded-b-xl">
         <MiniContent documentId={documentId} onClose={onClose} />
       </div>
     </div>
