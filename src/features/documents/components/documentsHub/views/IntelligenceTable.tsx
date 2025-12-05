@@ -56,7 +56,7 @@ export function IntelligenceTable({
                 )}
 
                 {/* Actions spacer */}
-                <div className="w-20" />
+                <div className="w-28" />
             </div>
 
             {/* Table Body */}

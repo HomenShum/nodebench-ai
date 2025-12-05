@@ -1,17 +1,19 @@
 /**
  * DocumentRow Component
- * 
+ *
  * A high-density row optimized for document scanning with:
  * - Name & Format with file icon
- * - AI Tags (colorful pills)
+ * - AI Tags (colorful pills) - fetched from database or inferred from file type
  * - Intelligence Status indicator
  * - Meta (Date Modified and Size)
  * - Hover-only actions
  */
 
 import { useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
-import { Sparkles, Calendar, Star, Trash2, MessageCircle, Loader2 } from "lucide-react";
+import { Calendar, Star, Trash2, MessageCircle, Loader2, Sparkles, Edit3, Share2 } from "lucide-react";
 import { FileTypeIcon } from "@/shared/components/FileTypeIcon";
 import { inferFileType, type FileType } from "@/lib/fileTypes";
 import { getThemeForFileType } from "@/lib/documentThemes";
@@ -29,6 +31,8 @@ export interface DocumentRowProps {
   onToggleFavorite?: (documentId: Id<"documents">) => void;
   onDelete?: (documentId: Id<"documents">) => void;
   onChat?: (documentId: Id<"documents">) => void;
+  onEdit?: (documentId: Id<"documents">) => void;
+  onShare?: (documentId: Id<"documents">) => void;
   density?: "compact" | "comfortable"; // Kept for compatibility, though unused in new design
 }
 
@@ -78,6 +82,30 @@ function formatFileSize(bytes: number | undefined): string {
   return `${(bytes / 1048576).toFixed(1)} MB`;
 }
 
+/**
+ * Get semantic color styling for tags based on their kind
+ * - entity: Purple (companies, products, people)
+ * - topic: Blue (broader themes)
+ * - keyword: Gray (single terms)
+ * - community: Green (groups, ecosystems)
+ * - relationship: Orange (connections)
+ */
+function getTagStyle(kind?: string, fallbackStyle?: string): string {
+  switch (kind) {
+    case "entity":
+      return "bg-purple-500/10 text-purple-600 border border-purple-500/20";
+    case "topic":
+      return "bg-blue-500/10 text-blue-600 border border-blue-500/20";
+    case "community":
+      return "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20";
+    case "relationship":
+      return "bg-orange-500/10 text-orange-600 border border-orange-500/20";
+    case "keyword":
+    default:
+      return fallbackStyle || "bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]";
+  }
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -90,6 +118,8 @@ export function DocumentRow({
   onToggleFavorite,
   onDelete,
   onChat,
+  onEdit,
+  onShare,
 }: DocumentRowProps) {
   // Infer file type for theming
   const typeGuess: FileType = useMemo(() => {
@@ -106,72 +136,80 @@ export function DocumentRow({
   const theme = getThemeForFileType(typeGuess);
   const status = getIntelligenceStatus(doc);
 
-  // Get context-aware tags based on file type and document metadata
-  const tags: string[] = useMemo(() => {
-    const docTags: string[] = [];
+  // Fetch persisted tags from database (LLM-generated)
+  const persistedTags = useQuery(api.tags.listForDocument, { documentId: doc._id });
 
-    // Check for AI-derived tags first (highest priority)
-    if ((doc as any).tags && Array.isArray((doc as any).tags)) {
-      docTags.push(...(doc as any).tags);
+  // Get tags: prefer persisted LLM-generated tags, fall back to file-type inference
+  const tags: Array<{ name: string; kind?: string }> = useMemo(() => {
+    // If we have persisted tags from the database, use them
+    if (persistedTags && persistedTags.length > 0) {
+      return persistedTags.slice(0, 4).map((t) => ({
+        name: t.name,
+        kind: t.kind,
+      }));
     }
 
-    // Generate context-aware tags based on file type
+    // Fall back to simple file-type-based tags
+    const fallbackTags: Array<{ name: string; kind?: string }> = [];
+
     if (doc.documentType === "file") {
       switch (typeGuess) {
         case "excel":
         case "csv":
-          docTags.push("Finance", "Data");
+          fallbackTags.push({ name: "finance", kind: "topic" }, { name: "data", kind: "keyword" });
           break;
         case "pdf":
-          docTags.push("Research", "Report");
+          fallbackTags.push({ name: "research", kind: "topic" }, { name: "report", kind: "keyword" });
           break;
         case "image":
-          docTags.push("Media", "Asset");
+          fallbackTags.push({ name: "media", kind: "keyword" }, { name: "asset", kind: "keyword" });
           break;
         case "video":
-          docTags.push("Content", "Video");
+          fallbackTags.push({ name: "content", kind: "keyword" }, { name: "video", kind: "keyword" });
           break;
         case "audio":
-          docTags.push("Media", "Audio");
+          fallbackTags.push({ name: "media", kind: "keyword" }, { name: "audio", kind: "keyword" });
           break;
         case "code":
         case "web":
-          docTags.push("Code", "Dev");
+          fallbackTags.push({ name: "code", kind: "keyword" }, { name: "dev", kind: "topic" });
           break;
         case "json":
-          docTags.push("Data", "Config");
+          fallbackTags.push({ name: "data", kind: "keyword" }, { name: "config", kind: "keyword" });
           break;
         case "text":
-          docTags.push("Notes", "Text");
+          fallbackTags.push({ name: "notes", kind: "keyword" }, { name: "text", kind: "keyword" });
           break;
         default:
-          docTags.push(typeGuess.charAt(0).toUpperCase() + typeGuess.slice(1));
+          fallbackTags.push({ name: typeGuess, kind: "keyword" });
       }
     } else if (doc.documentType === "timeline") {
-      docTags.push("Timeline", "Agent");
+      fallbackTags.push({ name: "timeline", kind: "keyword" }, { name: "agent", kind: "entity" });
     } else {
       // NodeBench documents - infer from title
       const title = doc.title.toLowerCase();
       if (title.includes("calendar") || title.includes("📅")) {
-        docTags.push("Calendar", "Schedule");
+        fallbackTags.push({ name: "calendar", kind: "keyword" }, { name: "schedule", kind: "topic" });
       } else if (title.includes("note") || title.includes("📝")) {
-        docTags.push("Notes", "Daily");
+        fallbackTags.push({ name: "notes", kind: "keyword" }, { name: "daily", kind: "topic" });
       } else if (title.includes("chat")) {
-        docTags.push("Chat", "Conversation");
+        fallbackTags.push({ name: "chat", kind: "keyword" }, { name: "conversation", kind: "topic" });
       } else if (title.includes("analysis")) {
-        docTags.push("Analysis", "AI");
+        fallbackTags.push({ name: "analysis", kind: "topic" }, { name: "ai", kind: "entity" });
       } else if (title.includes("dossier") || title.includes("example:")) {
-        docTags.push("Dossier", "Research");
+        fallbackTags.push({ name: "dossier", kind: "keyword" }, { name: "research", kind: "topic" });
       } else if (title.includes("agent")) {
-        docTags.push("Agent", "Timeline");
+        fallbackTags.push({ name: "agent", kind: "entity" }, { name: "timeline", kind: "keyword" });
       } else {
-        docTags.push("Document");
+        fallbackTags.push({ name: "document", kind: "keyword" });
       }
     }
 
-    // Deduplicate and limit to 3 tags
-    return [...new Set(docTags)].slice(0, 3);
-  }, [doc, typeGuess]);
+    return fallbackTags;
+  }, [doc, typeGuess, persistedTags]);
+
+  // Check if tags are LLM-generated (from database)
+  const hasAITags = persistedTags && persistedTags.length > 0;
 
   const isFavorite = !!(doc as any).isFavorite;
   const modifiedAt = (doc as any).updatedAt || (doc as any)._creationTime;
@@ -240,21 +278,26 @@ export function DocumentRow({
         </div>
       </div>
 
-      {/* 3. Tags Column */}
+      {/* 3. Tags Column - Semantic color coding by tag kind */}
       <div className="w-48 hidden md:flex items-center gap-1.5">
-        {tags.slice(0, 2).map((tag, i) => (
-          <span
-            key={i}
-            className={`
-              px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap
-              ${i === 0 ? theme.label : "bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"}
-            `}
-          >
-            #{tag}
-          </span>
-        ))}
-        {tags.length > 2 && (
-          <span className="text-[10px] text-[var(--text-muted)]">+{tags.length - 2}</span>
+        {tags.slice(0, 3).map((tag, i) => {
+          // Semantic color coding based on tag kind
+          const tagStyle = getTagStyle(tag.kind, i === 0 ? theme.label : undefined);
+          return (
+            <span
+              key={i}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${tagStyle}`}
+              title={tag.kind ? `${tag.kind}: ${tag.name}` : tag.name}
+            >
+              #{tag.name}
+            </span>
+          );
+        })}
+        {tags.length > 3 && (
+          <span className="text-[10px] text-[var(--text-muted)]">+{tags.length - 3}</span>
+        )}
+        {hasAITags && (
+          <Sparkles className="w-3 h-3 text-purple-400 ml-0.5" title="AI-generated tags" />
         )}
       </div>
 
@@ -281,8 +324,9 @@ export function DocumentRow({
         <span>{formatRelativeTime(modifiedAt)}</span>
       </div>
 
-      {/* 6. Actions (Hover only) */}
-      <div className="w-20 flex justify-end items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+      {/* 6. Actions (Hover only) - Intelligence Table action toolbar */}
+      <div className="w-28 flex justify-end items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        {/* Primary actions */}
         {onChat && (
           <button
             type="button"
@@ -291,11 +335,38 @@ export function DocumentRow({
               onChat(doc._id);
             }}
             title="Chat with AI"
-            className="p-1.5 hover:bg-[var(--bg-primary)] rounded text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
+            className="p-1.5 hover:bg-[var(--accent-primary)]/10 rounded text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
           >
-            <MessageCircle className="w-4 h-4" />
+            <MessageCircle className="w-3.5 h-3.5" />
           </button>
         )}
+        {onEdit && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(doc._id);
+            }}
+            title="Quick Edit"
+            className="p-1.5 hover:bg-blue-500/10 rounded text-[var(--text-muted)] hover:text-blue-500 transition-colors"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {onShare && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShare(doc._id);
+            }}
+            title="Share"
+            className="p-1.5 hover:bg-emerald-500/10 rounded text-[var(--text-muted)] hover:text-emerald-500 transition-colors"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {/* Secondary actions */}
         <button
           type="button"
           onClick={(e) => {
@@ -308,7 +379,7 @@ export function DocumentRow({
             : "text-[var(--text-muted)] hover:text-yellow-500 hover:bg-[var(--bg-primary)]"
             }`}
         >
-          <Star className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
+          <Star className={`w-3.5 h-3.5 ${isFavorite ? "fill-current" : ""}`} />
         </button>
         <button
           type="button"
@@ -319,7 +390,7 @@ export function DocumentRow({
           title="Delete"
           className="p-1.5 hover:bg-red-500/10 rounded text-[var(--text-muted)] hover:text-red-500 transition-colors"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
