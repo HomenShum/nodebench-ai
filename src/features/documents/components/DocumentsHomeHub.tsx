@@ -94,6 +94,8 @@ import {
   // Extracted view components
   SectionCard,
   QuickCreateBar,
+  IntelligenceTable,
+  IntelligenceTableRow,
   // Extracted hooks
   useWeekNavigation,
 } from "@features/documents/components/documentsHub";
@@ -6896,59 +6898,66 @@ export function DocumentsHomeHub({
                       )}
 
                     {docViewMode === "list" ? (
-                      <SortableList
-                        items={orderedDocuments.map((d) => d._id)}
-                        onReorder={(newOrderIds) => {
-                          // Prune to currently visible/filtered documents only
+                      <IntelligenceTable>
+                        <SortableList
+                          items={orderedDocuments.map((d) => d._id)}
+                          onReorder={(newOrderIds) => {
+                            // Prune to currently visible/filtered documents only
 
-                          const valid = new Set(
-                            filteredDocuments.map((d) => d._id),
-                          );
+                            const valid = new Set(
+                              filteredDocuments.map((d) => d._id),
+                            );
 
-                          const pruned = newOrderIds.filter((id) =>
-                            valid.has(id),
-                          );
+                            const pruned = newOrderIds.filter((id) =>
+                              valid.has(id),
+                            );
 
-                          setDocOrderByFilter((prev) => ({
-                            ...prev,
-                            [filter]: pruned.map((id) => id as string),
-                          }));
+                            setDocOrderByFilter((prev) => ({
+                              ...prev,
+                              [filter]: pruned.map((id) => id as string),
+                            }));
 
-                          if (loggedInUser) {
-                            void saveOrderForFilter({
-                              filterKey: filter,
-                              order: pruned,
-                            }).catch(() => { });
-                          } else {
-                            try {
-                              localStorage.setItem(
-                                "nodebench:docOrderByFilter",
-                                JSON.stringify({
-                                  ...docOrderByFilter,
-                                  [filter]: pruned.map((id) => id as string),
-                                }),
-                              );
-                            } catch {
-                              /* no-op */
+                            if (loggedInUser) {
+                              void saveOrderForFilter({
+                                filterKey: filter,
+                                order: pruned,
+                              }).catch(() => { });
+                            } else {
+                              try {
+                                localStorage.setItem(
+                                  "nodebench:docOrderByFilter",
+                                  JSON.stringify({
+                                    ...docOrderByFilter,
+                                    [filter]: pruned.map((id) => id as string),
+                                  }),
+                                );
+                              } catch {
+                                /* no-op */
+                              }
                             }
-                          }
-                        }}
-                        renderItem={(id, _index, _isDragging) => {
-                          const doc = docsById[String(id)];
+                          }}
+                          renderItem={(id, _index, _isDragging) => {
+                            const doc = docsById[String(id)];
 
-                          if (!doc) return null;
+                            if (!doc) return null;
 
-                          return (
-                            <DocumentRow
-                              doc={doc}
-                              onSelect={handleSelectDocument}
-                              onToggleFavorite={handleToggleFavorite}
-                              onDelete={handleDeleteDocument}
-                              density={density}
-                            />
-                          );
-                        }}
-                      />
+                            return (
+                              <IntelligenceTableRow
+                                doc={doc}
+                                isSelected={selectedDocIds.has(doc._id)}
+                                onSelect={(id) => handleSelectDocument(id, false)}
+                                onToggleSelect={(id) => handleSelectDocument(id, true)}
+                                onToggleFavorite={handleToggleFavorite}
+                                onDelete={handleDeleteDocument}
+                                onChat={(id) => {
+                                  // TODO: Implement chat opening logic
+                                  toast.info("Chat coming soon");
+                                }}
+                              />
+                            );
+                          }}
+                        />
+                      </IntelligenceTable>
                     ) : docViewMode === "cards" ? (
                       <DocumentsGridSortable
                         items={orderedDocuments.map((d) => d._id)}
