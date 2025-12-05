@@ -95,7 +95,6 @@ import {
   SectionCard,
   QuickCreateBar,
   IntelligenceTable,
-  IntelligenceTableRow,
   // Extracted hooks
   useWeekNavigation,
 } from "@features/documents/components/documentsHub";
@@ -6942,7 +6941,7 @@ export function DocumentsHomeHub({
                             if (!doc) return null;
 
                             return (
-                              <IntelligenceTableRow
+                              <DocumentRow
                                 doc={doc}
                                 isSelected={selectedDocIds.has(doc._id)}
                                 onSelect={(id) => handleSelectDocument(id, false)}

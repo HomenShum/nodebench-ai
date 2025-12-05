@@ -7,4 +7,4 @@
 export { TaskRowGlobal, type TaskRowProps } from "./TaskRow";
 export { HolidayRowGlobal, type HolidayRowProps } from "./HolidayRow";
 export { DocumentRow, type DocumentRowProps } from "./DocumentRow";
-export { IntelligenceTableRow, type IntelligenceTableRowProps } from "./IntelligenceTableRow";
+
