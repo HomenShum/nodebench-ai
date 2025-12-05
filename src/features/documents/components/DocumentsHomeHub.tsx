@@ -91,6 +91,11 @@ import {
   type PlannerMode,
   type AgendaPopoverState,
   type DocumentCardData,
+  // Extracted view components
+  SectionCard,
+  QuickCreateBar,
+  // Extracted hooks
+  useWeekNavigation,
 } from "@features/documents/components/documentsHub";
 
 // Migrated list DnD to dnd-kit; removed @hello-pangea/dnd
@@ -3929,32 +3934,7 @@ export function DocumentsHomeHub({
       }
     };
 
-    const SectionCard = ({
-      title,
-
-      subtitle,
-
-      children,
-    }: {
-      title: string;
-      subtitle?: string;
-      children?: React.ReactNode;
-    }) => (
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            {title}
-          </h3>
-
-          {subtitle && (
-            <span className="text-xs text-gray-400">{subtitle}</span>
-          )}
-        </div>
-
-        {children}
-      </div>
-    );
-
+    // SectionCard is now imported from documentsHub/views
     const tasksTodayList = tasksToday ?? [];
 
     const eventsTodayList = eventsToday ?? [];
@@ -6907,53 +6887,53 @@ export function DocumentsHomeHub({
                       onClearSelection={() => clearSelection()}
                     />
 
-                  {(docViewMode === "list" || docViewMode === "cards") &&
-                    filteredDocuments.length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <p className="text-gray-400 text-sm">No documents found</p>
-                        <p className="text-gray-400 text-xs mt-1">Upload or create a document to get started</p>
-                      </div>
-                    )}
+                    {(docViewMode === "list" || docViewMode === "cards") &&
+                      filteredDocuments.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                          <p className="text-gray-400 text-sm">No documents found</p>
+                          <p className="text-gray-400 text-xs mt-1">Upload or create a document to get started</p>
+                        </div>
+                      )}
 
-                  {docViewMode === "list" ? (
-                    <SortableList
-                      items={orderedDocuments.map((d) => d._id)}
-                      onReorder={(newOrderIds) => {
-                        // Prune to currently visible/filtered documents only
+                    {docViewMode === "list" ? (
+                      <SortableList
+                        items={orderedDocuments.map((d) => d._id)}
+                        onReorder={(newOrderIds) => {
+                          // Prune to currently visible/filtered documents only
 
-                        const valid = new Set(
-                          filteredDocuments.map((d) => d._id),
-                        );
+                          const valid = new Set(
+                            filteredDocuments.map((d) => d._id),
+                          );
 
-                        const pruned = newOrderIds.filter((id) =>
-                          valid.has(id),
-                        );
+                          const pruned = newOrderIds.filter((id) =>
+                            valid.has(id),
+                          );
 
-                        setDocOrderByFilter((prev) => ({
-                          ...prev,
-                          [filter]: pruned.map((id) => id as string),
-                        }));
+                          setDocOrderByFilter((prev) => ({
+                            ...prev,
+                            [filter]: pruned.map((id) => id as string),
+                          }));
 
-                        if (loggedInUser) {
-                          void saveOrderForFilter({
-                            filterKey: filter,
-                            order: pruned,
-                          }).catch(() => { });
-                        } else {
-                          try {
-                            localStorage.setItem(
-                              "nodebench:docOrderByFilter",
-                              JSON.stringify({
-                                ...docOrderByFilter,
-                                [filter]: pruned.map((id) => id as string),
-                              }),
-                            );
-                          } catch {
-                            /* no-op */
+                          if (loggedInUser) {
+                            void saveOrderForFilter({
+                              filterKey: filter,
+                              order: pruned,
+                            }).catch(() => { });
+                          } else {
+                            try {
+                              localStorage.setItem(
+                                "nodebench:docOrderByFilter",
+                                JSON.stringify({
+                                  ...docOrderByFilter,
+                                  [filter]: pruned.map((id) => id as string),
+                                }),
+                              );
+                            } catch {
+                              /* no-op */
+                            }
                           }
-                        }
-                      }}
-                      renderItem={(id, _index, _isDragging) => {
+                        }}
+                        renderItem={(id, _index, _isDragging) => {
                           const doc = docsById[String(id)];
 
                           if (!doc) return null;
