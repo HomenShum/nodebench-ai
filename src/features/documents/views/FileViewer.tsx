@@ -149,6 +149,11 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
   const [sheetList, setSheetList] = useState<Array<{ name: string; data: any[][] }>>([]);
   const [activeSheet, setActiveSheet] = useState(0);
 
+  // Code view mode state (source vs preview for HTML files)
+  const [codeViewMode, setCodeViewMode] = useState<'source' | 'preview'>('source');
+  const [codeContent, setCodeContent] = useState<string | null>(null);
+  const [codeLoading, setCodeLoading] = useState(false);
+
 
 
   const handleRunAnalysis = async () => {
@@ -268,6 +273,26 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
 
   }, [fileDocument]);
 
+  // Load code content for code files
+  useEffect(() => {
+    if (!fileDocument?.storageUrl) return;
+    const fileName = fileDocument.file?.fileName || fileDocument.document.title || '';
+    const isCodeFile = /\.(html?|jsx?|tsx?|css|scss|json|xml|ya?ml|md|py|rb|go|rs|java|c|cpp|h|hpp|swift|kt|sh|bash|sql)$/i.test(fileName);
+    if (!isCodeFile) return;
+
+    setCodeLoading(true);
+    fetch(fileDocument.storageUrl)
+      .then(res => res.text())
+      .then(text => {
+        setCodeContent(text);
+        setCodeLoading(false);
+      })
+      .catch(() => {
+        setCodeContent(null);
+        setCodeLoading(false);
+      });
+  }, [fileDocument]);
+
 
   if (!fileDocument) {
     return (
@@ -284,41 +309,21 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
   // Resolve file type using stored type or filename extension
   const fileNameLower = String(file?.fileName || document.title || '').toLowerCase();
   const resolvedType: string = (() => {
+    // Detect code/web files FIRST (by extension) - this takes priority
+    if (/\.(html?|jsx?|tsx?|css|scss|json|xml|ya?ml|md|py|rb|go|rs|java|c|cpp|h|hpp|swift|kt|sh|bash|sql)$/.test(fileNameLower)) return 'code';
+
     const ft = String(document.fileType || '').toLowerCase();
-    if (["csv","excel","image","video","audio","pdf","text"].includes(ft)) return ft;
+    if (["csv","excel","image","video","audio","pdf"].includes(ft)) return ft;
     if (fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.xls')) return 'excel';
     if (fileNameLower.endsWith('.csv')) return 'csv';
     if (fileNameLower.endsWith('.pdf')) return 'pdf';
     if (/\.(png|jpg|jpeg|webp|gif|svg)$/.test(fileNameLower)) return 'image';
     if (/\.(mp4|mov|webm|avi|mkv)$/.test(fileNameLower)) return 'video';
     if (/\.(mp3|wav|m4a|aac|flac|ogg)$/.test(fileNameLower)) return 'audio';
-    // Detect code/web files
-    if (/\.(html?|jsx?|tsx?|css|scss|json|xml|ya?ml|md|py|rb|go|rs|java|c|cpp|h|hpp|swift|kt|sh|bash|sql)$/.test(fileNameLower)) return 'code';
     return ft || 'file';
   })();
 
-  // Code view mode state (source vs preview for HTML files)
-  const [codeViewMode, setCodeViewMode] = useState<'source' | 'preview'>('source');
-  const [codeContent, setCodeContent] = useState<string | null>(null);
-  const [codeLoading, setCodeLoading] = useState(false);
   const isHtmlFile = /\.html?$/.test(fileNameLower);
-
-  // Load code content for code files
-  useEffect(() => {
-    if (resolvedType === 'code' && storageUrl) {
-      setCodeLoading(true);
-      fetch(storageUrl)
-        .then(res => res.text())
-        .then(text => {
-          setCodeContent(text);
-          setCodeLoading(false);
-        })
-        .catch(() => {
-          setCodeContent(null);
-          setCodeLoading(false);
-        });
-    }
-  }, [resolvedType, storageUrl]);
 
 
   const formatFileSize = (bytes: number): string => {
