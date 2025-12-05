@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -32,6 +32,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const [showFastAgent, setShowFastAgent] = useState(false);
   const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents'>('documents');
   const [isGridMode, setIsGridMode] = useState(false);
+  // Transition state for smooth view changes
+  const [isTransitioning, setIsTransitioning] = useState(false);
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   // Multi-document selection for Fast Agent
@@ -156,6 +158,24 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   };
 
   const user = useQuery(api.domains.auth.auth.loggedInUser);
+
+  // Prefetch DocumentsHomeHub data - keep these subscribed even when viewing a document
+  // so the data is ready when user navigates back (no loading flash)
+  const _prefetchDocuments = useQuery(api.domains.documents.documents.getSidebarWithPreviews);
+  const _prefetchCalendarPrefs = useQuery(api.domains.auth.userPreferences.getCalendarUiPrefs);
+  const _prefetchTodoTasks = useQuery(
+    api.domains.tasks.tasks.listTasksByStatus,
+    user ? { status: "todo" } : "skip"
+  );
+  const _prefetchInProgressTasks = useQuery(
+    api.domains.tasks.tasks.listTasksByStatus,
+    user ? { status: "in_progress" } : "skip"
+  );
+  const _prefetchDoneTasks = useQuery(
+    api.domains.tasks.tasks.listTasksByStatus,
+    user ? { status: "done" } : "skip"
+  );
+
   // Preferences and API key status for reminder UI
   // Settings modal control
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -422,6 +442,24 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     };
   }, []);
 
+  // Listen for go back events (e.g., from FileViewer back button)
+  useEffect(() => {
+    const handler = () => {
+      // Use startTransition to defer the state update, keeping the current view visible
+      // while the DocumentsHomeHub loads its data
+      setIsTransitioning(true);
+      startTransition(() => {
+        onDocumentSelect(null);
+        // Clear transitioning after a short delay to allow the new view to render
+        setTimeout(() => setIsTransitioning(false), 100);
+      });
+    };
+    window.addEventListener('nodebench:goBack', handler);
+    return () => {
+      window.removeEventListener('nodebench:goBack', handler);
+    };
+  }, [onDocumentSelect]);
+
   useEffect(() => {
     const toCalendar = () => setCurrentView('calendar');
     const toTimeline = () => setCurrentView('documents'); // legacy
@@ -597,7 +635,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           </div>
 
           {/* Content Area - Resizable Split */}
-          <div className="flex-1 overflow-hidden" data-main-content>
+          <div className={`flex-1 overflow-hidden transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`} data-main-content>
             {currentView === 'public' ? (
               <PublicDocuments onDocumentSelect={handleDocumentSelect} />
             ) : currentView === 'agents' ? (
