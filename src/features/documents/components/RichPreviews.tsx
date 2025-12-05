@@ -3,7 +3,7 @@
  *
  * Instead of abstract file representations, these components render
  * miniature versions of actual content types:
- * - Spreadsheets: Real CSV data when available, or abstract grid fallback
+ * - Spreadsheets: Real CSV/Excel data when available, or abstract grid fallback
  * - HTML/Code: Mini-IDE with syntax coloring (dark VS Code theme)
  * - Markdown/Docs: Typography layout with headings and paragraphs
  * - Quick Notes: Sticky note / paper pad look with yellow tint
@@ -12,6 +12,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { AlertTriangle, ImageOff, FileQuestion } from "lucide-react";
+import * as XLSX from "xlsx";
 
 // ============================================================================
 // CSV Parser Utility - Parses CSV text into rows/columns
@@ -34,9 +35,41 @@ function parseCsvContent(text: string): string[][] | null {
 }
 
 // ============================================================================
-// CSV URL Fetcher Hook - Fetches first 2KB of CSV from URL
+// Excel Parser Utility - Parses Excel ArrayBuffer into rows/columns
 // ============================================================================
-function useCsvFromUrl(url: string | null | undefined): string[][] | null {
+function parseExcelContent(buffer: ArrayBuffer): string[][] | null {
+  try {
+    const workbook = XLSX.read(buffer, { type: "array" });
+    const firstSheetName = workbook.SheetNames[0];
+    if (!firstSheetName) return null;
+
+    const worksheet = workbook.Sheets[firstSheetName];
+    // Convert to 2D array, limit to first 6 rows
+    const jsonData = XLSX.utils.sheet_to_json<string[]>(worksheet, {
+      header: 1,
+      defval: "",
+    });
+
+    // Take first 6 rows, truncate cell content
+    const rows = jsonData.slice(0, 6).map((row) =>
+      (row as unknown[]).map((cell) =>
+        String(cell ?? "").substring(0, 20)
+      )
+    );
+
+    return rows.length > 0 ? rows : null;
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
+// Spreadsheet URL Fetcher Hook - Fetches CSV or Excel from URL
+// ============================================================================
+function useSpreadsheetFromUrl(
+  url: string | null | undefined,
+  fileType?: string
+): string[][] | null {
   const [data, setData] = useState<string[][] | null>(null);
 
   useEffect(() => {
@@ -47,39 +80,51 @@ function useCsvFromUrl(url: string | null | undefined): string[][] | null {
 
     let cancelled = false;
 
-    const fetchCsv = async () => {
+    const fetchSpreadsheet = async () => {
       try {
-        // Fetch with Range header to get only first 2KB
-        const response = await fetch(url, {
-          headers: { Range: 'bytes=0-2047' }
-        });
+        const isExcel = fileType === "excel" || url.endsWith(".xlsx") || url.endsWith(".xls");
 
-        if (!response.ok && response.status !== 206) {
-          // If Range not supported, try full fetch
-          const fullResponse = await fetch(url);
-          if (!fullResponse.ok) return;
-          const text = await fullResponse.text();
+        if (isExcel) {
+          // Fetch full file for Excel (binary format)
+          const response = await fetch(url);
+          if (!response.ok) return;
+          const buffer = await response.arrayBuffer();
           if (!cancelled) {
-            setData(parseCsvContent(text.substring(0, 2048)));
+            setData(parseExcelContent(buffer));
           }
-          return;
-        }
+        } else {
+          // CSV: Fetch with Range header to get only first 2KB
+          const response = await fetch(url, {
+            headers: { Range: "bytes=0-2047" },
+          });
 
-        const text = await response.text();
-        if (!cancelled) {
-          setData(parseCsvContent(text));
+          if (!response.ok && response.status !== 206) {
+            // If Range not supported, try full fetch
+            const fullResponse = await fetch(url);
+            if (!fullResponse.ok) return;
+            const text = await fullResponse.text();
+            if (!cancelled) {
+              setData(parseCsvContent(text.substring(0, 2048)));
+            }
+            return;
+          }
+
+          const text = await response.text();
+          if (!cancelled) {
+            setData(parseCsvContent(text));
+          }
         }
       } catch {
         // Silently fail - will show abstract fallback
       }
     };
 
-    fetchCsv();
+    fetchSpreadsheet();
 
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [url, fileType]);
 
   return data;
 }
@@ -90,17 +135,20 @@ function useCsvFromUrl(url: string | null | undefined): string[][] | null {
 export function SpreadsheetPreview({
   url,
   content,
-  structuredPreview
+  fileType,
+  structuredPreview,
 }: {
-  /** URL to fetch CSV content from (Convex storage URL) */
+  /** URL to fetch CSV/Excel content from (Convex storage URL) */
   url?: string | null;
   /** Raw CSV/text content to parse and display */
   content?: string | null;
+  /** File type hint for parsing (csv, excel) */
+  fileType?: string;
   /** Pre-parsed structured preview data (LLM-cleaned) */
   structuredPreview?: string[][] | null;
 }) {
-  // Fetch from URL if available
-  const urlData = useCsvFromUrl(url);
+  // Fetch from URL if available (handles both CSV and Excel)
+  const urlData = useSpreadsheetFromUrl(url, fileType);
 
   // Parse content if available
   const parsedData = useMemo(() => {
