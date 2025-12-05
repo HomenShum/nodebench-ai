@@ -10,7 +10,7 @@
 import { useRef, memo, useMemo } from "react";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import {
-  Edit3, Star, Trash2, Link2, Sparkles, GripVertical, Table2, FileText, Clock, Play
+  Edit3, Star, Trash2, Link2, Sparkles, GripVertical, Table2, FileText, Clock, Play, Eye, Code2
 } from "lucide-react";
 import { FileTypeIcon } from "@/shared/components/FileTypeIcon";
 import { inferFileType, type FileType } from "@/lib/fileTypes";
@@ -191,6 +191,49 @@ function VisualGlimpse({ doc, typeGuess }: { doc: DocumentCardData; typeGuess: F
         <div className="h-1.5 w-full bg-gray-200 rounded-sm" />
         <div className="h-1.5 w-5/6 bg-gray-200 rounded-sm" />
         <div className="h-1.5 w-1/2 bg-gray-200 rounded-sm" />
+      </div>
+    );
+  }
+
+  // Code/Web/HTML: Dark-mode "Code Studio" preview
+  if (['code', 'web'].includes(typeGuess)) {
+    return (
+      <div className="w-full h-full bg-[#1e1e1e] rounded-lg p-2.5 flex flex-col gap-1 overflow-hidden relative group/code">
+        {/* Fake Menu Bar (macOS style) */}
+        <div className="flex gap-1 mb-1 opacity-60">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+          <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+          <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+        </div>
+
+        {/* Syntax Highlighted Lines */}
+        <div className="flex gap-1.5">
+          <div className="w-6 h-1 bg-purple-400 rounded-sm opacity-70" />
+          <div className="w-10 h-1 bg-blue-400 rounded-sm opacity-70" />
+        </div>
+        <div className="flex gap-1.5 ml-3">
+          <div className="w-12 h-1 bg-green-400 rounded-sm opacity-70" />
+          <div className="w-5 h-1 bg-yellow-400 rounded-sm opacity-70" />
+        </div>
+        <div className="flex gap-1.5 ml-3">
+          <div className="w-8 h-1 bg-blue-300 rounded-sm opacity-70" />
+        </div>
+        <div className="flex gap-1.5">
+          <div className="w-4 h-1 bg-purple-400 rounded-sm opacity-70" />
+        </div>
+
+        {/* HTML Tag Decoration */}
+        <div className="absolute bottom-1.5 right-1.5 text-[9px] font-mono text-gray-600 opacity-30 font-bold">
+          &lt;/&gt;
+        </div>
+
+        {/* Hover: Preview Button */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover/code:opacity-100 transition-opacity backdrop-blur-[1px]">
+          <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-[10px] font-medium rounded-full shadow-lg">
+            <Eye className="w-3 h-3" />
+            <span>Preview</span>
+          </div>
+        </div>
       </div>
     );
   }
