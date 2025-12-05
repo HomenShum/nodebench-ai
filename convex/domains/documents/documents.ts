@@ -740,7 +740,12 @@ export const getSidebarWithPreviews = query({
           // For CSV and Excel files, generate URL for preview fetching
           // Note: doc.fileType contains the actual file type (csv, excel, etc.)
           // while file.fileType in the files table may be "document"
-          if ((doc.fileType === "csv" || doc.fileType === "excel") && file.storageId) {
+          // Also check for .xlsx/.xls extension in title for files with unknown fileType
+          const isSpreadsheet =
+            doc.fileType === "csv" ||
+            doc.fileType === "excel" ||
+            (doc.fileType === "unknown" && doc.title && /\.(xlsx?|csv)$/i.test(doc.title));
+          if (isSpreadsheet && file.storageId) {
             csvUrl = await ctx.storage.getUrl(file.storageId);
           }
         }

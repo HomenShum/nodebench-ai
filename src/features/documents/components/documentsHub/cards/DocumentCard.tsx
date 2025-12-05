@@ -242,18 +242,22 @@ function VisualGlimpse({
         <SpreadsheetPreview
           url={doc.csvUrl}
           content={doc.contentPreview}
+          fileType={typeGuess}
         />
       </div>
     );
   }
 
   // CSV/Excel meta-documents (like "Analysis: file.csv") without actual file storage
-  // Fall through to text document rendering to show their content
+  // Fall through to text document rendering to show their content with styled preview
   if ((typeGuess === 'csv' || typeGuess === 'excel') && !doc.csvUrl) {
     if (doc.contentPreview) {
+      // Show actual content with sticky note style (like Quick Notes)
       return renderWithEmptyState(
-        <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-2.5 overflow-hidden">
-          <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-4">
+        <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
+          {/* Red margin line */}
+          <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
+          <p className="text-[10px] text-gray-600 leading-relaxed line-clamp-4 ml-4 italic">
             {doc.contentPreview}
           </p>
         </div>
