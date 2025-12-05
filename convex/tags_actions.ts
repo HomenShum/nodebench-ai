@@ -119,7 +119,7 @@ Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web develop
     }
 
     // Save tags to database
-    const savedTags = await ctx.runMutation(api.tags.addTagsToDocument, {
+    const savedTags: Array<{ name: string; kind?: string; importance?: number }> = await ctx.runMutation(api.tags.addTagsToDocument, {
       documentId,
       tags: validTags,
     });
@@ -136,7 +136,7 @@ Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web develop
     return {
       success: true,
       tagsGenerated: savedTags.length,
-      tags: savedTags.map((t) => ({
+      tags: savedTags.map((t: { name: string; kind?: string; importance?: number }) => ({
         name: t.name,
         kind: t.kind,
         importance: t.importance,

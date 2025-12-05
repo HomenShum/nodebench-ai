@@ -723,6 +723,7 @@ export const getSidebarWithPreviews = query({
       let fileSize: number | undefined;
       let thumbnailUrl: string | null = null;
       let mediaUrl: string | null = null;
+      let csvUrl: string | null = null;
       if (doc.documentType === "file" && doc.fileId) {
         const file = await ctx.db.get(doc.fileId as Id<"files">);
         if (file) {
@@ -735,6 +736,12 @@ export const getSidebarWithPreviews = query({
               thumbnailUrl = url;
             }
             mediaUrl = url;
+          }
+          // For CSV and Excel files, generate URL for preview fetching
+          // Note: doc.fileType contains the actual file type (csv, excel, etc.)
+          // while file.fileType in the files table may be "document"
+          if ((doc.fileType === "csv" || doc.fileType === "excel") && file.storageId) {
+            csvUrl = await ctx.storage.getUrl(file.storageId);
           }
         }
       }
@@ -751,6 +758,8 @@ export const getSidebarWithPreviews = query({
         thumbnailUrl,
         // Include media URL for playable media (images and videos)
         mediaUrl,
+        // Include CSV URL for spreadsheet preview
+        csvUrl,
       };
     }));
 

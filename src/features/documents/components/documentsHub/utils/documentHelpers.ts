@@ -37,6 +37,8 @@ export type DocumentCardData = {
   thumbnailUrl?: string | null;
   // Media URL for playable media (images and videos)
   mediaUrl?: string | null;
+  // CSV URL for spreadsheet preview
+  csvUrl?: string | null;
 };
 
 /** AI indexing status for visual indicators */
@@ -101,6 +103,8 @@ export function normalizeDocument(d: any): DocumentCardData {
     thumbnailUrl: d?.thumbnailUrl,
     // Media URL for playable media (images and videos)
     mediaUrl: d?.mediaUrl,
+    // CSV URL for spreadsheet preview
+    csvUrl: d?.csvUrl,
   };
 }
 

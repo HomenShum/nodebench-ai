@@ -23,6 +23,7 @@ import {
   SpreadsheetPreview,
   CodePreview,
   MarkdownPreview,
+  NotePreview,
   EmptyStateOverlay,
   ImageFallback,
 } from "../../RichPreviews";
@@ -82,18 +83,54 @@ function formatFileSize(bytes?: number): string | null {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Code file extensions for smart detection */
+const CODE_EXTENSIONS = new Set([
+  'html', 'htm', 'js', 'jsx', 'ts', 'tsx', 'py', 'rb', 'go', 'rs', 'java',
+  'cpp', 'c', 'h', 'hpp', 'cs', 'swift', 'kt', 'scala', 'php', 'vue', 'svelte',
+  'css', 'scss', 'sass', 'less', 'json', 'xml', 'yaml', 'yml', 'toml', 'ini',
+  'sh', 'bash', 'zsh', 'ps1', 'bat', 'sql', 'graphql', 'prisma'
+]);
+
+/** Smart type detection - ensures code files are detected even if labeled as "text" */
+function getSmartFileType(doc: DocumentCardData, baseType: FileType): FileType {
+  const title = String(doc.title || doc.fileName || "").toLowerCase();
+  const ext = title.split('.').pop() || "";
+
+  // Force-detect code files even if system labeled them as "text"
+  if (CODE_EXTENSIONS.has(ext)) {
+    return 'code';
+  }
+
+  // Detect Quick Notes (nbdoc type or title pattern)
+  if (doc.documentType === 'document' && !doc.fileSize) {
+    // NodeBench documents without file size are likely Quick Notes
+    if (title.includes('quick note') || title.startsWith('note ')) {
+      return 'nbdoc';
+    }
+  }
+
+  return baseType;
+}
+
 /** Infer FileType for theming */
 function inferDocFileType(doc: DocumentCardData): FileType {
+  let baseType: FileType;
+
   if (doc.documentType === "file") {
     const ft = String(doc.fileType || "").toLowerCase();
     if (["video", "audio", "image", "csv", "pdf", "excel", "json", "text", "code", "web", "document"].includes(ft)) {
-      return ft as FileType;
+      baseType = ft as FileType;
+    } else {
+      baseType = inferFileType({ name: doc.fileName || doc.title });
     }
-    return inferFileType({ name: doc.fileName || doc.title });
+  } else {
+    const lower = String(doc.title || "").toLowerCase();
+    const looksLikeFile = /\.(csv|xlsx|xls|pdf|mp4|mov|webm|avi|mkv|jpg|jpeg|png|webp|gif|json|txt|md|markdown|js|ts|tsx|jsx|py|rb|go|rs|html|css|scss|sh)$/.test(lower);
+    baseType = looksLikeFile ? inferFileType({ name: doc.title }) : inferFileType({ name: doc.title, isNodebenchDoc: true });
   }
-  const lower = String(doc.title || "").toLowerCase();
-  const looksLikeFile = /\.(csv|xlsx|xls|pdf|mp4|mov|webm|avi|mkv|jpg|jpeg|png|webp|gif|json|txt|md|markdown|js|ts|tsx|jsx|py|rb|go|rs|html|css|scss|sh)$/.test(lower);
-  return looksLikeFile ? inferFileType({ name: doc.title }) : inferFileType({ name: doc.title, isNodebenchDoc: true });
+
+  // Apply smart type detection to catch code files labeled as "text"
+  return getSmartFileType(doc, baseType);
 }
 
 /**
@@ -197,17 +234,62 @@ function VisualGlimpse({
     );
   }
 
-  // CSV/Excel: Rich spreadsheet preview (Miniature Twin)
-  if (typeGuess === 'csv' || typeGuess === 'excel') {
+  // CSV/Excel: Rich spreadsheet preview with REAL DATA when available
+  // Only show spreadsheet preview if we have a csvUrl (actual file with storage)
+  if ((typeGuess === 'csv' || typeGuess === 'excel') && doc.csvUrl) {
     return renderWithEmptyState(
       <div className="w-full h-full rounded-lg overflow-hidden border border-gray-100">
-        <SpreadsheetPreview />
+        <SpreadsheetPreview
+          url={doc.csvUrl}
+          content={doc.contentPreview}
+        />
+      </div>
+    );
+  }
+
+  // CSV/Excel meta-documents (like "Analysis: file.csv") without actual file storage
+  // Fall through to text document rendering to show their content
+  if ((typeGuess === 'csv' || typeGuess === 'excel') && !doc.csvUrl) {
+    if (doc.contentPreview) {
+      return renderWithEmptyState(
+        <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-2.5 overflow-hidden">
+          <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-4">
+            {doc.contentPreview}
+          </p>
+        </div>
+      );
+    }
+    // If no content preview, show abstract document icon
+    return renderWithEmptyState(
+      <div className="w-full h-full rounded-lg overflow-hidden">
+        <MarkdownPreview hasContent={false} />
+      </div>
+    );
+  }
+
+  // Quick Notes (nbdoc): Sticky note / paper pad look
+  if (typeGuess === 'nbdoc') {
+    if (doc.contentPreview) {
+      // Show actual content with yellow tint
+      return renderWithEmptyState(
+        <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
+          {/* Red margin line */}
+          <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
+          <p className="text-[10px] text-gray-600 leading-relaxed line-clamp-4 ml-4 italic">
+            {doc.contentPreview}
+          </p>
+        </div>
+      );
+    }
+    return renderWithEmptyState(
+      <div className="w-full h-full rounded-lg overflow-hidden">
+        <NotePreview />
       </div>
     );
   }
 
   // Text/PDF/Docs: Typography layout or actual snippet
-  if (['pdf', 'text', 'document', 'nbdoc'].includes(typeGuess)) {
+  if (['pdf', 'text', 'document'].includes(typeGuess)) {
     if (doc.contentPreview) {
       return renderWithEmptyState(
         <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-2.5 overflow-hidden">
@@ -224,7 +306,7 @@ function VisualGlimpse({
     );
   }
 
-  // Code/Web/HTML: Mini-IDE preview
+  // Code/Web/HTML: Mini-IDE preview with dark theme
   if (['code', 'web'].includes(typeGuess)) {
     return renderWithEmptyState(
       <div className="w-full h-full rounded-lg overflow-hidden relative group/code">

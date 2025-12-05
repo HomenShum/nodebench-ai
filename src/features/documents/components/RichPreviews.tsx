@@ -1,20 +1,167 @@
 /**
  * RichPreviews - High-fidelity "Miniature Twin" previews for document cards
- * 
+ *
  * Instead of abstract file representations, these components render
  * miniature versions of actual content types:
- * - Spreadsheets: CSS Grid tables with cells and data bars
- * - HTML/Code: Mini-IDE with syntax coloring
+ * - Spreadsheets: Real CSV data when available, or abstract grid fallback
+ * - HTML/Code: Mini-IDE with syntax coloring (dark VS Code theme)
  * - Markdown/Docs: Typography layout with headings and paragraphs
+ * - Quick Notes: Sticky note / paper pad look with yellow tint
  * - Empty state: Warning overlay with cleanup suggestion
  */
 
+import { useMemo, useState, useEffect } from "react";
 import { AlertTriangle, ImageOff, FileQuestion } from "lucide-react";
 
 // ============================================================================
-// Spreadsheet Preview - Looks like a real Excel grid
+// CSV Parser Utility - Parses CSV text into rows/columns
 // ============================================================================
-export function SpreadsheetPreview() {
+function parseCsvContent(text: string): string[][] | null {
+  if (!text || text.trim().length === 0) return null;
+
+  // Parse first 6 lines, split by comma, clean quotes
+  const rows = text
+    .split('\n')
+    .slice(0, 6)
+    .map(row =>
+      row.split(',').map(cell =>
+        cell.replace(/^"|"$/g, '').trim().substring(0, 20) // Truncate cells
+      )
+    )
+    .filter(row => row.length > 0 && row.some(c => c.length > 0));
+
+  return rows.length > 0 ? rows : null;
+}
+
+// ============================================================================
+// CSV URL Fetcher Hook - Fetches first 2KB of CSV from URL
+// ============================================================================
+function useCsvFromUrl(url: string | null | undefined): string[][] | null {
+  const [data, setData] = useState<string[][] | null>(null);
+
+  useEffect(() => {
+    if (!url) {
+      setData(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchCsv = async () => {
+      try {
+        // Fetch with Range header to get only first 2KB
+        const response = await fetch(url, {
+          headers: { Range: 'bytes=0-2047' }
+        });
+
+        if (!response.ok && response.status !== 206) {
+          // If Range not supported, try full fetch
+          const fullResponse = await fetch(url);
+          if (!fullResponse.ok) return;
+          const text = await fullResponse.text();
+          if (!cancelled) {
+            setData(parseCsvContent(text.substring(0, 2048)));
+          }
+          return;
+        }
+
+        const text = await response.text();
+        if (!cancelled) {
+          setData(parseCsvContent(text));
+        }
+      } catch {
+        // Silently fail - will show abstract fallback
+      }
+    };
+
+    fetchCsv();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  return data;
+}
+
+// ============================================================================
+// Spreadsheet Preview - Shows REAL data when available, or abstract fallback
+// ============================================================================
+export function SpreadsheetPreview({
+  url,
+  content,
+  structuredPreview
+}: {
+  /** URL to fetch CSV content from (Convex storage URL) */
+  url?: string | null;
+  /** Raw CSV/text content to parse and display */
+  content?: string | null;
+  /** Pre-parsed structured preview data (LLM-cleaned) */
+  structuredPreview?: string[][] | null;
+}) {
+  // Fetch from URL if available
+  const urlData = useCsvFromUrl(url);
+
+  // Parse content if available
+  const parsedData = useMemo(() => {
+    if (content) {
+      return parseCsvContent(content);
+    }
+    return null;
+  }, [content]);
+
+  // Priority: structuredPreview (LLM-cleaned) > urlData (fetched) > parsedData (from content) > fallback
+  const displayData = structuredPreview || urlData || parsedData;
+
+  // REAL DATA RENDERER - Shows actual CSV content
+  if (displayData && displayData.length > 0) {
+    const headers = displayData[0];
+    const rows = displayData.slice(1, 6);
+
+    return (
+      <div className="w-full h-full bg-white flex flex-col overflow-hidden text-[6px] font-mono leading-none select-none relative">
+        {/* Header Row */}
+        <div className="flex bg-gradient-to-b from-gray-100 to-gray-50 border-b border-gray-200 sticky top-0">
+          <div className="w-4 shrink-0 border-r border-gray-200 bg-gray-100" />
+          {headers.slice(0, 4).map((header, i) => (
+            <div
+              key={i}
+              className="flex-1 border-r border-gray-200 px-0.5 py-0.5 font-bold text-gray-600 truncate uppercase tracking-tighter text-center"
+            >
+              {header || `Col${i+1}`}
+            </div>
+          ))}
+        </div>
+
+        {/* Data Rows */}
+        <div className="flex-1 overflow-hidden">
+          {rows.map((row, rIndex) => (
+            <div
+              key={rIndex}
+              className="flex border-b border-gray-100 hover:bg-blue-50/30"
+            >
+              <div className="w-4 shrink-0 border-r border-gray-200 bg-gray-50 text-gray-400 flex items-center justify-center font-semibold text-[5px]">
+                {rIndex + 1}
+              </div>
+              {row.slice(0, 4).map((cell, cIndex) => (
+                <div
+                  key={cIndex}
+                  className="flex-1 border-r border-gray-100 px-0.5 py-0.5 text-gray-700 truncate"
+                >
+                  {cell}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Fade hint for more content */}
+        <div className="absolute bottom-0 inset-x-0 h-3 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+      </div>
+    );
+  }
+
+  // ABSTRACT FALLBACK - When no real data available
   return (
     <div className="w-full h-full bg-white p-1.5 flex flex-col gap-0 border-t border-l border-gray-100 overflow-hidden">
       {/* Header Row */}
@@ -108,6 +255,37 @@ export function MarkdownPreview({ hasContent = false }: { hasContent?: boolean }
       {/* Second paragraph */}
       <div className="mt-1 w-full h-1 bg-gray-100 rounded-[1px]" />
       <div className="w-4/5 h-1 bg-gray-100 rounded-[1px]" />
+    </div>
+  );
+}
+
+// ============================================================================
+// Note Preview - "Sticky Note" / Paper Pad look for Quick Notes
+// ============================================================================
+export function NotePreview() {
+  return (
+    <div className="w-full h-full bg-gradient-to-br from-amber-50 via-yellow-50/80 to-orange-50/30 p-2 overflow-hidden relative">
+      {/* Subtle "tape" at top */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-amber-200/60 rounded-b-sm" />
+
+      {/* Red margin line (like legal pad) */}
+      <div className="absolute top-0 bottom-0 left-4 w-[1px] bg-red-200/40" />
+
+      {/* Content with lines */}
+      <div className="ml-5 mt-2 flex flex-col gap-1.5">
+        <div className="w-4/5 h-1.5 bg-gray-600/20 rounded-[1px]" />
+        <div className="w-full h-1 bg-gray-500/10 rounded-[1px]" />
+        <div className="w-3/4 h-1 bg-gray-500/10 rounded-[1px]" />
+        <div className="w-5/6 h-1 bg-gray-500/10 rounded-[1px]" />
+        <div className="w-1/2 h-1 bg-gray-500/10 rounded-[1px]" />
+      </div>
+
+      {/* Ruled lines across the paper */}
+      <div className="absolute inset-x-0 top-8 bottom-0 flex flex-col gap-2.5 px-2">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="w-full h-[0.5px] bg-blue-200/30" />
+        ))}
+      </div>
     </div>
   );
 }
