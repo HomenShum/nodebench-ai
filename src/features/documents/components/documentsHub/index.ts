@@ -4,6 +4,9 @@
  * Central export point for all DocumentsHub modular components
  */
 
+// Types
+export * from "./types";
+
 // Cards
 export * from "./cards";
 
@@ -27,3 +30,6 @@ export type { AgendaPopoverState } from "./planner/types";
 export { PlannerModeToggle } from "./planner/PlannerModeToggle";
 export type { PlannerMode } from "./planner/PlannerModeToggle";
 export { PlannerAiBar } from "./planner/PlannerAiBar";
+
+// Hooks
+export * from "./hooks";

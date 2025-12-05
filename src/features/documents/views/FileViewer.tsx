@@ -23,6 +23,8 @@ import {
   ChevronLeft,
   StretchHorizontal,
   StretchVertical,
+  Code2,
+  ArrowLeft,
 } from 'lucide-react';
 import Spreadsheet from 'react-spreadsheet';
 import * as XLSX from 'xlsx';
@@ -72,9 +74,10 @@ function wsToDisplayAOA(ws: XLSX.WorkSheet): string[][] {
 interface FileViewerProps {
   documentId: Id<"documents">;
   className?: string;
+  onGoBack?: () => void;
 }
 
-export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = "" }) => {
+export const FileViewer: React.FC<FileViewerProps> = ({ documentId, className = "", onGoBack }) => {
   const fileDocument = useQuery(api.domains.documents.fileDocuments.getFileDocument, { documentId });
   const analyzeWithGenAI = useAction(api.domains.documents.fileAnalysis.analyzeFileWithGenAI);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -247,26 +250,26 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     setSheetError(null);
     setSheetData(null);
     void (async () => {
-        try {
-          const resp = await fetch(fileDocument.storageUrl!);
-          const buf = await resp.arrayBuffer();
-          const wb = XLSX.read(buf, { type: 'array' });
-          const sheets = wb.SheetNames.map((name: string) => {
-            const ws = wb.Sheets[name];
-            const aoa = wsToDisplayAOA(ws);
-            const data = aoa.map(r => r.map(c => ({ value: c })));
-            return { name, data };
-          });
-          setSheetList(sheets);
-          setActiveSheet(0);
-          setSheetData(sheets[0]?.data ?? null);
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : 'Failed to load Excel';
-          setSheetError(msg);
-        } finally {
-          setSheetLoading(false);
-        }
-      })();
+      try {
+        const resp = await fetch(fileDocument.storageUrl!);
+        const buf = await resp.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const sheets = wb.SheetNames.map((name: string) => {
+          const ws = wb.Sheets[name];
+          const aoa = wsToDisplayAOA(ws);
+          const data = aoa.map(r => r.map(c => ({ value: c })));
+          return { name, data };
+        });
+        setSheetList(sheets);
+        setActiveSheet(0);
+        setSheetData(sheets[0]?.data ?? null);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Failed to load Excel';
+        setSheetError(msg);
+      } finally {
+        setSheetLoading(false);
+      }
+    })();
 
   }, [fileDocument]);
 
@@ -292,7 +295,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     if (/\.(html?|jsx?|tsx?|css|scss|json|xml|ya?ml|md|py|rb|go|rs|java|c|cpp|h|hpp|swift|kt|sh|bash|sql)$/.test(fileNameLower)) return 'code';
 
     const ft = String(document.fileType || '').toLowerCase();
-    if (["csv","excel","image","video","audio","pdf"].includes(ft)) return ft;
+    if (["csv", "excel", "image", "video", "audio", "pdf"].includes(ft)) return ft;
     if (fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.xls')) return 'excel';
     if (fileNameLower.endsWith('.csv')) return 'csv';
     if (fileNameLower.endsWith('.pdf')) return 'pdf';
@@ -437,8 +440,8 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
             className={
               zoomMode === 'fit'
                 ? (fitAxis === 'height'
-                    ? "h-full w-auto object-contain rounded-lg border border-[var(--border-color)]"
-                    : "w-full h-auto object-contain rounded-lg border border-[var(--border-color)]")
+                  ? "h-full w-auto object-contain rounded-lg border border-[var(--border-color)]"
+                  : "w-full h-auto object-contain rounded-lg border border-[var(--border-color)]")
                 : "max-w-none max-h-none object-contain rounded-lg border border-[var(--border-color)]"
             }
           />
@@ -493,8 +496,8 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
             className={
               zoomMode === 'fit'
                 ? (fitAxis === 'height'
-                    ? "h-full w-auto object-contain rounded-lg"
-                    : "w-full h-auto object-contain rounded-lg")
+                  ? "h-full w-auto object-contain rounded-lg"
+                  : "w-full h-auto object-contain rounded-lg")
                 : "max-w-none max-h-none rounded-lg"
             }
           >
@@ -553,6 +556,20 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
           <div className="max-w-4xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (onGoBack) {
+                      onGoBack();
+                    } else {
+                      // Fallback: dispatch event for parent to handle
+                      window.dispatchEvent(new CustomEvent('nodebench:goBack'));
+                    }
+                  }}
+                  className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors mr-2"
+                  title="Go back"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
                 {getFileIcon(resolvedType || 'unknown')}
                 <div>
                   <h3 className="text-lg font-medium text-[var(--text-primary)]">

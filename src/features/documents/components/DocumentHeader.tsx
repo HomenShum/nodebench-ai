@@ -14,7 +14,8 @@ import {
   Image as ImageIcon,
   Smile,
   Sparkles,
-  Loader2
+  Loader2,
+  ArrowLeft
 } from "lucide-react";
 
 interface DocumentHeaderProps {
@@ -230,18 +231,28 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
     <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-3">
-          {/* Public/Private Status */}
+          {/* Back Button and Public/Private Status */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('nodebench:goBack'));
+              }}
+              className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors mr-1"
+              title="Go back"
+              aria-label="Go back to documents"
+            >
+              <ArrowLeft className="h-4 w-4 text-[var(--text-secondary)]" />
+            </button>
             {document.isPublic ? (
               <>
                 <Globe className="h-4 w-4 text-[var(--accent-green)]" />
                 <span className="text-sm font-medium text-[var(--text-secondary)]">Public</span>
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                    (document as any).allowPublicEdit
+                  className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${(document as any).allowPublicEdit
                       ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/5'
                       : 'border-[var(--border-color)] text-[var(--text-muted)] bg-[var(--bg-secondary)]'
-                  }`}
+                    }`}
                   title={(document as any).allowPublicEdit ? 'Anyone with the link can edit' : 'Public view-only'}
                 >
                   {(document as any).allowPublicEdit ? 'Editable' : 'View-only'}
@@ -263,7 +274,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               onClick={() => {
                 try {
                   window.dispatchEvent(new CustomEvent('nodebench:toggleInspector'));
-                } catch {}
+                } catch { }
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-200"
               title="Toggle Inspect view"
@@ -505,11 +516,10 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
             <button
               onClick={() => void handleGenerateTags()}
               disabled={isGenerating || !canGenerateTags}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-colors ${
-                isGenerating || !canGenerateTags
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-colors ${isGenerating || !canGenerateTags
                   ? 'bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed'
                   : 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary)]/20'
-              }`}
+                }`}
               title={canGenerateTags ? 'Generate tags with AI' : 'Only the document owner can generate tags'}
             >
               {isGenerating ? (
