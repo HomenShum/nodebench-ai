@@ -1,0 +1,147 @@
+"use node";
+
+import { v } from "convex/values";
+import { action } from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import OpenAI from "openai";
+
+/**
+ * LLM-powered tag generation for documents
+ * Uses GPT-4o-mini for fast, cost-effective semantic tag extraction
+ */
+
+interface ExtractedTag {
+  name: string;
+  kind: "keyword" | "entity" | "topic" | "community" | "relationship";
+  importance: number;
+}
+
+/**
+ * Generate semantic tags for a document using LLM
+ * Called from DocumentHeader.tsx via useAction
+ */
+export const generateForDocument = action({
+  args: {
+    documentId: v.id("documents"),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    tagsGenerated: v.number(),
+    tags: v.array(v.object({
+      name: v.string(),
+      kind: v.optional(v.string()),
+      importance: v.optional(v.number()),
+    })),
+  }),
+  handler: async (ctx, { documentId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Get document text content
+    const text = await ctx.runQuery(internal.domains.knowledge.tags.getDocumentText, {
+      documentId,
+      maxChars: 6000, // Keep prompt size reasonable
+    });
+
+    if (!text || text.trim().length < 20) {
+      return { success: false, tagsGenerated: 0, tags: [] };
+    }
+
+    // Get OpenAI API key
+    const apiKey = process.env.OPENAI_API_KEY || process.env.CONVEX_OPENAI_API_KEY;
+    if (!apiKey) throw new Error("OpenAI API key not configured");
+
+    const openai = new OpenAI({ apiKey });
+
+    // Use GPT-4o-mini for fast, cheap tag extraction
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a semantic tag extraction expert. Extract 3-8 meaningful tags from the document content.
+
+For each tag, provide:
+- name: The tag text (lowercase, 1-3 words max)
+- kind: One of "keyword", "entity", "topic", "community", "relationship"
+  - keyword: Single important terms (e.g., "finance", "api", "machine learning")
+  - entity: Named entities like companies, products, people (e.g., "openai", "react", "elon musk")
+  - topic: Broader themes or domains (e.g., "artificial intelligence", "web development")
+  - community: Groups, forums, ecosystems (e.g., "open source", "startup ecosystem")
+  - relationship: Connections between entities (e.g., "competitor analysis", "integration")
+- importance: 0.0-1.0 score (1.0 = most important)
+
+Respond with ONLY a JSON array of tag objects. No markdown, no explanation.
+Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web development","kind":"topic","importance":0.7}]`,
+        },
+        {
+          role: "user",
+          content: `Extract semantic tags from this document:\n\n${text}`,
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 500,
+    });
+
+    // Parse LLM response
+    const content = response.choices[0]?.message?.content?.trim() || "[]";
+    let extractedTags: ExtractedTag[] = [];
+
+    try {
+      // Handle potential markdown code blocks
+      let jsonStr = content;
+      if (jsonStr.startsWith("```")) {
+        jsonStr = jsonStr.replace(/```json?\n?/g, "").replace(/```$/g, "").trim();
+      }
+      extractedTags = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error("[generateForDocument] Failed to parse LLM response:", content, e);
+      return { success: false, tagsGenerated: 0, tags: [] };
+    }
+
+    // Validate and normalize tags
+    const validTags = extractedTags
+      .filter((t) => t.name && typeof t.name === "string" && t.name.length > 0)
+      .slice(0, 10) // Max 10 tags
+      .map((t) => ({
+        name: t.name.toLowerCase().trim().slice(0, 50),
+        kind: ["keyword", "entity", "topic", "community", "relationship"].includes(t.kind)
+          ? t.kind
+          : undefined,
+        importance: typeof t.importance === "number"
+          ? Math.max(0, Math.min(1, t.importance))
+          : undefined,
+      }));
+
+    if (validTags.length === 0) {
+      return { success: false, tagsGenerated: 0, tags: [] };
+    }
+
+    // Save tags to database
+    const savedTags = await ctx.runMutation(api.tags.addTagsToDocument, {
+      documentId,
+      tags: validTags,
+    });
+
+    // Track usage
+    try {
+      await ctx.runMutation(internal.domains.auth.usage.incrementDailyUsage, {
+        provider: "openai",
+      });
+    } catch (e) {
+      console.warn("[generateForDocument] Failed to track usage:", e);
+    }
+
+    return {
+      success: true,
+      tagsGenerated: savedTags.length,
+      tags: savedTags.map((t) => ({
+        name: t.name,
+        kind: t.kind,
+        importance: t.importance,
+      })),
+    };
+  },
+});
+

@@ -183,6 +183,7 @@ import type * as router from "../router.js";
 import type * as schema_apiUsage from "../schema/apiUsage.js";
 import type * as schema_toolSearchSchema from "../schema/toolSearchSchema.js";
 import type * as tags from "../tags.js";
+import type * as tags_actions from "../tags_actions.js";
 import type * as tests_fastAgentPanelStreamingTests from "../tests/fastAgentPanelStreamingTests.js";
 import type * as tools_calendar_confirmEventSelection from "../tools/calendar/confirmEventSelection.js";
 import type * as tools_calendar_recentEventSearch from "../tools/calendar/recentEventSearch.js";
@@ -414,6 +415,7 @@ declare const fullApi: ApiFromModules<{
   "schema/apiUsage": typeof schema_apiUsage;
   "schema/toolSearchSchema": typeof schema_toolSearchSchema;
   tags: typeof tags;
+  tags_actions: typeof tags_actions;
   "tests/fastAgentPanelStreamingTests": typeof tests_fastAgentPanelStreamingTests;
   "tools/calendar/confirmEventSelection": typeof tools_calendar_confirmEventSelection;
   "tools/calendar/recentEventSearch": typeof tools_calendar_recentEventSearch;
