@@ -15,6 +15,8 @@ A comprehensive AI-powered document management and research platform with multi-
 - 📅 **Calendar Integration** - Manage events, tasks, and notes in one place
 - 🎯 **Fast Agent Panel** - Streaming AI chat with rich media display
 - 🌐 **Global Search Cache** - Intelligent caching with incremental updates and trending searches
+- ⚖️ **Arbitrage Agent** - Receipts-first research mode with source verification and contradiction detection
+- ⚡ **Instant-Value Search** - Search-as-you-type with cached dossier results for instant recall
 - 🔐 **Secure** - User authentication and authorization on all operations
 
 ---
@@ -394,6 +396,98 @@ Modern agentic UI with real-time event streaming:
 
 ---
 
+## Arbitrage Agent (BETA)
+
+A receipts-first research mode that prioritizes source verification, contradiction detection, and delta tracking.
+
+### Enabling Arbitrage Mode
+
+1. Open Fast Agent Panel
+2. Click Settings (gear icon)
+3. Toggle "Arbitrage Mode" (BETA badge)
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Source Quality Scoring** | Primary sources (10pts), Secondary (5pts), Tertiary (2pts), max 100 |
+| **Contradiction Detection** | Identifies conflicting claims across sources |
+| **Delta Tracking** | Tracks changes from previous knowledge baseline |
+| **Citation Status Tags** | Verified, Partial, Unverified, Contradicted badges |
+
+### Citation Format
+
+Arbitrage mode uses enhanced citation format:
+```
+{{arbitrage:section:slug:status}}
+```
+
+Status values:
+- `verified` - Confirmed by primary source (green badge)
+- `partial` - Partially confirmed (yellow badge)
+- `unverified` - No primary source confirmation (gray badge)
+- `contradicted` - Conflicting information found (red badge)
+
+### Source Hierarchy
+
+1. **Primary Sources** (10 points): SEC filings, official press releases, company websites
+2. **Secondary Sources** (5 points): Major news outlets, analyst reports
+3. **Tertiary Sources** (2 points): Blogs, social media, aggregators
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `convex/tools/arbitrage/analyzeWithArbitrage.ts` | Main arbitrage analysis tool |
+| `convex/domains/agents/core/prompts.ts` | ARBITRAGE_MODE_PROMPT |
+| `src/features/agents/components/FastAgentPanel/FastAgentPanel.VisualCitation.tsx` | Citation UI components |
+
+---
+
+## Instant-Value Welcome Landing
+
+Search-as-you-type system that shows cached dossiers immediately, transforming the landing page into an intelligent memory surface.
+
+### Features
+
+- **Instant Recall**: Type to search existing dossiers in real-time
+- **300ms Debounce**: Optimized for responsive feel without excessive queries
+- **Keyboard Shortcuts**:
+  - `Enter` - Start fresh research
+  - `Cmd/Ctrl+Enter` - Start deep research
+  - `Escape` - Close dropdown
+- **Click Navigation**: Click any result to open the dossier
+
+### User Flow
+
+```
+┌─────────────────────────────────────────┐
+│  🔍 Search companies, people, or...     │
+└─────────────────────────────────────────┘
+           ↓ (type "Tesla")
+┌─────────────────────────────────────────┐
+│  ⚡ Instant Knowledge (Cached)          │
+├─────────────────────────────────────────┤
+│  📄 Tesla Q3 2024 Analysis     2h ago   │
+│     Cached research dossier             │
+├─────────────────────────────────────────┤
+│  📄 Tesla Funding Round        3d ago   │
+│     SEC filings analysis...             │
+├─────────────────────────────────────────┤
+│  ✨ Start fresh research on "Tesla"     │
+└─────────────────────────────────────────┘
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `convex/domains/documents/search.ts` | Backend instant search queries |
+| `src/features/research/components/InstantSearchBar.tsx` | Search-as-you-type component |
+| `src/features/research/views/WelcomeLanding.tsx` | Landing page integration |
+
+---
+
 ## Tech Stack
 
 - **Frontend**: React, TypeScript, Vite, TailwindCSS
@@ -523,6 +617,50 @@ npx convex deploy
 
 ---
 
+### 2025-12-06 - Arbitrage Agent & Instant-Value Welcome Landing ✅
+
+**Status**: ✅ Complete
+
+#### Overview
+Implemented two major features: (1) Arbitrage Agent mode for receipts-first research with source verification and contradiction detection, and (2) Instant-Value Welcome Landing with search-as-you-type for cached dossiers.
+
+#### Arbitrage Agent Implementation
+
+**Backend:**
+- `convex/tools/arbitrage/analyzeWithArbitrage.ts` - Main arbitrage analysis tool with source quality scoring, contradiction detection, and delta tracking
+- `convex/tools/arbitrage/index.ts` - Tool exports
+- `convex/domains/agents/core/prompts.ts` - Added `ARBITRAGE_MODE_PROMPT` with full arbitrage persona
+- `convex/domains/agents/core/coordinatorAgent.ts` - Added `CoordinatorAgentOptions` interface and conditional prompt composition
+- `convex/agentsPrefs.ts` - Added `getAgentsPrefsByUserId` internal query for backend access
+- `convex/domains/agents/fastAgentPanelStreaming.ts` - Fetches user prefs and passes arbitrage mode to coordinator
+
+**Frontend:**
+- `src/features/agents/components/FastAgentPanel/FastAgentPanel.Settings.tsx` - Arbitrage Mode toggle with BETA badge
+- `src/features/agents/components/FastAgentPanel/FastAgentPanel.VisualCitation.tsx` - ArbitrageCitation component with colored status badges
+
+#### Instant-Value Welcome Landing Implementation
+
+**Backend:**
+- `convex/domains/documents/search.ts` - `instantSearch` and `getRecentDossiers` queries for fast dossier lookup
+
+**Frontend:**
+- `src/features/research/components/InstantSearchBar.tsx` - Search-as-you-type component with 300ms debounce, dropdown results, keyboard shortcuts
+- `src/features/research/views/WelcomeLanding.tsx` - Integrated InstantSearchBar into hero state
+
+#### Key Features
+- Source quality scoring: Primary (10pts), Secondary (5pts), Tertiary (2pts)
+- Contradiction detection by grouping similar claims
+- Delta tracking from memory baseline
+- Citation status badges: verified (green), partial (yellow), unverified (gray), contradicted (red)
+- Instant recall of cached dossiers
+- Keyboard shortcuts: Enter (fresh research), Cmd+Enter (deep research), Escape (close)
+
+#### Verification
+- ✅ TypeScript compilation passes (`npm run build`)
+- ✅ Convex typecheck passes (`npx convex typecheck`)
+- ✅ No breaking changes to existing functionality
+
+---
 
 ### 2025-12-04 - Skills System Implementation ✅
 

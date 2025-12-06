@@ -36,6 +36,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import ReactMarkdown from 'react-markdown';
 import LiveDossierDocument from "@/features/research/views/LiveDossierDocument";
 import MagicInputContainer from "@/features/research/components/MagicInputContainer";
+import { InstantSearchBar } from "@/features/research/components/InstantSearchBar";
 import { InlineMetrics, type WorkflowMetrics } from "@/features/agents/views/WorkflowMetricsBar";
 
 const baseMedia: ExtractedMedia = {
@@ -1378,10 +1379,10 @@ While commercial fusion is still years away, the pace of innovation has accelera
                       Access real-time intelligence from trusted sources. Generate briefings, analyze trends, and verify facts in seconds.
                     </p>
 
-                    <div className="pt-8 w-full max-w-xl mx-auto">
-                      <MagicInputContainer
-                        onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
-                        onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep" })}
+                    <div className="pt-8 w-full max-w-2xl mx-auto">
+                      {/* InstantSearchBar - Search-as-you-type with cached results */}
+                      <InstantSearchBar
+                        onStartNewResearch={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
                         defaultValue={researchPrompt}
                         mode={researchMode}
                       />

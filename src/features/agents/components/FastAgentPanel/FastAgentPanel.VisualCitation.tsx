@@ -158,5 +158,196 @@ export function HighlightableSource({
   );
 }
 
-export default InlineCitation;
+// ═══════════════════════════════════════════════════════════════════════════
+// ARBITRAGE CITATION SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Arbitrage verification status types
+ */
+export type ArbitrageStatus = 'verified' | 'partial' | 'unverified' | 'contradicted';
+
+/**
+ * Status badge configuration
+ */
+const STATUS_CONFIG: Record<ArbitrageStatus, {
+  label: string;
+  icon: string;
+  bgClass: string;
+  textClass: string;
+  description: string;
+}> = {
+  verified: {
+    label: 'Verified',
+    icon: '✓',
+    bgClass: 'bg-emerald-100 dark:bg-emerald-900/40',
+    textClass: 'text-emerald-700 dark:text-emerald-300',
+    description: 'Confirmed by primary source',
+  },
+  partial: {
+    label: 'Partial',
+    icon: '◐',
+    bgClass: 'bg-amber-100 dark:bg-amber-900/40',
+    textClass: 'text-amber-700 dark:text-amber-300',
+    description: 'Partially confirmed, some details unverified',
+  },
+  unverified: {
+    label: 'Unverified',
+    icon: '?',
+    bgClass: 'bg-gray-100 dark:bg-gray-800/40',
+    textClass: 'text-gray-600 dark:text-gray-400',
+    description: 'No primary source confirmation',
+  },
+  contradicted: {
+    label: 'Contradicted',
+    icon: '✗',
+    bgClass: 'bg-red-100 dark:bg-red-900/40',
+    textClass: 'text-red-700 dark:text-red-300',
+    description: 'Sources disagree on this claim',
+  },
+};
+
+interface ArbitrageCitationProps {
+  number: number;
+  sourceId: string;
+  status: ArbitrageStatus;
+  sourceTitle?: string;
+  onScrollToSource?: (sourceId: string) => void;
+  className?: string;
+}
+
+/**
+ * ArbitrageCitation - Citation with verification status badge
+ */
+export function ArbitrageCitation({
+  number,
+  sourceId,
+  status,
+  sourceTitle,
+  onScrollToSource,
+  className,
+}: ArbitrageCitationProps) {
+  const { setHighlightedCitationId } = useCitationHighlight();
+  const config = STATUS_CONFIG[status];
+
+  const handleMouseEnter = useCallback(() => {
+    setHighlightedCitationId(sourceId);
+  }, [sourceId, setHighlightedCitationId]);
+
+  const handleMouseLeave = useCallback(() => {
+    setHighlightedCitationId(null);
+  }, [setHighlightedCitationId]);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    onScrollToSource?.(sourceId);
+
+    const sourceElement = document.getElementById(`source-${number}`);
+    if (sourceElement) {
+      sourceElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      sourceElement.classList.add('citation-flash');
+      setTimeout(() => sourceElement.classList.remove('citation-flash'), 1500);
+    }
+  }, [number, sourceId, onScrollToSource]);
+
+  return (
+    <sup
+      className={cn(
+        "inline-flex items-center gap-0.5",
+        "h-4 px-1.5 mx-0.5",
+        "text-[10px] font-semibold",
+        config.bgClass,
+        config.textClass,
+        "rounded-full cursor-pointer",
+        "transition-all duration-200",
+        "hover:scale-110 hover:shadow-sm",
+        className
+      )}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
+      title={`${config.description}${sourceTitle ? ` - ${sourceTitle}` : ''}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`Citation ${number} (${config.label})${sourceTitle ? `: ${sourceTitle}` : ''}`}
+    >
+      <span className="text-[8px]">{config.icon}</span>
+      <span>{number}</span>
+    </sup>
+  );
+}
+
+/**
+ * Parse arbitrage citation format: {{arbitrage:section:slug:status}}
+ * Returns null if not a valid arbitrage citation
+ */
+export function parseArbitrageCitation(text: string): {
+  section: string;
+  slug: string;
+  status: ArbitrageStatus;
+} | null {
+  const match = text.match(/\{\{arbitrage:([^:]+):([^:]+):([^}]+)\}\}/);
+  if (!match) return null;
+
+  const [, section, slug, statusStr] = match;
+  const status = statusStr as ArbitrageStatus;
+
+  if (!['verified', 'partial', 'unverified', 'contradicted'].includes(status)) {
+    return null;
+  }
+
+  return { section, slug, status };
+}
+
+/**
+ * Parse legacy citation format: {{fact:section:slug}}
+ * Returns null if not a valid legacy citation
+ */
+export function parseLegacyCitation(text: string): {
+  section: string;
+  slug: string;
+} | null {
+  const match = text.match(/\{\{fact:([^:]+):([^}]+)\}\}/);
+  if (!match) return null;
+
+  const [, section, slug] = match;
+  return { section, slug };
+}
+
+/**
+ * StatusBadge - Standalone status indicator for use in reports
+ */
+export function StatusBadge({
+  status,
+  showLabel = true,
+  size = 'sm',
+}: {
+  status: ArbitrageStatus;
+  showLabel?: boolean;
+  size?: 'xs' | 'sm' | 'md';
+}) {
+  const config = STATUS_CONFIG[status];
+
+  const sizeClasses = {
+    xs: 'text-[9px] px-1 py-0',
+    sm: 'text-[10px] px-1.5 py-0.5',
+    md: 'text-xs px-2 py-1',
+  };
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-full font-medium",
+        config.bgClass,
+        config.textClass,
+        sizeClasses[size]
+      )}
+      title={config.description}
+    >
+      <span>{config.icon}</span>
+      {showLabel && <span>{config.label}</span>}
+    </span>
+  );
+}
+
+export default InlineCitation;
