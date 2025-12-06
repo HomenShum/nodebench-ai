@@ -39,6 +39,8 @@ import MagicInputContainer from "@/features/research/components/MagicInputContai
 import { InstantSearchBar } from "@/features/research/components/InstantSearchBar";
 import { MorningBriefingHeader } from "@/features/research/components/MorningBriefingHeader";
 import { PulseGrid, type InsightCard } from "@/features/research/components/PulseGrid";
+import { FeedCard, type FeedItem } from "@/features/research/components/FeedCard";
+import { TrendRail, type TrendItem } from "@/features/research/components/TrendRail";
 import { InlineMetrics, type WorkflowMetrics } from "@/features/agents/views/WorkflowMetricsBar";
 
 const baseMedia: ExtractedMedia = {
@@ -173,6 +175,80 @@ function WelcomeLandingInner({
     // In production, this would check actual source sync status
     return insightCards.length;
   }, [insightCards]);
+
+  // Generate FeedItems from documents for the masonry grid (Instagram x Bloomberg style)
+  const feedItems: FeedItem[] = useMemo(() => {
+    if (!documents?.length) {
+      // Return mock data for zero state
+      return [
+        {
+          id: 'mock-1', type: 'signal' as const, title: 'Generative AI Infrastructure Funding',
+          subtitle: 'Investment volume has increased 45% QoQ despite broader market cooldown.',
+          timestamp: '2h ago', tags: ['VC', 'Infra', 'Series A'],
+          metrics: [{ label: 'Vol', value: '$4.2B', trend: 'up' as const }, { label: 'Deals', value: '12' }]
+        },
+        {
+          id: 'mock-2', type: 'dossier' as const, title: 'The State of Autonomous Agents',
+          subtitle: 'A deep dive into the current capabilities, limitations, and regulatory landscape of autonomous browser agents.',
+          timestamp: '4h ago', tags: ['Agents', 'Research']
+        },
+        {
+          id: 'mock-3', type: 'news' as const, title: 'OpenAI Releases "O1" Reasoning Model',
+          subtitle: 'New model demonstrates advanced problem solving capabilities in math and coding benchmarks.',
+          timestamp: '5h ago', tags: ['LLM', 'Product Launch']
+        },
+      ];
+    }
+
+    const items: FeedItem[] = [];
+    const docs = documents.slice(0, 12); // Show recent 12 docs
+
+    docs.forEach((doc: any, index: number) => {
+      const isDossier = doc.documentType === 'dossier' || doc.type === 'dossier';
+      const hasSecKeyword = doc.title?.toLowerCase().includes('sec') || doc.title?.toLowerCase().includes('filing');
+      const hasFundingKeyword = doc.title?.toLowerCase().includes('fund') || doc.title?.toLowerCase().includes('series');
+
+      // Determine card type based on content
+      let itemType: FeedItem['type'] = 'dossier';
+      if (hasSecKeyword || hasFundingKeyword) itemType = 'signal';
+      else if (!isDossier) itemType = 'news';
+
+      // Calculate relative time
+      const updatedAt = doc.lastModified || doc._creationTime;
+      const relativeTime = updatedAt ? formatRelativeTime(updatedAt) : 'Recently';
+
+      items.push({
+        id: doc._id,
+        type: itemType,
+        title: doc.title || 'Untitled Document',
+        subtitle: doc.summary || (isDossier ? 'AI-powered research dossier with comprehensive analysis.' : 'Document from your workspace.'),
+        timestamp: relativeTime,
+        tags: extractTags(doc.title || ''),
+        metrics: itemType === 'signal' ? [
+          { label: 'Sources', value: String(Math.floor(Math.random() * 8) + 3) },
+          { label: 'Confidence', value: '92%', trend: 'up' as const }
+        ] : undefined,
+      });
+    });
+
+    return items;
+  }, [documents]);
+
+  // Helper: Format relative time
+  function formatRelativeTime(timestamp: number): string {
+    const diff = Date.now() - timestamp;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    return 'Just now';
+  }
+
+  // Helper: Extract tags from title
+  function extractTags(title: string): string[] {
+    const keywords = ['AI', 'SEC', 'Funding', 'FinTech', 'Healthcare', 'Biotech', 'Series', 'Seed', 'Research'];
+    return keywords.filter(kw => title.toLowerCase().includes(kw.toLowerCase())).slice(0, 3);
+  }
 
   const sendStreaming = useMutation(api.domains.agents.fastAgentPanelStreaming.initiateAsyncStreaming);
   // State with persistence (tabs removed - unified view)
@@ -1432,130 +1508,122 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
               {/* CONDITIONAL CONTENT: HERO vs ACTIVE */}
               {showHero ? (
-                // HERO STATE - Instant Value Dashboard
-                <div className="min-h-full flex flex-col p-8 pb-32">
-                  {/* Top Section: Morning Briefing + Search */}
-                  <div className="max-w-3xl w-full mx-auto text-center space-y-6 mb-12">
-                    {/* Morning Briefing Header */}
-                    <MorningBriefingHeader
-                      userName={user?.name || user?.email}
-                      updateCount={updatedSourceCount}
-                    />
+                // HERO STATE - "The Living Briefing" (Instagram x Bloomberg x Newsletter)
+                <div className="min-h-full flex flex-col bg-gradient-to-b from-white to-gray-50/50">
+                  {/* 1. HEADER: Personal & Briefing Style */}
+                  <div className="text-center pt-8 pb-4 px-6 space-y-2">
+                    <p className="text-gray-500 font-medium uppercase tracking-widest text-xs">
+                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} • Morning Briefing
+                    </p>
+                    <h1 className="text-3xl font-serif text-gray-900">
+                      Good morning, {user?.name?.split(' ')[0] || 'there'}. <br/>
+                      <span className="text-gray-400 italic text-2xl">{updatedSourceCount} sectors updated overnight.</span>
+                    </h1>
+                  </div>
 
-                    {/* Floating Command Bar - InstantSearchBar */}
-                    <div className="pt-6">
-                      <InstantSearchBar
-                        onStartNewResearch={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
-                        onDocumentSelect={onDocumentSelect}
-                        defaultValue={researchPrompt}
-                        mode={researchMode}
-                        onFocus={() => setIsSearchFocused(true)}
-                        onBlur={() => setIsSearchFocused(false)}
-                        floating={true}
-                      />
-                    </div>
-
-                    {/* Research Mode Buttons */}
-                    <div className={`flex gap-3 justify-center transition-all duration-300 ${isSearchFocused ? 'opacity-50' : 'opacity-100'}`}>
-                      {[
-                        { id: "quick", title: "⚡ Quick Brief", description: "30-second answer", mode: "quick" as const },
-                        { id: "deep", title: "🔬 Deep Dossier", description: "Comprehensive research", mode: "deep" as const },
-                      ].map((intent) => {
-                        const isActive = researchMode === intent.mode;
-                        return (
+                  {/* 2. FLOATING COMMAND CENTER (Perplexity/Raycast style) */}
+                  <div className={`sticky top-4 z-40 transition-all duration-500 px-6 ${isSearchFocused ? 'mb-6' : 'mb-4'}`}>
+                    <div className="max-w-2xl mx-auto">
+                      <div className={`transition-all duration-300 ${isSearchFocused ? 'shadow-2xl rounded-2xl ring-2 ring-blue-500/20' : 'shadow-lg rounded-xl'}`}>
+                        <InstantSearchBar
+                          onStartNewResearch={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                          onDocumentSelect={onDocumentSelect}
+                          defaultValue={researchPrompt}
+                          mode={researchMode}
+                          onFocus={() => setIsSearchFocused(true)}
+                          onBlur={() => setIsSearchFocused(false)}
+                          floating={true}
+                        />
+                      </div>
+                      {/* Research Mode Pills - below search */}
+                      <div className={`flex gap-2 justify-center mt-3 transition-all duration-300 ${isSearchFocused ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                        {[
+                          { id: "quick", title: "⚡ Quick Brief", mode: "quick" as const },
+                          { id: "deep", title: "🔬 Deep Dossier", mode: "deep" as const },
+                        ].map((intent) => (
                           <button
                             key={intent.id}
                             type="button"
                             onClick={() => handleRunPrompt(undefined, { mode: intent.mode })}
-                            className={`relative text-center rounded-lg border px-5 py-2.5 transition-all ${isActive
-                              ? "border-gray-900 bg-gray-900 text-white shadow-sm"
-                              : "border-gray-200 bg-white hover:border-gray-300"
-                              }`}
-                          >
-                            <div className="text-sm font-semibold">{intent.title}</div>
-                            <p className={`mt-0.5 text-xs ${isActive ? "text-gray-300" : "text-gray-500"}`}>{intent.description}</p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Pulse Grid - Dashboard Cards */}
-                  {insightCards.length > 0 && (
-                    <div className="max-w-4xl w-full mx-auto">
-                      <PulseGrid
-                        cards={insightCards}
-                        isFocused={isSearchFocused}
-                        onCardClick={(card) => {
-                          // Extract document ID from card.id (format: "type-docId")
-                          const docId = card.id.split('-').slice(1).join('-');
-                          if (docId && onDocumentSelect) {
-                            onDocumentSelect(docId);
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Source Category Pills */}
-                  <div className={`max-w-3xl w-full mx-auto mt-8 transition-all duration-300 ${isSearchFocused ? 'opacity-30' : 'opacity-100'}`}>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {SOURCE_PRESETS.map(preset => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => applyPreset(preset.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
-                            ? 'bg-gray-900 text-white border-gray-900'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-all ${researchMode === intent.mode
+                              ? "border-gray-900 bg-gray-900 text-white"
+                              : "border-gray-200 bg-white hover:border-gray-300 text-gray-600"
                             }`}
-                        >
-                          <span>{preset.icon}</span>
-                          <span>{preset.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* View Last Results Button */}
-                  {threadId && hasReceivedResponse && (
-                    <div className="max-w-3xl w-full mx-auto mt-6 text-center">
-                      <button
-                        type="button"
-                        onClick={handleViewLastResults}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
-                      >
-                        <Clock className="w-4 h-4" />
-                        View Last Results
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Recent Searches - Collapsible */}
-                  {cacheHistory.length > 0 && !isSearchFocused && (
-                    <div className="max-w-3xl w-full mx-auto mt-8">
-                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Recent Searches</div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {cacheHistory.slice(0, 4).map((entry, idx) => (
-                          <button
-                            key={`${entry.threadId}-${idx}`}
-                            type="button"
-                            onClick={() => {
-                              setThreadId(entry.threadId);
-                              setShowHero(false);
-                              setHasReceivedResponse(true);
-                              setIsFromCache(true);
-                              setIsRunning(false);
-                            }}
-                            className="text-left px-3 py-2 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
                           >
-                            <div className="text-sm font-medium text-gray-900 line-clamp-1">{entry.prompt}</div>
-                            <div className="text-[11px] text-gray-500">Cached: {entry.date}</div>
+                            {intent.title}
                           </button>
                         ))}
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* 3. THE "STORIES" RAIL - Live Signals (Instagram/Twitter style) */}
+                  <div className={`px-6 transition-all duration-300 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none' : 'opacity-100'}`}>
+                    <TrendRail
+                      onTrendClick={(trend) => {
+                        setResearchPrompt(`Latest news and analysis on ${trend.label}`);
+                        handleRunPrompt(`Latest news and analysis on ${trend.label}`, { mode: 'quick' });
+                      }}
+                    />
+                  </div>
+
+                  {/* 4. THE INTELLIGENCE FEED (Masonry Grid - Pinterest/Bloomberg hybrid) */}
+                  <div className={`flex-1 px-6 py-6 transition-all duration-300 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none scale-[0.98]' : 'opacity-100'}`}>
+                    <div className="max-w-5xl mx-auto">
+                      {/* Feed Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Your Intelligence Feed</h2>
+                        <div className="flex gap-2">
+                          {SOURCE_PRESETS.slice(0, 3).map(preset => (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              onClick={() => applyPreset(preset.id)}
+                              className={`text-xs px-2.5 py-1 rounded-full border transition-all ${activePreset === preset.id
+                                ? 'bg-gray-900 text-white border-gray-900'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              {preset.icon} {preset.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Masonry Grid of FeedCards */}
+                      <div className="columns-1 md:columns-2 lg:columns-3 gap-4">
+                        {feedItems.map((item) => (
+                          <FeedCard
+                            key={item.id}
+                            item={item}
+                            onClick={() => {
+                              // If it's a real document, navigate to it
+                              if (!item.id.startsWith('mock-') && onDocumentSelect) {
+                                onDocumentSelect(item.id);
+                              } else {
+                                // Mock item - start research on it
+                                handleRunPrompt(item.title, { mode: 'quick' });
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      {/* View Last Results - if available */}
+                      {threadId && hasReceivedResponse && (
+                        <div className="text-center mt-8">
+                          <button
+                            type="button"
+                            onClick={handleViewLastResults}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
+                          >
+                            <Clock className="w-4 h-4" />
+                            View Last Results
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 // ACTIVE DOSSIER STATE
