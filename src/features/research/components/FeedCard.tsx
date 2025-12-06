@@ -12,6 +12,7 @@ export interface FeedItem {
   metrics?: { label: string; value: string; trend?: 'up' | 'down' }[];
   sourceIcon?: React.ReactNode;
   tags: string[];
+  url?: string;  // External URL for live feed items (opens in new tab)
 }
 
 interface FeedCardProps {

@@ -176,10 +176,76 @@ function WelcomeLandingInner({
     return insightCards.length;
   }, [insightCards]);
 
-  // Generate FeedItems from documents for the masonry grid (Instagram x Bloomberg style)
+  // ============================================================================
+  // LIVE FEED: Central Newsstand data from Hacker News, ArXiv, RSS, etc.
+  // "Write Once, Read Many" - shared across all users, free forever
+  // ============================================================================
+  const liveFeed = useQuery(api.feed.get, { limit: 12 });
+
+  // Generate FeedItems combining LIVE FEED + user documents (Instagram x Bloomberg style)
   const feedItems: FeedItem[] = useMemo(() => {
-    if (!documents?.length) {
-      // Return mock data for zero state
+    const items: FeedItem[] = [];
+
+    // 1. Add LIVE FEED items first (Central Newsstand - public free data)
+    if (liveFeed?.length) {
+      liveFeed.forEach((item) => {
+        const publishedTime = new Date(item.publishedAt).getTime();
+        items.push({
+          id: `feed-${item._id}`,
+          type: item.type as FeedItem['type'],
+          title: item.title,
+          subtitle: item.summary,
+          timestamp: formatRelativeTime(publishedTime),
+          tags: item.tags,
+          metrics: item.metrics?.map(m => ({
+            label: m.label,
+            value: m.value,
+            trend: m.trend as 'up' | 'down' | undefined
+          })),
+          sourceIcon: item.source === 'YCombinator' ? (
+            <div className="w-4 h-4 bg-orange-500 rounded-sm flex items-center justify-center text-[10px] font-bold text-white">Y</div>
+          ) : undefined,
+          // Store original URL for opening external links
+          url: item.url,
+        });
+      });
+    }
+
+    // 2. Add USER DOCUMENTS (personal workspace data)
+    if (documents?.length) {
+      const docs = documents.slice(0, 8); // Show recent 8 docs (balance with live feed)
+
+      docs.forEach((doc: any) => {
+        const isDossier = doc.documentType === 'dossier' || doc.type === 'dossier';
+        const hasSecKeyword = doc.title?.toLowerCase().includes('sec') || doc.title?.toLowerCase().includes('filing');
+        const hasFundingKeyword = doc.title?.toLowerCase().includes('fund') || doc.title?.toLowerCase().includes('series');
+
+        // Determine card type based on content
+        let itemType: FeedItem['type'] = 'dossier';
+        if (hasSecKeyword || hasFundingKeyword) itemType = 'signal';
+        else if (!isDossier) itemType = 'news';
+
+        // Calculate relative time
+        const updatedAt = doc.lastModified || doc._creationTime;
+        const relativeTime = updatedAt ? formatRelativeTime(updatedAt) : 'Recently';
+
+        items.push({
+          id: doc._id, // Document ID for navigation
+          type: itemType,
+          title: doc.title || 'Untitled Document',
+          subtitle: doc.summary || (isDossier ? 'AI-powered research dossier with comprehensive analysis.' : 'Document from your workspace.'),
+          timestamp: relativeTime,
+          tags: extractTags(doc.title || ''),
+          metrics: itemType === 'signal' ? [
+            { label: 'Sources', value: String(Math.floor(Math.random() * 8) + 3) },
+            { label: 'Confidence', value: '92%', trend: 'up' as const }
+          ] : undefined,
+        });
+      });
+    }
+
+    // 3. If no data at all, show placeholder mock data
+    if (items.length === 0) {
       return [
         {
           id: 'mock-1', type: 'signal' as const, title: 'Generative AI Infrastructure Funding',
@@ -200,39 +266,8 @@ function WelcomeLandingInner({
       ];
     }
 
-    const items: FeedItem[] = [];
-    const docs = documents.slice(0, 12); // Show recent 12 docs
-
-    docs.forEach((doc: any, index: number) => {
-      const isDossier = doc.documentType === 'dossier' || doc.type === 'dossier';
-      const hasSecKeyword = doc.title?.toLowerCase().includes('sec') || doc.title?.toLowerCase().includes('filing');
-      const hasFundingKeyword = doc.title?.toLowerCase().includes('fund') || doc.title?.toLowerCase().includes('series');
-
-      // Determine card type based on content
-      let itemType: FeedItem['type'] = 'dossier';
-      if (hasSecKeyword || hasFundingKeyword) itemType = 'signal';
-      else if (!isDossier) itemType = 'news';
-
-      // Calculate relative time
-      const updatedAt = doc.lastModified || doc._creationTime;
-      const relativeTime = updatedAt ? formatRelativeTime(updatedAt) : 'Recently';
-
-      items.push({
-        id: doc._id,
-        type: itemType,
-        title: doc.title || 'Untitled Document',
-        subtitle: doc.summary || (isDossier ? 'AI-powered research dossier with comprehensive analysis.' : 'Document from your workspace.'),
-        timestamp: relativeTime,
-        tags: extractTags(doc.title || ''),
-        metrics: itemType === 'signal' ? [
-          { label: 'Sources', value: String(Math.floor(Math.random() * 8) + 3) },
-          { label: 'Confidence', value: '92%', trend: 'up' as const }
-        ] : undefined,
-      });
-    });
-
     return items;
-  }, [documents]);
+  }, [liveFeed, documents]);
 
   // Helper: Format relative time
   function formatRelativeTime(timestamp: number): string {
@@ -1597,10 +1632,15 @@ While commercial fusion is still years away, the pace of innovation has accelera
                             key={item.id}
                             item={item}
                             onClick={() => {
+                              // Live feed items (from Central Newsstand) open external URL
+                              if (item.id.startsWith('feed-') && item.url) {
+                                window.open(item.url, '_blank', 'noopener,noreferrer');
+                                return;
+                              }
                               // If it's a real document, navigate to it
-                              if (!item.id.startsWith('mock-') && onDocumentSelect) {
+                              if (!item.id.startsWith('mock-') && !item.id.startsWith('feed-') && onDocumentSelect) {
                                 onDocumentSelect(item.id);
-                              } else {
+                              } else if (item.id.startsWith('mock-')) {
                                 // Mock item - start research on it
                                 handleRunPrompt(item.title, { mode: 'quick' });
                               }
