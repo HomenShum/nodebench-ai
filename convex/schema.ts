@@ -1192,12 +1192,23 @@ const feedItems = defineTable({
   type: v.union(
     v.literal("news"),
     v.literal("signal"),
-    v.literal("dossier")
+    v.literal("dossier"),
+    v.literal("repo"),                     // GitHub repos
+    v.literal("product")                   // Product launches
   ),
+  category: v.optional(v.union(            // For segmented views
+    v.literal("tech"),                     // General tech news
+    v.literal("ai_ml"),                    // AI/ML research & news
+    v.literal("startups"),                 // Startup/funding news
+    v.literal("products"),                 // Product launches (Product Hunt, etc.)
+    v.literal("opensource"),               // Open source / GitHub
+    v.literal("finance"),                  // Finance/markets
+    v.literal("research")                  // Academic research (ArXiv, etc.)
+  )),
   title: v.string(),
   summary: v.string(),                     // The "Newsletter" style blurb
   url: v.string(),                         // Link to original content
-  source: v.string(),                      // "YCombinator", "ArXiv", "TechCrunch"
+  source: v.string(),                      // "YCombinator", "ArXiv", "GitHub", "ProductHunt"
   tags: v.array(v.string()),               // ["Trending", "AI", "Funding"]
   metrics: v.optional(v.array(v.object({
     label: v.string(),
@@ -1212,6 +1223,7 @@ const feedItems = defineTable({
   .index("by_score", ["score"])
   .index("by_source", ["source"])
   .index("by_type", ["type"])
+  .index("by_category", ["category"])      // Segmented view filtering
   .index("by_source_id", ["sourceId"]);    // Fast deduplication lookup
 
 export default defineSchema({

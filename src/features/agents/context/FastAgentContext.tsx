@@ -27,6 +27,8 @@ interface FastAgentContextValue {
   isOpen: boolean;
   /** Current context options (if opened with context) */
   options: AgentOpenOptions | null;
+  /** Whether an external panel handler is registered (e.g., MainLayout) */
+  hasExternalHandler: boolean;
   /** Open the Fast Agent panel (optionally with context) */
   open: (opts?: AgentOpenOptions) => void;
   /** Open with specific context (convenience method) */
@@ -93,6 +95,7 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
   const value: FastAgentContextValue = {
     isOpen,
     options,
+    hasExternalHandler: !!externalSetter,
     open,
     openWithContext,
     close,
@@ -116,6 +119,7 @@ export function useFastAgent() {
     return {
       isOpen: false,
       options: null,
+      hasExternalHandler: false,
       open: () => console.warn('FastAgentProvider not found'),
       openWithContext: () => console.warn('FastAgentProvider not found'),
       close: () => {},

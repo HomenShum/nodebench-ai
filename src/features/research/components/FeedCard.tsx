@@ -1,7 +1,7 @@
 import React from 'react';
-import { TrendingUp, FileText, MessageSquare, ArrowUpRight, ArrowDownRight, Sparkles } from 'lucide-react';
+import { TrendingUp, FileText, MessageSquare, ArrowUpRight, ArrowDownRight, Sparkles, GitBranch, Package } from 'lucide-react';
 
-export type FeedItemType = 'dossier' | 'signal' | 'news';
+export type FeedItemType = 'dossier' | 'signal' | 'news' | 'repo' | 'product';
 
 export interface FeedItem {
   id: string;
@@ -25,6 +25,8 @@ interface FeedCardProps {
 export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) => {
   const isSignal = item.type === 'signal';
   const isDossier = item.type === 'dossier';
+  const isRepo = item.type === 'repo';
+  const isProduct = item.type === 'product';
 
   const handleAnalyzeClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card onClick
@@ -53,8 +55,10 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) 
             {isDossier && <div className="p-1.5 bg-purple-100 rounded-md text-purple-600"><FileText size={12}/></div>}
             {isSignal && <div className="p-1.5 bg-green-500/20 rounded-md text-green-400"><TrendingUp size={12}/></div>}
             {item.type === 'news' && <div className="p-1.5 bg-blue-100 rounded-md text-blue-600"><MessageSquare size={12}/></div>}
+            {isRepo && <div className="p-1.5 bg-gray-800 rounded-md text-white"><GitBranch size={12}/></div>}
+            {isProduct && <div className="p-1.5 bg-orange-100 rounded-md text-orange-600"><Package size={12}/></div>}
             <span className={`text-[10px] uppercase tracking-wider font-semibold ${isSignal ? 'text-slate-400' : 'text-gray-400'}`}>
-              {item.type}
+              {item.type === 'repo' ? 'GitHub' : item.type === 'product' ? 'Product' : item.type}
             </span>
           </div>
           <span className={`text-xs ${isSignal ? 'text-slate-500' : 'text-gray-400'}`}>{item.timestamp}</span>
@@ -113,7 +117,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) 
       `}>
          {/* Primary action: View/Read */}
          <div className="bg-black text-white text-xs font-medium px-4 py-2 rounded-full shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
-            {isSignal ? 'View Signal' : isDossier ? 'Read Dossier' : 'View Article'}
+            {isSignal ? 'View Signal' : isDossier ? 'Read Dossier' : isRepo ? 'View Repo' : isProduct ? 'View Product' : 'View Article'}
          </div>
 
          {/* Secondary action: Analyze with AI (only if handler provided) */}

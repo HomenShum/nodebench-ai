@@ -107,6 +107,20 @@ function WelcomeLandingInner({
 
   // Feed pagination state (must be before liveFeed query that uses it)
   const [feedLimit, setFeedLimit] = useState(12);
+  
+  // Feed category filter for segmented views
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
+  // Category options for the feed tabs
+  const FEED_CATEGORIES = [
+    { id: null, label: "All", icon: "📰" },
+    { id: "ai_ml", label: "AI & ML", icon: "🤖" },
+    { id: "startups", label: "Startups", icon: "🚀" },
+    { id: "products", label: "Products", icon: "📦" },
+    { id: "opensource", label: "Open Source", icon: "💻" },
+    { id: "research", label: "Research", icon: "📚" },
+    { id: "tech", label: "Tech News", icon: "📱" },
+  ] as const;
 
   // Get recent dossiers for the expandable nav menu
   const recentDossiers = useMemo(() => {
@@ -188,7 +202,10 @@ function WelcomeLandingInner({
   // LIVE FEED: Central Newsstand data from Hacker News, ArXiv, RSS, etc.
   // "Write Once, Read Many" - shared across all users, free forever
   // ============================================================================
-  const liveFeed = useQuery(api.feed.get, { limit: feedLimit });
+  const liveFeed = useQuery(api.feed.get, { 
+    limit: feedLimit,
+    ...(selectedCategory ? { category: selectedCategory as any } : {})
+  });
 
   // Generate FeedItems combining LIVE FEED + user documents (Instagram x Bloomberg style)
   const feedItems: FeedItem[] = useMemo(() => {
@@ -1613,21 +1630,32 @@ While commercial fusion is still years away, the pace of innovation has accelera
                   {/* 4. THE INTELLIGENCE FEED (Masonry Grid - Pinterest/Bloomberg hybrid) */}
                   <div className={`flex-1 px-6 py-6 transition-all duration-300 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none scale-[0.98]' : 'opacity-100'}`}>
                     <div className="w-full">
-                      {/* Feed Header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Your Intelligence Feed</h2>
-                        <div className="flex gap-2">
-                          {SOURCE_PRESETS.slice(0, 3).map(preset => (
+                      {/* Feed Header with Category Tabs */}
+                      <div className="flex flex-col gap-3 mb-4">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Your Intelligence Feed</h2>
+                          <span className="text-xs text-gray-400">
+                            {feedItems.length} items • Updated hourly
+                          </span>
+                        </div>
+                        
+                        {/* Category Tabs */}
+                        <div className="flex flex-wrap gap-2">
+                          {FEED_CATEGORIES.map(cat => (
                             <button
-                              key={preset.id}
+                              key={cat.id ?? 'all'}
                               type="button"
-                              onClick={() => applyPreset(preset.id)}
-                              className={`text-xs px-2.5 py-1 rounded-full border transition-all ${activePreset === preset.id
-                                ? 'bg-gray-900 text-white border-gray-900'
-                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                              onClick={() => {
+                                setSelectedCategory(cat.id);
+                                setFeedLimit(12); // Reset pagination on category change
+                              }}
+                              className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
+                                selectedCategory === cat.id
+                                  ? 'bg-gray-900 text-white border-gray-900 shadow-md'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                               }`}
                             >
-                              {preset.icon} {preset.name}
+                              {cat.icon} {cat.label}
                             </button>
                           ))}
                         </div>
