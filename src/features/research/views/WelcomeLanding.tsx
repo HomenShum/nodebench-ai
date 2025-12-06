@@ -106,20 +106,23 @@ function WelcomeLandingInner({
   const { openWithContext } = useFastAgent();
 
   // Feed pagination state (must be before liveFeed query that uses it)
-  const [feedLimit, setFeedLimit] = useState(12);
+  const [feedLimit, setFeedLimit] = useState(24);
   
   // Feed category filter for segmented views
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
-  // Category options for the feed tabs
+  // Feed search/filter text
+  const [feedSearchQuery, setFeedSearchQuery] = useState('');
+  
+  // Category options for the feed tabs with keyword patterns for fallback filtering
   const FEED_CATEGORIES = [
-    { id: null, label: "All", icon: "📰" },
-    { id: "ai_ml", label: "AI & ML", icon: "🤖" },
-    { id: "startups", label: "Startups", icon: "🚀" },
-    { id: "products", label: "Products", icon: "📦" },
-    { id: "opensource", label: "Open Source", icon: "💻" },
-    { id: "research", label: "Research", icon: "📚" },
-    { id: "tech", label: "Tech News", icon: "📱" },
+    { id: null, label: "All", icon: "📰", keywords: [] },
+    { id: "ai_ml", label: "AI & ML", icon: "🤖", keywords: ['ai', 'ml', 'llm', 'gpt', 'model', 'neural', 'transformer', 'agent', 'machine learning', 'deep learning', 'openai', 'anthropic', 'langchain'] },
+    { id: "startups", label: "Startups", icon: "🚀", keywords: ['startup', 'funding', 'series', 'seed', 'vc', 'venture', 'raise', 'valuation', 'ycombinator', 'techcrunch'] },
+    { id: "products", label: "Products", icon: "📦", keywords: ['launch', 'product', 'producthunt', 'release', 'announce', 'beta', 'app'] },
+    { id: "opensource", label: "Open Source", icon: "💻", keywords: ['github', 'opensource', 'open-source', 'repo', 'repository', 'star', 'fork', 'mit', 'apache'] },
+    { id: "research", label: "Research", icon: "📚", keywords: ['arxiv', 'paper', 'research', 'study', 'academic', 'journal', 'ieee', 'acm'] },
+    { id: "tech", label: "Tech News", icon: "📱", keywords: ['tech', 'google', 'apple', 'microsoft', 'amazon', 'meta', 'cloud', 'devops', 'kubernetes', 'docker'] },
   ] as const;
 
   // Get recent dossiers for the expandable nav menu
@@ -304,6 +307,34 @@ function WelcomeLandingInner({
 
     return items;
   }, [liveFeed, documents]);
+
+  // Filtered feed items based on search query and category (client-side fallback)
+  const filteredFeedItems = useMemo(() => {
+    let filtered = feedItems;
+    
+    // Apply text search filter
+    if (feedSearchQuery.trim()) {
+      const query = feedSearchQuery.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.title.toLowerCase().includes(query) ||
+        item.subtitle?.toLowerCase().includes(query) ||
+        item.tags?.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+    
+    // Apply category filter (client-side fallback for items without DB category)
+    if (selectedCategory) {
+      const categoryConfig = FEED_CATEGORIES.find(c => c.id === selectedCategory);
+      if (categoryConfig && categoryConfig.keywords.length > 0) {
+        filtered = filtered.filter(item => {
+          const searchText = `${item.title} ${item.subtitle || ''} ${item.tags?.join(' ') || ''}`.toLowerCase();
+          return categoryConfig.keywords.some(kw => searchText.includes(kw.toLowerCase()));
+        });
+      }
+    }
+    
+    return filtered;
+  }, [feedItems, feedSearchQuery, selectedCategory, FEED_CATEGORIES]);
 
   // Helper: Format relative time
   function formatRelativeTime(timestamp: number): string {
@@ -1630,12 +1661,24 @@ While commercial fusion is still years away, the pace of innovation has accelera
                   {/* 4. THE INTELLIGENCE FEED (Masonry Grid - Pinterest/Bloomberg hybrid) */}
                   <div className={`flex-1 px-6 py-6 transition-all duration-300 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none scale-[0.98]' : 'opacity-100'}`}>
                     <div className="w-full">
-                      {/* Feed Header with Category Tabs */}
+                      {/* Feed Header with Search and Category Tabs */}
                       <div className="flex flex-col gap-3 mb-4">
-                        <div className="flex items-center justify-between">
-                          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Your Intelligence Feed</h2>
-                          <span className="text-xs text-gray-400">
-                            {feedItems.length} items • Updated hourly
+                        <div className="flex items-center justify-between gap-4">
+                          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Intelligence Feed</h2>
+                          
+                          {/* Quick Search Input */}
+                          <div className="flex-1 max-w-xs">
+                            <input
+                              type="text"
+                              value={feedSearchQuery}
+                              onChange={(e) => setFeedSearchQuery(e.target.value)}
+                              placeholder="Search feed..."
+                              className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all"
+                            />
+                          </div>
+                          
+                          <span className="text-xs text-gray-400 whitespace-nowrap">
+                            {filteredFeedItems.length} of {feedItems.length} items
                           </span>
                         </div>
                         
@@ -1647,7 +1690,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
                               type="button"
                               onClick={() => {
                                 setSelectedCategory(cat.id);
-                                setFeedLimit(12); // Reset pagination on category change
+                                setFeedSearchQuery(''); // Clear search on category change
                               }}
                               className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
                                 selectedCategory === cat.id
@@ -1658,12 +1701,31 @@ While commercial fusion is still years away, the pace of innovation has accelera
                               {cat.icon} {cat.label}
                             </button>
                           ))}
+                          
+                          {/* Clear filters button */}
+                          {(selectedCategory || feedSearchQuery) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(null);
+                                setFeedSearchQuery('');
+                              }}
+                              className="text-xs px-3 py-1.5 rounded-full border border-red-200 text-red-600 hover:bg-red-50 transition-all"
+                            >
+                              ✕ Clear
+                            </button>
+                          )}
                         </div>
                       </div>
 
                       {/* Masonry Grid of FeedCards */}
                       <div className="columns-1 md:columns-2 xl:columns-3 2xl:columns-4 gap-6">
-                        {feedItems.map((item) => (
+                        {filteredFeedItems.length === 0 ? (
+                          <div className="col-span-full text-center py-12 text-gray-500">
+                            <p className="text-lg mb-2">No items match your filters</p>
+                            <p className="text-sm">Try adjusting your search or category selection</p>
+                          </div>
+                        ) : filteredFeedItems.map((item) => (
                           <FeedCard
                             key={item.id}
                             item={item}
@@ -1693,15 +1755,15 @@ While commercial fusion is still years away, the pace of innovation has accelera
                         ))}
                       </div>
 
-                      {/* Load More Button */}
-                      {feedItems.length >= feedLimit && (
+                      {/* Load More Button - show when there might be more items to load */}
+                      {feedItems.length >= feedLimit && filteredFeedItems.length > 0 && (
                         <div className="text-center mt-6">
                           <button
                             type="button"
-                            onClick={() => setFeedLimit(prev => prev + 12)}
+                            onClick={() => setFeedLimit(prev => prev + 24)}
                             className="inline-flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
                           >
-                            Load More
+                            Load More ({feedLimit} loaded)
                           </button>
                         </div>
                       )}
