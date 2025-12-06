@@ -37,6 +37,8 @@ import ReactMarkdown from 'react-markdown';
 import LiveDossierDocument from "@/features/research/views/LiveDossierDocument";
 import MagicInputContainer from "@/features/research/components/MagicInputContainer";
 import { InstantSearchBar } from "@/features/research/components/InstantSearchBar";
+import { MorningBriefingHeader } from "@/features/research/components/MorningBriefingHeader";
+import { PulseGrid, type InsightCard } from "@/features/research/components/PulseGrid";
 import { InlineMetrics, type WorkflowMetrics } from "@/features/agents/views/WorkflowMetricsBar";
 
 const baseMedia: ExtractedMedia = {
@@ -108,6 +110,70 @@ function WelcomeLandingInner({
         isAgentUpdating: false,
       }));
   }, [documents]);
+
+  // Generate InsightCards from recent documents for PulseGrid
+  const insightCards: InsightCard[] = useMemo(() => {
+    if (!documents?.length) return [];
+
+    const cards: InsightCard[] = [];
+    const docs = documents.slice(0, 20); // Look at recent 20 docs
+
+    // Find a trending dossier (most recent research)
+    const trendingDossier = docs.find((d: any) => d.documentType === 'dossier' || d.type === 'dossier');
+    if (trendingDossier) {
+      cards.push({
+        id: `trending-${trendingDossier._id}`,
+        type: 'trending',
+        title: trendingDossier.title || 'Recent Research',
+        description: trendingDossier.summary || 'AI-powered research dossier',
+        source: 'Research',
+        updatedAt: (trendingDossier as any).lastModified || trendingDossier._creationTime,
+      });
+    }
+
+    // Find a document that might be a "watchlist" item (SEC, filing, alert)
+    const watchlistDoc = docs.find((d: any) =>
+      d.title?.toLowerCase().includes('sec') ||
+      d.title?.toLowerCase().includes('filing') ||
+      d.title?.toLowerCase().includes('alert') ||
+      d.documentType === 'note'
+    );
+    if (watchlistDoc) {
+      cards.push({
+        id: `watchlist-${watchlistDoc._id}`,
+        type: 'watchlist',
+        title: watchlistDoc.title || 'Recent Alert',
+        description: watchlistDoc.summary || 'Tracked document update',
+        source: 'Watchlist',
+        updatedAt: (watchlistDoc as any).lastModified || watchlistDoc._creationTime,
+      });
+    }
+
+    // Find a draft document (resume work)
+    const draftDoc = docs.find((d: any) =>
+      d.documentType === 'document' ||
+      (!d.documentType && !d.type)
+    );
+    if (draftDoc) {
+      cards.push({
+        id: `resume-${draftDoc._id}`,
+        type: 'resume',
+        title: draftDoc.title || 'Recent Draft',
+        description: 'Continue where you left off',
+        source: 'Drafts',
+        updatedAt: (draftDoc as any).lastModified || draftDoc._creationTime,
+      });
+    }
+
+    return cards;
+  }, [documents]);
+
+  // Count updated sources (mock for now, could integrate with SourceNode status)
+  const updatedSourceCount = useMemo(() => {
+    // In production, this would check actual source sync status
+    return insightCards.length;
+  }, [insightCards]);
+
   const sendStreaming = useMutation(api.domains.agents.fastAgentPanelStreaming.initiateAsyncStreaming);
   // State with persistence (tabs removed - unified view)
   const [researchPrompt, setResearchPrompt] = useState(() => {
@@ -169,6 +235,9 @@ function WelcomeLandingInner({
   const [cacheHistory, setCacheHistory] = useState<Array<{ prompt: string; date: string; threadId: string; timestamp: number }>>([]);
   const [followUpMode, setFollowUpMode] = useState<"append" | "new">("append");
   const [followUpHistory, setFollowUpHistory] = useState<Array<{ prompt: string; mode: "append" | "new"; status: "queued" | "done"; timestamp: number }>>([]);
+
+  // Search focus state for dimming PulseGrid
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Live Events Panel state - REMOVED (events now inline in LiveDossierDocument)
   // const [showEventsPanel, setShowEventsPanel] = useState(false);
@@ -1363,121 +1432,130 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
               {/* CONDITIONAL CONTENT: HERO vs ACTIVE */}
               {showHero ? (
-                // HERO STATE
-                <div className="min-h-full flex flex-col items-center justify-center p-8 pb-32">
-                  <div className="max-w-2xl w-full text-center space-y-8">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-900/5 text-gray-900 rounded-full text-xs font-medium border border-gray-200 mb-4">
-                      <Sparkles className="w-3 h-3" />
-                      <span>New: Multi-source Verification Engine</span>
-                    </div>
+                // HERO STATE - Instant Value Dashboard
+                <div className="min-h-full flex flex-col p-8 pb-32">
+                  {/* Top Section: Morning Briefing + Search */}
+                  <div className="max-w-3xl w-full mx-auto text-center space-y-6 mb-12">
+                    {/* Morning Briefing Header */}
+                    <MorningBriefingHeader
+                      userName={user?.name || user?.email}
+                      updateCount={updatedSourceCount}
+                    />
 
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
-                      Research at the Speed of <span className="underline decoration-gray-900/50 decoration-4 underline-offset-8">Thought.</span>
-                    </h1>
-
-                    <p className="text-lg text-gray-600 max-w-xl mx-auto">
-                      Access real-time intelligence from trusted sources. Generate briefings, analyze trends, and verify facts in seconds.
-                    </p>
-
-                    <div className="pt-8 w-full max-w-2xl mx-auto">
-                      {/* InstantSearchBar - Search-as-you-type with cached results */}
+                    {/* Floating Command Bar - InstantSearchBar */}
+                    <div className="pt-6">
                       <InstantSearchBar
                         onStartNewResearch={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
                         onDocumentSelect={onDocumentSelect}
                         defaultValue={researchPrompt}
                         mode={researchMode}
+                        onFocus={() => setIsSearchFocused(true)}
+                        onBlur={() => setIsSearchFocused(false)}
+                        floating={true}
                       />
+                    </div>
 
-                      <div className="mt-6 flex gap-3 justify-center">
-                        {[
-                          {
-                            id: "quick",
-                            title: "⚡ Quick Brief",
-                            description: "30-second answer, key facts only",
-                            mode: "quick" as const,
-                          },
-                          {
-                            id: "deep",
-                            title: "🔬 Deep Dossier",
-                            description: "Comprehensive research with cross-verification",
-                            mode: "deep" as const,
-                          },
-                        ].map((intent) => {
-                          const isActive = researchMode === intent.mode;
-                          return (
-                            <button
-                              key={intent.id}
-                              type="button"
-                              onClick={() => handleRunPrompt(undefined, { mode: intent.mode })}
-                              className={`relative text-center rounded-lg border px-6 py-3 transition-all ${isActive
-                                ? "border-gray-900 bg-gray-900 text-white shadow-sm"
-                                : "border-gray-200 bg-white hover:border-gray-300"
-                                }`}
-                            >
-                              <div className="text-sm font-semibold">{intent.title}</div>
-                              <p className={`mt-1 text-xs ${isActive ? "text-gray-300" : "text-gray-500"}`}>
-                                {intent.description}
-                              </p>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Source Category Pills - Simplified */}
-                      <div className="flex flex-wrap justify-center gap-2 mt-6">
-                        {SOURCE_PRESETS.map(preset => (
+                    {/* Research Mode Buttons */}
+                    <div className={`flex gap-3 justify-center transition-all duration-300 ${isSearchFocused ? 'opacity-50' : 'opacity-100'}`}>
+                      {[
+                        { id: "quick", title: "⚡ Quick Brief", description: "30-second answer", mode: "quick" as const },
+                        { id: "deep", title: "🔬 Deep Dossier", description: "Comprehensive research", mode: "deep" as const },
+                      ].map((intent) => {
+                        const isActive = researchMode === intent.mode;
+                        return (
                           <button
-                            key={preset.id}
-                            onClick={() => applyPreset(preset.id)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
-                              ? 'bg-gray-900 text-white border-gray-900'
-                              : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                            key={intent.id}
+                            type="button"
+                            onClick={() => handleRunPrompt(undefined, { mode: intent.mode })}
+                            className={`relative text-center rounded-lg border px-5 py-2.5 transition-all ${isActive
+                              ? "border-gray-900 bg-gray-900 text-white shadow-sm"
+                              : "border-gray-200 bg-white hover:border-gray-300"
                               }`}
                           >
-                            <span>{preset.icon}</span>
-                            <span>{preset.name}</span>
+                            <div className="text-sm font-semibold">{intent.title}</div>
+                            <p className={`mt-0.5 text-xs ${isActive ? "text-gray-300" : "text-gray-500"}`}>{intent.description}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Pulse Grid - Dashboard Cards */}
+                  {insightCards.length > 0 && (
+                    <div className="max-w-4xl w-full mx-auto">
+                      <PulseGrid
+                        cards={insightCards}
+                        isFocused={isSearchFocused}
+                        onCardClick={(card) => {
+                          // Extract document ID from card.id (format: "type-docId")
+                          const docId = card.id.split('-').slice(1).join('-');
+                          if (docId && onDocumentSelect) {
+                            onDocumentSelect(docId);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Source Category Pills */}
+                  <div className={`max-w-3xl w-full mx-auto mt-8 transition-all duration-300 ${isSearchFocused ? 'opacity-30' : 'opacity-100'}`}>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {SOURCE_PRESETS.map(preset => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => applyPreset(preset.id)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all ${activePreset === preset.id
+                            ? 'bg-gray-900 text-white border-gray-900'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                            }`}
+                        >
+                          <span>{preset.icon}</span>
+                          <span>{preset.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* View Last Results Button */}
+                  {threadId && hasReceivedResponse && (
+                    <div className="max-w-3xl w-full mx-auto mt-6 text-center">
+                      <button
+                        type="button"
+                        onClick={handleViewLastResults}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
+                      >
+                        <Clock className="w-4 h-4" />
+                        View Last Results
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Recent Searches - Collapsible */}
+                  {cacheHistory.length > 0 && !isSearchFocused && (
+                    <div className="max-w-3xl w-full mx-auto mt-8">
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Recent Searches</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {cacheHistory.slice(0, 4).map((entry, idx) => (
+                          <button
+                            key={`${entry.threadId}-${idx}`}
+                            type="button"
+                            onClick={() => {
+                              setThreadId(entry.threadId);
+                              setShowHero(false);
+                              setHasReceivedResponse(true);
+                              setIsFromCache(true);
+                              setIsRunning(false);
+                            }}
+                            className="text-left px-3 py-2 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="text-sm font-medium text-gray-900 line-clamp-1">{entry.prompt}</div>
+                            <div className="text-[11px] text-gray-500">Cached: {entry.date}</div>
                           </button>
                         ))}
                       </div>
-
-                      {/* View Last Results Button */}
-                      {threadId && hasReceivedResponse && (
-                        <div className="mt-6">
-                          <button
-                            onClick={handleViewLastResults}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
-                          >
-                            <Clock className="w-4 h-4" />
-                            View Last Results
-                          </button>
-                        </div>
-                      )}
-
-                      {cacheHistory.length > 0 && (
-                        <div className="mt-8 text-left">
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recent searches</div>
-                          <div className="space-y-2">
-                            {cacheHistory.map((entry, idx) => (
-                              <button
-                                key={`${entry.threadId}-${idx}`}
-                                onClick={() => {
-                                  setThreadId(entry.threadId);
-                                  setShowHero(false);
-                                  setHasReceivedResponse(true);
-                                  setIsFromCache(true);
-                                  setIsRunning(false);
-                                }}
-                                className="w-full text-left px-3 py-2 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
-                              >
-                                <div className="text-sm font-medium text-gray-900 line-clamp-1">{entry.prompt}</div>
-                                <div className="text-[11px] text-gray-500">Cached: {entry.date}</div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 // ACTIVE DOSSIER STATE
