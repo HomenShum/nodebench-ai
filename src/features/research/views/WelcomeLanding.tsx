@@ -42,6 +42,8 @@ import { PulseGrid, type InsightCard } from "@/features/research/components/Puls
 import { FeedCard, type FeedItem } from "@/features/research/components/FeedCard";
 import { TrendRail, type TrendItem } from "@/features/research/components/TrendRail";
 import { InlineMetrics, type WorkflowMetrics } from "@/features/agents/views/WorkflowMetricsBar";
+import { useFastAgent } from "@/features/agents/context/FastAgentContext";
+import { FloatingAgentButton } from "@/features/agents/components/FloatingAgentButton";
 
 const baseMedia: ExtractedMedia = {
   youtubeVideos: [],
@@ -99,6 +101,12 @@ function WelcomeLandingInner({
   const documents = useQuery(api.domains.documents.documents.getSidebar);
   const { signIn } = useAuthActions();
   const createThread = useAction(api.domains.agents.fastAgentPanelStreaming.createThread);
+
+  // Global Fast Agent context for contextual opening
+  const { openWithContext } = useFastAgent();
+
+  // Feed pagination state (must be before liveFeed query that uses it)
+  const [feedLimit, setFeedLimit] = useState(12);
 
   // Get recent dossiers for the expandable nav menu
   const recentDossiers = useMemo(() => {
@@ -180,7 +188,7 @@ function WelcomeLandingInner({
   // LIVE FEED: Central Newsstand data from Hacker News, ArXiv, RSS, etc.
   // "Write Once, Read Many" - shared across all users, free forever
   // ============================================================================
-  const liveFeed = useQuery(api.feed.get, { limit: 12 });
+  const liveFeed = useQuery(api.feed.get, { limit: feedLimit });
 
   // Generate FeedItems combining LIVE FEED + user documents (Instagram x Bloomberg style)
   const feedItems: FeedItem[] = useMemo(() => {
@@ -213,7 +221,18 @@ function WelcomeLandingInner({
 
     // 2. Add USER DOCUMENTS (personal workspace data)
     if (documents?.length) {
-      const docs = documents.slice(0, 8); // Show recent 8 docs (balance with live feed)
+      const docs = documents
+        .filter((doc: any) => {
+          const docType = typeof doc.documentType === 'string'
+            ? doc.documentType.toLowerCase()
+            : typeof doc.type === 'string'
+              ? doc.type.toLowerCase()
+              : '';
+
+          if (docType === 'nbdoc') return false; // Hide Quick Notes from feed
+          return docType === 'dossier';
+        })
+        .slice(0, 8); // Show recent 8 dossiers (balance with live feed)
 
       docs.forEach((doc: any) => {
         const isDossier = doc.documentType === 'dossier' || doc.type === 'dossier';
@@ -334,13 +353,8 @@ function WelcomeLandingInner({
     return false;
   });
 
-  const [showHero, setShowHero] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('nodebench_landing_showHero');
-      return saved !== null ? saved === 'true' : true;
-    }
-    return true;
-  });
+  const [showHero, setShowHero] = useState(true);
+  const [hasActiveSearch, setHasActiveSearch] = useState(false);
 
   const [isFromCache, setIsFromCache] = useState(false);
   const [cacheHistory, setCacheHistory] = useState<Array<{ prompt: string; date: string; threadId: string; timestamp: number }>>([]);
@@ -386,10 +400,6 @@ function WelcomeLandingInner({
   useEffect(() => {
     sessionStorage.setItem('nodebench_landing_hasResponse', String(hasReceivedResponse));
   }, [hasReceivedResponse]);
-
-  useEffect(() => {
-    sessionStorage.setItem('nodebench_landing_showHero', String(showHero));
-  }, [showHero]);
 
   // Cache utility functions - include userId to isolate per-user caches
   const userId = user?._id;
@@ -600,11 +610,12 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
   // Track when we first receive a response to prevent flickering between views
   useEffect(() => {
-    if (responseText && responseText.trim() && !hasReceivedResponse) {
-      setHasReceivedResponse(true);
+    if (!responseText || !responseText.trim() || hasReceivedResponse) return;
+    setHasReceivedResponse(true);
+    if (hasActiveSearch) {
       setShowHero(false); // Switch to dossier view
     }
-  }, [responseText, hasReceivedResponse]);
+  }, [responseText, hasActiveSearch, hasReceivedResponse]);
 
   useEffect(() => {
     setCacheHistory(loadCacheHistory());
@@ -826,15 +837,16 @@ While commercial fusion is still years away, the pace of innovation has accelera
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeSources]);
 
-  // Function to reset back to search view
-  const handleBackToSearch = () => {
-    setShowHero(true);
-    // Keep threadId so we can navigate back to results
-  };
-
   // Function to view last results
   const handleViewLastResults = () => {
     setShowHero(false);
+    setHasActiveSearch(true);
+  };
+
+  const resetToBriefing = () => {
+    setHasActiveSearch(false);
+    setShowHero(true);
+    setIsRunning(false);
   };
 
   const handleRunPrompt = async (
@@ -880,6 +892,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
       setIsRunning(true);
       setShowHero(false);
+      setHasActiveSearch(true);
       setHasReceivedResponse(true); // keep the current dossier visible while enriching
       setIsFromCache(false);
 
@@ -905,6 +918,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
       console.log('✨ Loading cached results for:', promptToRun);
       setThreadId(cachedThreadId);
       setShowHero(false);
+      setHasActiveSearch(true);
       setHasReceivedResponse(true);
       setIsFromCache(true);
       setIsRunning(false);
@@ -919,6 +933,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
     setIsRunning(true);
     setShowHero(false); // Switch to dossier view immediately
+    setHasActiveSearch(true);
     setHasReceivedResponse(false);
     setIsFromCache(false);
 
@@ -1508,24 +1523,17 @@ While commercial fusion is still years away, the pace of innovation has accelera
               <div className="flex items-center text-sm text-gray-500">
                 <span>Research</span>
                 <ChevronRight className="w-4 h-4 mx-1" />
-                <span className="text-gray-900 font-medium">Live Dossier</span>
+                <span className="text-gray-900 font-medium">
+                  {showHero ? "Morning Briefing" : "Live Dossier"}
+                </span>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {!showHero && (
-                <>
-                  <button
-                    onClick={handleBackToSearch}
-                    className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    <ChevronRight className="w-4 h-4 rotate-180" />
-                    Back to Search
-                  </button>
-                  <div className="h-4 w-px bg-gray-200"></div>
-                </>
-              )}
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <button
+                onClick={resetToBriefing}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
                 <Search className="w-4 h-4" />
               </button>
               <div className="h-4 w-px bg-gray-200"></div>
@@ -1604,7 +1612,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
                   {/* 4. THE INTELLIGENCE FEED (Masonry Grid - Pinterest/Bloomberg hybrid) */}
                   <div className={`flex-1 px-6 py-6 transition-all duration-300 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none scale-[0.98]' : 'opacity-100'}`}>
-                    <div className="max-w-5xl mx-auto">
+                    <div className="w-full">
                       {/* Feed Header */}
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Your Intelligence Feed</h2>
@@ -1626,7 +1634,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
                       </div>
 
                       {/* Masonry Grid of FeedCards */}
-                      <div className="columns-1 md:columns-2 lg:columns-3 gap-4">
+                      <div className="columns-1 md:columns-2 xl:columns-3 2xl:columns-4 gap-6">
                         {feedItems.map((item) => (
                           <FeedCard
                             key={item.id}
@@ -1645,9 +1653,30 @@ While commercial fusion is still years away, the pace of innovation has accelera
                                 handleRunPrompt(item.title, { mode: 'quick' });
                               }
                             }}
+                            onAnalyze={() => {
+                              // Open Fast Agent with context about this item
+                              openWithContext({
+                                initialMessage: `Analyze this ${item.type}: "${item.title}"\n\n${item.subtitle || ''}`,
+                                contextWebUrls: item.url ? [item.url] : undefined,
+                                contextTitle: item.title,
+                              });
+                            }}
                           />
                         ))}
                       </div>
+
+                      {/* Load More Button */}
+                      {feedItems.length >= feedLimit && (
+                        <div className="text-center mt-6">
+                          <button
+                            type="button"
+                            onClick={() => setFeedLimit(prev => prev + 12)}
+                            className="inline-flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                          >
+                            Load More
+                          </button>
+                        </div>
+                      )}
 
                       {/* View Last Results - if available */}
                       {threadId && hasReceivedResponse && (
@@ -1788,6 +1817,9 @@ While commercial fusion is still years away, the pace of innovation has accelera
           </div>
         </div>
       </div>
+
+      {/* Floating Agent Button - Universal access to AI agent */}
+      {isAuthenticated && <FloatingAgentButton label="Ask Agent" />}
     </>
   );
 }

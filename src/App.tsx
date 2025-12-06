@@ -10,6 +10,7 @@ import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
 import { FastAgentProvider } from "@/features/agents/context/FastAgentContext";
 import { SelectionProvider } from "@/features/agents/context/SelectionContext";
+import { FloatingAgentButton } from "@/features/agents/components/FloatingAgentButton";
 
 function App() {
   const [showTutorial, setShowTutorial] = useState(false);
@@ -105,6 +106,8 @@ function App() {
                   onEnterWorkspace={handleEnterWorkspace}
                 />
               )}
+              {/* Global Floating Agent Button - visible on all authenticated pages */}
+              <FloatingAgentButton />
             </ContextPillsProvider>
           </SelectionProvider>
         </FastAgentProvider>

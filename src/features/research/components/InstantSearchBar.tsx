@@ -55,7 +55,7 @@ export function InstantSearchBar({
   onDocumentSelect,
   defaultValue = '',
   mode = 'quick',
-  autoFocus = true,
+  autoFocus = false,
   onFocus,
   onBlur,
   suggestedQueries,

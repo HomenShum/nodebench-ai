@@ -617,9 +617,42 @@ npx convex deploy
 
 ---
 
-### 2025-12-06 - Arbitrage Agent & Instant-Value Welcome Landing ✅
+### 2025-12-06 - Feed UX Improvements & Load More Pagination 
 
-**Status**: ✅ Complete
+**Status**: 
+
+#### Overview
+Fixed first-load UX issues with the Welcome Landing feed and implemented pagination with a "Load More" button.
+
+#### Changes
+
+**First Load & Dimming Fix:**
+- `src/features/research/components/InstantSearchBar.tsx` - Changed `autoFocus` default from `true` to `false`
+- Feed is now fully visible on first load; dimming only triggers when user explicitly clicks the search bar
+- Smooth fade transition when entering "Cinema Mode"
+
+**Load More Pagination:**
+- `src/features/research/views/WelcomeLanding.tsx` - Added `feedLimit` state (initial: 12)
+- Live feed query now uses dynamic limit: `useQuery(api.feed.get, { limit: feedLimit })`
+- Added "Load More" button that increases limit by 12 on each click
+- Button styled with shadow and hover effects for visual feedback
+
+**Full-Width Feed Grid:**
+- Removed `max-w-[1600px]` constraint from feed container
+- Grid now uses full available width (`w-full`) for better data density on large monitors
+
+#### Verification
+- TypeScript compilation passes
+- Hot reload working correctly
+- Feed visible immediately on page load
+- Dimming only triggers on search bar click
+- Load More button increments feed limit
+
+---
+
+### 2025-12-06 - Arbitrage Agent & Instant-Value Welcome Landing 
+
+**Status**: 
 
 #### Overview
 Implemented two major features: (1) Arbitrage Agent mode for receipts-first research with source verification and contradiction detection, and (2) Instant-Value Welcome Landing with search-as-you-type for cached dossiers.

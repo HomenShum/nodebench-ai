@@ -102,6 +102,7 @@ import type * as domains_documents_gridProjects from "../domains/documents/gridP
 import type * as domains_documents_index from "../domains/documents/index.js";
 import type * as domains_documents_pendingEdits from "../domains/documents/pendingEdits.js";
 import type * as domains_documents_prosemirror from "../domains/documents/prosemirror.js";
+import type * as domains_documents_search from "../domains/documents/search.js";
 import type * as domains_documents_smartDateExtraction from "../domains/documents/smartDateExtraction.js";
 import type * as domains_documents_sync from "../domains/documents/sync.js";
 import type * as domains_documents_syncMutations from "../domains/documents/syncMutations.js";
@@ -151,6 +152,7 @@ import type * as domains_verification_claimVerificationQueries from "../domains/
 import type * as domains_verification_claimVerifications from "../domains/verification/claimVerifications.js";
 import type * as domains_verification_facts from "../domains/verification/facts.js";
 import type * as domains_verification_index from "../domains/verification/index.js";
+import type * as feed from "../feed.js";
 import type * as globalResearch_artifacts from "../globalResearch/artifacts.js";
 import type * as globalResearch_cacheSimple from "../globalResearch/cacheSimple.js";
 import type * as globalResearch_compaction from "../globalResearch/compaction.js";
@@ -185,6 +187,8 @@ import type * as schema_toolSearchSchema from "../schema/toolSearchSchema.js";
 import type * as tags from "../tags.js";
 import type * as tags_actions from "../tags_actions.js";
 import type * as tests_fastAgentPanelStreamingTests from "../tests/fastAgentPanelStreamingTests.js";
+import type * as tools_arbitrage_analyzeWithArbitrage from "../tools/arbitrage/analyzeWithArbitrage.js";
+import type * as tools_arbitrage_index from "../tools/arbitrage/index.js";
 import type * as tools_calendar_confirmEventSelection from "../tools/calendar/confirmEventSelection.js";
 import type * as tools_calendar_recentEventSearch from "../tools/calendar/recentEventSearch.js";
 import type * as tools_document_contextTools from "../tools/document/contextTools.js";
@@ -334,6 +338,7 @@ declare const fullApi: ApiFromModules<{
   "domains/documents/index": typeof domains_documents_index;
   "domains/documents/pendingEdits": typeof domains_documents_pendingEdits;
   "domains/documents/prosemirror": typeof domains_documents_prosemirror;
+  "domains/documents/search": typeof domains_documents_search;
   "domains/documents/smartDateExtraction": typeof domains_documents_smartDateExtraction;
   "domains/documents/sync": typeof domains_documents_sync;
   "domains/documents/syncMutations": typeof domains_documents_syncMutations;
@@ -383,6 +388,7 @@ declare const fullApi: ApiFromModules<{
   "domains/verification/claimVerifications": typeof domains_verification_claimVerifications;
   "domains/verification/facts": typeof domains_verification_facts;
   "domains/verification/index": typeof domains_verification_index;
+  feed: typeof feed;
   "globalResearch/artifacts": typeof globalResearch_artifacts;
   "globalResearch/cacheSimple": typeof globalResearch_cacheSimple;
   "globalResearch/compaction": typeof globalResearch_compaction;
@@ -417,6 +423,8 @@ declare const fullApi: ApiFromModules<{
   tags: typeof tags;
   tags_actions: typeof tags_actions;
   "tests/fastAgentPanelStreamingTests": typeof tests_fastAgentPanelStreamingTests;
+  "tools/arbitrage/analyzeWithArbitrage": typeof tools_arbitrage_analyzeWithArbitrage;
+  "tools/arbitrage/index": typeof tools_arbitrage_index;
   "tools/calendar/confirmEventSelection": typeof tools_calendar_confirmEventSelection;
   "tools/calendar/recentEventSearch": typeof tools_calendar_recentEventSearch;
   "tools/document/contextTools": typeof tools_document_contextTools;
