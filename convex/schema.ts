@@ -1182,6 +1182,38 @@ const voiceSessions = defineTable({
   .index("by_thread_id", ["threadId"])
   .index("by_last_activity", ["lastActivityAt"]);
 
+/* ------------------------------------------------------------------ */
+/* FEED ITEMS - Central Newsstand for live intelligence feed          */
+/* Shared public feed sourced from HackerNews, ArXiv, RSS, etc.       */
+/* "Write Once, Read Many" - one hourly ingest, all users read free   */
+/* ------------------------------------------------------------------ */
+const feedItems = defineTable({
+  sourceId: v.string(),                    // e.g., "hn-12345" (deduplication key)
+  type: v.union(
+    v.literal("news"),
+    v.literal("signal"),
+    v.literal("dossier")
+  ),
+  title: v.string(),
+  summary: v.string(),                     // The "Newsletter" style blurb
+  url: v.string(),                         // Link to original content
+  source: v.string(),                      // "YCombinator", "ArXiv", "TechCrunch"
+  tags: v.array(v.string()),               // ["Trending", "AI", "Funding"]
+  metrics: v.optional(v.array(v.object({
+    label: v.string(),
+    value: v.string(),
+    trend: v.optional(v.union(v.literal("up"), v.literal("down")))
+  }))),
+  publishedAt: v.string(),                 // ISO date string
+  score: v.number(),                       // For sorting by "Heat"
+  createdAt: v.optional(v.number()),       // When we ingested this
+})
+  .index("by_published", ["publishedAt"])
+  .index("by_score", ["score"])
+  .index("by_source", ["source"])
+  .index("by_type", ["type"])
+  .index("by_source_id", ["sourceId"]);    // Fast deduplication lookup
+
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
   documents,
@@ -1236,6 +1268,7 @@ export default defineSchema({
   agentTimelineRuns,
   agentImageResults,
   voiceSessions,
+  feedItems,
 
   // API Usage Tracking
   apiUsage: defineTable({
