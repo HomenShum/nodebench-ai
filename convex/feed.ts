@@ -9,13 +9,41 @@ import { v } from "convex/values";
 // ============================================================================
 // 1. PUBLIC QUERY: The "Feed" your frontend consumes
 // ============================================================================
+// Feed categories for segmented views
+const FEED_TYPES = ["news", "signal", "dossier", "repo", "product"] as const;
+const FEED_CATEGORIES = ["tech", "ai_ml", "startups", "products", "opensource", "finance", "research"] as const;
+
 export const get = query({
   args: { 
     limit: v.optional(v.number()),
-    type: v.optional(v.union(v.literal("news"), v.literal("signal"), v.literal("dossier"))),
+    type: v.optional(v.union(
+      v.literal("news"), 
+      v.literal("signal"), 
+      v.literal("dossier"),
+      v.literal("repo"),
+      v.literal("product")
+    )),
+    category: v.optional(v.union(
+      v.literal("tech"),
+      v.literal("ai_ml"),
+      v.literal("startups"),
+      v.literal("products"),
+      v.literal("opensource"),
+      v.literal("finance"),
+      v.literal("research")
+    )),
   },
   handler: async (ctx, args) => {
     const limit = args.limit || 20;
+    
+    // If category filter specified, use the category index
+    if (args.category) {
+      return await ctx.db
+        .query("feedItems")
+        .withIndex("by_category", q => q.eq("category", args.category!))
+        .order("desc")
+        .take(limit);
+    }
     
     // If type filter specified, use the type index
     if (args.type) {
@@ -32,6 +60,48 @@ export const get = query({
       .withIndex("by_score")
       .order("desc")
       .take(limit);
+  },
+});
+
+// Get feed items by category for segmented views
+export const getByCategory = query({
+  args: { 
+    category: v.union(
+      v.literal("tech"),
+      v.literal("ai_ml"),
+      v.literal("startups"),
+      v.literal("products"),
+      v.literal("opensource"),
+      v.literal("finance"),
+      v.literal("research")
+    ),
+    limit: v.optional(v.number()) 
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("feedItems")
+      .withIndex("by_category", q => q.eq("category", args.category))
+      .order("desc")
+      .take(args.limit || 20);
+  },
+});
+
+// Get available categories with counts
+export const getCategories = query({
+  args: {},
+  handler: async (ctx) => {
+    // Get counts for each category
+    const categories = [
+      { id: "all", label: "All", icon: "📰" },
+      { id: "ai_ml", label: "AI & ML", icon: "🤖" },
+      { id: "startups", label: "Startups", icon: "🚀" },
+      { id: "products", label: "Products", icon: "📦" },
+      { id: "opensource", label: "Open Source", icon: "💻" },
+      { id: "research", label: "Research", icon: "📚" },
+      { id: "tech", label: "Tech News", icon: "📱" },
+      { id: "finance", label: "Finance", icon: "💰" },
+    ];
+    return categories;
   },
 });
 
@@ -54,7 +124,22 @@ export const saveItems = internalMutation({
   args: { 
     items: v.array(v.object({
       sourceId: v.string(),
-      type: v.union(v.literal("news"), v.literal("signal"), v.literal("dossier")),
+      type: v.union(
+        v.literal("news"), 
+        v.literal("signal"), 
+        v.literal("dossier"),
+        v.literal("repo"),
+        v.literal("product")
+      ),
+      category: v.optional(v.union(
+        v.literal("tech"),
+        v.literal("ai_ml"),
+        v.literal("startups"),
+        v.literal("products"),
+        v.literal("opensource"),
+        v.literal("finance"),
+        v.literal("research")
+      )),
       title: v.string(),
       summary: v.string(),
       url: v.string(),
@@ -523,19 +608,25 @@ export const ingestRSS = action({
 export const ingestAll = action({
   args: {},
   handler: async (ctx) => {
-    const results = {
+    const results: Record<string, { status: string; ingested: number; checked: number }> = {
       hackerNews: { status: "pending", ingested: 0, checked: 0 },
       arxiv: { status: "pending", ingested: 0, checked: 0 },
       reddit: { status: "pending", ingested: 0, checked: 0 },
       rss: { status: "pending", ingested: 0, checked: 0 },
+      github: { status: "pending", ingested: 0, checked: 0 },
+      productHunt: { status: "pending", ingested: 0, checked: 0 },
+      devTo: { status: "pending", ingested: 0, checked: 0 },
     };
 
     // Run all ingestors in parallel for speed
-    const [hnResult, arxivResult, redditResult, rssResult] = await Promise.allSettled([
+    const [hnResult, arxivResult, redditResult, rssResult, ghResult, phResult, devtoResult] = await Promise.allSettled([
       ctx.runAction(internal.feed.ingestHackerNewsInternal, {}),
       ctx.runAction(internal.feed.ingestArXivInternal, {}),
       ctx.runAction(internal.feed.ingestRedditInternal, {}),
       ctx.runAction(internal.feed.ingestRSSInternal, {}),
+      ctx.runAction(internal.feed.ingestGitHubTrendingInternal, {}),
+      ctx.runAction(internal.feed.ingestProductHuntInternal, {}),
+      ctx.runAction(internal.feed.ingestDevToInternal, {}),
     ]);
 
     // Process results
@@ -543,12 +634,11 @@ export const ingestAll = action({
     if (arxivResult.status === 'fulfilled') results.arxiv = arxivResult.value as any;
     if (redditResult.status === 'fulfilled') results.reddit = redditResult.value as any;
     if (rssResult.status === 'fulfilled') results.rss = rssResult.value as any;
+    if (ghResult.status === 'fulfilled') results.github = ghResult.value as any;
+    if (phResult.status === 'fulfilled') results.productHunt = phResult.value as any;
+    if (devtoResult.status === 'fulfilled') results.devTo = devtoResult.value as any;
 
-    const totalIngested =
-      (results.hackerNews.ingested || 0) +
-      (results.arxiv.ingested || 0) +
-      (results.reddit.ingested || 0) +
-      (results.rss.ingested || 0);
+    const totalIngested = Object.values(results).reduce((sum, r) => sum + (r.ingested || 0), 0);
 
     return {
       status: "success",
@@ -768,6 +858,241 @@ export const ingestRSSInternal = internalAction({
     } catch (error) {
       return { status: "error", message: String(error), ingested: 0, checked: 0 };
     }
+  }
+});
+
+// ============================================================================
+// 8. ACTION: Fetch GitHub Trending Repos (via GitHub Search API)
+// ============================================================================
+export const ingestGitHubTrending = action({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const url = `https://api.github.com/search/repositories?q=created:>${since}&sort=stars&order=desc&per_page=20`;
+      
+      const response = await fetch(url, {
+        headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'NodeBench/1.0' }
+      });
+
+      if (!response.ok) return { status: "error", message: `GitHub API ${response.status}` };
+
+      const data = await response.json();
+      const feedItems: Array<any> = [];
+
+      for (const repo of (data.items || [])) {
+        if (repo.stargazers_count < 50) continue;
+        const isAI = /ai|ml|llm|gpt|model|neural|transformer|agent|rag/i.test(
+          `${repo.name} ${repo.description || ''} ${repo.topics?.join(' ') || ''}`
+        );
+        feedItems.push({
+          sourceId: `github-${repo.id}`,
+          type: "repo" as const,
+          category: isAI ? "ai_ml" as const : "opensource" as const,
+          title: repo.full_name,
+          summary: repo.description || `A ${repo.language || 'multi-language'} repository trending on GitHub.`,
+          url: repo.html_url,
+          source: "GitHub",
+          tags: ["Trending", repo.language || "Code"].filter(Boolean),
+          metrics: [
+            { label: "Stars", value: repo.stargazers_count.toLocaleString(), trend: "up" as const },
+            { label: "Forks", value: repo.forks_count.toLocaleString() }
+          ],
+          publishedAt: repo.created_at,
+          score: repo.stargazers_count
+        });
+      }
+
+      if (feedItems.length > 0) await ctx.runMutation(internal.feed.saveItems, { items: feedItems });
+      return { status: "success", ingested: feedItems.length, checked: data.items?.length || 0 };
+    } catch (error) {
+      return { status: "error", message: String(error) };
+    }
+  }
+});
+
+// ============================================================================
+// 9. ACTION: Fetch Product Hunt Top Products (RSS Feed)
+// ============================================================================
+export const ingestProductHunt = action({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const response = await fetch('https://www.producthunt.com/feed', {
+        headers: { 'User-Agent': 'NodeBench/1.0', 'Accept': 'application/rss+xml, text/xml' }
+      });
+      if (!response.ok) return { status: "error", message: `HTTP ${response.status}` };
+
+      const xmlText = await response.text();
+      const feedItems: Array<any> = [];
+      const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+      const titleRegex = /<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/;
+      const linkRegex = /<link>([\s\S]*?)<\/link>/;
+      const descRegex = /<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/;
+
+      let match, count = 0;
+      while ((match = itemRegex.exec(xmlText)) !== null && count < 15) {
+        count++;
+        const titleMatch = titleRegex.exec(match[1]);
+        const linkMatch = linkRegex.exec(match[1]);
+        const descMatch = descRegex.exec(match[1]);
+        if (!titleMatch || !linkMatch) continue;
+
+        const title = titleMatch[1].trim().replace(/<[^>]+>/g, '');
+        const desc = descMatch ? descMatch[1].trim().replace(/<[^>]+>/g, '').slice(0, 250) : '';
+
+        feedItems.push({
+          sourceId: `ph-${linkMatch[1].split('/').pop() || Date.now()}-${count}`,
+          type: "product" as const,
+          category: "products" as const,
+          title: title.slice(0, 200),
+          summary: desc || `New product featured on Product Hunt.`,
+          url: linkMatch[1].trim(),
+          source: "ProductHunt",
+          tags: ["Product Launch"],
+          metrics: [],
+          publishedAt: new Date().toISOString(),
+          score: 50 + Math.floor(Math.random() * 50)
+        });
+      }
+
+      if (feedItems.length > 0) await ctx.runMutation(internal.feed.saveItems, { items: feedItems });
+      return { status: "success", ingested: feedItems.length, checked: count };
+    } catch (error) {
+      return { status: "error", message: String(error) };
+    }
+  }
+});
+
+// ============================================================================
+// 10. ACTION: Fetch Dev.to Top Articles (Free JSON API)
+// ============================================================================
+export const ingestDevTo = action({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const response = await fetch('https://dev.to/api/articles?per_page=15&top=7', {
+        headers: { 'User-Agent': 'NodeBench/1.0', 'Accept': 'application/json' }
+      });
+      if (!response.ok) return { status: "error", message: `HTTP ${response.status}` };
+
+      const articles = await response.json();
+      const feedItems: Array<any> = [];
+
+      for (const article of articles) {
+        const isRelevant = /ai|ml|llm|typescript|react|python|rust|devops|cloud|api/i.test(
+          `${article.title} ${article.tags || ''}`
+        );
+        if (!isRelevant) continue;
+        const isAI = /ai|ml|llm|gpt|model|neural/i.test(article.title);
+
+        feedItems.push({
+          sourceId: `devto-${article.id}`,
+          type: "news" as const,
+          category: isAI ? "ai_ml" as const : "tech" as const,
+          title: article.title,
+          summary: article.description || `Article by ${article.user?.name || 'developer'} on Dev.to`,
+          url: article.url,
+          source: "Dev.to",
+          tags: (article.tag_list || []).slice(0, 3),
+          metrics: [
+            { label: "Reactions", value: (article.public_reactions_count || 0).toString(), trend: "up" as const }
+          ],
+          publishedAt: article.published_at,
+          score: article.public_reactions_count || 0
+        });
+      }
+
+      if (feedItems.length > 0) await ctx.runMutation(internal.feed.saveItems, { items: feedItems });
+      return { status: "success", ingested: feedItems.length, checked: articles.length };
+    } catch (error) {
+      return { status: "error", message: String(error) };
+    }
+  }
+});
+
+// Internal versions for parallel execution from ingestAll
+export const ingestGitHubTrendingInternal = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const response = await fetch(
+        `https://api.github.com/search/repositories?q=created:>${since}&sort=stars&order=desc&per_page=15`,
+        { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'NodeBench/1.0' } }
+      );
+      if (!response.ok) return { status: "error", ingested: 0, checked: 0 };
+      const data = await response.json();
+      const feedItems: Array<any> = [];
+      for (const repo of (data.items || []).slice(0, 15)) {
+        if (repo.stargazers_count < 100) continue;
+        const isAI = /ai|ml|llm|gpt|model|neural/i.test(`${repo.name} ${repo.description || ''}`);
+        feedItems.push({
+          sourceId: `github-${repo.id}`, type: "repo", category: isAI ? "ai_ml" : "opensource",
+          title: repo.full_name, summary: repo.description || `Trending ${repo.language || ''} repo.`,
+          url: repo.html_url, source: "GitHub", tags: ["Trending", repo.language].filter(Boolean),
+          metrics: [{ label: "Stars", value: repo.stargazers_count.toLocaleString(), trend: "up" as const }],
+          publishedAt: repo.created_at, score: repo.stargazers_count
+        });
+      }
+      if (feedItems.length > 0) await ctx.runMutation(internal.feed.saveItems, { items: feedItems });
+      return { status: "success", ingested: feedItems.length, checked: data.items?.length || 0 };
+    } catch { return { status: "error", ingested: 0, checked: 0 }; }
+  }
+});
+
+export const ingestProductHuntInternal = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const response = await fetch('https://www.producthunt.com/feed', { headers: { 'User-Agent': 'NodeBench/1.0' } });
+      if (!response.ok) return { status: "error", ingested: 0, checked: 0 };
+      const xmlText = await response.text();
+      const feedItems: Array<any> = [];
+      const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+      const titleRegex = /<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/;
+      const linkRegex = /<link>([\s\S]*?)<\/link>/;
+      let match, count = 0;
+      while ((match = itemRegex.exec(xmlText)) !== null && count < 10) {
+        count++;
+        const titleMatch = titleRegex.exec(match[1]);
+        const linkMatch = linkRegex.exec(match[1]);
+        if (!titleMatch || !linkMatch) continue;
+        feedItems.push({
+          sourceId: `ph-${Date.now()}-${count}`, type: "product", category: "products",
+          title: titleMatch[1].trim().replace(/<[^>]+>/g, '').slice(0, 200),
+          summary: `New product on Product Hunt.`, url: linkMatch[1].trim(),
+          source: "ProductHunt", tags: ["Product Launch"], metrics: [],
+          publishedAt: new Date().toISOString(), score: 50 + Math.floor(Math.random() * 50)
+        });
+      }
+      if (feedItems.length > 0) await ctx.runMutation(internal.feed.saveItems, { items: feedItems });
+      return { status: "success", ingested: feedItems.length, checked: count };
+    } catch { return { status: "error", ingested: 0, checked: 0 }; }
+  }
+});
+
+export const ingestDevToInternal = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const response = await fetch('https://dev.to/api/articles?per_page=10&top=7', { headers: { 'User-Agent': 'NodeBench/1.0' } });
+      if (!response.ok) return { status: "error", ingested: 0, checked: 0 };
+      const articles = await response.json();
+      const feedItems: Array<any> = [];
+      for (const article of articles) {
+        const isAI = /ai|ml|llm|gpt/i.test(article.title);
+        feedItems.push({
+          sourceId: `devto-${article.id}`, type: "news", category: isAI ? "ai_ml" : "tech",
+          title: article.title, summary: article.description || `Dev.to article`,
+          url: article.url, source: "Dev.to", tags: (article.tag_list || []).slice(0, 3),
+          metrics: [{ label: "Reactions", value: String(article.public_reactions_count || 0) }],
+          publishedAt: article.published_at, score: article.public_reactions_count || 0
+        });
+      }
+      if (feedItems.length > 0) await ctx.runMutation(internal.feed.saveItems, { items: feedItems });
+      return { status: "success", ingested: feedItems.length, checked: articles.length };
+    } catch { return { status: "error", ingested: 0, checked: 0 }; }
   }
 });
 

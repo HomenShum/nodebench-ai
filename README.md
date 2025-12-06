@@ -617,6 +617,44 @@ npx convex deploy
 
 ---
 
+### 2025-12-06 - Intelligence Feed Expansion & Segmented Views 
+
+**Status**: 
+
+#### Overview
+Expanded the intelligence feed with 3 new sources (GitHub Trending, Product Hunt, Dev.to) and added category-based segmented views for better organization.
+
+#### New Feed Sources
+
+| Source | Type | Category | API |
+|--------|------|----------|-----|
+| **GitHub Trending** | `repo` | `opensource` / `ai_ml` | GitHub Search API |
+| **Product Hunt** | `product` | `products` | RSS Feed |
+| **Dev.to** | `news` | `tech` / `ai_ml` | JSON API |
+
+#### Schema Changes (`convex/schema.ts`)
+- Added new feed types: `repo`, `product`
+- Added category field: `tech`, `ai_ml`, `startups`, `products`, `opensource`, `finance`, `research`
+- Added `by_category` index for fast filtering
+
+#### Backend (`convex/feed.ts`)
+- Updated `get` query to support category filtering
+- Added `getByCategory` and `getCategories` queries
+- Added `ingestGitHubTrending`, `ingestProductHunt`, `ingestDevTo` actions
+- Updated `ingestAll` to run all 7 sources in parallel
+
+#### Frontend
+- Added category tabs: All, AI & ML, Startups, Products, Open Source, Research, Tech News
+- Updated `FeedCard` to handle `repo` and `product` types with new icons (GitBranch, Package)
+- Category selection resets pagination
+
+#### Floating Agent Button
+- Added `FloatingAgentButton` component for global AI agent access
+- Integrated with `FastAgentContext` for state management
+- Added to agents barrel export for cleaner imports
+
+---
+
 ### 2025-12-06 - Feed UX Improvements & Load More Pagination 
 
 **Status**: 

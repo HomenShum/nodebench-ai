@@ -8,9 +8,36 @@ import WelcomeLanding from "@/features/research/views/WelcomeLanding";
 import { useState, useEffect, useRef } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
-import { FastAgentProvider } from "@/features/agents/context/FastAgentContext";
+import { FastAgentProvider, useFastAgent } from "@/features/agents/context/FastAgentContext";
 import { SelectionProvider } from "@/features/agents/context/SelectionContext";
-import { FloatingAgentButton } from "@/features/agents/components/FloatingAgentButton";
+import { FloatingAgentButton, FastAgentPanel } from "@/features/agents";
+
+/**
+ * GlobalFastAgentPanel - Renders FastAgentPanel connected to FastAgentContext
+ * This allows the FloatingAgentButton to open the panel from anywhere.
+ * 
+ * NOTE: When MainLayout is mounted, it registers its own panel handler via
+ * registerExternalState, so we skip rendering here to avoid duplicates.
+ */
+function GlobalFastAgentPanel() {
+  const { isOpen, close, options, clearOptions, hasExternalHandler } = useFastAgent();
+
+  // Skip if MainLayout is handling the panel
+  if (hasExternalHandler) return null;
+
+  const handleClose = () => {
+    close();
+    clearOptions();
+  };
+
+  return (
+    <FastAgentPanel
+      isOpen={isOpen}
+      onClose={handleClose}
+      variant="overlay"
+    />
+  );
+}
 
 function App() {
   const [showTutorial, setShowTutorial] = useState(false);
@@ -108,6 +135,8 @@ function App() {
               )}
               {/* Global Floating Agent Button - visible on all authenticated pages */}
               <FloatingAgentButton />
+              {/* Global Fast Agent Panel - controlled by FloatingAgentButton via context */}
+              <GlobalFastAgentPanel />
             </ContextPillsProvider>
           </SelectionProvider>
         </FastAgentProvider>
