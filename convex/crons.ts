@@ -112,4 +112,20 @@ crons.interval(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Feed Ingestion Crons
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Ingest Hacker News hourly (top stories)
+crons.interval("ingest Hacker News feed", { hours: 1 }, internal.feed.ingestHackerNewsInternal, {});
+
+// Ingest ArXiv CS.AI papers every 6 hours (new papers published at ~8pm ET)
+crons.interval("ingest ArXiv AI papers", { hours: 6 }, internal.feed.ingestArXivInternal, {});
+
+// Ingest Reddit /r/MachineLearning every 4 hours
+crons.interval("ingest Reddit ML feed", { hours: 4 }, internal.feed.ingestRedditInternal, {});
+
+// Ingest RSS feeds every 2 hours (TechCrunch, etc.)
+crons.interval("ingest RSS tech feeds", { hours: 2 }, internal.feed.ingestRSSInternal, {});
+
 export default crons;

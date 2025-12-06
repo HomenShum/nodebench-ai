@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, FileText, MessageSquare, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, FileText, MessageSquare, ArrowUpRight, ArrowDownRight, Sparkles } from 'lucide-react';
 
 export type FeedItemType = 'dossier' | 'signal' | 'news';
 
@@ -18,20 +18,27 @@ export interface FeedItem {
 interface FeedCardProps {
   item: FeedItem;
   onClick: () => void;
+  /** Handler for "Analyze with AI" action - opens global agent with context */
+  onAnalyze?: () => void;
 }
 
-export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick }) => {
+export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) => {
   const isSignal = item.type === 'signal';
   const isDossier = item.type === 'dossier';
 
+  const handleAnalyzeClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card onClick
+    onAnalyze?.();
+  };
+
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`
         group relative break-inside-avoid mb-4 cursor-pointer overflow-hidden rounded-xl border transition-all duration-300
-        ${isSignal 
-          ? 'bg-slate-900 border-slate-800 text-white hover:border-green-500/50' 
-          : 'bg-white border-gray-200 hover:shadow-lg hover:-translate-y-1'}
+        ${isSignal
+          ? 'bg-slate-900 border-slate-800 text-white hover:border-green-500/50'
+          : 'bg-white border-gray-200 text-gray-900 hover:shadow-lg hover:-translate-y-1'}
       `}
     >
       {/* Bloomberg Vibe: Accent bar for Signals */}
@@ -54,10 +61,10 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick }) => {
         </div>
 
         {/* Title: Serif for dossiers (newsletter feel), Sans for data */}
-        <h3 className={`text-lg font-semibold leading-tight mb-2 ${isDossier ? 'font-serif' : 'font-sans'}`}>
+        <h3 className={`text-lg font-semibold leading-tight mb-2 ${isDossier ? 'font-serif' : 'font-sans'} ${isSignal ? 'text-white' : 'text-gray-900'}`}>
           {item.title}
         </h3>
-        
+
         {item.subtitle && (
           <p className={`text-sm line-clamp-3 mb-4 ${isSignal ? 'text-slate-400' : 'text-gray-600'}`}>
             {item.subtitle}
@@ -84,11 +91,11 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick }) => {
         {item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-4">
             {item.tags.map((tag, i) => (
-              <span 
-                key={i} 
+              <span
+                key={i}
                 className={`text-[10px] px-2 py-0.5 rounded-full border ${
-                  isSignal 
-                    ? 'bg-slate-800 border-slate-700 text-slate-300' 
+                  isSignal
+                    ? 'bg-slate-800 border-slate-700 text-slate-300'
                     : 'bg-gray-50 border-gray-100 text-gray-500'
                 }`}
               >
@@ -98,17 +105,29 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick }) => {
           </div>
         )}
       </div>
-      
-      {/* Hover Overlay (Instagram Style) */}
+
+      {/* Hover Overlay (Instagram Style) - with dual actions */}
       <div className={`
-        absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]
+        absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]
         ${isSignal ? 'bg-white/10' : 'bg-white/60'}
       `}>
+         {/* Primary action: View/Read */}
          <div className="bg-black text-white text-xs font-medium px-4 py-2 rounded-full shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
-            {isSignal ? 'Analyze Signal' : isDossier ? 'Read Dossier' : 'View Article'}
+            {isSignal ? 'View Signal' : isDossier ? 'Read Dossier' : 'View Article'}
          </div>
+
+         {/* Secondary action: Analyze with AI (only if handler provided) */}
+         {onAnalyze && (
+           <button
+             type="button"
+             onClick={handleAnalyzeClick}
+             className="flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-medium px-4 py-2 rounded-full shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:from-purple-500 hover:to-indigo-500"
+           >
+             <Sparkles size={12} />
+             Analyze
+           </button>
+         )}
       </div>
     </div>
   );
 };
-
