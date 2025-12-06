@@ -13,11 +13,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Search, ArrowRight, FileText, Sparkles, Clock, Zap } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface InstantSearchBarProps {
   onStartNewResearch: (query: string, options?: { mode?: 'quick' | 'deep' }) => void;
+  onDocumentSelect?: (documentId: string) => void;
   defaultValue?: string;
   mode?: 'quick' | 'deep';
   autoFocus?: boolean;
@@ -37,11 +37,11 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export function InstantSearchBar({
   onStartNewResearch,
+  onDocumentSelect,
   defaultValue = '',
   mode = 'quick',
   autoFocus = true,
 }: InstantSearchBarProps) {
-  const navigate = useNavigate();
   const [inputValue, setInputValue] = useState(defaultValue);
   const [showResults, setShowResults] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,8 +78,10 @@ export function InstantSearchBar({
 
   const handleResultClick = useCallback((docId: string) => {
     setShowResults(false);
-    navigate(`/documents/${docId}`);
-  }, [navigate]);
+    if (onDocumentSelect) {
+      onDocumentSelect(docId);
+    }
+  }, [onDocumentSelect]);
 
   const handleStartFresh = useCallback(() => {
     setShowResults(false);
