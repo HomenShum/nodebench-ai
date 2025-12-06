@@ -15,12 +15,27 @@ import { api } from '../../../../convex/_generated/api';
 import { Search, ArrowRight, FileText, Sparkles, Clock, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Default suggested queries based on common research topics
+const DEFAULT_SUGGESTIONS = [
+  { label: 'AI Funding', query: 'Latest AI startup funding rounds this week' },
+  { label: 'SEC Filings', query: 'Recent SEC 10-K filings for tech companies' },
+  { label: 'Market Trends', query: 'Emerging market trends in healthcare technology' },
+];
+
 interface InstantSearchBarProps {
   onStartNewResearch: (query: string, options?: { mode?: 'quick' | 'deep' }) => void;
   onDocumentSelect?: (documentId: string) => void;
   defaultValue?: string;
   mode?: 'quick' | 'deep';
   autoFocus?: boolean;
+  /** Called when search input gains focus */
+  onFocus?: () => void;
+  /** Called when search input loses focus */
+  onBlur?: () => void;
+  /** Dynamic suggested queries based on pulse grid content */
+  suggestedQueries?: Array<{ label: string; query: string }>;
+  /** Enable floating "command bar" style with stronger shadow */
+  floating?: boolean;
 }
 
 // Simple debounce hook
@@ -41,12 +56,21 @@ export function InstantSearchBar({
   defaultValue = '',
   mode = 'quick',
   autoFocus = true,
+  onFocus,
+  onBlur,
+  suggestedQueries,
+  floating = true,
 }: InstantSearchBarProps) {
   const [inputValue, setInputValue] = useState(defaultValue);
   const [showResults, setShowResults] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const debouncedValue = useDebounce(inputValue, 300);
+
+  // Merge custom suggestions with defaults
+  const suggestions = suggestedQueries?.length ? suggestedQueries : DEFAULT_SUGGESTIONS;
 
   // Instant Search Query
   const results = useQuery(
@@ -88,24 +112,48 @@ export function InstantSearchBar({
     onStartNewResearch(inputValue, { mode });
   }, [inputValue, mode, onStartNewResearch]);
 
+  const handleFocus = useCallback(() => {
+    setShowResults(true);
+    setIsFocused(true);
+    onFocus?.();
+  }, [onFocus]);
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
+    onBlur?.();
+  }, [onBlur]);
+
+  const handleSuggestionClick = useCallback((query: string) => {
+    setInputValue(query);
+    inputRef.current?.focus();
+    setShowResults(true);
+  }, []);
+
   const hasResults = results && results.length > 0;
   const showDropdown = showResults && hasResults && inputValue.length >= 1;
 
   return (
     <div ref={containerRef} className="relative w-full max-w-2xl mx-auto z-50">
-      {/* Glow effect behind */}
-      <div className="absolute -inset-3 bg-gradient-to-r from-gray-900/10 via-gray-600/10 to-gray-900/10 rounded-[2rem] blur-2xl opacity-40 group-hover:opacity-60 transition duration-1000" />
-
-      {/* Main Input Container */}
+      {/* Glow effect behind - enhanced for floating style */}
       <div className={cn(
-        "relative flex items-center bg-white shadow-xl transition-all duration-200 border border-gray-200",
-        showDropdown ? "rounded-t-xl rounded-b-none border-b-transparent" : "rounded-xl"
+        "absolute -inset-3 bg-gradient-to-r from-gray-900/10 via-gray-600/10 to-gray-900/10 rounded-[2rem] blur-2xl transition duration-500",
+        floating ? "opacity-60" : "opacity-40",
+        isFocused && "opacity-80 scale-105"
+      )} />
+
+      {/* Main Input Container - floating command bar style */}
+      <div className={cn(
+        "relative flex items-center bg-white transition-all duration-200 border border-gray-200",
+        floating ? "shadow-2xl" : "shadow-xl",
+        showDropdown ? "rounded-t-xl rounded-b-none border-b-transparent" : "rounded-xl",
+        isFocused && "ring-2 ring-gray-900/10"
       )}>
         <div className="absolute left-4 text-gray-400 pointer-events-none">
           <Search className="w-5 h-5" />
         </div>
 
         <input
+          ref={inputRef}
           type="text"
           value={inputValue}
           onChange={(e) => {
@@ -113,7 +161,8 @@ export function InstantSearchBar({
             setShowResults(true);
           }}
           onKeyDown={handleKeyDown}
-          onFocus={() => setShowResults(true)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           className="w-full h-14 bg-transparent text-base text-gray-900 placeholder:text-gray-400 pl-12 pr-14 outline-none border-none"
           placeholder="Search companies, people, or research topics..."
           autoFocus={autoFocus}
@@ -158,6 +207,22 @@ export function InstantSearchBar({
               <span>Start fresh research on "{inputValue}"</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Suggested Query Pills - Show when input is empty or very short */}
+      {!showDropdown && inputValue.length < 3 && (
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {suggestions.map((suggestion, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleSuggestionClick(suggestion.query)}
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white/80 border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 transition-all duration-200 shadow-sm"
+            >
+              {suggestion.label}
+            </button>
+          ))}
         </div>
       )}
     </div>
