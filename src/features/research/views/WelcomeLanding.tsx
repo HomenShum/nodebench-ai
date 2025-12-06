@@ -1383,6 +1383,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
                       {/* InstantSearchBar - Search-as-you-type with cached results */}
                       <InstantSearchBar
                         onStartNewResearch={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                        onDocumentSelect={onDocumentSelect}
                         defaultValue={researchPrompt}
                         mode={researchMode}
                       />
