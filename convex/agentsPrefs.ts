@@ -1,11 +1,11 @@
 /**
  * Agent Preferences API
- * 
+ *
  * Provides simple key-value storage for agent-related preferences,
  * stored in the userPreferences.agentsPrefs field.
  */
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalQuery } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -97,3 +97,20 @@ export const setAgentsPrefs = mutation({
   },
 });
 
+/**
+ * Internal query to get agent preferences by userId
+ * Used by internal actions that already have the userId
+ */
+export const getAgentsPrefsByUserId = internalQuery({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args): Promise<Record<string, string>> => {
+    const preferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+
+    return preferences?.agentsPrefs ?? {};
+  },
+});

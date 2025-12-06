@@ -1179,6 +1179,18 @@ export const streamAsync = internalAction({
     const userId = (thread?.userId ?? null) as Id<"users"> | null;
     console.log(`[streamAsync:${executionId}] userId from thread:`, userId);
 
+    // Fetch user preferences for arbitrage mode
+    let arbitrageMode = false;
+    if (userId) {
+      try {
+        const agentsPrefs = await ctx.runQuery(internal.agentsPrefs.getAgentsPrefsByUserId, { userId });
+        arbitrageMode = agentsPrefs?.arbitrageMode === "true";
+        console.log(`[streamAsync:${executionId}] Arbitrage mode:`, arbitrageMode);
+      } catch (err) {
+        console.warn(`[streamAsync:${executionId}] Could not fetch agent prefs:`, err);
+      }
+    }
+
     // Choose agent based on mode
     let agent;
     let agentType: string;
@@ -1214,8 +1226,9 @@ export const streamAsync = internalAction({
 
       // Always use CoordinatorAgent - it has GAM tools and decides internally when to use them
       // Pass artifactDeps to wrap all tools for artifact extraction
-      agent = createCoordinatorAgent(args.model, artifactDeps);
-      agentType = "coordinator";
+      // Pass arbitrageMode option for receipts-first research persona
+      agent = createCoordinatorAgent(args.model, artifactDeps, { arbitrageMode });
+      agentType = arbitrageMode ? "arbitrage" : "coordinator";
       
       console.log(`[streamAsync:${executionId}] Using CoordinatorAgent directly - GAM memory tools available, artifacts=${!!artifactDeps}, sectionRef=enabled`);
     } else {
@@ -1788,23 +1801,36 @@ export const sendMessageInternal = internalAction({
       evaluationUserId: args.userId,
     };
 
+    // Fetch user preferences for arbitrage mode
+    let arbitrageMode = false;
+    if (args.userId) {
+      try {
+        const agentsPrefs = await ctx.runQuery(internal.agentsPrefs.getAgentsPrefsByUserId, { userId: args.userId });
+        arbitrageMode = agentsPrefs?.arbitrageMode === "true";
+        console.log('[sendMessageInternal] Arbitrage mode:', arbitrageMode);
+      } catch (err) {
+        console.warn('[sendMessageInternal] Could not fetch agent prefs:', err);
+      }
+    }
+
     // Choose agent based on mode
     let chatAgent;
     if (args.useCoordinator !== false) { // Default to coordinator
       console.log('[sendMessageInternal] Using COORDINATOR AGENT for intelligent delegation');
       const { createCoordinatorAgent } = await import("./core/coordinatorAgent");
-      
+
       // Create mutable ref for dynamic section tracking
       const sectionIdRef = { current: undefined as string | undefined };
-      
+
       // Build artifact deps if we have userId
       const artifactDeps = args.userId ? {
         runId: args.threadId ?? "temp-thread",
         userId: args.userId,
         sectionIdRef,
       } : undefined;
-      
-      chatAgent = createCoordinatorAgent(modelName, artifactDeps);
+
+      // Pass arbitrageMode option for receipts-first research persona
+      chatAgent = createCoordinatorAgent(modelName, artifactDeps, { arbitrageMode });
     } else {
       console.log('[sendMessageInternal] Using SINGLE AGENT (legacy mode)');
       chatAgent = createChatAgent(modelName);

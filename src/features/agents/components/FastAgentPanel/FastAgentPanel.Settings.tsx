@@ -1,8 +1,10 @@
 // src/components/FastAgentPanel/FastAgentPanel.Settings.tsx
 // Settings panel for FastAgentPanel
 
-import React, { useState } from 'react';
-import { X, Zap, Thermometer, Hash, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Zap, Thermometer, Hash, FileText, Scale } from 'lucide-react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../../../convex/_generated/api';
 
 type ModelOption = 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gemini';
 
@@ -27,6 +29,30 @@ export function Settings({
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(2000);
   const [systemPrompt, setSystemPrompt] = useState('');
+
+  // Arbitrage mode - persisted to backend
+  const agentsPrefs = useQuery(api.agentsPrefs.getAgentsPrefs);
+  const setAgentsPrefs = useMutation(api.agentsPrefs.setAgentsPrefs);
+  const [arbitrageMode, setArbitrageMode] = useState(false);
+
+  // Sync arbitrage mode from backend
+  useEffect(() => {
+    if (agentsPrefs?.arbitrageMode !== undefined) {
+      setArbitrageMode(agentsPrefs.arbitrageMode === 'true');
+    }
+  }, [agentsPrefs]);
+
+  // Handle arbitrage mode toggle
+  const handleArbitrageModeChange = async (enabled: boolean) => {
+    setArbitrageMode(enabled);
+    try {
+      await setAgentsPrefs({ prefs: { arbitrageMode: enabled ? 'true' : 'false' } });
+    } catch (err) {
+      console.error('[Settings] Failed to save arbitrage mode:', err);
+      // Revert on error
+      setArbitrageMode(!enabled);
+    }
+  };
   
   return (
     <div className="settings-overlay" onClick={onClose}>
@@ -57,7 +83,28 @@ export function Settings({
           <p className="setting-description">
             Optimized for speed with reduced thinking steps and faster responses
           </p>
-          
+
+          {/* Arbitrage Mode Toggle */}
+          <div className="setting-group">
+            <div className="setting-label">
+              <Scale className="h-4 w-4" />
+              <span>Arbitrage Mode</span>
+              <span className="ml-2 px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-400 rounded">BETA</span>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={arbitrageMode}
+                onChange={(e) => handleArbitrageModeChange(e.target.checked)}
+                aria-label="Toggle Arbitrage Mode"
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+          <p className="setting-description">
+            Receipts-first research mode: detects contradictions, scores source quality, and tracks changes over time. "Show me the receipts."
+          </p>
+
           {/* Model Selection */}
           <div className="setting-group">
             <div className="setting-label">

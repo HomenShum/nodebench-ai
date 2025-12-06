@@ -78,6 +78,20 @@ import {
 import { askHuman } from "../../../tools/integration/humanInputTools";
 import { externalOrchestratorTool } from "./tools/externalOrchestratorTools";
 
+// Import arbitrage prompt for conditional composition
+import { ARBITRAGE_MODE_PROMPT } from "./prompts";
+
+// Import arbitrage tools
+import { analyzeWithArbitrage } from "../../../tools/arbitrage";
+
+/**
+ * Options for coordinator agent creation
+ */
+export interface CoordinatorAgentOptions {
+  /** Enable arbitrage mode for receipts-first research with contradiction detection */
+  arbitrageMode?: boolean;
+}
+
 // Import Knowledge Graph tools (claim-based graphs for entity/theme research)
 import {
   buildKnowledgeGraph,
@@ -167,9 +181,15 @@ function withSectionRefUpdate(
  *
  * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-5-chat-latest")
  * @param artifactDeps - Optional: If provided, all tools will be wrapped for artifact extraction
+ * @param options - Optional: Configuration options including arbitrageMode
  * @returns Orchestrator agent configured with delegation and planning tools
  */
-export const createCoordinatorAgent = (model: string, artifactDeps?: ArtifactDeps): Agent => {
+export const createCoordinatorAgent = (
+  model: string,
+  artifactDeps?: ArtifactDeps,
+  options?: CoordinatorAgentOptions
+): Agent => {
+  const isArbitrageMode = options?.arbitrageMode ?? false;
   // Build base tools registry
   const baseTools = {
     // === DELEGATION TOOLS (Deep Agents 2.0) ===
@@ -240,6 +260,9 @@ export const createCoordinatorAgent = (model: string, artifactDeps?: ArtifactDep
     searchAvailableSkills,
     listSkillCategories,
     describeSkill,
+
+    // === ARBITRAGE TOOLS (Receipts-first research) ===
+    analyzeWithArbitrage,
   };
 
   // Wrap all tools for artifact extraction if deps provided
@@ -254,13 +277,8 @@ export const createCoordinatorAgent = (model: string, artifactDeps?: ArtifactDep
     setActiveSection: withSectionRefUpdate(artifactDeps, setActiveSection),
   };
 
-  return new Agent(components.agent, {
-    name: "CoordinatorAgent",
-    languageModel: openai.chat(model),
-    textEmbeddingModel: openai.embedding("text-embedding-3-small"),
-    tools,
-    stopWhen: stepCountIs(25),
-    instructions: `You are the Coordinator Agent for NodeBench AI, an orchestrator in a Deep Agents 2.0 architecture.
+  // Base instructions for the coordinator agent
+  const baseInstructions = `You are the Coordinator Agent for NodeBench AI, an orchestrator in a Deep Agents 2.0 architecture.
 
 # RESPONSE MODE (YOU DECIDE)
 
@@ -773,7 +791,27 @@ Structure your responses clearly:
 - "I'm running [Agent1] and [Agent2] in parallel..."
 - Present the agent's findings
 - Add your own synthesis if needed
-`,
+`;
+
+  // Compose instructions: base + arbitrage mode if enabled
+  const instructions = isArbitrageMode
+    ? `${baseInstructions}\n\n${ARBITRAGE_MODE_PROMPT}`
+    : baseInstructions;
+
+  // Determine agent name based on mode
+  const agentName = isArbitrageMode ? "ArbitrageAgent" : "CoordinatorAgent";
+
+  if (isArbitrageMode) {
+    console.log("[createCoordinatorAgent] Arbitrage mode enabled - using ArbitrageAgent persona");
+  }
+
+  return new Agent(components.agent, {
+    name: agentName,
+    languageModel: openai.chat(model),
+    textEmbeddingModel: openai.embedding("text-embedding-3-small"),
+    tools,
+    stopWhen: stepCountIs(25),
+    instructions,
   });
 };
 
