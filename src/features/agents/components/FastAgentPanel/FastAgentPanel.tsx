@@ -949,9 +949,9 @@ export function FastAgentPanel({
         />
       )}
 
-      <div className={`fast-agent-panel ${variant === 'sidebar' ? 'sidebar-mode' : ''} bg-[var(--bg-primary)] border-l border-[var(--border-color)]`}>
+      <div className={`fast-agent-panel ${variant === 'sidebar' ? 'sidebar-mode' : ''} bg-white border-l border-gray-200`}>
         {/* Header */}
-        <div className="fast-agent-panel-header border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+        <div className="fast-agent-panel-header border-b border-gray-200 bg-white">
           <div className="flex flex-col gap-4 w-full">
             {/* Top Row: Thread Selector & New Button */}
             <div className="flex items-center justify-between mb-3">
@@ -1223,17 +1223,17 @@ export function FastAgentPanel({
           right: 1rem;
           bottom: 1rem;
           top: 1rem;
-          width: 450px;
+          width: 480px;
           max-width: calc(100vw - 2rem);
-          background: var(--bg-primary);
+          background: #ffffff;
           border-radius: 1rem;
           display: flex;
           flex-direction: column;
           z-index: 1000;
           box-shadow: 
-            0 0 0 1px rgba(0,0,0,0.05),
-            0 10px 15px -3px rgba(0,0,0,0.1),
-            0 4px 6px -2px rgba(0,0,0,0.05);
+            0 0 0 1px rgba(0,0,0,0.08),
+            0 0 50px rgba(0,0,0,0.12),
+            0 25px 50px -12px rgba(0,0,0,0.15);
           overflow: hidden;
         }
 
@@ -1245,14 +1245,15 @@ export function FastAgentPanel({
           width: 100%;
           height: 100%;
           border-radius: 0;
-          box-shadow: none;
-          border-left: 1px solid var(--border-color);
+          background: #ffffff;
+          box-shadow: -1px 0 0 0 #e5e7eb, 0 0 40px rgba(0,0,0,0.08);
+          border-left: 1px solid #e5e7eb;
         }
 
         .fast-agent-panel-header {
           padding: 1rem;
-          background: var(--bg-primary);
-          border-bottom: 1px solid var(--border-color);
+          background: #ffffff;
+          border-bottom: 1px solid #e5e7eb;
           flex-shrink: 0;
         }
 

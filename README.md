@@ -18,6 +18,8 @@ A comprehensive AI-powered document management and research platform with multi-
 - ⚖️ **Arbitrage Agent** - Receipts-first research mode with source verification and contradiction detection
 - ⚡ **Instant-Value Search** - Search-as-you-type with cached dossier results for instant recall
 - 🔐 **Secure** - User authentication and authorization on all operations
+- 🧭 **Persona Day Starter** - Right-rail presets (banking/product/research/sales/general) that launch Fast/Arbitrage Agent briefs
+- 📑 **Deal & Move Rail** - Overnight moves, deal list, and watchlist flyouts with dates, sources, FDA/patent/paper context
 
 ---
 
@@ -614,6 +616,56 @@ npx convex deploy
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+---
+
+### 2025-12-06 - Sidebar Intelligence Widgets & Deal Flow Pipeline
+
+**Status**: 
+
+#### Overview
+Added a suite of intelligence widgets to the WelcomeLanding sidebar: Live Radar for trending signals, Morning Digest with AI summaries, Smart Watchlist with detail drawer, Day Starter presets, Overnight Moves tracker, and Deal Flow panels. Also fixed Fast Agent Panel styling and enabled guest access.
+
+#### New Components
+
+| Component | Purpose | Key Features |
+|-----------|---------|--------------|
+| `LiveRadarWidget` | Agent-curated signal dashboard | Velocity meters, category filters, Fast Agent integration |
+| `MorningDigest` | AI-curated personalized briefing | Summary generation, sentiment badges, section expansion |
+| `SmartWatchlist` | Stock watchlist with live prices | Search, detail drawer, sparklines, mentions feed |
+| `DayStarterCard` | Persona-based quick actions | Presets for VC/researcher/founder personas |
+| `OvernightMovesCard` | Deal tracker summary | Sector tagging, sentiment indicators |
+| `DealListPanel` + `DealFlyout` | Full deal flow pipeline | Timeline, regulatory info, prep actions |
+
+#### Backend Changes
+- `convex/domains/ai/morningDigest.ts` - AI summary generation action using OpenAI
+- `convex/domains/ai/morningDigestQueries.ts` - Digest data query (non-Node file for Convex compatibility)
+
+#### Frontend Changes
+- `src/features/research/components/LiveRadarWidget.tsx` - New component using `api.feed.getTrending`
+- `src/features/research/components/MorningDigest.tsx` - Redesigned with stats badges, clean sections
+- `src/features/research/components/SmartWatchlist.tsx` - Added search, detail drawer, localStorage persistence
+- `src/features/research/components/DayStarterCard.tsx` - Persona presets for quick actions
+- `src/features/research/components/OvernightMovesCard.tsx` - Deal summary cards
+- `src/features/research/components/DealListPanel.tsx` - Deal list + flyout for deep analysis
+- `src/features/research/views/WelcomeLanding.tsx` - Integrated all widgets, added persona system
+- `src/App.tsx` - Wrapped unauthenticated users with `FastAgentProvider` for guest access
+
+#### Fast Agent Panel Fixes
+- Changed background from CSS variables to solid `#ffffff`
+- Added deep shadow: `0 0 50px rgba(0,0,0,0.12)`
+- Increased panel width to 480px
+- Fixed sidebar mode with clean border separation
+
+#### Fast Agent Context Integration
+All widgets use `useFastAgent().openWithContext()` for seamless analysis:
+```tsx
+openWithContext({
+  initialMessage: `Analyze ${signal.title}`,
+  contextWebUrls: signal.url ? [signal.url] : [],
+  contextTitle: signal.title,
+});
+```
 
 ---
 

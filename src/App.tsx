@@ -10,7 +10,7 @@ import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
 import { FastAgentProvider, useFastAgent } from "@/features/agents/context/FastAgentContext";
 import { SelectionProvider } from "@/features/agents/context/SelectionContext";
-import { FloatingAgentButton, FastAgentPanel } from "@/features/agents";
+import { FastAgentPanel } from "@/features/agents";
 
 /**
  * GlobalFastAgentPanel - Renders FastAgentPanel connected to FastAgentContext
@@ -100,8 +100,16 @@ function App() {
   return (
     <main className="h-screen">
       <Unauthenticated>
-        {/* Marketing/landing welcome with Mini Note Agent and animations */}
-        <WelcomeLanding />
+        <FastAgentProvider>
+          <SelectionProvider>
+            <ContextPillsProvider>
+              {/* Marketing/landing welcome with Mini Note Agent and animations */}
+              <WelcomeLanding />
+              {/* Global Fast Agent Panel for guests */}
+              <GlobalFastAgentPanel />
+            </ContextPillsProvider>
+          </SelectionProvider>
+        </FastAgentProvider>
       </Unauthenticated>
       <Authenticated>
         <FastAgentProvider>
@@ -133,9 +141,7 @@ function App() {
                   onEnterWorkspace={handleEnterWorkspace}
                 />
               )}
-              {/* Global Floating Agent Button - visible on all authenticated pages */}
-              <FloatingAgentButton />
-              {/* Global Fast Agent Panel - controlled by FloatingAgentButton via context */}
+              {/* Global Fast Agent Panel - controlled via context */}
               <GlobalFastAgentPanel />
             </ContextPillsProvider>
           </SelectionProvider>

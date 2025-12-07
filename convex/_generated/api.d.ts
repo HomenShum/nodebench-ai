@@ -65,6 +65,8 @@ import type * as domains_agents_types from "../domains/agents/types.js";
 import type * as domains_ai_ai from "../domains/ai/ai.js";
 import type * as domains_ai_genai from "../domains/ai/genai.js";
 import type * as domains_ai_metadataAnalyzer from "../domains/ai/metadataAnalyzer.js";
+import type * as domains_ai_morningDigest from "../domains/ai/morningDigest.js";
+import type * as domains_ai_morningDigestQueries from "../domains/ai/morningDigestQueries.js";
 import type * as domains_analytics_analytics from "../domains/analytics/analytics.js";
 import type * as domains_analytics_ossStats from "../domains/analytics/ossStats.js";
 import type * as domains_auth_account from "../domains/auth/account.js";
@@ -301,6 +303,8 @@ declare const fullApi: ApiFromModules<{
   "domains/ai/ai": typeof domains_ai_ai;
   "domains/ai/genai": typeof domains_ai_genai;
   "domains/ai/metadataAnalyzer": typeof domains_ai_metadataAnalyzer;
+  "domains/ai/morningDigest": typeof domains_ai_morningDigest;
+  "domains/ai/morningDigestQueries": typeof domains_ai_morningDigestQueries;
   "domains/analytics/analytics": typeof domains_analytics_analytics;
   "domains/analytics/ossStats": typeof domains_analytics_ossStats;
   "domains/auth/account": typeof domains_auth_account;

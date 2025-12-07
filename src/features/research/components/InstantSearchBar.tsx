@@ -134,19 +134,21 @@ export function InstantSearchBar({
 
   return (
     <div ref={containerRef} className="relative w-full max-w-2xl mx-auto z-50">
-      {/* Glow effect behind - enhanced for floating style */}
+      {/* Subtle glow effect behind - diffuse and calm */}
       <div className={cn(
-        "absolute -inset-3 bg-gradient-to-r from-gray-900/10 via-gray-600/10 to-gray-900/10 rounded-[2rem] blur-2xl transition duration-500",
-        floating ? "opacity-60" : "opacity-40",
-        isFocused && "opacity-80 scale-105"
+        "absolute -inset-2 bg-gradient-to-r from-gray-200/40 via-gray-100/30 to-gray-200/40 rounded-2xl blur-xl transition duration-500",
+        floating ? "opacity-50" : "opacity-30",
+        isFocused && "opacity-70 scale-[1.02]"
       )} />
 
-      {/* Main Input Container - floating command bar style */}
+      {/* Main Input Container - refined floating command bar */}
       <div className={cn(
-        "relative flex items-center bg-white transition-all duration-200 border border-gray-200",
-        floating ? "shadow-2xl" : "shadow-xl",
-        showDropdown ? "rounded-t-xl rounded-b-none border-b-transparent" : "rounded-xl",
-        isFocused && "ring-2 ring-gray-900/10"
+        "relative flex items-center bg-white transition-all duration-200",
+        floating 
+          ? "shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-gray-200" 
+          : "shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100",
+        showDropdown ? "rounded-t-2xl rounded-b-none border-b-transparent shadow-lg ring-1 ring-gray-100" : "rounded-2xl",
+        isFocused && !showDropdown && "ring-1 ring-gray-200 shadow-[0_8px_30px_rgb(0,0,0,0.06)]"
       )}>
         <div className="absolute left-4 text-gray-400 pointer-events-none">
           <Search className="w-5 h-5" />
@@ -180,7 +182,7 @@ export function InstantSearchBar({
 
       {/* Instant Results Dropdown */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 border-t-0 rounded-b-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full left-0 right-0 bg-white border border-gray-100 border-t-0 rounded-b-2xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50/80 flex items-center gap-1.5">
             <Zap className="w-3 h-3" />
             Instant Knowledge (Cached)

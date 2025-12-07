@@ -1,7 +1,22 @@
-import React from 'react';
-import { TrendingUp, FileText, MessageSquare, ArrowUpRight, ArrowDownRight, Sparkles, GitBranch, Package } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  TrendingUp, 
+  FileText, 
+  MessageSquare, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Sparkles, 
+  GitBranch, 
+  Package,
+  Bookmark,
+  BookmarkCheck,
+  Zap,
+  MessageCircle
+} from 'lucide-react';
 
 export type FeedItemType = 'dossier' | 'signal' | 'news' | 'repo' | 'product';
+
+export type SentimentType = 'bullish' | 'bearish' | 'neutral';
 
 export interface FeedItem {
   id: string;
@@ -13,6 +28,9 @@ export interface FeedItem {
   sourceIcon?: React.ReactNode;
   tags: string[];
   url?: string;  // External URL for live feed items (opens in new tab)
+  sentiment?: SentimentType;  // AI-detected sentiment
+  relevanceScore?: number;    // 0-100 relevance to watchlist
+  isBookmarked?: boolean;     // User bookmark state
 }
 
 interface FeedCardProps {
@@ -20,13 +38,39 @@ interface FeedCardProps {
   onClick: () => void;
   /** Handler for "Analyze with AI" action - opens global agent with context */
   onAnalyze?: () => void;
+  /** Handler for bookmark action */
+  onBookmark?: () => void;
+  /** Whether this card is currently selected (for keyboard nav) */
+  isSelected?: boolean;
 }
 
-export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) => {
+export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, onBookmark, isSelected }) => {
+  const [isBookmarked, setIsBookmarked] = useState(item.isBookmarked ?? false);
   const isSignal = item.type === 'signal';
   const isDossier = item.type === 'dossier';
   const isRepo = item.type === 'repo';
   const isProduct = item.type === 'product';
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsBookmarked(!isBookmarked);
+    onBookmark?.();
+  };
+
+  const getSentimentBadge = () => {
+    if (!item.sentiment) return null;
+    const badges = {
+      bullish: { icon: '🐂', label: 'Bullish', color: 'bg-green-50 text-green-700 border-green-200' },
+      bearish: { icon: '🐻', label: 'Bearish', color: 'bg-red-50 text-red-700 border-red-200' },
+      neutral: { icon: '⚖️', label: 'Neutral', color: 'bg-gray-50 text-gray-600 border-gray-200' },
+    };
+    const badge = badges[item.sentiment];
+    return (
+      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${badge.color}`}>
+        {badge.icon} {badge.label}
+      </span>
+    );
+  };
 
   const handleAnalyzeClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card onClick
@@ -37,19 +81,24 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) 
     <div
       onClick={onClick}
       className={`
-        group relative break-inside-avoid mb-4 cursor-pointer overflow-hidden rounded-xl border transition-all duration-300
+        group relative break-inside-avoid cursor-pointer overflow-hidden rounded-xl border transition-all duration-300
         ${isSignal
           ? 'bg-slate-900 border-slate-800 text-white hover:border-green-500/50'
-          : 'bg-white border-gray-200 text-gray-900 hover:shadow-lg hover:-translate-y-1'}
+          : 'bg-white border-gray-200 text-gray-900 hover:shadow-lg hover:-translate-y-0.5'}
+        ${isSelected ? 'ring-2 ring-purple-500 ring-offset-2' : ''}
       `}
     >
+      {/* Relevance indicator bar */}
+      {item.relevanceScore && item.relevanceScore > 70 && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-500" />
+      )}
       {/* Bloomberg Vibe: Accent bar for Signals */}
       {isSignal && (
         <div className="absolute top-0 left-0 w-1 bg-green-500 h-full" />
       )}
 
       <div className="p-5">
-        {/* Header: Type badge + Timestamp */}
+        {/* Header: Type badge + Sentiment + Timestamp */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {isDossier && <div className="p-1.5 bg-purple-100 rounded-md text-purple-600"><FileText size={12}/></div>}
@@ -60,8 +109,18 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) 
             <span className={`text-[10px] uppercase tracking-wider font-semibold ${isSignal ? 'text-slate-400' : 'text-gray-400'}`}>
               {item.type === 'repo' ? 'GitHub' : item.type === 'product' ? 'Product' : item.type}
             </span>
+            {getSentimentBadge()}
           </div>
-          <span className={`text-xs ${isSignal ? 'text-slate-500' : 'text-gray-400'}`}>{item.timestamp}</span>
+          <div className="flex items-center gap-2">
+            {/* Relevance Score */}
+            {item.relevanceScore && item.relevanceScore > 50 && (
+              <span className="text-[10px] text-purple-500 font-medium flex items-center gap-0.5">
+                <Zap className="w-3 h-3" />
+                {item.relevanceScore}%
+              </span>
+            )}
+            <span className={`text-xs ${isSignal ? 'text-slate-500' : 'text-gray-400'}`}>{item.timestamp}</span>
+          </div>
         </div>
 
         {/* Title: Serif for dossiers (newsletter feel), Sans for data */}
@@ -110,7 +169,23 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) 
         )}
       </div>
 
-      {/* Hover Overlay (Instagram Style) - with dual actions */}
+      {/* Quick Action Bar (always visible on right edge) */}
+      <div className="absolute top-3 right-3 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onClick={handleBookmark}
+          className={`p-1.5 rounded-lg transition-all ${
+            isBookmarked 
+              ? 'bg-amber-100 text-amber-600' 
+              : isSignal ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-600'
+          }`}
+          title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+        >
+          {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+        </button>
+      </div>
+
+      {/* Hover Overlay (Instagram Style) - with actions */}
       <div className={`
         absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]
         ${isSignal ? 'bg-white/10' : 'bg-white/60'}
@@ -132,6 +207,11 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze }) 
            </button>
          )}
       </div>
+
+      {/* Bookmarked indicator */}
+      {isBookmarked && (
+        <div className="absolute top-0 right-4 w-0 h-0 border-l-[10px] border-r-[10px] border-t-[14px] border-l-transparent border-r-transparent border-t-amber-500" />
+      )}
     </div>
   );
 };
