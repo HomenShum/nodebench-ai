@@ -5,6 +5,7 @@ import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { GoogleGenAI } from "@google/genai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // Helper to get Gemini API key
 function getGeminiKey(): string {
@@ -236,7 +237,7 @@ export const searchUserFiles = internalAction({
 
       // Use Gemini with file search
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: getLlmModel("fileSearch", "gemini"),
         contents: query,
         config: {
           tools: [

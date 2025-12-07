@@ -1,0 +1,83 @@
+[
+  {
+    "id": "section-1-company-overview",
+    "meta": {
+      "date": "2024-12-07",
+      "title": "VoltAI: Company Overview"
+    },
+    "content": {
+      "body": [
+        "VoltAI is a Series A semiconductor AI startup that raised $36M from <SmartLink id='sequoia'>Sequoia Capital</SmartLink>.",
+        "The team includes <SmartLink id='olympiad-talent'>IOI/IPhO medalists</SmartLink> and ex-Synopsys leadership focused on reasoning models for verification."
+      ],
+      "deepDives": [
+        {
+          "title": "Why Sequoia Invested",
+          "content": "Sequoia's thesis: AI-first semiconductor tools can 10x designer productivity by automating DRC/LVS verification. VoltAI is shipping reasoning models that reduce false positives and shorten tape-out cycles."
+        }
+      ]
+    },
+    "dashboard": {
+      "phaseLabel": "Series A - Growth Stage",
+      "kpis": [
+        { "label": "Total Funding", "value": 36, "unit": "M", "color": "bg-blue-600", "prefix": "$" },
+        { "label": "Team Size", "value": 35, "unit": " ppl", "color": "bg-green-500" },
+        { "label": "Market Share", "value": 2, "unit": "%", "color": "bg-amber-400" }
+      ],
+      "fundingChart": {
+        "seed": 4,
+        "seriesA": 36,
+        "valuation": 150
+      },
+      "investorLogos": ["sequoia", "a16z", "intel-capital"]
+    },
+    "smartLinks": {
+      "sequoia": {
+        "summary": "Sequoia Capital is a VC firm with $85B AUM; backs category-defining companies.",
+        "source": "Crunchbase"
+      },
+      "olympiad-talent": {
+        "summary": "International Olympiad medalists represent top 0.01% of global technical talent.",
+        "source": "Wikipedia"
+      }
+    }
+  },
+  {
+    "id": "section-2-partnership-opportunity",
+    "meta": {
+      "date": "2024-12-07",
+      "title": "Partnership Opportunity Analysis"
+    },
+    "content": {
+      "body": [
+        "NodeBench AI's reasoning models for <SmartLink id='drc-verification'>DRC/LVS verification</SmartLink> align with VoltAI's roadmap.",
+        "Expected ROI: 8x speedup in verification time and $2M/year cost savings per enterprise customer."
+      ],
+      "deepDives": [
+        {
+          "title": "Technical Integration Path",
+          "content": "RESTful API integration: VoltAI sends GDSII files, NodeBench returns constraint violations with confidence scores. Latency target: <500ms for 1M transistor designs."
+        }
+      ]
+    },
+    "dashboard": {
+      "phaseLabel": "Partnership Potential: HIGH",
+      "kpis": [
+        { "label": "Verification Speedup", "value": 800, "unit": "%", "color": "bg-green-600" },
+        { "label": "False Positive Reduction", "value": 87, "unit": "%", "color": "bg-blue-600" },
+        { "label": "Annual Savings (per customer)", "value": 2, "unit": "M", "color": "bg-emerald-500", "prefix": "$" }
+      ],
+      "roiChart": {
+        "currentCost": 2000000,
+        "withNodeBench": 200000,
+        "savingsPercent": 90
+      }
+    },
+    "smartLinks": {
+      "drc-verification": {
+        "summary": "Design Rule Check (DRC) and Layout vs Schematic (LVS) are critical verification steps; current heuristic tools see high false positive rates.",
+        "source": "Cadence Documentation"
+      }
+    }
+  }
+]

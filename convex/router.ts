@@ -6,6 +6,7 @@ import type { Id } from "./_generated/dataModel";
 import { PersistentTextStreaming, StreamId } from "@convex-dev/persistent-text-streaming";
 import { components } from "./_generated/api";
 import { openai } from "@ai-sdk/openai";
+import { getLlmModel } from "../shared/llm/modelCatalog";
 import { Agent } from "@convex-dev/agent";
 import { z } from "zod";
 
@@ -924,7 +925,7 @@ http.route({
       }
 
       const prompt = lastUserMessage.content;
-      const modelName = model || "gpt-5-chat-latest";
+      const modelName = model || getLlmModel("chat", "openai");
       const agentThreadId = streamingThread.agentThreadId;
       console.log(`[chat-stream-agent] Prompt: "${prompt.substring(0, 50)}..." for thread ${agentThreadId} with model ${modelName}`);
 

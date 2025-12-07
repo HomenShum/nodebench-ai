@@ -18,6 +18,7 @@ import { createMediaAgent } from "../subagents/media_subagent/mediaAgent";
 import { createSECAgent } from "../subagents/sec_subagent/secAgent";
 import { createOpenBBAgent } from "../subagents/openbb_subagent/openbbAgent";
 import { createEntityResearchAgent } from "../subagents/entity_subagent/entityResearchAgent";
+import { getLlmModel } from "../../../../../shared/llm/modelCatalog";
 
 // Import helpers
 import {
@@ -393,7 +394,7 @@ UI can subscribe to live updates using the returned runId and delegationIds.`,
       await (ctx as any).scheduler.runAfter(0, internal.actions.parallelDelegation.scheduleDelegations, {
         runId,
         userId,
-        model: "gpt-4o-mini", // Could be passed from coordinator config
+        model: getLlmModel("agent", "openai"), // Could be passed from coordinator config
         tasks,
       });
       

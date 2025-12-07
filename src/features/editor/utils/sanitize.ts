@@ -79,16 +79,31 @@ export const sanitizeProseMirrorContent = (content: any): any => {
 
     // Recursively sanitize nested content
     if (content.content && Array.isArray(content.content)) {
-      const sanitized = content.content
+      let sanitized = content.content
         .map((node: any) => sanitizeProseMirrorContent(node))
         .filter((node: any) => node !== null);
 
       // Flatten arrays (from taskList conversion)
-      const flattened = sanitized.flat();
+      sanitized = sanitized.flat();
+
+      // For doc/blockGroup/blockContainer nodes, wrap any bare text nodes in paragraphs
+      // BlockNote expects bnBlock children, not raw text nodes
+      const blockContainerTypes = ['doc', 'blockGroup', 'blockContainer'];
+      if (blockContainerTypes.includes(content.type)) {
+        sanitized = sanitized.map((child: any) => {
+          if (child && typeof child === 'object' && child.type === 'text' && typeof child.text === 'string') {
+            return {
+              type: 'paragraph',
+              content: [child],
+            };
+          }
+          return child;
+        });
+      }
 
       return {
         ...content,
-        content: flattened.length > 0 ? flattened : undefined,
+        content: sanitized.length > 0 ? sanitized : undefined,
       };
     }
   }

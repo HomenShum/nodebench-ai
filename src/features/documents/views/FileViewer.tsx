@@ -3,6 +3,7 @@ import { useQuery, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
 import UnifiedEditor from "@features/editor/components/UnifiedEditor";
+import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
 import {
   FileText,
@@ -696,7 +697,9 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                   </button>
                 </div>
                 <div className="min-h-[240px]">
-                  <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+                  <ErrorBoundary title="Failed to load notes">
+                    <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+                  </ErrorBoundary>
                 </div>
               </div>
             </Panel>

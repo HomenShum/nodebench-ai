@@ -4,6 +4,13 @@ import type { Id } from "../../_generated/dataModel";
 import { internal, components } from "../../_generated/api";
 import { ProsemirrorSync } from "@convex-dev/prosemirror-sync";
 
+// =================================================================
+// LEGACY MIGRATION UTILITIES
+// These functions are for migrating existing documents from the
+// deprecated EditorJS format to ProseMirror/BlockNote format.
+// New documents use ProseMirror format directly.
+// =================================================================
+
 // Server-side PM JSON normalizer for existing snapshots.
 // - Unwrap wrapper nodes: blockGroup/blockContainer
 // - Map legacy list item names at top-level: checkListItem -> taskItem; bulletListItem -> listItem

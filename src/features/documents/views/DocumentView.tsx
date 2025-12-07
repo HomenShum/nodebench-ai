@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { DocumentHeader } from "@/features/documents/components/DocumentHeader";
-// Use the richer Editor wrapper (InlineRichEditor) so proposals/mentions work
+// Editor wrapper with UnifiedEditor (BlockNote/ProseMirror)
 import { Editor } from "@/components/Editor/Editor";
 import UnifiedEditor from "@features/editor/components/UnifiedEditor";
 import { FileViewer } from "@/features/documents/views/FileViewer";

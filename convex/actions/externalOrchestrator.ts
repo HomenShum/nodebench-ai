@@ -2,6 +2,7 @@
 
 import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
+import { getLlmModel } from "../../shared/llm/modelCatalog";
 
 type Provider = "openai" | "gemini";
 
@@ -9,8 +10,8 @@ const DEFAULT_CONTEXT =
   "NodeBench AI Fast Agents external orchestrator: respond concisely, keep output tool-call friendly, and honor any supplied plan/memory context.";
 
 const DEFAULT_MODELS: Record<Provider, string> = {
-  openai: "gpt-4o-mini",
-  gemini: "gemini-1.5-flash",
+  openai: getLlmModel("chat", "openai"),
+  gemini: getLlmModel("chat", "gemini"),
 };
 
 async function callOpenAI({

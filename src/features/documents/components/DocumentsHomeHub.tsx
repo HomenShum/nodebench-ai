@@ -2458,9 +2458,9 @@ export function DocumentsHomeHub({
     }
   };
 
-  // Build EditorJS data from analysis result for createWithContentString
-
-  const buildEditorJsDataFromAnalysis = useCallback(
+  // Build ProseMirror document from analysis result
+  // Note: Internally builds EditorJS-style blocks then converts to ProseMirror format
+  const buildDocumentFromAnalysis = useCallback(
     (args: {
       title: string;
       analysis: string;
@@ -2702,7 +2702,54 @@ export function DocumentsHomeHub({
         for (const p of paras) addParagraph(p);
       }
 
-      return { time: Date.now(), blocks, version: "2.31.0" };
+      // Convert EditorJS-style blocks to ProseMirror format
+      const pmContent: any[] = [];
+      for (const b of blocks) {
+        switch (b.type) {
+          case "header":
+            pmContent.push({
+              type: "heading",
+              attrs: { level: b.data?.level || 2, textAlignment: "left" },
+              content: b.data?.text ? [{ type: "text", text: b.data.text }] : [],
+            });
+            break;
+          case "paragraph":
+            pmContent.push({
+              type: "paragraph",
+              attrs: { textAlignment: "left" },
+              content: b.data?.text ? [{ type: "text", text: b.data.text }] : [],
+            });
+            break;
+          case "list": {
+            const listType = b.data?.style === "ordered" ? "orderedList" : "bulletList";
+            const items = (b.data?.items || []).map((item: string) => ({
+              type: "listItem",
+              content: [{ type: "paragraph", content: item ? [{ type: "text", text: item }] : [] }],
+            }));
+            pmContent.push({ type: listType, content: items });
+            break;
+          }
+          case "checklist": {
+            const items = (b.data?.items || []).map((item: any) => ({
+              type: "taskItem",
+              attrs: { checked: !!item.checked },
+              content: [{ type: "paragraph", content: item.text ? [{ type: "text", text: item.text }] : [] }],
+            }));
+            pmContent.push({ type: "taskList", content: items });
+            break;
+          }
+          default:
+            // Fallback to paragraph
+            if (b.data?.text) {
+              pmContent.push({
+                type: "paragraph",
+                attrs: { textAlignment: "left" },
+                content: [{ type: "text", text: b.data.text }],
+              });
+            }
+        }
+      }
+      return { type: "doc", content: pmContent };
     },
     [],
   );
@@ -2762,14 +2809,14 @@ export function DocumentsHomeHub({
         if ((result as any)?.success) {
           const title = `Analysis: ${doc.title}`;
 
-          const editorJsData = buildEditorJsDataFromAnalysis({
+          const documentContent = buildDocumentFromAnalysis({
             title,
             analysis: (result as any).analysis,
             structuredData: (result as any).structuredData,
             analysisType,
           });
 
-          const contentString = JSON.stringify(editorJsData);
+          const contentString = JSON.stringify(documentContent);
 
           const newDocId = await createDocumentWithContent({
             title,
@@ -2794,7 +2841,7 @@ export function DocumentsHomeHub({
       analyzeRunningDocId,
       analyzeFileWithGenAI,
       loggedInUser,
-      buildEditorJsDataFromAnalysis,
+      buildDocumentFromAnalysis,
       createDocumentWithContent,
       onDocumentSelect,
     ],

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "section-1-early-2025",
+    "meta": {
+      "date": "Early 2025",
+      "title": "The Stumbling Phase"
+    },
+    "content": {
+      "body": [
+        "Adoption is technically high, but actual utility hits a plateau. We are seeing what we call <SmartLink id='agent-bloat'>Agent Bloat</SmartLink> in the enterprise sector.",
+        "While compute is available, the orchestration layers are still immature."
+      ],
+      "deepDives": [
+        {
+          "title": "Why Orchestration Fails",
+          "content": "Current frameworks assume linear reasoning. Real-world workflows are recursive and require adaptive planning."
+        }
+      ]
+    },
+    "dashboard": {
+      "phaseLabel": "Phase 1: Friction",
+      "kpis": [
+        { "label": "Global Compute Usage", "value": 15, "unit": "%", "color": "bg-blue-500" },
+        { "label": "Model Hallucination Rate", "value": 32, "unit": "%", "color": "bg-red-400" }
+      ],
+      "marketSentiment": 45,
+      "activeRegion": "North America"
+    },
+    "smartLinks": {
+      "agent-bloat": {
+        "summary": "Too many specialized agents create latency without adding reasoning value.",
+        "source": "Gartner 2024"
+      }
+    }
+  },
+  {
+    "id": "section-2-late-2026",
+    "meta": {
+      "date": "Late 2026",
+      "title": "Algorithmic Consolidation"
+    },
+    "content": {
+      "body": [
+        "The market shifts from distinct models to fused architectures. Efficiency jumps as <SmartLink id='sparse-run'>Sparse Run</SmartLink> techniques become standard.",
+        "Compute costs drop, allowing for 'always-on' inference loops."
+      ],
+      "deepDives": []
+    },
+    "dashboard": {
+      "phaseLabel": "Phase 2: Integration",
+      "kpis": [
+        { "label": "Global Compute Usage", "value": 68, "unit": "%", "color": "bg-blue-600" },
+        { "label": "Model Hallucination Rate", "value": 12, "unit": "%", "color": "bg-green-500" }
+      ],
+      "marketSentiment": 88,
+      "activeRegion": "Global"
+    },
+    "smartLinks": {
+      "sparse-run": {
+        "summary": "Activating only sparse parameters during inference reduces cost by up to 90%.",
+        "source": "DeepMind"
+      }
+    }
+  }
+]

@@ -7,6 +7,7 @@ import { api, internal } from "../../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id } from "../../_generated/dataModel";
 import { GoogleGenAI, createUserContent } from "@google/genai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // Shared constants
 const METADATA_HEADING = "\uD83D\uDCCA Metadata (Auto-Generated)";
@@ -87,7 +88,7 @@ export const buildDossierMetadata = action({
       { text: prompt },
     ]);
 
-    const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents });
+    const response = await ai.models.generateContent({ model: getLlmModel("analysis", "gemini"), contents });
     const summary = clamp(response.text || "", 2000);
 
     // 6) Upsert metadata section at the top of Quick Notes
@@ -167,7 +168,7 @@ export const analyzeDocumentMetadata = action({
     if (!apiKey) throw new Error("Gemini API key not configured");
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: getLlmModel("analysis", "gemini"),
       contents: createUserContent([
         { text: `Document: ${doc.title}` },
         { text: plain },
@@ -276,4 +277,3 @@ export const analyzeSelectedFilesIntoDossier = action({
     return { success: true, analyzed: analyzedCount, failed: results.filter(r => !r.ok).length, judge: { passSpeed, passCompleteness, passUsefulness, overallPass } };
   },
 });
-

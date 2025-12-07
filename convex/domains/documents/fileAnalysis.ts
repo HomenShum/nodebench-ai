@@ -15,6 +15,7 @@ import {
   FileState,
 } from "@google/genai";
 import { Id } from "../../_generated/dataModel";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // Type definitions
 interface AnalysisResult {
@@ -541,7 +542,7 @@ async function generateStructuredAnalysis(
 
   try {
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: getLlmModel("analysis", "gemini"),
       contents: createUserContent([...contentParts, enhancedPrompt]),
       config: { tools: [{ functionDeclarations: [analysisTool] }] },
     });
@@ -573,7 +574,7 @@ async function generateTextAnalysis(
   File Info: Name: ${file.fileName}, Type: ${file.fileType || 'Unknown'}`;
   
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: getLlmModel("analysis", "gemini"),
     contents: createUserContent([...contentParts, enhancedPrompt]),
   });
   

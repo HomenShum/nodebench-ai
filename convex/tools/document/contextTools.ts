@@ -6,6 +6,7 @@
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { GoogleGenAI, createUserContent, Type } from "@google/genai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER: Generate unique messageId (browser-safe, no Node crypto)
@@ -449,7 +450,7 @@ BE CONCISE. Remove all verbose explanations and redundant details.`;
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: getLlmModel("router", "gemini"),
         contents: createUserContent([{ text: prompt }]),
         config: {
           responseMimeType: "application/json",

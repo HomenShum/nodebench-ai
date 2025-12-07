@@ -22,9 +22,8 @@ import {
 } from "../../lib/markdownToTipTap";
 
 // =================================================================
-// Editor content now defaults to EditorJS JSON for new documents.
-// The legacy ProseMirror builder remains below for reference but is
-// no longer used by the default create() path.
+// Editor content uses ProseMirror/BlockNote JSON format.
+// All new documents use the unified BlockNote editor.
 // =================================================================
 
 /**
@@ -53,7 +52,7 @@ const extractPlainTextFromRichContent = (content: any): string => {
 
   // Handle JSON content structure
   if (typeof content === "object" && content !== null) {
-    // Special case: EditorJS schema with blocks array
+    // Special case: legacy EditorJS schema with blocks array (for migration compatibility)
     const anyContent: any = content;
     if (Array.isArray(anyContent.blocks)) {
       const blocks: any[] = anyContent.blocks ?? [];
@@ -207,83 +206,12 @@ const parseMarkdownText = (text: string): any[] => {
   return nodes;
 };
 
-/**
- * DEPRECATED: Build a minimal EditorJS JSON string from our simple array-of-blocks.
- *
- * ⚠️ DEPRECATION NOTICE (2025-10-20):
- * EditorJS format is being phased out in favor of TipTap/ProseMirror JSON.
- * New documents should use the unified generateAndCreateDocument action in fastAgentDocumentCreation.ts
- * which standardizes on TipTap JSON format.
- *
- * This function is kept for backward compatibility with existing documents only.
- * Do not use for new document creation.
- */
-const buildEditorJSFromBlocks = (blocks: any[]): string => {
-  type EJBlock = { type: string; data?: Record<string, any> };
-  const out: EJBlock[] = [];
-
-  if (!Array.isArray(blocks) || blocks.length === 0) {
-    return JSON.stringify({
-      time: Date.now(),
-      blocks: [{ type: "paragraph", data: { text: "" } }],
-      version: "2.31.0",
-    });
-  }
-
-  const toText = (val: any) => String(val ?? "");
-
-  // Group consecutive bullet and checklist items
-  let i = 0;
-  while (i < blocks.length) {
-    const b = blocks[i] ?? {};
-    if (b.type === "bulletListItem") {
-      const items: string[] = [];
-      while (i < blocks.length && blocks[i]?.type === "bulletListItem") {
-        items.push(toText(blocks[i]?.text));
-        i++;
-      }
-      out.push({ type: "list", data: { style: "unordered", items } });
-      continue;
-    }
-    if (b.type === "checkListItem") {
-      const items: Array<{ text: string; checked: boolean }> = [];
-      while (i < blocks.length && blocks[i]?.type === "checkListItem") {
-        items.push({ text: toText(blocks[i]?.text), checked: !!blocks[i]?.checked });
-        i++;
-      }
-      out.push({ type: "checklist", data: { items } });
-      continue;
-    }
-
-    switch (b.type) {
-      case "heading":
-        out.push({ type: "header", data: { text: toText(b.text), level: b.level || 1 } });
-        break;
-      case "quote":
-        out.push({ type: "quote", data: { text: toText(b.text) } });
-        break;
-      case "codeBlock":
-        out.push({ type: "code", data: { code: toText(b.text) } });
-        break;
-      case "horizontalRule":
-        out.push({ type: "delimiter" });
-        break;
-      case "paragraph":
-      default:
-        out.push({ type: "paragraph", data: { text: toText(b.text).replace(/\n/g, "<br>") } });
-        break;
-    }
-    i++;
-  }
-
-  return JSON.stringify({ time: Date.now(), blocks: out, version: "2.31.0" });
-};
 
 /**
- * Legacy: Build a wrapper-free ProseMirror JSON string from our simple array-of-blocks.
- * Kept for migrations/back-compat where needed.
+ * Build a ProseMirror/BlockNote-compatible JSON string from our simple array-of-blocks.
+ * This is the canonical format used by the UnifiedEditor.
  */
-const _buildEditorJSON = (blocks: any[]): string => {
+const buildProseMirrorFromBlocks = (blocks: any[]): string => {
   type PMNode = { type: string; attrs?: Record<string, any>; content?: PMNode[] } & Record<string, any>;
 
   const makeParagraph = (text?: string): PMNode => ({
@@ -452,14 +380,8 @@ const _buildEditorJSON = (blocks: any[]): string => {
 
 
 /**
- * DEPRECATED: Create a new document with EditorJS content.
- *
- * ⚠️ DEPRECATION NOTICE (2025-10-20):
- * This mutation uses EditorJS format which is being phased out.
- * For agent-driven document creation, use generateAndCreateDocument action in fastAgentDocumentCreation.ts
- * which standardizes on TipTap JSON format.
- *
- * This mutation is kept for backward compatibility with existing UI flows only.
+ * Create a new document with ProseMirror/BlockNote content.
+ * Uses the unified ProseMirror JSON format compatible with UnifiedEditor.
  */
 export const create = mutation({
   args: {
@@ -480,9 +402,8 @@ export const create = mutation({
       throw new Error("Not authenticated");
     }
 
-    // NOTE: Still using EditorJS for backward compatibility
-    // New documents should use TipTap format via generateAndCreateDocument
-    const initialContent = buildEditorJSFromBlocks(args.content || []);
+    // Build ProseMirror JSON for BlockNote editor
+    const initialContent = buildProseMirrorFromBlocks(args.content || []);
 
     const document = await ctx.db.insert("documents", {
       title: args.title,
@@ -503,7 +424,7 @@ export const create = mutation({
   },
 });
 
-// Create a document with a prebuilt content string (e.g., EditorJS JSON)
+// Create a document with a prebuilt content string (ProseMirror JSON)
 export const createWithContent = mutation({
   args: {
     title: v.string(),
@@ -1366,7 +1287,7 @@ export const getLinkedAssets = query({
 
 /**
  * Get or create a Quick Notes document linked to a dossier
- * This prevents ProseMirror from overwriting the dossier's EditorJS content
+ * This creates a separate document for quick notes while preserving dossier content
  */
 export const getOrCreateQuickNotes = mutation({
   args: {

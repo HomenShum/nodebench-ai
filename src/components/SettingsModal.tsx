@@ -82,6 +82,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const saveEncryptedApiKey = useMutation(api.domains.auth.apiKeys.saveEncryptedApiKeyPublic);
   const deleteApiKey = useMutation(api.domains.auth.apiKeys.deleteApiKey);
   const createPolarCheckout = useAction(api.domains.billing.billing.createPolarCheckout);
+  const runGmailIngest = useAction(api.domains.integrations.gmail.ingestMessages);
+  const runGcalSync = useAction(api.domains.integrations.gcal.syncPrimaryCalendar);
   
   // Calendar UI prefs (timezone)
   const calendarPrefs = useQuery(api.domains.auth.userPreferences.getCalendarUiPrefs, {});
@@ -158,6 +160,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const [savingSectionName, setSavingSectionName] = useState(false);
   const [savingPlannerPrefs, setSavingPlannerPrefs] = useState(false);
   const [savingCalendarSize, setSavingCalendarSize] = useState(false);
+  const [savingCalendarIngest, setSavingCalendarIngest] = useState(false);
+  const [syncingCalendar, setSyncingCalendar] = useState<"gmail" | "gcal" | null>(null);
   const [showGithubConfig, setShowGithubConfig] = useState(false);
   
   // Account & Security
@@ -1037,6 +1041,127 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           </button>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calendar Ingestion */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900">Calendar Ingestion</h3>
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold">Auto-sync sources</div>
+                        <div className="text-xs text-gray-500">Gmail (events from email) and Google Calendar</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="inline-flex items-center gap-2 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={userPreferences?.gmailIngestEnabled ?? true}
+                            onChange={async (e) => {
+                              setSavingCalendarIngest(true);
+                              try {
+                                await updateUserPreferences({ gmailIngestEnabled: e.target.checked });
+                                toast.success("Gmail ingest preference saved");
+                              } catch (err: any) {
+                                toast.error(err?.message ?? "Failed to save");
+                              } finally {
+                                setSavingCalendarIngest(false);
+                              }
+                            }}
+                          />
+                          Gmail
+                        </label>
+                        <label className="inline-flex items-center gap-2 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={userPreferences?.gcalSyncEnabled ?? true}
+                            onChange={async (e) => {
+                              setSavingCalendarIngest(true);
+                              try {
+                                await updateUserPreferences({ gcalSyncEnabled: e.target.checked });
+                                toast.success("GCal sync preference saved");
+                              } catch (err: any) {
+                                toast.error(err?.message ?? "Failed to save");
+                              } finally {
+                                setSavingCalendarIngest(false);
+                              }
+                            }}
+                          />
+                          Google Calendar
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="font-semibold">Auto-add mode</span>
+                      {["auto", "propose"].map((mode) => (
+                        <button
+                          key={mode}
+                          className={`px-2 py-1 rounded border text-xs ${
+                            (userPreferences?.calendarAutoAddMode ?? "propose") === mode
+                              ? "bg-slate-900 text-white border-slate-900"
+                              : "border-gray-200 text-gray-700 hover:bg-gray-100"
+                          }`}
+                          onClick={async () => {
+                            setSavingCalendarIngest(true);
+                            try {
+                              await updateUserPreferences({ calendarAutoAddMode: mode as "auto" | "propose" });
+                              toast.success("Calendar auto-add mode updated");
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Failed to save");
+                            } finally {
+                              setSavingCalendarIngest(false);
+                            }
+                          }}
+                        >
+                          {mode === "auto" ? "Auto-add" : "Propose first"}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-2 text-xs rounded border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
+                        disabled={syncingCalendar === "gmail"}
+                        onClick={async () => {
+                          setSyncingCalendar("gmail");
+                          try {
+                            const res = await runGmailIngest({ maxResults: 15 });
+                            if (res?.success) {
+                              toast.success(`Gmail ingest: +${res.created} / ${res.updated} updated`);
+                            } else {
+                              toast.error(res?.error ?? "Gmail ingest failed");
+                            }
+                          } catch (err: any) {
+                            toast.error(err?.message ?? "Gmail ingest failed");
+                          } finally {
+                            setSyncingCalendar(null);
+                          }
+                        }}
+                      >
+                        {syncingCalendar === "gmail" ? "Running…" : "Ingest Gmail now"}
+                      </button>
+                      <button
+                        className="px-3 py-2 text-xs rounded border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
+                        disabled={syncingCalendar === "gcal"}
+                        onClick={async () => {
+                          setSyncingCalendar("gcal");
+                          try {
+                            const res = await runGcalSync({});
+                            if (res?.success) {
+                              toast.success(`GCal sync: +${res.created} / ${res.updated} updated`);
+                            } else {
+                              toast.error(res?.error ?? "GCal sync failed");
+                            }
+                          } catch (err: any) {
+                            toast.error(err?.message ?? "GCal sync failed");
+                          } finally {
+                            setSyncingCalendar(null);
+                          }
+                        }}
+                      >
+                        {syncingCalendar === "gcal" ? "Running…" : "Sync Google Calendar now"}
+                      </button>
                     </div>
                   </div>
                 </div>

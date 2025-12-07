@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Save, X } from "lucide-react";
-import InlineRichEditor from "./InlineRichEditor";
 
 export type PopoverMiniDocEditorProps = {
   initialValue?: string;
@@ -106,17 +105,12 @@ export default function PopoverMiniDocEditor({
         </div>
       </div>
 
-      <div className="w-full border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)]">
-        <InlineRichEditor
-          value={text}
-          onChange={setText}
-          placeholder="Write details…"
-          initialJson={initialJson}
-          registerSaveExtractor={(fn) => {
-            getEditorJsonRef.current = fn;
-          }}
-        />
-      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Write details…"
+        className="w-full min-h-[100px] px-3 py-2 text-sm border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+      />
     </div>
   );
 }

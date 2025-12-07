@@ -4,13 +4,6 @@ import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { X, Trash2, Calendar, Flag, ChevronDown, Tag, User, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
-import EditorJS from "@editorjs/editorjs";
-import Header from "@editorjs/header";
-import List from "@editorjs/list";
-import Checklist from "@editorjs/checklist";
-import Delimiter from "@editorjs/delimiter";
-import Quote from "@editorjs/quote";
-import CodeTool from "@editorjs/code";
 
 type RefItem = { kind: "document" | "task" | "event"; id: string };
 
@@ -52,8 +45,6 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
   const lastSavedRef = useRef<string>("");
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showDuePicker, setShowDuePicker] = useState(false);
-  // Hook provided by TaskRichEditor to get Editor.js JSON output on demand
-  const getEditorJsonRef = useRef<null | (() => Promise<any>)>(null);
 
   useEffect(() => {
     if (!task) return;
@@ -608,245 +599,16 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
           </div>
         )}
 
-        {/* Description - rich editor (Editor.js adapter) */}
-        <div className="w-full border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)]">
-          <TaskRichEditor
-            value={description}
-            onChange={setDescription}
-            placeholder="Write details…"
-            initialJson={(task as any)?.descriptionJson}
-            registerSaveExtractor={(fn) => { getEditorJsonRef.current = fn; }}
-            onSetStatus={(s) => setStatus(s)}
-            onSetPriority={(p) => setPriority(p)}
-            onStartPreset={(preset) => {
-              switch (preset) {
-                case "today": {
-                  const d = new Date();
-                  setStartDateStr(toInputDate(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-                  break;
-                }
-                case "tomorrow": {
-                  const d = new Date();
-                  d.setDate(d.getDate() + 1);
-                  setStartDateStr(toInputDate(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-                  break;
-                }
-                case "next_week": {
-                  const d = new Date();
-                  d.setDate(d.getDate() + 7);
-                  setStartDateStr(toInputDate(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-                  break;
-                }
-                case "clear":
-                  setStartDateStr("");
-                  break;
-              }
-            }}
-            onDuePreset={(preset) => {
-              switch (preset) {
-                case "today": {
-                  const d = new Date();
-                  setDueDateStr(toInputDate(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-                  break;
-                }
-                case "tomorrow": {
-                  const d = new Date();
-                  d.setDate(d.getDate() + 1);
-                  setDueDateStr(toInputDate(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-                  break;
-                }
-                case "next_week": {
-                  const d = new Date();
-                  d.setDate(d.getDate() + 7);
-                  setDueDateStr(toInputDate(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-                  break;
-                }
-                case "clear":
-                  setDueDateStr("");
-                  break;
-              }
-            }}
-            onSetStartDate={(iso) => setStartDateStr(iso ?? "")}
-            onSetDueDate={(iso) => setDueDateStr(iso ?? "")}
-          />
-        </div>
+        {/* Description */}
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Write details…"
+          className="w-full min-h-[80px] px-3 py-2 text-sm border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+        />
 
         <div className="text-[10px] text-[var(--text-muted)]">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
       </div>
-    </div>
-  );
-}
-
-// --- Lightweight rich editor adapter for markdown string fields ---
-function TaskRichEditor({
-  value,
-  onChange,
-  placeholder,
-  initialJson,
-  registerSaveExtractor,
-  onSetStatus: _onSetStatus,
-  onSetPriority: _onSetPriority,
-  onStartPreset: _onStartPreset,
-  onDuePreset: _onDuePreset,
-  onSetStartDate: _onSetStartDate,
-  onSetDueDate: _onSetDueDate,
-}: {
-  value: string;
-  onChange: (md: string) => void;
-  placeholder?: string;
-  initialJson?: string | null;
-  registerSaveExtractor?: (fn: () => Promise<any>) => void;
-  onSetStatus?: (s: "todo" | "in_progress" | "done" | "blocked") => void;
-  onSetPriority?: (p: "low" | "medium" | "high" | "urgent" | undefined) => void;
-  onStartPreset?: (preset: "today" | "tomorrow" | "next_week" | "clear") => void;
-  onDuePreset?: (preset: "today" | "tomorrow" | "next_week" | "clear") => void;
-  onSetStartDate?: (iso: string | null) => void;
-  onSetDueDate?: (iso: string | null) => void;
-}) {
-  const holderRef = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<EditorJS | null>(null);
-  const lastAppliedTextRef = useRef<string>("");
-  const changeTimer = useRef<number | null>(null);
-
-  const parseInitialData = useCallback((raw: string): any => {
-    // Try to parse Editor.js JSON, else convert plain text/markdown-ish to paragraphs
-    try {
-      const data: any = JSON.parse(raw);
-      if (data && Array.isArray(data?.blocks)) return data;
-    } catch {
-      // not JSON
-    }
-    const text = (raw ?? "").trim();
-    if (!text) {
-      return { time: Date.now(), blocks: [{ type: "paragraph", data: { text: "" } }], version: "2.31.0" };
-    }
-    const paras = text.split(/\n\n+/).map((p) => p.replace(/\n/g, "<br>"));
-    return {
-      time: Date.now(),
-      blocks: paras.map((p) => ({ type: "paragraph", data: { text: p } })),
-      version: "2.31.0",
-    };
-  }, []);
-
-  const blocksToPlainText = useCallback((data: any): string => {
-    try {
-      const blocks: any[] = Array.isArray(data?.blocks) ? data.blocks : [];
-      const lines: string[] = [];
-      for (const b of blocks) {
-        switch (b.type) {
-          case "header":
-            lines.push("# ".repeat(Math.min(6, b.data?.level || 1)) + (b.data?.text || ""));
-            break;
-          case "list": {
-            const style = (b.data?.style || "unordered") as string;
-            const items: string[] = Array.isArray(b.data?.items) ? b.data.items : [];
-            for (let i = 0; i < items.length; i++) {
-              const prefix = style === "ordered" ? `${i + 1}. ` : "- ";
-              lines.push(prefix + items[i]);
-            }
-            break;
-          }
-          case "quote":
-            lines.push("> " + (b.data?.text || ""));
-            break;
-          case "delimiter":
-            lines.push("---");
-            break;
-          case "code":
-            lines.push("```\n" + (b.data?.code || "") + "\n```");
-            break;
-          case "paragraph":
-          default:
-            lines.push(String(b.data?.text || "").replace(/<br\s*\/?>(?=.)/g, "\n"));
-        }
-      }
-      return lines.join("\n\n").trimEnd();
-    } catch {
-      return "";
-    }
-  }, []);
-
-  useEffect(() => {
-    const init = async () => {
-      if (!holderRef.current) return;
-      try {
-        const data = parseInitialData((initialJson ?? undefined) || (value ?? ""));
-        lastAppliedTextRef.current = blocksToPlainText(data);
-        const ed = new EditorJS({
-          holder: holderRef.current,
-          minHeight: 120,
-          autofocus: true,
-          placeholder: placeholder || "Write details…",
-          data,
-          tools: {
-            header: {
-              class: Header,
-              inlineToolbar: true,
-              config: { levels: [2,3,4], defaultLevel: 2 },
-            },
-            list: { class: List, inlineToolbar: true },
-            checklist: { class: Checklist, inlineToolbar: true },
-            delimiter: Delimiter,
-            quote: { class: Quote, inlineToolbar: true },
-            code: CodeTool,
-          },
-          inlineToolbar: true,
-          onChange: () => {
-            if (changeTimer.current) window.clearTimeout(changeTimer.current);
-            changeTimer.current = window.setTimeout(() => {
-              ed
-                .save()
-                .then((output) => {
-                  const plain = blocksToPlainText(output);
-                  if (plain !== lastAppliedTextRef.current) {
-                    lastAppliedTextRef.current = plain;
-                    onChange(plain);
-                  }
-                })
-                .catch(() => { /* ignore */ });
-            }, 200);
-          },
-        });
-        editorRef.current = ed;
-        // Provide a getter for JSON output to parent on save
-        if (registerSaveExtractor) {
-          registerSaveExtractor(() => ed.save());
-        }
-      } catch (err) {
-        console.error("Failed to init Editor.js", err);
-      }
-    };
-    void init();
-    return () => {
-      if (changeTimer.current) window.clearTimeout(changeTimer.current);
-      try { editorRef.current?.destroy?.(); } catch { /* no-op */ }
-      editorRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // If external value changes (e.g., programmatic update), update editor
-  useEffect(() => {
-    const ed = editorRef.current;
-    if (!ed) return;
-    const data = parseInitialData(value ?? "");
-    const nextText = blocksToPlainText(data);
-    if (nextText === lastAppliedTextRef.current) return;
-    lastAppliedTextRef.current = nextText;
-    // Render new data
-    try {
-      ed.render(data).catch(() => { /* ignore */ });
-    } catch {
-      // ignore
-    }
-  }, [value, parseInitialData, blocksToPlainText]);
-
-  return (
-    <div className="min-h-[120px]">
-      <div ref={holderRef} className="min-h-[120px] px-3 py-2 text-sm" />
-      {!editorRef.current && (
-        <div className="text-[12px] text-[var(--text-muted)] px-3 py-2">{placeholder || "Loading editor…"}</div>
-      )}
     </div>
   );
 }

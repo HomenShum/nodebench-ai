@@ -16,6 +16,7 @@ import type * as actions_spreadsheetActions from "../actions/spreadsheetActions.
 import type * as agentsPrefs from "../agentsPrefs.js";
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
+import type * as crons_emailIntelligenceCron from "../crons/emailIntelligenceCron.js";
 import type * as domains_agents_agentChat from "../domains/agents/agentChat.js";
 import type * as domains_agents_agentChatActions from "../domains/agents/agentChatActions.js";
 import type * as domains_agents_agentDelegations from "../domains/agents/agentDelegations.js";
@@ -111,6 +112,7 @@ import type * as domains_documents_syncMutations from "../domains/documents/sync
 import type * as domains_integrations_email from "../domains/integrations/email.js";
 import type * as domains_integrations_email_dossierEmailExample from "../domains/integrations/email/dossierEmailExample.js";
 import type * as domains_integrations_email_dossierEmailTemplate from "../domains/integrations/email/dossierEmailTemplate.js";
+import type * as domains_integrations_gcal from "../domains/integrations/gcal.js";
 import type * as domains_integrations_gmail from "../domains/integrations/gmail.js";
 import type * as domains_integrations_index from "../domains/integrations/index.js";
 import type * as domains_integrations_integrations from "../domains/integrations/integrations.js";
@@ -166,11 +168,13 @@ import type * as globalResearch_runs from "../globalResearch/runs.js";
 import type * as http from "../http.js";
 import type * as http_mcpMemory from "../http/mcpMemory.js";
 import type * as http_mcpPlans from "../http/mcpPlans.js";
+import type * as lib_actionItemsGenerator from "../lib/actionItemsGenerator.js";
 import type * as lib_artifactModels from "../lib/artifactModels.js";
 import type * as lib_artifactPersistence from "../lib/artifactPersistence.js";
 import type * as lib_artifactQueries from "../lib/artifactQueries.js";
 import type * as lib_artifactValidators from "../lib/artifactValidators.js";
 import type * as lib_crypto from "../lib/crypto.js";
+import type * as lib_dossierGenerator from "../lib/dossierGenerator.js";
 import type * as lib_dossierHelpers from "../lib/dossierHelpers.js";
 import type * as lib_entityResolution from "../lib/entityResolution.js";
 import type * as lib_factValidation from "../lib/factValidation.js";
@@ -192,6 +196,7 @@ import type * as tests_fastAgentPanelStreamingTests from "../tests/fastAgentPane
 import type * as tools_arbitrage_analyzeWithArbitrage from "../tools/arbitrage/analyzeWithArbitrage.js";
 import type * as tools_arbitrage_index from "../tools/arbitrage/index.js";
 import type * as tools_calendar_confirmEventSelection from "../tools/calendar/confirmEventSelection.js";
+import type * as tools_calendar_emailEventExtractor from "../tools/calendar/emailEventExtractor.js";
 import type * as tools_calendar_recentEventSearch from "../tools/calendar/recentEventSearch.js";
 import type * as tools_document_contextTools from "../tools/document/contextTools.js";
 import type * as tools_document_deepAgentEditTools from "../tools/document/deepAgentEditTools.js";
@@ -199,6 +204,7 @@ import type * as tools_document_documentEditingLiveTest from "../tools/document/
 import type * as tools_document_documentTools from "../tools/document/documentTools.js";
 import type * as tools_document_geminiFileSearch from "../tools/document/geminiFileSearch.js";
 import type * as tools_document_hashtagSearchTools from "../tools/document/hashtagSearchTools.js";
+import type * as tools_email_emailIntelligenceParser from "../tools/email/emailIntelligenceParser.js";
 import type * as tools_evaluation_comprehensiveTest from "../tools/evaluation/comprehensiveTest.js";
 import type * as tools_evaluation_evaluator from "../tools/evaluation/evaluator.js";
 import type * as tools_evaluation_helpers from "../tools/evaluation/helpers.js";
@@ -237,7 +243,9 @@ import type * as tools_meta_toolRegistry from "../tools/meta/toolRegistry.js";
 import type * as tools_sec_secCompanySearch from "../tools/sec/secCompanySearch.js";
 import type * as tools_sec_secFilingTools from "../tools/sec/secFilingTools.js";
 import type * as tools_wrappers_coreAgentTools from "../tools/wrappers/coreAgentTools.js";
+import type * as workflows_emailResearchOrchestrator from "../workflows/emailResearchOrchestrator.js";
 import type * as workflows_index from "../workflows/index.js";
+import type * as workflows_prdComposerWorkflow from "../workflows/prdComposerWorkflow.js";
 
 import type {
   ApiFromModules,
@@ -254,6 +262,7 @@ declare const fullApi: ApiFromModules<{
   agentsPrefs: typeof agentsPrefs;
   auth: typeof auth;
   crons: typeof crons;
+  "crons/emailIntelligenceCron": typeof crons_emailIntelligenceCron;
   "domains/agents/agentChat": typeof domains_agents_agentChat;
   "domains/agents/agentChatActions": typeof domains_agents_agentChatActions;
   "domains/agents/agentDelegations": typeof domains_agents_agentDelegations;
@@ -349,6 +358,7 @@ declare const fullApi: ApiFromModules<{
   "domains/integrations/email": typeof domains_integrations_email;
   "domains/integrations/email/dossierEmailExample": typeof domains_integrations_email_dossierEmailExample;
   "domains/integrations/email/dossierEmailTemplate": typeof domains_integrations_email_dossierEmailTemplate;
+  "domains/integrations/gcal": typeof domains_integrations_gcal;
   "domains/integrations/gmail": typeof domains_integrations_gmail;
   "domains/integrations/index": typeof domains_integrations_index;
   "domains/integrations/integrations": typeof domains_integrations_integrations;
@@ -404,11 +414,13 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "http/mcpMemory": typeof http_mcpMemory;
   "http/mcpPlans": typeof http_mcpPlans;
+  "lib/actionItemsGenerator": typeof lib_actionItemsGenerator;
   "lib/artifactModels": typeof lib_artifactModels;
   "lib/artifactPersistence": typeof lib_artifactPersistence;
   "lib/artifactQueries": typeof lib_artifactQueries;
   "lib/artifactValidators": typeof lib_artifactValidators;
   "lib/crypto": typeof lib_crypto;
+  "lib/dossierGenerator": typeof lib_dossierGenerator;
   "lib/dossierHelpers": typeof lib_dossierHelpers;
   "lib/entityResolution": typeof lib_entityResolution;
   "lib/factValidation": typeof lib_factValidation;
@@ -430,6 +442,7 @@ declare const fullApi: ApiFromModules<{
   "tools/arbitrage/analyzeWithArbitrage": typeof tools_arbitrage_analyzeWithArbitrage;
   "tools/arbitrage/index": typeof tools_arbitrage_index;
   "tools/calendar/confirmEventSelection": typeof tools_calendar_confirmEventSelection;
+  "tools/calendar/emailEventExtractor": typeof tools_calendar_emailEventExtractor;
   "tools/calendar/recentEventSearch": typeof tools_calendar_recentEventSearch;
   "tools/document/contextTools": typeof tools_document_contextTools;
   "tools/document/deepAgentEditTools": typeof tools_document_deepAgentEditTools;
@@ -437,6 +450,7 @@ declare const fullApi: ApiFromModules<{
   "tools/document/documentTools": typeof tools_document_documentTools;
   "tools/document/geminiFileSearch": typeof tools_document_geminiFileSearch;
   "tools/document/hashtagSearchTools": typeof tools_document_hashtagSearchTools;
+  "tools/email/emailIntelligenceParser": typeof tools_email_emailIntelligenceParser;
   "tools/evaluation/comprehensiveTest": typeof tools_evaluation_comprehensiveTest;
   "tools/evaluation/evaluator": typeof tools_evaluation_evaluator;
   "tools/evaluation/helpers": typeof tools_evaluation_helpers;
@@ -475,7 +489,9 @@ declare const fullApi: ApiFromModules<{
   "tools/sec/secCompanySearch": typeof tools_sec_secCompanySearch;
   "tools/sec/secFilingTools": typeof tools_sec_secFilingTools;
   "tools/wrappers/coreAgentTools": typeof tools_wrappers_coreAgentTools;
+  "workflows/emailResearchOrchestrator": typeof workflows_emailResearchOrchestrator;
   "workflows/index": typeof workflows_index;
+  "workflows/prdComposerWorkflow": typeof workflows_prdComposerWorkflow;
 }>;
 
 /**

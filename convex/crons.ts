@@ -76,6 +76,31 @@ crons.daily(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Calendar ingestion (Gmail/GCal) reconciliation
+// ═══════════════════════════════════════════════════════════════════════════
+
+crons.interval(
+  "gmail ingest recent messages",
+  { hours: 1 },
+  internal.domains.integrations.gmail.ingestMessagesCron,
+  {}
+);
+
+crons.interval(
+  "email intelligence sweep",
+  { minutes: 15 },
+  internal.crons.emailIntelligenceCron.runEmailIntelligenceSweep,
+  { maxEmails: 10 }
+);
+
+crons.interval(
+  "gcal sync primary calendar",
+  { hours: 1 },
+  internal.domains.integrations.gcal.syncPrimaryCalendar,
+  {}
+);
+
 // Deduplicate global artifacts (merge race-condition duplicates)
 crons.daily(
   "dedupe global artifacts",

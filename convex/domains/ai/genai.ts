@@ -12,6 +12,7 @@ import {
   createPartFromUri,
   Type,
 } from "@google/genai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // --- Embedding helper ---
 async function embedTexts(openai: OpenAI, texts: string[]): Promise<number[][]> {
@@ -214,7 +215,7 @@ export const extractAndIndexFile = action({
     let response;
     try {
       response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: getLlmModel("analysis", "gemini"),
         contents,
         config: {
           responseMimeType: "application/json",
@@ -229,7 +230,7 @@ export const extractAndIndexFile = action({
           e,
         );
         response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: getLlmModel("analysis", "gemini"),
           contents,
           config: {
             responseMimeType: "application/json",
@@ -416,7 +417,7 @@ export const answerFromCache = action({
       .join("\n\n---\n\n");
 
     const rsp = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: getLlmModel("analysis", "gemini"),
       contents: createUserContent([
         { text: `You are answering questions using ONLY the provided cached summaries. If information isn't present, say you don't have enough info.` },
         { text: `Context:\n${contextText}` },

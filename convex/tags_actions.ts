@@ -5,6 +5,7 @@ import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import OpenAI from "openai";
+import { getLlmModel } from "../shared/llm/modelCatalog";
 
 /**
  * LLM-powered tag generation for documents
@@ -54,9 +55,9 @@ export const generateForDocument = action({
 
     const openai = new OpenAI({ apiKey });
 
-    // Use GPT-4o-mini for fast, cheap tag extraction
+    // Use central LLM registry for fast, cheap tag extraction
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getLlmModel("analysis", "openai"),
       messages: [
         {
           role: "system",
@@ -77,12 +78,12 @@ Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web develop
         },
         {
           role: "user",
-          content: `Extract semantic tags from this document:\n\n${text}`,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 500,
-    });
+      content: `Extract semantic tags from this document:\n\n${text}`,
+    },
+  ],
+  temperature: 0.3,
+  max_completion_tokens: 500,
+});
 
     // Parse LLM response
     const content = response.choices[0]?.message?.content?.trim() || "[]";
@@ -144,4 +145,3 @@ Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web develop
     };
   },
 });
-

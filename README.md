@@ -20,6 +20,18 @@ A comprehensive AI-powered document management and research platform with multi-
 - 🔐 **Secure** - User authentication and authorization on all operations
 - 🧭 **Persona Day Starter** - Right-rail presets (banking/product/research/sales/general) that launch Fast/Arbitrage Agent briefs
 - 📑 **Deal & Move Rail** - Overnight moves, deal list, and watchlist flyouts with dates, sources, FDA/patent/paper context
+- 📧 **Email Intelligence Pipeline** - Gmail parsing, entity extraction, dossier + PRD composer workflows with scheduled sweeps and scrollytelling dossier UI
+
+---
+
+## LLM Model Registry
+
+- Location: `shared/llm/modelCatalog.ts`
+- Purpose: single source of truth for provider/task defaults (OpenAI → gpt-5-nano/minis; Gemini → 2.5 flash/pro and image/flash-lite variants; 3-pro preview as fallback)
+- Helper: `getLlmModel(task, provider?, override?)` returns the preferred model while honoring explicit overrides
+- Tasks covered: `chat`, `agent`, `router`, `judge`, `analysis`, `vision`, `fileSearch`, `voice`
+- Usage: import `getLlmModel` and pass to OpenAI or Gemini SDK calls instead of hardcoding model strings
+- Key call sites wired to the registry (examples): `convex/actions/externalOrchestrator.ts` (chat proxy), `convex/router.ts` (streaming), `convex/domains/agents/fastAgentPanelStreaming.ts` (panel chat + doc generation), `convex/domains/agents/fastAgentChat.ts` (modern chat), `convex/domains/verification/claimVerificationAction.ts` (judge), `convex/tags_actions.ts` (tagging), `convex/domains/documents/fileAnalysis.ts` and `convex/domains/ai/genai.ts` (Gemini analysis/extraction), `convex/domains/documents/fileSearch.ts` (Gemini file search), `convex/domains/ai/morningDigest.ts` (digest summary), `convex/domains/integrations/voice/voiceActions.ts` (voice), `convex/tools/integration/orchestrationTools.ts`, `convex/tools/document/contextTools.ts`, `convex/tools/calendar/recentEventSearch.ts`, `convex/tools/media/recentNewsSearch.ts`, `convex/tools/integration/peopleProfileSearch.ts`, `convex/tools/sec/secCompanySearch.ts`, and `convex/tools/evaluation/evaluator.ts`.
 
 ---
 
@@ -52,6 +64,16 @@ VITE_CONVEX_URL=your_convex_url
 OPENAI_API_KEY=your_openai_key
 LINKUP_API_KEY=your_linkup_key
 ```
+
+---
+
+## Email Intelligence & PRD Composer
+
+- **Parser/Entities**: `convex/tools/email/emailIntelligenceParser.ts` extracts companies/people/investors, intent, and urgency from Gmail messages.
+- **Research Orchestration**: `convex/workflows/emailResearchOrchestrator.ts` calls enrichment tools, builds action items, and can email a dossier digest.
+- **PRD Composer**: `convex/workflows/prdComposerWorkflow.ts` builds an 8-section partnership PRD with validation, citation counting, and optional delivery.
+- **Cron Sweep**: `convex/crons/emailIntelligenceCron.ts` runs every 15 minutes via `convex/crons.ts` to process new inbox messages.
+- **Scrollytelling UI**: sample narrative data lives at `src/features/emailIntelligence/content/dossierStream.json` with components under `src/features/emailIntelligence/components/`.
 
 ---
 

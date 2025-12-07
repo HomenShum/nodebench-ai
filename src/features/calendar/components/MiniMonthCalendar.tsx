@@ -2,12 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { Lightbulb, CalendarDays, Plus, StickyNote } from "lucide-react";
-import AgendaMiniRow from "@features/calendar/components/agenda/AgendaMiniRow";
-import MiniAgendaEditorPanel from "@features/calendar/components/agenda/MiniAgendaEditorPanel";
+import { CalendarDays } from "lucide-react";
+import CalendarDatePopover from "./CalendarDatePopover";
 import DualCreateMiniPanel from "@/features/documents/editors/DualCreateMiniPanel";
 import DualEditMiniPanel from "@/features/documents/editors/DualEditMiniPanel";
-import PopoverMiniEditor from "@/features/documents/editors/PopoverMiniEditor";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
 import { toast } from "sonner";
 type DayInfo = {
@@ -34,6 +32,10 @@ function startOfLocalMonth(base: Date, offsetMs: number): number {
 function nextMonthStartMs(base: Date, offsetMs: number): number {
   const d = new Date(base.getFullYear(), base.getMonth() + 1, 1, 0, 0, 0, 0);
   return d.getTime() - offsetMs;
+}
+
+function startOfLocalDay(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).getTime();
 }
 
 // (removed addDays; not needed with per-day loop approach)
@@ -127,6 +129,8 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
   // Load and persist preferred time zone
   const prefs = useQuery(api.domains.auth.userPreferences.getCalendarUiPrefs, {});
   const setTimeZonePref = useMutation(api.domains.auth.userPreferences.setTimeZonePreference);
+  const updateEventMutation = useMutation(api.domains.calendar.events.updateEvent);
+  const deleteEventMutation = useMutation(api.domains.calendar.events.deleteEvent);
   const browserTz = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone as string | undefined;
@@ -180,6 +184,28 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     const day = String(d.getUTCDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
   }, [selectedTz, now, offsetMs]);
+
+  const handleAcceptProposed = React.useCallback(async (eventId: string) => {
+    try {
+      await updateEventMutation({
+        eventId: eventId as Id<"events">,
+        proposed: false,
+        status: "confirmed",
+      });
+      toast.success("Event accepted");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to accept event");
+    }
+  }, [updateEventMutation]);
+
+  const handleDeclineProposed = React.useCallback(async (eventId: string) => {
+    try {
+      await deleteEventMutation({ eventId: eventId as Id<"events"> });
+      toast.success("Event declined");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to decline event");
+    }
+  }, [deleteEventMutation]);
 
   // Compute month range [start, end]
   const monthStart = useMemo(() => startOfLocalMonth(anchor, offsetMs), [anchor, offsetMs]);
@@ -392,11 +418,6 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
   }, [activeInfo, selectedTz]);
   const [showQuickNote, setShowQuickNote] = useState(false);
   const [quickNoteAnchorEl, setQuickNoteAnchorEl] = useState<HTMLElement | null>(null);
-  const [editAnchorEl, setEditAnchorEl] = useState<HTMLElement | null>(null);
-
-  // Track double-click state for events/tasks/notes
-  const [lastClickedId, setLastClickedId] = useState<string | null>(null);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const activeEndUtc = useMemo(() => (activeStartUtc !== null ? (activeStartUtc + 24 * 60 * 60 * 1000 - 1) : null), [activeStartUtc]);
   // Use dateKey for holiday range to hit 00:00:00Z on that local day
   const previewHolidayRange = useMemo(() => {
@@ -408,17 +429,6 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     };
     // Depend on activeInfo.date so key updates correctly
   }, [activeInfo]);
-  // Create an event from a holiday preview
-  const handleCreateHolidayEvent = (name: string) => {
-    if (!activeInfo) return;
-    const localMidnightMs = new Date(
-      activeInfo.date.getFullYear(),
-      activeInfo.date.getMonth(),
-      activeInfo.date.getDate(),
-      0, 0, 0, 0,
-    ).getTime();
-    setEditTarget({ kind: "createBoth", dateMs: localMidnightMs, defaultAllDay: true, defaultTitle: name });
-  };
   const previewAgenda = useQuery(
     api.domains.calendar.calendar.listAgendaInRange,
     activeStartUtc !== null && activeEndUtc !== null && previewHolidayRange !== null
@@ -431,6 +441,71 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
         }
       : "skip",
   );
+
+  const previewEvents = useMemo(() => {
+    if (!previewAgenda || typeof previewAgenda !== "object") return [];
+    return [...(previewAgenda.events ?? [])]
+      .sort((a: any, b: any) => (a?.startTime ?? 0) - (b?.startTime ?? 0))
+      .map((ev: any) => ({
+      _id: ev._id ?? ev.id,
+      documentId: ev.documentId,
+      title: ev.title ?? ev.name ?? ev.summary ?? ev.rawSummary ?? "Untitled event",
+      startTime: typeof ev.startTime === "number" ? ev.startTime : undefined,
+      endTime: typeof ev.endTime === "number" ? ev.endTime : undefined,
+      allDay: ev.allDay ?? false,
+      proposed: ev.proposed ?? ev.status === "proposed",
+      sourceType: ev.sourceType ?? ev.meta?.sourceType,
+      location: ev.location ?? ev.meta?.location,
+      rawSummary: ev.rawSummary ?? ev.description,
+    }));
+  }, [previewAgenda]);
+
+  const previewTasks = useMemo(() => {
+    if (!previewAgenda || typeof previewAgenda !== "object") return [];
+    return [...(previewAgenda.tasks ?? [])]
+      .sort((a: any, b: any) => (a?.dueDate ?? 0) - (b?.dueDate ?? 0))
+      .map((t: any) => ({
+        _id: t._id ?? t.id,
+        documentId: t.documentId,
+        title: t.title ?? t.name ?? "Task",
+        dueDate: typeof t.dueDate === "number" ? t.dueDate : undefined,
+        status: t.status ?? t.state,
+      }));
+  }, [previewAgenda]);
+
+  const previewNotes = useMemo(() => {
+    if (!previewAgenda || typeof previewAgenda !== "object") return [];
+    return [...(previewAgenda.notes ?? [])].map((n: any) => ({
+      _id: n._id ?? n.id,
+      documentId: n.documentId ?? n._id ?? n.id,
+      title: n.title ?? n.name ?? "Note",
+    }));
+  }, [previewAgenda]);
+
+  const previewHolidays = useMemo(() => {
+    if (!previewAgenda || typeof previewAgenda !== "object") return [];
+    return [...(previewAgenda.holidays ?? [])].map((h: any) => ({
+      _id: h._id ?? h.id ?? h.dateKey,
+      title: h.name ?? h.title ?? "Holiday",
+      dateKey: h.dateKey,
+    }));
+  }, [previewAgenda]);
+
+  const previewFiles = useMemo(() => {
+    if (!previewAgenda || typeof previewAgenda !== "object") return [];
+    const collected: Array<{ _id?: string; title: string; fileType?: string }> = [];
+    const seen = new Set<string>();
+    const pushFile = (id: any, title?: string, fileType?: string) => {
+      const key = id ? String(id) : `t:${title ?? ""}`;
+      if (!title || seen.has(key)) return;
+      seen.add(key);
+      collected.push({ _id: typeof id === "string" ? id : undefined, title, fileType });
+    };
+    (previewAgenda.notes ?? []).forEach((n: any) => pushFile(n.documentId ?? n._id ?? n.id, n.title ?? n.name ?? "Note", n.fileType));
+    (previewAgenda.tasks ?? []).forEach((t: any) => pushFile(t.documentId ?? t._id ?? t.id, t.title ?? t.name ?? "Task", t.fileType ?? "task"));
+    (previewAgenda.events ?? []).forEach((ev: any) => pushFile(ev.documentId ?? ev._id ?? ev.id, ev.title ?? ev.name ?? "Event", "event"));
+    return collected;
+  }, [previewAgenda]);
 
   const monthLabel = useMemo(() => {
     const d = toLocalDateInZone(monthStart, selectedTz);
@@ -496,6 +571,28 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
       console.error("Failed to save timezone preference", e);
     }
   };
+
+  const handleAddEventForDay = React.useCallback((dateMs: number) => {
+    if (_onAddEvent) {
+      _onAddEvent(dateMs);
+      return;
+    }
+    setEditTarget({ kind: "create", dateMs });
+  }, [_onAddEvent]);
+
+  const handlePrepDay = React.useCallback((dateMs: number) => {
+    setEditTarget({ kind: "createBoth", dateMs, defaultTitle: "Daily brief" });
+    setQuickNoteAnchorEl(previewRef.current);
+    setShowQuickNote(true);
+  }, []);
+
+  const handleTimeBlock = React.useCallback((dateMs: number) => {
+    if (_onAddTask) {
+      _onAddTask(dateMs);
+      return;
+    }
+    setEditTarget({ kind: "createBoth", dateMs, defaultTitle: "Time block plan", defaultAllDay: false });
+  }, [_onAddTask]);
 
   const goPrev = () => {
     setAnchor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -661,53 +758,67 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                   </div>
 
                 {/* Hover/Pinned Preview */}
-                {(activeKey === d.key) && (
+                {activeKey === d.key && (
                   <div
-                    className={`absolute z-30 top-1 ${editTarget ? "w-72 max-w-[18rem]" : "w-64 max-w-[18rem]"} rounded-lg border border-gray-200 bg-white shadow-xl p-2 text-[11px] ${
-                      // In sidebar, keep previews inside; otherwise flip near right edge
-                      constrainToSidebar ? "right-2" : ( (idx % 7) >= 4 ? "right-full mr-2" : "left-full ml-2" )
-                    }`}
+                    className={`absolute z-30 top-1 ${constrainToSidebar ? "right-2" : ((idx % 7) >= 4 ? "right-full mr-2" : "left-full ml-2")}`}
                     role="dialog"
                     aria-label={`Preview for ${d.date.toDateString()}`}
                     ref={pinnedKey === d.key ? previewRef : undefined}
                     onMouseDown={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="text-[10px] text-gray-400">
-                        {d.date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                      </div>
-                      {pinnedKey === d.key && (
-                        <button
-                          className="w-5 h-5 inline-flex items-center justify-center rounded hover:bg-gray-100 text-gray-400"
-                          aria-label="Close preview"
-                          title="Close"
-                          onClick={(e) => { e.stopPropagation(); setPinnedKey(null); setHoveredKey(null); setEditTarget(null); }}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <div className="inline-flex items-center gap-1 text-blue-700">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-                        {m.events} events
-                      </div>
-                      <div className="inline-flex items-center gap-1 text-purple-700">
-                        <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
-                        {m.holidays} holidays
-                      </div>
-                      <div className="inline-flex items-center gap-1 text-emerald-700">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                        {m.tasks} tasks
-                      </div>
-                      <div className="inline-flex items-center gap-1 text-amber-700">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                        {m.notes} notes
-                      </div>
-                    </div>
-                    {/* Content lists or editor */}
-                    {editTarget ? (
-                      <div className="mt-2">
+                    <CalendarDatePopover
+                      date={d.date}
+                      events={previewEvents}
+                      tasks={previewTasks}
+                      notes={previewNotes}
+                      holidays={previewHolidays}
+                      files={previewFiles}
+                      isLoading={previewAgenda === undefined}
+                      onClose={() => {
+                        setPinnedKey(null);
+                        setHoveredKey(null);
+                        setEditTarget(null);
+                        setShowQuickNote(false);
+                        setQuickNoteAnchorEl(null);
+                      }}
+                      onAddEvent={() => {
+                        const dayStart = startOfLocalDay(d.date);
+                        handleAddEventForDay(dayStart);
+                      }}
+                      onPrepDay={() => {
+                        const dayStart = startOfLocalDay(d.date);
+                        handlePrepDay(dayStart);
+                      }}
+                      onTimeBlock={() => {
+                        const dayStart = startOfLocalDay(d.date);
+                        handleTimeBlock(dayStart);
+                      }}
+                      onAcceptProposed={(eventId) => {
+                        if (!eventId) return;
+                        void handleAcceptProposed(eventId);
+                      }}
+                      onDeclineProposed={(eventId) => {
+                        if (!eventId) return;
+                        void handleDeclineProposed(eventId);
+                      }}
+                      onSelectEvent={(_eventId, documentId) => {
+                        if (documentId) {
+                          onOpenDocument?.(documentId as Id<"documents">);
+                        }
+                      }}
+                      onSelectTask={(_taskId, documentId) => {
+                        if (documentId) {
+                          onOpenDocument?.(documentId as Id<"documents">);
+                        }
+                      }}
+                      onSelectNote={(_noteId, documentId) => {
+                        if (documentId) {
+                          onOpenDocument?.(documentId as Id<"documents">);
+                        }
+                      }}
+                    />
+                    {editTarget && (
+                      <div className="mt-2 w-80 max-w-[20rem] rounded-xl border border-gray-200 bg-white shadow-lg p-2">
                         {editTarget.kind === "create" && (
                           <DualCreateMiniPanel
                             dateMs={editTarget.dateMs}
@@ -724,267 +835,25 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                             onClose={() => setEditTarget(null)}
                           />
                         )}
-                        {editTarget.kind === "note" && (
-                          <MiniEditorPopover
-                            isOpen={true}
-                            documentId={editTarget.id as Id<"documents">}
-                            anchorEl={editAnchorEl}
-                            onClose={() => {
-                              setEditTarget(null);
-                              setEditAnchorEl(null);
-                            }}
-                          />
-                        )}
-                        {editTarget.kind === "holiday" && (
-                          <div className="p-2 border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)]">
-                            <div className="text-sm font-semibold text-[var(--text-primary)] mb-1">{editTarget.name}</div>
-                            <div className="text-[11px] text-[var(--text-secondary)]">Official holiday. Details may be read-only.</div>
-                            <div className="mt-2 flex items-center justify-end gap-2">
-                              <button
-                                className="text-[11px] px-2 py-1 rounded-md border border-[var(--border-color)] bg-blue-50 text-blue-700 hover:bg-blue-100"
-                                onClick={(e) => { e.stopPropagation(); void handleCreateHolidayEvent(editTarget.name); }}
-                                aria-label="Create event from holiday"
-                              >
-                                Create event
-                              </button>
-                              <button
-                                className="text-[11px] px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
-                                onClick={(e) => { e.stopPropagation(); setEditTarget(null); }}
-                              >
-                                Close
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
-                    ) : (
-                      <>
-                        {previewAgenda === undefined ? (
-                          <div className="text-[var(--text-muted)]">Loading…</div>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {(previewAgenda?.holidays ?? []).slice(0, 3).map((h: any, idx: number) => (
-                              <div
-                                key={`ph_${idx}`}
-                                className="relative overflow-visible pl-2 py-1 pr-1 rounded-sm cursor-pointer border border-purple-200 bg-purple-50"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (activeInfo) {
-                                    const localMidnightMs = new Date(
-                                      activeInfo.date.getFullYear(),
-                                      activeInfo.date.getMonth(),
-                                      activeInfo.date.getDate(),
-                                      0, 0, 0, 0,
-                                    ).getTime();
-                                    setEditTarget({ kind: "createBoth", dateMs: localMidnightMs, defaultAllDay: true, defaultTitle: String(h?.name ?? "Holiday") });
-                                  }
-                                }}
-                              >
-                                <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-purple-500/70" aria-hidden />
-                                <div className="min-w-0 flex items-center gap-2">
-                                  <span className="text-[10px] px-1 rounded border border-purple-200 bg-purple-50 text-purple-700">Holiday</span>
-                                  <span className="truncate text-[var(--text-primary)] text-xs">{h.name}</span>
-                                </div>
-                              </div>
-                            ))}
-                            {(previewAgenda?.events ?? []).slice(0, 3).map((ev: any, idx: number) => (
-                              <AgendaMiniRow
-                                key={`pev_${idx}`}
-                                item={ev}
-                                kind="event"
-                                onSelect={(id) => {
-                                  const idStr = String(id);
-                                  if (lastClickedId === `event_${idStr}`) {
-                                    // Double-click: navigate to document
-                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                                    setLastClickedId(null);
-                                    setEditTarget(null);
-                                    setEditAnchorEl(null);
-                                    // Events now have documentId set to the document's _id
-                                    if (ev.documentId) {
-                                      onOpenDocument?.(ev.documentId as Id<"documents">);
-                                    }
-                                  } else {
-                                    // First click: show popover
-                                    setLastClickedId(`event_${idStr}`);
-                                    const el = document.querySelector(`[data-agenda-mini-row][data-event-id="${idStr}"]`);
-                                    setEditAnchorEl(el as HTMLElement);
-                                    setEditTarget({ kind: "event", id: idStr });
-                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                                    clickTimeoutRef.current = setTimeout(() => setLastClickedId(null), 300);
-                                  }
-                                }}
-                              />
-                            ))}
-                            {(previewAgenda?.tasks ?? []).slice(0, 3).map((t: any, idx: number) => (
-                              <AgendaMiniRow
-                                key={`pt_${idx}`}
-                                item={t}
-                                kind="task"
-                                onSelect={(id) => {
-                                  const idStr = String(id);
-                                  if (lastClickedId === `task_${idStr}`) {
-                                    // Double-click: navigate to document
-                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                                    setLastClickedId(null);
-                                    setEditTarget(null);
-                                    setEditAnchorEl(null);
-                                    // Tasks now have documentId set to the document's _id
-                                    if (t.documentId) {
-                                      onOpenDocument?.(t.documentId as Id<"documents">);
-                                    }
-                                  } else {
-                                    // First click: show popover
-                                    setLastClickedId(`task_${idStr}`);
-                                    const el = document.querySelector(`[data-agenda-mini-row][data-task-id="${idStr}"]`);
-                                    setEditAnchorEl(el as HTMLElement);
-                                    setEditTarget({ kind: "task", id: idStr });
-                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                                    clickTimeoutRef.current = setTimeout(() => setLastClickedId(null), 300);
-                                  }
-                                }}
-                              />
-                            ))}
-                            {(previewAgenda?.notes ?? []).slice(0, 3).map((n: any, idx: number) => (
-                              <AgendaMiniRow
-                                key={`pn_${idx}`}
-                                item={n}
-                                kind="note"
-                                onSelect={(id) => {
-                                  const idStr = String(id);
-
-                                  // Check if this is a double-click (same ID clicked twice within 300ms)
-                                  if (lastClickedId === idStr) {
-                                    // Double-click: navigate to full document
-                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                                    setLastClickedId(null);
-                                    setEditTarget(null);
-                                    setEditAnchorEl(null);
-                                    onOpenDocument?.(idStr as Id<"documents">);
-                                  } else {
-                                    // First click: open popover
-                                    setLastClickedId(idStr);
-                                    const el = document.querySelector(`[data-agenda-mini-row][data-note-id="${idStr}"]`);
-                                    setEditAnchorEl(el as HTMLElement);
-                                    setEditTarget({ kind: "note", id: idStr });
-
-                                    // Reset after 300ms if no second click
-                                    if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-                                    clickTimeoutRef.current = setTimeout(() => {
-                                      setLastClickedId(null);
-                                    }, 300);
-                                  }
-                                }}
-                              />
-                            ))}
-                            {/* Add agenda + Quick Note buttons */}
-                            {activeInfo && (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[11px]"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const localMidnightMs = new Date(
-                                      activeInfo.date.getFullYear(),
-                                      activeInfo.date.getMonth(),
-                                      activeInfo.date.getDate(),
-                                      0, 0, 0, 0,
-                                    ).getTime();
-                                    setEditTarget({ kind: "create", dateMs: localMidnightMs });
-                                  }}
-                                  aria-label="Add agenda item"
-                                  title="Add agenda item"
-                                >
-                                  <Plus className="w-3 h-3 text-[var(--text-secondary)]" />
-                                  Add
-                                </button>
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[11px]"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setQuickNoteAnchorEl(e.currentTarget);
-                                    setShowQuickNote((v) => !v);
-                                  }}
-                                  aria-label="Quick note"
-                                  title="Quick note"
-                                >
-                                  <StickyNote className="w-3 h-3 text-[var(--text-secondary)]" />
-                                  Quick Note
-                                </button>
-                                {/* View actions to sync hubs */}
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--border-color)] bg-blue-50 text-blue-700 hover:bg-blue-100 text-[11px]"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    try {
-                                      const localMidnightMs = new Date(
-                                        activeInfo.date.getFullYear(),
-                                        activeInfo.date.getMonth(),
-                                        activeInfo.date.getDate(),
-                                        0, 0, 0, 0,
-                                      ).getTime();
-                                      _onViewDay?.(localMidnightMs);
-                                    } catch {}
-                                  }}
-                                  aria-label="View day"
-                                  title="View day"
-                                >
-                                  Day
-                                </button>
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--border-color)] bg-blue-50 text-blue-700 hover:bg-blue-100 text-[11px]"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    try {
-                                      const localMidnightMs = new Date(
-                                        activeInfo.date.getFullYear(),
-                                        activeInfo.date.getMonth(),
-                                        activeInfo.date.getDate(),
-                                        0, 0, 0, 0,
-                                      ).getTime();
-                                      _onViewWeek?.(localMidnightMs);
-                                    } catch {}
-                                  }}
-                                  aria-label="View week"
-                                  title="View week"
-                                >
-                                  Week
-                                </button>
-                              </div>
-                            )}
-
-                            {/* Quick note editor using existing MiniEditorPopover */}
-                            {showQuickNote && activeInfo && activeStartUtc !== null && (
-                              <div
-                                onClick={(e) => e.stopPropagation()}
-                                onMouseDown={(e) => e.stopPropagation()}
-                              >
-                                <QuickNoteInitializer
-                                  isOpen={showQuickNote}
-                                  activeInfo={activeInfo}
-                                  activeStartUtc={activeStartUtc}
-                                  anchorEl={quickNoteAnchorEl}
-                                  onClose={() => {
-                                    setShowQuickNote(false);
-                                    setQuickNoteAnchorEl(null);
-                                  }}
-                                />
-                              </div>
-                            )}
-                            {(!previewAgenda || ((previewAgenda.events ?? []).length === 0 && (previewAgenda.tasks ?? []).length === 0 && (previewAgenda.holidays ?? []).length === 0 && (previewAgenda.notes ?? []).length === 0)) && (
-                              <div className="text-[var(--text-muted)]">No items</div>
-                            )}
-                            {/* Summary footer only */}
-                            <div className="mt-2 pt-2 border-t border-[var(--border-color)]">
-                              <div className="text-[10px] text-[var(--text-muted)]">Summary</div>
-                            </div>
-                          </div>
-                        )}
-                      </>
+                    )}
+                    {showQuickNote && activeInfo && activeStartUtc !== null && (
+                      <div
+                        className="mt-2"
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <QuickNoteInitializer
+                          isOpen={showQuickNote}
+                          activeInfo={activeInfo}
+                          activeStartUtc={activeStartUtc}
+                          anchorEl={quickNoteAnchorEl ?? previewRef.current}
+                          onClose={() => {
+                            setShowQuickNote(false);
+                            setQuickNoteAnchorEl(null);
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
                 )}

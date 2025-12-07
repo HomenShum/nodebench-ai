@@ -9,6 +9,7 @@ import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import OpenAI from "openai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -152,9 +153,9 @@ async function judgeClaimAgainstSource(
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getLlmModel("judge", "openai"),
       temperature: 0.1, // Low temp for consistent judgments
-      max_tokens: 200,
+      max_completion_tokens: 200,
       messages: [
         { role: "system", content: JUDGE_SYSTEM_PROMPT },
         { role: "user", content: buildJudgePrompt(claimText, sourceContent) },

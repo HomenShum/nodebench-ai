@@ -231,6 +231,9 @@ export const updateUserPreferences = mutation({
     docOrderByGroup: v.optional(v.record(v.string(), v.array(v.id("documents")))),
     linkReminderOptOut: v.optional(v.boolean()),
     trackedHashtags: v.optional(v.array(v.string())),
+    gmailIngestEnabled: v.optional(v.boolean()),
+    gcalSyncEnabled: v.optional(v.boolean()),
+    calendarAutoAddMode: v.optional(v.union(v.literal("auto"), v.literal("propose"))),
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
@@ -271,6 +274,9 @@ export const updateUserPreferences = mutation({
       if (args.trackedHashtags !== undefined) {
         updates.trackedHashtags = args.trackedHashtags.map((h: string) => h.trim().replace(/^#/, '').toLowerCase());
       }
+      if (args.gmailIngestEnabled !== undefined) updates.gmailIngestEnabled = args.gmailIngestEnabled;
+      if (args.gcalSyncEnabled !== undefined) updates.gcalSyncEnabled = args.gcalSyncEnabled;
+      if (args.calendarAutoAddMode !== undefined) updates.calendarAutoAddMode = args.calendarAutoAddMode;
 
       await ctx.db.patch(existingPreferences._id, updates);
     } else {
@@ -290,6 +296,9 @@ export const updateUserPreferences = mutation({
 
         linkReminderOptOut: args.linkReminderOptOut ?? false,
         trackedHashtags: (args.trackedHashtags ?? []).map((h: string) => h.trim().replace(/^#/, '').toLowerCase()),
+        gmailIngestEnabled: args.gmailIngestEnabled ?? true,
+        gcalSyncEnabled: args.gcalSyncEnabled ?? true,
+        calendarAutoAddMode: args.calendarAutoAddMode ?? "propose",
         createdAt: now,
         updatedAt: now,
       });

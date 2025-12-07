@@ -9,6 +9,7 @@ import { httpAction } from "../../../_generated/server";
 import { internal, components } from "../../../_generated/api";
 import { createVoiceAgent, createVoiceCoordinatorAgent, createVoicePlannerAgent, voicePlanSchema } from "./voiceAgent";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { getLlmModel } from "../../../../shared/llm/modelCatalog";
 
 /**
  * Voice session state stored in DB
@@ -62,7 +63,7 @@ export const voiceConnect = httpAction(async (ctx, request) => {
     }
 
     // Create agent thread for this voice session
-    const model = body?.model || "gpt-4o-mini"; // Fast model for voice
+    const model = body?.model || getLlmModel("voice", "openai"); // Fast model for voice
     const voiceAgent = createVoiceAgent(model);
 
     const { threadId } = await voiceAgent.createThread(ctx, {
@@ -152,7 +153,7 @@ export const voiceAction = httpAction(async (ctx, request) => {
       threadId = session?.threadId;
     }
 
-    const model = "gpt-4o-mini";
+    const model = getLlmModel("voice", "openai");
     
     // Use planner to determine routing
     const planner = createVoicePlannerAgent(model);

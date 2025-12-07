@@ -58,6 +58,7 @@ import {
   enrichCompanyDossier
 } from "../../tools/financial/enhancedFundingTools";
 import { searchFiles } from "../../tools/document/geminiFileSearch";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 const streamCancellationControllers = new Map<string, AbortController>();
 
@@ -65,14 +66,15 @@ const streamCancellationControllers = new Map<string, AbortController>();
 // Note: For now, only OpenAI models are supported due to bundler constraints
 // Gemini support will be added in a future update
 function getLanguageModel(modelName: string) {
+  const fallbackModel = getLlmModel("chat", "openai");
   // For now, map all models to OpenAI
   // TODO: Add Gemini support with dynamic imports when @ai-sdk/google is available
   if (modelName.startsWith("gemini")) {
-    console.warn(`[getLanguageModel] Gemini model requested(${modelName}) but not yet supported, falling back to gpt - 5 - chat - latest`);
-    return openai.chat("gpt-5-chat-latest");
+    console.warn(`[getLanguageModel] Gemini model requested(${modelName}) but not yet supported, falling back to ${fallbackModel}`);
+    return openai.chat(fallbackModel);
   }
   // Default to OpenAI
-  return openai.chat(modelName);
+  return openai.chat(modelName || fallbackModel);
 }
 
 // Simple, lightweight agent for Mini Note Agent (no tools, fast responses)
@@ -603,7 +605,7 @@ export const createThread = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const modelName = args.model || "gpt-5-chat-latest";
+    const modelName = args.model || getLlmModel("chat", "openai");
     const chatAgent = createChatAgent(modelName);
     const title = (args.title ?? "").trim() || "Research Thread";
 
@@ -713,7 +715,7 @@ export const autoNameThread = action({
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getLlmModel("chat", "openai"),
       messages: [
         {
           role: "system",
@@ -726,14 +728,14 @@ Examples:
 - "SEC Filing Review: Apple"
 - "Competitor Analysis: Stripe"`,
         },
-        {
-          role: "user",
-          content: args.firstMessage.slice(0, 500), // Limit input
-        },
-      ],
-      max_tokens: 60,
-      temperature: 0.3,
-    });
+      {
+        role: "user",
+        content: args.firstMessage.slice(0, 500), // Limit input
+      },
+    ],
+    max_completion_tokens: 60,
+    temperature: 0.3,
+  });
 
     const generatedTitle = response.choices[0]?.message?.content?.trim() || "Research Thread";
 
@@ -1049,7 +1051,7 @@ export const initiateAsyncStreaming = mutation({
       throw new Error("Unauthorized");
     }
 
-    const modelName = args.model || "gpt-5-chat-latest";
+    const modelName = args.model || getLlmModel("chat", "openai");
     const chatAgent = createChatAgent(modelName);
 
     console.log(`[initiateAsyncStreaming:${requestId}] 💾 Saving user message, agentThreadId:`, streamingThread.agentThreadId);
@@ -1360,7 +1362,7 @@ export const generateDocumentContent = action({
   handler: async (ctx, args) => {
     console.log(`[generateDocumentContent] Generating content for prompt: "${args.prompt}"`);
 
-    const modelName = "gpt-5-chat-latest";
+    const modelName = getLlmModel("chat", "openai");
     const chatAgent = createChatAgent(modelName);
 
     // Create or get thread
@@ -1431,7 +1433,7 @@ export const createDocumentFromAgentContent = mutation({
 
     console.log(`[createDocumentFromAgentContent] Creating document: "${args.title}"`);
 
-    // Convert markdown/text content to EditorJS blocks
+    // Convert markdown/text content to ProseMirror blocks
     const contentBlocks = args.content.split('\n\n').map(paragraph => {
       const trimmed = paragraph.trim();
       if (!trimmed) return null;
@@ -1463,7 +1465,7 @@ export const createDocumentFromAgentContent = mutation({
       }
     }).filter(Boolean);
 
-    // Build EditorJS format
+    // Build ProseMirror document format
     const editorContent = {
       type: "doc",
       content: contentBlocks.length > 0 ? contentBlocks : [
@@ -1793,7 +1795,7 @@ export const sendMessageInternal = internalAction({
   }),
   handler: async (ctx, args): Promise<{ response: string; toolsCalled: string[]; threadId: string; toolResults: any[] }> => {
     console.log('[sendMessageInternal] Starting with message:', args.message);
-    const modelName = "gpt-5-chat-latest";
+    const modelName = getLlmModel("chat", "openai");
 
     // Create a context with userId for tools to access
     const contextWithUserId = {
@@ -2266,7 +2268,7 @@ export const submitFileQuestion = mutation({
       threadId: thread.agentThreadId,
       promptMessageId: messageId,
       streamThreadId: args.threadId,
-      model: thread.model || "gpt-5-chat-latest",
+      model: thread.model || getLlmModel("chat", "openai"),
     });
 
     return {

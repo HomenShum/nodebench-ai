@@ -68,7 +68,7 @@ Respond with ONLY a JSON object:
         },
       ],
       temperature: 0.3,
-      max_tokens: 200,
+      max_completion_tokens: 200,
     });
 
     const content = response.choices[0]?.message?.content || "{}";
@@ -116,7 +116,7 @@ Generate a specific edit proposal. Return ONLY the proposed new content or chang
         },
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_completion_tokens: 500,
     });
 
     return response.choices[0]?.message?.content || "";
@@ -316,4 +316,3 @@ export const runDocumentEditingLiveTests = action({
     };
   },
 });
-

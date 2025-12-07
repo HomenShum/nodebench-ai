@@ -8,6 +8,7 @@ import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { allTestCases, TestCase } from "./testCases";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 const openai = new OpenAI();
 
@@ -194,7 +195,7 @@ Evaluate each aspect based on the success criteria:
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-chat-latest",
+      model: getLlmModel("analysis", "openai"),
       messages: [
         {
           role: "system",
@@ -413,4 +414,3 @@ function printSummary(summary: EvaluationSummary) {
 
   console.log("\n" + "=".repeat(80) + "\n");
 }
-

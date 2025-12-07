@@ -5,6 +5,7 @@ import { internalAction, internalQuery, internalMutation } from "../../_generate
 import { v } from "convex/values";
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VALIDATORS - Extracted to avoid "Type instantiation is excessively deep"
@@ -245,7 +246,7 @@ Return a JSON array with this exact structure:
 IMPORTANT: Return ONLY the JSON array, no other text.`;
 
       const result = await generateText({
-        model: openai.chat("gpt-5-mini"),
+        model: openai.chat(getLlmModel("router", "openai")),
         prompt,
       });
 
@@ -360,4 +361,3 @@ export const confirmEvent = internalMutation({
     return null;
   },
 });
-

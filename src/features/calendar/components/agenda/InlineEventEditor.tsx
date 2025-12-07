@@ -4,7 +4,6 @@ import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { X, Trash2, Calendar as CalendarIcon, MapPin, Palette, Tag } from "lucide-react";
 import { toast } from "sonner";
-import InlineRichEditor from "@shared/editors/InlineRichEditor";
 
 export default function InlineEventEditor({ eventId, onClose, documentIdForAssociation }: { eventId: Id<"events">; onClose: () => void; documentIdForAssociation?: Id<"documents"> | null }) {
   const ev = useQuery(api.domains.calendar.events.getEvent, { eventId });
@@ -364,9 +363,12 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
         )}
 
         {/* Description - unified rich editor */}
-        <div className="w-full border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)]">
-          <InlineRichEditor value={description} onChange={setDescription} placeholder="Write details…" initialJson={(ev as any)?.descriptionJson ?? null} registerSaveExtractor={(fn) => { getEditorJsonRef.current = fn; }} />
-        </div>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Write details…"
+          className="w-full min-h-[60px] px-3 py-2 text-sm border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+        />
 
         {/* Location moved to chip with inline input */}
       </div>

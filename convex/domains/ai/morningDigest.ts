@@ -3,6 +3,7 @@
 import { v } from "convex/values";
 import { action } from "../../_generated/server";
 import OpenAI from "openai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // NOTE: Query is in morningDigestQueries.ts (Convex requires queries in non-Node files)
 // Import it via: api.domains.ai.morningDigestQueries.getDigestData
@@ -74,12 +75,12 @@ Write a professional, concise summary (2-3 sentences max). Do not use bullet poi
 
     try {
       const response = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        model: process.env.OPENAI_MODEL || getLlmModel("chat", "openai"),
         messages: [
           { role: "system", content: "You are a professional financial analyst writing morning market briefings." },
           { role: "user", content: prompt }
         ],
-        max_tokens: 200,
+        max_completion_tokens: 200,
         temperature: 0.7,
       });
 
@@ -109,7 +110,7 @@ export const detectSentiment = action({
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: getLlmModel("chat", "openai"),
         messages: [
           { 
             role: "system", 
@@ -120,7 +121,7 @@ export const detectSentiment = action({
             content: `Classify the sentiment of this news headline:\n"${args.title}"\n${args.summary ? `Summary: ${args.summary}` : ''}`
           }
         ],
-        max_tokens: 10,
+        max_completion_tokens: 10,
         temperature: 0,
       });
 

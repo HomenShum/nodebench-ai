@@ -1,6 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { Mail, CalendarDays } from "lucide-react";
 
 export type AgendaMiniKind = "task" | "event" | "holiday" | "note";
 
@@ -11,6 +12,8 @@ export interface AgendaMiniRowProps {
   // When provided for kind === 'task', show a checkbox and call handler on toggle
   showCheckbox?: boolean;
   onToggleComplete?: (id: Id<"tasks">, completed: boolean) => void;
+  onAcceptProposed?: (id: Id<"events">) => void | Promise<void>;
+  onDeclineProposed?: (id: Id<"events">) => void | Promise<void>;
 }
 
 function stripeClass(kind: AgendaMiniKind, status?: string): string {
@@ -125,7 +128,26 @@ function holidayDate(item: any): string | undefined {
   return undefined;
 }
 
-export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSelect, showCheckbox, onToggleComplete }) => {
+function renderSourceBadge(item: any) {
+  const sourceType = item?.sourceType as string | undefined;
+  if (!sourceType) return null;
+  const isProposed = item?.proposed === true;
+  const base = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] leading-tight";
+  const pill = isProposed
+    ? "border-amber-200 bg-amber-50 text-amber-700"
+    : "border-slate-200 bg-slate-50 text-slate-700";
+  const icon = sourceType === "gmail" ? <Mail className="h-3 w-3" /> : <CalendarDays className="h-3 w-3" />;
+  const label = sourceType === "gmail" ? "Gmail" : sourceType === "gcal" ? "GCal" : "Doc";
+  return (
+    <span className={`${base} ${pill}`} title={isProposed ? "Proposed event" : "Synced event"}>
+      {icon}
+      {label}
+      {isProposed ? "· Proposed" : null}
+    </span>
+  );
+}
+
+export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSelect, showCheckbox, onToggleComplete, onAcceptProposed, onDeclineProposed }) => {
   const title: string = String(
     item?.title || (
       kind === "event"
@@ -196,7 +218,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
     >
       <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${stripeClass(kind, item?.status)}`} aria-hidden />
       <div className="min-w-0 flex flex-col gap-0.5">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
           {kind === 'task' && showCheckbox ? (
             <input
               type="checkbox"
@@ -225,6 +247,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
           >
             {kind === 'event' ? 'Event' : kind === 'holiday' ? 'Holiday' : kind === 'note' ? 'Note' : 'Task'}
           </span>
+          {kind === 'event' ? renderSourceBadge(item) : null}
           <span className={`truncate text-xs ${kind === 'task' && String(item?.status ?? 'todo') === 'done' ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'}`}>{title}</span>
         </div>
       </div>
@@ -277,6 +300,22 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
                 {item?.description && (
                   <div className="text-[10px] text-[var(--text-secondary)]">
                     {String(item.description).slice(0, 120)}{String(item.description).length > 120 ? '…' : ''}
+                  </div>
+                )}
+                {item?.proposed && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      className="px-2 py-1 text-[10px] rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                      onClick={(e) => { e.stopPropagation(); onAcceptProposed?.(item?._id as Id<"events">); }}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="px-2 py-1 text-[10px] rounded border border-slate-200 text-slate-700 hover:bg-slate-100"
+                      onClick={(e) => { e.stopPropagation(); onDeclineProposed?.(item?._id as Id<"events">); }}
+                    >
+                      Decline
+                    </button>
                   </div>
                 )}
               </>

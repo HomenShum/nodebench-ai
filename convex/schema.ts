@@ -699,6 +699,10 @@ const userPreferences = defineTable({
   agentsPrefs: v.optional(v.record(v.string(), v.string())),
   // Tracked hashtags/topics for daily dossier/newsletter
   trackedHashtags: v.optional(v.array(v.string())),
+  // Calendar ingestion preferences
+  gmailIngestEnabled: v.optional(v.boolean()),
+  gcalSyncEnabled: v.optional(v.boolean()),
+  calendarAutoAddMode: v.optional(v.union(v.literal("auto"), v.literal("propose"))),
   // Onboarding status
   onboardingSeededAt: v.optional(v.number()),
   // Future: more UI preferences can be added here
@@ -719,6 +723,8 @@ const googleAccounts = defineTable({
   scope: v.optional(v.string()),
   expiryDate: v.optional(v.number()), // ms since epoch
   tokenType: v.optional(v.string()),
+  historyId: v.optional(v.string()),      // Gmail history cursor for watch
+  gcalSyncToken: v.optional(v.string()),   // Google Calendar sync token
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -952,6 +958,20 @@ const events = defineTable({
   documentId: v.optional(v.id("documents")),
   tags: v.optional(v.array(v.string())),
   recurrence: v.optional(v.string()),    // simple RRULE or custom text for now
+  sourceType: v.optional(v.union(
+    v.literal("gmail"),
+    v.literal("gcal"),
+    v.literal("doc"),
+  )),
+  sourceId: v.optional(v.string()),       // external id (messageId/eventId/etc.)
+  ingestionConfidence: v.optional(v.union(
+    v.literal("low"),
+    v.literal("med"),
+    v.literal("high"),
+  )),
+  proposed: v.optional(v.boolean()),      // requires user accept before "confirmed"
+  rawSummary: v.optional(v.string()),     // short extracted summary from source
+  meta: v.optional(v.any()),              // misc ingestion metadata (e.g., hash, origin headers)
   createdAt: v.number(),
   updatedAt: v.number(),
 })

@@ -160,10 +160,10 @@ export const seedOnboardingContent = mutation({
         documentIds.push(found._id);
         continue;
       }
-      // Reuse existing creation logic to build editor JSON
-      const newId = (await ctx.runMutation(api.domains.documents.documents.create, {
+      // Use ProseMirror-compatible document creation for BlockNote editor
+      const newId = (await ctx.runMutation(api.domains.documents.prosemirror.createDocumentWithInitialSnapshot, {
         title: doc.title,
-        content: doc.content,
+        initialContent: doc.content,
       })) as Id<"documents">;
       createdDocuments += 1;
       documentIds.push(newId);

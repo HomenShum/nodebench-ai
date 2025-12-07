@@ -59,6 +59,12 @@ export const createEvent = mutation({
     documentId: v.optional(v.id("documents")),
     tags: v.optional(v.array(v.string())),
     recurrence: v.optional(v.string()),
+    sourceType: v.optional(v.union(v.literal("gmail"), v.literal("gcal"), v.literal("doc"))),
+    sourceId: v.optional(v.string()),
+    ingestionConfidence: v.optional(v.union(v.literal("low"), v.literal("med"), v.literal("high"))),
+    proposed: v.optional(v.boolean()),
+    rawSummary: v.optional(v.string()),
+    meta: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
@@ -80,6 +86,12 @@ export const createEvent = mutation({
       documentId: args.documentId,
       tags: args.tags,
       recurrence: args.recurrence,
+      sourceType: args.sourceType,
+      sourceId: args.sourceId,
+      ingestionConfidence: args.ingestionConfidence,
+      proposed: args.proposed,
+      rawSummary: args.rawSummary,
+      meta: args.meta,
       createdAt: now,
       updatedAt: now,
     });
@@ -134,6 +146,12 @@ export const updateEvent = mutation({
     documentId: v.optional(v.id("documents")),
     tags: v.optional(v.array(v.string())),
     recurrence: v.optional(v.string()),
+    sourceType: v.optional(v.union(v.literal("gmail"), v.literal("gcal"), v.literal("doc"))),
+    sourceId: v.optional(v.string()),
+    ingestionConfidence: v.optional(v.union(v.literal("low"), v.literal("med"), v.literal("high"))),
+    proposed: v.optional(v.boolean()),
+    rawSummary: v.optional(v.string()),
+    meta: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
@@ -160,6 +178,12 @@ export const updateEvent = mutation({
     if (args.documentId !== undefined) updates.documentId = args.documentId;
     if (args.tags !== undefined) updates.tags = args.tags;
     if (args.recurrence !== undefined) updates.recurrence = args.recurrence;
+    if (args.sourceType !== undefined) updates.sourceType = args.sourceType;
+    if (args.sourceId !== undefined) updates.sourceId = args.sourceId;
+    if (args.ingestionConfidence !== undefined) updates.ingestionConfidence = args.ingestionConfidence;
+    if (args.proposed !== undefined) updates.proposed = args.proposed;
+    if (args.rawSummary !== undefined) updates.rawSummary = args.rawSummary;
+    if (args.meta !== undefined) updates.meta = args.meta;
 
     await ctx.db.patch(args.eventId, updates);
     return { success: true };

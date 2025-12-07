@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, Component, type ReactNode, type ErrorInfo } from "react";
 import ReactDOM from "react-dom";
 import { Id } from "../../../convex/_generated/dataModel";
 import { X } from "lucide-react";
@@ -7,6 +7,25 @@ import { api } from "../../../convex/_generated/api";
 import UnifiedEditor from "@features/editor/components/UnifiedEditor";
 import SpreadsheetMiniEditor from "@/features/documents/editors/SpreadsheetMiniEditor";
 import DossierMiniEditor from "@/features/documents/editors/DossierMiniEditor";
+
+// Error boundary to gracefully handle editor initialization failures
+class EditorErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[EditorErrorBoundary] Editor failed to load:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? (
+        <div className="p-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded">
+          Failed to load editor. The document may have invalid content.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface MiniEditorPopoverProps {
   isOpen: boolean;
@@ -158,7 +177,9 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
     // Not a file document or no access: fall back to unified document quick editor
     return (
       <div className="min-h-[240px]">
-        <UnifiedEditor documentId={documentId} mode="quickNote" />
+        <EditorErrorBoundary>
+          <UnifiedEditor documentId={documentId} mode="quickNote" />
+        </EditorErrorBoundary>
       </div>
     );
   }
@@ -177,7 +198,9 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
   }
   return (
     <div className="min-h-[240px]">
-      <UnifiedEditor documentId={documentId} mode="quickNote" />
+      <EditorErrorBoundary>
+        <UnifiedEditor documentId={documentId} mode="quickNote" />
+      </EditorErrorBoundary>
     </div>
   );
 }

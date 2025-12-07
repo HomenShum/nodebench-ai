@@ -104,10 +104,29 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
           }
 
           if (Array.isArray(pmNode.content)) {
-            const sanitizedContent = pmNode.content
+            let sanitizedContent = pmNode.content
               .map((child: unknown) => sanitize(child))
               .flat()
               .filter((child: unknown) => child !== null);
+
+            // For doc/blockGroup/blockContainer nodes, wrap any bare text nodes in paragraphs
+            // BlockNote expects bnBlock children, not raw text nodes
+            const blockContainerTypes = ["doc", "blockGroup", "blockContainer"];
+            if (blockContainerTypes.includes(nodeType)) {
+              sanitizedContent = sanitizedContent.map((child) => {
+                if (child && typeof child === "object") {
+                  const childNode = child as PMLikeNode;
+                  // If it's a text node at the block level, wrap it in a paragraph
+                  if (childNode.type === "text" && typeof childNode.text === "string") {
+                    return {
+                      type: "paragraph",
+                      content: [child],
+                    } as PMLikeNode;
+                  }
+                }
+                return child;
+              }) as ({} | undefined)[];
+            }
 
             return {
               ...pmNode,
@@ -169,7 +188,7 @@ export const {
     // Sanitize the snapshot to remove unsupported node types before storing
     const sanitized = sanitizeProseMirrorSnapshot(snapshot);
 
-    // Avoid overwriting EditorJS-based dossier content with ProseMirror snapshots
+    // Avoid overwriting dossier content with ProseMirror snapshots (dossiers have special handling)
     const document = await ctx.db.get(id as Id<"documents">);
     if (!document) {
       return;

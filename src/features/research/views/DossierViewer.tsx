@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Sparkles, Loader2, Video, Image as ImageIcon
 import { DossierMediaGallery } from "@/features/research/components/dossier/DossierMediaGallery";
 import { extractMediaFromTipTap, countMediaAssets, type TipTapDocument } from "@/features/research/components/dossier/tipTapMediaExtractor";
 import UnifiedEditor from "@features/editor/components/UnifiedEditor";
+import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import type { VideoAsset, ImageAsset, DocumentAsset } from "@/features/research/components/dossier/mediaExtractor";
 
 type ViewMode = 'split' | 'unified';
@@ -570,7 +571,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
 
         {/* Full-width Unified Editor */}
         <div className="flex-1 overflow-hidden">
-          <UnifiedEditor documentId={documentId} />
+          <ErrorBoundary title="Failed to load editor">
+            <UnifiedEditor documentId={documentId} />
+          </ErrorBoundary>
         </div>
       </div>
     );
@@ -858,7 +861,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             </div>
             <div className="flex-1 overflow-hidden">
               {quickNotesDocId ? (
-                <UnifiedEditor documentId={quickNotesDocId} mode="quickNote" editable={true} autoCreateIfEmpty={true} />
+                <ErrorBoundary title="Failed to load notes">
+                  <UnifiedEditor documentId={quickNotesDocId} mode="quickNote" editable={true} autoCreateIfEmpty={true} />
+                </ErrorBoundary>
               ) : (
                 <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
                   Loading quick notes...
@@ -899,7 +904,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       {viewMode === 'unified' && (
         <div className="h-full overflow-y-auto opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">
           <div className="max-w-4xl mx-auto px-6 py-8">
-            <UnifiedEditor documentId={documentId} mode="full" editable={true} autoCreateIfEmpty={true} />
+            <ErrorBoundary title="Failed to load editor">
+              <UnifiedEditor documentId={documentId} mode="full" editable={true} autoCreateIfEmpty={true} />
+            </ErrorBoundary>
           </div>
         </div>
       )}

@@ -5,6 +5,7 @@
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { GoogleGenAI, createUserContent, Type } from "@google/genai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VERSIONING & CACHING
@@ -337,7 +338,7 @@ PLAN STRUCTURE RULES:
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: getLlmModel("router", "gemini"),
         contents: createUserContent([{ text: prompt }]),
         config: {
           responseMimeType: "application/json",
@@ -464,7 +465,7 @@ Return valid JSON only.`;
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: getLlmModel("router", "gemini"),
         contents: createUserContent([{ text: prompt }]),
         config: {
           responseMimeType: "application/json",

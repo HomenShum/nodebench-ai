@@ -1,6 +1,8 @@
-import { action, internalMutation, internalQuery, query } from "../../_generated/server";
+import { action, internalAction, internalMutation, internalQuery, query } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { api, internal } from "../../_generated/api";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 const DEFAULT_SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
@@ -109,6 +111,8 @@ export const updateTokens = internalMutation({
     refreshToken: v.optional(v.string()),
     tokenType: v.optional(v.string()),
     scope: v.optional(v.string()),
+    historyId: v.optional(v.string()),
+    gcalSyncToken: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -128,6 +132,8 @@ export const updateTokens = internalMutation({
       refreshToken: args.refreshToken ?? existing.refreshToken,
       tokenType: args.tokenType ?? existing.tokenType,
       scope: args.scope ?? existing.scope,
+      historyId: args.historyId ?? existing.historyId,
+      gcalSyncToken: args.gcalSyncToken ?? existing.gcalSyncToken,
       updatedAt: Date.now(),
     });
 
@@ -146,6 +152,8 @@ export const getAccount = internalQuery({
       expiryDate: v.optional(v.number()),
       tokenType: v.optional(v.string()),
       scope: v.optional(v.string()),
+      historyId: v.optional(v.string()),
+      gcalSyncToken: v.optional(v.string()),
     })
   ),
   handler: async (ctx) => {
@@ -163,13 +171,15 @@ export const getAccount = internalQuery({
       expiryDate: account.expiryDate,
       tokenType: account.tokenType,
       scope: account.scope,
+      historyId: account.historyId,
+      gcalSyncToken: account.gcalSyncToken,
     };
   },
 });
 
 const tokenEndpoint = "https://oauth2.googleapis.com/token";
 
-async function refreshAccessTokenIfNeeded(ctx: any, account: any) {
+export async function refreshAccessTokenIfNeeded(ctx: any, account: any) {
   const now = Date.now();
   const expiresSoon = account.expiryDate && account.expiryDate - now < 60_000; // 1 min buffer
   if (!expiresSoon) return account.accessToken;
@@ -204,8 +214,7 @@ async function refreshAccessTokenIfNeeded(ctx: any, account: any) {
   const expiresIn = data.expires_in as number | undefined;
   const expiryDate = expiresIn ? Date.now() + expiresIn * 1000 : undefined;
 
-  const refs = await import("../../_generated/api");
-  await ctx.runMutation((refs as any).internal.domains.integrations.gmail.updateTokens, {
+  await ctx.runMutation(internal.domains.integrations.gmail.updateTokens, {
     accessToken: newAccess,
     expiryDate,
     tokenType: data.token_type,
@@ -239,8 +248,7 @@ export const fetchInbox = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) return { success: false, error: "Not authenticated" };
 
-    const refs = await import("../../_generated/api");
-    const account = await ctx.runQuery((refs as any).internal.domains.integrations.gmail.getAccount, {});
+    const account = await ctx.runQuery(internal.domains.integrations.gmail.getAccount, {});
     if (!account) {
       return { success: false, error: "No Google account connected" };
     }
@@ -289,5 +297,368 @@ export const fetchInbox = action({
     );
 
     return { success: true, messages: details };
+  },
+});
+
+function decodeBase64Url(data: string): string {
+  const normalized = data.replace(/-/g, "+").replace(/_/g, "/");
+  return Buffer.from(normalized, "base64").toString("utf-8");
+}
+
+function extractIcsParts(payload: any): string[] {
+  const out: string[] = [];
+  const walk = (part: any) => {
+    if (!part) return;
+    const mime = part.mimeType || "";
+    const filename = part.filename || "";
+    if (mime === "text/calendar" || filename.endsWith(".ics")) {
+      const data = part.body?.data;
+      if (typeof data === "string" && data.length > 0) {
+        out.push(decodeBase64Url(data));
+      }
+    }
+    if (Array.isArray(part.parts)) {
+      part.parts.forEach(walk);
+    }
+  };
+  walk(payload);
+  return out;
+}
+
+function parseIcsEvent(icsText: string): { title?: string; startTime?: number; endTime?: number; allDay?: boolean; location?: string } | null {
+  const getLine = (tag: string) => {
+    const re = new RegExp(`^${tag}[:]([^\\r\\n]+)`, "mi");
+    const m = icsText.match(re);
+    return m ? m[1].trim() : undefined;
+  };
+  const dtstart = getLine("DTSTART(?:;[^:]*)?");
+  if (!dtstart) return null;
+  const dtend = getLine("DTEND(?:;[^:]*)?");
+  const summary = getLine("SUMMARY");
+  const location = getLine("LOCATION");
+
+  const parseDt = (dt: string) => {
+    if (/^\\d{8}$/.test(dt)) {
+      const y = Number(dt.slice(0, 4));
+      const m = Number(dt.slice(4, 6)) - 1;
+      const d = Number(dt.slice(6, 8));
+      return { ms: Date.UTC(y, m, d), allDay: true };
+    }
+    const iso = dt.length === 15 && dt.endsWith("Z")
+      ? `${dt.slice(0, 4)}-${dt.slice(4, 6)}-${dt.slice(6, 8)}T${dt.slice(9, 11)}:${dt.slice(11, 13)}:${dt.slice(13, 15)}Z`
+      : dt.length === 15
+        ? `${dt.slice(0, 4)}-${dt.slice(4, 6)}-${dt.slice(6, 8)}T${dt.slice(9, 11)}:${dt.slice(11, 13)}:${dt.slice(13, 15)}`
+        : dt;
+    const ms = Date.parse(iso);
+    return Number.isFinite(ms) ? { ms, allDay: false } : null;
+  };
+
+  const startParsed = parseDt(dtstart);
+  if (!startParsed) return null;
+  const endParsed = dtend ? parseDt(dtend) : null;
+  return {
+    title: summary,
+    startTime: startParsed.ms,
+    endTime: endParsed?.ms,
+    allDay: startParsed.allDay || endParsed?.allDay || false,
+    location,
+  };
+}
+
+function heuristicParse(subject?: string, snippet?: string): { title: string; startTime: number; endTime?: number; confidence: number } | null {
+  const text = [subject, snippet].filter(Boolean).join(" ");
+  const dateRe = /(\\b\\d{1,2}[\\/.-]\\d{1,2}[\\/.-]\\d{2,4})/i;
+  const timeRe = /(\\d{1,2}:\\d{2}\\s?(am|pm)?)/i;
+  const dateMatch = text.match(dateRe);
+  const timeMatch = text.match(timeRe);
+  if (!dateMatch || !timeMatch) return null;
+  const dateStr = dateMatch[1];
+  const timeStr = timeMatch[1];
+  const parsed = Date.parse(`${dateStr} ${timeStr}`);
+  if (!Number.isFinite(parsed)) return null;
+  return {
+    title: subject || "Meeting",
+    startTime: parsed,
+    confidence: 0.55,
+  };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Gmail watch + history ingest
+// ────────────────────────────────────────────────────────────────────────────
+
+export const startWatch = action({
+  args: {},
+  returns: v.object({ success: v.boolean(), historyId: v.optional(v.string()), error: v.optional(v.string()) }),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { success: false, error: "Not authenticated" };
+    const account = await ctx.runQuery(internal.domains.integrations.gmail.getAccount, {});
+    if (!account) return { success: false, error: "No Google account connected" };
+
+    const accessToken = await refreshAccessTokenIfNeeded(ctx, account);
+
+    // Use profile endpoint to grab current historyId (avoids Pub/Sub requirement).
+    const profileRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!profileRes.ok) {
+      const text = await profileRes.text();
+      return { success: false, error: `Failed to fetch profile: ${text}` };
+    }
+    const profile = await profileRes.json();
+    const historyId: string | undefined = profile.historyId ? String(profile.historyId) : undefined;
+
+    if (historyId) {
+      await ctx.runMutation(internal.domains.integrations.gmail.updateTokens, {
+        accessToken,
+        historyId,
+      });
+    }
+
+    return { success: true, historyId };
+  },
+});
+
+export const stopWatch = action({
+  args: {},
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { success: false };
+    const account = await ctx.runQuery(internal.domains.integrations.gmail.getAccount, {});
+    if (!account) return { success: true };
+    await ctx.runMutation(internal.domains.integrations.gmail.updateTokens, {
+      accessToken: account.accessToken,
+      historyId: undefined,
+    });
+    return { success: true };
+  },
+});
+
+export const fetchHistory = action({
+  args: {
+    startHistoryId: v.optional(v.string()),
+    maxResults: v.optional(v.number()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    historyId: v.optional(v.string()),
+    messageIds: v.optional(v.array(v.string())),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, { startHistoryId, maxResults }): Promise<{ success: boolean; historyId?: string; messageIds?: string[]; error?: string }> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { success: false, error: "Not authenticated" };
+    const account = await ctx.runQuery(internal.domains.integrations.gmail.getAccount, {});
+    if (!account) return { success: false, error: "No Google account connected" };
+
+    const effectiveStart = startHistoryId || account.historyId;
+    if (!effectiveStart) return { success: false, error: "No historyId available; run startWatch first" };
+
+    const accessToken = await refreshAccessTokenIfNeeded(ctx, account);
+    const url = new URL("https://gmail.googleapis.com/gmail/v1/users/me/history");
+    url.searchParams.set("startHistoryId", effectiveStart);
+    url.searchParams.set("historyTypes", "messageAdded");
+    url.searchParams.set("maxResults", String(maxResults ?? 50));
+
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!res.ok) {
+      const text = await res.text();
+      return { success: false, error: `Failed to fetch history: ${text}` };
+    }
+    const data: any = await res.json();
+    const history = Array.isArray(data.history) ? data.history : [];
+    const messageIds = history.flatMap((h: any) =>
+      (h.messagesAdded || []).map((m: any) => m?.message?.id).filter(Boolean)
+    );
+
+    const newestHistoryId: string | undefined = data.historyId ? String(data.historyId) : effectiveStart;
+    if (newestHistoryId) {
+      await ctx.runMutation(internal.domains.integrations.gmail.updateTokens, {
+        accessToken,
+        historyId: newestHistoryId,
+      });
+    }
+
+    return { success: true, historyId: newestHistoryId, messageIds };
+  },
+});
+
+export const ingestMessages = action({
+  args: {
+    historyId: v.optional(v.string()),
+    maxResults: v.optional(v.number()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    created: v.number(),
+    updated: v.number(),
+    skipped: v.number(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args): Promise<{ success: boolean; created: number; updated: number; skipped: number; error?: string }> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { success: false, created: 0, updated: 0, skipped: 0, error: "Not authenticated" };
+
+    const account = await ctx.runQuery(internal.domains.integrations.gmail.getAccount, {});
+    if (!account) return { success: false, created: 0, updated: 0, skipped: 0, error: "No Google account connected" };
+
+    const db = (ctx as any).db;
+    const prefs = db
+      ? await db.query("userPreferences").withIndex("by_user", (q: any) => q.eq("userId", userId)).first()
+      : null;
+    if (prefs && prefs.gmailIngestEnabled === false) {
+      return { success: true, created: 0, updated: 0, skipped: 0 };
+    }
+    const autoAddMode = prefs?.calendarAutoAddMode ?? "propose";
+
+    const historyResult = await ctx.runAction(api.domains.integrations.gmail.fetchHistory, {
+      startHistoryId: args.historyId,
+      maxResults: args.maxResults ?? 25,
+    });
+    if (!historyResult.success || !historyResult.messageIds) {
+      return { success: false, created: 0, updated: 0, skipped: 0, error: historyResult.error };
+    }
+
+    const accessToken = await refreshAccessTokenIfNeeded(ctx, account);
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const id of historyResult.messageIds) {
+      try {
+        const detailUrl = new URL(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}`);
+        detailUrl.searchParams.set("format", "full");
+        for (const h of ["Subject", "From", "Date", "To"]) {
+          detailUrl.searchParams.append("metadataHeaders", h);
+        }
+        const r = await fetch(detailUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (!r.ok) {
+          skipped++;
+          continue;
+        }
+        const j = await r.json();
+        const headers: Array<{ name: string; value: string }> = j.payload?.headers ?? [];
+        const find = (n: string) => headers.find((h) => h.name === n)?.value;
+        const subject = find("Subject") || "New Event";
+        const from = find("From");
+        const dateHeader = find("Date");
+        const snippet: string | undefined = j.snippet;
+
+        let eventCandidate: any = null;
+
+        const icsParts = extractIcsParts(j.payload);
+        for (const ics of icsParts) {
+          const parsed = parseIcsEvent(ics);
+          if (parsed && parsed.startTime) {
+            eventCandidate = {
+              title: parsed.title || subject,
+              startTime: parsed.startTime,
+              endTime: parsed.endTime,
+              allDay: parsed.allDay,
+              location: parsed.location,
+              confidence: 0.95,
+              rawSummary: parsed.title || subject,
+            };
+            break;
+          }
+        }
+
+        if (!eventCandidate) {
+          const heur = heuristicParse(subject, snippet);
+          if (heur) {
+            eventCandidate = {
+              title: heur.title,
+              startTime: heur.startTime,
+              endTime: heur.endTime,
+              confidence: heur.confidence,
+              rawSummary: subject,
+            };
+          }
+        }
+
+        if (!eventCandidate) {
+          const extraction = await ctx.runAction(internal.tools.calendar.emailEventExtractor.extractFromEmail, {
+            subject,
+            snippet,
+            headers,
+            sourceId: id,
+          });
+          if (extraction.success && extraction.event) {
+            eventCandidate = extraction.event;
+          }
+        }
+
+        if (!eventCandidate || !eventCandidate.startTime) {
+          skipped++;
+          continue;
+        }
+
+        const ev = eventCandidate;
+        const start = ev.startTime;
+        const end = ev.endTime;
+        const hash = `${ev.title.toLowerCase().trim()}::${start}::${from ?? ""}`;
+
+        // Dedup within ±2 hours
+        const window = 2 * 60 * 60 * 1000;
+        const candidates = db
+          ? await db
+              .query("events")
+              .withIndex("by_user_start", (q: any) =>
+                q.eq("userId", userId).gte("startTime", start - window).lte("startTime", start + window)
+              )
+              .collect()
+          : [];
+
+        const existing = candidates.find((e: any) => (e.meta as any)?.hash === hash || e.sourceId === id);
+
+        const baseEvent = {
+          userId,
+          title: ev.title,
+          description: ev.rawSummary,
+          startTime: start,
+          endTime: end,
+          allDay: ev.allDay || false,
+          location: ev.location,
+          status: ev.allDay ? "confirmed" : "tentative",
+          sourceType: "gmail" as const,
+          sourceId: id,
+          ingestionConfidence: ev.confidence >= 0.7 ? "high" : ev.confidence >= 0.4 ? "med" : "low",
+          proposed: autoAddMode === "propose" ? true : ev.confidence < 0.7 || !end,
+          rawSummary: ev.rawSummary,
+          meta: { hash, people: ev.people, from, dateHeader },
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        if (existing && db) {
+          await db.patch(existing._id, {
+            ...baseEvent,
+            createdAt: existing.createdAt,
+          });
+          updated++;
+        } else if (db) {
+          await db.insert("events", baseEvent);
+          created++;
+        } else {
+          skipped++;
+        }
+      } catch (err) {
+        skipped++;
+        console.warn("[gmail.ingestMessages] failed for", id, err);
+      }
+    }
+
+    return { success: true, created, updated, skipped };
+  },
+});
+
+// Internal wrapper for cron usage
+export const ingestMessagesCron = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    await ctx.runAction(api.domains.integrations.gmail.ingestMessages, {});
+    return null;
   },
 });

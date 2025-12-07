@@ -27,6 +27,7 @@ import { ZoomState, ZoomControls } from "@/hooks/useZoom";
 import { ZoomControls as ZoomControlsComponent } from "@/shared/components/ZoomControls";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
 import UnifiedEditor from "@features/editor/components/UnifiedEditor";
+import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 
 import Spreadsheet from 'react-spreadsheet';
 import Papa from 'papaparse';
@@ -1046,7 +1047,9 @@ useEffect(() => {
             </button>
           </div>
           <div className="min-h-[240px]">
-            <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+            <ErrorBoundary title="Failed to load notes">
+              <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+            </ErrorBoundary>
           </div>
         </div>
       </Panel>

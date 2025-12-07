@@ -20,8 +20,8 @@ import {
   Zap,
   AlertCircle,
   Search,
+  RefreshCw,
   Filter,
-  Image as ImageIcon,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage } from "@/components/SidebarGlobalNav";
 import { SourceNode, type SourceStatus } from "@/components/SourceNode";
@@ -38,10 +38,11 @@ import MagicInputContainer from "@/features/research/components/MagicInputContai
 import { InstantSearchBar } from "@/features/research/components/InstantSearchBar";
 import { PulseGrid, type InsightCard } from "@/features/research/components/PulseGrid";
 import { FeedCard, type FeedItem, type SentimentType } from "@/features/research/components/FeedCard";
-import { TrendRail, type TrendItem } from "@/features/research/components/TrendRail";
+import FeedTimeline from "@/features/research/components/FeedTimeline";
+import ScrollytellingLayout from "@/features/research/components/ScrollytellingLayout";
+import FeedReaderModal from "@/features/research/components/FeedReaderModal";
 import { InlineMetrics, type WorkflowMetrics } from "@/features/agents/views/WorkflowMetricsBar";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
-import { FeedReaderPanel } from "@/features/research/components/FeedReaderPanel";
 import { SmartWatchlist } from "@/features/research/components/SmartWatchlist";
 import { LiveRadarWidget } from "@/features/research/components/LiveRadarWidget";
 import { useKeyboardNavigation, KeyboardShortcutsHint } from "@/hooks/useKeyboardNavigation";
@@ -203,16 +204,17 @@ function WelcomeLandingInner({
 
   // Feed pagination state (must be before liveFeed query that uses it)
   const [feedLimit, setFeedLimit] = useState(24);
-  
+
   // Feed category filter for segmented views
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  
+
   // Feed search/filter text
   const [feedSearchQuery, setFeedSearchQuery] = useState('');
-  
+
   // Reader panel state - holds the selected feed item for deep dive
   const [readerItem, setReaderItem] = useState<FeedItem | null>(null);
-  
+  const [activeTopTab, setActiveTopTab] = useState<"briefing" | "signals" | "watchlist" | "saved">("briefing");
+
   // Category options for the feed tabs with keyword patterns for fallback filtering
   const FEED_CATEGORIES = [
     { id: null, label: "All", icon: "📰", keywords: [] },
@@ -304,7 +306,7 @@ function WelcomeLandingInner({
   // LIVE FEED: Central Newsstand data from Hacker News, ArXiv, RSS, etc.
   // "Write Once, Read Many" - shared across all users, free forever
   // ============================================================================
-  const liveFeed = useQuery(api.feed.get, { 
+  const liveFeed = useQuery(api.feed.get, {
     limit: feedLimit,
     ...(selectedCategory ? { category: selectedCategory as any } : {})
   });
@@ -314,7 +316,7 @@ function WelcomeLandingInner({
   const enrichFeedItem = (title: string, tags: string[]): { sentiment: SentimentType; relevanceScore: number } => {
     const titleLower = title.toLowerCase();
     const allText = `${title} ${tags.join(' ')}`.toLowerCase();
-    
+
     // Simple heuristic sentiment detection (replace with AI in production)
     let sentiment: SentimentType = 'neutral';
     if (allText.match(/growth|surge|boost|gain|bullish|up|raise|expand|record|success/)) {
@@ -322,7 +324,7 @@ function WelcomeLandingInner({
     } else if (allText.match(/decline|drop|fall|bearish|down|cut|loss|concern|risk/)) {
       sentiment = 'bearish';
     }
-    
+
     // Relevance scoring based on watchlist keywords (replace with user preferences)
     const watchlistKeywords = ['aapl', 'apple', 'nvda', 'nvidia', 'ai', 'openai', 'msft', 'microsoft', 'tech', 'semiconductor'];
     let relevanceScore = Math.floor(Math.random() * 40) + 20; // Base 20-60
@@ -330,7 +332,7 @@ function WelcomeLandingInner({
       if (allText.includes(keyword)) relevanceScore += 15;
     });
     relevanceScore = Math.min(99, relevanceScore);
-    
+
     return { sentiment, relevanceScore };
   };
 
@@ -363,6 +365,7 @@ function WelcomeLandingInner({
           // Enhanced fields
           sentiment: enrichment.sentiment,
           relevanceScore: enrichment.relevanceScore,
+          source: item.source || 'News',
         });
       });
     }
@@ -407,6 +410,7 @@ function WelcomeLandingInner({
             { label: 'Sources', value: String(Math.floor(Math.random() * 8) + 3) },
             { label: 'Confidence', value: '92%', trend: 'up' as const }
           ] : undefined,
+          source: 'Workspace',
         });
       });
     }
@@ -418,17 +422,20 @@ function WelcomeLandingInner({
           id: 'mock-1', type: 'signal' as const, title: 'Generative AI Infrastructure Funding',
           subtitle: 'Investment volume has increased 45% QoQ despite broader market cooldown.',
           timestamp: '2h ago', tags: ['VC', 'Infra', 'Series A'],
-          metrics: [{ label: 'Vol', value: '$4.2B', trend: 'up' as const }, { label: 'Deals', value: '12' }]
+          metrics: [{ label: 'Vol', value: '$4.2B', trend: 'up' as const }, { label: 'Deals', value: '12' }],
+          source: 'System'
         },
         {
           id: 'mock-2', type: 'dossier' as const, title: 'The State of Autonomous Agents',
           subtitle: 'A deep dive into the current capabilities, limitations, and regulatory landscape of autonomous browser agents.',
-          timestamp: '4h ago', tags: ['Agents', 'Research']
+          timestamp: '4h ago', tags: ['Agents', 'Research'],
+          source: 'System'
         },
         {
           id: 'mock-3', type: 'news' as const, title: 'OpenAI Releases "O1" Reasoning Model',
           subtitle: 'New model demonstrates advanced problem solving capabilities in math and coding benchmarks.',
-          timestamp: '5h ago', tags: ['LLM', 'Product Launch']
+          timestamp: '5h ago', tags: ['LLM', 'Product Launch'],
+          source: 'System'
         },
       ];
     }
@@ -469,17 +476,17 @@ function WelcomeLandingInner({
   // Filtered feed items based on search query and category (client-side fallback)
   const filteredFeedItems = useMemo(() => {
     let filtered = feedItems;
-    
+
     // Apply text search filter
     if (feedSearchQuery.trim()) {
       const query = feedSearchQuery.toLowerCase();
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.title.toLowerCase().includes(query) ||
         item.subtitle?.toLowerCase().includes(query) ||
         item.tags?.some(tag => tag.toLowerCase().includes(query))
       );
     }
-    
+
     // Apply category filter (client-side fallback for items without DB category)
     if (selectedCategory) {
       const categoryConfig = FEED_CATEGORIES.find(c => c.id === selectedCategory);
@@ -490,9 +497,18 @@ function WelcomeLandingInner({
         });
       }
     }
-    
+
+    // Apply top tab filter to mirror workspace tabs
+    if (activeTopTab === "signals") {
+      filtered = filtered.filter((item) => item.type === "signal");
+    } else if (activeTopTab === "watchlist") {
+      filtered = filtered.filter((item) => extractTickersFromText(item.title || "").length > 0);
+    } else if (activeTopTab === "saved") {
+      filtered = filtered.filter((item) => item.isBookmarked);
+    }
+
     return filtered;
-  }, [feedItems, feedSearchQuery, selectedCategory, FEED_CATEGORIES]);
+  }, [feedItems, feedSearchQuery, selectedCategory, FEED_CATEGORIES, activeTopTab]);
 
   // Helper: Format relative time
   function formatRelativeTime(timestamp: number): string {
@@ -561,6 +577,11 @@ Include outreach angle, credibility notes, and 3 tailored questions.`
     return matches.filter((t) => !ignore.has(t)).slice(0, 3);
   }
 
+  const todayLabel = useMemo(
+    () => new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+    []
+  );
+
   const sendStreaming = useMutation(api.domains.agents.fastAgentPanelStreaming.initiateAsyncStreaming);
   // State with persistence (tabs removed - unified view)
   const [researchPrompt, setResearchPrompt] = useState(() => {
@@ -626,7 +647,6 @@ Include outreach angle, credibility notes, and 3 tailored questions.`
   });
 
   // Search focus state for dimming PulseGrid
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Live Events Panel state - REMOVED (events now inline in LiveDossierDocument)
   // const [showEventsPanel, setShowEventsPanel] = useState(false);
@@ -1843,248 +1863,198 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
               {/* CONDITIONAL CONTENT: HERO vs ACTIVE */}
               {showHero ? (
-                // HERO STATE - "The Living Briefing" (Instagram x Bloomberg x Newsletter)
-                <div className="min-h-full flex flex-col relative">
-                  
-                  {/* Subtle Top Gradient for depth */}
-                  <div className="absolute top-0 left-0 right-0 h-80 bg-gradient-to-b from-gray-50/80 via-gray-50/40 to-transparent pointer-events-none" />
-                  
-                  {/* 1. HEADER: Personal & Briefing Style - Tighter spacing */}
-                  <div className="relative text-center pt-10 pb-6 px-6 space-y-1">
-                    <p className="text-gray-400 font-medium uppercase tracking-[0.2em] text-[11px]">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} • Morning Briefing
-                    </p>
-                    <h1 className="text-4xl font-serif text-gray-900 tracking-tight leading-tight">
-                      Good morning, {user?.name?.split(' ')[0] || 'there'}.
-                    </h1>
-                    <p className="text-gray-400 text-base font-light">{updatedSourceCount} sectors updated overnight</p>
-                  </div>
-
-                  {/* 2. FLOATING COMMAND CENTER - Centered and aligned */}
-                  <div className={`relative sticky top-6 z-40 transition-all duration-500 px-6 ${isSearchFocused ? 'mb-8' : 'mb-6'}`}>
-                    <div className="max-w-2xl mx-auto">
-                      <InstantSearchBar
-                        onStartNewResearch={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
-                        onDocumentSelect={onDocumentSelect}
-                        defaultValue={researchPrompt}
-                        mode={researchMode}
-                        onFocus={() => setIsSearchFocused(true)}
-                        onBlur={() => setIsSearchFocused(false)}
-                        floating={true}
-                      />
-                      {/* Research Mode Pills - below search */}
-                      <div className={`flex gap-2 justify-center mt-4 transition-all duration-300 ${isSearchFocused ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                        {[
-                          { id: "quick", title: "⚡ Quick Brief", mode: "quick" as const },
-                          { id: "deep", title: "🔬 Deep Dossier", mode: "deep" as const },
-                        ].map((intent) => (
-                          <button
-                            key={intent.id}
-                            type="button"
-                            onClick={() => handleRunPrompt(undefined, { mode: intent.mode })}
-                            className={`text-xs px-4 py-1.5 rounded-full border transition-all ${researchMode === intent.mode
-                              ? "border-gray-900 bg-gray-900 text-white shadow-sm"
-                              : "border-gray-200 bg-white/80 hover:border-gray-300 text-gray-600 backdrop-blur-sm"
-                            }`}
-                          >
-                            {intent.title}
-                          </button>
-                        ))}
+                // HERO STATE - DocumentsHub-aligned dashboard
+                <div className="min-h-full bg-white">
+                  <div className="px-6 py-6">
+                    <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
+                      {/* Tabs + date (mirrors DocumentsHub pills + date) */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1 p-1 bg-gray-100/80 rounded-lg">
+                          {[
+                            { id: "briefing", label: "Briefing" },
+                            { id: "signals", label: "Signals" },
+                            { id: "watchlist", label: "Watchlist" },
+                            { id: "saved", label: "Saved" },
+                          ].map((tab) => (
+                            <button
+                              key={tab.id}
+                              type="button"
+                              onClick={() => {
+                                setActiveTopTab(tab.id as any);
+                                setSelectedCategory(null);
+                              }}
+                              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTopTab === tab.id
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-500 hover:text-gray-900"
+                                }`}
+                            >
+                              {tab.label}
+                            </button>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500 font-medium">{todayLabel}</span>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* 3. THE "STORIES" RAIL - Aligned with content grid */}
-                  <div className={`px-6 mb-6 transition-all duration-300 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none' : 'opacity-100'}`}>
-                    <div className="max-w-[1400px] mx-auto">
-                      <TrendRail
-                        onTrendClick={(trend) => {
-                          setResearchPrompt(`Latest news and analysis on ${trend.label}`);
-                          handleRunPrompt(`Latest news and analysis on ${trend.label}`, { mode: 'quick' });
-                        }}
-                      />
-                    </div>
-                  </div>
+                      {/* Title row */}
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Morning Briefing</h1>
+                          <p className="text-sm text-gray-500 mt-1">Daily intelligence digest and market signals.</p>
+                        </div>
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Research</span>
+                      </div>
 
-                  {/* 4. THE INTELLIGENCE FEED - Daily Briefing Dashboard Layout */}
-                  <div className={`flex-1 px-6 py-6 transition-all duration-300 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none scale-[0.98]' : 'opacity-100'}`}>
-                    {/* Constrained Width Container - Centered */}
-                    <div className="w-full max-w-[1400px] mx-auto">
-                      {/* Two-Column Layout: Feed (70%) + Sidebar (30%) */}
-                      <div className="flex gap-8">
-                        
-                        {/* LEFT COLUMN: Main Feed */}
-                        <div className="flex-1 min-w-0">
-                          {/* Feed Toolbar - Sticky with backdrop blur */}
-                          <div className="sticky top-0 z-20 -mx-2 px-2 py-4 mb-4 bg-white/90 backdrop-blur-md">
-                            <div className="flex items-center justify-between gap-4 mb-3">
-                              <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Intelligence Feed</h2>
-                              
-                              {/* Quick Search Input */}
-                              <div className="flex-1 max-w-[200px]">
-                                <input
-                                  type="text"
-                                  value={feedSearchQuery}
-                                  onChange={(e) => setFeedSearchQuery(e.target.value)}
-                                  placeholder="Filter..."
-                                  className="w-full px-3 py-1.5 text-sm border border-gray-100 rounded-lg bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-gray-200 focus:border-gray-200 transition-all placeholder:text-gray-400"
-                                />
-                              </div>
-                              
-                              <span className="text-xs text-gray-400 font-medium whitespace-nowrap hidden sm:block">
-                                {filteredFeedItems.length} updates
-                              </span>
-                            </div>
-                            
-                            {/* Category Tabs - Horizontal scroll with fade mask */}
-                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                              {FEED_CATEGORIES.map(cat => (
+                      {/* Toolbar / command bar (aligned with workspace filters) */}
+                      <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {FEED_CATEGORIES.slice(0, 4).map((cat) => (
+                            <button
+                              key={cat.id ?? "all"}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(cat.id);
+                                setActiveTopTab("briefing");
+                              }}
+                              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${selectedCategory === cat.id
+                                ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                                : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                                }`}
+                            >
+                              {cat.icon} {cat.label}
+                            </button>
+                          ))}
+                          <div className="h-4 w-px bg-gray-200" />
+                          <button
+                            type="button"
+                            onClick={() => handleRunPrompt(undefined, { mode: researchMode })}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium shadow-sm hover:bg-black"
+                          >
+                            <Zap className="w-3 h-3" />
+                            Run
+                          </button>
+                          <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+                            {[
+                              { id: "quick", title: "Quick" as const },
+                              { id: "deep", title: "Deep" as const },
+                            ].map((intent) => {
+                              const modeKey = intent.title === "Quick" ? "quick" : "deep" as const;
+                              return (
                                 <button
-                                  key={cat.id ?? 'all'}
+                                  key={intent.id}
                                   type="button"
-                                  onClick={() => {
-                                    setSelectedCategory(cat.id);
-                                    setFeedSearchQuery(''); // Clear search on category change
-                                  }}
-                                  className={`text-xs px-3 py-1.5 rounded-full border transition-all whitespace-nowrap ${
-                                    selectedCategory === cat.id
-                                      ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                                      : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-200 hover:bg-gray-100'
-                                  }`}
+                                  onClick={() => setResearchMode(modeKey)}
+                                  className={`px-3 py-1 text-[11px] rounded-full font-medium ${researchMode === modeKey
+                                    ? "bg-white shadow-sm text-gray-900"
+                                    : "text-gray-500"
+                                    }`}
                                 >
-                                  {cat.icon} {cat.label}
+                                  {intent.title}
                                 </button>
-                              ))}
-                              
-                              {/* Clear filters button */}
-                              {(selectedCategory || feedSearchQuery) && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedCategory(null);
-                                    setFeedSearchQuery('');
-                                  }}
-                                  className="text-xs px-3 py-1.5 rounded-full border border-red-100 text-red-500 bg-red-50 hover:bg-red-100 transition-all whitespace-nowrap"
-                                >
-                                  ✕ Clear
-                                </button>
-                              )}
-                            </div>
+                              );
+                            })}
                           </div>
+                        </div>
 
-                          {/* Masonry Grid of FeedCards - Reduced columns when sidebar visible */}
-                          <div className="columns-1 md:columns-2 xl:columns-2 2xl:columns-3 gap-6 space-y-6">
-                            {filteredFeedItems.length === 0 ? (
-                              <div className="col-span-full text-center py-12 text-gray-500">
-                                <p className="text-lg mb-2">No items match your filters</p>
-                                <p className="text-sm">Try adjusting your search or category selection</p>
-                              </div>
-                            ) : filteredFeedItems.map((item) => (
-                              <FeedCard
-                                key={item.id}
-                                item={item}
-                                onClick={() => {
-                                  // Open the Reader Panel for deep dive (stays "on your own page")
-                                  // This keeps users in the app instead of opening external tabs
-                                  if (item.id.startsWith('feed-') || item.url) {
-                                    setReaderItem(item);
-                                    return;
-                                  }
-                                  // If it's a real document, navigate to it
-                                  if (!item.id.startsWith('mock-') && !item.id.startsWith('feed-') && onDocumentSelect) {
-                                    onDocumentSelect(item.id);
-                                  } else if (item.id.startsWith('mock-')) {
-                                    // Mock item - open in reader panel
-                                    setReaderItem(item);
-                                  }
-                                }}
-                                onAnalyze={() => {
-                                  // Open Fast Agent with context about this item
-                                  openWithContext({
-                                    initialMessage: `Analyze this ${item.type}: "${item.title}"\n\n${item.subtitle || ''}`,
-                                    contextWebUrls: item.url ? [item.url] : undefined,
-                                    contextTitle: item.title,
-                                  });
-                                }}
-                              />
-                            ))}
+                        <div className="flex items-center gap-2">
+                          <div className="relative group">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600" />
+                            <input
+                              type="text"
+                              placeholder="Filter briefing..."
+                              value={feedSearchQuery}
+                              onChange={(e) => setFeedSearchQuery(e.target.value)}
+                              className="pl-8 pr-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 rounded-lg text-xs w-48 transition-all outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            />
                           </div>
+                          <div className="h-4 w-px bg-gray-200" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFeedSearchQuery('');
+                              setSelectedCategory(null);
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Refresh
+                          </button>
+                        </div>
+                      </div>
 
-                          {/* Load More Button - show when there might be more items to load */}
+                      {/* Scrollytelling dossier stream */}
+                      <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <ScrollytellingLayout />
+                      </div>
+
+                      {/* Linear flow + context */}
+                      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-16 items-start px-0 md:px-2">
+                        <div className="flex-1 max-w-4xl">
+                          <FeedTimeline
+                            items={filteredFeedItems}
+                            onItemClick={(item) => {
+                              setReaderItem(item);
+                            }}
+                            onAnalyze={(item) => {
+                              openWithContext({
+                                initialMessage: `Analyze this ${item.type}: \"${item.title}\"\n\n${item.subtitle || ''}`,
+                                contextWebUrls: (item as any).url ? [(item as any).url] : undefined,
+                                contextTitle: item.title,
+                              });
+                            }}
+                          />
                           {feedItems.length >= feedLimit && filteredFeedItems.length > 0 && (
-                            <div className="text-center mt-6">
+                            <div className="text-center mt-4">
                               <button
                                 type="button"
                                 onClick={() => setFeedLimit(prev => prev + 24)}
-                                className="inline-flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                                className="inline-flex items-center gap-2 px-5 py-2 bg-gray-900 text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-all duration-200 shadow-sm"
                               >
                                 Load More ({feedLimit} loaded)
                               </button>
                             </div>
                           )}
-
-                          {/* View Last Results - if available */}
-                          {threadId && hasReceivedResponse && (
-                            <div className="text-center mt-8">
-                              <button
-                                type="button"
-                                onClick={handleViewLastResults}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
-                              >
-                                <Clock className="w-4 h-4" />
-                                View Last Results
-                              </button>
-                            </div>
-                          )}
                         </div>
 
-                        {/* RIGHT COLUMN: Pinned Context Sidebar (hidden on smaller screens) */}
-                        <aside className="hidden xl:block w-80 shrink-0 space-y-5 sticky top-24">
-                          <DayStarterCard
-                            onRunPreset={(prompt, personaKey) => {
-                              setPersona(personaKey);
-                              runWithFastAgent(prompt);
-                            }}
-                            activePersona={persona}
-                            onPersonaChange={setPersona}
-                            isGuest={!isAuthenticated}
-                          />
-
-                          {persona === 'general' && (
-                            <MorningDigest
-                              userName={user?.name?.split(' ')[0]}
-                              onItemClick={(item) => {
-                                const prompt = item.linkedEntity
-                                  ? `Tell me about recent news for ${item.linkedEntity}`
-                                  : item.text;
-                                if (!prompt) return;
-                                runWithFastAgent(prompt);
-                              }}
-                            />
-                          )}
-
-                          <OvernightMovesCard
-                            items={overnightMoves}
-                            onOpen={handleOvernightOpen}
-                            onBrief={handleOvernightBrief}
-                          />
-
-                          <DealListPanel
-                            deals={SAMPLE_DEALS}
-                            onOpenDeal={handleDealOpen}
-                          />
-
-                          <SmartWatchlist 
-                            mentions={watchlistMentions}
-                            onItemClick={(symbol) => {
-                              runWithFastAgent(`Give me a quick analysis of ${symbol}`);
-                            }}
-                            onAnalyze={(symbol) => {
-                              runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
-                            }}
-                          />
-
-                          <LiveRadarWidget />
+                        <aside className="hidden xl:block w-[280px] shrink-0 sticky top-24">
+                          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-6">
+                            <div>
+                              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Today</h3>
+                              <MorningDigest
+                                userName={user?.name?.split(' ')[0]}
+                                onItemClick={(item) => {
+                                  const prompt = item.linkedEntity
+                                    ? `Tell me about recent news for ${item.linkedEntity}`
+                                    : item.text;
+                                  if (!prompt) return;
+                                  runWithFastAgent(prompt);
+                                }}
+                              />
+                            </div>
+                            <div className="border-t border-gray-100 pt-4">
+                              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Watchlist</h3>
+                              <SmartWatchlist
+                                mentions={watchlistMentions}
+                                onItemClick={(symbol) => {
+                                  runWithFastAgent(`Give me a quick analysis of ${symbol}`);
+                                }}
+                                onAnalyze={(symbol) => {
+                                  runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
+                                }}
+                              />
+                            </div>
+                            <div className="border-t border-gray-100 pt-4 space-y-3">
+                              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Quick Actions</h3>
+                              <DayStarterCard
+                                onRunPreset={(prompt, personaKey) => {
+                                  setPersona(personaKey);
+                                  runWithFastAgent(prompt);
+                                }}
+                                activePersona={persona}
+                                onPersonaChange={setPersona}
+                                isGuest={!isAuthenticated}
+                              />
+                            </div>
+                          </div>
                         </aside>
                       </div>
                     </div>
@@ -2188,6 +2158,10 @@ While commercial fusion is still years away, the pace of innovation has accelera
                     )}
                     {/* Unified Live Dossier View - All content in one place */}
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      {/* Scrollytelling dossier stream (JSON-driven) */}
+                      <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <ScrollytellingLayout />
+                      </div>
                       {/* Executive Summary Block (Only show if we have some content) */}
                       {citations.length > 0 && <ExecutiveSummaryBlock />}
 
@@ -2214,9 +2188,9 @@ While commercial fusion is still years away, the pace of innovation has accelera
         </div>
       </div>
 
-      {/* Feed Reader Panel - Deep Dive view for selected items */}
+      {/* Feed Reader Modal - Deep Dive view for selected items */}
       {readerItem && (
-        <FeedReaderPanel
+        <FeedReaderModal
           item={readerItem}
           onClose={() => setReaderItem(null)}
         />

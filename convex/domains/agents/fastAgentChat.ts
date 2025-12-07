@@ -9,6 +9,7 @@ import { api, internal } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import OpenAI from "openai";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
 /**
  * Modern fast agent chat action
@@ -311,7 +312,13 @@ async function handleChatResponse(
     apiKey: process.env.OPENAI_API_KEY,
   });
 
-  const modelName = model === "openai" ? "gpt-5-mini" : "gpt-5-mini";
+  const preferredModel = model === "gemini"
+    ? getLlmModel("chat", "gemini")
+    : getLlmModel("chat", "openai");
+  const modelName = model === "gemini" ? getLlmModel("chat", "openai") : preferredModel;
+  if (model === "gemini") {
+    console.warn("[fastAgentChat] Gemini not wired for chat completions in this path; using OpenAI transport with OpenAI model fallback.");
+  }
 
   const completion = await openai.chat.completions.create({
     model: modelName,
@@ -326,7 +333,7 @@ async function handleChatResponse(
       },
     ],
     temperature: 0.7,
-    max_tokens: 2000,
+    max_completion_tokens: 2000,
   });
 
   const response = completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
