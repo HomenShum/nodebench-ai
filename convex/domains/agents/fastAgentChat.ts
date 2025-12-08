@@ -332,7 +332,6 @@ async function handleChatResponse(
         content: message,
       },
     ],
-    temperature: 0.7,
     max_completion_tokens: 2000,
   });
 

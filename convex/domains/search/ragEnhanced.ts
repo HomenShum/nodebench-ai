@@ -298,7 +298,6 @@ Respond in JSON format:
         { role: "user", content: prompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.1, // Low temperature for consistent judgments
     });
 
     const responseContent = completion.choices[0]?.message?.content || "{}";

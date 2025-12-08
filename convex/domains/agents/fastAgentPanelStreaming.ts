@@ -734,7 +734,6 @@ Examples:
       },
     ],
     max_completion_tokens: 60,
-    temperature: 0.3,
   });
 
     const generatedTitle = response.choices[0]?.message?.content?.trim() || "Research Thread";

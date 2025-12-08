@@ -67,7 +67,6 @@ Respond with ONLY a JSON object:
           content: judgmentPrompt,
         },
       ],
-      temperature: 0.3,
       max_completion_tokens: 200,
     });
 
@@ -115,7 +114,6 @@ Generate a specific edit proposal. Return ONLY the proposed new content or chang
           content: prompt,
         },
       ],
-      temperature: 0.7,
       max_completion_tokens: 500,
     });
 

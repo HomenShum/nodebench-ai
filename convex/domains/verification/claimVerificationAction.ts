@@ -154,7 +154,6 @@ async function judgeClaimAgainstSource(
   try {
     const response = await openai.chat.completions.create({
       model: getLlmModel("judge", "openai"),
-      temperature: 0.1, // Low temp for consistent judgments
       max_completion_tokens: 200,
       messages: [
         { role: "system", content: JUDGE_SYSTEM_PROMPT },

@@ -27,10 +27,11 @@ A comprehensive AI-powered document management and research platform with multi-
 ## LLM Model Registry
 
 - Location: `shared/llm/modelCatalog.ts`
-- Purpose: single source of truth for provider/task defaults (OpenAI → gpt-5-nano/minis; Gemini → 2.5 flash/pro and image/flash-lite variants; 3-pro preview as fallback)
+- Purpose: single source of truth for provider/task defaults (OpenAI → gpt-5-nano/mini reasoning models; Gemini → 2.5 flash/pro and image/flash-lite variants; 3-pro preview as fallback)
 - Helper: `getLlmModel(task, provider?, override?)` returns the preferred model while honoring explicit overrides
 - Tasks covered: `chat`, `agent`, `router`, `judge`, `analysis`, `vision`, `fileSearch`, `voice`
 - Usage: import `getLlmModel` and pass to OpenAI or Gemini SDK calls instead of hardcoding model strings
+- **Note:** gpt-5-nano/mini are reasoning models that only support the default temperature (1). Do not pass custom `temperature` values when using these models.
 - Key call sites wired to the registry (examples): `convex/actions/externalOrchestrator.ts` (chat proxy), `convex/router.ts` (streaming), `convex/domains/agents/fastAgentPanelStreaming.ts` (panel chat + doc generation), `convex/domains/agents/fastAgentChat.ts` (modern chat), `convex/domains/verification/claimVerificationAction.ts` (judge), `convex/tags_actions.ts` (tagging), `convex/domains/documents/fileAnalysis.ts` and `convex/domains/ai/genai.ts` (Gemini analysis/extraction), `convex/domains/documents/fileSearch.ts` (Gemini file search), `convex/domains/ai/morningDigest.ts` (digest summary), `convex/domains/integrations/voice/voiceActions.ts` (voice), `convex/tools/integration/orchestrationTools.ts`, `convex/tools/document/contextTools.ts`, `convex/tools/calendar/recentEventSearch.ts`, `convex/tools/media/recentNewsSearch.ts`, `convex/tools/integration/peopleProfileSearch.ts`, `convex/tools/sec/secCompanySearch.ts`, and `convex/tools/evaluation/evaluator.ts`.
 
 ---

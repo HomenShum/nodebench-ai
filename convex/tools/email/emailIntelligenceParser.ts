@@ -1,5 +1,9 @@
+"use node";
+
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
+import { v } from "convex/values";
+import { action } from "../../_generated/server";
 import { api } from "../../_generated/api";
 
 export type EmailIntelligenceEntities = {
@@ -229,4 +233,63 @@ function toTitle(input: string): string {
     .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
     .join(" ")
     .trim();
+}
+
+/**
+ * Action wrapper for parseEmailForIntelligence tool.
+ * Allows the cron and other internal actions to call this directly.
+ */
+export const parseEmailForIntelligenceAction = action({
+  args: {
+    maxEmails: v.optional(v.number()),
+    unreadOnly: v.optional(v.boolean()),
+    filterSenders: v.optional(v.array(v.string())),
+    keywords: v.optional(v.array(v.string())),
+    email: v.optional(v.object({
+      id: v.optional(v.string()),
+      from: v.optional(v.string()),
+      subject: v.optional(v.string()),
+      snippet: v.optional(v.string()),
+      body: v.optional(v.string()),
+      date: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; emails?: EmailIntelligence[]; error?: string }> => {
+    const maxEmails = args.maxEmails ?? 20;
+    const targets =
+      args.email !== undefined
+        ? [args.email]
+        : await fetchRecentInboxAction(ctx, maxEmails, args.filterSenders);
+
+    if (!targets || targets.length === 0) {
+      return { success: true, emails: [] };
+    }
+
+    const parsed = targets
+      .map((email: BasicEmail) => analyzeEmailIntelligence(email, args.keywords))
+      .filter(
+        (email: EmailIntelligence) =>
+          email.entities.companies.length > 0 || email.entities.people.length > 0,
+      );
+
+    return { success: true, emails: parsed };
+  },
+});
+
+async function fetchRecentInboxAction(ctx: any, maxEmails: number, filterSenders?: string[]) {
+  const inbox = await ctx.runAction(api.domains.integrations.gmail.fetchInbox, {
+    maxResults: maxEmails,
+  });
+
+  if (!inbox.success || !inbox.messages) return [];
+
+  const candidates = inbox.messages;
+  if (!filterSenders || filterSenders.length === 0) return candidates;
+
+  const matchers = filterSenders.map((f) => f.toLowerCase());
+  return candidates.filter((m: any) => {
+    if (!m.from) return false;
+    const from = m.from.toLowerCase();
+    return matchers.some((matcher) => from.includes(matcher.replace("*", "")));
+  });
 }

@@ -207,7 +207,6 @@ Evaluate each aspect based on the success criteria:
         }
       ],
       response_format: zodResponseFormat(JudgeEvaluationSchema, "evaluation"),
-      temperature: 0.1, // Low temperature for consistent evaluations
     });
 
     const messageContent = completion.choices[0].message.content;

@@ -81,7 +81,6 @@ Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web develop
       content: `Extract semantic tags from this document:\n\n${text}`,
     },
   ],
-  temperature: 0.3,
   max_completion_tokens: 500,
 });
 

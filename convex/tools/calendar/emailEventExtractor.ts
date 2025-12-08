@@ -43,7 +43,6 @@ export const extractFromEmail = internalAction({
       const result = await generateText({
         model: openai.chat(getLlmModel("analysis", "openai")),
         maxOutputTokens: 400,
-        temperature: 0.2,
         prompt,
       });
 

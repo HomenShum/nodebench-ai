@@ -81,7 +81,6 @@ Write a professional, concise summary (2-3 sentences max). Do not use bullet poi
           { role: "user", content: prompt }
         ],
         max_completion_tokens: 200,
-        temperature: 0.7,
       });
 
       return {
@@ -122,7 +121,6 @@ export const detectSentiment = action({
           }
         ],
         max_completion_tokens: 10,
-        temperature: 0,
       });
 
       const sentiment = response.choices[0]?.message?.content?.toLowerCase().trim();
