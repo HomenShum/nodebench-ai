@@ -8,7 +8,7 @@ export const runEmailIntelligenceSweep = internalAction({
   },
   handler: async (ctx, args) => {
     const parsed: any = await ctx.runAction(
-      api.tools.email.emailIntelligenceParser.parseEmailForIntelligence,
+      (api as any).tools.email.emailIntelligenceParser.parseEmailForIntelligence,
       {
         maxEmails: args.maxEmails ?? 10,
         unreadOnly: true,

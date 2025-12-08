@@ -37,6 +37,7 @@
     "@blocknote/react": "^0.44.0",
     "@convex-dev/agent": "^0.2.10",
     "@convex-dev/auth": "^0.0.80",
+    "@convex-dev/crons": "^0.2.0",
     "@convex-dev/persistent-text-streaming": "^0.2.3",
     "@convex-dev/polar": "^0.6.3",
     "@convex-dev/presence": "^0.1.2",

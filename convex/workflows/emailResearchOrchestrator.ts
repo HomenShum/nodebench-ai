@@ -46,7 +46,7 @@ export const orchestrateEmailResearch = action({
     if (companyName) {
       try {
         companyResearch = await ctx.runAction(
-          api.tools.financial.enhancedFundingTools.enrichCompanyDossier,
+          (api as any).tools.financial.enhancedFundingTools.enrichCompanyDossier,
           {
             companyName,
             industry: "technology",
@@ -60,7 +60,7 @@ export const orchestrateEmailResearch = action({
 
       try {
         founderResearch = await ctx.runAction(
-          api.tools.financial.enhancedFundingTools.enrichFounderInfo,
+          (api as any).tools.financial.enhancedFundingTools.enrichFounderInfo,
           {
             companyName,
             industry: "technology",
@@ -72,7 +72,7 @@ export const orchestrateEmailResearch = action({
 
       try {
         investorResearch = await ctx.runAction(
-          api.tools.financial.enhancedFundingTools.smartFundingSearch,
+          (api as any).tools.financial.enhancedFundingTools.smartFundingSearch,
           {
             industries: ["technology", "semiconductor", "ai"],
             fundingStages: ["seed", "series-a", "series-b"],
@@ -184,7 +184,7 @@ async function maybeDeliverEmail(
     };
 
     const html = generateDossierEmail(emailData);
-    await ctx.runAction(api.domains.integrations.email.sendEmail, {
+    await ctx.runAction((api as any).domains.integrations.email.sendEmail, {
       to,
       subject: `Email Intelligence: ${dossier.company.name}`,
       body: html,

@@ -28,6 +28,15 @@ const INVESTMENT_TERMS = ["investment", "raise", "series", "funding", "term shee
 const URGENCY_TERMS = ["urgent", "asap", "this week", "today", "calendar", "invite", "soon"];
 const TECH_TERMS = ["api", "integration", "pilot", "verification", "eda", "semiconductor", "chip", "architecture"];
 
+type BasicEmail = {
+  id?: string;
+  from?: string;
+  subject?: string;
+  snippet?: string;
+  body?: string;
+  date?: string;
+};
+
 export const parseEmailForIntelligence = createTool({
   description: `Parse Gmail messages to extract companies, people, investors, and intent for research orchestration.
 
@@ -63,8 +72,11 @@ Outputs structured entities, intent classification, and urgency scoring.`,
     }
 
     const parsed = targets
-      .map((email) => analyzeEmailIntelligence(email, args.keywords))
-      .filter((email) => email.entities.companies.length > 0 || email.entities.people.length > 0);
+      .map((email: BasicEmail) => analyzeEmailIntelligence(email, args.keywords))
+      .filter(
+        (email: EmailIntelligence) =>
+          email.entities.companies.length > 0 || email.entities.people.length > 0,
+      );
 
     return { success: true, emails: parsed };
   },
@@ -75,7 +87,7 @@ Outputs structured entities, intent classification, and urgency scoring.`,
  * Exposed for reuse by workflows that already have an email body loaded.
  */
 export function analyzeEmailIntelligence(
-  email: { id?: string; from?: string; subject?: string; snippet?: string; body?: string },
+  email: BasicEmail,
   extraKeywords?: string[],
 ): EmailIntelligence {
   const text = buildText(email);

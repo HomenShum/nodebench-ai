@@ -5,6 +5,7 @@ import { action } from "../_generated/server";
 import { v } from "convex/values";
 import { api } from "../_generated/api";
 import type { EmailIntelligenceDossier } from "../lib/dossierGenerator";
+import type { Id } from "../_generated/dataModel";
 
 const REQUIRED_SECTIONS = [
   "executive summary",
@@ -16,6 +17,16 @@ const REQUIRED_SECTIONS = [
   "risk assessment",
   "pricing",
 ];
+
+type ComposeReturn = {
+  success: boolean;
+  prdMarkdown: string;
+  validation: ReturnType<typeof validatePRDStructure>;
+  citations: string[];
+  confidenceScore: number;
+  documentId?: string;
+  pdfArtifact?: string;
+};
 
 export const composePRDForPartnership = action({
   args: {
@@ -32,18 +43,18 @@ export const composePRDForPartnership = action({
     documentId: v.optional(v.string()),
     pdfArtifact: v.optional(v.string()),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<ComposeReturn> => {
     const startedAt = Date.now();
     const dossier = (args.dossierData || {}) as EmailIntelligenceDossier;
     const companyName = dossier.company?.name ?? args.emailIntelligence?.entities?.companies?.[0] ?? "Partner";
 
     const prompt = buildPRDPrompt(companyName, dossier, args.emailIntelligence);
-    const run = await ctx.runAction(api.domains.agents.core.coordinatorAgent.runCoordinatorAgent, {
+    const run = (await ctx.runAction((api as any).domains.agents.core.coordinatorAgent.runCoordinatorAgent, {
       threadId: `prd-${Date.now()}`,
       prompt,
-    });
+    })) as { text?: string } | string;
 
-    const prdMarkdown = run?.text || String(run || "");
+    const prdMarkdown = typeof run === "string" ? run : run?.text || "";
     const validation = validatePRDStructure(prdMarkdown);
     const citations = extractCitations(prdMarkdown);
     const confidenceScore = calculateConfidenceScore({
@@ -138,14 +149,18 @@ function calculateConfidenceScore(params: {
   return Math.round(Math.min(100, citationScore + sectionScore + speedScore));
 }
 
-async function persistPRDDocument(ctx: any, companyName: string, markdown: string) {
+async function persistPRDDocument(
+  ctx: any,
+  companyName: string,
+  markdown: string,
+): Promise<Id<"documents"> | undefined> {
   try {
     const userId = await getAuthUserId(ctx);
     if (!userId) return undefined;
-    const docId = await ctx.runMutation(api.domains.documents.documents.createWithContent, {
+    const docId = (await ctx.runMutation(api.domains.documents.documents.createWithContent, {
       title: `PRD: ${companyName}`,
       content: markdown,
-    });
+    })) as Id<"documents">;
     return docId;
   } catch (err) {
     console.warn("[prdComposer] persistPRDDocument failed", err);
@@ -175,7 +190,7 @@ async function maybeEmailPRD(ctx: any, companyName: string, markdown: string, ci
       .filter(Boolean)
       .join("\n");
 
-    await ctx.runAction(api.domains.integrations.email.sendEmail, {
+    await ctx.runAction((api as any).domains.integrations.email.sendEmail, {
       to,
       subject: `Partnership PRD: ${companyName}`,
       body,
