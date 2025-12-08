@@ -50,6 +50,7 @@ import { MorningDigest } from "@/features/research/components/MorningDigest";
 import { DayStarterCard } from "@/features/research/components/DayStarterCard";
 import { OvernightMovesCard, type MoveItem } from "@/features/research/components/OvernightMovesCard";
 import { DealListPanel, DealFlyout, type Deal } from "@/features/research/components/DealListPanel";
+import SourceFeed from "@/features/research/components/SourceFeed";
 
 const SAMPLE_DEALS: Deal[] = [
   {
@@ -214,6 +215,7 @@ function WelcomeLandingInner({
   // Reader panel state - holds the selected feed item for deep dive
   const [readerItem, setReaderItem] = useState<FeedItem | null>(null);
   const [activeTopTab, setActiveTopTab] = useState<"briefing" | "signals" | "watchlist" | "saved">("briefing");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
 
   // Category options for the feed tabs with keyword patterns for fallback filtering
   const FEED_CATEGORIES = [
@@ -469,8 +471,6 @@ function extractScrollySectionsFromDoc(doc: any): ScrollySection[] | null {
     return insightCards.length;
   }, [insightCards]);
 
-  const scrollyData = dossierSections ?? undefined;
-
   const dossierSections: ScrollySection[] | null = useMemo(() => {
     if (!documents?.length) return null;
     const candidate = documents.find(
@@ -483,6 +483,8 @@ function extractScrollySectionsFromDoc(doc: any): ScrollySection[] | null {
     if (!candidate) return null;
     return extractScrollySectionsFromDoc(candidate);
   }, [documents]);
+
+  const scrollyData = dossierSections ?? undefined;
 
   // ============================================================================
   // LIVE FEED: Central Newsstand data from Hacker News, ArXiv, RSS, etc.
@@ -691,6 +693,25 @@ function extractScrollySectionsFromDoc(doc: any): ScrollySection[] | null {
 
     return filtered;
   }, [feedItems, feedSearchQuery, selectedCategory, FEED_CATEGORIES, activeTopTab]);
+
+  const sourceFilters = useMemo(() => {
+    const unique = new Map<string, string>();
+    feedItems.forEach((item) => {
+      if (item.source) {
+        unique.set(item.source.toLowerCase(), item.source);
+      }
+    });
+    return [
+      { id: "all", label: "All Sources" },
+      ...Array.from(unique.entries()).map(([id, label]) => ({ id, label })),
+    ];
+  }, [feedItems]);
+
+  const sourceFilteredFeedItems = useMemo(() => {
+    if (sourceFilter === "all") return filteredFeedItems;
+    const target = sourceFilter.toLowerCase();
+    return filteredFeedItems.filter((item) => (item.source || "").toLowerCase() === target);
+  }, [filteredFeedItems, sourceFilter]);
 
   // Helper: Format relative time
   function formatRelativeTime(timestamp: number): string {
@@ -2168,11 +2189,30 @@ While commercial fusion is still years away, the pace of innovation has accelera
                         <ScrollytellingLayout data={scrollyData} />
                       </div>
 
+                      {/* Source-filtered intelligence rail */}
+                      <div className="mb-8 rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-900">Live Source Intelligence</h3>
+                            <p className="text-xs text-gray-500">Toggle sources to focus the feed.</p>
+                          </div>
+                          <span className="text-[11px] text-gray-500">{sourceFilteredFeedItems.length} items</span>
+                        </div>
+                        <div className="px-4 pb-4">
+                          <SourceFeed
+                            items={filteredFeedItems}
+                            sources={sourceFilters}
+                            activeSource={sourceFilter}
+                            onSelectSource={setSourceFilter}
+                          />
+                        </div>
+                      </div>
+
                       {/* Linear flow + context */}
                       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-16 items-start px-0 md:px-2">
                         <div className="flex-1 max-w-4xl">
                           <FeedTimeline
-                            items={filteredFeedItems}
+                            items={sourceFilteredFeedItems}
                             onItemClick={(item) => {
                               setReaderItem(item);
                             }}
@@ -2184,7 +2224,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
                               });
                             }}
                           />
-                          {feedItems.length >= feedLimit && filteredFeedItems.length > 0 && (
+                          {feedItems.length >= feedLimit && sourceFilteredFeedItems.length > 0 && (
                             <div className="text-center mt-4">
                               <button
                                 type="button"
