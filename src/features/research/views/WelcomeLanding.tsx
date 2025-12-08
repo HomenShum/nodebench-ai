@@ -241,172 +241,172 @@ function WelcomeLandingInner({
       }));
   }, [documents]);
 
-type EmailDossierLite = {
-  company?: {
-    name?: string;
-    domain?: string;
-    description?: string;
-    headquarters?: string;
-    founded?: string;
-    industry?: string;
-    employeeCount?: string;
-    website?: string;
-    stage?: string;
+  type EmailDossierLite = {
+    company?: {
+      name?: string;
+      domain?: string;
+      description?: string;
+      headquarters?: string;
+      founded?: string;
+      industry?: string;
+      employeeCount?: string;
+      website?: string;
+      stage?: string;
+    };
+    funding?: {
+      totalRaised?: string;
+      latestRound?: { round?: string; amount?: string; date?: string; leadInvestor?: string; participants?: string[] };
+    };
+    market?: { industry?: string; competitors?: string[]; differentiators?: string[] };
+    actionItems?: {
+      valueProposition?: string[];
+      meetingTopics?: string[];
+      partnerships?: string[];
+      followUp?: string[];
+      risks?: string[];
+    };
+    metadata?: { confidenceScore?: number; generatedAt?: number; emailSource?: string };
   };
-  funding?: {
-    totalRaised?: string;
-    latestRound?: { round?: string; amount?: string; date?: string; leadInvestor?: string; participants?: string[] };
-  };
-  market?: { industry?: string; competitors?: string[]; differentiators?: string[] };
-  actionItems?: {
-    valueProposition?: string[];
-    meetingTopics?: string[];
-    partnerships?: string[];
-    followUp?: string[];
-    risks?: string[];
-  };
-  metadata?: { confidenceScore?: number; generatedAt?: number; emailSource?: string };
-};
 
-function slugify(text?: string): string {
-  return (text || "section")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function parseNumber(value?: string | number): number {
-  if (typeof value === "number") return value;
-  if (!value) return 0;
-  const match = String(value).replace(/,/g, "").match(/([\d.]+)/);
-  if (!match) return 0;
-  const num = parseFloat(match[1]);
-  if (String(value).toLowerCase().includes("b")) return num * 1_000;
-  if (String(value).toLowerCase().includes("m")) return num;
-  return num;
-}
-
-function mapDossierToSections(dossier: EmailDossierLite): ScrollySection[] {
-  const company = dossier.company || {};
-  const funding = dossier.funding || {};
-  const actionItems = dossier.actionItems || {};
-  const market = dossier.market || {};
-  const stageLabel = company.stage || funding.latestRound?.round || "Opportunity";
-  const confidence = dossier.metadata?.confidenceScore ?? 60;
-
-  const kpis = [
-    {
-      label: "Confidence",
-      value: confidence,
-      unit: "%", color: "bg-blue-600",
-    },
-    {
-      label: "Funding",
-      value: Math.min(100, parseNumber(funding.totalRaised) * 3 || 20),
-      unit: "%", color: "bg-emerald-500",
-    },
-    {
-      label: "Team Size",
-      value: Math.min(100, parseNumber(company.employeeCount || "20")),
-      unit: "", color: "bg-indigo-500",
-    },
-  ];
-
-  const smartLinks: Record<string, { summary: string; source?: string }> = {};
-  if (funding.latestRound?.leadInvestor) {
-    smartLinks["lead-investor"] = { summary: funding.latestRound.leadInvestor, source: "Funding" };
-  }
-  if (company.industry) {
-    smartLinks["industry"] = { summary: company.industry, source: "Dossier" };
+  function slugify(text?: string): string {
+    return (text || "section")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   }
 
-  const nowDate = new Date(dossier.metadata?.generatedAt || Date.now()).toISOString().slice(0, 10);
-  const sectionId = slugify(company.name || "company");
+  function parseNumber(value?: string | number): number {
+    if (typeof value === "number") return value;
+    if (!value) return 0;
+    const match = String(value).replace(/,/g, "").match(/([\d.]+)/);
+    if (!match) return 0;
+    const num = parseFloat(match[1]);
+    if (String(value).toLowerCase().includes("b")) return num * 1_000;
+    if (String(value).toLowerCase().includes("m")) return num;
+    return num;
+  }
 
-  const overview: ScrollySection = {
-    id: `${sectionId}-overview`,
-    meta: { date: nowDate, title: company.name || "Company Overview" },
-    content: {
-      body: [
-        `${company.name || "This company"} ${company.description || "has an open dossier for review."}`,
-        company.industry
-          ? `Operating in <SmartLink id='industry'>${company.industry}</SmartLink>, HQ ${company.headquarters || "N/A"}.`
-          : `Headquarters: ${company.headquarters || "Unknown"}.`,
-      ],
-      deepDives: [
-        {
-          title: "Why it matters",
-          content:
-            actionItems.valueProposition?.join(" • ") ||
-            "Strategic fit identified via email intelligence pipeline.",
-        },
-      ],
-    },
-    dashboard: {
-      phaseLabel: stageLabel,
-      kpis,
-      marketSentiment: Math.min(100, confidence),
-      activeRegion: company.headquarters || "Global",
-    },
-    smartLinks,
-  };
+  function mapDossierToSections(dossier: EmailDossierLite): ScrollySection[] {
+    const company = dossier.company || {};
+    const funding = dossier.funding || {};
+    const actionItems = dossier.actionItems || {};
+    const market = dossier.market || {};
+    const stageLabel = company.stage || funding.latestRound?.round || "Opportunity";
+    const confidence = dossier.metadata?.confidenceScore ?? 60;
 
-  const actionSection: ScrollySection = {
-    id: `${sectionId}-actions`,
-    meta: { date: nowDate, title: "Action Plan" },
-    content: {
-      body: [
-        `Top follow-ups: ${(actionItems.followUp || []).slice(0, 3).join(" • ") || "Schedule intro and set pilot scope."}`,
-        `Risks to probe: ${(actionItems.risks || []).slice(0, 3).join(" • ") || "Clarify data access and ownership."}`,
-      ],
-      deepDives: [
-        {
-          title: "Meeting Topics",
-          content:
-            (actionItems.meetingTopics || []).join(" • ") ||
-            "Validate integration path, data feeds, and success metrics.",
-        },
-      ],
-    },
-    dashboard: {
-      phaseLabel: "Execution Readiness",
-      kpis: [
-        { label: "Follow-up depth", value: Math.min(100, (actionItems.followUp?.length || 1) * 20), unit: "%", color: "bg-amber-500" },
-        { label: "Risk clarity", value: Math.min(100, (actionItems.risks?.length || 1) * 15), unit: "%", color: "bg-red-400" },
-      ],
-      marketSentiment: Math.min(100, confidence - 10),
-      activeRegion: company.headquarters || "Global",
-    },
-    smartLinks,
-  };
+    const kpis = [
+      {
+        label: "Confidence",
+        value: confidence,
+        unit: "%", color: "bg-blue-600",
+      },
+      {
+        label: "Funding",
+        value: Math.min(100, parseNumber(funding.totalRaised) * 3 || 20),
+        unit: "%", color: "bg-emerald-500",
+      },
+      {
+        label: "Team Size",
+        value: Math.min(100, parseNumber(company.employeeCount || "20")),
+        unit: "", color: "bg-indigo-500",
+      },
+    ];
 
-  return [overview, actionSection];
-}
-
-function extractScrollySectionsFromDoc(doc: any): ScrollySection[] | null {
-  if (!doc) return null;
-  const content = (doc as any).content;
-  let parsed: any = null;
-
-  if (Array.isArray(content) && content.length && content[0].meta && content[0].dashboard) {
-    parsed = content;
-  } else if (typeof content === "string") {
-    try {
-      const json = JSON.parse(content);
-      if (Array.isArray(json) && json[0]?.meta && json[0]?.dashboard) {
-        parsed = json;
-      } else if (json && json.company) {
-        parsed = mapDossierToSections(json as EmailDossierLite);
-      }
-    } catch {
-      parsed = null;
+    const smartLinks: Record<string, { summary: string; source?: string }> = {};
+    if (funding.latestRound?.leadInvestor) {
+      smartLinks["lead-investor"] = { summary: funding.latestRound.leadInvestor, source: "Funding" };
     }
-  } else if (content && (content as any).company) {
-    parsed = mapDossierToSections(content as EmailDossierLite);
+    if (company.industry) {
+      smartLinks["industry"] = { summary: company.industry, source: "Dossier" };
+    }
+
+    const nowDate = new Date(dossier.metadata?.generatedAt || Date.now()).toISOString().slice(0, 10);
+    const sectionId = slugify(company.name || "company");
+
+    const overview: ScrollySection = {
+      id: `${sectionId}-overview`,
+      meta: { date: nowDate, title: company.name || "Company Overview" },
+      content: {
+        body: [
+          `${company.name || "This company"} ${company.description || "has an open dossier for review."}`,
+          company.industry
+            ? `Operating in <SmartLink id='industry'>${company.industry}</SmartLink>, HQ ${company.headquarters || "N/A"}.`
+            : `Headquarters: ${company.headquarters || "Unknown"}.`,
+        ],
+        deepDives: [
+          {
+            title: "Why it matters",
+            content:
+              actionItems.valueProposition?.join(" • ") ||
+              "Strategic fit identified via email intelligence pipeline.",
+          },
+        ],
+      },
+      dashboard: {
+        phaseLabel: stageLabel,
+        kpis,
+        marketSentiment: Math.min(100, confidence),
+        activeRegion: company.headquarters || "Global",
+      },
+      smartLinks,
+    };
+
+    const actionSection: ScrollySection = {
+      id: `${sectionId}-actions`,
+      meta: { date: nowDate, title: "Action Plan" },
+      content: {
+        body: [
+          `Top follow-ups: ${(actionItems.followUp || []).slice(0, 3).join(" • ") || "Schedule intro and set pilot scope."}`,
+          `Risks to probe: ${(actionItems.risks || []).slice(0, 3).join(" • ") || "Clarify data access and ownership."}`,
+        ],
+        deepDives: [
+          {
+            title: "Meeting Topics",
+            content:
+              (actionItems.meetingTopics || []).join(" • ") ||
+              "Validate integration path, data feeds, and success metrics.",
+          },
+        ],
+      },
+      dashboard: {
+        phaseLabel: "Execution Readiness",
+        kpis: [
+          { label: "Follow-up depth", value: Math.min(100, (actionItems.followUp?.length || 1) * 20), unit: "%", color: "bg-amber-500" },
+          { label: "Risk clarity", value: Math.min(100, (actionItems.risks?.length || 1) * 15), unit: "%", color: "bg-red-400" },
+        ],
+        marketSentiment: Math.min(100, confidence - 10),
+        activeRegion: company.headquarters || "Global",
+      },
+      smartLinks,
+    };
+
+    return [overview, actionSection];
   }
 
-  return parsed ?? null;
-}
+  function extractScrollySectionsFromDoc(doc: any): ScrollySection[] | null {
+    if (!doc) return null;
+    const content = (doc as any).content;
+    let parsed: any = null;
+
+    if (Array.isArray(content) && content.length && content[0].meta && content[0].dashboard) {
+      parsed = content;
+    } else if (typeof content === "string") {
+      try {
+        const json = JSON.parse(content);
+        if (Array.isArray(json) && json[0]?.meta && json[0]?.dashboard) {
+          parsed = json;
+        } else if (json && json.company) {
+          parsed = mapDossierToSections(json as EmailDossierLite);
+        }
+      } catch {
+        parsed = null;
+      }
+    } else if (content && (content as any).company) {
+      parsed = mapDossierToSections(content as EmailDossierLite);
+    }
+
+    return parsed ?? null;
+  }
 
   // Generate InsightCards from recent documents for PulseGrid
   const insightCards: InsightCard[] = useMemo(() => {
@@ -1870,20 +1870,17 @@ While commercial fusion is still years away, the pace of innovation has accelera
           background: #E5E7EB;
           border-radius: 10px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #D1D5DB;
         }
       `}</style>
 
-      <div className="flex h-screen bg-[#FAFAFA] font-sans selection:bg-blue-100 overflow-hidden">
-
-        {/* PERSISTENT SIDEBAR */}
-        <aside className="w-64 bg-[#FBFBFB] border-r border-gray-200 flex flex-col shrink-0 z-30">
-          {/* Logo Area */}
-          <div className="h-16 flex items-center px-4 border-b border-gray-100">
-            <div className="flex items-center gap-2">
+      <div className="h-screen w-full flex bg-[#fbfaf2] overflow-hidden font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+        {/* Sidebar - Fixed Width */}
+        <div className="w-[280px] bg-[#fbfaf2] border-r border-gray-200 flex flex-col z-30 flex-shrink-0 relative transition-all duration-300">
+          {/* Sidebar Header with Logo */}
+          <div className="h-16 flex items-center px-5 border-b border-gray-100">
+            <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-lg shadow-black/10">
-                <Sparkles className="w-4 h-4 text-white" />
+                <span className="text-white font-bold text-sm">N</span>
               </div>
               <span className="text-lg font-bold text-gray-900 tracking-tight">Nodebench AI</span>
             </div>
@@ -1910,6 +1907,8 @@ While commercial fusion is still years away, the pace of innovation has accelera
           {/* Divider */}
           <div className="h-px bg-gray-200 mx-5 my-2" />
 
+
+          {/* Context Area: Source Nodes (Active Knowledge Bases) */}
           {/* Context Area: Source Nodes (Active Knowledge Bases) */}
           <div className="flex-1 overflow-y-auto py-2 px-3 custom-scrollbar">
             <div className="px-2 mb-3 flex items-center justify-between">
@@ -1951,479 +1950,376 @@ While commercial fusion is still years away, the pace of innovation has accelera
                     activityCount={activityCount}
                     active={isActive}
                     onToggle={() => toggleSource(source.id)}
-                    onConfigure={() => {
-                      // TODO: Open source configuration modal
-                      console.log('Configure source:', source.id);
-                    }}
-                    onDragStart={(e, sourceId) => {
-                      e.dataTransfer.setData('application/x-source-node', sourceId);
-                      e.dataTransfer.effectAllowed = 'link';
-                    }}
+                    onConfigure={() => { }}
                   />
                 );
               })}
             </div>
+          </div>
+        </div>
 
-            {/* Quick Actions */}
-            <div className="mt-4 pt-3 border-t border-gray-100">
-              <div className="flex items-center justify-between px-2">
-                <span className="text-[10px] text-gray-400">
-                  Drag a node to Agent to monitor
-                </span>
+        {/* Main Content Area */}
+        {showHero ? (
+          <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-[#fbfaf2]">
+            <header className="h-14 flex-shrink-0 bg-[#fbfaf2] border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-20">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   type="button"
-                  className="text-[10px] text-blue-600 hover:text-blue-700 font-medium"
-                  onClick={() => {
-                    // Toggle all sources
-                    if (activeSources.length === SOURCES.length) {
-                      SOURCES.forEach(s => {
-                        if (activeSources.includes(s.id)) toggleSource(s.id);
-                      });
-                    } else {
-                      SOURCES.forEach(s => {
-                        if (!activeSources.includes(s.id)) toggleSource(s.id);
-                      });
-                    }
-                  }}
+                  onClick={toggleFastAgent}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${isFastAgentOpen
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  title="Toggle Fast Agent Panel"
+                  aria-label="Toggle Fast Agent Panel"
                 >
-                  {activeSources.length === SOURCES.length ? 'Pause All' : 'Activate All'}
+                  <Zap className="h-4 w-4" />
+                  <span className="hidden sm:inline">Fast Agent</span>
+                </button>
+                <div className="hidden sm:block h-4 w-px bg-gray-200"></div>
+                <button
+                  onClick={resetToBriefing}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+                <div className="h-4 w-px bg-gray-200"></div>
+                <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  <Filter className="w-4 h-4" />
                 </button>
               </div>
-            </div>
-          </div>
+              <div className="flex items-center gap-1">
 
-          {/* User Profile */}
-          <div className="p-4 border-t border-gray-200 bg-white">
-            {isAuthenticated ? (
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs">
-                  {user?.name?.charAt(0) || "U"}
+                {
+                  [
+                    { id: "briefing", label: "Briefing" },
+                    { id: "signals", label: "Signals" },
+                    { id: "watchlist", label: "Watchlist" },
+                    { id: "saved", label: "Saved" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTopTab(tab.id as any);
+                        setSelectedCategory(null);
+                      }}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTopTab === tab.id
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-900"
+                        }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))
+                }
+              </div >
+              <span className="text-sm text-gray-500 font-medium">{todayLabel}</span>
+
+
+              {/* Title row */}
+              < div className="flex items-end justify-between" >
+                <div>
+                  <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Morning Briefing</h1>
+                  <p className="text-sm text-gray-500 mt-1">Daily intelligence digest and market signals.</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">{user?.name || "User"}</div>
-                  <div className="text-xs text-gray-500 truncate">Pro Plan</div>
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Research</span>
+              </div >
+
+              {/* Toolbar / command bar (aligned with workspace filters) */}
+              < div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl p-3 shadow-sm" >
+                <div className="flex items-center gap-2 flex-wrap">
+                  {FEED_CATEGORIES.slice(0, 4).map((cat) => (
+                    <button
+                      key={cat.id ?? "all"}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setActiveTopTab("briefing");
+                      }}
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${selectedCategory === cat.id
+                        ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                        }`}
+                    >
+                      {cat.icon} {cat.label}
+                    </button>
+                  ))}
+                  <div className="h-4 w-px bg-gray-200" />
+                  <button
+                    type="button"
+                    onClick={() => handleRunPrompt(undefined, { mode: researchMode })}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium shadow-sm hover:bg-black"
+                  >
+                    <Zap className="w-3 h-3" />
+                    Run
+                  </button>
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+                    {[
+                      { id: "quick", title: "Quick" as const },
+                      { id: "deep", title: "Deep" as const },
+                    ].map((intent) => {
+                      const modeKey = intent.title === "Quick" ? "quick" : "deep" as const;
+                      return (
+                        <button
+                          key={intent.id}
+                          type="button"
+                          onClick={() => setResearchMode(modeKey)}
+                          className={`px-3 py-1 text-[11px] rounded-full font-medium ${researchMode === modeKey
+                            ? "bg-white shadow-sm text-gray-900"
+                            : "text-gray-500"
+                            }`}
+                        >
+                          {intent.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative group">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600" />
+                    <input
+                      type="text"
+                      placeholder="Filter briefing..."
+                      value={feedSearchQuery}
+                      onChange={(e) => setFeedSearchQuery(e.target.value)}
+                      className="pl-8 pr-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 rounded-lg text-xs w-48 transition-all outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="h-4 w-px bg-gray-200" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFeedSearchQuery('');
+                      setSelectedCategory(null);
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                  >
+                    Clear
+                  </button>
                 </div>
               </div>
-            ) : (
-              <button
-                onClick={handleSignIn}
-                className="w-full py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-              >
-                Sign In
-              </button>
-            )}
-          </div>
-        </aside>
+            </header >
 
-        {/* MAIN CONTENT AREA */}
-        <div className="flex-1 flex flex-col relative min-w-0 bg-white">
-
-          {/* PERSISTENT HEADER */}
-          <header className="h-16 border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-6">
-            <div className="flex items-center gap-4">
-              {/* Breadcrumbs or Title */}
-              <div className="flex items-center text-sm text-gray-500">
-                <span>Research</span>
-                <ChevronRight className="w-4 h-4 mx-1" />
-                <span className="text-gray-900 font-medium">
-                  {showHero ? "Morning Briefing" : "Live Dossier"}
-                </span>
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar space-y-6">
+              <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Live Source Intelligence</h3>
+                  <p className="text-xs text-gray-500">Toggle sources to focus the feed.</p>
+                </div>
+                <span className="text-[11px] text-gray-500">{sourceFilteredFeedItems.length} items</span>
+              </div>
+              <div className="px-4 pb-4">
+                <SourceFeed
+                  items={filteredFeedItems}
+                  sources={sourceFilters}
+                  activeSource={sourceFilter}
+                  onSelectSource={setSourceFilter}
+                />
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={toggleFastAgent}
-                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${isFastAgentOpen
-                  ? 'bg-gray-900 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                title="Toggle Fast Agent Panel"
-                aria-label="Toggle Fast Agent Panel"
-              >
-                <Zap className="h-4 w-4" />
-                <span className="hidden sm:inline">Fast Agent</span>
-              </button>
-              <div className="hidden sm:block h-4 w-px bg-gray-200"></div>
-              <button
-                onClick={resetToBriefing}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <Search className="w-4 h-4" />
-              </button>
-              <div className="h-4 w-px bg-gray-200"></div>
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                <Filter className="w-4 h-4" />
-              </button>
+            {/* Main Feed Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
+              <div className="flex-1">
+                <FeedTimeline
+                  items={sourceFilteredFeedItems}
+                  onItemClick={(item) => setReaderItem(item)}
+                  onAnalyze={(item) => {
+                    openWithContext({
+                      initialMessage: `Analyze this ${item.type}: "${item.title}"\n\n${item.subtitle || ''}`,
+                      contextWebUrls: (item as any).url ? [(item as any).url] : undefined,
+                      contextTitle: item.title,
+                    });
+                  }}
+                />
+                {feedItems.length >= feedLimit && sourceFilteredFeedItems.length > 0 && (
+                  <div className="text-center mt-8">
+                    <button
+                      type="button"
+                      onClick={() => setFeedLimit(prev => prev + 24)}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                    >
+                      Load More ({feedLimit} loaded)
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Analyst Sidebar */}
+              <aside className="hidden xl:flex flex-col gap-6 w-[320px] shrink-0 sticky top-24">
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Morning Digest</h3>
+                  <MorningDigest
+                    userName={user?.name?.split(' ')[0]}
+                    onItemClick={(item) => {
+                      const prompt = item.linkedEntity
+                        ? `Tell me about recent news for ${item.linkedEntity}`
+                        : item.text;
+                      if (!prompt) return;
+                      runWithFastAgent(prompt);
+                    }}
+                  />
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Watchlist Pulse</h3>
+                  <SmartWatchlist
+                    mentions={watchlistMentions}
+                    onItemClick={(symbol) => {
+                      runWithFastAgent(`Give me a quick analysis of ${symbol}`);
+                    }}
+                    onAnalyze={(symbol) => {
+                      runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
+                    }}
+                  />
+                </div>
+
+                <DayStarterCard
+                  onRunPreset={(prompt, personaKey) => {
+                    setPersona(personaKey);
+                    runWithFastAgent(prompt);
+                  }}
+                  activePersona={persona}
+                  onPersonaChange={setPersona}
+                  isGuest={!isAuthenticated}
+                />
+              </aside>
             </div>
-          </header>
-
-          {/* CONTENT + EVENTS PANEL CONTAINER */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* SCROLLABLE CANVAS */}
-            <main className="flex-1 overflow-y-auto custom-scrollbar relative">
-
-              {/* CONDITIONAL CONTENT: HERO vs ACTIVE */}
-              {showHero ? (
-                // HERO STATE - DocumentsHub-aligned dashboard
-                <div className="min-h-full bg-white">
-                  <div className="px-6 py-6">
-                    <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
-                      {/* Tabs + date (mirrors DocumentsHub pills + date) */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 p-1 bg-gray-100/80 rounded-lg">
-                          {[
-                            { id: "briefing", label: "Briefing" },
-                            { id: "signals", label: "Signals" },
-                            { id: "watchlist", label: "Watchlist" },
-                            { id: "saved", label: "Saved" },
-                          ].map((tab) => (
-                            <button
-                              key={tab.id}
-                              type="button"
-                              onClick={() => {
-                                setActiveTopTab(tab.id as any);
-                                setSelectedCategory(null);
-                              }}
-                              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTopTab === tab.id
-                                ? "bg-white text-gray-900 shadow-sm"
-                                : "text-gray-500 hover:text-gray-900"
-                                }`}
-                            >
-                              {tab.label}
-                            </button>
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-500 font-medium">{todayLabel}</span>
-                      </div>
-
-                      {/* Title row */}
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Morning Briefing</h1>
-                          <p className="text-sm text-gray-500 mt-1">Daily intelligence digest and market signals.</p>
-                        </div>
-                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Research</span>
-                      </div>
-
-                      {/* Toolbar / command bar (aligned with workspace filters) */}
-                      <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {FEED_CATEGORIES.slice(0, 4).map((cat) => (
-                            <button
-                              key={cat.id ?? "all"}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCategory(cat.id);
-                                setActiveTopTab("briefing");
-                              }}
-                              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${selectedCategory === cat.id
-                                ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                                : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                                }`}
-                            >
-                              {cat.icon} {cat.label}
-                            </button>
-                          ))}
-                          <div className="h-4 w-px bg-gray-200" />
-                          <button
-                            type="button"
-                            onClick={() => handleRunPrompt(undefined, { mode: researchMode })}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium shadow-sm hover:bg-black"
-                          >
-                            <Zap className="w-3 h-3" />
-                            Run
-                          </button>
-                          <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
-                            {[
-                              { id: "quick", title: "Quick" as const },
-                              { id: "deep", title: "Deep" as const },
-                            ].map((intent) => {
-                              const modeKey = intent.title === "Quick" ? "quick" : "deep" as const;
-                              return (
-                                <button
-                                  key={intent.id}
-                                  type="button"
-                                  onClick={() => setResearchMode(modeKey)}
-                                  className={`px-3 py-1 text-[11px] rounded-full font-medium ${researchMode === modeKey
-                                    ? "bg-white shadow-sm text-gray-900"
-                                    : "text-gray-500"
-                                    }`}
-                                >
-                                  {intent.title}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="relative group">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600" />
-                            <input
-                              type="text"
-                              placeholder="Filter briefing..."
-                              value={feedSearchQuery}
-                              onChange={(e) => setFeedSearchQuery(e.target.value)}
-                              className="pl-8 pr-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 rounded-lg text-xs w-48 transition-all outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                            />
-                          </div>
-                          <div className="h-4 w-px bg-gray-200" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFeedSearchQuery('');
-                              setSelectedCategory(null);
-                            }}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            Refresh
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Scrollytelling dossier stream */}
-                      <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
-                        <ScrollytellingLayout data={scrollyData} />
-                      </div>
-
-                      {/* Source-filtered intelligence rail */}
-                      <div className="mb-8 rounded-2xl border border-gray-200 bg-white shadow-sm">
-                        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                          <div>
-                            <h3 className="text-sm font-semibold text-gray-900">Live Source Intelligence</h3>
-                            <p className="text-xs text-gray-500">Toggle sources to focus the feed.</p>
-                          </div>
-                          <span className="text-[11px] text-gray-500">{sourceFilteredFeedItems.length} items</span>
-                        </div>
-                        <div className="px-4 pb-4">
-                          <SourceFeed
-                            items={filteredFeedItems}
-                            sources={sourceFilters}
-                            activeSource={sourceFilter}
-                            onSelectSource={setSourceFilter}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Linear flow + context */}
-                      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-16 items-start px-0 md:px-2">
-                        <div className="flex-1 max-w-4xl">
-                          <FeedTimeline
-                            items={sourceFilteredFeedItems}
-                            onItemClick={(item) => {
-                              setReaderItem(item);
-                            }}
-                            onAnalyze={(item) => {
-                              openWithContext({
-                                initialMessage: `Analyze this ${item.type}: \"${item.title}\"\n\n${item.subtitle || ''}`,
-                                contextWebUrls: (item as any).url ? [(item as any).url] : undefined,
-                                contextTitle: item.title,
-                              });
-                            }}
-                          />
-                          {feedItems.length >= feedLimit && sourceFilteredFeedItems.length > 0 && (
-                            <div className="text-center mt-4">
-                              <button
-                                type="button"
-                                onClick={() => setFeedLimit(prev => prev + 24)}
-                                className="inline-flex items-center gap-2 px-5 py-2 bg-gray-900 text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-all duration-200 shadow-sm"
-                              >
-                                Load More ({feedLimit} loaded)
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        <aside className="hidden xl:block w-[280px] shrink-0 sticky top-24">
-                          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-6">
-                            <div>
-                              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Today</h3>
-                              <MorningDigest
-                                userName={user?.name?.split(' ')[0]}
-                                onItemClick={(item) => {
-                                  const prompt = item.linkedEntity
-                                    ? `Tell me about recent news for ${item.linkedEntity}`
-                                    : item.text;
-                                  if (!prompt) return;
-                                  runWithFastAgent(prompt);
-                                }}
-                              />
-                            </div>
-                            <div className="border-t border-gray-100 pt-4">
-                              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Watchlist</h3>
-                              <SmartWatchlist
-                                mentions={watchlistMentions}
-                                onItemClick={(symbol) => {
-                                  runWithFastAgent(`Give me a quick analysis of ${symbol}`);
-                                }}
-                                onAnalyze={(symbol) => {
-                                  runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
-                                }}
-                              />
-                            </div>
-                            <div className="border-t border-gray-100 pt-4 space-y-3">
-                              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Quick Actions</h3>
-                              <DayStarterCard
-                                onRunPreset={(prompt, personaKey) => {
-                                  setPersona(personaKey);
-                                  runWithFastAgent(prompt);
-                                }}
-                                activePersona={persona}
-                                onPersonaChange={setPersona}
-                                isGuest={!isAuthenticated}
-                              />
-                            </div>
-                          </div>
-                        </aside>
-                      </div>
-                    </div>
+          </div >
+      </div >
+      ) : (
+      // ACTIVE DOSSIER STATE
+      <div className="min-h-full bg-[#fbfaf2]">
+        {/* Sticky Input Bar for Active State */}
+        <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <MagicInputContainer
+                  onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                  onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
+                  compact={true}
+                  defaultValue={researchPrompt}
+                  mode={researchMode}
+                />
+              </div>
+              {/* Unified Action Button with Mode Toggle */}
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
+                  disabled={isRunning}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
+                    ? "bg-black text-white border-black cursor-wait"
+                    : "bg-black text-white border-black hover:bg-gray-800"
+                    }`}
+                  title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
+                >
+                  <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
+                  {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
+                </button>
+                {/* Mode Dropdown */}
+                <div className="relative group">
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
+                    <button
+                      type="button"
+                      onClick={() => setFollowUpMode("append")}
+                      className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
+                      Append
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFollowUpMode("new")}
+                      className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
+                      Replace
+                    </button>
                   </div>
                 </div>
-              ) : (
-                // ACTIVE DOSSIER STATE
-                <div className="min-h-full bg-gray-50/50">
-                  {/* Sticky Input Bar for Active State */}
-                  <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <MagicInputContainer
-                            onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
-                            onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
-                            compact={true}
-                            defaultValue={researchPrompt}
-                            mode={researchMode}
-                          />
-                        </div>
-                        {/* Unified Action Button with Mode Toggle */}
-                        <div className="flex items-center">
-                          <button
-                            type="button"
-                            onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
-                            disabled={isRunning}
-                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
-                              ? "bg-black text-white border-black cursor-wait"
-                              : "bg-black text-white border-black hover:bg-gray-800"
-                              }`}
-                            title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
-                          >
-                            <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
-                            {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
-                          </button>
-                          {/* Mode Dropdown */}
-                          <div className="relative group">
-                            <button
-                              type="button"
-                              className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
-                            >
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            </button>
-                            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
-                              <button
-                                type="button"
-                                onClick={() => setFollowUpMode("append")}
-                                className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
-                              >
-                                <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
-                                Append
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setFollowUpMode("new")}
-                                className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
-                              >
-                                <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
-                                Replace
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <ThoughtStreamTicker isActive={isRunning} />
+              </div>
+            </div>
+            <ThoughtStreamTicker isActive={isRunning} />
+          </div>
+
+          {/* Cache Indicator */}
+          {isFromCache && (
+            <div className="max-w-4xl mx-auto mt-2 px-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
+                <Zap className="w-3 h-3 text-gray-900" />
+                Loaded from cache (instant results)
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
+          {/* Follow-up history drawer (compact) */}
+          {followUpHistory.length > 0 && (
+            <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                <span>Follow-up history</span>
+                <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
+              </div>
+              <div className="space-y-1">
+                {followUpHistory.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
+                      <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
                     </div>
-
-                    {/* Cache Indicator */}
-                    {isFromCache && (
-                      <div className="max-w-4xl mx-auto mt-2 px-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
-                          <Zap className="w-3 h-3 text-gray-900" />
-                          Loaded from cache (instant results)
-                        </div>
-                      </div>
-                    )}
+                    <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
+                    <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
                   </div>
-
-                  <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
-                    {/* Follow-up history drawer (compact) */}
-                    {followUpHistory.length > 0 && (
-                      <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
-                        <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          <span>Follow-up history</span>
-                          <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
-                        </div>
-                        <div className="space-y-1">
-                          {followUpHistory.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
-                              <div className="flex items-center gap-2">
-                                <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
-                                <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
-                              </div>
-                              <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
-                              <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {/* Unified Live Dossier View - All content in one place */}
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      {/* Scrollytelling dossier stream (JSON-driven) */}
-                      <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
-                        <ScrollytellingLayout />
-                      </div>
-                      {/* Executive Summary Block (Only show if we have some content) */}
-                      {citations.length > 0 && <ExecutiveSummaryBlock />}
-
-                      {/* Reasoning Chain */}
-                      <CollapsibleReasoningChain steps={toolParts} />
-
-                      {/* The Main Document with inline media and documents */}
-                      <LiveDossierDocument
-                        threadId={threadId}
-                        isLoading={isRunning || (hasReceivedResponse && !responseText)}
-                        onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
-                        media={aggregatedMedia}
-                        documents={aggregatedDocumentActions}
-                        onDocumentSelect={onDocumentSelect}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </main>
-
-            {/* LIVE EVENTS PANEL - REMOVED (events now inline in LiveDossierDocument) */}
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Unified Live Dossier View - summary and document (scrollytelling shown above) */}
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+            {citations.length > 0 && <ExecutiveSummaryBlock />}
+            <CollapsibleReasoningChain steps={toolParts} />
+            <LiveDossierDocument
+              threadId={threadId}
+              isLoading={isRunning || (hasReceivedResponse && !responseText)}
+              onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
+              media={aggregatedMedia}
+              documents={aggregatedDocumentActions}
+              onDocumentSelect={onDocumentSelect}
+            />
           </div>
         </div>
       </div>
+    </div >
+    </div >
 
-      {/* Feed Reader Modal - Deep Dive view for selected items */}
-      {readerItem && (
-        <FeedReaderModal
-          item={readerItem}
-          onClose={() => setReaderItem(null)}
-        />
-      )}
-
-      {/* Deal Flyout */}
-      <DealFlyout
-        deal={selectedDeal}
-        onClose={() => setSelectedDeal(null)}
-        onPrep={handleDealPrep}
+    {/* Feed Reader Modal - Deep Dive view for selected items */ }
+  {
+    readerItem && (
+      <FeedReaderModal
+        item={readerItem}
+        onClose={() => setReaderItem(null)}
       />
+    )
+  }
+
+  {/* Deal Flyout */ }
+  <DealFlyout
+    deal={selectedDeal}
+    onClose={() => setSelectedDeal(null)}
+    onPrep={handleDealPrep}
+  />
     </>
   );
 }
