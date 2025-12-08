@@ -39,7 +39,7 @@ import { InstantSearchBar } from "@/features/research/components/InstantSearchBa
 import { PulseGrid, type InsightCard } from "@/features/research/components/PulseGrid";
 import { FeedCard, type FeedItem, type SentimentType } from "@/features/research/components/FeedCard";
 import FeedTimeline from "@/features/research/components/FeedTimeline";
-import ScrollytellingLayout from "@/features/research/components/ScrollytellingLayout";
+import ScrollytellingLayout, { type ScrollySection } from "@/features/research/components/ScrollytellingLayout";
 import FeedReaderModal from "@/features/research/components/FeedReaderModal";
 import { InlineMetrics, type WorkflowMetrics } from "@/features/agents/views/WorkflowMetricsBar";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
@@ -239,6 +239,173 @@ function WelcomeLandingInner({
       }));
   }, [documents]);
 
+type EmailDossierLite = {
+  company?: {
+    name?: string;
+    domain?: string;
+    description?: string;
+    headquarters?: string;
+    founded?: string;
+    industry?: string;
+    employeeCount?: string;
+    website?: string;
+    stage?: string;
+  };
+  funding?: {
+    totalRaised?: string;
+    latestRound?: { round?: string; amount?: string; date?: string; leadInvestor?: string; participants?: string[] };
+  };
+  market?: { industry?: string; competitors?: string[]; differentiators?: string[] };
+  actionItems?: {
+    valueProposition?: string[];
+    meetingTopics?: string[];
+    partnerships?: string[];
+    followUp?: string[];
+    risks?: string[];
+  };
+  metadata?: { confidenceScore?: number; generatedAt?: number; emailSource?: string };
+};
+
+function slugify(text?: string): string {
+  return (text || "section")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function parseNumber(value?: string | number): number {
+  if (typeof value === "number") return value;
+  if (!value) return 0;
+  const match = String(value).replace(/,/g, "").match(/([\d.]+)/);
+  if (!match) return 0;
+  const num = parseFloat(match[1]);
+  if (String(value).toLowerCase().includes("b")) return num * 1_000;
+  if (String(value).toLowerCase().includes("m")) return num;
+  return num;
+}
+
+function mapDossierToSections(dossier: EmailDossierLite): ScrollySection[] {
+  const company = dossier.company || {};
+  const funding = dossier.funding || {};
+  const actionItems = dossier.actionItems || {};
+  const market = dossier.market || {};
+  const stageLabel = company.stage || funding.latestRound?.round || "Opportunity";
+  const confidence = dossier.metadata?.confidenceScore ?? 60;
+
+  const kpis = [
+    {
+      label: "Confidence",
+      value: confidence,
+      unit: "%", color: "bg-blue-600",
+    },
+    {
+      label: "Funding",
+      value: Math.min(100, parseNumber(funding.totalRaised) * 3 || 20),
+      unit: "%", color: "bg-emerald-500",
+    },
+    {
+      label: "Team Size",
+      value: Math.min(100, parseNumber(company.employeeCount || "20")),
+      unit: "", color: "bg-indigo-500",
+    },
+  ];
+
+  const smartLinks: Record<string, { summary: string; source?: string }> = {};
+  if (funding.latestRound?.leadInvestor) {
+    smartLinks["lead-investor"] = { summary: funding.latestRound.leadInvestor, source: "Funding" };
+  }
+  if (company.industry) {
+    smartLinks["industry"] = { summary: company.industry, source: "Dossier" };
+  }
+
+  const nowDate = new Date(dossier.metadata?.generatedAt || Date.now()).toISOString().slice(0, 10);
+  const sectionId = slugify(company.name || "company");
+
+  const overview: ScrollySection = {
+    id: `${sectionId}-overview`,
+    meta: { date: nowDate, title: company.name || "Company Overview" },
+    content: {
+      body: [
+        `${company.name || "This company"} ${company.description || "has an open dossier for review."}`,
+        company.industry
+          ? `Operating in <SmartLink id='industry'>${company.industry}</SmartLink>, HQ ${company.headquarters || "N/A"}.`
+          : `Headquarters: ${company.headquarters || "Unknown"}.`,
+      ],
+      deepDives: [
+        {
+          title: "Why it matters",
+          content:
+            actionItems.valueProposition?.join(" • ") ||
+            "Strategic fit identified via email intelligence pipeline.",
+        },
+      ],
+    },
+    dashboard: {
+      phaseLabel: stageLabel,
+      kpis,
+      marketSentiment: Math.min(100, confidence),
+      activeRegion: company.headquarters || "Global",
+    },
+    smartLinks,
+  };
+
+  const actionSection: ScrollySection = {
+    id: `${sectionId}-actions`,
+    meta: { date: nowDate, title: "Action Plan" },
+    content: {
+      body: [
+        `Top follow-ups: ${(actionItems.followUp || []).slice(0, 3).join(" • ") || "Schedule intro and set pilot scope."}`,
+        `Risks to probe: ${(actionItems.risks || []).slice(0, 3).join(" • ") || "Clarify data access and ownership."}`,
+      ],
+      deepDives: [
+        {
+          title: "Meeting Topics",
+          content:
+            (actionItems.meetingTopics || []).join(" • ") ||
+            "Validate integration path, data feeds, and success metrics.",
+        },
+      ],
+    },
+    dashboard: {
+      phaseLabel: "Execution Readiness",
+      kpis: [
+        { label: "Follow-up depth", value: Math.min(100, (actionItems.followUp?.length || 1) * 20), unit: "%", color: "bg-amber-500" },
+        { label: "Risk clarity", value: Math.min(100, (actionItems.risks?.length || 1) * 15), unit: "%", color: "bg-red-400" },
+      ],
+      marketSentiment: Math.min(100, confidence - 10),
+      activeRegion: company.headquarters || "Global",
+    },
+    smartLinks,
+  };
+
+  return [overview, actionSection];
+}
+
+function extractScrollySectionsFromDoc(doc: any): ScrollySection[] | null {
+  if (!doc) return null;
+  const content = (doc as any).content;
+  let parsed: any = null;
+
+  if (Array.isArray(content) && content.length && content[0].meta && content[0].dashboard) {
+    parsed = content;
+  } else if (typeof content === "string") {
+    try {
+      const json = JSON.parse(content);
+      if (Array.isArray(json) && json[0]?.meta && json[0]?.dashboard) {
+        parsed = json;
+      } else if (json && json.company) {
+        parsed = mapDossierToSections(json as EmailDossierLite);
+      }
+    } catch {
+      parsed = null;
+    }
+  } else if (content && (content as any).company) {
+    parsed = mapDossierToSections(content as EmailDossierLite);
+  }
+
+  return parsed ?? null;
+}
+
   // Generate InsightCards from recent documents for PulseGrid
   const insightCards: InsightCard[] = useMemo(() => {
     if (!documents?.length) return [];
@@ -301,6 +468,21 @@ function WelcomeLandingInner({
     // In production, this would check actual source sync status
     return insightCards.length;
   }, [insightCards]);
+
+  const scrollyData = dossierSections ?? undefined;
+
+  const dossierSections: ScrollySection[] | null = useMemo(() => {
+    if (!documents?.length) return null;
+    const candidate = documents.find(
+      (doc: any) =>
+        doc.documentType === "dossier" ||
+        doc.type === "dossier" ||
+        (doc.title || "").toLowerCase().includes("dossier") ||
+        (doc.title || "").toLowerCase().includes("prd"),
+    );
+    if (!candidate) return null;
+    return extractScrollySectionsFromDoc(candidate);
+  }, [documents]);
 
   // ============================================================================
   // LIVE FEED: Central Newsstand data from Hacker News, ArXiv, RSS, etc.
@@ -1983,7 +2165,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
                       {/* Scrollytelling dossier stream */}
                       <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
-                        <ScrollytellingLayout />
+                        <ScrollytellingLayout data={scrollyData} />
                       </div>
 
                       {/* Linear flow + context */}

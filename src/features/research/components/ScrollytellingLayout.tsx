@@ -4,7 +4,7 @@ import SmartLink from "./SmartLink";
 import DeepDiveAccordion from "./DeepDiveAccordion";
 import streamData from "@/features/research/content/researchStream.json";
 
-type Section = (typeof streamData)[number];
+export type ScrollySection = (typeof streamData)[number];
 
 // Lightweight intersection observer hook to avoid external dependency
 const useInView = (options?: IntersectionObserverInit) => {
@@ -28,7 +28,7 @@ const useInView = (options?: IntersectionObserverInit) => {
   return { ref, inView };
 };
 
-const parseSmartLinks = (text: string, linksData: Section["smartLinks"]) => {
+const parseSmartLinks = (text: string, linksData: ScrollySection["smartLinks"]) => {
   // Basic parser for <SmartLink id='x'>Label</SmartLink> tags
   const regex = /<SmartLink id=['"]([^'"]+)['"]>(.*?)<\/SmartLink>/g;
   const parts: Array<string | { id: string; label: string }> = [];
@@ -55,7 +55,7 @@ const parseSmartLinks = (text: string, linksData: Section["smartLinks"]) => {
   });
 };
 
-const SectionRenderer = ({ section, onVisible }: { section: Section; onVisible: () => void }) => {
+const SectionRenderer = ({ section, onVisible }: { section: ScrollySection; onVisible: () => void }) => {
   const { ref, inView } = useInView({ threshold: 0.5, triggerOnce: false });
 
   useEffect(() => {
@@ -84,16 +84,26 @@ const SectionRenderer = ({ section, onVisible }: { section: Section; onVisible: 
   );
 };
 
-export const ScrollytellingLayout: React.FC = () => {
-  const initial = useMemo(() => streamData[0]?.dashboard ?? { phaseLabel: "", kpis: [], marketSentiment: 0, activeRegion: "" }, []);
+export const ScrollytellingLayout: React.FC<{ data?: ScrollySection[] }> = ({ data }) => {
+  const sourceData = data && data.length ? data : (streamData as ScrollySection[]);
+  const initial = useMemo(
+    () =>
+      sourceData[0]?.dashboard ?? {
+        phaseLabel: "",
+        kpis: [],
+        marketSentiment: 0,
+        activeRegion: "",
+      },
+    [sourceData],
+  );
   const [activeData, setActiveData] = useState(initial);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="lg:col-span-7 xl:col-span-8 pb-96">
-          {streamData.map((section) => (
-            <SectionRenderer key={section.id} section={section as Section} onVisible={() => setActiveData(section.dashboard)} />
+          {sourceData.map((section) => (
+            <SectionRenderer key={section.id} section={section as ScrollySection} onVisible={() => setActiveData(section.dashboard)} />
           ))}
         </div>
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
