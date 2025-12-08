@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 import DashboardPanel from "./DashboardPanel";
 import SmartLink from "./SmartLink";
 import DeepDiveAccordion from "./DeepDiveAccordion";
@@ -128,26 +126,17 @@ interface ScrollytellingLayoutProps {
   data?: ScrollySection[];
   /** If true, shows the "free daily" badge and sign-in prompt */
   isGuestMode?: boolean;
-  /** If true, skips fetching from database (use static data only) */
-  skipDatabaseFetch?: boolean;
 }
 
-export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data, isGuestMode, skipDatabaseFetch }) => {
-  // Fetch latest public dossier from database (no auth required)
-  const publicDossier = useQuery(
-    api.domains.research.publicDossier.getLatestPublicDossier,
-    skipDatabaseFetch ? "skip" : {}
-  );
-  
-  // Priority: props data > database dossier > static fallback
+export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data, isGuestMode }) => {
+  // Priority: props data > static fallback
   const sourceData = useMemo(() => {
     if (data && data.length) return data;
-    if (publicDossier?.sections?.length) return publicDossier.sections as ScrollySection[];
     return streamData as unknown as ScrollySection[];
-  }, [data, publicDossier]);
+  }, [data]);
   
-  const showGuestBadge = isGuestMode ?? (!data?.length && !skipDatabaseFetch);
-  const isLiveData = !!publicDossier?.sections?.length && !data?.length;
+  const showGuestBadge = isGuestMode ?? !data?.length;
+  const isLiveData = false;
   
   const initial = useMemo(
     () =>
@@ -163,21 +152,13 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
 
   // Generate today's date for the header
   const todayFormatted = useMemo(() => {
-    if (publicDossier?.generatedAt) {
-      return new Date(publicDossier.generatedAt).toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'long', 
-        day: 'numeric',
-        year: 'numeric'
-      });
-    }
     return new Date().toLocaleDateString('en-US', { 
       weekday: 'long', 
       month: 'long', 
       day: 'numeric',
       year: 'numeric'
     });
-  }, [publicDossier?.generatedAt]);
+  }, []);
 
   const sectionCount = sourceData.length;
 
@@ -202,7 +183,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
                 )}
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-2">
-                {publicDossier?.topic || "AI Intelligence Dossier"}
+                {"AI Intelligence Dossier"}
               </h1>
               <p className="text-gray-600 max-w-2xl">
                 Your daily synthesis of AI infrastructure funding, emerging trends, and technical deep dives. 
