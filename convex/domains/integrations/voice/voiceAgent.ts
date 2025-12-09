@@ -12,8 +12,17 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { z } from "zod";
 import { components } from "../../../_generated/api";
+
+// Helper to get the appropriate language model based on model name
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) return anthropic(modelName);
+  if (modelName.startsWith("gemini-")) return google(modelName);
+  return openai.chat(modelName);
+}
 import { createCoordinatorAgent } from "../../agents/core/coordinatorAgent";
 
 // Import all tools for voice agent access
@@ -76,7 +85,7 @@ export const voicePlanSchema = z.object({
 export const createVoiceAgent = (model: string) =>
   new Agent(components.agent, {
     name: "VoiceFastAgent",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     instructions: `You are a helpful voice assistant with access to the user's documents, tasks, events, and media.
 
 VOICE-SPECIFIC BEHAVIOR:
@@ -178,7 +187,7 @@ VOICE MODE ACTIVE:
 export const createVoicePlannerAgent = (model: string) =>
   new Agent(components.agent, {
     name: "VoicePlanner",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     instructions: `Analyze the user's voice request and classify it:
 
 SIMPLE requests (mode: "simple"):

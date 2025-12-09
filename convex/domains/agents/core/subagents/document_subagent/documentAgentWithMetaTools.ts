@@ -16,7 +16,16 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
+
+// Helper to get the appropriate language model based on model name
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) return anthropic(modelName);
+  if (modelName.startsWith("gemini-")) return google(modelName);
+  return openai.chat(modelName);
+}
 
 // Import meta-tools (hybrid search)
 import {
@@ -41,7 +50,7 @@ import {
 export function createDocumentAgentWithMetaTools(model: string) {
   return new Agent(components.agent, {
     name: "DocumentAgent",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     textEmbeddingModel: openai.embedding("text-embedding-3-small"),
     instructions: `You are a specialized document analyst and manager for NodeBench AI.
 
@@ -138,7 +147,7 @@ export function createMinimalDocumentAgent(model: string) {
 
   return new Agent(components.agent, {
     name: "DocumentAgent",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     instructions: `You are a document assistant. You can search, read, create, and update documents.
 
 Available tools:

@@ -9,6 +9,8 @@ import type { Id } from "../../_generated/dataModel";
 // Import streaming utilities from @convex-dev/agent
 import { Agent, stepCountIs, vStreamArgs, syncStreams, listUIMessages, storeFile, getFile, saveMessage, vProviderMetadata } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { z } from "zod";
 
 // Import tools
@@ -58,23 +60,38 @@ import {
   enrichCompanyDossier
 } from "../../tools/financial/enhancedFundingTools";
 import { searchFiles } from "../../tools/document/geminiFileSearch";
-import { getLlmModel } from "../../../shared/llm/modelCatalog";
+import { getLlmModel, calculateRequestCost, getProviderForModel, isModelAllowedForTier, resolveModelAlias, DEFAULT_FALLBACK_MODEL, getModelWithFailover, validateContextWindow, type UserTier } from "../../../shared/llm/modelCatalog";
 
 const streamCancellationControllers = new Map<string, AbortController>();
 
 // Helper to get the appropriate language model based on model name
-// Note: For now, only OpenAI models are supported due to bundler constraints
-// Gemini support will be added in a future update
-function getLanguageModel(modelName: string) {
-  const fallbackModel = getLlmModel("chat", "openai");
-  // For now, map all models to OpenAI
-  // TODO: Add Gemini support with dynamic imports when @ai-sdk/google is available
-  if (modelName.startsWith("gemini")) {
-    console.warn(`[getLanguageModel] Gemini model requested(${modelName}) but not yet supported, falling back to ${fallbackModel}`);
-    return openai.chat(fallbackModel);
+// Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
+// Includes alias resolution, failover support, and env var validation
+function getLanguageModel(modelInput: string) {
+  // Resolve aliases (e.g., "claude" -> "claude-sonnet-4-5-20250929")
+  const resolvedModel = resolveModelAlias(modelInput);
+  
+  // Get model with failover (checks if provider API key is configured)
+  const { model: modelName, provider, isFallback } = getModelWithFailover(resolvedModel);
+  
+  if (isFallback) {
+    console.warn(`[getLanguageModel] Failover activated: ${modelInput} → ${modelName} (${provider})`);
   }
-  // Default to OpenAI
-  return openai.chat(modelName || fallbackModel);
+  
+  // Handle Claude/Anthropic models
+  if (modelName.startsWith("claude-")) {
+    console.log(`[getLanguageModel] Using Anthropic model: ${modelName}`);
+    return anthropic(modelName);
+  }
+  
+  // Handle Gemini/Google models
+  if (modelName.startsWith("gemini-")) {
+    console.log(`[getLanguageModel] Using Google Gemini model: ${modelName}`);
+    return google(modelName);
+  }
+  
+  // Default to OpenAI (gpt-*, o1-*, o3-*, o4-*)
+  return openai.chat(modelName || DEFAULT_FALLBACK_MODEL);
 }
 
 // Simple, lightweight agent for Mini Note Agent (no tools, fast responses)
@@ -101,6 +118,10 @@ const createChatAgent = (model: string) => new Agent(components.agent, {
     try {
       if (!args.threadId) return [];
       const threadId = args.threadId as string;
+      const agentThread = await ctx.runQuery(components.agent.threads.getThread, {
+        threadId,
+      });
+      const userId = agentThread?.userId as Id<"users"> | undefined;
       const recent = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
         threadId,
         order: "desc",
@@ -111,7 +132,74 @@ const createChatAgent = (model: string) => new Agent(components.agent, {
         .filter((m: any) => m.role === "assistant" && m.metadata?.lesson)
         .map((m: any) => ({ role: "assistant", content: m.metadata.lesson as string }));
 
+      let memoryContext: any[] = [];
+      let skillContext: any[] = [];
+
+      if (userId) {
+        const inputPrompt = typeof args.inputPrompt === "string" ? args.inputPrompt : "";
+        try {
+          const [semanticMemories, preferenceMemories] = await Promise.all([
+            inputPrompt
+              ? ctx.runAction(internal.tools.teachability.userMemoryTools.searchTeachings, {
+                userId,
+                query: inputPrompt,
+                limit: 5,
+              })
+              : [],
+            ctx.runQuery(internal.tools.teachability.userMemoryQueries.getTopPreferences, {
+              userId,
+              limit: 5,
+            }),
+          ]);
+
+          const combined = [
+            ...(preferenceMemories ?? []),
+            ...(semanticMemories ?? []),
+          ];
+          const seen = new Set<string>();
+          const deduped = combined.filter((m: any) => {
+            const key = m?._id ? String(m._id) : String(m.id ?? "");
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return m.status === "active";
+          }).slice(0, 6);
+
+          memoryContext = deduped.map((m: any) => ({
+            role: "system",
+            content: `[MEMORY - ${String(m.type ?? "note").toUpperCase()}]: ${m.content}`,
+          }));
+        } catch (memErr) {
+          console.warn("[FastChatAgent][contextHandler] teachability retrieval failed", memErr);
+        }
+
+        try {
+          if (inputPrompt.trim().length > 0) {
+            const matchedSkill = await ctx.runAction(
+              internal.tools.teachability.userMemoryTools.matchUserSkillTrigger,
+              {
+                userId,
+                userMessage: inputPrompt,
+              }
+            );
+            if (matchedSkill) {
+              const steps = (matchedSkill.steps ?? [])
+                .map((s: string, idx: number) => `${idx + 1}. ${s}`)
+                .join(" ");
+              const skillLabel = matchedSkill.key || matchedSkill.category || "user skill";
+              const skillText = steps
+                ? `[USER SKILL] ${skillLabel}: ${matchedSkill.content}\nSteps: ${steps}`
+                : `[USER SKILL] ${skillLabel}: ${matchedSkill.content}`;
+              skillContext.push({ role: "system", content: skillText });
+            }
+          }
+        } catch (skillErr) {
+          console.warn("[FastChatAgent][contextHandler] skill trigger lookup failed", skillErr);
+        }
+      }
+
       return [
+        ...skillContext,
+        ...memoryContext,
         ...(lessons || []),
         ...(args.recent || []),
         ...(args.inputMessages || []),
@@ -1164,6 +1252,7 @@ export const streamAsync = internalAction({
   },
   handler: async (ctx, args) => {
     const executionId = crypto.randomUUID().substring(0, 8);
+    const startTime = Date.now();
     console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId);
 
     // Get userId for coordinator agent from thread
@@ -1172,19 +1261,45 @@ export const streamAsync = internalAction({
     });
     console.log(`[streamAsync:${executionId}] Thread retrieved:`, { threadId: args.threadId, hasUserId: !!thread?.userId });
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // RATE LIMITING CHECK
+    // ═══════════════════════════════════════════════════════════════════════
+    const userId = thread?.userId;
+    if (userId) {
+      try {
+        const rateLimitCheck = await ctx.runQuery(api.domains.billing.rateLimiting.checkRequestAllowed, {
+          model: args.model,
+          estimatedInputTokens: 2000, // Estimate for pre-check
+          estimatedOutputTokens: 1000,
+        });
+        
+        if (!rateLimitCheck.allowed) {
+          console.warn(`[streamAsync:${executionId}] ⛔ Rate limit exceeded: ${rateLimitCheck.reason}`);
+          throw new Error(`Rate limit exceeded: ${rateLimitCheck.reason}`);
+        }
+        console.log(`[streamAsync:${executionId}] ✅ Rate limit check passed, estimated cost: $${rateLimitCheck.estimatedCost.toFixed(4)}`);
+      } catch (rateLimitError: any) {
+        if (rateLimitError.message?.includes("Rate limit")) {
+          throw rateLimitError;
+        }
+        // If rate limiting query fails, continue but log warning
+        console.warn(`[streamAsync:${executionId}] ⚠️ Rate limit check failed (non-blocking):`, rateLimitError.message);
+      }
+    }
+
     // Get our custom thread data for cancel flag
     const customThread = await ctx.runQuery(internal.domains.agents.fastAgentPanelStreaming.getThreadByAgentId, {
       agentThreadId: args.threadId
     });
 
-    const userId = (thread?.userId ?? null) as Id<"users"> | null;
-    console.log(`[streamAsync:${executionId}] userId from thread:`, userId);
+    const userIdTyped = (thread?.userId ?? null) as Id<"users"> | null;
+    console.log(`[streamAsync:${executionId}] userId from thread:`, userIdTyped);
 
     // Fetch user preferences for arbitrage mode
     let arbitrageMode = false;
-    if (userId) {
+    if (userIdTyped) {
       try {
-        const agentsPrefs = await ctx.runQuery(internal.agentsPrefs.getAgentsPrefsByUserId, { userId });
+        const agentsPrefs = await ctx.runQuery(internal.agentsPrefs.getAgentsPrefsByUserId, { userId: userIdTyped });
         arbitrageMode = agentsPrefs?.arbitrageMode === "true";
         console.log(`[streamAsync:${executionId}] Arbitrage mode:`, arbitrageMode);
       } catch (err) {
@@ -1198,7 +1313,7 @@ export const streamAsync = internalAction({
     let responsePromptOverride: string | undefined;
     const contextWithUserId = {
       ...ctx,
-      evaluationUserId: userId,
+      evaluationUserId: userIdTyped,
     };
 
     if (customThread?.cancelRequested) {
@@ -1219,9 +1334,9 @@ export const streamAsync = internalAction({
 
       // Build artifact deps if we have userId
       // runId = threadId (agent thread), userId for artifact ownership
-      const artifactDeps = userId ? {
+      const artifactDeps = userIdTyped ? {
         runId: args.threadId,
-        userId,
+        userId: userIdTyped,
         sectionIdRef, // Mutable ref for per-section artifact linking
       } : undefined;
 
@@ -1312,17 +1427,75 @@ export const streamAsync = internalAction({
         console.log(`[streamAsync:${executionId}] 🎯 Real-time deltas were streamed to clients via saveStreamDeltas`);
       }
 
-      // Note: Usage tracking is handled automatically by the agent's usageHandler
+      // Teachability analysis (async, non-blocking)
+      if (userIdTyped) {
+        try {
+          const promptMessages = await ctx.runQuery(components.agent.messages.getMessagesByIds, {
+            messageIds: [args.promptMessageId],
+          });
+          const promptText = (promptMessages?.[0]?.text as string | undefined) ?? "";
+          if (promptText) {
+            await ctx.scheduler.runAfter(0, internal.tools.teachability.userMemoryTools.analyzeAndStoreTeachings, {
+              userId: userIdTyped,
+              userMessage: promptText,
+              assistantResponse: finalText ?? "",
+              threadId: args.threadId,
+            });
+          }
+        } catch (teachErr) {
+          console.warn(`[streamAsync:${executionId}] Teachability scheduling failed`, teachErr);
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // USAGE TRACKING - Record actual token usage
+      // ═══════════════════════════════════════════════════════════════════════
+      const latencyMs = Date.now() - startTime;
+      try {
+        // Estimate tokens from response (actual usage comes from provider metadata if available)
+        const estimatedInputTokens = Math.ceil((finalText?.length || 0) / 4) + 500; // rough estimate
+        const estimatedOutputTokens = Math.ceil((finalText?.length || 0) / 4);
+        
+        await ctx.runMutation(api.domains.billing.rateLimiting.recordLlmUsage, {
+          model: args.model,
+          inputTokens: estimatedInputTokens,
+          outputTokens: estimatedOutputTokens,
+          cachedTokens: 0,
+          latencyMs,
+          success: true,
+        });
+        console.log(`[streamAsync:${executionId}] 📊 Usage recorded: ~${estimatedInputTokens + estimatedOutputTokens} tokens, ${latencyMs}ms`);
+      } catch (usageError) {
+        console.warn(`[streamAsync:${executionId}] ⚠️ Failed to record usage (non-blocking):`, usageError);
+      }
 
     } catch (error) {
       // Handle AI_NoOutputGeneratedError gracefully
       const errorName = (error as any)?.name || '';
+      const errorMessage = (error as any)?.message || String(error);
+      
       if (errorName === 'AI_NoOutputGeneratedError') {
         console.warn(`[streamAsync:${executionId}] ⚠️ AI_NoOutputGeneratedError: Agent completed tool execution but didn't generate final text`);
         console.warn(`[streamAsync:${executionId}] This should be RARE with stopWhen: stepCountIs(15). If you see this often, raise the step count.`);
         console.warn(`[streamAsync:${executionId}] Tool results are still saved and visible in the UI.`);
         // Don't re-throw - this is not a fatal error, tool results are visible
         return;
+      }
+
+      // Record failed usage (except rate limit errors which weren't executed)
+      if (!errorMessage.includes("Rate limit")) {
+        try {
+          await ctx.runMutation(api.domains.billing.rateLimiting.recordLlmUsage, {
+            model: args.model,
+            inputTokens: 100, // Minimal estimate for failed request
+            outputTokens: 0,
+            success: false,
+            errorMessage: errorMessage.substring(0, 500),
+            latencyMs: Date.now() - startTime,
+          });
+        } catch (usageErr) {
+          // Ignore usage tracking errors
+        }
       }
 
       console.error(`[streamAsync:${executionId}] ❌ Error:`, error);
@@ -2123,6 +2296,19 @@ export const sendMessageInternal = internalAction({
     if (!responseText && toolsCalled.length > 0) {
       console.log('[sendMessageInternal] WARNING: Failed to get text response after follow-up calls. Using fallback message.');
       responseText = "I've processed your request using the available tools, but encountered an issue generating a response. Please try rephrasing your question.";
+    }
+
+    if (args.userId) {
+      try {
+        await ctx.scheduler.runAfter(0, internal.tools.teachability.userMemoryTools.analyzeAndStoreTeachings, {
+          userId: args.userId,
+          userMessage: args.message,
+          assistantResponse: responseText ?? "",
+          threadId,
+        });
+      } catch (teachErr) {
+        console.warn("[sendMessageInternal] Teachability scheduling failed", teachErr);
+      }
     }
 
     console.log('[sendMessageInternal] Returning response, tools called:', toolsCalled, 'response length:', responseText.length);

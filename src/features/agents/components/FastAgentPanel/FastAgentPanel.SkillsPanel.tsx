@@ -58,6 +58,11 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
+  const userSkills = useQuery(api.domains.teachability.listUserTeachings, {
+    type: "skill",
+    limit: 6,
+  });
+
   // Fetch all skills
   const skills = useQuery(api.tools.meta.skillDiscoveryQueries.listAllSkills, {
     category: selectedCategory ?? undefined,
@@ -115,6 +120,9 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
               className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
             />
           </div>
+          <p className="text-[11px] text-zinc-500 mt-2">
+            Hint: teach a new skill in chat by saying “when I say X, do Y then Z”.
+          </p>
           
           {/* Category filters */}
           <div className="flex flex-wrap gap-2 mt-3">
@@ -147,6 +155,33 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
         
         {/* Skills list */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[400px]">
+          {userSkills && userSkills.length > 0 && (
+            <div className="space-y-2 pb-2 border-b border-zinc-700/50">
+              <div className="text-xs uppercase tracking-wide text-zinc-500 flex items-center gap-1">
+                <Sparkles className="h-3 w-3" />
+                Your custom skills
+              </div>
+              {userSkills.map((skill: any) => (
+                <button
+                  key={skill._id}
+                  onClick={() => {
+                    const label = skill.key || skill.category || "custom skill";
+                    onSelectSkill(label, skill.content);
+                    onClose();
+                  }}
+                  className="w-full text-left p-3 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 rounded-lg transition-colors"
+                >
+                  <div className="text-sm font-medium text-indigo-200">
+                    {skill.key || skill.category || "Custom skill"}
+                  </div>
+                  <div className="text-xs text-indigo-100/80 mt-1 line-clamp-2">
+                    {skill.content}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
           {!skills ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 text-indigo-400 animate-spin" />
@@ -244,4 +279,3 @@ const styles = `
 `;
 
 export default SkillsPanel;
-

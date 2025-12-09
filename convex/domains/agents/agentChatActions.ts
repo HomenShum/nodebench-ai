@@ -13,11 +13,26 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { Agent } from "@convex-dev/agent";
 import { components } from "../../_generated/api";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
+
+// Helper to get the appropriate language model based on model name
+// Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) {
+    return anthropic(modelName);
+  }
+  if (modelName.startsWith("gemini-")) {
+    return google(modelName);
+  }
+  return openai.chat(modelName);
+}
 
 // Define the agent configuration (simplified version of FastChatAgent)
 const createChatAgent = (model: string) => new Agent(components.agent, {
   name: "FastChatAgent",
-  languageModel: openai.chat(model),
+  languageModel: getLanguageModel(model),
   instructions: `You are a helpful AI assistant with access to the user's documents, tasks, events, and media files.
   
   CRITICAL BEHAVIOR RULES:
@@ -85,7 +100,7 @@ export const createThreadWithMessageInternal = internalAction({
   },
   handler: async (ctx, args): Promise<{ success: boolean; threadId: string; messageId?: string }> => {
     const { userId, message, model } = args;
-    const modelName = model || "gpt-5-chat-latest";
+    const modelName = model || getLlmModel("chat", "openai");
     const chatAgent = createChatAgent(modelName);
 
     // Create agent thread

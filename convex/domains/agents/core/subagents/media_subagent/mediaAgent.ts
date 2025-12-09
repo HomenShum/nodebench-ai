@@ -10,7 +10,16 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
+
+// Helper to get the appropriate language model based on model name
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) return anthropic(modelName);
+  if (modelName.startsWith("gemini-")) return google(modelName);
+  return openai.chat(modelName);
+}
 
 // Import media-specific tools
 import {
@@ -39,7 +48,7 @@ import {
 export function createMediaAgent(model: string) {
   return new Agent(components.agent, {
     name: "MediaAgent",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     instructions: `You are a specialized media discovery and analysis agent for NodeBench AI.
 
 ## Core Responsibilities
@@ -126,7 +135,7 @@ Always structure responses with:
 export function createMediaAgentWithMetaTools(model: string) {
   return new Agent(components.agent, {
     name: "MediaAgent",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     textEmbeddingModel: openai.embedding("text-embedding-3-small"),
     instructions: `You are a specialized media discovery and analysis agent for NodeBench AI.
 

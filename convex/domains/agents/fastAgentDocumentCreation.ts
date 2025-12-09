@@ -206,10 +206,24 @@ export const generateAndCreateDocument = action({
       // Define agent locally since specializedAgents is deprecated
       const { Agent } = await import("@convex-dev/agent");
       const { openai } = await import("@ai-sdk/openai");
+      const { anthropic } = await import("@ai-sdk/anthropic");
+      const { google } = await import("@ai-sdk/google");
+
+      // Use model catalog for consistent model selection
+      const { getLlmModel } = await import("../../../shared/llm/modelCatalog");
+      const agentModel = getLlmModel("agent", "openai");
+
+      // Helper to get language model based on model name
+      // Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
+      const getLanguageModel = (model: string) => {
+        if (model.startsWith("claude-")) return anthropic(model);
+        if (model.startsWith("gemini-")) return google(model);
+        return openai.chat(model);
+      };
 
       const createDocumentGenerationAgent = (ctx: any, userId: any) => new Agent(components.agent, {
         name: "DocumentGenerationAgent",
-        languageModel: openai.chat("gpt-4o"),
+        languageModel: getLanguageModel(agentModel),
         instructions: `You are an expert document writer and editor.
 Your goal is to write high-quality, well-structured documents based on user prompts.
 

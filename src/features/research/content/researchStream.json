@@ -1,64 +1,217 @@
 [
   {
-    "id": "section-1-early-2025",
+    "id": "daily-executive-summary",
     "meta": {
-      "date": "Early 2025",
-      "title": "The Stumbling Phase"
+      "date": "Today's Briefing",
+      "title": "AI Infrastructure: The $47B Opportunity"
     },
     "content": {
       "body": [
-        "Adoption is technically high, but actual utility hits a plateau. We are seeing what we call <SmartLink id='agent-bloat'>Agent Bloat</SmartLink> in the enterprise sector.",
-        "While compute is available, the orchestration layers are still immature."
+        "This week marks a pivotal moment in AI infrastructure investment. Total funding in the <SmartLink id='ai-infra'>AI infrastructure sector</SmartLink> has reached $47.2B YTD, with inference optimization emerging as the dominant category.",
+        "Three major themes are driving capital allocation: <SmartLink id='edge-ai'>edge AI deployment</SmartLink>, enterprise agent orchestration, and synthetic data generation. Notably, 62% of Series B+ rounds now include dedicated AI infrastructure components.",
+        "The competitive landscape is consolidating around a handful of platform players, while vertical-specific solutions continue to attract seed-stage interest."
       ],
       "deepDives": [
         {
-          "title": "Why Orchestration Fails",
-          "content": "Current frameworks assume linear reasoning. Real-world workflows are recursive and require adaptive planning."
+          "title": "Why Infrastructure Matters Now",
+          "content": "Model capabilities have outpaced deployment infrastructure. Enterprises report 3-6 month delays between POC approval and production deployment. The bottleneck has shifted from 'can AI do this?' to 'can we run AI reliably at scale?' This creates a $12B+ TAM for infrastructure tooling."
+        },
+        {
+          "title": "Key Investor Thesis",
+          "content": "Leading VCs are betting that infrastructure margins will exceed model margins by 2026. The reasoning: models commoditize, but deployment complexity compounds. Winners will own the 'last mile' of AI delivery—monitoring, optimization, and compliance layers."
         }
       ]
     },
     "dashboard": {
-      "phaseLabel": "Phase 1: Friction",
+      "phaseLabel": "Market Overview",
       "kpis": [
-        { "label": "Global Compute Usage", "value": 15, "unit": "%", "color": "bg-blue-500" },
-        { "label": "Model Hallucination Rate", "value": 32, "unit": "%", "color": "bg-red-400" }
+        { "label": "YTD Funding", "value": 47, "unit": "B", "color": "bg-emerald-500" },
+        { "label": "Deal Count", "value": 89, "unit": " deals", "color": "bg-blue-500" },
+        { "label": "Avg. Round Size", "value": 28, "unit": "M", "color": "bg-indigo-500" }
       ],
-      "marketSentiment": 45,
-      "activeRegion": "North America"
+      "marketSentiment": 78,
+      "activeRegion": "Global"
     },
     "smartLinks": {
-      "agent-bloat": {
-        "summary": "Too many specialized agents create latency without adding reasoning value.",
-        "source": "Gartner 2024"
+      "ai-infra": {
+        "summary": "AI infrastructure includes compute orchestration, model serving, MLOps, vector databases, and inference optimization tools. The sector grew 340% YoY.",
+        "source": "PitchBook Q4 2024"
+      },
+      "edge-ai": {
+        "summary": "Edge AI refers to running inference on-device or at network edge, reducing latency from 200ms to <10ms. Key enablers: quantization, distillation, and custom silicon.",
+        "source": "Gartner Hype Cycle 2024"
       }
     }
   },
   {
-    "id": "section-2-late-2026",
+    "id": "daily-top-deals",
     "meta": {
-      "date": "Late 2026",
-      "title": "Algorithmic Consolidation"
+      "date": "Funding Highlights",
+      "title": "This Week's Notable Raises"
     },
     "content": {
       "body": [
-        "The market shifts from distinct models to fused architectures. Efficiency jumps as <SmartLink id='sparse-run'>Sparse Run</SmartLink> techniques become standard.",
-        "Compute costs drop, allowing for 'always-on' inference loops."
+        "<SmartLink id='contextual-ai'>Contextual AI</SmartLink> closed a $80M Series B led by Greycroft to build enterprise RAG infrastructure. The round values the company at $450M, a 3.2x step-up from their Series A just 9 months ago.",
+        "<SmartLink id='modular'>Modular</SmartLink> (founded by Chris Lattner) raised $100M at a $600M valuation for their Mojo programming language and inference engine. Strategic investors include Google and Amazon.",
+        "In the healthcare vertical, <SmartLink id='atropos'>Atropos Health</SmartLink> secured $33M to apply LLMs to clinical evidence generation, with Flare Capital and General Catalyst co-leading."
       ],
-      "deepDives": []
+      "deepDives": [
+        {
+          "title": "What's Driving Valuations",
+          "content": "Enterprise AI infrastructure companies are commanding 15-25x ARR multiples, compared to 8-12x for general SaaS. Investors cite: (1) high switching costs once deployed, (2) usage-based pricing with strong net retention, and (3) regulatory moats in healthcare/finance verticals."
+        }
+      ]
     },
     "dashboard": {
-      "phaseLabel": "Phase 2: Integration",
+      "phaseLabel": "Top Raises This Week",
       "kpis": [
-        { "label": "Global Compute Usage", "value": 68, "unit": "%", "color": "bg-blue-600" },
-        { "label": "Model Hallucination Rate", "value": 12, "unit": "%", "color": "bg-green-500" }
+        { "label": "Largest Round", "value": 100, "unit": "M", "color": "bg-purple-500" },
+        { "label": "Median Valuation", "value": 450, "unit": "M", "color": "bg-blue-600" },
+        { "label": "Healthcare AI", "value": 33, "unit": "M", "color": "bg-rose-500" }
       ],
-      "marketSentiment": 88,
+      "marketSentiment": 85,
+      "activeRegion": "North America"
+    },
+    "smartLinks": {
+      "contextual-ai": {
+        "summary": "Founded by Douwe Kiela (ex-Meta AI Research). Building enterprise RAG with citation guarantees and hallucination detection. Customers include Fortune 500 legal and finance teams.",
+        "source": "Crunchbase"
+      },
+      "modular": {
+        "summary": "Chris Lattner's latest venture after creating Swift and LLVM. Mojo promises 35,000x speedup over Python for ML workloads while maintaining Python syntax compatibility.",
+        "source": "TechCrunch"
+      },
+      "atropos": {
+        "summary": "Spun out of Stanford. Uses LLMs to generate real-world evidence from EHR data. FDA engagement ongoing for regulatory pathway.",
+        "source": "STAT News"
+      }
+    }
+  },
+  {
+    "id": "daily-emerging-trends",
+    "meta": {
+      "date": "Emerging Signals",
+      "title": "Agentic Workflows Hit Inflection Point"
+    },
+    "content": {
+      "body": [
+        "Enterprise adoption of <SmartLink id='agentic'>agentic AI systems</SmartLink> crossed a critical threshold this quarter. 34% of Fortune 500 companies now have at least one agent-based workflow in production, up from 8% a year ago.",
+        "The shift is driven by three factors: improved <SmartLink id='tool-use'>tool-use capabilities</SmartLink> in frontier models, better guardrails for autonomous actions, and maturing orchestration frameworks like LangGraph and CrewAI.",
+        "However, challenges persist. Agent sprawl—similar to the microservices explosion of the 2010s—is creating observability nightmares. Companies report 40% of agent compute is wasted on redundant or failed task attempts."
+      ],
+      "deepDives": [
+        {
+          "title": "The Orchestration Wars",
+          "content": "LangChain, LlamaIndex, and Semantic Kernel are battling for the agent orchestration layer. LangChain leads in GitHub stars (78K) but faces criticism for abstraction complexity. LlamaIndex dominates RAG use cases. Microsoft's Semantic Kernel is gaining enterprise traction through Azure integration. The winner will likely be determined by who best solves multi-agent coordination and human-in-the-loop workflows."
+        },
+        {
+          "title": "What's Actually Working",
+          "content": "Successful agent deployments share common patterns: (1) Narrow scope with clear success metrics, (2) Human approval gates for high-stakes actions, (3) Extensive logging and replay capabilities, (4) Fallback to human operators within SLA windows. The 'fully autonomous' vision remains 2-3 years out for most use cases."
+        }
+      ]
+    },
+    "dashboard": {
+      "phaseLabel": "Agentic AI Adoption",
+      "kpis": [
+        { "label": "F500 Adoption", "value": 34, "unit": "%", "color": "bg-green-500" },
+        { "label": "YoY Growth", "value": 325, "unit": "%", "color": "bg-emerald-600" },
+        { "label": "Compute Waste", "value": 40, "unit": "%", "color": "bg-amber-500" }
+      ],
+      "marketSentiment": 72,
       "activeRegion": "Global"
     },
     "smartLinks": {
-      "sparse-run": {
-        "summary": "Activating only sparse parameters during inference reduces cost by up to 90%.",
-        "source": "DeepMind"
+      "agentic": {
+        "summary": "Agentic AI systems can autonomously plan, execute multi-step tasks, use tools, and adapt based on feedback. Distinguished from chatbots by their ability to take actions, not just generate text.",
+        "source": "Anthropic Research"
+      },
+      "tool-use": {
+        "summary": "Tool use (or function calling) allows LLMs to invoke external APIs, databases, and code execution. GPT-4, Claude, and Gemini all support structured tool definitions. Accuracy has improved from ~60% to ~95% in the past year.",
+        "source": "Berkeley Function Calling Leaderboard"
+      }
+    }
+  },
+  {
+    "id": "daily-technical-spotlight",
+    "meta": {
+      "date": "Technical Deep Dive",
+      "title": "Inference Cost Optimization: The New Battleground"
+    },
+    "content": {
+      "body": [
+        "As model capabilities plateau, the competition shifts to <SmartLink id='inference-cost'>inference economics</SmartLink>. Leading labs report 10x cost reductions over 18 months through a combination of quantization, speculative decoding, and custom silicon.",
+        "<SmartLink id='groq'>Groq's LPU architecture</SmartLink> demonstrated 500 tokens/second throughput at $0.27 per million tokens—an order of magnitude cheaper than cloud GPU inference. This has forced incumbents to accelerate their own silicon programs.",
+        "The practical implication: use cases previously uneconomical (real-time translation, continuous monitoring, bulk document processing) are becoming viable. Expect a wave of 'inference-enabled' startups in 2025."
+      ],
+      "deepDives": [
+        {
+          "title": "Speculative Decoding Explained",
+          "content": "Speculative decoding uses a small 'draft' model to predict multiple tokens, then verifies them in parallel with the large model. This exploits the fact that verification is cheaper than generation. Results: 2-3x speedup with no quality loss. Now shipping in vLLM, TensorRT-LLM, and Hugging Face TGI."
+        },
+        {
+          "title": "The Quantization Frontier",
+          "content": "FP16 → INT8 → INT4 → INT2. Each step halves memory and improves throughput. The surprising finding: 4-bit quantization preserves 95%+ of model quality for most tasks. GPTQ, AWQ, and GGML are the leading quantization methods. The next frontier: 1-bit (binary) models for edge deployment."
+        }
+      ]
+    },
+    "dashboard": {
+      "phaseLabel": "Inference Economics",
+      "kpis": [
+        { "label": "Cost Reduction (18mo)", "value": 90, "unit": "%", "color": "bg-green-600" },
+        { "label": "Groq Speed", "value": 500, "unit": " tok/s", "color": "bg-purple-600" },
+        { "label": "4-bit Quality Retention", "value": 95, "unit": "%", "color": "bg-blue-500" }
+      ],
+      "marketSentiment": 82,
+      "activeRegion": "Silicon Valley"
+    },
+    "smartLinks": {
+      "inference-cost": {
+        "summary": "Inference cost = (compute time × hardware cost) + (memory bandwidth × token count). Optimization targets all three: faster chips, efficient memory access patterns, and reduced precision arithmetic.",
+        "source": "MLSys 2024"
+      },
+      "groq": {
+        "summary": "Groq's Language Processing Unit (LPU) uses a deterministic execution model optimized for transformer inference. No batching required—each request gets dedicated silicon. Founded by ex-Google TPU architect Jonathan Ross.",
+        "source": "Groq Technical Paper"
+      }
+    }
+  },
+  {
+    "id": "daily-outlook",
+    "meta": {
+      "date": "Week Ahead",
+      "title": "What to Watch"
+    },
+    "content": {
+      "body": [
+        "<SmartLink id='nvidia-earnings'>NVIDIA earnings</SmartLink> on Wednesday will set the tone for AI infrastructure sentiment. Consensus expects $32B revenue; whisper numbers suggest $35B+ is possible given H100 demand signals.",
+        "OpenAI's rumored <SmartLink id='o2-release'>o2 model release</SmartLink> could drop any day. Early testers report significant reasoning improvements, potentially obsoleting some agent orchestration complexity.",
+        "Three IPO filings expected: Databricks (direct listing), Scale AI (traditional), and Anthropic (SPAC rumors persist but unconfirmed). Total expected proceeds: $15-20B."
+      ],
+      "deepDives": [
+        {
+          "title": "Earnings Impact Analysis",
+          "content": "NVIDIA's data center revenue directly correlates with AI infrastructure startup funding (r=0.87). A beat typically triggers 15-20% valuation bumps for private AI companies within 30 days. A miss could accelerate the 'efficient AI' narrative and benefit inference optimization plays."
+        }
+      ]
+    },
+    "dashboard": {
+      "phaseLabel": "Week Ahead Outlook",
+      "kpis": [
+        { "label": "NVDA Consensus", "value": 32, "unit": "B", "color": "bg-green-500" },
+        { "label": "Expected IPO Proceeds", "value": 18, "unit": "B", "color": "bg-indigo-500" },
+        { "label": "Confidence Score", "value": 74, "unit": "%", "color": "bg-amber-500" }
+      ],
+      "marketSentiment": 74,
+      "activeRegion": "Global"
+    },
+    "smartLinks": {
+      "nvidia-earnings": {
+        "summary": "NVIDIA reports Q4 FY25 earnings Wednesday after market close. Key metrics: Data Center revenue, H100 shipment guidance, and Blackwell production timeline. Options imply ±8% move.",
+        "source": "Bloomberg"
+      },
+      "o2-release": {
+        "summary": "OpenAI's o2 (successor to o1-preview) reportedly achieves PhD-level reasoning on GPQA and solves 75% of SWE-bench tasks. Expected to ship with improved tool use and reduced 'thinking' latency.",
+        "source": "The Information"
       }
     }
   }

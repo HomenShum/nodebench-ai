@@ -9,7 +9,10 @@ import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import OpenAI from "openai";
-import { getLlmModel } from "../../../shared/llm/modelCatalog";
+import Anthropic from "@anthropic-ai/sdk";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
+import { getLlmModel, resolveModelAlias, getModelWithFailover } from "../../../shared/llm/modelCatalog";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -144,24 +147,43 @@ async function judgeClaimAgainstSource(
   claimText: string,
   sourceContent: string
 ): Promise<JudgeResult> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY not configured");
-  }
-
-  const openai = new OpenAI({ apiKey });
+  const { model: modelName, provider } = getModelWithFailover(resolveModelAlias(getLlmModel("judge")));
+  const userPrompt = buildJudgePrompt(claimText, sourceContent);
 
   try {
-    const response = await openai.chat.completions.create({
-      model: getLlmModel("judge", "openai"),
-      max_completion_tokens: 200,
-      messages: [
-        { role: "system", content: JUDGE_SYSTEM_PROMPT },
-        { role: "user", content: buildJudgePrompt(claimText, sourceContent) },
-      ],
-    });
-
-    const content = response.choices[0]?.message?.content?.trim();
+    let content: string | undefined;
+    
+    if (provider === "anthropic") {
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const response = await anthropic.messages.create({
+        model: modelName,
+        max_tokens: 200,
+        system: JUDGE_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: userPrompt }],
+      });
+      content = response.content[0]?.type === "text" ? response.content[0].text : undefined;
+    } else if (provider === "gemini") {
+      const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+      const result = await generateText({
+        model: google(modelName),
+        system: JUDGE_SYSTEM_PROMPT,
+        prompt: userPrompt,
+        maxOutputTokens: 200,
+      });
+      content = result.text;
+    } else {
+      // OpenAI
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const response = await openai.chat.completions.create({
+        model: modelName,
+        max_completion_tokens: 200,
+        messages: [
+          { role: "system", content: JUDGE_SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+      });
+      content = response.choices[0]?.message?.content?.trim();
+    }
     if (!content) {
       throw new Error("Empty response from judge");
     }

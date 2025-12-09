@@ -10,8 +10,17 @@
 
 import { Agent, createTool, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
 import { internal } from "../../../../../_generated/api";
+
+// Helper to get the appropriate language model based on model name
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) return anthropic(modelName);
+  if (modelName.startsWith("gemini-")) return google(modelName);
+  return openai.chat(modelName);
+}
 import { z } from "zod";
 
 // Import SEC-specific tools
@@ -48,7 +57,7 @@ const searchSecCompaniesTool = createTool({
 export function createSECAgent(model: string): Agent {
   return new Agent(components.agent, {
     name: "SECAgent",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     instructions: `You are a specialized SEC filings and regulatory research agent for NodeBench AI.
 
 ## Core Responsibilities
@@ -143,7 +152,7 @@ Always structure responses with:
 export function createSECAgentWithMetaTools(model: string): Agent {
   return new Agent(components.agent, {
     name: "SECAgent",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     textEmbeddingModel: openai.embedding("text-embedding-3-small"),
     instructions: `You are a specialized SEC filings and regulatory research agent for NodeBench AI.
 

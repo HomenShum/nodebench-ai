@@ -2,7 +2,7 @@
 // Main container component for the new ChatGPT-like AI chat sidebar
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen } from 'lucide-react';
@@ -68,6 +68,9 @@ export function FastAgentPanel({
   initialThreadId,
   variant = 'overlay',
 }: FastAgentPanelProps) {
+  // ========== AUTH ==========
+  const { isAuthenticated } = useConvexAuth();
+
   // ========== STATE ==========
   // Agent component uses string threadIds, not Id<"chatThreads">
   const [activeThreadId, setActiveThreadId] = useState<string | null>(initialThreadId || null);
@@ -201,7 +204,10 @@ export function FastAgentPanel({
 
   // ========== CONVEX QUERIES & MUTATIONS ==========
   // Agent mode: Using @convex-dev/agent component
-  const agentThreads = useQuery(api.domains.agents.agentChat.listUserThreads);
+  const agentThreads = useQuery(
+    api.domains.agents.agentChat.listUserThreads,
+    isAuthenticated ? {} : "skip"
+  );
   const agentMessagesResult = useQuery(
     api.domains.agents.agentChat.getThreadMessages,
     activeThreadId && chatMode === 'agent' ? {
@@ -219,7 +225,7 @@ export function FastAgentPanel({
   // Agent Streaming mode: Using agent component's native streaming
   const streamingThreads = useQuery(
     api.domains.agents.fastAgentPanelStreaming.listThreads,
-    chatMode === 'agent-streaming' ? {} : "skip"
+    isAuthenticated && chatMode === 'agent-streaming' ? {} : "skip"
   );
 
   // Get the agent thread ID for streaming mode

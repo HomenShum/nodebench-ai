@@ -127,7 +127,10 @@ export const runWorkflow = internalAction({
                 { label: "Synthesizing Intelligence", status: "pending" }
             ]);
 
-            const coordinator = createCoordinatorAgent("gpt-4o");
+            // Use model catalog for consistent model selection
+            const { getLlmModel } = await import("../../../../shared/llm/modelCatalog");
+            const coordinatorModel = getLlmModel("agent", "openai");
+            const coordinator = createCoordinatorAgent(coordinatorModel);
 
             // Get agent thread ID
             const threadInfo = await ctx.runQuery(internal.domains.agents.core.multiAgentWorkflow.getAgentThreadId, {

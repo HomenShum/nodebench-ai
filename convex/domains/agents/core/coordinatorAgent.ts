@@ -10,7 +10,21 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { components } from "../../../_generated/api";
+
+// Helper to get the appropriate language model based on model name
+// Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) {
+    return anthropic(modelName);
+  }
+  if (modelName.startsWith("gemini-")) {
+    return google(modelName);
+  }
+  return openai.chat(modelName);
+}
 
 // Import delegation tools (Deep Agents 2.0 hierarchical delegation)
 import { buildDelegationTools } from "./delegation/delegationTools";
@@ -112,6 +126,12 @@ import {
   listSkillCategories,
   describeSkill,
 } from "../../../tools/meta/skillDiscovery";
+import { analyzeForTeaching } from "../../../tools/teachability/teachingAnalyzer";
+import { learnUserSkill } from "../../../tools/teachability/learnUserSkill";
+import {
+  searchTeachingsTool,
+  getTopPreferencesTool,
+} from "../../../tools/teachability/userMemoryTools";
 
 // Artifact persistence wrapper
 import { wrapAllToolsWithArtifactPersistence } from "../../../lib/withArtifactPersistence";
@@ -213,6 +233,12 @@ export const createCoordinatorAgent = (
     queryMemory,
     getOrBuildMemory,
     updateMemoryFromReview,
+
+    // === TEACHABILITY (User facts, preferences, skills) ===
+    analyzeForTeaching,
+    searchTeachingsTool,
+    getTopPreferencesTool,
+    learnUserSkill,
 
     // === ORCHESTRATION META-TOOLS (Self-Awareness + Planning) ===
     discoverCapabilities,
@@ -807,7 +833,7 @@ Structure your responses clearly:
 
   return new Agent(components.agent, {
     name: agentName,
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     textEmbeddingModel: openai.embedding("text-embedding-3-small"),
     tools,
     stopWhen: stepCountIs(25),

@@ -2018,7 +2018,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
 
               {/* Title row */}
-              < div className="flex items-end justify-between" >
+              <div className="flex items-end justify-between" >
                 <div>
                   <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Morning Briefing</h1>
                   <p className="text-sm text-gray-500 mt-1">Daily intelligence digest and market signals.</p>
@@ -2027,7 +2027,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
               </div >
 
               {/* Toolbar / command bar (aligned with workspace filters) */}
-              < div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl p-3 shadow-sm" >
+              <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl p-3 shadow-sm" >
                 <div className="flex items-center gap-2 flex-wrap">
                   {FEED_CATEGORIES.slice(0, 4).map((cat) => (
                     <button
@@ -2103,224 +2103,224 @@ While commercial fusion is still years away, the pace of innovation has accelera
               </div>
             </header >
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar space-y-6">
-              <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Live Source Intelligence</h3>
-                  <p className="text-xs text-gray-500">Toggle sources to focus the feed.</p>
-                </div>
-                <span className="text-[11px] text-gray-500">{sourceFilteredFeedItems.length} items</span>
-              </div>
-              <div className="px-4 pb-4">
-                <SourceFeed
-                  items={filteredFeedItems}
-                  sources={sourceFilters}
-                  activeSource={sourceFilter}
-                  onSelectSource={setSourceFilter}
-                />
-              </div>
-            </div>
-
-            {/* Main Feed Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
-              <div className="flex-1">
-                <FeedTimeline
-                  items={sourceFilteredFeedItems}
-                  onItemClick={(item) => setReaderItem(item)}
-                  onAnalyze={(item) => {
-                    openWithContext({
-                      initialMessage: `Analyze this ${item.type}: "${item.title}"\n\n${item.subtitle || ''}`,
-                      contextWebUrls: (item as any).url ? [(item as any).url] : undefined,
-                      contextTitle: item.title,
-                    });
-                  }}
-                />
-                {feedItems.length >= feedLimit && sourceFilteredFeedItems.length > 0 && (
-                  <div className="text-center mt-8">
-                    <button
-                      type="button"
-                      onClick={() => setFeedLimit(prev => prev + 24)}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-                    >
-                      Load More ({feedLimit} loaded)
-                    </button>
+            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 custom-scrollbar">
+              <div className="max-w-[1600px] mx-auto space-y-6">
+                <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Live Source Intelligence</h3>
+                    <p className="text-xs text-gray-500">Toggle sources to focus the feed.</p>
                   </div>
-                )}
-              </div>
-
-              {/* Analyst Sidebar */}
-              <aside className="hidden xl:flex flex-col gap-6 w-[320px] shrink-0 sticky top-24">
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Morning Digest</h3>
-                  <MorningDigest
-                    userName={user?.name?.split(' ')[0]}
-                    onItemClick={(item) => {
-                      const prompt = item.linkedEntity
-                        ? `Tell me about recent news for ${item.linkedEntity}`
-                        : item.text;
-                      if (!prompt) return;
-                      runWithFastAgent(prompt);
-                    }}
+                  <span className="text-[11px] text-gray-500">{sourceFilteredFeedItems.length} items</span>
+                </div>
+                <div className="px-4 pb-4">
+                  <SourceFeed
+                    items={filteredFeedItems}
+                    sources={sourceFilters}
+                    activeSource={sourceFilter}
+                    onSelectSource={setSourceFilter}
                   />
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Watchlist Pulse</h3>
-                  <SmartWatchlist
-                    mentions={watchlistMentions}
-                    onItemClick={(symbol) => {
-                      runWithFastAgent(`Give me a quick analysis of ${symbol}`);
-                    }}
-                    onAnalyze={(symbol) => {
-                      runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
-                    }}
-                  />
-                </div>
 
-                <DayStarterCard
-                  onRunPreset={(prompt, personaKey) => {
-                    setPersona(personaKey);
-                    runWithFastAgent(prompt);
-                  }}
-                  activePersona={persona}
-                  onPersonaChange={setPersona}
-                  isGuest={!isAuthenticated}
-                />
-              </aside>
-            </div>
-          </div >
-      </div >
-      ) : (
-      // ACTIVE DOSSIER STATE
-      <div className="min-h-full bg-[#fbfaf2]">
-        {/* Sticky Input Bar for Active State */}
-        <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <MagicInputContainer
-                  onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
-                  onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
-                  compact={true}
-                  defaultValue={researchPrompt}
-                  mode={researchMode}
-                />
-              </div>
-              {/* Unified Action Button with Mode Toggle */}
-              <div className="flex items-center">
-                <button
-                  type="button"
-                  onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
-                  disabled={isRunning}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
-                    ? "bg-black text-white border-black cursor-wait"
-                    : "bg-black text-white border-black hover:bg-gray-800"
-                    }`}
-                  title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
-                >
-                  <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
-                  {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
-                </button>
-                {/* Mode Dropdown */}
-                <div className="relative group">
-                  <button
-                    type="button"
-                    className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
-                  >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
-                    <button
-                      type="button"
-                      onClick={() => setFollowUpMode("append")}
-                      className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
-                      Append
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFollowUpMode("new")}
-                      className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
-                      Replace
-                    </button>
+                {/* Main Feed Grid */}
+                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
+                  <div className="flex-1">
+                    <FeedTimeline
+                      items={sourceFilteredFeedItems}
+                      onItemClick={(item) => setReaderItem(item)}
+                      onAnalyze={(item) => {
+                        openWithContext({
+                          initialMessage: `Analyze this ${item.type}: "${item.title}"\n\n${item.subtitle || ''}`,
+                          contextWebUrls: (item as any).url ? [(item as any).url] : undefined,
+                          contextTitle: item.title,
+                        });
+                      }}
+                    />
+                    {feedItems.length >= feedLimit && sourceFilteredFeedItems.length > 0 && (
+                      <div className="text-center mt-8">
+                        <button
+                          type="button"
+                          onClick={() => setFeedLimit(prev => prev + 24)}
+                          className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                        >
+                          Load More ({feedLimit} loaded)
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
-            </div>
-            <ThoughtStreamTicker isActive={isRunning} />
-          </div>
 
-          {/* Cache Indicator */}
-          {isFromCache && (
-            <div className="max-w-4xl mx-auto mt-2 px-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
-                <Zap className="w-3 h-3 text-gray-900" />
-                Loaded from cache (instant results)
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
-          {/* Follow-up history drawer (compact) */}
-          {followUpHistory.length > 0 && (
-            <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                <span>Follow-up history</span>
-                <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
-              </div>
-              <div className="space-y-1">
-                {followUpHistory.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
-                      <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
+                  {/* Analyst Sidebar */}
+                  <aside className="hidden xl:flex flex-col gap-6 w-[380px] shrink-0 sticky top-4">
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Morning Digest</h3>
+                      <MorningDigest
+                        userName={user?.name?.split(' ')[0]}
+                        onItemClick={(item) => {
+                          const prompt = item.linkedEntity
+                            ? `Tell me about recent news for ${item.linkedEntity}`
+                            : item.text;
+                          if (!prompt) return;
+                          runWithFastAgent(prompt);
+                        }}
+                      />
                     </div>
-                    <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
-                    <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
-                  </div>
-                ))}
+
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Watchlist Pulse</h3>
+                      <SmartWatchlist
+                        mentions={watchlistMentions}
+                        onItemClick={(symbol) => {
+                          runWithFastAgent(`Give me a quick analysis of ${symbol}`);
+                        }}
+                        onAnalyze={(symbol) => {
+                          runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
+                        }}
+                      />
+                    </div>
+
+                    <DayStarterCard
+                      onRunPreset={(prompt, personaKey) => {
+                        setPersona(personaKey);
+                        runWithFastAgent(prompt);
+                      }}
+                      activePersona={persona}
+                      onPersonaChange={setPersona}
+                      isGuest={!isAuthenticated}
+                    />
+                  </aside>
+                </div>
               </div>
             </div>
-          )}
-          {/* Unified Live Dossier View - summary and document (scrollytelling shown above) */}
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
-            {citations.length > 0 && <ExecutiveSummaryBlock />}
-            <CollapsibleReasoningChain steps={toolParts} />
-            <LiveDossierDocument
-              threadId={threadId}
-              isLoading={isRunning || (hasReceivedResponse && !responseText)}
-              onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
-              media={aggregatedMedia}
-              documents={aggregatedDocumentActions}
-              onDocumentSelect={onDocumentSelect}
-            />
           </div>
-        </div>
-      </div>
-    </div >
-    </div >
+        ) : (
+          // ACTIVE DOSSIER STATE
+          <div className="min-h-full bg-[#fbfaf2]">
+            {/* Sticky Input Bar for Active State */}
+            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <MagicInputContainer
+                      onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                      onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
+                      compact={true}
+                      defaultValue={researchPrompt}
+                      mode={researchMode}
+                    />
+                  </div>
+                  {/* Unified Action Button with Mode Toggle */}
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
+                      disabled={isRunning}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
+                        ? "bg-black text-white border-black cursor-wait"
+                        : "bg-black text-white border-black hover:bg-gray-800"
+                        }`}
+                      title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
+                    >
+                      <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
+                      {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
+                    </button>
+                    {/* Mode Dropdown */}
+                    <div className="relative group">
+                      <button
+                        type="button"
+                        className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
+                        <button
+                          type="button"
+                          onClick={() => setFollowUpMode("append")}
+                          className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
+                          Append
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFollowUpMode("new")}
+                          className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
+                          Replace
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <ThoughtStreamTicker isActive={isRunning} />
+              </div>
 
-    {/* Feed Reader Modal - Deep Dive view for selected items */ }
-  {
-    readerItem && (
+              {/* Cache Indicator */}
+              {isFromCache && (
+                <div className="max-w-4xl mx-auto mt-2 px-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
+                    <Zap className="w-3 h-3 text-gray-900" />
+                    Loaded from cache (instant results)
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
+              {/* Follow-up history drawer (compact) */}
+              {followUpHistory.length > 0 && (
+                <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
+                  <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    <span>Follow-up history</span>
+                    <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
+                  </div>
+                  <div className="space-y-1">
+                    {followUpHistory.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
+                          <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
+                        </div>
+                        <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
+                        <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Unified Live Dossier View - summary and document (scrollytelling shown above) */}
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+                {citations.length > 0 && <ExecutiveSummaryBlock />}
+                <CollapsibleReasoningChain steps={toolParts} />
+                <LiveDossierDocument
+                  threadId={threadId}
+                  isLoading={isRunning || (hasReceivedResponse && !responseText)}
+                  onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
+                  media={aggregatedMedia}
+                  documents={aggregatedDocumentActions}
+                  onDocumentSelect={onDocumentSelect}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+    {/* Feed Reader Modal - Deep Dive view for selected items */}
+    {readerItem && (
       <FeedReaderModal
         item={readerItem}
         onClose={() => setReaderItem(null)}
       />
-    )
-  }
+    )}
 
-  {/* Deal Flyout */ }
-  <DealFlyout
-    deal={selectedDeal}
-    onClose={() => setSelectedDeal(null)}
-    onPrep={handleDealPrep}
-  />
-    </>
+    {/* Deal Flyout */}
+    <DealFlyout
+      deal={selectedDeal}
+      onClose={() => setSelectedDeal(null)}
+      onPrep={handleDealPrep}
+    />
+  </>
   );
 }
 

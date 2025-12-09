@@ -712,6 +712,37 @@ const userPreferences = defineTable({
   .index("by_user", ["userId"]);
 
 /* ------------------------------------------------------------------ */
+/* USER TEACHINGS - Long-term teachability memory (facts/prefs/skills) */
+/* ------------------------------------------------------------------ */
+const userTeachings = defineTable({
+  userId: v.id("users"),
+  type: v.union(
+    v.literal("fact"),
+    v.literal("preference"),
+    v.literal("skill"),
+  ),
+  category: v.optional(v.string()),           // Stable bucket for conflict resolution
+  key: v.optional(v.string()),                // Short label for the teaching
+  content: v.string(),                        // Normalized teaching text
+  embedding: v.optional(v.array(v.float64())),// Vector embedding for semantic retrieval
+  status: v.union(v.literal("active"), v.literal("archived")),
+  source: v.optional(v.union(v.literal("explicit"), v.literal("inferred"))),
+  steps: v.optional(v.array(v.string())),     // For skills: ordered steps
+  triggerPhrases: v.optional(v.array(v.string())), // For skills: trigger phrases
+  confidence: v.optional(v.float64()),        // Analyzer confidence (0-1)
+  usageCount: v.optional(v.number()),
+  lastUsedAt: v.optional(v.number()),
+  createdAt: v.number(),
+  archivedAt: v.optional(v.number()),
+  threadId: v.optional(v.string()),           // Source thread for provenance
+})
+  .index("by_user", ["userId"])
+  .index("by_user_type", ["userId", "type"])
+  .index("by_user_category", ["userId", "category"])
+  .index("by_user_status", ["userId", "status"])
+  .vectorIndex("by_embedding", { vectorField: "embedding", dimensions: 1536 });
+
+/* ------------------------------------------------------------------ */
 /* GOOGLE ACCOUNTS - OAuth tokens for Gmail integration               */
 /* ------------------------------------------------------------------ */
 const googleAccounts = defineTable({
@@ -1263,6 +1294,7 @@ export default defineSchema({
   folders,
   documentFolders,
   userPreferences,
+  userTeachings,
   events,
   tasks,
   holidays,
@@ -2639,5 +2671,62 @@ export default defineSchema({
   })
     .index("by_hash", ["queryHash"])
     .index("by_expiry", ["expiresAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* PUBLIC DOSSIERS - Daily AI-generated intelligence briefings        */
+  /* No auth required - free for all users                              */
+  /* ------------------------------------------------------------------ */
+  publicDossiers: defineTable({
+    sections: v.array(v.any()),     // ScrollySection[] - JSON structure for scrollytelling
+    topic: v.string(),              // Topic/focus of the dossier (e.g., "AI Infrastructure")
+    generatedAt: v.number(),        // Unix timestamp when generated
+    dateString: v.string(),         // YYYY-MM-DD for easy querying
+    version: v.number(),            // Version number for same-day updates
+  })
+    .index("by_date", ["generatedAt"])
+    .index("by_date_string", ["dateString"]),
+
+  /* ------------------------------------------------------------------ */
+  /* LLM USAGE TRACKING - Daily aggregates for rate limiting            */
+  /* ------------------------------------------------------------------ */
+  llmUsageDaily: defineTable({
+    userId: v.id("users"),
+    date: v.string(),               // YYYY-MM-DD
+    requests: v.number(),           // Total requests today
+    totalTokens: v.number(),        // Total tokens (input + output)
+    inputTokens: v.number(),        // Total input tokens
+    outputTokens: v.number(),       // Total output tokens
+    cachedTokens: v.number(),       // Cached input tokens (discounted)
+    totalCost: v.number(),          // Total cost in USD
+    successCount: v.number(),       // Successful requests
+    errorCount: v.number(),         // Failed requests
+    providers: v.optional(v.any()), // { openai: 5, anthropic: 3 }
+    models: v.optional(v.any()),    // { "gpt-5.1": 3, "claude-sonnet-4-5": 2 }
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_date", ["userId", "date"])
+    .index("by_date", ["date"]),
+
+  /* ------------------------------------------------------------------ */
+  /* LLM USAGE LOG - Detailed per-request log for analytics             */
+  /* ------------------------------------------------------------------ */
+  llmUsageLog: defineTable({
+    userId: v.id("users"),
+    timestamp: v.number(),
+    model: v.string(),              // e.g., "gpt-5.1", "claude-sonnet-4-5-20250929"
+    provider: v.string(),           // "openai", "anthropic", "gemini"
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+    cachedTokens: v.number(),
+    cost: v.number(),               // Cost in USD
+    latencyMs: v.optional(v.number()),
+    success: v.boolean(),
+    errorMessage: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_timestamp", ["userId", "timestamp"])
+    .index("by_model", ["model"])
+    .index("by_provider", ["provider"]),
 
 });

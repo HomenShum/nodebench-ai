@@ -4,8 +4,17 @@
 import { internalAction, internalQuery, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
 import { getLlmModel } from "../../../shared/llm/modelCatalog";
+
+// Helper to get the appropriate language model based on model name
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) return anthropic(modelName);
+  if (modelName.startsWith("gemini-")) return google(modelName);
+  return openai.chat(modelName);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VALIDATORS - Extracted to avoid "Type instantiation is excessively deep"
@@ -165,7 +174,7 @@ Return a JSON array with this exact structure:
 IMPORTANT: Return ONLY the JSON array, no other text.`;
 
       const result = await generateText({
-        model: openai.chat(getLlmModel("analysis", "openai")),
+        model: getLanguageModel(getLlmModel("analysis", "openai")),
         prompt,
       });
 

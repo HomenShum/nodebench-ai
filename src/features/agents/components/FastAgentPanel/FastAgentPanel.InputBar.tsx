@@ -38,8 +38,8 @@ interface FastAgentInputBarProps {
   onSend: (content?: string) => void;
   isStreaming: boolean;
   onStop: () => void;
-  selectedModel: 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gemini';
-  onSelectModel: (model: 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gemini') => void;
+  selectedModel: string;
+  onSelectModel: (model: string) => void;
   attachedFiles: File[];
   onAttachFiles: (files: File[]) => void;
   onRemoveFile: (index: number) => void;
@@ -430,7 +430,12 @@ export function FastAgentInputBar({
               className="flex items-center gap-1.5 px-2 py-1 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] rounded-full text-xs font-medium text-[var(--text-primary)] transition-colors"
             >
               <Sparkles className="w-3 h-3 text-[var(--accent-secondary)]" />
-              <span>{selectedModel === 'gpt-5' ? 'GPT-5' : selectedModel === 'gpt-5-mini' ? 'GPT-5 Mini' : selectedModel === 'gemini' ? 'Gemini' : 'GPT-5 Nano'}</span>
+              <span>{
+                selectedModel.includes('claude') ? (selectedModel.includes('sonnet') ? 'Claude Sonnet' : 'Claude Haiku') :
+                selectedModel.includes('gemini') ? (selectedModel.includes('pro') ? 'Gemini Pro' : 'Gemini Flash') :
+                selectedModel === 'gpt-5.1' ? 'GPT-5.1' :
+                selectedModel === 'gpt-5-mini' ? 'GPT-5 Mini' : 'GPT-5 Nano'
+              }</span>
               <ChevronUp className={cn("w-3 h-3 transition-transform", showModelSelector ? "rotate-180" : "")} />
             </button>
 
@@ -444,10 +449,16 @@ export function FastAgentInputBar({
                 <div className="absolute bottom-full left-0 mb-2 w-48 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl overflow-hidden z-20 flex flex-col py-1">
                   <div className="px-3 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Select Model</div>
                   {[
-                    { id: 'gpt-5', label: 'GPT-5', desc: 'Most capable' },
-                    { id: 'gpt-5-mini', label: 'GPT-5 Mini', desc: 'Fast & efficient' },
-                    { id: 'gpt-5-nano', label: 'GPT-5 Nano', desc: 'Lightning fast' },
-                    { id: 'gemini', label: 'Gemini 1.5', desc: 'Large context' },
+                    // OpenAI
+                    { id: 'gpt-5.1', label: 'GPT-5.1', desc: 'Most capable', icon: '🟢' },
+                    { id: 'gpt-5-mini', label: 'GPT-5 Mini', desc: 'Balanced', icon: '🟢' },
+                    { id: 'gpt-5-nano', label: 'GPT-5 Nano', desc: 'Fastest', icon: '🟢' },
+                    // Anthropic
+                    { id: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet', desc: 'Best balance', icon: '🟠' },
+                    { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku', desc: 'Fast', icon: '🟠' },
+                    // Gemini
+                    { id: 'gemini-2.5-flash', label: 'Gemini Flash', desc: '1M context', icon: '🔵' },
+                    { id: 'gemini-2.5-pro', label: 'Gemini Pro', desc: '2M context', icon: '🔵' },
                   ].map((model) => (
                     <button
                       key={model.id}
@@ -460,7 +471,8 @@ export function FastAgentInputBar({
                         selectedModel === model.id && "bg-[var(--accent-primary-bg)]"
                       )}
                     >
-                      <span className={cn("text-xs font-medium", selectedModel === model.id ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]")}>
+                      <span className={cn("text-xs font-medium flex items-center gap-1.5", selectedModel === model.id ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]")}>
+                        <span>{(model as any).icon}</span>
                         {model.label}
                       </span>
                       <span className="text-[10px] text-[var(--text-muted)]">{model.desc}</span>

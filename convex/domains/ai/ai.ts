@@ -4,9 +4,13 @@ import { v } from "convex/values";
 import { action } from "../../_generated/server";
 import { api, internal } from "../../_generated/api";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
 import { Id } from "../../_generated/dataModel";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { getLlmModel, resolveModelAlias, getModelWithFailover } from "../../../shared/llm/modelCatalog";
 
 // Legacy import - agentTools not used with new Convex Agent system
 // import { agentToolsOpenAI } from "../agents/agentTools";
@@ -71,8 +75,8 @@ export interface AIResponse {
 // 3. THE MAIN AI ACTION
 // =================================================================
 
-// Default OpenAI chat model variant (legacy action uses OpenAI when applicable)
-const MODEL = process.env.OPENAI_API_KEY ? "gpt-5-nano" : "gpt-5-nano";
+// Default model (multi-provider support)
+const MODEL = getLlmModel("chat");
 
 export const generateResponse = action({
   args: {
@@ -169,17 +173,53 @@ export const generateResponse = action({
     // const tools = agentToolsOpenAI as any;
     const tools: any[] = []; // Empty tools array for now
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const response = await openai.chat.completions.create({ model: modelVariant, messages, tools: tools.length > 0 ? tools : undefined, tool_choice: tools.length > 0 ? "auto" : undefined });
-    // Increment usage on successful OpenAI call
-    try {
-      await ctx.runMutation(internal.domains.auth.usage.incrementDailyUsage, { provider: "openai" });
-    } catch (e) {
-      console.warn("[usage] incrementDailyUsage failed (openai)", e);
+    // Multi-provider LLM support
+    const { model: modelName, provider } = getModelWithFailover(resolveModelAlias(modelVariant || MODEL));
+    
+    let responseMessage: any;
+    let toolCalls: any;
+    
+    // Note: Tool calls only work with OpenAI in this legacy path
+    if (provider === "openai" || tools.length > 0) {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const response = await openai.chat.completions.create({ 
+        model: modelName, 
+        messages, 
+        tools: tools.length > 0 ? tools : undefined, 
+        tool_choice: tools.length > 0 ? "auto" : undefined 
+      });
+      responseMessage = response.choices[0].message;
+      toolCalls = responseMessage.tool_calls;
+    } else if (provider === "anthropic") {
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const response = await anthropic.messages.create({
+        model: modelName,
+        max_tokens: 2000,
+        system: messages.filter((m: any) => m.role === "system").map((m: any) => m.content).join("\n"),
+        messages: messages.filter((m: any) => m.role !== "system"),
+      });
+      responseMessage = { content: response.content[0]?.type === "text" ? response.content[0].text : "" };
+      toolCalls = undefined;
+    } else if (provider === "gemini") {
+      const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+      const result = await generateText({
+        model: google(modelName),
+        system: messages.filter((m: any) => m.role === "system").map((m: any) => m.content).join("\n"),
+        prompt: messages.filter((m: any) => m.role === "user").map((m: any) => m.content).join("\n"),
+        maxOutputTokens: 2000,
+      });
+      responseMessage = { content: result.text };
+      toolCalls = undefined;
+    } else {
+      throw new Error(`Unsupported provider: ${provider}`);
     }
 
-    const responseMessage = response.choices[0].message;
-    const toolCalls = responseMessage.tool_calls;
+    // Increment usage
+    try {
+      await ctx.runMutation(internal.domains.auth.usage.incrementDailyUsage, { provider });
+    } catch (e) {
+      console.warn(`[usage] incrementDailyUsage failed (${provider})`, e);
+    }
 
     if (!toolCalls || toolCalls.length === 0) {
       return { message: responseMessage.content || "I'm not sure how to help with that.", actions: [] };

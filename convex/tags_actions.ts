@@ -5,11 +5,14 @@ import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import OpenAI from "openai";
-import { getLlmModel } from "../shared/llm/modelCatalog";
+import Anthropic from "@anthropic-ai/sdk";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
+import { getLlmModel, resolveModelAlias, getModelWithFailover } from "../shared/llm/modelCatalog";
 
 /**
  * LLM-powered tag generation for documents
- * Uses GPT-4o-mini for fast, cost-effective semantic tag extraction
+ * Uses model catalog (gpt-5.1 for analysis) for semantic tag extraction
  */
 
 interface ExtractedTag {
@@ -49,19 +52,10 @@ export const generateForDocument = action({
       return { success: false, tagsGenerated: 0, tags: [] };
     }
 
-    // Get OpenAI API key
-    const apiKey = process.env.OPENAI_API_KEY || process.env.CONVEX_OPENAI_API_KEY;
-    if (!apiKey) throw new Error("OpenAI API key not configured");
-
-    const openai = new OpenAI({ apiKey });
-
-    // Use central LLM registry for fast, cheap tag extraction
-    const response = await openai.chat.completions.create({
-      model: getLlmModel("analysis", "openai"),
-      messages: [
-        {
-          role: "system",
-          content: `You are a semantic tag extraction expert. Extract 3-8 meaningful tags from the document content.
+    // Multi-provider LLM support
+    const { model: modelName, provider } = getModelWithFailover(resolveModelAlias(getLlmModel("analysis")));
+    
+    const systemPrompt = `You are a semantic tag extraction expert. Extract 3-8 meaningful tags from the document content.
 
 For each tag, provide:
 - name: The tag text (lowercase, 1-3 words max)
@@ -74,18 +68,46 @@ For each tag, provide:
 - importance: 0.0-1.0 score (1.0 = most important)
 
 Respond with ONLY a JSON array of tag objects. No markdown, no explanation.
-Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web development","kind":"topic","importance":0.7}]`,
-        },
-        {
-          role: "user",
-      content: `Extract semantic tags from this document:\n\n${text}`,
-    },
-  ],
-  max_completion_tokens: 500,
-});
+Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web development","kind":"topic","importance":0.7}]`;
+
+    const userPrompt = `Extract semantic tags from this document:\n\n${text}`;
+    
+    let responseText: string;
+    
+    if (provider === "anthropic") {
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const response = await anthropic.messages.create({
+        model: modelName,
+        max_tokens: 500,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      });
+      responseText = response.content[0]?.type === "text" ? response.content[0].text : "[]";
+    } else if (provider === "gemini") {
+      const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+      const result = await generateText({
+        model: google(modelName),
+        system: systemPrompt,
+        prompt: userPrompt,
+        maxOutputTokens: 500,
+      });
+      responseText = result.text;
+    } else {
+      // OpenAI
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const response = await openai.chat.completions.create({
+        model: modelName,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_completion_tokens: 500,
+      });
+      responseText = response.choices[0]?.message?.content?.trim() || "[]";
+    }
 
     // Parse LLM response
-    const content = response.choices[0]?.message?.content?.trim() || "[]";
+    const content = responseText;
     let extractedTags: ExtractedTag[] = [];
 
     try {
@@ -124,10 +146,10 @@ Example: [{"name":"react","kind":"entity","importance":0.9},{"name":"web develop
       tags: validTags,
     });
 
-    // Track usage
+    // Track usage with actual provider
     try {
       await ctx.runMutation(internal.domains.auth.usage.incrementDailyUsage, {
-        provider: "openai",
+        provider,
       });
     } catch (e) {
       console.warn("[generateForDocument] Failed to track usage:", e);

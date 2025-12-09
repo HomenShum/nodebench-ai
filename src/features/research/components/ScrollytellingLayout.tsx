@@ -76,6 +76,10 @@ interface SectionRendererProps {
   isLast?: boolean;
 }
 
+import HeroSection from "./HeroSection";
+
+// ... existing imports
+
 const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRendererProps) => {
   const { ref, inView } = useInView({ threshold: 0.5 });
 
@@ -84,35 +88,37 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
   }, [inView, onVisible]);
 
   return (
-    <div ref={ref} className="relative mb-24 min-h-[40vh] scroll-mt-24 pl-6 xl:pl-0">
-      {/* Timeline Connector Line */}
+    <div ref={ref} className="relative mb-32 min-h-[60vh] scroll-mt-32 pl-8 xl:pl-4">
+      {/* Timeline Connector Line - Simplified for Clean Look */}
       {!isLast && (
-        <div className="absolute left-0 top-8 bottom-[-96px] w-px bg-gradient-to-b from-indigo-200 to-transparent hidden xl:block" />
+        <div className="absolute left-0 top-10 bottom-[-128px] w-px bg-gray-200 hidden xl:block" />
       )}
-      {/* Timeline Dot */}
-      <div className="absolute left-[-4px] top-[10px] w-2 h-2 rounded-full bg-indigo-500 ring-4 ring-indigo-50 hidden xl:block" />
+      {/* Timeline Dot - Static Minimalist */}
+      <div className="absolute left-[-4px] top-[14px] hidden xl:block">
+        <div className="h-2.5 w-2.5 rounded-full bg-gray-900 ring-4 ring-[#fbfaf2]"></div>
+      </div>
 
       {/* Date Badge */}
-      <span className="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-700">
+      <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/50 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500 backdrop-blur-sm">
         {section.meta.date}
       </span>
 
-      {/* Section Title - Editorial Serif */}
-      <h2 className="mb-4 font-serif text-2xl font-bold tracking-tight text-gray-900 leading-snug">
+      {/* Section Title - Clean Sans */}
+      <h2 className="mb-6 text-4xl font-medium tracking-tight text-gray-900 leading-[1.1]">
         {section.meta.title}
       </h2>
 
-      {/* Narrative Body - Serif for Editorial Feel */}
-      <div className="prose prose-base prose-slate font-serif text-gray-700 leading-relaxed max-w-none">
+      {/* Narrative Body - Clean Sans */}
+      <div className="prose prose-lg prose-slate text-gray-600 leading-loose max-w-none not-italic">
         {section.content.body.map((paragraph, idx) => (
-          <p key={idx} className="mb-4 last:mb-0">
+          <p key={idx} className="mb-6 last:mb-0">
             {parseSmartLinks(paragraph, (section.smartLinks ?? {}) as Record<string, { summary: string; source?: string }>)}
           </p>
         ))}
       </div>
 
       {section.content.deepDives.length > 0 && (
-        <div className="mt-6 space-y-4">
+        <div className="mt-8 space-y-4">
           {section.content.deepDives.map((dd, idx) => (
             <DeepDiveAccordion key={idx} title={dd.title} content={dd.content} />
           ))}
@@ -134,10 +140,10 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
     if (data && data.length) return data;
     return streamData as unknown as ScrollySection[];
   }, [data]);
-  
+
   const showGuestBadge = isGuestMode ?? !data?.length;
   const isLiveData = false;
-  
+
   const initial = useMemo(
     () =>
       sourceData[0]?.dashboard ?? {
@@ -152,9 +158,9 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
 
   // Generate today's date for the header
   const todayFormatted = useMemo(() => {
-    return new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
       day: 'numeric',
       year: 'numeric'
     });
@@ -163,73 +169,47 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
   const sectionCount = sourceData.length;
 
   return (
-    <div className="w-full py-8">
+    <div className="w-full pb-32">
       {/* Daily Briefing Header */}
       {showGuestBadge && (
-        <header className="mb-12 pb-8 border-b border-gray-100">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-sm">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                  Free Daily Briefing
-                </span>
-                <span className="text-xs text-gray-500 font-medium">{todayFormatted}</span>
-                {isLiveData && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-bold uppercase">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                    Live
-                  </span>
-                )}
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-2">
-                {"AI Intelligence Dossier"}
-              </h1>
-              <p className="text-gray-600 max-w-2xl">
-                Your daily synthesis of AI infrastructure funding, emerging trends, and technical deep dives. 
-                {isLiveData ? " Generated fresh by our deep research agents." : " Updated every morning by our research agents."}
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <div className="text-right text-xs text-gray-500">
-                <span className="font-medium text-gray-700">{sectionCount} sections</span> · {Math.ceil(sectionCount * 2.5)} min read
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${isLiveData ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
-                  {isLiveData ? "AI-Generated" : "Sample Data"}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Sign-in prompt for personalized content */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-indigo-50/30 rounded-xl border border-gray-100">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Want personalized dossiers?</p>
-                  <p className="text-xs text-gray-500">Sign in to get AI-generated reports on your deals, watchlist, and custom topics.</p>
-                </div>
-              </div>
-              <button 
-                type="button"
-                className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
-              >
-                Sign in free
-              </button>
-            </div>
-          </div>
-        </header>
+        <HeroSection
+          todayFormatted={todayFormatted}
+          sectionCount={sectionCount}
+          readTimeMin={Math.ceil(sectionCount * 2.5)}
+          isLiveData_={isLiveData}
+        />
       )}
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+      {/* Mobile/Tablet Compact Dashboard (Sticky Top) */}
+      <div className="lg:hidden relative mt-6 mb-8 mx-4 bg-[#fbfaf2]/90 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-900">{activeData.phaseLabel || "Briefing"}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-[10px] text-gray-500 uppercase font-medium">Sentiment</div>
+              <div className="text-sm font-bold text-gray-900">{activeData.marketSentiment}/100</div>
+            </div>
+          </div>
+        </div>
+        {/* Progress Bar */}
+        <div className="mt-3 h-1 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div
+            className="h-full bg-gray-900 transition-all duration-1000 ease-out"
+            style={{ width: `${activeData.marketSentiment}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
         <div className="lg:col-span-7 xl:col-span-8 pb-24 relative">
+          {sourceData.length === 0 && (
+            <div className="p-8 text-center text-gray-500 bg-white/50 rounded-xl border border-gray-100">
+              <p>No briefing data available for this view.</p>
+            </div>
+          )}
           {sourceData.map((section, idx) => (
             <SectionRenderer
               key={section.id}
@@ -240,11 +220,36 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
           ))}
         </div>
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
-          <div className="sticky top-12 min-h-[400px] rounded-xl border border-gray-200 bg-white shadow-sm p-6 ring-1 ring-black/5">
+          <div className="sticky top-24 min-h-[400px]">
             <DashboardPanel data={activeData} />
           </div>
         </div>
       </div>
+
+      {/* Footer / CTA for Guests */}
+      {showGuestBadge && (
+        <div className="mt-24 border-t border-gray-200 pt-16 text-center">
+          <h3 className="mb-4 text-2xl font-medium text-gray-900">
+            Dive deeper with your own data
+          </h3>
+          <p className="mx-auto mb-8 max-w-xl text-gray-500">
+            Connect your workspace to generate personalized intelligence briefings,
+            track your specific deals, and get real-time market alerts.
+          </p>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-gray-800"
+          >
+            <span>Start Free Trial</span>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </button>
+          <p className="mt-6 text-xs text-gray-400">
+            No credit card required · SOC2 Compliant
+          </p>
+        </div>
+      )}
     </div>
   );
 };

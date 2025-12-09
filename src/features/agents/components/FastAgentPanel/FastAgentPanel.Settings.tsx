@@ -1,12 +1,16 @@
 // src/components/FastAgentPanel/FastAgentPanel.Settings.tsx
-// Settings panel for FastAgentPanel
+// Settings panel for FastAgentPanel with multi-provider LLM support
 
 import React, { useState, useEffect } from 'react';
-import { X, Zap, Thermometer, Hash, FileText, Scale } from 'lucide-react';
+import { X, Zap, Thermometer, Hash, FileText, Scale, BarChart3, Sparkles, BookOpen } from 'lucide-react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
+import { ModelSelector } from '../../../../components/ModelSelector';
+import { UsageDashboard } from '../../../../components/UsageDashboard';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 
-type ModelOption = 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gemini';
+// Extended to support all providers
+type ModelOption = string;
 
 interface SettingsProps {
   fastMode: boolean;
@@ -34,6 +38,21 @@ export function Settings({
   const agentsPrefs = useQuery(api.agentsPrefs.getAgentsPrefs);
   const setAgentsPrefs = useMutation(api.agentsPrefs.setAgentsPrefs);
   const [arbitrageMode, setArbitrageMode] = useState(false);
+  const updateTeaching = useMutation(api.domains.teachability.updateTeaching);
+  const deleteTeaching = useMutation(api.domains.teachability.deleteTeaching);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftContent, setDraftContent] = useState('');
+  const [draftKey, setDraftKey] = useState('');
+
+  const savedPreferences = useQuery(api.domains.teachability.listUserTeachings, {
+    type: "preference",
+    limit: 5,
+  });
+  const savedSkills = useQuery(api.domains.teachability.listUserTeachings, {
+    type: "skill",
+    limit: 5,
+  });
 
   // Sync arbitrage mode from backend
   useEffect(() => {
@@ -51,6 +70,31 @@ export function Settings({
       console.error('[Settings] Failed to save arbitrage mode:', err);
       // Revert on error
       setArbitrageMode(!enabled);
+    }
+  };
+  
+  const startEditing = (item: any) => {
+    setEditingId(String(item._id));
+    setDraftContent(item.content || "");
+    setDraftKey(item.key || "");
+  };
+
+  const saveEditing = async (id: Id<"userTeachings">) => {
+    if (!draftContent.trim()) return;
+    try {
+      await updateTeaching({ teachingId: id, content: draftContent.trim(), key: draftKey.trim() || undefined });
+    } finally {
+      setEditingId(null);
+      setDraftContent('');
+      setDraftKey('');
+    }
+  };
+
+  const handleDelete = async (id: Id<"userTeachings">) => {
+    try {
+      await deleteTeaching({ teachingId: id });
+    } catch (err) {
+      console.error("[Settings] Delete teaching failed", err);
     }
   };
   
@@ -105,26 +149,16 @@ export function Settings({
             Receipts-first research mode: detects contradictions, scores source quality, and tracks changes over time. "Show me the receipts."
           </p>
 
-          {/* Model Selection */}
-          <div className="setting-group">
-            <div className="setting-label">
+          {/* Model Selection - Multi-provider support */}
+          <div className="setting-group-vertical">
+            <div className="setting-label mb-3">
               <FileText className="h-4 w-4" />
-              <span>Model</span>
+              <span>AI Model</span>
             </div>
-            <select
+            <ModelSelector
               value={model}
-              onChange={(e) => onModelChange(e.target.value as ModelOption)}
-              className="setting-select"
-            >
-              <optgroup label="GPT-5 Series">
-                <option value="gpt-5">GPT-5 (Most Capable)</option>
-                <option value="gpt-5-mini">GPT-5 Mini (Balanced)</option>
-                <option value="gpt-5-nano">GPT-5 Nano (Fastest)</option>
-              </optgroup>
-              <optgroup label="Other">
-                <option value="gemini">Google Gemini</option>
-              </optgroup>
-            </select>
+              onChange={(modelId) => onModelChange(modelId as ModelOption)}
+            />
           </div>
           
           {/* Temperature */}
@@ -186,6 +220,146 @@ export function Settings({
           <p className="setting-description">
             Custom instructions that guide the AI's behavior
           </p>
+
+          {/* Saved Preferences */}
+          <div className="setting-group-vertical mt-6 pt-6 border-t border-gray-200">
+            <div className="setting-label mb-2">
+              <Sparkles className="h-4 w-4" />
+              <span>Saved Preferences</span>
+            </div>
+            {!savedPreferences ? (
+              <p className="text-xs text-gray-500">Loading preferences...</p>
+            ) : savedPreferences.length === 0 ? (
+              <p className="text-xs text-gray-500">No preferences saved yet. Teach the agent how you like responses.</p>
+            ) : (
+              <div className="space-y-2">
+                {savedPreferences.map((pref) => {
+                  const isEditing = editingId === String(pref._id);
+                  return (
+                    <div
+                      key={pref._id}
+                      className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-800 space-y-1"
+                    >
+                      {isEditing ? (
+                        <>
+                          <textarea
+                            className="w-full text-xs border rounded px-2 py-1"
+                            value={draftContent}
+                            onChange={(e) => setDraftContent(e.target.value)}
+                            rows={2}
+                          />
+                          <div className="flex gap-2 text-[11px]">
+                            <button
+                              className="px-2 py-1 bg-gray-900 text-white rounded"
+                              onClick={() => saveEditing(pref._id as Id<"userTeachings">)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded"
+                              onClick={() => setEditingId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>{pref.content}</div>
+                          <div className="flex gap-2 text-[11px] text-gray-500">
+                            <button onClick={() => startEditing(pref)}>Edit</button>
+                            <button onClick={() => handleDelete(pref._id as Id<"userTeachings">)}>Delete</button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Learned Skills */}
+          <div className="setting-group-vertical mt-4">
+            <div className="setting-label mb-2">
+              <BookOpen className="h-4 w-4" />
+              <span>Learned Skills</span>
+            </div>
+            {!savedSkills ? (
+              <p className="text-xs text-gray-500">Loading skills...</p>
+            ) : savedSkills.length === 0 ? (
+              <p className="text-xs text-gray-500">No custom skills yet. Teach a workflow in chat to see it here.</p>
+            ) : (
+              <div className="space-y-2">
+                {savedSkills.map((skill) => {
+                  const isEditing = editingId === String(skill._id);
+                  return (
+                    <div
+                      key={skill._id}
+                      className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 space-y-1"
+                    >
+                      {isEditing ? (
+                        <>
+                          <input
+                            className="w-full text-xs border rounded px-2 py-1"
+                            value={draftKey}
+                            onChange={(e) => setDraftKey(e.target.value)}
+                            placeholder="Skill name"
+                          />
+                          <textarea
+                            className="w-full text-xs border rounded px-2 py-1 mt-1"
+                            value={draftContent}
+                            onChange={(e) => setDraftContent(e.target.value)}
+                            rows={2}
+                          />
+                          <div className="flex gap-2 text-[11px]">
+                            <button
+                              className="px-2 py-1 bg-gray-900 text-white rounded"
+                              onClick={() => saveEditing(skill._id as Id<"userTeachings">)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded"
+                              onClick={() => setEditingId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-xs font-semibold text-gray-800">
+                            {skill.key || skill.category || "Custom skill"}
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                            {skill.content}
+                          </div>
+                          <div className="flex gap-2 text-[11px] text-gray-500">
+                            <button onClick={() => {
+                              setDraftKey(skill.key || skill.category || "");
+                              setDraftContent(skill.content || "");
+                              setEditingId(String(skill._id));
+                            }}>Edit</button>
+                            <button onClick={() => handleDelete(skill._id as Id<"userTeachings">)}>Delete</button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Usage Dashboard */}
+          <div className="setting-group-vertical mt-6 pt-6 border-t border-gray-200">
+            <div className="setting-label mb-3">
+              <BarChart3 className="h-4 w-4" />
+              <span>Usage & Limits</span>
+            </div>
+            <UsageDashboard compact />
+          </div>
         </div>
 
         <div className="settings-footer">

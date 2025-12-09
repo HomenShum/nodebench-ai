@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 
 interface DeepDiveProps {
   title: string;
@@ -11,15 +11,22 @@ export const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) =
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="my-6 overflow-hidden rounded-md border-l-4 border-indigo-500 bg-stone-50">
+    <div className="group my-8 overflow-hidden rounded-xl border border-indigo-100 bg-white/40 shadow-sm backdrop-blur-sm transition-all hover:bg-white/60 hover:shadow-md hover:border-indigo-200">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-gray-900 font-serif hover:bg-stone-100 transition-colors"
+        className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors"
       >
-        <span>Deep Dive: {title}</span>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className="h-4 w-4 text-gray-500" />
+        <span className="flex items-center gap-3 font-serif text-lg font-medium text-gray-900">
+          <Sparkles className="h-4 w-4 text-indigo-500" />
+          <span>Deep Dive: {title}</span>
+        </span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+          className="rounded-full bg-indigo-50 p-1 text-indigo-600 group-hover:bg-indigo-100"
+        >
+          <ChevronDown className="h-5 w-5" />
         </motion.div>
       </button>
       <AnimatePresence initial={false}>
@@ -28,9 +35,11 @@ export const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) =
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
           >
-            <div className="px-4 pb-4 pt-0 text-sm leading-relaxed text-gray-600">{content}</div>
+            <div className="border-t border-indigo-50/50 px-6 pb-6 pt-4 text-base leading-loose text-gray-600 font-serif">
+              {content}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

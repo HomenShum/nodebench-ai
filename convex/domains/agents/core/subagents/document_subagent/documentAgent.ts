@@ -11,7 +11,17 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
+
+// Helper to get the appropriate language model based on model name
+// Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) return anthropic(modelName);
+  if (modelName.startsWith("gemini-")) return google(modelName);
+  return openai.chat(modelName);
+}
 
 // Import document-specific tools
 import {
@@ -46,7 +56,7 @@ import {
 export function createDocumentAgent(model: string) {
   return new Agent(components.agent, {
     name: "DocumentAgent",
-    languageModel: openai.chat(model),
+    languageModel: getLanguageModel(model),
     textEmbeddingModel: openai.embedding("text-embedding-3-small"),
     instructions: `You are a specialized document analyst and manager for NodeBench AI.
 

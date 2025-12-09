@@ -6875,7 +6875,7 @@ export function DocumentsHomeHub({
         }
       `}</style>
 
-      <div className="h-full w-full bg-[#FAFAFA] overflow-y-auto relative premium-scrollbar">
+      <div className="h-full w-full bg-[#fbfaf2] overflow-y-auto relative premium-scrollbar">
         {/* Premium SaaS layout */}
 
         <div className="flex-1 px-6 sm:px-8 lg:px-12 py-8 relative z-10">

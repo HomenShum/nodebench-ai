@@ -21,6 +21,33 @@ A comprehensive AI-powered document management and research platform with multi-
 - 🧭 **Persona Day Starter** - Right-rail presets (banking/product/research/sales/general) that launch Fast/Arbitrage Agent briefs
 - 📑 **Deal & Move Rail** - Overnight moves, deal list, and watchlist flyouts with dates, sources, FDA/patent/paper context
 - 📧 **Email Intelligence Pipeline** - Gmail parsing, entity extraction, dossier + PRD composer workflows with scheduled sweeps and scrollytelling dossier UI
+- 🧠 **Agent Teachability** - Agents learn and remember user facts, preferences, and custom skills across sessions with semantic retrieval and trigger-based activation
+
+---
+
+## Agent Teachability
+
+Inspired by Microsoft AutoGen's Teachability, agents can now learn and persist knowledge:
+
+- **Facts** - User name, company, role, tools, preferences
+- **Preferences** - Tone, format, brevity, communication style
+- **Skills** - User-defined workflows triggered by phrases
+
+### Architecture
+
+- `convex/tools/teachability/teachingAnalyzer.ts` - LLM-based extraction of teachable content
+- `convex/tools/teachability/userMemoryTools.ts` - Vector search and skill trigger matching
+- `convex/tools/teachability/learnUserSkill.ts` - Explicit skill learning tool
+- `convex/domains/teachability/` - Public API for Settings UI
+- `convex/schema.ts` - `userTeachings` table with vector index
+
+### How It Works
+
+1. **Inference**: After each response, background analyzer detects facts/preferences/skills
+2. **Storage**: Teachings stored with embeddings for semantic retrieval
+3. **Injection**: Context handler loads relevant memories before each response
+4. **Skills**: Trigger phrases activate learned procedures automatically
+5. **UI**: Settings panel shows saved preferences and skills for editing
 
 ---
 

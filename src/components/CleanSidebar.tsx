@@ -95,7 +95,7 @@ export function CleanSidebar({
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#FBFBFB]">
+    <div className="h-full flex flex-col bg-[#fbfaf2]">
       {/* Logo */}
       <div className="h-16 flex items-center px-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
@@ -155,16 +155,14 @@ export function CleanSidebar({
                       type="button"
                       key={doc._id}
                       onClick={() => onDocumentSelect?.(doc._id)}
-                      className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
-                        isSelected
+                      className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${isSelected
                           ? 'bg-blue-50 text-blue-700'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
+                        }`}
                       title={doc.title || 'Untitled'}
                     >
-                      <FileText className={`w-3.5 h-3.5 shrink-0 ${
-                        isSelected ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-                      }`} />
+                      <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                        }`} />
                       <span className="truncate text-left">
                         {doc.title || 'Untitled'}
                       </span>

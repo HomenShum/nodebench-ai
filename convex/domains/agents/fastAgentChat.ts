@@ -9,7 +9,10 @@ import { api, internal } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import OpenAI from "openai";
-import { getLlmModel } from "../../../shared/llm/modelCatalog";
+import Anthropic from "@anthropic-ai/sdk";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
+import { getLlmModel, resolveModelAlias, getModelWithFailover } from "../../../shared/llm/modelCatalog";
 
 /**
  * Modern fast agent chat action
@@ -307,35 +310,45 @@ async function handleChatResponse(
     }
   }
 
-  // Use OpenAI for chat response
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
-  const preferredModel = model === "gemini"
-    ? getLlmModel("chat", "gemini")
-    : getLlmModel("chat", "openai");
-  const modelName = model === "gemini" ? getLlmModel("chat", "openai") : preferredModel;
-  if (model === "gemini") {
-    console.warn("[fastAgentChat] Gemini not wired for chat completions in this path; using OpenAI transport with OpenAI model fallback.");
+  // Multi-provider LLM support
+  const preferredModel = model === "gemini" ? getLlmModel("chat", "gemini") : model === "anthropic" ? getLlmModel("chat", "anthropic") : getLlmModel("chat", "openai");
+  const { model: modelName, provider } = getModelWithFailover(resolveModelAlias(preferredModel));
+  
+  const systemPrompt = "You are a helpful AI assistant. Provide clear, concise, and accurate responses." + context;
+  
+  let response: string;
+  
+  if (provider === "anthropic") {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const completion = await anthropic.messages.create({
+      model: modelName,
+      max_tokens: 2000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: message }],
+    });
+    response = completion.content[0]?.type === "text" ? completion.content[0].text : "I apologize, but I couldn't generate a response.";
+  } else if (provider === "gemini") {
+    const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+    const result = await generateText({
+      model: google(modelName),
+      system: systemPrompt,
+      prompt: message,
+      maxOutputTokens: 2000,
+    });
+    response = result.text || "I apologize, but I couldn't generate a response.";
+  } else {
+    // OpenAI
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const completion = await openai.chat.completions.create({
+      model: modelName,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+      ],
+      max_completion_tokens: 2000,
+    });
+    response = completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
   }
-
-  const completion = await openai.chat.completions.create({
-    model: modelName,
-    messages: [
-      {
-        role: "system",
-        content: "You are a helpful AI assistant. Provide clear, concise, and accurate responses." + context,
-      },
-      {
-        role: "user",
-        content: message,
-      },
-    ],
-    max_completion_tokens: 2000,
-  });
-
-  const response = completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
 
   return response;
 }

@@ -508,7 +508,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
 
   return (
-    <div className="h-screen flex bg-[#FAFAFA] transition-colors duration-200">
+    <div className="h-screen flex bg-[#fbfaf2] transition-colors duration-200">
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div
@@ -520,7 +520,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Sidebar - Resizable Width on Desktop, Overlay on Mobile */}
       <div
         className={`
-          flex-shrink-0 h-full bg-[#FBFBFB] border-r border-gray-200 z-50 transition-transform duration-300
+          flex-shrink-0 h-full bg-[#fbfaf2] border-r border-gray-200 z-50 transition-transform duration-300
           lg:relative lg:translate-x-0
           fixed inset-y-0 left-0
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -559,7 +559,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           style={{ width: '100%' }}
         >
           {/* Top Bar */}
-          <div className="h-14 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 sm:px-6 flex items-center transition-colors duration-200 relative">
+          <div className="h-14 bg-[#fbfaf2] border-b border-gray-200 px-4 sm:px-6 flex items-center transition-colors duration-200 relative">
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Mobile Hamburger Menu */}
               <button

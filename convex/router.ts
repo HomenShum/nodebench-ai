@@ -6,8 +6,17 @@ import type { Id } from "./_generated/dataModel";
 import { PersistentTextStreaming, StreamId } from "@convex-dev/persistent-text-streaming";
 import { components } from "./_generated/api";
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { getLlmModel } from "../shared/llm/modelCatalog";
 import { Agent } from "@convex-dev/agent";
+
+// Helper to get the appropriate language model based on model name
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) return anthropic(modelName);
+  if (modelName.startsWith("gemini-")) return google(modelName);
+  return openai.chat(modelName);
+}
 import { z } from "zod";
 
 const http = httpRouter();
@@ -931,7 +940,7 @@ http.route({
 
       const chatAgent = new Agent(components.agent, {
         name: "RouterChatAgent",
-        languageModel: openai.chat(modelName),
+        languageModel: getLanguageModel(modelName),
         instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
       });
 
