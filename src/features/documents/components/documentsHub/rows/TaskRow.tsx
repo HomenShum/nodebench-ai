@@ -103,14 +103,14 @@ export const TaskRowGlobal = ({
   };
 
   // Local mutations for favorite and delete actions
-  const toggleTaskFavorite = useMutation(api.domains.tasks.tasks.toggleFavorite);
-  const deleteTaskLocal = useMutation(api.domains.tasks.tasks.deleteTask);
-  const updateTaskStatus = useMutation(api.domains.tasks.tasks.updateTask);
+  const toggleTaskFavorite = useMutation(api.domains.tasks.userEvents.toggleFavorite);
+  const deleteTaskLocal = useMutation(api.domains.tasks.userEvents.deleteTask);
+  const updateTaskStatus = useMutation(api.domains.tasks.userEvents.updateTask);
 
   // Event-side actions
   const deleteEventLocal = useMutation(api.domains.calendar.events.deleteEvent);
   const createEventLocal = useMutation(api.domains.calendar.events.createEvent);
-  const createTaskLocal = useMutation(api.domains.tasks.tasks.createTask);
+  const createTaskLocal = useMutation(api.domains.tasks.userEvents.createTask);
 
   const handleStarClick = (e: any) => {
     e.stopPropagation();

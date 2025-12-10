@@ -1047,9 +1047,9 @@ const financialEvents = defineTable({
   .index("by_category_date", ["category", "dateMs"]);
 
 /* ------------------------------------------------------------------ */
-/* TASKS – personal task management                                   */
+/* USER EVENTS – personal event/task management (renamed from tasks)  */
 /* ------------------------------------------------------------------ */
-const tasks = defineTable({
+const userEvents = defineTable({
   userId: v.id("users"),
   title: v.string(),
   description: v.optional(v.string()),
@@ -1078,7 +1078,7 @@ const tasks = defineTable({
     v.array(
       v.union(
         v.object({ kind: v.literal("document"), id: v.id("documents") }),
-        v.object({ kind: v.literal("task"), id: v.id("tasks") }),
+        v.object({ kind: v.literal("userEvent"), id: v.id("userEvents") }),
         v.object({ kind: v.literal("event"), id: v.id("events") }),
       ),
     ),
@@ -1296,7 +1296,7 @@ export default defineSchema({
   userPreferences,
   userTeachings,
   events,
-  tasks,
+  userEvents,
   holidays,
   financialEvents,
   mcpServers,
@@ -1333,6 +1333,28 @@ export default defineSchema({
   agentImageResults,
   voiceSessions,
   feedItems,
+
+  // Human-in-the-Loop (HITL) Interrupts for agent approval workflow
+  agentInterrupts: defineTable({
+    threadId: v.string(),
+    toolName: v.string(),
+    arguments: v.any(),
+    description: v.string(),
+    allowedDecisions: v.array(v.string()), // ["approve", "edit", "reject"]
+    status: v.string(), // "pending" | "approve" | "edit" | "reject" | "cancelled"
+    decision: v.optional(v.object({
+      type: v.string(),
+      editedAction: v.optional(v.object({
+        name: v.string(),
+        args: v.any(),
+      })),
+      message: v.optional(v.string()),
+    })),
+    createdAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_thread_and_status", ["threadId", "status"]),
 
   // API Usage Tracking
   apiUsage: defineTable({
@@ -1666,6 +1688,58 @@ export default defineSchema({
 
     /** Boolean: is this entity within cluster support region? (One-Class SVM) */
     isInClusterSupport: v.optional(v.boolean()),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ARBITRAGE AGENT FIELDS (Receipts-first research)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /** Arbitrage-specific metrics */
+    arbitrageMetadata: v.optional(v.object({
+      lastArbitrageCheckAt: v.number(),
+      contradictionCount: v.number(),
+      sourceQualityScore: v.number(), // 0-100 composite score
+      verificationStatus: v.union(
+        v.literal("verified"),
+        v.literal("partial"),
+        v.literal("unverified")
+      ),
+      deltasSinceLastCheck: v.number(),
+      hiddenSourcesCount: v.number(),
+    })),
+
+    /** Source health tracking (URL availability + content changes) */
+    sourceHealth: v.optional(v.array(v.object({
+      url: v.string(),
+      lastChecked: v.number(),
+      status: v.union(
+        v.literal("ok"),
+        v.literal("404"),
+        v.literal("content_changed")
+      ),
+      contentHash: v.string(),
+      firstSeenHash: v.string(),
+    }))),
+
+    /** Delta changelog (what changed since last arbitrage check) */
+    deltas: v.optional(v.array(v.object({
+      type: v.union(
+        v.literal("fact_added"),
+        v.literal("fact_removed"),
+        v.literal("fact_modified"),
+        v.literal("conflict_detected"),
+        v.literal("conflict_resolved"),
+        v.literal("source_404"),
+        v.literal("source_changed")
+      ),
+      factId: v.optional(v.string()),
+      timestamp: v.number(),
+      description: v.string(),
+      severity: v.union(
+        v.literal("high"),
+        v.literal("medium"),
+        v.literal("low")
+      ),
+    }))),
   })
     .index("by_entity", ["entityName", "entityType"])
     .index("by_spreadsheet", ["spreadsheetId", "rowIndex"])

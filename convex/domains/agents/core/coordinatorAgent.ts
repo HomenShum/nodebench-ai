@@ -14,16 +14,33 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { components } from "../../../_generated/api";
 
+// Model name mapping: custom names → real API model names
+const MODEL_NAME_MAP: Record<string, string> = {
+  // GPT-5 series → GPT-4o (current best OpenAI models)
+  'gpt-5.1': 'gpt-4o',
+  'gpt-5.1-codex': 'gpt-4o',
+  'gpt-5-mini': 'gpt-4o-mini',
+  'gpt-5-nano': 'gpt-4o-mini',
+  'gpt-5': 'gpt-4o',
+  'gpt-5-chat-latest': 'gpt-4o',
+  // GPT-4.1 series → GPT-4o-mini (fallback)
+  'gpt-4.1-mini': 'gpt-4o-mini',
+  'gpt-4.1-nano': 'gpt-4o-mini',
+};
+
 // Helper to get the appropriate language model based on model name
 // Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
 function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) {
-    return anthropic(modelName);
+  // Map custom model names to real API model names
+  const resolvedModel = MODEL_NAME_MAP[modelName] || modelName;
+  
+  if (resolvedModel.startsWith("claude-")) {
+    return anthropic(resolvedModel);
   }
-  if (modelName.startsWith("gemini-")) {
-    return google(modelName);
+  if (resolvedModel.startsWith("gemini-")) {
+    return google(resolvedModel);
   }
-  return openai.chat(modelName);
+  return openai.chat(resolvedModel);
 }
 
 // Import delegation tools (Deep Agents 2.0 hierarchical delegation)
@@ -68,11 +85,17 @@ import {
 // Import direct-access tools (for simple operations)
 import { linkupSearch } from "../../../tools/media/linkupSearch";
 import { youtubeSearch } from "../../../tools/media/youtubeSearch";
-// Data access MCP wrappers are gated until the data_access_server is live
-// When ready, uncomment the import and set ENABLE_DATA_ACCESS_TOOLS to true
-// import { listTasks, createTask, updateTask, listEvents, createEvent, getFolderContents } from "../../../tools/integration/dataAccessTools";
-const ENABLE_DATA_ACCESS_TOOLS = false;
-const dataAccessTools: Record<string, any> = {};
+// Data access tools for calendar/tasks/folder operations
+import { listTasks, createTask, updateTask, listEvents, createEvent, getFolderContents } from "../../../tools/integration/dataAccessTools";
+const ENABLE_DATA_ACCESS_TOOLS = true;
+const dataAccessTools = {
+  listTasks,
+  createTask,
+  updateTask,
+  listEvents,
+  createEvent,
+  getFolderContents,
+};
 import {
   searchHashtag,
   createHashtagDossier,
@@ -549,8 +572,31 @@ You can delegate to these specialized agents:
 - Financial data → delegateToOpenBBAgent
 
 **Handle directly** for these operations:
-- Simple task/event management
+- Simple task/event management → Use listTasks, createTask, updateTask
+- Calendar event queries → Use listEvents (pass timeRange: "today", "tomorrow", "week", "month")
+- Creating calendar events → Use createEvent
 - Web search when not media-focused (linkupSearch)
+- Folder browsing → Use getFolderContents
+
+# CALENDAR & TASK TOOLS (DIRECT ACCESS)
+
+For calendar and task operations, use these tools DIRECTLY (no delegation needed):
+
+## listEvents
+Use for: "What events do I have today?", "Show my calendar this week"
+Args: { timeRange: "today" | "tomorrow" | "week" | "month" }
+IMPORTANT: Always use timeRange parameter, NOT a date string. The tool calculates dates automatically.
+
+## createEvent  
+Use for: "Schedule a meeting tomorrow at 2pm"
+Args: { title, startTime (ISO), endTime (ISO), location?, description? }
+
+## listTasks
+Use for: "Show my tasks", "What tasks are due today?"
+Args: { filter: "all" | "today" | "week", status?: "todo" | "done" }
+
+## createTask / updateTask
+Use for task CRUD operations
 
 ## Parallel Delegation
 

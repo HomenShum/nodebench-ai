@@ -68,46 +68,46 @@ export const getOrCreateEventDocument = mutation({
 });
 
 /**
- * Get or create a document for a task.
- * If the task already has a documentId, return it.
- * Otherwise, create a new document and associate it with the task.
+ * Get or create a document for a user event.
+ * If the user event already has a documentId, return it.
+ * Otherwise, create a new document and associate it with the user event.
  */
-export const getOrCreateTaskDocument = mutation({
+export const getOrCreateUserEventDocument = mutation({
   args: {
-    taskId: v.id("tasks"),
+    userEventId: v.id("userEvents"),
   },
   returns: v.id("documents"),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    // Get the task
-    const task = await ctx.db.get(args.taskId);
-    if (!task) throw new Error("Task not found");
-    if (task.userId !== userId) throw new Error("Not authorized");
+    // Get the user event
+    const userEvent = await ctx.db.get(args.userEventId);
+    if (!userEvent) throw new Error("User event not found");
+    if (userEvent.userId !== userId) throw new Error("Not authorized");
 
-    // If task already has a document, return it
-    if (task.documentId) {
-      return task.documentId;
+    // If user event already has a document, return it
+    if (userEvent.documentId) {
+      return userEvent.documentId;
     }
 
-    // Format task metadata for document header
-    const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleString() : 'No due date';
-    const statusEmoji = task.status === 'done' ? '✅' : task.status === 'in_progress' ? '🔄' : task.status === 'blocked' ? '🚫' : '📋';
+    // Format user event metadata for document header
+    const dueStr = userEvent.dueDate ? new Date(userEvent.dueDate).toLocaleString() : 'No due date';
+    const statusEmoji = userEvent.status === 'done' ? '✅' : userEvent.status === 'in_progress' ? '🔄' : userEvent.status === 'blocked' ? '🚫' : '📋';
 
     const metadataLines = [
-      `${statusEmoji} Task: ${task.title}`,
+      `${statusEmoji} Task: ${userEvent.title}`,
       `📅 Due: ${dueStr}`,
-      task.status ? `Status: ${task.status}` : null,
-      task.priority ? `Priority: ${task.priority}` : null,
+      userEvent.status ? `Status: ${userEvent.status}` : null,
+      userEvent.priority ? `Priority: ${userEvent.priority}` : null,
       '',
       '---',
       '',
     ].filter(Boolean);
 
-    // Create a new document for the task with metadata header
+    // Create a new document for the user event with metadata header
     const documentId = await ctx.db.insert("documents", {
-      title: `✓ ${task.title}`,
+      title: `✓ ${userEvent.title}`,
       documentType: "text",
       isPublic: false,
       createdBy: userId,
@@ -121,16 +121,16 @@ export const getOrCreateTaskDocument = mutation({
           })),
           {
             type: "paragraph",
-            content: task.description
-              ? [{ type: "text", text: task.description }]
+            content: userEvent.description
+              ? [{ type: "text", text: userEvent.description }]
               : [],
           },
         ],
       }),
     });
 
-    // Associate the document with the task
-    await ctx.db.patch(args.taskId, {
+    // Associate the document with the user event
+    await ctx.db.patch(args.userEventId, {
       documentId,
     });
 
@@ -139,13 +139,16 @@ export const getOrCreateTaskDocument = mutation({
       documentId,
       tags: [
         { name: "task", kind: "type" },
-        { name: task.title, kind: "topic" },
-        task.status ? { name: task.status, kind: "status" } : null,
-        task.priority ? { name: task.priority, kind: "priority" } : null,
+        { name: userEvent.title, kind: "topic" },
+        userEvent.status ? { name: userEvent.status, kind: "status" } : null,
+        userEvent.priority ? { name: userEvent.priority, kind: "priority" } : null,
       ].filter(Boolean) as Array<{ name: string; kind?: string }>,
     });
 
     return documentId;
   },
 });
+
+// Backward compatibility alias
+export const getOrCreateTaskDocument = getOrCreateUserEventDocument;
 

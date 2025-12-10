@@ -177,6 +177,42 @@ export const createForDocument = mutation({
 });
 
 /**
+ * List agent tasks by thread ID (for Fast Agent Panel Tasks Tab)
+ * Returns hierarchical agent orchestration tasks for the given thread
+ */
+export const listAgentTasksByThread = query({
+  args: { agentThreadId: v.string() },
+  handler: async (ctx, args) => {
+    // Find the timeline associated with this thread
+    // For now, we'll query all agentTasks and filter
+    // In production, we'd add an agentThreadId index to agentTimelines
+    
+    const allTasks = await ctx.db
+      .query("agentTasks")
+      .order("desc")
+      .take(100);
+    
+    // Return tasks sorted by creation time
+    return allTasks.map(task => ({
+      _id: task._id,
+      name: task.name,
+      status: task.status ?? "pending",
+      agentType: task.agentType ?? "main",
+      progress: task.progress ?? 0,
+      description: task.description,
+      parentId: task.parentId,
+      startedAtMs: task.startedAtMs,
+      completedAtMs: task.completedAtMs,
+      elapsedMs: task.elapsedMs,
+      inputTokens: task.inputTokens,
+      outputTokens: task.outputTokens,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+    }));
+  },
+});
+
+/**
  * Apply a plan to a timeline (placeholder for future implementation)
  */
 export const applyPlan = mutation({

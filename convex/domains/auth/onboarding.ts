@@ -131,7 +131,7 @@ export const seedOnboardingContent = mutation({
     createdTasks: v.number(),
     existingTasks: v.number(),
     documentIds: v.array(v.id("documents")),
-    taskIds: v.array(v.id("tasks")),
+    taskIds: v.array(v.id("userEvents")),
   }),
   handler: async (ctx) => {
     const rawUserId = await getAuthUserId(ctx);
@@ -169,33 +169,33 @@ export const seedOnboardingContent = mutation({
       documentIds.push(newId);
     }
 
-    // Seed Tasks (check only user's tasks by title)
+    // Seed User Events (check only user's events by title)
     let createdTasks = 0;
     let existingTasks = 0;
-    const taskIds: Array<Id<"tasks">> = [];
+    const taskIds: Array<Id<"userEvents">> = [];
 
-    const userTasks = await ctx.db
-      .query("tasks")
+    const userEventsData = await ctx.db
+      .query("userEvents")
       .withIndex("by_user", (q: any) => q.eq("userId", userId))
       .collect();
 
     const now = Date.now();
 
     for (const t of ONBOARDING_TASKS) {
-      const found = userTasks.find((row) => eqIgnoreCase(row.title || "", t.title));
+      const found = userEventsData.find((row) => eqIgnoreCase(row.title || "", t.title));
       if (found) {
         existingTasks += 1;
         taskIds.push(found._id);
         continue;
       }
       const dueDate = typeof t.dueInDays === "number" ? now + t.dueInDays * 24 * 60 * 60 * 1000 : undefined;
-      const newTaskId = (await ctx.runMutation(api.domains.tasks.tasks.createTask, {
+      const newTaskId = (await ctx.runMutation(api.domains.tasks.userEvents.createUserEvent, {
         title: t.title,
         description: t.description,
         status: t.status ?? "todo",
         priority: t.priority,
         dueDate,
-      })) as Id<"tasks">;
+      })) as Id<"userEvents">;
       createdTasks += 1;
       taskIds.push(newTaskId);
     }
@@ -304,7 +304,7 @@ export const ensureSeedOnLogin = mutation({
       createdTasks: number;
       existingTasks: number;
       documentIds: Id<"documents">[];
-      taskIds: Id<"tasks">[];
+      taskIds: Id<"userEvents">[];
     } = await ctx.runMutation(api.domains.auth.onboarding.seedOnboardingContent, {});
 
     // Mark as seeded in user preferences

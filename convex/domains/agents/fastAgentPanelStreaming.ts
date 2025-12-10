@@ -1122,6 +1122,7 @@ export const initiateAsyncStreaming = mutation({
     prompt: v.string(),
     model: v.optional(v.string()),
     useCoordinator: v.optional(v.boolean()), // Default true to honor planner + coordinator routing
+    arbitrageEnabled: v.optional(v.boolean()), // UI override for arbitrage mode
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -1212,6 +1213,7 @@ export const initiateAsyncStreaming = mutation({
       promptMessageId: messageId,
       model: modelName,
       useCoordinator: args.useCoordinator ?? true, // Default to planner+coordinator routing
+      arbitrageEnabled: args.arbitrageEnabled ?? false,
     });
 
     console.log(`[initiateAsyncStreaming:${requestId}] ⏰ Stream scheduled for messageId:`, messageId);
@@ -1249,6 +1251,7 @@ export const streamAsync = internalAction({
     threadId: v.string(),
     model: v.string(),
     useCoordinator: v.optional(v.boolean()), // Enable/disable coordinator mode (default: true)
+    arbitrageEnabled: v.optional(v.boolean()), // UI override for arbitrage mode
   },
   handler: async (ctx, args) => {
     const executionId = crypto.randomUUID().substring(0, 8);
@@ -1295,17 +1298,17 @@ export const streamAsync = internalAction({
     const userIdTyped = (thread?.userId ?? null) as Id<"users"> | null;
     console.log(`[streamAsync:${executionId}] userId from thread:`, userIdTyped);
 
-    // Fetch user preferences for arbitrage mode
-    let arbitrageMode = false;
-    if (userIdTyped) {
+    // Determine arbitrage mode: UI override takes precedence, then user prefs
+    let arbitrageMode = args.arbitrageEnabled ?? false;
+    if (!args.arbitrageEnabled && userIdTyped) {
       try {
         const agentsPrefs = await ctx.runQuery(internal.agentsPrefs.getAgentsPrefsByUserId, { userId: userIdTyped });
         arbitrageMode = agentsPrefs?.arbitrageMode === "true";
-        console.log(`[streamAsync:${executionId}] Arbitrage mode:`, arbitrageMode);
       } catch (err) {
         console.warn(`[streamAsync:${executionId}] Could not fetch agent prefs:`, err);
       }
     }
+    console.log(`[streamAsync:${executionId}] Arbitrage mode:`, arbitrageMode, '(UI override:', args.arbitrageEnabled, ')');
 
     // Choose agent based on mode
     let agent;

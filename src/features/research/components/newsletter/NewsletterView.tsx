@@ -2,11 +2,13 @@
 // Wrapper that renders parsed sections in newsletter layout
 // FIX: Now uses smart artifact-section matching instead of broken store lookup
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useAction } from 'convex/react';
+import { api } from '../../../../../convex/_generated/api';
 import { parseMarkdownToDossier } from '../../utils/newsletterParser';
 import { NewsletterSectionBlock, DigestHero, type NewsletterSection, type NewsletterMediaItem } from './NewsletterComponents';
 import { EvidenceDrawer, type EvidenceSource } from './EvidenceDrawer';
-import { TrendingUp, Users, Briefcase, AlertTriangle, Lightbulb, FileText, Target, DollarSign, ShieldAlert, HelpCircle, Link2 } from 'lucide-react';
+import { TrendingUp, Users, Briefcase, AlertTriangle, Lightbulb, FileText, Target, DollarSign, ShieldAlert, HelpCircle, Link2, Sparkles, Loader2, RefreshCw } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ICON MAPPING
@@ -169,11 +171,39 @@ interface NewsletterViewProps {
     runId: string;
     artifacts: any[];
     isStreaming?: boolean;
+    topic?: string;
+    onRefresh?: (newMarkdown: string) => void;
 }
 
-export function NewsletterView({ markdown, runId, artifacts, isStreaming }: NewsletterViewProps) {
+export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic, onRefresh }: NewsletterViewProps) {
     const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['executive_summary', 'market_landscape']));
     const [pinnedSections, setPinnedSections] = useState<Set<string>>(new Set());
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    // Agent action for generating/refreshing newsletter content
+    const generateWithAgent = useAction(api.domains.agents.arbitrage.agent.research);
+
+    const handleGenerateWithAgent = useCallback(async () => {
+        if (!topic || isGenerating) return;
+        
+        setIsGenerating(true);
+        try {
+            const result = await generateWithAgent({
+                prompt: `Generate a comprehensive dossier for "${topic}" with verification. Include executive summary, market landscape, funding signals, competitive analysis, and risk flags. Use receipts-first research approach.`,
+                model: 'gpt-4o',
+            });
+            
+            if (result && onRefresh) {
+                // Assuming the result contains markdown content
+                const content = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+                onRefresh(content);
+            }
+        } catch (error) {
+            console.error('[NewsletterView] Agent generation failed:', error);
+        } finally {
+            setIsGenerating(false);
+        }
+    }, [topic, isGenerating, generateWithAgent, onRefresh]);
 
     // Parse markdown into sections
     const parseResult = useMemo(() => {
@@ -268,6 +298,29 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming }: News
         <div className="min-h-screen bg-white">
             {/* Main Document Container - Centered, max-w-3xl like a standard doc */}
             <div className="max-w-3xl mx-auto px-8 py-12">
+
+                {/* Generate with Agent CTA */}
+                {topic && onRefresh && (
+                    <div className="flex justify-end mb-4">
+                        <button
+                            onClick={handleGenerateWithAgent}
+                            disabled={isGenerating || isStreaming}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Generating...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-4 h-4" />
+                                    Generate with AI
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
 
                 {/* Digest Hero (Document Title) */}
                 {heroData && (

@@ -8,6 +8,7 @@ import DualCreateMiniPanel from "@/features/documents/editors/DualCreateMiniPane
 import DualEditMiniPanel from "@/features/documents/editors/DualEditMiniPanel";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
 import { toast } from "sonner";
+import { useCalendarAgenda } from "../hooks/useCalendarAgenda";
 type DayInfo = {
   date: Date;
   inMonth: boolean;
@@ -284,14 +285,14 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     return { startUtc, endUtc };
   }, [monthStart, offsetMs, selectedTz]);
 
-  // Canonical agenda for the entire visible grid range (not just the month)
-  const agendaMonth = useQuery(api.domains.calendar.calendar.listAgendaInRange, {
-    start: gridRangeUtc.startUtc,
-    end: gridRangeUtc.endUtc,
+  // Use unified calendar agenda hook for consistent data across all calendar views
+  const { events: monthEventsRaw, tasks: monthTasksRaw, holidays: monthHolidaysRaw, notes: monthNotesRaw } = useCalendarAgenda({
+    startMs: gridRangeUtc.startUtc,
+    endMs: gridRangeUtc.endUtc,
     country: "US",
     holidaysStartUtc: gridHolidayRange.startUtc,
     holidaysEndUtc: gridHolidayRange.endUtc,
-  } as any);
+  });
 
   // Build calendar grid starting Monday before the 1st, ending Sunday after last day, 6 rows x 7 cols
   const gridDays: DayInfo[] = useMemo(() => {
@@ -319,12 +320,11 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     return days;
   }, [monthStart, offsetMs, todayKey]);
 
-  // Precompute markers per day
-  // Stable arrays for memo deps
-  const monthEvents = useMemo(() => (agendaMonth?.events ?? []) as any[], [agendaMonth]);
-  const monthTasks = useMemo(() => (agendaMonth?.tasks ?? []) as any[], [agendaMonth]);
-  const monthHolidays = useMemo(() => (agendaMonth?.holidays ?? []) as any[], [agendaMonth]);
-  const monthNotes = useMemo(() => (agendaMonth?.notes ?? []) as any[], [agendaMonth]);
+  // Precompute markers per day - use data from unified hook
+  const monthEvents = useMemo(() => monthEventsRaw as any[], [monthEventsRaw]);
+  const monthTasks = useMemo(() => monthTasksRaw as any[], [monthTasksRaw]);
+  const monthHolidays = useMemo(() => monthHolidaysRaw as any[], [monthHolidaysRaw]);
+  const monthNotes = useMemo(() => monthNotesRaw as any[], [monthNotesRaw]);
 
   const markers = useMemo(() => {
     // Count per grid day using the SAME UTC bounds the preview uses.

@@ -1,23 +1,10 @@
 // src/features/agents/components/FastAgentPanel/FastAgentPanel.SkillsPanel.tsx
-// Skills discovery and browsing panel for FastAgentPanel
+// Skills discovery and browsing panel for FastAgentPanel - compact modern popover
 
 import React, { useState, useCallback } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
-import { 
-  X, 
-  Search, 
-  BookOpen, 
-  Briefcase, 
-  FileText, 
-  Video, 
-  DollarSign, 
-  Workflow,
-  ChevronRight,
-  Loader2,
-  Sparkles,
-  Clock
-} from 'lucide-react';
+import { Search, Loader2, Sparkles, Zap } from 'lucide-react';
 
 interface SkillsPanelProps {
   onClose: () => void;
@@ -33,249 +20,135 @@ interface SkillSummary {
   keywords: string[];
 }
 
-// Category icons mapping
-const categoryIcons: Record<string, React.ReactNode> = {
-  research: <Briefcase className="h-4 w-4" />,
-  document: <FileText className="h-4 w-4" />,
-  media: <Video className="h-4 w-4" />,
-  financial: <DollarSign className="h-4 w-4" />,
-  workflow: <Workflow className="h-4 w-4" />,
+// Minimal category dot colors
+const categoryDots: Record<string, string> = {
+  research: 'bg-blue-500',
+  document: 'bg-emerald-500',
+  media: 'bg-violet-500',
+  financial: 'bg-amber-500',
+  workflow: 'bg-cyan-500',
 };
 
-// Category colors
-const categoryColors: Record<string, string> = {
-  research: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  document: 'bg-green-500/20 text-green-400 border-green-500/30',
-  media: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  financial: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  workflow: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-};
-
-/**
- * SkillsPanel - Browse and search available skills
- */
 export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
-  const userSkills = useQuery(api.domains.teachability.listUserTeachings, {
+  const userSkills = useQuery(api.domains.teachability.index.listUserTeachings, {
     type: "skill",
-    limit: 6,
+    limit: 4,
   });
 
-  // Fetch all skills
   const skills = useQuery(api.tools.meta.skillDiscoveryQueries.listAllSkills, {
-    category: selectedCategory ?? undefined,
-    limit: 50,
+    limit: 20,
   });
   
-  // Filter skills by search query
   const filteredSkills = skills?.filter((skill: SkillSummary) => {
     if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      skill.name.toLowerCase().includes(query) ||
-      skill.description.toLowerCase().includes(query) ||
-      skill.keywords.some((k: string) => k.toLowerCase().includes(query))
-    );
+    const q = searchQuery.toLowerCase();
+    return skill.name.toLowerCase().includes(q) || skill.description.toLowerCase().includes(q);
   });
   
-  // Get unique categories from skills
-  const categories = skills ? Array.from(new Set(skills.map((s: SkillSummary) => s.category))) : [];
-  
-  const handleSkillClick = useCallback((skill: SkillSummary) => {
-    onSelectSkill(skill.name, skill.description);
+  const handleSkillClick = useCallback((name: string, desc: string) => {
+    onSelectSkill(name, desc);
     onClose();
   }, [onSelectSkill, onClose]);
   
   return (
-    <div className="skills-overlay" onClick={onClose}>
-      <div 
-        className="skills-panel bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 rounded-xl shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-700/50">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-indigo-400" />
-            <h3 className="text-lg font-semibold text-white">Skills Library</h3>
-          </div>
-          <button 
-            onClick={onClose} 
-            className="p-1.5 rounded-lg hover:bg-zinc-700/50 transition-colors"
-          >
-            <X className="h-4 w-4 text-zinc-400" />
-          </button>
+    <div 
+      className="absolute top-full right-0 mt-1.5 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Search - compact */}
+      <div className="p-2.5 border-b border-gray-100">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search skills..."
+            autoFocus
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border-0 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
         </div>
-        
-        {/* Search */}
-        <div className="p-4 border-b border-zinc-700/50">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search skills..."
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
-            />
-          </div>
-          <p className="text-[11px] text-zinc-500 mt-2">
-            Hint: teach a new skill in chat by saying “when I say X, do Y then Z”.
-          </p>
-          
-          {/* Category filters */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
-                selectedCategory === null
-                  ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
-                  : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700/50'
-              }`}
-            >
-              All
-            </button>
-            {categories.map((cat: string) => (
+      </div>
+      
+      {/* Skills list - compact */}
+      <div className="max-h-64 overflow-y-auto">
+        {/* User custom skills */}
+        {userSkills && userSkills.length > 0 && (
+          <div className="px-2.5 pt-2 pb-1">
+            <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              Your Skills
+            </div>
+            {userSkills.slice(0, 3).map((skill: any) => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors flex items-center gap-1.5 ${
-                  selectedCategory === cat
-                    ? categoryColors[cat] || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
-                    : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700/50'
-                }`}
+                key={skill._id}
+                onClick={() => handleSkillClick(skill.key || 'custom', skill.content)}
+                className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-blue-50 transition-colors mb-1 group"
               >
-                {categoryIcons[cat]}
-                {cat}
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <span className="text-xs font-medium text-gray-800 group-hover:text-blue-600 truncate">
+                    {skill.key || skill.category || 'Custom skill'}
+                  </span>
+                </div>
               </button>
             ))}
           </div>
-        </div>
-        
-        {/* Skills list */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[400px]">
+        )}
+
+        {/* Built-in skills */}
+        <div className="px-2.5 py-2">
           {userSkills && userSkills.length > 0 && (
-            <div className="space-y-2 pb-2 border-b border-zinc-700/50">
-              <div className="text-xs uppercase tracking-wide text-zinc-500 flex items-center gap-1">
-                <Sparkles className="h-3 w-3" />
-                Your custom skills
-              </div>
-              {userSkills.map((skill: any) => (
+            <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <Zap className="h-3 w-3" />
+              Built-in
+            </div>
+          )}
+          
+          {!skills ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />
+            </div>
+          ) : filteredSkills?.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-xs text-gray-400">No skills found</p>
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {filteredSkills?.slice(0, 8).map((skill: SkillSummary) => (
                 <button
-                  key={skill._id}
-                  onClick={() => {
-                    const label = skill.key || skill.category || "custom skill";
-                    onSelectSkill(label, skill.content);
-                    onClose();
-                  }}
-                  className="w-full text-left p-3 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 rounded-lg transition-colors"
+                  key={skill.name}
+                  onClick={() => handleSkillClick(skill.name, skill.description)}
+                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="text-sm font-medium text-indigo-200">
-                    {skill.key || skill.category || "Custom skill"}
-                  </div>
-                  <div className="text-xs text-indigo-100/80 mt-1 line-clamp-2">
-                    {skill.content}
+                  <div className="flex items-start gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${categoryDots[skill.category] || 'bg-gray-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-gray-800 group-hover:text-blue-600 transition-colors truncate">
+                        {skill.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </div>
+                      <div className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
+                        {skill.description}
+                      </div>
+                    </div>
                   </div>
                 </button>
               ))}
             </div>
           )}
-
-          {!skills ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 text-indigo-400 animate-spin" />
-            </div>
-          ) : filteredSkills?.length === 0 ? (
-            <div className="text-center py-8">
-              <Sparkles className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
-              <p className="text-sm text-zinc-500">No skills found</p>
-              <p className="text-xs text-zinc-600 mt-1">Try a different search term</p>
-            </div>
-          ) : (
-            filteredSkills?.map((skill: SkillSummary) => (
-              <button
-                key={skill.name}
-                onClick={() => handleSkillClick(skill)}
-                className="w-full text-left p-4 bg-zinc-800/30 hover:bg-zinc-800/50 border border-zinc-700/30 hover:border-zinc-600/50 rounded-xl transition-all group"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${categoryColors[skill.category] || 'bg-zinc-500/20 text-zinc-400'}`}>
-                        {categoryIcons[skill.category]}
-                        {skill.categoryName}
-                      </span>
-                      {skill.usageCount > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
-                          <Clock className="h-3 w-3" />
-                          {skill.usageCount}x
-                        </span>
-                      )}
-                    </div>
-                    <h4 className="text-sm font-medium text-white group-hover:text-indigo-300 transition-colors">
-                      {skill.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </h4>
-                    <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
-                      {skill.description}
-                    </p>
-                    {skill.keywords.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {skill.keywords.slice(0, 4).map((keyword: string) => (
-                          <span 
-                            key={keyword}
-                            className="px-1.5 py-0.5 text-[10px] bg-zinc-700/50 text-zinc-400 rounded"
-                          >
-                            {keyword}
-                          </span>
-                        ))}
-                        {skill.keywords.length > 4 && (
-                          <span className="text-[10px] text-zinc-500">
-                            +{skill.keywords.length - 4} more
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-indigo-400 transition-colors flex-shrink-0 mt-1" />
-                </div>
-              </button>
-            ))
-          )}
         </div>
-        
-        {/* Footer */}
-        <div className="p-4 border-t border-zinc-700/50 bg-zinc-800/30">
-          <p className="text-xs text-zinc-500 text-center">
-            Skills are pre-defined workflows. Select one to use it in your conversation.
-          </p>
-        </div>
+      </div>
+      
+      {/* Hint footer - minimal */}
+      <div className="px-3 py-2 bg-gray-50 border-t border-gray-100">
+        <p className="text-[10px] text-gray-400 text-center">
+          Tip: Say "when I say X, do Y" to teach new skills
+        </p>
       </div>
     </div>
   );
 }
-
-// CSS styles (add to FastAgentPanel.animations.css)
-const styles = `
-.skills-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.skills-panel {
-  width: 100%;
-  max-width: 480px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-}
-`;
 
 export default SkillsPanel;

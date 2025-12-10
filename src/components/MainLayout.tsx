@@ -12,6 +12,7 @@ import { CalendarHomeHub } from "@/features/calendar/components/CalendarHomeHub"
 import { AgentsHub } from "@/features/agents/views/AgentsHub";
 
 import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
+import WelcomeLanding from "@/features/research/views/WelcomeLanding";
 
 import { Zap, Menu, X as CloseIcon } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
@@ -30,7 +31,7 @@ interface MainLayoutProps {
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowWelcomeLanding }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents'>('documents');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research'>('research');
   const [isGridMode, setIsGridMode] = useState(false);
   // Transition state for smooth view changes
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -129,7 +130,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const startSidebarWidthRef = useRef(0);
 
   // Agent Panel resizing
-  const [agentPanelWidth, setAgentPanelWidth] = useState(400);
+  const [agentPanelWidth, setAgentPanelWidth] = useState(620);
   const agentResizingRef = useRef(false);
   const startAgentWidthRef = useRef(0);
   // Centralized task selection for inline editor
@@ -164,15 +165,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const _prefetchDocuments = useQuery(api.domains.documents.documents.getSidebarWithPreviews);
   const _prefetchCalendarPrefs = useQuery(api.domains.auth.userPreferences.getCalendarUiPrefs);
   const _prefetchTodoTasks = useQuery(
-    api.domains.tasks.tasks.listTasksByStatus,
+    api.domains.tasks.userEvents.listTasksByStatus,
     user ? { status: "todo" } : "skip"
   );
   const _prefetchInProgressTasks = useQuery(
-    api.domains.tasks.tasks.listTasksByStatus,
+    api.domains.tasks.userEvents.listTasksByStatus,
     user ? { status: "in_progress" } : "skip"
   );
   const _prefetchDoneTasks = useQuery(
-    api.domains.tasks.tasks.listTasksByStatus,
+    api.domains.tasks.userEvents.listTasksByStatus,
     user ? { status: "done" } : "skip"
   );
 
@@ -206,10 +207,6 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
-
-  const handleSmsMessageProcessed = () => {
-    setSmsMessage(null);
-  };
 
   const handleDocumentSelect = (documentId: Id<"documents"> | null) => {
     onDocumentSelect(documentId);
@@ -508,7 +505,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
 
   return (
-    <div className="h-screen flex bg-[#fbfaf2] transition-colors duration-200">
+    <div className="h-screen flex bg-white transition-colors duration-200">
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div
@@ -520,7 +517,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Sidebar - Resizable Width on Desktop, Overlay on Mobile */}
       <div
         className={`
-          flex-shrink-0 h-full bg-[#fbfaf2] border-r border-gray-200 z-50 transition-transform duration-300
+          flex-shrink-0 h-full bg-white border-r border-gray-200 z-50 transition-transform duration-300
           lg:relative lg:translate-x-0
           fixed inset-y-0 left-0
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -539,9 +536,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             );
           }}
           onOpenSettings={openSettings}
-          onGoHome={onShowWelcomeLanding}
+          onGoHome={() => setCurrentView('research')}
           selectedDocumentId={selectedDocumentId}
           onDocumentSelect={handleDocumentSelect}
+          currentView={currentView}
+          onViewChange={setCurrentView}
         />
       </div>
 
@@ -559,7 +558,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           style={{ width: '100%' }}
         >
           {/* Top Bar */}
-          <div className="h-14 bg-[#fbfaf2] border-b border-gray-200 px-4 sm:px-6 flex items-center transition-colors duration-200 relative">
+          <div className="h-14 bg-white border-b border-gray-200 px-4 sm:px-6 flex items-center transition-colors duration-200 relative">
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Mobile Hamburger Menu */}
               <button
@@ -576,17 +575,19 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               </button>
 
               <h1 className="text-base sm:text-lg font-semibold text-gray-900">
-                {currentView === 'public'
-                  ? 'Public Documents'
-                  : currentView === 'calendar'
-                    ? 'Calendar'
-                    : currentView === 'roadmap'
-                      ? 'Roadmap'
-                      : currentView === 'timeline'
-                        ? 'Timeline'
-                        : selectedDocumentId
-                          ? 'My Documents'
-                          : 'My Workspace'}
+                {currentView === 'research'
+                  ? 'Home'
+                  : currentView === 'public'
+                    ? 'Public Documents'
+                    : currentView === 'calendar'
+                      ? 'Calendar'
+                      : currentView === 'roadmap'
+                        ? 'Roadmap'
+                        : currentView === 'timeline'
+                          ? 'Timeline'
+                          : selectedDocumentId
+                            ? 'My Documents'
+                            : 'My Workspace'}
               </h1>
             </div>
 
@@ -636,7 +637,17 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
           {/* Content Area - Resizable Split */}
           <div className={`flex-1 overflow-hidden transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`} data-main-content>
-            {currentView === 'public' ? (
+            {currentView === 'research' ? (
+              <WelcomeLanding
+                embedded
+                onDocumentSelect={(id) => handleDocumentSelect(id as Id<"documents">)}
+                onEnterWorkspace={() => setCurrentView('documents')}
+                activeSources={activeSources}
+                onToggleSource={(sourceId) => setActiveSources(prev =>
+                  prev.includes(sourceId) ? prev.filter(id => id !== sourceId) : [...prev, sourceId]
+                )}
+              />
+            ) : currentView === 'public' ? (
               <PublicDocuments onDocumentSelect={handleDocumentSelect} />
             ) : currentView === 'agents' ? (
               <AgentsHub />
@@ -690,7 +701,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         {/* AI Chat Panel - Right Side Column */}
         {showFastAgent && (
           <div
-            className="flex-shrink-0 h-full bg-white border-l border-gray-200 z-20 shadow-xl lg:shadow-none lg:relative absolute right-0 top-0 bottom-0"
+            className="flex-shrink-0 h-full bg-white border-l border-gray-200 z-20 shadow-xl lg:shadow-none lg:relative absolute right-0 top-0 bottom-0 overflow-hidden"
             style={{ width: `${agentPanelWidth}px` }}
           >
             <FastAgentPanel

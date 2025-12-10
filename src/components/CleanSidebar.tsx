@@ -36,6 +36,10 @@ interface CleanSidebarProps {
   onGoHome?: () => void;
   selectedDocumentId?: Id<"documents"> | null;
   onDocumentSelect?: (docId: Id<"documents">) => void;
+  /** Current view from MainLayout - used to highlight correct nav item */
+  currentView?: 'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research';
+  /** Callback when view changes */
+  onViewChange?: (view: 'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research') => void;
 }
 
 export function CleanSidebar({
@@ -47,6 +51,8 @@ export function CleanSidebar({
   onGoHome,
   selectedDocumentId,
   onDocumentSelect,
+  currentView = 'documents',
+  onViewChange,
 }: CleanSidebarProps) {
   const [isDocsOpen, setIsDocsOpen] = useState(true);
   const user = useQuery(api.domains.auth.auth.loggedInUser);
@@ -72,19 +78,22 @@ export function CleanSidebar({
   // Handle global navigation
   const handleNavigate = (page: ActivePage) => {
     if (page === 'research') {
-      // Go back to WelcomeLanding/Research view
+      // Navigate to research/home view
+      onViewChange?.('research');
       onGoHome?.();
     } else if (page === 'workspace') {
+      onViewChange?.('documents');
       onModeChange('workspace');
     } else if (page === 'saved') {
       onModeChange('dossier');
     }
   };
 
-  // Map appMode to ActivePage for highlighting
+  // Map currentView to ActivePage for highlighting
   const getActivePage = (): ActivePage => {
+    if (currentView === 'research') return 'research';
     if (appMode === 'dossier') return 'saved';
-    return 'workspace'; // workspace, fast-agent, deep-agent all show as workspace
+    return 'workspace'; // documents, calendar, roadmap, etc. all show as workspace
   };
 
   // Handle dossier selection from expandable menu
@@ -95,7 +104,7 @@ export function CleanSidebar({
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#fbfaf2]">
+    <div className="h-full flex flex-col bg-white">
       {/* Logo */}
       <div className="h-16 flex items-center px-4 border-b border-gray-100">
         <div className="flex items-center gap-2">

@@ -100,8 +100,8 @@ export const getRoadmapAnalytics = query({
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
       .collect();
 
-    const tasks = await ctx.db
-      .query("tasks")
+    const userEvents = await ctx.db
+      .query("userEvents")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
@@ -176,10 +176,10 @@ export const getRoadmapAnalytics = query({
       }
     });
 
-    // Aggregate tasks
-    tasks.forEach(task => {
-      if (task.createdAt >= startDate && task.createdAt <= endDate) {
-        const key = getDateKey(task.createdAt);
+    // Aggregate user events
+    userEvents.forEach(ue => {
+      if (ue.createdAt >= startDate && ue.createdAt <= endDate) {
+        const key = getDateKey(ue.createdAt);
         const entry = heatmapMap.get(key) ?? { documents: 0, tasks: 0, events: 0, agentRuns: 0, chatMessages: 0 };
         entry.tasks++;
         heatmapMap.set(key, entry);
@@ -218,10 +218,10 @@ export const getRoadmapAnalytics = query({
 
     // Calculate status breakdowns
     const tasksByStatus = {
-      todo: tasks.filter(t => t.status === "todo").length,
-      in_progress: tasks.filter(t => t.status === "in_progress").length,
-      done: tasks.filter(t => t.status === "done").length,
-      blocked: tasks.filter(t => t.status === "blocked").length,
+      todo: userEvents.filter(t => t.status === "todo").length,
+      in_progress: userEvents.filter(t => t.status === "in_progress").length,
+      done: userEvents.filter(t => t.status === "done").length,
+      blocked: userEvents.filter(t => t.status === "blocked").length,
     };
 
     const eventsByStatus = {
@@ -250,12 +250,12 @@ export const getRoadmapAnalytics = query({
       });
     });
 
-    tasks.slice(-20).forEach(task => {
+    userEvents.slice(-20).forEach(ue => {
       recentActivity.push({
         type: "task",
-        title: task.title,
-        timestamp: task.createdAt,
-        id: task._id,
+        title: ue.title,
+        timestamp: ue.createdAt,
+        id: ue._id,
       });
     });
 
@@ -298,7 +298,7 @@ export const getRoadmapAnalytics = query({
       heatmap,
       totals: {
         documents: documents.length,
-        tasks: tasks.length,
+        tasks: userEvents.length,
         events: events.length,
         agentTimelines: agentTimelines.length,
         agentTasks: agentTasks.length,

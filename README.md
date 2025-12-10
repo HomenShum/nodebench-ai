@@ -16,16 +16,65 @@ A comprehensive AI-powered document management and research platform with multi-
 - 🎯 **Fast Agent Panel** - Streaming AI chat with rich media display
 - 🌐 **Global Search Cache** - Intelligent caching with incremental updates and trending searches
 - ⚖️ **Arbitrage Agent** - Receipts-first research mode with source verification and contradiction detection
+- ⚖️ **Arbitrage Integration** - Integration with external arbitrage systems for seamless research and analysis
 - ⚡ **Instant-Value Search** - Search-as-you-type with cached dossier results for instant recall
 - 🔐 **Secure** - User authentication and authorization on all operations
 - 🧭 **Persona Day Starter** - Right-rail presets (banking/product/research/sales/general) that launch Fast/Arbitrage Agent briefs
 - 📑 **Deal & Move Rail** - Overnight moves, deal list, and watchlist flyouts with dates, sources, FDA/patent/paper context
 - 📧 **Email Intelligence Pipeline** - Gmail parsing, entity extraction, dossier + PRD composer workflows with scheduled sweeps and scrollytelling dossier UI
-- 🧠 **Agent Teachability** - Agents learn and remember user facts, preferences, and custom skills across sessions with semantic retrieval and trigger-based activation
-
 ---
 
-## Agent Teachability
+## Arbitrage Agent Integration
+
+**Completed December 2025** - Full integration of receipts-first research agent across the NodeBench AI platform.
+
+### Core Features
+
+- **🔍 Receipts-First Research** - All claims verified with primary sources before response generation
+- **⚖️ Source Quality Ranking** - Excellent, Good, Fair, Poor classification with visual badges
+- **🔄 Delta Detection** - Automatic identification of changes and contradictions between sources
+- **🛡️ Source Health Checks** - Verification of source credibility and timeliness
+- **📊 ArbitrageReportCard** - Visual breakdown of verification results with contradiction analysis
+
+### Integration Points
+
+| Feature | Component | Status |
+|---------|-----------|--------|
+| **FastAgentPanel** | Arbitrage toggle + verification badges | ✅ Complete |
+| **DocumentsHomeHub** | "Analyze with AI" context action | ✅ Complete |
+| **SmartWatchlist** | Delta tracking UI with change badges | ✅ Complete |
+| **Email Intelligence** | "Verify with AI" agent integration | ✅ Complete |
+| **NewsletterView** | Agent CTA for arbitrage analysis | ✅ Complete |
+| **FeedCard** | Source quality badges | ✅ Complete |
+| **EvidenceDrawer** | Verification status indicators | ✅ Complete |
+| **MorningDigest** | AI refresh with arbitrage mode | ✅ Complete |
+
+### Technical Implementation
+
+- **Backend**: Convex schema extensions for arbitrage metadata, streaming mutations with `arbitrageEnabled` flag
+- **Frontend**: Custom events (`ai:analyzeDocument`), React components (`ArbitrageReportCard`), UI state management
+- **Agent Routing**: `agentRouter.ts` routes queries to arbitrage agent for deep verification
+- **Verification Flow**: Tool-result extraction → arbitrage data parsing → visual rendering
+
+### Architecture
+
+```typescript
+// Arbitrage agent routing
+const agent = arbitrageEnabled
+  ? api.domains.agents.arbitrage.agent.research
+  : api.domains.agents.simple.agent.chat;
+
+// Streaming with verification
+const result = await sendStreamingMessage({
+  message,
+  arbitrageEnabled,
+  // ... other params
+});
+```
+
+See `NODEBENCH_INTEGRATION_MAP.md` for detailed implementation notes and testing results.
+
+---
 
 Inspired by Microsoft AutoGen's Teachability, agents can now learn and persist knowledge:
 

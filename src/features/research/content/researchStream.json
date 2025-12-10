@@ -22,15 +22,47 @@
         }
       ]
     },
-    "dashboard": {
-      "phaseLabel": "Market Overview",
-      "kpis": [
-        { "label": "YTD Funding", "value": 47, "unit": "B", "color": "bg-emerald-500" },
-        { "label": "Deal Count", "value": 89, "unit": " deals", "color": "bg-blue-500" },
-        { "label": "Avg. Round Size", "value": 28, "unit": "M", "color": "bg-indigo-500" }
-      ],
-      "marketSentiment": 78,
-      "activeRegion": "Global"
+    "timelineState": {
+      "sectionId": "phase-1-overview",
+      "narrative": {
+        "title": "Market Velocity",
+        "date_display": "Dec 2025",
+        "summary": "Infrastructure funding hits an inflection point as deployment bottlenecks stifle model gains.",
+        "body": "The gap between model capability and enterprise readiness has forced a massive capital rotation into 'plumbing'—orchestration, observability, and specialized silicon."
+      },
+      "dashboard_state": {
+        "meta": { "currentDate": "Dec 2025", "timelineProgress": 0.2 },
+        "charts": {
+          "trendLine": {
+            "label": "Infra Funding Velocity (Billions)",
+            "data": [12, 18, 24, 32, 41, 47.2]
+          },
+          "marketShare": [
+            { "label": "Inference Ops", "value": 45, "color": "accent" },
+            { "label": "Training Infra", "value": 30, "color": "black" },
+            { "label": "Data Tooling", "value": 25, "color": "gray" }
+          ]
+        },
+        "techReadiness": { "existing": 8, "emerging": 2, "sciFi": 0 },
+        "keyStats": [
+          { "label": "YTD Funding", "value": "$47.2B", "trend": "up" },
+          { "label": "Deal Count", "value": "89", "sub": "deals" },
+          { "label": "Avg Round", "value": "$28M" }
+        ],
+        "capabilities": [
+          { "label": "Scale", "score": 85, "icon": "trending-up" },
+          { "label": "Reliability", "score": 60, "icon": "shield-check" },
+          { "label": "Cost", "score": 40, "icon": "dollar-sign" }
+        ],
+        "annotations": [
+          {
+            "id": "note-overview-1",
+            "title": "The Deployment Wall",
+            "description": "Enterprises hit the 'POC Wall', forcing a surge in infra spending.",
+            "position": { "x": 65, "y": 40 }
+          }
+        ]
+      }
     },
     "smartLinks": {
       "ai-infra": {
@@ -62,27 +94,59 @@
         }
       ]
     },
-    "dashboard": {
-      "phaseLabel": "Top Raises This Week",
-      "kpis": [
-        { "label": "Largest Round", "value": 100, "unit": "M", "color": "bg-purple-500" },
-        { "label": "Median Valuation", "value": 450, "unit": "M", "color": "bg-blue-600" },
-        { "label": "Healthcare AI", "value": 33, "unit": "M", "color": "bg-rose-500" }
-      ],
-      "marketSentiment": 85,
-      "activeRegion": "North America"
+    "timelineState": {
+      "sectionId": "phase-2-deals",
+      "narrative": {
+        "title": "Capital Concentration",
+        "date_display": "Late 2025",
+        "summary": "Valuations for 'Pick and Shovel' plays are decoupling from general SaaS.",
+        "body": "Investors are paying premium multiples for companies that solve the 'Last Mile' problem of AI—latency, compliance, and specific vertical integration."
+      },
+      "dashboard_state": {
+        "meta": { "currentDate": "Dec 2025", "timelineProgress": 0.4 },
+        "charts": {
+          "trendLine": {
+            "label": "Avg Valuation Multiple (Revenue)",
+            "data": [8, 10, 12, 18, 22, 25]
+          },
+          "marketShare": [
+            { "label": "Infrastructure", "value": 60, "color": "accent" },
+            { "label": "Applications", "value": 25, "color": "gray" },
+            { "label": "Services", "value": 15, "color": "black" }
+          ]
+        },
+        "techReadiness": { "existing": 6, "emerging": 4, "sciFi": 0 },
+        "keyStats": [
+          { "label": "Top Raise", "value": "$100M", "trend": "up" },
+          { "label": "Med. Val.", "value": "$450M", "sub": "Series B" },
+          { "label": "Vertical AI", "value": "$33M" }
+        ],
+        "capabilities": [
+          { "label": "Funding", "score": 90, "icon": "dollar-sign" },
+          { "label": "Hype", "score": 75, "icon": "zap" },
+          { "label": "Rev Growth", "score": 65, "icon": "trending-up" }
+        ],
+        "annotations": [
+          {
+            "id": "note-deals-1",
+            "title": "The Infra Premium",
+            "description": "Multiples expanding as 'Lock-in' potential becomes clear.",
+            "position": { "x": 80, "y": 20 }
+          }
+        ]
+      }
     },
     "smartLinks": {
       "contextual-ai": {
-        "summary": "Founded by Douwe Kiela (ex-Meta AI Research). Building enterprise RAG with citation guarantees and hallucination detection. Customers include Fortune 500 legal and finance teams.",
+        "summary": "Founded by Douwe Kiela (ex-Meta AI Research). Building enterprise RAG with citation guarantees. Customers include Fortune 500 legal teams.",
         "source": "Crunchbase"
       },
       "modular": {
-        "summary": "Chris Lattner's latest venture after creating Swift and LLVM. Mojo promises 35,000x speedup over Python for ML workloads while maintaining Python syntax compatibility.",
+        "summary": "Mojo promises 35,000x speedup over Python for ML workloads. Led by Chris Lattner (creator of Swift/LLVM).",
         "source": "TechCrunch"
       },
       "atropos": {
-        "summary": "Spun out of Stanford. Uses LLMs to generate real-world evidence from EHR data. FDA engagement ongoing for regulatory pathway.",
+        "summary": "Spun out of Stanford. Uses LLMs to generate real-world evidence from EHR data. FDA engagement ongoing.",
         "source": "STAT News"
       }
     }
@@ -110,15 +174,47 @@
         }
       ]
     },
-    "dashboard": {
-      "phaseLabel": "Agentic AI Adoption",
-      "kpis": [
-        { "label": "F500 Adoption", "value": 34, "unit": "%", "color": "bg-green-500" },
-        { "label": "YoY Growth", "value": 325, "unit": "%", "color": "bg-emerald-600" },
-        { "label": "Compute Waste", "value": 40, "unit": "%", "color": "bg-amber-500" }
-      ],
-      "marketSentiment": 72,
-      "activeRegion": "Global"
+    "timelineState": {
+      "sectionId": "phase-3-agents",
+      "narrative": {
+        "title": "The Agentic Era",
+        "date_display": "Q4 2025",
+        "summary": "Adoption skyrockets as 'Reasoning Models' (like o1) solve reliability issues.",
+        "body": "We are moving from 'Chatbots' to 'Workforce'. The bottleneck is no longer intelligence, but orchestration and safety."
+      },
+      "dashboard_state": {
+        "meta": { "currentDate": "Dec 2025", "timelineProgress": 0.6 },
+        "charts": {
+          "trendLine": {
+            "label": "Agent Task Success Rate (%)",
+            "data": [45, 52, 60, 68, 85, 92]
+          },
+          "marketShare": [
+            { "label": "LangChain/Graph", "value": 50, "color": "accent" },
+            { "label": "LlamaIndex", "value": 30, "color": "gray" },
+            { "label": "Semantic Kernel", "value": 20, "color": "black" }
+          ]
+        },
+        "techReadiness": { "existing": 5, "emerging": 4, "sciFi": 1 },
+        "keyStats": [
+          { "label": "Adoption", "value": "34%", "trend": "up" },
+          { "label": "Growth", "value": "325%", "sub": "YoY" },
+          { "label": "Waste", "value": "40%", "trend": "down" }
+        ],
+        "capabilities": [
+          { "label": "Planning", "score": 85, "icon": "map" },
+          { "label": "Tool Use", "score": 90, "icon": "tool" },
+          { "label": "Autonomy", "score": 55, "icon": "cpu" }
+        ],
+        "annotations": [
+          {
+            "id": "note-agents-1",
+            "title": "The Reasoning Jump",
+            "description": "Introduction of 'Chain-of-Thought' native models spiked reliability.",
+            "position": { "x": 75, "y": 15 }
+          }
+        ]
+      }
     },
     "smartLinks": {
       "agentic": {
@@ -126,7 +222,7 @@
         "source": "Anthropic Research"
       },
       "tool-use": {
-        "summary": "Tool use (or function calling) allows LLMs to invoke external APIs, databases, and code execution. GPT-4, Claude, and Gemini all support structured tool definitions. Accuracy has improved from ~60% to ~95% in the past year.",
+        "summary": "Tool use allows LLMs to invoke external APIs and code execution. Accuracy has improved from ~60% to ~95% in the past year.",
         "source": "Berkeley Function Calling Leaderboard"
       }
     }
@@ -154,15 +250,47 @@
         }
       ]
     },
-    "dashboard": {
-      "phaseLabel": "Inference Economics",
-      "kpis": [
-        { "label": "Cost Reduction (18mo)", "value": 90, "unit": "%", "color": "bg-green-600" },
-        { "label": "Groq Speed", "value": 500, "unit": " tok/s", "color": "bg-purple-600" },
-        { "label": "4-bit Quality Retention", "value": 95, "unit": "%", "color": "bg-blue-500" }
-      ],
-      "marketSentiment": 82,
-      "activeRegion": "Silicon Valley"
+    "timelineState": {
+      "sectionId": "phase-4-tech",
+      "narrative": {
+        "title": "The Race to Zero",
+        "date_display": "2024 - 2026",
+        "summary": "Inference costs are collapsing, unlocking 'Always On' intelligence.",
+        "body": "Custom silicon (LPUs) and extreme quantization are driving the cost of intelligence down faster than Moore's Law, enabling real-time voice and video agents."
+      },
+      "dashboard_state": {
+        "meta": { "currentDate": "Jan 2026", "timelineProgress": 0.8 },
+        "charts": {
+          "trendLine": {
+            "label": "Cost per 1M Tokens ($)",
+            "data": [30, 15, 5, 1.5, 0.5, 0.27]
+          },
+          "marketShare": [
+            { "label": "Nvidia", "value": 75, "color": "black" },
+            { "label": "Groq/Custom", "value": 15, "color": "accent" },
+            { "label": "Cloud TPU", "value": 10, "color": "gray" }
+          ]
+        },
+        "techReadiness": { "existing": 9, "emerging": 1, "sciFi": 0 },
+        "keyStats": [
+          { "label": "Cost Redux", "value": "-90%", "trend": "down" },
+          { "label": "Throughput", "value": "500", "sub": "tok/s" },
+          { "label": "Precision", "value": "INT4" }
+        ],
+        "capabilities": [
+          { "label": "Speed", "score": 95, "icon": "zap" },
+          { "label": "Efficiency", "score": 90, "icon": "battery-charging" },
+          { "label": "Quality", "score": 80, "icon": "check-circle" }
+        ],
+        "annotations": [
+          {
+            "id": "note-tech-1",
+            "title": "The LPU Disruption",
+            "description": "Deterministic silicon (Groq) breaks the GPU batching paradigm.",
+            "position": { "x": 85, "y": 80 }
+          }
+        ]
+      }
     },
     "smartLinks": {
       "inference-cost": {
@@ -170,7 +298,7 @@
         "source": "MLSys 2024"
       },
       "groq": {
-        "summary": "Groq's Language Processing Unit (LPU) uses a deterministic execution model optimized for transformer inference. No batching required—each request gets dedicated silicon. Founded by ex-Google TPU architect Jonathan Ross.",
+        "summary": "Groq's LPU uses a deterministic execution model optimized for transformer inference. No batching required—each request gets dedicated silicon.",
         "source": "Groq Technical Paper"
       }
     }
@@ -194,23 +322,55 @@
         }
       ]
     },
-    "dashboard": {
-      "phaseLabel": "Week Ahead Outlook",
-      "kpis": [
-        { "label": "NVDA Consensus", "value": 32, "unit": "B", "color": "bg-green-500" },
-        { "label": "Expected IPO Proceeds", "value": 18, "unit": "B", "color": "bg-indigo-500" },
-        { "label": "Confidence Score", "value": 74, "unit": "%", "color": "bg-amber-500" }
-      ],
-      "marketSentiment": 74,
-      "activeRegion": "Global"
+    "timelineState": {
+      "sectionId": "phase-5-outlook",
+      "narrative": {
+        "title": "Horizon Scanning",
+        "date_display": "Next Week",
+        "summary": "Markets brace for volatility as the 'Big Three' prepare announcements.",
+        "body": "With Nvidia earnings and the rumored 'O2' release, we expect significant repricing of both hardware stocks and application-layer startups."
+      },
+      "dashboard_state": {
+        "meta": { "currentDate": "Future", "timelineProgress": 1.0 },
+        "charts": {
+          "trendLine": {
+            "label": "Market Volatility Index (AI Sector)",
+            "data": [20, 25, 40, 35, 65, 80]
+          },
+          "marketShare": [
+            { "label": "Pricing In", "value": 50, "color": "accent" },
+            { "label": "Wait & See", "value": 30, "color": "gray" },
+            { "label": "Short", "value": 20, "color": "black" }
+          ]
+        },
+        "techReadiness": { "existing": 5, "emerging": 3, "sciFi": 2 },
+        "keyStats": [
+          { "label": "NVDA Est.", "value": "$32B", "trend": "flat" },
+          { "label": "IPO Vol", "value": "$18B", "sub": "Expected" },
+          { "label": "Conf.", "value": "74%" }
+        ],
+        "capabilities": [
+          { "label": "Prediction", "score": 60, "icon": "eye" },
+          { "label": "Risk", "score": 85, "icon": "alert-triangle" },
+          { "label": "Alpha", "score": 70, "icon": "trending-up" }
+        ],
+        "annotations": [
+          {
+            "id": "note-outlook-1",
+            "title": "Earnings Call",
+            "description": "The single most important event for 2026 AI CapEx forecasting.",
+            "position": { "x": 90, "y": 10 }
+          }
+        ]
+      }
     },
     "smartLinks": {
       "nvidia-earnings": {
-        "summary": "NVIDIA reports Q4 FY25 earnings Wednesday after market close. Key metrics: Data Center revenue, H100 shipment guidance, and Blackwell production timeline. Options imply ±8% move.",
+        "summary": "NVIDIA reports Q4 FY25 earnings Wednesday. Key metrics: Data Center revenue, H100 shipment guidance, and Blackwell production timeline.",
         "source": "Bloomberg"
       },
       "o2-release": {
-        "summary": "OpenAI's o2 (successor to o1-preview) reportedly achieves PhD-level reasoning on GPQA and solves 75% of SWE-bench tasks. Expected to ship with improved tool use and reduced 'thinking' latency.",
+        "summary": "OpenAI's o2 (successor to o1) reportedly achieves PhD-level reasoning on GPQA. Expected to ship with improved tool use.",
         "source": "The Information"
       }
     }

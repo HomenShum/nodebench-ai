@@ -17,7 +17,7 @@ export function useUnifiedItems(opts: {
 }) {
   const { filterText = "", sortBy = "updated", sortOrder = "desc", groupBy = "smart", openIds = [] } = opts;
   const docs = useQuery(api.domains.documents.documents.getSidebarWithOptions, { sortBy: "updated", sortOrder: "desc" });
-  const tasks = useQuery(api.domains.tasks.tasks.listTasksByUpdatedDesc, { limit: 200 });
+  const tasks = useQuery(api.domains.tasks.userEvents.listTasksByUpdatedDesc, { limit: 200 });
 
   const { items, groups } = useMemo(() => {
     if (!docs || !tasks) return { items: undefined, groups: undefined };

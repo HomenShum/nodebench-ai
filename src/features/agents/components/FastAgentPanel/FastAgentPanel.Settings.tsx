@@ -17,6 +17,8 @@ interface SettingsProps {
   onFastModeChange: (enabled: boolean) => void;
   model: ModelOption;
   onModelChange: (model: ModelOption) => void;
+  arbitrageMode: boolean;
+  onArbitrageModeChange: (enabled: boolean) => void;
   onClose: () => void;
 }
 
@@ -28,6 +30,8 @@ export function Settings({
   onFastModeChange,
   model,
   onModelChange,
+  arbitrageMode: arbitrageModeProp,
+  onArbitrageModeChange,
   onClose,
 }: SettingsProps) {
   const [temperature, setTemperature] = useState(0.7);
@@ -37,7 +41,7 @@ export function Settings({
   // Arbitrage mode - persisted to backend
   const agentsPrefs = useQuery(api.agentsPrefs.getAgentsPrefs);
   const setAgentsPrefs = useMutation(api.agentsPrefs.setAgentsPrefs);
-  const [arbitrageMode, setArbitrageMode] = useState(false);
+  const [arbitrageMode, setArbitrageMode] = useState(arbitrageModeProp);
   const updateTeaching = useMutation(api.domains.teachability.updateTeaching);
   const deleteTeaching = useMutation(api.domains.teachability.deleteTeaching);
 
@@ -58,12 +62,19 @@ export function Settings({
   useEffect(() => {
     if (agentsPrefs?.arbitrageMode !== undefined) {
       setArbitrageMode(agentsPrefs.arbitrageMode === 'true');
+      onArbitrageModeChange(agentsPrefs.arbitrageMode === 'true');
     }
-  }, [agentsPrefs]);
+  }, [agentsPrefs, onArbitrageModeChange]);
+
+  // Sync local toggle with prop (so FastAgentPanel state stays authoritative)
+  useEffect(() => {
+    setArbitrageMode(arbitrageModeProp);
+  }, [arbitrageModeProp]);
 
   // Handle arbitrage mode toggle
   const handleArbitrageModeChange = async (enabled: boolean) => {
     setArbitrageMode(enabled);
+    onArbitrageModeChange(enabled);
     try {
       await setAgentsPrefs({ prefs: { arbitrageMode: enabled ? 'true' : 'false' } });
     } catch (err) {

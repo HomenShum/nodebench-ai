@@ -24,6 +24,19 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+    
+    /* FastAgentPanel variables */
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-hover: #f3f4f6;
+    --bg-tertiary: #e5e7eb;
+    --border-color: #e5e7eb;
+    --accent-primary: #3b82f6;
+    --accent-secondary: #8b5cf6;
+    --accent-primary-bg: rgba(59, 130, 246, 0.1);
   }
  
   .dark {

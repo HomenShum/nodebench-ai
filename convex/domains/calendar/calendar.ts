@@ -22,8 +22,8 @@ export const listAgendaInRange = query({
   handler: async (ctx, args): Promise<AgendaResult> => {
     const country: string = args.country ?? "US";
 
-    // Fetch documents tagged as events and tasks
-    const [eventDocs, taskDocs, holidays, notes]: [any[], any[], any[], any[]] = await Promise.all([
+    // Fetch documents tagged as events and tasks, plus events from events table
+    const [eventDocs, taskDocs, holidays, notes, tableEvents]: [any[], any[], any[], any[], any[]] = await Promise.all([
       ctx.runQuery(api.domains.documents.documents.listDocumentsByTag, { tag: "event" }),
       ctx.runQuery(api.domains.documents.documents.listDocumentsByTag, { tag: "task" }),
       ctx.runQuery(api.domains.calendar.holidays.listHolidaysInRange, {
@@ -32,10 +32,12 @@ export const listAgendaInRange = query({
         end: args.holidaysEndUtc ?? args.end,
       }),
       ctx.runQuery(api.domains.documents.documents.listNotesInRange, { start: args.start, end: args.end }),
+      // Also fetch events from the events table directly
+      ctx.runQuery(api.domains.calendar.events.listEventsInRange, { start: args.start, end: args.end }),
     ]);
 
     // Parse metadata from event documents and filter by date range
-    const events = eventDocs
+    const docEvents = eventDocs
       .map(doc => {
         const metadata = parseDocumentMetadata(doc.content, doc.title);
         return metadataToEventLike(doc, metadata);
@@ -45,8 +47,20 @@ export const listAgendaInRange = query({
         // Include events that overlap with the range
         const eventEnd = event.endTime || event.startTime;
         return event.startTime <= args.end && eventEnd >= args.start;
-      })
-      .sort((a, b) => a.startTime - b.startTime);
+      });
+
+    // Merge document-based events with table events, deduplicating by _id
+    const eventMap = new Map<string, any>();
+    for (const ev of tableEvents) {
+      eventMap.set(ev._id, ev);
+    }
+    for (const ev of docEvents) {
+      // Only add doc events if not already present (table events take priority)
+      if (!eventMap.has(ev._id)) {
+        eventMap.set(ev._id, ev);
+      }
+    }
+    const events = Array.from(eventMap.values()).sort((a, b) => (a.startTime ?? 0) - (b.startTime ?? 0));
 
     // Parse metadata from task documents and filter by date range
     const tasks = taskDocs

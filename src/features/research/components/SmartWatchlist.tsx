@@ -11,8 +11,19 @@ import {
   RefreshCw,
   Zap,
   Search,
-  X
+  X,
+  AlertTriangle,
+  FileText,
+  Activity,
+  Clock
 } from 'lucide-react';
+
+interface DeltaInfo {
+  type: 'price_spike' | 'news_mention' | 'volume_surge' | 'sentiment_shift' | 'filing';
+  description: string;
+  severity: 'high' | 'medium' | 'low';
+  timestamp: number;
+}
 
 interface WatchlistItem {
   symbol: string;
@@ -23,6 +34,9 @@ interface WatchlistItem {
   sparklineData: number[];
   hasAlert: boolean;
   sector?: string;
+  deltas?: DeltaInfo[]; // Track what changed since last check
+  lastChecked?: number; // Timestamp of last verification
+  verificationStatus?: 'verified' | 'unverified' | 'stale';
 }
 
 interface SmartWatchlistProps {
@@ -296,6 +310,25 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                 <span className="text-sm font-semibold text-gray-900">{item.symbol}</span>
                 {item.hasAlert && (
                   <Bell className="w-3 h-3 text-amber-500" />
+                )}
+                {/* Delta indicator badge */}
+                {item.deltas && item.deltas.length > 0 && (
+                  <span 
+                    className="flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200"
+                    title={`${item.deltas.length} change${item.deltas.length > 1 ? 's' : ''} detected`}
+                  >
+                    <Activity className="w-2.5 h-2.5" />
+                    {item.deltas.length}
+                  </span>
+                )}
+                {/* Verification status badge */}
+                {item.verificationStatus === 'verified' && (
+                  <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-200">✓</span>
+                )}
+                {item.verificationStatus === 'stale' && (
+                  <span className="text-[8px] px-1 py-0.5 rounded bg-gray-50 text-gray-500 border border-gray-200" title="Data may be stale">
+                    <Clock className="w-2.5 h-2.5 inline" />
+                  </span>
                 )}
               </div>
               <span className="text-[11px] text-gray-400 truncate block">{item.name}</span>

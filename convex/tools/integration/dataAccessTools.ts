@@ -28,14 +28,14 @@ export const listTasks = createTool({
 
     let tasks: any[] = [];
 
-    // Get tasks based on filter
+    // Get user events based on filter
     if (args.filter === "today") {
-      tasks = await ctx.runQuery(api.domains.tasks.tasks.listTasksDueToday, { userId });
+      tasks = await ctx.runQuery(api.domains.tasks.userEvents.listUserEventsDueToday, { userId });
     } else if (args.filter === "week") {
-      tasks = await ctx.runQuery(api.domains.tasks.tasks.listTasksDueThisWeek, { userId });
+      tasks = await ctx.runQuery(api.domains.tasks.userEvents.listUserEventsDueThisWeek, { userId });
     } else {
-      // Get all tasks for the user (using listTasksByUpdatedDesc)
-      tasks = await ctx.runQuery(api.domains.tasks.tasks.listTasksByUpdatedDesc, { limit: 100, userId });
+      // Get all user events (using listUserEventsByUpdatedDesc)
+      tasks = await ctx.runQuery(api.domains.tasks.userEvents.listUserEventsByUpdatedDesc, { limit: 100, userId });
     }
 
     // Apply status filter
@@ -89,22 +89,22 @@ Total matching tasks: ${tasks.length}`;
 });
 
 /**
- * Create a new task
+ * Create a new user event (personal task/todo)
  * Voice: "Create a task to review the Q4 report"
  */
-export const createTask = createTool({
-  description: "Create a new task with title, description, due date, and priority. Returns the new task ID.",
+export const createUserEvent = createTool({
+  description: "Create a new user event (personal task/todo) with title, description, due date, and priority. Returns the new event ID.",
   
   args: z.object({
-    title: z.string().describe("Task title"),
-    description: z.string().optional().describe("Task description"),
+    title: z.string().describe("Event/task title"),
+    description: z.string().optional().describe("Event description"),
     dueDate: z.string().optional().describe("Due date in ISO format (YYYY-MM-DD) or natural language like 'tomorrow', 'next week'"),
-    priority: z.enum(["low", "medium", "high"]).default("medium").describe("Task priority"),
-    status: z.enum(["todo", "in_progress", "done"]).default("todo").describe("Initial task status"),
+    priority: z.enum(["low", "medium", "high"]).default("medium").describe("Priority level"),
+    status: z.enum(["todo", "in_progress", "done"]).default("todo").describe("Initial status"),
   }),
 
   handler: async (ctx, args): Promise<string> => {
-    console.log(`[createTask] Creating task: "${args.title}"`);
+    console.log(`[createUserEvent] Creating user event: "${args.title}"`);
 
     // Parse due date if provided
     let dueDateMs: number | undefined;
@@ -116,7 +116,7 @@ export const createTask = createTool({
       }
     }
 
-    const taskId = await ctx.runMutation(api.domains.tasks.tasks.createTask, {
+    const eventId = await ctx.runMutation(api.domains.tasks.userEvents.createUserEvent, {
       title: args.title,
       description: args.description,
       dueDate: dueDateMs,
@@ -124,36 +124,39 @@ export const createTask = createTool({
       status: args.status,
     });
     
-    return `Task created successfully!
+    return `User event created successfully!
 
 Title: "${args.title}"
-ID: ${taskId}
+ID: ${eventId}
 Priority: ${args.priority}
 Status: ${args.status}
 ${args.dueDate ? `Due: ${args.dueDate}` : 'No due date'}
 
-The task has been added to your list.`;
+The event has been added to your personal list.`;
   },
 });
 
+// Backward compatibility alias
+export const createTask = createUserEvent;
+
 /**
- * Update an existing task
+ * Update an existing user event
  * Voice: "Mark task [ID] as complete" or "Change priority of task [ID] to high"
  */
-export const updateTask = createTool({
-  description: "Update an existing task's properties including title, description, status, priority, or due date.",
+export const updateUserEvent = createTool({
+  description: "Update an existing user event's properties including title, description, status, priority, or due date.",
   
   args: z.object({
-    taskId: z.string().describe("The task ID to update"),
-    title: z.string().optional().describe("New task title"),
-    description: z.string().optional().describe("New task description"),
-    status: z.enum(["todo", "in_progress", "done"]).optional().describe("New task status"),
-    priority: z.enum(["low", "medium", "high"]).optional().describe("New task priority"),
+    userEventId: z.string().describe("The user event ID to update"),
+    title: z.string().optional().describe("New title"),
+    description: z.string().optional().describe("New description"),
+    status: z.enum(["todo", "in_progress", "done"]).optional().describe("New status"),
+    priority: z.enum(["low", "medium", "high"]).optional().describe("New priority"),
     dueDate: z.string().optional().describe("New due date in ISO format"),
   }),
   
   handler: async (ctx, args): Promise<string> => {
-    console.log(`[updateTask] Updating task: ${args.taskId}`);
+    console.log(`[updateUserEvent] Updating user event: ${args.userEventId}`);
     
     const updates: any = {};
     if (args.title) updates.title = args.title;
@@ -167,21 +170,24 @@ export const updateTask = createTool({
       }
     }
     
-    await ctx.runMutation(api.domains.tasks.tasks.updateTask, {
-      taskId: args.taskId as any,
+    await ctx.runMutation(api.domains.tasks.userEvents.updateUserEvent, {
+      userEventId: args.userEventId as any,
       ...updates,
     });
     
     const updatedFields = Object.keys(updates).join(', ');
     
-    return `Task updated successfully!
+    return `User event updated successfully!
 
-Task ID: ${args.taskId}
+Event ID: ${args.userEventId}
 Updated fields: ${updatedFields}
 
 The changes have been saved.`;
   },
 });
+
+// Backward compatibility alias
+export const updateTask = updateUserEvent;
 
 /**
  * List events in a date range
@@ -234,12 +240,13 @@ export const listEvents = createTool({
       end = args.endDate ? new Date(args.endDate).getTime() : start + 24 * 60 * 60 * 1000;
     }
 
-    // Get events in range
-    let events = await ctx.runQuery(api.domains.calendar.events.listEventsInRange, {
+    // Get events using unified calendar agenda (includes events table + document-based events)
+    const agenda = await ctx.runQuery(api.domains.calendar.calendar.listAgendaInRange, {
       start,
       end,
-      userId, // Pass userId for evaluation
+      country: "US",
     });
+    let events = agenda.events as any[];
     
     // Filter by status if needed
     if (args.status !== "all") {

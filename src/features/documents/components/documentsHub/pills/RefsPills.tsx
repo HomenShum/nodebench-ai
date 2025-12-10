@@ -46,7 +46,7 @@ export const RefsPills = ({ refs, onOpenRef }: RefsPillsProps) => {
   ) as Array<{ _id: Id<"documents">; title: string }> | undefined;
 
   const taskTitles = useQuery(
-    api.domains.tasks.tasks.getTitles,
+    api.domains.tasks.userEvents.getTitles,
     taskIdsTyped.length ? { ids: taskIdsTyped } : "skip",
   ) as Array<{ _id: Id<"tasks">; title: string }> | undefined;
 

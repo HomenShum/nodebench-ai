@@ -103,8 +103,13 @@ function App() {
         <FastAgentProvider>
           <SelectionProvider>
             <ContextPillsProvider>
-              {/* Marketing/landing welcome with Mini Note Agent and animations */}
-              <WelcomeLanding />
+              {/* Use MainLayout for visual consistency - limited features for guests */}
+              <MainLayout
+                selectedDocumentId={null}
+                onDocumentSelect={() => {}}
+                onShowWelcome={() => {}}
+                onShowWelcomeLanding={() => {}}
+              />
               {/* Global Fast Agent Panel for guests */}
               <GlobalFastAgentPanel />
             </ContextPillsProvider>
@@ -120,25 +125,13 @@ function App() {
                   onGetStarted={handleGetStarted}
                   onDocumentSelect={handleDocumentSelect}
                 />
-              ) : documents && documents.length > 0 && !showWelcomeLanding ? (
-                <MainLayout
-                  selectedDocumentId={selectedDocumentId}
-                  onDocumentSelect={setSelectedDocumentId}
-                  onShowWelcome={handleShowTutorial}
-                  onShowWelcomeLanding={handleShowWelcomeLanding}
-                />
-              ) : !showWelcomeLanding ? (
-                <MainLayout
-                  selectedDocumentId={selectedDocumentId}
-                  onDocumentSelect={setSelectedDocumentId}
-                  onShowWelcome={handleShowTutorial}
-                  onShowWelcomeLanding={handleShowWelcomeLanding}
-                />
               ) : (
-                /* Authenticated users land on WelcomeLanding by default */
-                <WelcomeLanding
-                  onDocumentSelect={handleDocumentSelect}
-                  onEnterWorkspace={handleEnterWorkspace}
+                /* Always use MainLayout - it handles research/workspace views internally */
+                <MainLayout
+                  selectedDocumentId={selectedDocumentId}
+                  onDocumentSelect={setSelectedDocumentId}
+                  onShowWelcome={handleShowTutorial}
+                  onShowWelcomeLanding={handleShowWelcomeLanding}
                 />
               )}
               {/* Global Fast Agent Panel - controlled via context */}

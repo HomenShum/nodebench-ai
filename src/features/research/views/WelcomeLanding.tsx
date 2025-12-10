@@ -51,6 +51,7 @@ import { DayStarterCard } from "@/features/research/components/DayStarterCard";
 import { OvernightMovesCard, type MoveItem } from "@/features/research/components/OvernightMovesCard";
 import { DealListPanel, DealFlyout, type Deal } from "@/features/research/components/DealListPanel";
 import SourceFeed from "@/features/research/components/SourceFeed";
+import researchStreamData from "@/features/research/content/researchStream.json";
 
 const SAMPLE_DEALS: Deal[] = [
   {
@@ -186,11 +187,19 @@ import { SOURCES, SOURCE_PRESETS } from "@/lib/sources";
 interface WelcomeLandingProps {
   onDocumentSelect?: (documentId: string) => void;
   onEnterWorkspace?: () => void;
+  /** When true, renders content-only (no sidebar/header) for use inside MainLayout */
+  embedded?: boolean;
+  /** Source toggles from parent (MainLayout) - used in embedded mode */
+  activeSources?: string[];
+  onToggleSource?: (sourceId: string) => void;
 }
 
 function WelcomeLandingInner({
   onDocumentSelect,
   onEnterWorkspace,
+  embedded = false,
+  activeSources: parentActiveSources,
+  onToggleSource: parentToggleSource,
 }: WelcomeLandingProps) {
   const { isAuthenticated } = useConvexAuth();
   const user = useQuery(api.domains.auth.auth.loggedInUser);
@@ -1853,7 +1862,399 @@ While commercial fusion is still years away, the pace of innovation has accelera
     );
   }
 
-  // Main Render - Persistent Layout
+  // Scrolly data - cast imported JSON to proper type
+  const scrollySections = useMemo(() => {
+    return researchStreamData as ScrollySection[];
+  }, []);
+
+  // Main Content Area - shared between embedded and standalone modes
+  const mainContentArea = (
+    <>
+      {showHero ? (
+        <div className={`flex-1 flex flex-col ${embedded ? 'h-full' : ''} overflow-hidden relative bg-white`}>
+          {/* Scrollable content with landing page experience */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {/* Hero Section - Animated Landing */}
+            <header className="relative mb-8 px-6 py-12 sm:px-12 sm:py-16 max-w-[1400px] mx-auto">
+              <div className="relative z-10 mx-auto max-w-4xl text-center">
+                {/* Top Badge */}
+                <div className="mb-6 flex justify-center animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <div className="inline-flex items-center gap-3 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium shadow-sm">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                    </span>
+                    <span className="text-gray-600">{todayLabel}</span>
+                    <span className="text-gray-300">|</span>
+                    <span className="text-gray-900 font-bold tracking-wide uppercase text-xs">
+                      Daily Intelligence
+                    </span>
+                  </div>
+                </div>
+
+                {/* Main Title - Large & Animated */}
+                <h1 className="mb-4 text-4xl font-bold tracking-tighter text-gray-900 sm:text-5xl lg:text-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  The Morning
+                  <br />
+                  <span className="text-gray-400">Dossier</span>
+                </h1>
+
+                {/* Subtitle */}
+                <p className="mx-auto mb-8 max-w-2xl text-base text-gray-500 sm:text-lg leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+                  AI-synthesized briefing on trends, deals, and deep dives.
+                  <br className="hidden sm:block" />
+                  <span className="text-gray-900">{scrollySections.length} stories</span> curated for you.
+                </p>
+
+                {/* Magic Search Input */}
+                <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                  <MagicInputContainer
+                    onRun={(prompt: string, opts?: { mode?: "quick" | "deep" }) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                    onDeepRun={(prompt: string) => handleRunPrompt(prompt, { mode: "deep" })}
+                    compact={false}
+                    defaultValue=""
+                    mode={researchMode}
+                  />
+                </div>
+
+              </div>
+            </header>
+
+            {/* Scrollytelling Section */}
+            {scrollySections.length > 0 && (
+              <div className="max-w-[1400px] mx-auto px-6 mb-12">
+                <ScrollytellingLayout data={scrollySections} isGuestMode={!isAuthenticated} hideHero />
+              </div>
+            )}
+
+            {/* Unified Navigation Bar */}
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-200 px-6 py-2.5">
+              <div className="max-w-[1400px] mx-auto flex items-center justify-between">
+                {/* Left: Main View Tabs */}
+                <div className="flex items-center gap-1">
+                  {[
+                    { id: "briefing", label: "Feed" },
+                    { id: "signals", label: "Signals" },
+                    { id: "watchlist", label: "Watchlist" },
+                    { id: "saved", label: "Saved" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTopTab(tab.id as any);
+                        setSelectedCategory(null);
+                      }}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${activeTopTab === tab.id
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                        }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Right: Filters */}
+                <div className="flex items-center gap-3">
+                  {/* Category Dropdown */}
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-50 transition-all"
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                      {selectedCategory ? FEED_CATEGORIES.find(c => c.id === selectedCategory)?.label : "All Topics"}
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[160px] py-1">
+                      {FEED_CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.id ?? "all"}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(cat.id);
+                            setActiveTopTab("briefing");
+                          }}
+                          className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 flex items-center gap-2 ${selectedCategory === cat.id ? "bg-gray-100 font-semibold" : ""}`}
+                        >
+                          <span>{cat.icon}</span>
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sources Dropdown */}
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-50 transition-all"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      {sourceFilter === "all" ? "All Sources" : sourceFilters.find(s => s.id === sourceFilter)?.label || "Sources"}
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[180px] py-1">
+                      {sourceFilters.map(source => (
+                        <button
+                          key={source.id}
+                          type="button"
+                          onClick={() => setSourceFilter(source.id)}
+                          className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 flex items-center gap-2 ${sourceFilter === source.id ? "bg-gray-100 font-semibold" : ""}`}
+                        >
+                          {source.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Item Count */}
+                  <span className="text-[11px] text-gray-400">{sourceFilteredFeedItems.length} items</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="max-w-[1600px] mx-auto px-6 py-6">
+
+              {/* Main Feed Grid */}
+              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start px-4">
+                <div className="flex-1">
+                  {activeTopTab === "briefing" && (
+                    <>
+                      <FeedTimeline
+                        items={sourceFilteredFeedItems}
+                        onItemClick={(item) => setReaderItem(item)}
+                        onAnalyze={(item) => {
+                          openWithContext({
+                            initialMessage: `Analyze this ${item.type}: "${item.title}"\n\n${item.subtitle || ''}`,
+                            contextWebUrls: (item as any).url ? [(item as any).url] : undefined,
+                            contextTitle: item.title,
+                          });
+                        }}
+                      />
+                      {feedItems.length >= feedLimit && sourceFilteredFeedItems.length > 0 && (
+                        <div className="text-center mt-8">
+                          <button
+                            type="button"
+                            onClick={() => setFeedLimit((prev: number) => prev + 24)}
+                            className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                          >
+                            Load More ({feedLimit} loaded)
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {activeTopTab === "signals" && (
+                    <div className="text-center py-12 text-gray-500">Signals view coming soon</div>
+                  )}
+                  {activeTopTab === "watchlist" && (
+                    <SmartWatchlist
+                      mentions={watchlistMentions}
+                      onItemClick={(symbol: string) => {
+                        runWithFastAgent(`Give me a quick analysis of ${symbol}`);
+                      }}
+                      onAnalyze={(symbol: string) => {
+                        runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
+                      }}
+                    />
+                  )}
+                  {activeTopTab === "saved" && (
+                    <DocumentActionGrid
+                      documents={aggregatedDocumentActions}
+                      onDocumentSelect={onDocumentSelect}
+                    />
+                  )}
+                </div>
+
+                {/* Analyst Sidebar */}
+                <aside className="hidden xl:flex flex-col gap-6 w-[380px] shrink-0 sticky top-4">
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Morning Digest</h3>
+                    <MorningDigest
+                      userName={user?.name?.split(' ')[0]}
+                      onItemClick={(item: any) => {
+                        const prompt = item.linkedEntity
+                          ? `Tell me about recent news for ${item.linkedEntity}`
+                          : item.text;
+                        if (!prompt) return;
+                        runWithFastAgent(prompt);
+                      }}
+                    />
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Watchlist Pulse</h3>
+                    <SmartWatchlist
+                      mentions={watchlistMentions}
+                      onItemClick={(symbol: string) => {
+                        runWithFastAgent(`Give me a quick analysis of ${symbol}`);
+                      }}
+                      onAnalyze={(symbol: string) => {
+                        runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
+                      }}
+                    />
+                  </div>
+
+                  <DayStarterCard
+                    onRunPreset={(prompt: string, personaKey: string) => {
+                      setPersona(personaKey);
+                      runWithFastAgent(prompt);
+                    }}
+                    activePersona={persona}
+                    onPersonaChange={setPersona}
+                    isGuest={!isAuthenticated}
+                  />
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Active Dossier state (when researching)
+        <div className={`${embedded ? 'h-full' : 'min-h-full'} bg-white overflow-y-auto custom-scrollbar`}>
+          {/* Sticky Input Bar for Active State */}
+          <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <MagicInputContainer
+                    onRun={(prompt: string, opts?: { mode?: "quick" | "deep" }) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
+                    onDeepRun={(prompt: string) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
+                    compact={true}
+                    defaultValue={researchPrompt}
+                    mode={researchMode}
+                  />
+                </div>
+                {/* Unified Action Button with Mode Toggle */}
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
+                    disabled={isRunning}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
+                      ? "bg-black text-white border-black cursor-wait"
+                      : "bg-black text-white border-black hover:bg-gray-800"
+                      }`}
+                    title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
+                  >
+                    <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
+                    {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
+                  </button>
+                  {/* Mode Dropdown */}
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
+                      <button
+                        type="button"
+                        onClick={() => setFollowUpMode("append")}
+                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
+                        Append
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFollowUpMode("new")}
+                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
+                        Replace
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <ThoughtStreamTicker isActive={isRunning} />
+            </div>
+
+            {/* Cache Indicator */}
+            {isFromCache && (
+              <div className="max-w-4xl mx-auto mt-2 px-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
+                  <Zap className="w-3 h-3 text-gray-900" />
+                  Loaded from cache (instant results)
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
+            {/* Follow-up history drawer (compact) */}
+            {followUpHistory.length > 0 && (
+              <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
+                <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  <span>Follow-up history</span>
+                  <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
+                </div>
+                <div className="space-y-1">
+                  {followUpHistory.map((item: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
+                        <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
+                      </div>
+                      <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
+                      <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Unified Live Dossier View - summary and document */}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+              {citations.length > 0 && <ExecutiveSummaryBlock />}
+              <CollapsibleReasoningChain steps={toolParts} />
+              <LiveDossierDocument
+                threadId={threadId}
+                isLoading={isRunning || (hasReceivedResponse && !responseText)}
+                onRunFollowUp={(query: string) => handleRunPrompt(query, { appendToThread: true })}
+                media={aggregatedMedia}
+                documents={aggregatedDocumentActions}
+                onDocumentSelect={onDocumentSelect}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
+      {readerItem && (
+        <FeedReaderModal
+          item={readerItem}
+          onClose={() => setReaderItem(null)}
+        />
+      )}
+      <DealFlyout
+        deal={selectedDeal}
+        onClose={() => setSelectedDeal(null)}
+        onPrep={handleDealPrep}
+      />
+    </>
+  );
+
+  // Embedded mode - render content only (MainLayout provides sidebar + header)
+  if (embedded) {
+    return (
+      <>
+        <style>{`
+          .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+        `}</style>
+        {mainContentArea}
+      </>
+    );
+  }
+
+  // Standalone mode - full layout with sidebar
   return (
     <>
       {/* Custom Scrollbar Styling */}
@@ -1870,12 +2271,11 @@ While commercial fusion is still years away, the pace of innovation has accelera
           background: #E5E7EB;
           border-radius: 10px;
         }
-        }
       `}</style>
 
-      <div className="h-screen w-full flex bg-[#fbfaf2] overflow-hidden font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+      <div className="h-screen w-full flex bg-white overflow-hidden font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
         {/* Sidebar - Fixed Width */}
-        <div className="w-[280px] bg-[#fbfaf2] border-r border-gray-200 flex flex-col z-30 flex-shrink-0 relative transition-all duration-300">
+        <div className="w-[280px] bg-white border-r border-gray-200 flex flex-col z-30 flex-shrink-0 relative transition-all duration-300">
           {/* Sidebar Header with Logo */}
           <div className="h-16 flex items-center px-5 border-b border-gray-100">
             <div className="flex items-center gap-2.5">
@@ -1958,369 +2358,10 @@ While commercial fusion is still years away, the pace of innovation has accelera
           </div>
         </div>
 
-        {/* Main Content Area */}
-        {showHero ? (
-          <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-[#fbfaf2]">
-            <header className="h-14 flex-shrink-0 bg-[#fbfaf2] border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-20">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={toggleFastAgent}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${isFastAgentOpen
-                    ? 'bg-gray-900 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  title="Toggle Fast Agent Panel"
-                  aria-label="Toggle Fast Agent Panel"
-                >
-                  <Zap className="h-4 w-4" />
-                  <span className="hidden sm:inline">Fast Agent</span>
-                </button>
-                <div className="hidden sm:block h-4 w-px bg-gray-200"></div>
-                <button
-                  onClick={resetToBriefing}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
-                <div className="h-4 w-px bg-gray-200"></div>
-                <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Filter className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex items-center gap-1">
-
-                {
-                  [
-                    { id: "briefing", label: "Briefing" },
-                    { id: "signals", label: "Signals" },
-                    { id: "watchlist", label: "Watchlist" },
-                    { id: "saved", label: "Saved" },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveTopTab(tab.id as any);
-                        setSelectedCategory(null);
-                      }}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTopTab === tab.id
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-gray-500 hover:text-gray-900"
-                        }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))
-                }
-              </div >
-              <span className="text-sm text-gray-500 font-medium">{todayLabel}</span>
-
-
-              {/* Title row */}
-              <div className="flex items-end justify-between" >
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Morning Briefing</h1>
-                  <p className="text-sm text-gray-500 mt-1">Daily intelligence digest and market signals.</p>
-                </div>
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Research</span>
-              </div >
-
-              {/* Toolbar / command bar (aligned with workspace filters) */}
-              <div className="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-xl p-3 shadow-sm" >
-                <div className="flex items-center gap-2 flex-wrap">
-                  {FEED_CATEGORIES.slice(0, 4).map((cat) => (
-                    <button
-                      key={cat.id ?? "all"}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategory(cat.id);
-                        setActiveTopTab("briefing");
-                      }}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${selectedCategory === cat.id
-                        ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                        }`}
-                    >
-                      {cat.icon} {cat.label}
-                    </button>
-                  ))}
-                  <div className="h-4 w-px bg-gray-200" />
-                  <button
-                    type="button"
-                    onClick={() => handleRunPrompt(undefined, { mode: researchMode })}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium shadow-sm hover:bg-black"
-                  >
-                    <Zap className="w-3 h-3" />
-                    Run
-                  </button>
-                  <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
-                    {[
-                      { id: "quick", title: "Quick" as const },
-                      { id: "deep", title: "Deep" as const },
-                    ].map((intent) => {
-                      const modeKey = intent.title === "Quick" ? "quick" : "deep" as const;
-                      return (
-                        <button
-                          key={intent.id}
-                          type="button"
-                          onClick={() => setResearchMode(modeKey)}
-                          className={`px-3 py-1 text-[11px] rounded-full font-medium ${researchMode === modeKey
-                            ? "bg-white shadow-sm text-gray-900"
-                            : "text-gray-500"
-                            }`}
-                        >
-                          {intent.title}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="relative group">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600" />
-                    <input
-                      type="text"
-                      placeholder="Filter briefing..."
-                      value={feedSearchQuery}
-                      onChange={(e) => setFeedSearchQuery(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 rounded-lg text-xs w-48 transition-all outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="h-4 w-px bg-gray-200" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFeedSearchQuery('');
-                      setSelectedCategory(null);
-                    }}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm"
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
-            </header >
-
-            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 custom-scrollbar">
-              <div className="max-w-[1600px] mx-auto space-y-6">
-                <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">Live Source Intelligence</h3>
-                    <p className="text-xs text-gray-500">Toggle sources to focus the feed.</p>
-                  </div>
-                  <span className="text-[11px] text-gray-500">{sourceFilteredFeedItems.length} items</span>
-                </div>
-                <div className="px-4 pb-4">
-                  <SourceFeed
-                    items={filteredFeedItems}
-                    sources={sourceFilters}
-                    activeSource={sourceFilter}
-                    onSelectSource={setSourceFilter}
-                  />
-                </div>
-
-
-                {/* Main Feed Grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
-                  <div className="flex-1">
-                    <FeedTimeline
-                      items={sourceFilteredFeedItems}
-                      onItemClick={(item) => setReaderItem(item)}
-                      onAnalyze={(item) => {
-                        openWithContext({
-                          initialMessage: `Analyze this ${item.type}: "${item.title}"\n\n${item.subtitle || ''}`,
-                          contextWebUrls: (item as any).url ? [(item as any).url] : undefined,
-                          contextTitle: item.title,
-                        });
-                      }}
-                    />
-                    {feedItems.length >= feedLimit && sourceFilteredFeedItems.length > 0 && (
-                      <div className="text-center mt-8">
-                        <button
-                          type="button"
-                          onClick={() => setFeedLimit(prev => prev + 24)}
-                          className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-                        >
-                          Load More ({feedLimit} loaded)
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Analyst Sidebar */}
-                  <aside className="hidden xl:flex flex-col gap-6 w-[380px] shrink-0 sticky top-4">
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Morning Digest</h3>
-                      <MorningDigest
-                        userName={user?.name?.split(' ')[0]}
-                        onItemClick={(item) => {
-                          const prompt = item.linkedEntity
-                            ? `Tell me about recent news for ${item.linkedEntity}`
-                            : item.text;
-                          if (!prompt) return;
-                          runWithFastAgent(prompt);
-                        }}
-                      />
-                    </div>
-
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Watchlist Pulse</h3>
-                      <SmartWatchlist
-                        mentions={watchlistMentions}
-                        onItemClick={(symbol) => {
-                          runWithFastAgent(`Give me a quick analysis of ${symbol}`);
-                        }}
-                        onAnalyze={(symbol) => {
-                          runWithFastAgent(`Deep dive analysis on ${symbol}: recent news, price action, and outlook`);
-                        }}
-                      />
-                    </div>
-
-                    <DayStarterCard
-                      onRunPreset={(prompt, personaKey) => {
-                        setPersona(personaKey);
-                        runWithFastAgent(prompt);
-                      }}
-                      activePersona={persona}
-                      onPersonaChange={setPersona}
-                      isGuest={!isAuthenticated}
-                    />
-                  </aside>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          // ACTIVE DOSSIER STATE
-          <div className="min-h-full bg-[#fbfaf2]">
-            {/* Sticky Input Bar for Active State */}
-            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-200 py-3 px-6 shadow-sm">
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <MagicInputContainer
-                      onRun={(prompt, opts) => handleRunPrompt(prompt, { mode: opts?.mode || researchMode })}
-                      onDeepRun={(prompt) => handleRunPrompt(prompt, { mode: "deep", appendToThread: followUpMode === "append" })}
-                      compact={true}
-                      defaultValue={researchPrompt}
-                      mode={researchMode}
-                    />
-                  </div>
-                  {/* Unified Action Button with Mode Toggle */}
-                  <div className="flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => handleRunPrompt(undefined, { appendToThread: followUpMode === "append" })}
-                      disabled={isRunning}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-l-full border-y border-l text-xs font-semibold transition-colors whitespace-nowrap ${isRunning
-                        ? "bg-black text-white border-black cursor-wait"
-                        : "bg-black text-white border-black hover:bg-gray-800"
-                        }`}
-                      title={followUpMode === "append" ? "Add findings to current dossier" : "Replace with fresh results"}
-                    >
-                      <span className={`h-2 w-2 rounded-full ${isRunning ? "bg-white animate-pulse" : "bg-white"}`} />
-                      {isRunning ? "Running…" : (followUpMode === "append" ? "Add to Dossier" : "Replace Dossier")}
-                    </button>
-                    {/* Mode Dropdown */}
-                    <div className="relative group">
-                      <button
-                        type="button"
-                        className="inline-flex items-center px-2 py-2 rounded-r-full border border-l-0 border-black bg-black text-white hover:bg-gray-800 transition-colors"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </button>
-                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 min-w-[140px]">
-                        <button
-                          type="button"
-                          onClick={() => setFollowUpMode("append")}
-                          className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-t-lg flex items-center gap-2 ${followUpMode === "append" ? "bg-gray-100 font-semibold" : ""}`}
-                        >
-                          <span className={`w-2 h-2 rounded-full ${followUpMode === "append" ? "bg-black" : "bg-gray-300"}`} />
-                          Append
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFollowUpMode("new")}
-                          className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-b-lg flex items-center gap-2 ${followUpMode === "new" ? "bg-gray-100 font-semibold" : ""}`}
-                        >
-                          <span className={`w-2 h-2 rounded-full ${followUpMode === "new" ? "bg-black" : "bg-gray-300"}`} />
-                          Replace
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <ThoughtStreamTicker isActive={isRunning} />
-              </div>
-
-              {/* Cache Indicator */}
-              {isFromCache && (
-                <div className="max-w-4xl mx-auto mt-2 px-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900/5 text-gray-900 text-xs font-medium rounded-full border border-gray-200">
-                    <Zap className="w-3 h-3 text-gray-900" />
-                    Loaded from cache (instant results)
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
-              {/* Follow-up history drawer (compact) */}
-              {followUpHistory.length > 0 && (
-                <div className="flex flex-col gap-2 p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
-                  <div className="flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    <span>Follow-up history</span>
-                    <span className="text-[11px] text-gray-500">Last {followUpHistory.length}</span>
-                  </div>
-                  <div className="space-y-1">
-                    {followUpHistory.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <span className={`h-2 w-2 rounded-full ${item.status === "done" ? "bg-black" : "bg-gray-700 animate-pulse"}`} />
-                          <span className="font-medium">{item.mode === "append" ? "Add to Dossier" : "Replace"}</span>
-                        </div>
-                        <div className="flex-1 mx-2 truncate text-gray-900">{item.prompt}</div>
-                        <span className="text-[11px] text-gray-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Unified Live Dossier View - summary and document (scrollytelling shown above) */}
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
-                {citations.length > 0 && <ExecutiveSummaryBlock />}
-                <CollapsibleReasoningChain steps={toolParts} />
-                <LiveDossierDocument
-                  threadId={threadId}
-                  isLoading={isRunning || (hasReceivedResponse && !responseText)}
-                  onRunFollowUp={(query) => handleRunPrompt(query, { appendToThread: true })}
-                  media={aggregatedMedia}
-                  documents={aggregatedDocumentActions}
-                  onDocumentSelect={onDocumentSelect}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Main Content Area - use shared component */}
+        {mainContentArea}
       </div>
-
-    {/* Feed Reader Modal - Deep Dive view for selected items */}
-    {readerItem && (
-      <FeedReaderModal
-        item={readerItem}
-        onClose={() => setReaderItem(null)}
-      />
-    )}
-
-    {/* Deal Flyout */}
-    <DealFlyout
-      deal={selectedDeal}
-      onClose={() => setSelectedDeal(null)}
-      onPrep={handleDealPrep}
-    />
-  </>
+    </>
   );
 }
 

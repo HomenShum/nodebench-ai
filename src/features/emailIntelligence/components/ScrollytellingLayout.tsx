@@ -1,8 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useAction } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 import DashboardPanel from "./DashboardPanel";
 import SmartLink from "./SmartLink";
 import DeepDiveAccordion from "./DeepDiveAccordion";
 import dossierStream from "../content/dossierStream.json";
+import { Sparkles, Loader2, Shield } from "lucide-react";
 
 // Define a proper type to avoid JSON inference issues
 export interface ScrollySection {
@@ -141,11 +144,73 @@ export const ScrollytellingLayout: React.FC<Props> = ({ data }) => {
     [sourceData]
   );
   const [activeData, setActiveData] = useState(initial);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+
+  // Agent action for analyzing email intelligence content
+  const analyzeWithAgent = useAction(api.domains.agents.arbitrage.agent.research);
+
+  const handleAnalyzeIntelligence = useCallback(async () => {
+    if (isAnalyzing) return;
+    
+    setIsAnalyzing(true);
+    try {
+      // Compile all section content for analysis
+      const contentSummary = sourceData.map(section => 
+        `${section.meta.title}: ${section.content.body.join(' ')}`
+      ).join('\n\n');
+
+      const result = await analyzeWithAgent({
+        prompt: `Analyze this email intelligence dossier using receipts-first research. Verify key claims, identify contradictions between sources, and rank source quality:\n\n${contentSummary.slice(0, 4000)}`,
+        model: 'gpt-4o',
+      });
+      
+      setAnalysisResult(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
+    } catch (error) {
+      console.error('[ScrollytellingLayout] Agent analysis failed:', error);
+      setAnalysisResult('Analysis failed. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [sourceData, isAnalyzing, analyzeWithAgent]);
 
   if (!sourceData.length) return null;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      {/* AI Analysis Header */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-indigo-600" />
+          <span className="text-sm font-medium text-gray-700">Email Intelligence Dossier</span>
+        </div>
+        <button
+          onClick={handleAnalyzeIntelligence}
+          disabled={isAnalyzing}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+        >
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              Verify with AI
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Analysis Result (if any) */}
+      {analysisResult && (
+        <div className="mb-8 p-4 rounded-lg bg-indigo-50 border border-indigo-200">
+          <h4 className="text-sm font-semibold text-indigo-900 mb-2">AI Verification Result</h4>
+          <p className="text-sm text-indigo-800 whitespace-pre-wrap">{analysisResult}</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="lg:col-span-7 xl:col-span-8 pb-96 relative">
           {sourceData.map((section, idx) => (

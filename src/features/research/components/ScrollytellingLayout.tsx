@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import DashboardPanel from "./DashboardPanel";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SmartLink from "./SmartLink";
 import DeepDiveAccordion from "./DeepDiveAccordion";
 import streamData from "@/features/research/content/researchStream.json";
+import StickyDashboard from "./StickyDashboard";
+import type { DashboardState, StorySection } from "@/features/research/types";
 
 // Define a proper type to avoid JSON inference issues
 export interface ScrollySection {
@@ -18,6 +19,8 @@ export interface ScrollySection {
     marketSentiment: number;
     activeRegion: string;
   };
+  dashboard_update?: DashboardState;
+  timelineState?: StorySection;
   smartLinks?: Record<string, { summary: string; source?: string }>;
 }
 
@@ -82,29 +85,37 @@ import HeroSection from "./HeroSection";
 
 const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRendererProps) => {
   const { ref, inView } = useInView({ threshold: 0.5 });
+  const onVisibleRef = useRef(onVisible);
 
   useEffect(() => {
-    if (inView) onVisible();
-  }, [inView, onVisible]);
+    onVisibleRef.current = onVisible;
+  }, [onVisible]);
+
+  useEffect(() => {
+    if (inView) onVisibleRef.current?.();
+  }, [inView]);
 
   return (
-    <div ref={ref} className="relative mb-32 min-h-[60vh] scroll-mt-32 pl-8 xl:pl-4">
+    <div ref={ref} className="relative mb-12 scroll-mt-16 pl-8 xl:pl-4">
       {/* Timeline Connector Line - Simplified for Clean Look */}
       {!isLast && (
-        <div className="absolute left-0 top-10 bottom-[-128px] w-px bg-gray-200 hidden xl:block" />
+        <div className="absolute left-0 top-10 bottom-[-48px] w-px bg-gray-200 hidden xl:block" />
       )}
       {/* Timeline Dot - Static Minimalist */}
       <div className="absolute left-[-4px] top-[14px] hidden xl:block">
         <div className="h-2.5 w-2.5 rounded-full bg-gray-900 ring-4 ring-[#fbfaf2]"></div>
       </div>
 
-      {/* Date Badge */}
-      <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/50 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500 backdrop-blur-sm">
-        {section.meta.date}
-      </span>
+      {/* Date Badge - Inline with dot */}
+      <div className="mb-3 flex items-center gap-2">
+        <span className="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          {section.meta.date}
+        </span>
+      </div>
 
       {/* Section Title - Clean Sans */}
-      <h2 className="mb-6 text-4xl font-medium tracking-tight text-gray-900 leading-[1.1]">
+      <h2 className="mb-4 text-2xl font-semibold tracking-tight text-gray-900 leading-tight">
         {section.meta.title}
       </h2>
 
@@ -132,19 +143,23 @@ interface ScrollytellingLayoutProps {
   data?: ScrollySection[];
   /** If true, shows the "free daily" badge and sign-in prompt */
   isGuestMode?: boolean;
+  /** If true, hides the HeroSection (useful when parent already has a hero) */
+  hideHero?: boolean;
 }
 
-export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data, isGuestMode }) => {
+export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data, isGuestMode, hideHero }) => {
   // Priority: props data > static fallback
   const sourceData = useMemo(() => {
     if (data && data.length) return data;
     return streamData as unknown as ScrollySection[];
   }, [data]);
 
+  const sectionCount = sourceData.length;
+
   const showGuestBadge = isGuestMode ?? !data?.length;
   const isLiveData = false;
 
-  const initial = useMemo(
+  const initialLegacy = useMemo(
     () =>
       sourceData[0]?.dashboard ?? {
         phaseLabel: "",
@@ -154,7 +169,83 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
       },
     [sourceData],
   );
-  const [activeData, setActiveData] = useState(initial);
+  const fallbackDashboardData = useCallback(
+    (section: ScrollySection | undefined, idx: number): DashboardState => {
+      if (!section) {
+        return {
+          meta: { currentDate: "Now", timelineProgress: 0 },
+          charts: { trendLine: { data: [0], label: "Briefing" }, marketShare: [] },
+          techReadiness: { existing: 0, emerging: 0, sciFi: 0 },
+          keyStats: [],
+          capabilities: [],
+        };
+      }
+      if (section.timelineState?.dashboard_state) return section.timelineState.dashboard_state;
+      if (section.dashboard_update) {
+        // Convert legacy mainTrend → trendLine if present
+        const du = section.dashboard_update as any;
+        const hasMain = du?.charts?.mainTrend;
+        return {
+          ...du,
+          charts: {
+            trendLine: hasMain ? du.charts.mainTrend : du.charts.trendLine ?? { data: [0], label: "Briefing" },
+            marketShare: du.charts.marketShare ?? [],
+          },
+        };
+      }
+      const base = section.dashboard ?? {
+        phaseLabel: "Briefing",
+        kpis: [],
+        marketSentiment: 0,
+        activeRegion: "Global",
+      };
+      return {
+        meta: {
+          currentDate: section.meta?.date ?? "Now",
+          timelineProgress: sectionCount > 1 ? idx / Math.max(sectionCount - 1, 1) : 1,
+        },
+        charts: {
+          trendLine: {
+            data: base.kpis?.map((kpi) => kpi.value) ?? [base.marketSentiment ?? 0],
+            label: base.phaseLabel ?? "Briefing",
+          },
+          marketShare:
+            base.kpis?.slice(0, 3).map((kpi, i) => ({
+              label: kpi.label,
+              value: Math.max(0, Math.min(100, kpi.value)),
+              color: i === 0 ? "black" : i === 1 ? "accent" : "gray",
+            })) ?? [],
+        },
+        techReadiness: {
+          existing: Math.min(8, Math.round((base.marketSentiment ?? 0) / 15)),
+          emerging: Math.min(8, Math.round((base.kpis?.[0]?.value ?? 0) / 20)),
+          sciFi: Math.min(8, Math.round((base.kpis?.[1]?.value ?? 0) / 20)),
+        },
+        keyStats:
+          base.kpis?.slice(0, 3).map((kpi) => ({
+            label: kpi.label,
+            value: `${kpi.value}${kpi.unit ?? ""}`,
+          })) ?? [],
+        capabilities:
+          base.kpis?.slice(0, 3).map((kpi, i) => ({
+            label: kpi.label,
+            score: Math.max(0, Math.min(100, kpi.value)),
+            icon: i === 0 ? "shield-alert" : i === 1 ? "code" : "vote",
+          })) ?? [],
+      };
+    },
+    [sectionCount],
+  );
+
+  const initialDashboardData = useMemo(() => fallbackDashboardData(sourceData[0], 0), [fallbackDashboardData, sourceData]);
+
+  const [activeLegacy, setActiveLegacy] = useState(initialLegacy);
+  const [activeDashboard, setActiveDashboard] = useState<DashboardState>(initialDashboardData);
+
+  useEffect(() => {
+    setActiveLegacy(initialLegacy);
+    setActiveDashboard(initialDashboardData);
+  }, [initialDashboardData, initialLegacy]);
 
   // Generate today's date for the header
   const todayFormatted = useMemo(() => {
@@ -166,12 +257,10 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
     });
   }, []);
 
-  const sectionCount = sourceData.length;
-
   return (
-    <div className="w-full pb-32">
+    <div className="w-full pb-12">
       {/* Daily Briefing Header */}
-      {showGuestBadge && (
+      {showGuestBadge && !hideHero && (
         <HeroSection
           todayFormatted={todayFormatted}
           sectionCount={sectionCount}
@@ -185,12 +274,12 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-900">{activeData.phaseLabel || "Briefing"}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-900">{activeLegacy.phaseLabel || "Briefing"}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] text-gray-500 uppercase font-medium">Sentiment</div>
-              <div className="text-sm font-bold text-gray-900">{activeData.marketSentiment}/100</div>
+              <div className="text-sm font-bold text-gray-900">{activeLegacy.marketSentiment}/100</div>
             </div>
           </div>
         </div>
@@ -198,13 +287,13 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
         <div className="mt-3 h-1 w-full rounded-full bg-gray-100 overflow-hidden">
           <div
             className="h-full bg-gray-900 transition-all duration-1000 ease-out"
-            style={{ width: `${activeData.marketSentiment}%` }}
+            style={{ width: `${activeLegacy.marketSentiment}%` }}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
-        <div className="lg:col-span-7 xl:col-span-8 pb-24 relative">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
+        <div className="lg:col-span-7 xl:col-span-8 pb-8 relative">
           {sourceData.length === 0 && (
             <div className="p-8 text-center text-gray-500 bg-white/50 rounded-xl border border-gray-100">
               <p>No briefing data available for this view.</p>
@@ -214,14 +303,17 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
             <SectionRenderer
               key={section.id}
               section={section as ScrollySection}
-              onVisible={() => setActiveData(section.dashboard)}
+              onVisible={() => {
+                setActiveLegacy(section.dashboard ?? initialLegacy);
+                setActiveDashboard(fallbackDashboardData(section, idx));
+              }}
               isLast={idx === sourceData.length - 1}
             />
           ))}
         </div>
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
           <div className="sticky top-24 min-h-[400px]">
-            <DashboardPanel data={activeData} />
+            <StickyDashboard data={activeDashboard} />
           </div>
         </div>
       </div>

@@ -22,6 +22,14 @@ import { RichMediaSection } from './RichMediaSection';
 import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaExtractor';
 import { GoalCard, type TaskStatusItem } from './FastAgentPanel.GoalCard';
 import { DocumentActionGrid, extractDocumentActions, removeDocumentActionMarkers } from './DocumentActionCard';
+import { 
+  ArbitrageCitation, 
+  StatusBadge, 
+  parseArbitrageCitation, 
+  parseLegacyCitation,
+  type ArbitrageStatus 
+} from './FastAgentPanel.VisualCitation';
+import { ArbitrageReportCard } from './ArbitrageReportCard';
 
 interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
@@ -743,10 +751,39 @@ export function FastAgentUIMessageBubble({
     return [...documents, ...textDocs];
   }, [isUser, message.parts, visibleText]);
 
+  // Extract arbitrage verification data from tool results
+  const arbitrageData = useMemo(() => {
+    if (isUser) return null;
+    
+    const toolResultParts = message.parts.filter((p): p is any => p.type === 'tool-result');
+    
+    for (const part of toolResultParts) {
+      const resultText = String(part.result || '');
+      // Look for arbitrage tool outputs
+      if (part.toolName?.includes('arbitrage') || 
+          part.toolName?.includes('contradiction') || 
+          part.toolName?.includes('sourceQuality') ||
+          part.toolName?.includes('delta')) {
+        try {
+          const parsed = JSON.parse(resultText);
+          if (parsed.contradictions || parsed.rankedSources || parsed.deltas || parsed.healthResults) {
+            return parsed;
+          }
+        } catch {
+          // Not JSON, continue
+        }
+      }
+    }
+    return null;
+  }, [isUser, message.parts]);
+
   // Clean text by removing media markers and document action markers (for display purposes)
   const cleanedText = useMemo(() => {
     let cleaned = removeMediaMarkersFromText(visibleText || '');
     cleaned = removeDocumentActionMarkers(cleaned);
+    // Also remove arbitrage citation markers for clean display (they're rendered separately)
+    cleaned = cleaned.replace(/\{\{arbitrage:[^}]+\}\}/g, '');
+    cleaned = cleaned.replace(/\{\{fact:[^}]+\}\}/g, '');
     return cleaned;
   }, [visibleText]);
 
@@ -865,6 +902,11 @@ export function FastAgentUIMessageBubble({
               );
             })}
           </div>
+        )}
+
+        {/* Arbitrage Verification Report (if arbitrage tools were used) */}
+        {!isUser && arbitrageData && (
+          <ArbitrageReportCard data={arbitrageData} />
         )}
 
         {/* NEW PRESENTATION LAYER: Polished media display FIRST */}

@@ -16,9 +16,9 @@ type Props = {
 };
 
 export default function TaskEditorPanel({ taskId, onClose, embedded = false }: Props) {
-  const task = useQuery(api.domains.tasks.tasks.getTask, { taskId });
-  const updateTask = useMutation(api.domains.tasks.tasks.updateTask);
-  const deleteTask = useMutation(api.domains.tasks.tasks.deleteTask);
+  const task = useQuery(api.domains.tasks.userEvents.getTask, { taskId });
+  const updateTask = useMutation(api.domains.tasks.userEvents.updateTask);
+  const deleteTask = useMutation(api.domains.tasks.userEvents.deleteTask);
   const me = useQuery(api.domains.auth.auth.loggedInUser);
   const [assigneeQuery, setAssigneeQuery] = useState("");
   const userSuggestions = useQuery(api.domains.auth.users.list as any, assigneeQuery ? { query: assigneeQuery, limit: 10 } : { limit: 10 } as any) as any[] | undefined;
@@ -155,7 +155,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
   const taskIds = React.useMemo(() => refs.filter((r) => r.kind === "task").map((r) => r.id), [refs]);
   const eventIds = React.useMemo(() => refs.filter((r) => r.kind === "event").map((r) => r.id), [refs]);
   const docTitles = useQuery(api.domains.documents.documents.getTitles as any, docIds.length ? { ids: docIds as any } : "skip") as any[] | undefined;
-  const taskTitles = useQuery(api.domains.tasks.tasks.getTitles as any, taskIds.length ? { ids: taskIds as any } : "skip") as any[] | undefined;
+  const taskTitles = useQuery(api.domains.tasks.userEvents.getTitles as any, taskIds.length ? { ids: taskIds as any } : "skip") as any[] | undefined;
   const eventTitles = useQuery(api.domains.calendar.events.getTitles as any, eventIds.length ? { ids: eventIds as any } : "skip") as any[] | undefined;
   const docTitleById = React.useMemo(() => {
     const m: Record<string, string> = {};

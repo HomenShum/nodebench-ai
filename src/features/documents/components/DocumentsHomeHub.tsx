@@ -400,28 +400,28 @@ export function DocumentsHomeHub({
 
   const todoTasks =
     useQuery(
-      api.domains.tasks.tasks.listTasksByStatus,
+      api.domains.tasks.userEvents.listTasksByStatus,
 
       loggedInUser ? { status: "todo" } : "skip",
     ) ?? [];
 
   const inProgressTasks =
     useQuery(
-      api.domains.tasks.tasks.listTasksByStatus,
+      api.domains.tasks.userEvents.listTasksByStatus,
 
       loggedInUser ? { status: "in_progress" } : "skip",
     ) ?? [];
 
   const doneTasks =
     useQuery(
-      api.domains.tasks.tasks.listTasksByStatus,
+      api.domains.tasks.userEvents.listTasksByStatus,
 
       loggedInUser ? { status: "done" } : "skip",
     ) ?? [];
 
   const blockedTasks =
     useQuery(
-      api.domains.tasks.tasks.listTasksByStatus,
+      api.domains.tasks.userEvents.listTasksByStatus,
 
       loggedInUser ? { status: "blocked" } : "skip",
     ) ?? [];
@@ -2134,7 +2134,7 @@ export function DocumentsHomeHub({
 
   const recentTasks =
     useQuery(
-      api.domains.tasks.tasks.listTasksByUpdatedDesc,
+      api.domains.tasks.userEvents.listTasksByUpdatedDesc,
 
       loggedInUser ? { limit: 6 } : "skip",
     ) ?? [];
@@ -2215,6 +2215,27 @@ export function DocumentsHomeHub({
         window.dispatchEvent(
           new CustomEvent("ai:chatWithDocument", {
             detail: { documentId: doc._id, documentTitle: doc.title },
+          }),
+        );
+      } catch {
+        // no-op
+      }
+    },
+    [],
+  );
+
+  // Handler for "Analyze with AI" - opens Fast Agent Panel with arbitrage mode for deep analysis
+  const handleAnalyzeWithAI = useCallback(
+    (doc: { _id: Id<"documents">; title: string }) => {
+      try {
+        window.dispatchEvent(
+          new CustomEvent("ai:analyzeDocument", {
+            detail: { 
+              documentId: doc._id, 
+              documentTitle: doc.title,
+              arbitrageMode: true, // Enable receipts-first research mode
+              prompt: `Analyze the document "${doc.title}" using receipts-first research. Verify key claims, check source quality, and identify any contradictions or changes.`
+            },
           }),
         );
       } catch {
@@ -2867,15 +2888,15 @@ export function DocumentsHomeHub({
 
   // Dashboard (merged) mutations
 
-  const createTask = useMutation(api.domains.tasks.tasks.createTask);
+  const createTask = useMutation(api.domains.tasks.userEvents.createTask);
 
-  const updateTask = useMutation(api.domains.tasks.tasks.updateTask);
+  const updateTask = useMutation(api.domains.tasks.userEvents.updateTask);
 
-  const moveTaskMutation = useMutation(api.domains.tasks.tasks.moveTask);
+  const moveTaskMutation = useMutation(api.domains.tasks.userEvents.moveTask);
 
-  const deleteTaskMutation = useMutation(api.domains.tasks.tasks.deleteTask);
+  const deleteTaskMutation = useMutation(api.domains.tasks.userEvents.deleteTask);
 
-  const rebalanceOrders = useMutation(api.domains.tasks.tasks.rebalanceOrders);
+  const rebalanceOrders = useMutation(api.domains.tasks.userEvents.rebalanceOrders);
 
   const createEventMutation = useMutation(api.domains.calendar.events.createEvent);
 
@@ -2883,7 +2904,7 @@ export function DocumentsHomeHub({
 
   const deleteEventMutation = useMutation(api.domains.calendar.events.deleteEvent);
 
-  const toggleTaskFavoriteAgg = useMutation(api.domains.tasks.tasks.toggleFavorite);
+  const toggleTaskFavoriteAgg = useMutation(api.domains.tasks.userEvents.toggleFavorite);
 
   // Toolbar: open inline event dialog (Calendar/Kanban)
 
@@ -4039,7 +4060,7 @@ export function DocumentsHomeHub({
     }, [tzOffsetMinutes]);
 
     const tasksThisMonthRaw = useQuery(
-      api.domains.tasks.tasks.listTasksDueInRange,
+      api.domains.tasks.userEvents.listTasksDueInRange,
 
       loggedInUser && listRange === "month" ? monthBounds : "skip",
     );
@@ -4059,7 +4080,7 @@ export function DocumentsHomeHub({
     }, [customStart, customEnd]);
 
     const tasksCustomRaw = useQuery(
-      api.domains.tasks.tasks.listTasksDueInRange,
+      api.domains.tasks.userEvents.listTasksDueInRange,
 
       loggedInUser && listRange === "custom" && customBounds
         ? customBounds
@@ -6875,7 +6896,7 @@ export function DocumentsHomeHub({
         }
       `}</style>
 
-      <div className="h-full w-full bg-[#fbfaf2] overflow-y-auto relative premium-scrollbar">
+      <div className="h-full w-full bg-white overflow-y-auto relative premium-scrollbar">
         {/* Premium SaaS layout */}
 
         <div className="flex-1 px-6 sm:px-8 lg:px-12 py-8 relative z-10">
@@ -7085,6 +7106,7 @@ export function DocumentsHomeHub({
                               onToggleFavorite={handleToggleFavorite}
                               onOpenMiniEditor={openMiniEditor}
                               onChatWithFile={handleChatWithFile}
+                              onAnalyzeFile={handleAnalyzeWithAI}
                               onOpenMedia={handleOpenMedia}
                               hybrid={true}
                               isDragging={isDragging}

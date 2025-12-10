@@ -18,7 +18,7 @@ export default function DualEditMiniPanel({
   defaultAllDay?: boolean;
   documentIdForAssociation?: Id<"documents"> | null;
 }) {
-  const createTask = useMutation(api.domains.tasks.tasks.createTask);
+  const createTask = useMutation(api.domains.tasks.userEvents.createTask);
   const createEvent = useMutation(api.domains.calendar.events.createEvent);
 
   const [mode, setMode] = React.useState<"confirm" | "edit">("confirm");

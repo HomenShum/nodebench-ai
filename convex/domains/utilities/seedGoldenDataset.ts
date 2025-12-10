@@ -72,15 +72,15 @@ async function clearTestData(ctx: any) {
   }
   console.log(`   ✓ Deleted ${files.length} test files`);
 
-  // Delete tasks created by test user
-  const tasks = await ctx.db
-    .query("tasks")
+  // Delete user events created by test user
+  const userEvents = await ctx.db
+    .query("userEvents")
     .filter((q: any) => q.eq(q.field("userId"), testUserId))
     .collect();
-  for (const task of tasks) {
-    await ctx.db.delete(task._id);
+  for (const ue of userEvents) {
+    await ctx.db.delete(ue._id);
   }
-  console.log(`   ✓ Deleted ${tasks.length} test tasks`);
+  console.log(`   ✓ Deleted ${userEvents.length} test user events`);
 
   // Delete events created by test user
   const events = await ctx.db
@@ -329,7 +329,7 @@ async function seedTasks(ctx: any) {
   ];
 
   for (const task of tasks) {
-    await ctx.db.insert("tasks", task);
+    await ctx.db.insert("userEvents", task);
     const dueLabel = task.dueDate === todayTimestamp ? "today" :
       task.dueDate === tomorrowTimestamp ? "tomorrow" : "next week";
     console.log(`   ✓ Created: "${task.title}" (${task.priority}, due ${dueLabel})`);

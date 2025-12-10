@@ -22,8 +22,8 @@ import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
 
 import { PresetChip } from "@shared/ui/PresetChip";
 
-
 import { createCalendarDocument } from "@/lib/calendarHelpers";
+import { useCalendarAgenda, getWeekRangeUtc, type CalendarEvent } from "../hooks/useCalendarAgenda";
 import MiniAgendaEditorPanel from "@features/calendar/components/agenda/MiniAgendaEditorPanel";
 import EventEditorPanel from "@/features/calendar/components/EventEditorPanel";
 
@@ -132,23 +132,41 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   // Ensure we use the same timestamp for both frontend week calculation and backend query
   const effectiveFocusedDateMs = useMemo(() => focusedDateMs ?? Date.now(), [focusedDateMs]);
-  const eventsThisWeekRaw = useQuery(
-    api.domains.calendar.events.listEventsForWeek,
-    loggedInUser ? { tzOffsetMinutes, dateMs: effectiveFocusedDateMs } : "skip",
-  );
+  
+  // Use unified calendar agenda hook for consistent data across all calendar views
+  const weekRange = useMemo(() => getWeekRangeUtc(effectiveFocusedDateMs, tzOffsetMinutes), [effectiveFocusedDateMs, tzOffsetMinutes]);
+  const { events: agendaEvents, isLoading: _isLoadingAgenda } = useCalendarAgenda({
+    startMs: weekRange.startMs,
+    endMs: weekRange.endMs,
+    skip: !loggedInUser,
+  });
+  
   const eventsThisWeek: WeekEvent[] = useMemo(() => {
-    // Defensive: remove duplicates by _id before rendering
+    // Map CalendarEvent to WeekEvent format and deduplicate
     const map = new Map<string, WeekEvent>();
-    for (const ev of ((eventsThisWeekRaw as WeekEvent[] | undefined) ?? [])) {
+    for (const ev of agendaEvents) {
       const key = String(ev._id);
-      if (!map.has(key)) map.set(key, ev);
+      if (!map.has(key)) {
+        map.set(key, {
+          _id: ev._id as Id<"events">,
+          title: ev.title,
+          startTime: ev.startTime,
+          endTime: ev.endTime,
+          allDay: ev.allDay,
+          description: ev.description,
+          location: ev.location,
+          status: ev.status,
+          color: ev.color,
+          documentId: ev.documentId,
+        });
+      }
     }
     return Array.from(map.values());
-  }, [eventsThisWeekRaw]);
+  }, [agendaEvents]);
   const createEvent = useMutation(api.domains.calendar.events.createEvent);
   const updateEvent = useMutation(api.domains.calendar.events.updateEvent);
   const deleteEvent = useMutation(api.domains.calendar.events.deleteEvent);
-  const createTask = useMutation(api.domains.tasks.tasks.createTask);
+  const createTask = useMutation(api.domains.tasks.userEvents.createTask);
 
   const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);

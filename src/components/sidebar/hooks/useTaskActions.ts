@@ -13,8 +13,8 @@ export function useTaskActions() {
     const user = useQuery(api.domains.auth.auth.loggedInUser);
 
     // Mutations
-    const createTaskMutation = useMutation(api.domains.tasks.tasks.createTask);
-    const updateTaskMutation = useMutation(api.domains.tasks.tasks.updateTask);
+    const createTaskMutation = useMutation(api.domains.tasks.userEvents.createTask);
+    const updateTaskMutation = useMutation(api.domains.tasks.userEvents.updateTask);
 
     // Create Task Handler
     const handleCreateTask = useCallback(async (onSuccess?: (taskId: Id<"tasks">) => void) => {

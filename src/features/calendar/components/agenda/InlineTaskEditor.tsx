@@ -8,9 +8,9 @@ import { toast } from "sonner";
 type RefItem = { kind: "document" | "task" | "event"; id: string };
 
 export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"tasks">; onClose: () => void }) {
-  const task = useQuery(api.domains.tasks.tasks.getTask, { taskId });
-  const updateTask = useMutation(api.domains.tasks.tasks.updateTask);
-  const deleteTask = useMutation(api.domains.tasks.tasks.deleteTask);
+  const task = useQuery(api.domains.tasks.userEvents.getTask, { taskId });
+  const updateTask = useMutation(api.domains.tasks.userEvents.updateTask);
+  const deleteTask = useMutation(api.domains.tasks.userEvents.deleteTask);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

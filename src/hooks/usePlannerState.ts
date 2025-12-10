@@ -107,7 +107,7 @@ export function usePlannerState() {
   } as const;
 
   // Convex mutations (can be no-ops if not used by the consumer)
-  const createTask = useMutation(api.domains.tasks.tasks.createTask);
+  const createTask = useMutation(api.domains.tasks.userEvents.createTask);
 
   const startOfLocalDay = useCallback((ms: number) => {
     const d = new Date(ms);

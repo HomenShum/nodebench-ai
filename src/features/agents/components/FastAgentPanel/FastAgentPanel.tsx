@@ -21,8 +21,9 @@ import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
+import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
+import { EditsTab } from './FastAgentPanel.EditsTab';
 import { LiveAgentLanes } from '@/features/agents/views/LiveAgentLanes';
-import { LiveEventsPanel } from './LiveEventsPanel';
 import type { LiveEvent } from './LiveEventCard';
 import { RichMediaSection } from './RichMediaSection';
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from './DocumentActionCard';
@@ -94,7 +95,8 @@ export function FastAgentPanel({
 
   // Settings
   const [fastMode, setFastMode] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gemini'>('gpt-5');
+  const [selectedModel, setSelectedModel] = useState<'gpt-5.1' | 'gpt-5-mini' | 'gpt-5-nano' | 'gemini' | 'claude-sonnet-4-5-20250929'>('gpt-5-mini');
+  const [arbitrageEnabled, setArbitrageEnabled] = useState(false);
 
   // Thread list collapse state
   const [showSidebar, setShowSidebar] = useState(false);
@@ -593,6 +595,7 @@ export function FastAgentPanel({
           prompt: messageContent,
           model: selectedModel,
           useCoordinator: true,  // Enable smart routing via coordinator
+          arbitrageEnabled,
         });
 
         console.log('[FastAgentPanel] Streaming initiated');
@@ -1043,6 +1046,7 @@ export function FastAgentPanel({
                   title="Toggle Live Events Panel"
                 >
                   <Activity className={`w-3.5 h-3.5 ${isStreaming ? 'animate-pulse text-blue-500' : ''}`} />
+                  Live
                   {liveEvents.filter(e => e.status === 'running').length > 0 && (
                     <span className="px-1 py-0.5 text-[10px] bg-blue-500 text-white rounded-full">
                       {liveEvents.filter(e => e.status === 'running').length}
@@ -1050,16 +1054,40 @@ export function FastAgentPanel({
                   )}
                 </button>
 
-                {/* Skills button */}
-                <button
-                  type="button"
-                  onClick={() => setShowSkillsPanel(true)}
-                  className="skills-button"
-                  title="Browse Skills"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Skills
-                </button>
+                {/* Skills button with popover */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowSkillsPanel(!showSkillsPanel)}
+                    className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                      showSkillsPanel
+                        ? 'bg-blue-50 border-blue-200 text-blue-700'
+                        : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
+                    }`}
+                    title="Browse Skills"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Skills
+                  </button>
+
+                  {/* Skills Popover */}
+                  {showSkillsPanel && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowSkillsPanel(false)}
+                      />
+                      <SkillsPanel
+                        onClose={() => setShowSkillsPanel(false)}
+                        onSelectSkill={(skillName, description) => {
+                          const skillPrompt = `Use the "${skillName}" skill: ${description}`;
+                          setInput((prev) => prev ? `${prev}\n\n${skillPrompt}` : skillPrompt);
+                          toast.success(`Skill "${skillName}" added to your message`);
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
 
                 <button
                   type="button"
@@ -1137,54 +1165,111 @@ export function FastAgentPanel({
                 hasThread={Boolean(activeThreadId)}
                 onDocumentSelect={handleDocumentSelect}
               />
+            ) : activeTab === 'tasks' ? (
+              <AgentTasksTab agentThreadId={streamingThread?.agentThreadId || null} />
+            ) : activeTab === 'edits' ? (
+              <EditsTab activeThreadId={streamingThread?.agentThreadId || null} />
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
-                {/* Parallel Agent Lanes (Live Activity) */}
-                {chatMode === 'agent-streaming' && streamingThread?.agentThreadId && (
-                  <div className="mb-4">
-                    <LiveAgentLanes
-                      runId={streamingThread.agentThreadId}
-                      className="mb-4"
-                    />
-                  </div>
-                )}
-
-                {/* Welcome / Empty State */}
-                {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[var(--text-secondary)]">
-                    <div className="w-12 h-12 bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center mb-4">
-                      <Bot className="w-6 h-6 text-[var(--text-muted)]" />
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* Live Events Section - Inline collapsible */}
+                {showEventsPanel && liveEvents.length > 0 && (
+                  <div className="flex-shrink-0 border-b border-[var(--border-color)] max-h-48 overflow-y-auto">
+                    <div className="px-3 py-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Activity className={`w-3.5 h-3.5 ${isStreaming ? 'text-blue-500 animate-pulse' : 'text-[var(--text-muted)]'}`} />
+                          <span className="text-xs font-medium text-[var(--text-primary)]">
+                            Live Activity
+                          </span>
+                          {liveEvents.filter(e => e.status === 'running').length > 0 && (
+                            <span className="px-1.5 py-0.5 text-[9px] bg-blue-500 text-white rounded-full">
+                              {liveEvents.filter(e => e.status === 'running').length}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setShowEventsPanel(false)}
+                          className="p-1 rounded text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="space-y-1">
+                        {liveEvents.slice(-5).map((event) => (
+                          <div key={event.id} className="flex items-center gap-2 py-1 text-xs">
+                            {event.status === 'running' ? (
+                              <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                            ) : event.status === 'success' ? (
+                              <div className="w-3 h-3 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              </div>
+                            ) : (
+                              <div className="w-3 h-3 rounded-full bg-amber-100 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              </div>
+                            )}
+                            <span className="text-[var(--text-secondary)] truncate flex-1">
+                              {event.title || event.toolName || event.type.replace(/_/g, ' ')}
+                            </span>
+                            {event.duration && (
+                              <span className="text-[10px] text-[var(--text-muted)]">{event.duration}ms</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">Nodebench AI</h3>
-                    <p className="text-xs text-[var(--text-muted)] max-w-[200px]">
-                      Ready to help with your coding tasks.
-                    </p>
                   </div>
                 )}
 
-                {messagesToRender?.map((message: any) => (
-                  <FastAgentUIMessageBubble
-                    key={message._id || message.id}
-                    message={message}
-                    onRegenerateMessage={() => handleRegenerateMessage(message.key)}
-                    onDeleteMessage={() => handleDeleteMessage(message._id)}
-                    onCompanySelect={handleCompanySelect}
-                    onPersonSelect={handlePersonSelect}
-                    onEventSelect={handleEventSelect}
-                    onNewsSelect={handleNewsSelect}
-                    onDocumentSelect={handleDocumentSelect}
-                  />
-                ))}
+                {/* Main scrollable chat area */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+                  {/* Parallel Agent Lanes (Live Activity) */}
+                  {chatMode === 'agent-streaming' && streamingThread?.agentThreadId && (
+                    <div className="mb-4">
+                      <LiveAgentLanes
+                        runId={streamingThread.agentThreadId}
+                        className="mb-4"
+                      />
+                    </div>
+                  )}
 
-                {/* Streaming Indicator */}
-                {isStreaming && (
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] px-4 animate-pulse">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>Thinking...</span>
-                  </div>
-                )}
+                  {/* Welcome / Empty State */}
+                  {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[var(--text-secondary)]">
+                      <div className="w-12 h-12 bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center mb-4">
+                        <Bot className="w-6 h-6 text-[var(--text-muted)]" />
+                      </div>
+                      <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">Nodebench AI</h3>
+                      <p className="text-xs text-[var(--text-muted)] max-w-[200px]">
+                        Ready to help with your coding tasks.
+                      </p>
+                    </div>
+                  )}
 
-                <div ref={messagesEndRef} />
+                  {messagesToRender?.map((message: any) => (
+                    <FastAgentUIMessageBubble
+                      key={message._id || message.id}
+                      message={message}
+                      onRegenerateMessage={() => handleRegenerateMessage(message.key)}
+                      onDeleteMessage={() => handleDeleteMessage(message._id)}
+                      onCompanySelect={handleCompanySelect}
+                      onPersonSelect={handlePersonSelect}
+                      onEventSelect={handleEventSelect}
+                      onNewsSelect={handleNewsSelect}
+                      onDocumentSelect={handleDocumentSelect}
+                    />
+                  ))}
+
+                  {/* Streaming Indicator */}
+                  {isStreaming && (
+                    <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] px-4 animate-pulse">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Thinking...</span>
+                    </div>
+                  )}
+
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
             )}
 
@@ -1212,76 +1297,7 @@ export function FastAgentPanel({
             </div>
           </div>
 
-          {/* Live Events Panel */}
-          {showEventsPanel && (
-            <LiveEventsPanel
-              events={liveEvents}
-              onClose={() => setShowEventsPanel(false)}
-              isStreaming={isStreaming}
-              className="w-72 flex-shrink-0"
-            />
-          )}
         </div>
-
-        <style>{`
-        .fast-agent-panel {
-          position: fixed;
-          right: 1rem;
-          bottom: 1rem;
-          top: 1rem;
-          width: 480px;
-          max-width: calc(100vw - 2rem);
-          background: #ffffff;
-          border-radius: 1rem;
-          display: flex;
-          flex-direction: column;
-          z-index: 1000;
-          box-shadow: 
-            0 0 0 1px rgba(0,0,0,0.08),
-            0 0 50px rgba(0,0,0,0.12),
-            0 25px 50px -12px rgba(0,0,0,0.15);
-          overflow: hidden;
-        }
-
-        .fast-agent-panel.sidebar-mode {
-          position: relative;
-          right: auto;
-          bottom: auto;
-          top: auto;
-          width: 100%;
-          height: 100%;
-          border-radius: 0;
-          background: #ffffff;
-          box-shadow: -1px 0 0 0 #e5e7eb, 0 0 40px rgba(0,0,0,0.08);
-          border-left: 1px solid #e5e7eb;
-        }
-
-        .fast-agent-panel-header {
-          padding: 1rem;
-          background: #ffffff;
-          border-bottom: 1px solid #e5e7eb;
-          flex-shrink: 0;
-        }
-
-        .fast-agent-panel-content {
-          flex: 1;
-          display: flex;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .panel-sidebar {
-          width: 0;
-          overflow: hidden;
-          transition: width 0.3s ease;
-          border-right: 1px solid var(--border-color);
-          background: var(--bg-secondary);
-        }
-
-        .panel-sidebar.visible {
-          width: 260px;
-        }
-        `}</style>
 
         {/* Export Menu */}
         {exportingThreadId && (() => {
@@ -1320,22 +1336,12 @@ export function FastAgentPanel({
             onFastModeChange={setFastMode}
             model={selectedModel}
             onModelChange={setSelectedModel}
+            arbitrageMode={arbitrageEnabled}
+            onArbitrageModeChange={setArbitrageEnabled}
             onClose={() => setShowSettings(false)}
           />
         )}
 
-        {/* Skills Panel */}
-        {showSkillsPanel && (
-          <SkillsPanel
-            onClose={() => setShowSkillsPanel(false)}
-            onSelectSkill={(skillName, description) => {
-              // Insert skill reference into input
-              const skillPrompt = `Use the "${skillName}" skill: ${description}`;
-              setInput((prev) => prev ? `${prev}\n\n${skillPrompt}` : skillPrompt);
-              toast.success(`Skill "${skillName}" added to your message`);
-            }}
-          />
-        )}
       </div>
     </>
   );
