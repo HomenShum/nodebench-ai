@@ -22,6 +22,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useBriefDateSelection } from "@/lib/useBriefDateSelection";
+import { formatBriefDate } from "@/lib/briefDate";
+import { buttonDanger, buttonIcon, buttonSecondary } from "@/lib/buttonClasses";
 
 type BriefStatus = "pending" | "failing" | "passing";
 
@@ -107,10 +109,10 @@ function TaskCard({
               onClick={onRetry}
               disabled={retryDisabled}
               className={cn(
-                "mt-2 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded border transition-colors",
+                "mt-2 gap-1 px-2 py-1 text-[10px] font-medium",
                 retryDisabled
                   ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                  : "bg-white hover:bg-red-50 text-red-700 border-red-200",
+                  : buttonDanger,
               )}
             >
               <RefreshCcw className="w-3 h-3" />
@@ -269,12 +271,21 @@ export function BriefTab() {
   const resultsMap = new Map<string, any>();
   (results ?? []).forEach((r: any) => resultsMap.set(r.taskId, r));
 
+  const allFeatures = [...personalFeatures, ...globalFeatures];
   const passingGlobal = globalFeatures.filter((f) => f.status === "passing")
     .length;
   const passingPersonal = personalFeatures.filter((f) => f.status === "passing")
     .length;
+  const failingCount = allFeatures.filter((f) => f.status === "failing").length;
+  const passingCount = passingGlobal + passingPersonal;
+  const pendingCount = allFeatures.filter((f) => f.status === "pending").length;
+  const totalCount = allFeatures.length || 1;
+  const passingPct = (passingCount / totalCount) * 100;
+  const failingPct = (failingCount / totalCount) * 100;
+  const pendingPct = (pendingCount / totalCount) * 100;
 
   const displayDate = selectedDate || memory.dateString;
+  const displayDateLabel = formatBriefDate(displayDate);
   const isViewingHistorical = selectedDate !== null;
 
   return (
@@ -286,7 +297,7 @@ export function BriefTab() {
             <div className="flex items-center gap-2">
               <Calendar className="w-3 h-3 text-amber-600" />
               <span className="text-xs text-amber-800 font-medium">
-                Viewing historical brief: {displayDate}
+                Viewing historical brief: {displayDateLabel}
               </span>
             </div>
             <button
@@ -312,10 +323,29 @@ export function BriefTab() {
             </span>
           </div>
           <span className="text-xs text-gray-500">
-            {passingGlobal + passingPersonal}/
-            {globalFeatures.length + personalFeatures.length} passing
+            {passingCount} passing / {failingCount} failed / {pendingCount} pending
           </span>
         </div>
+
+        {/* Progress bar */}
+        {allFeatures.length > 0 && (
+          <div className="mb-3">
+            <div className="h-1.5 w-full bg-gray-100 rounded overflow-hidden flex">
+              <div
+                className="h-full bg-emerald-500"
+                style={{ width: `${passingPct}%` }}
+              />
+              <div
+                className="h-full bg-red-500"
+                style={{ width: `${failingPct}%` }}
+              />
+              <div
+                className="h-full bg-gray-300"
+                style={{ width: `${pendingPct}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Date navigation row */}
         <div className="flex items-center justify-between mb-2 px-0.5">
@@ -325,7 +355,7 @@ export function BriefTab() {
                 type="button"
                 onClick={handlePreviousDay}
                 disabled={!canGoPrevious}
-                className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className={buttonIcon}
                 title="Previous day"
               >
                 <ChevronLeft className="w-3 h-3 text-slate-600" />
@@ -334,7 +364,7 @@ export function BriefTab() {
                 type="button"
                 onClick={handleNextDay}
                 disabled={!canGoNext}
-                className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className={buttonIcon}
                 title="Next day"
               >
                 <ChevronRight className="w-3 h-3 text-slate-600" />
@@ -343,7 +373,7 @@ export function BriefTab() {
             <div className="text-[10px] text-slate-500 font-mono">
               {isViewingHistorical ? (
                 <span className="text-amber-600 font-medium">
-                  {displayDate}
+                  {displayDateLabel}
                 </span>
               ) : (
                 <span>Latest</span>
@@ -357,10 +387,10 @@ export function BriefTab() {
           onClick={handleRunNext}
           disabled={isRunning || isViewingHistorical}
           className={cn(
-            "mt-1 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md border transition-colors",
-            isRunning || isViewingHistorical
-              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-              : "bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-primary)]",
+            buttonSecondary,
+            "mt-1 w-full gap-2 px-3 py-2 text-xs font-medium",
+            (isRunning || isViewingHistorical) &&
+              "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:bg-gray-100",
           )}
         >
           {isRunning ? (

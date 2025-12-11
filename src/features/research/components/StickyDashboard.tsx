@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock } from "lucide-react";
 import InteractiveLineChart from "./InteractiveLineChart";
 import type { DashboardState } from "@/features/research/types";
+import { formatBriefMonthYear } from "@/lib/briefDate";
 
 // Icon Mapping for capabilities
 const IconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -43,7 +44,8 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
     ? safeCharts.marketShare.reduce((prev, current) => (prev.value > current.value ? prev : current))
     : { label: "N/A", value: 0, color: "gray" as const };
 
-  const [monthLabel, yearLabel] = safeMeta.currentDate.split(" ");
+  const monthYearLabel = formatBriefMonthYear(safeMeta.currentDate);
+  const [monthLabel, yearLabel] = monthYearLabel.split(" ");
 
   return (
     <div className="w-full font-mono text-slate-900 select-none">

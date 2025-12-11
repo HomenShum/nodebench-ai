@@ -7,6 +7,8 @@ import { StickyDashboard } from "./StickyDashboard";
 import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Calendar, RotateCcw } from "lucide-react";
 import type { DashboardState } from "@/features/research/types";
 import { useBriefDateSelection } from "@/lib/useBriefDateSelection";
+import { formatBriefDate, formatBriefDateTime } from "@/lib/briefDate";
+import { buttonIcon, buttonSecondary } from "@/lib/buttonClasses";
 
 /**
  * LiveDashboard - Wrapper component that fetches live dashboard data
@@ -117,7 +119,7 @@ export const LiveDashboard: React.FC<{
               type="button"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition-colors"
+              className={`${buttonSecondary} px-2 py-1 text-xs`}
               title="Generate fresh metrics"
             >
               <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -156,8 +158,9 @@ export const LiveDashboard: React.FC<{
   }
 
   // Render dashboard with live data
-  const lastUpdated = new Date(snapshot.generatedAt).toLocaleString();
+  const lastUpdated = formatBriefDateTime(snapshot.generatedAt);
   const displayDate = selectedDate || snapshot.dateString;
+  const displayDateLabel = formatBriefDate(displayDate);
 
   return (
     <div className="relative">
@@ -168,7 +171,7 @@ export const LiveDashboard: React.FC<{
             <div className="flex items-center gap-2">
               <Calendar className="w-3 h-3 text-amber-600" />
               <span className="text-xs text-amber-800 font-medium">
-                Viewing historical data: {displayDate}
+                Viewing historical data: {displayDateLabel}
               </span>
             </div>
             <button
@@ -193,7 +196,7 @@ export const LiveDashboard: React.FC<{
               type="button"
               onClick={handlePreviousDay}
               disabled={!canGoPrevious}
-              className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className={buttonIcon}
               title="Previous day"
             >
               <ChevronLeft className="w-3 h-3 text-slate-600" />
@@ -202,7 +205,7 @@ export const LiveDashboard: React.FC<{
               type="button"
               onClick={handleNextDay}
               disabled={!canGoNext}
-              className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className={buttonIcon}
               title="Next day"
             >
               <ChevronRight className="w-3 h-3 text-slate-600" />
@@ -210,7 +213,7 @@ export const LiveDashboard: React.FC<{
           </div>
           <div className="text-[10px] text-slate-500 font-mono">
             {isViewingHistorical ? (
-              <span className="text-amber-600 font-medium">{displayDate}</span>
+              <span className="text-amber-600 font-medium">{displayDateLabel}</span>
             ) : (
               <span>Latest: {lastUpdated}</span>
             )}
@@ -222,7 +225,7 @@ export const LiveDashboard: React.FC<{
           type="button"
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="flex items-center gap-1 px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition-colors disabled:opacity-50"
+          className={`${buttonSecondary} px-2 py-1 text-xs`}
           title="Refresh dashboard metrics"
         >
           <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
