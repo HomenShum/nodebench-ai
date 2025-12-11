@@ -126,6 +126,31 @@ import { LiveDashboard } from '@/features/research/components/LiveDashboard';
 <LiveDashboard fallbackData={staticData} />
 ```
 
+### Historical Data Navigation
+
+The LiveDashboard component includes comprehensive historical data navigation:
+
+**Features:**
+- **Previous/Next Day Buttons** - Navigate through historical snapshots chronologically
+- **Date Picker** - Click any date from the last 7 days to view that day's metrics
+- **Visual Indicators** - Amber banner shows when viewing historical data
+- **Return to Latest** - One-click button to return to current day's data
+- **Available Data Count** - Shows how many days of historical data are available
+
+**UI Elements:**
+- Left side: `< >` navigation arrows for previous/next day
+- Center: Current date display (amber when historical, gray when latest)
+- Right side: Refresh button
+- Top banner: "Viewing historical data" alert with "Return to Latest" button (only when viewing past data)
+- Bottom section: Clickable date buttons for quick access to any available date
+
+**User Flow:**
+1. User sees latest dashboard data by default
+2. Click `<` to view previous day's data
+3. Amber banner appears: "Viewing historical data: 2025-12-10"
+4. Click date buttons at bottom to jump to specific dates
+5. Click "Latest" button to return to current day
+
 ### Querying Historical Data
 
 ```typescript

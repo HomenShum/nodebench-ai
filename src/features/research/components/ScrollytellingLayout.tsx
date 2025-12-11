@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import SmartLink from "./SmartLink";
 import DeepDiveAccordion from "./DeepDiveAccordion";
 import streamData from "@/features/research/content/researchStream.json";
-import StickyDashboard from "./StickyDashboard";
+import LiveDashboard from "./LiveDashboard";
 import type { DashboardState, StorySection } from "@/features/research/types";
 import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
 
@@ -499,7 +499,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
         </div>
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
           <div className="sticky top-24 min-h-[400px]">
-            <StickyDashboard data={activeDashboard} />
+            <LiveDashboard fallbackData={activeDashboard} />
           </div>
         </div>
       </div>

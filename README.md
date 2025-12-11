@@ -159,7 +159,15 @@ import { LiveDashboard } from '@/features/research/components/LiveDashboard';
 <LiveDashboard fallbackData={staticData} />
 ```
 
-**Query Historical Data:**
+**Historical Data Navigation:**
+The LiveDashboard component includes built-in historical data navigation:
+- **Previous/Next Day Buttons** (`< >`) - Navigate chronologically through snapshots
+- **Date Picker** - Click any date from last 7 days to view that day's metrics
+- **Visual Indicators** - Amber banner when viewing historical data
+- **Return to Latest** - One-click button to return to current day
+- **Available Data Count** - Shows how many days of data are stored
+
+**Query Historical Data (Programmatic):**
 ```typescript
 // Latest snapshot
 const latest = useQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot);
