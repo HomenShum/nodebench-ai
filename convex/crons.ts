@@ -153,4 +153,17 @@ crons.interval("ingest Reddit ML feed", { hours: 4 }, internal.feed.ingestReddit
 // Ingest RSS feeds every 2 hours (TechCrunch, etc.)
 crons.interval("ingest RSS tech feeds", { hours: 2 }, internal.feed.ingestRSSInternal, {});
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Daily Morning Brief - Automated dashboard metrics and digest generation
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Run daily morning brief at 6:00 AM UTC
+// Orchestrates: feed ingestion → dashboard metrics → digest generation → storage
+crons.daily(
+  "generate daily morning brief",
+  { hourUTC: 6, minuteUTC: 0 },
+  internal.workflows.dailyMorningBrief.runDailyMorningBrief,
+  {}
+);
+
 export default crons;

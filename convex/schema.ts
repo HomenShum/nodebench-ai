@@ -2817,6 +2817,55 @@ export default defineSchema({
     .index("by_date_string", ["dateString"]),
 
   /* ------------------------------------------------------------------ */
+  /* DAILY BRIEF SNAPSHOTS - Automated morning dashboard metrics        */
+  /* Generated daily at 6:00 AM UTC from aggregated feed data           */
+  /* ------------------------------------------------------------------ */
+  dailyBriefSnapshots: defineTable({
+    dateString: v.string(),         // YYYY-MM-DD for easy querying
+    generatedAt: v.number(),        // Unix timestamp when generated
+
+    // Dashboard metrics for StickyDashboard component
+    dashboardMetrics: v.object({
+      meta: v.object({
+        currentDate: v.string(),
+        timelineProgress: v.number(),
+      }),
+      charts: v.object({
+        trendLine: v.any(),         // TrendLineConfig
+        marketShare: v.array(v.any()), // MarketShareSegment[]
+      }),
+      techReadiness: v.object({
+        existing: v.number(),
+        emerging: v.number(),
+        sciFi: v.number(),
+      }),
+      keyStats: v.array(v.any()),   // KeyStat[]
+      capabilities: v.array(v.any()), // CapabilityEntry[]
+      annotations: v.optional(v.array(v.any())),
+      agentCount: v.optional(v.object({
+        count: v.number(),
+        label: v.string(),
+        speed: v.number(),
+      })),
+    }),
+
+    // Source data summary
+    sourceSummary: v.object({
+      totalItems: v.number(),
+      bySource: v.any(),            // { "HackerNews": 15, "GitHub": 20, ... }
+      byCategory: v.any(),          // { "ai_ml": 25, "tech": 10, ... }
+      topTrending: v.array(v.string()), // Top 5 trending topics
+    }),
+
+    // Generation metadata
+    version: v.number(),            // Version number for same-day updates
+    processingTimeMs: v.optional(v.number()),
+    errors: v.optional(v.array(v.string())),
+  })
+    .index("by_date_string", ["dateString"])
+    .index("by_generated_at", ["generatedAt"]),
+
+  /* ------------------------------------------------------------------ */
   /* LLM USAGE TRACKING - Daily aggregates for rate limiting            */
   /* ------------------------------------------------------------------ */
   llmUsageDaily: defineTable({

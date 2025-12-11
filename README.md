@@ -76,6 +76,129 @@ See `NODEBENCH_INTEGRATION_MAP.md` for detailed implementation notes and testing
 
 ---
 
+## Daily Morning Brief - Automated Dashboard & Digest System
+
+**Completed December 11, 2025** - Comprehensive automated workflow that runs daily at 6:00 AM UTC to populate research dashboard and morning digest with fresh data from multiple free sources.
+
+### Overview
+
+The Daily Morning Brief orchestrates:
+1. **Feed Ingestion** - Parallel ingestion from HackerNews, GitHub, Dev.to, ArXiv, Reddit, Product Hunt, RSS feeds
+2. **Dashboard Metrics** - AI-driven calculation of capability scores, key stats, market share, trend lines
+3. **Data Storage** - Snapshots stored in `dailyBriefSnapshots` table with versioning
+4. **Auto-Refresh** - Frontend components reactively update when new data is available
+
+### Architecture
+
+**Backend Workflow:**
+```
+6:00 AM UTC Cron → Feed Ingestion (parallel) → Metrics Calculation → Storage
+```
+
+**Key Files:**
+- `convex/workflows/dailyMorningBrief.ts` - Main orchestration workflow
+- `convex/domains/research/dashboardMetrics.ts` - Metrics calculation engine
+- `convex/domains/research/dashboardQueries.ts` - Query layer for frontend
+- `convex/crons.ts` - Cron job registration (line 158-169)
+- `convex/schema.ts` - New `dailyBriefSnapshots` table (line 2819-2867)
+
+**Frontend Components:**
+- `src/features/research/components/LiveDashboard.tsx` - Live data wrapper with refresh button
+- `src/features/research/components/StickyDashboard.tsx` - Dashboard renderer (unchanged)
+- `src/features/research/components/MorningDigest.tsx` - Digest UI (already live)
+
+### Data Sources (All Free)
+
+| Source | Frequency | Data |
+|--------|-----------|------|
+| HackerNews | Hourly | Top stories, tech news |
+| GitHub | Daily | Trending repositories |
+| Dev.to | 2 hours | Developer articles |
+| ArXiv | 6 hours | CS.AI research papers |
+| Reddit | 4 hours | /r/MachineLearning |
+| Product Hunt | Daily | Product launches |
+| RSS | 2 hours | TechCrunch, etc. |
+
+### Metrics Calculation
+
+**Capability Scores (0-1):**
+- **Reasoning**: AI/ML news volume → normalized score
+- **Uptime**: Inverse of outage mentions (min 0.5)
+- **Safety**: Inverse of security mentions (min 0.6)
+
+**Key Stats:**
+- **Gap Width**: AI capability vs deployment gap (20-45 pts, based on AI activity)
+- **Fail Rate**: Outage mentions / total items (0-25%)
+- **Avg Latency**: Estimated from AI activity (1.5-2.4s)
+
+**Market Share:**
+- Top 3 sources by feed item count
+- Rendered as animated donut chart
+
+**Tech Readiness Buckets (0-10):**
+- **Existing**: Production/deployed mentions
+- **Emerging**: Beta/preview/experimental
+- **Sci-Fi**: Future/AGI/quantum
+
+**Trend Line:**
+- 6-quarter moving average
+- Simulated from current feed volume
+
+**Agent Count:**
+- Scales with AI/ML activity
+- Tiers: Unreliable (12k-25k), Reliable (25k-50k), Autonomous (50k+)
+
+### Usage
+
+**Automatic:** Runs daily at 6:00 AM UTC, no manual intervention required.
+
+**Manual Refresh:**
+```tsx
+import { LiveDashboard } from '@/features/research/components/LiveDashboard';
+
+<LiveDashboard fallbackData={staticData} />
+```
+
+**Query Historical Data:**
+```typescript
+// Latest snapshot
+const latest = useQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot);
+
+// Specific date
+const snapshot = useQuery(api.domains.research.dashboardQueries.getDashboardSnapshotByDate, {
+  dateString: "2025-01-15"
+});
+
+// Last 7 days
+const history = useQuery(api.domains.research.dashboardQueries.getHistoricalSnapshots, { days: 7 });
+```
+
+### Error Handling
+
+- **Graceful Degradation**: If one source fails, workflow continues with others
+- **Error Logging**: Errors stored in snapshot's `errors` field
+- **Fallback Data**: Frontend displays static data if no snapshot exists
+- **Monitoring**: Check Convex logs with `[dailyMorningBrief]` and `[dashboardMetrics]` prefixes
+
+### Configuration
+
+**Change Schedule:**
+Edit `convex/crons.ts` line 158:
+```typescript
+crons.daily("generate daily morning brief", { hourUTC: 6, minuteUTC: 0 }, ...);
+```
+
+**Customize Metrics:**
+Edit helper functions in `convex/domains/research/dashboardMetrics.ts`:
+- `calculateCapabilities()` - Capability scoring
+- `calculateKeyStats()` - Key stat calculations
+- `calculateMarketShare()` - Market share distribution
+- `calculateTechReadiness()` - Readiness buckets
+
+See `DAILY_MORNING_BRIEF.md` for complete documentation.
+
+---
+
 ## Research Dashboard Visual Enhancements
 
 **Completed December 11, 2025** - Fixed critical visual bugs in the AI 2027-style StickyDashboard component for dense, terminal-inspired research UI.
