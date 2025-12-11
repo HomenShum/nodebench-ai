@@ -76,6 +76,43 @@ See `NODEBENCH_INTEGRATION_MAP.md` for detailed implementation notes and testing
 
 ---
 
+## Daily Morning Brief - Convex Deployment Fix
+
+**Fixed December 11, 2025** - Resolved Convex deployment error caused by query function in Node.js action file.
+
+### Issue
+Convex deployment failed with error:
+```
+`getFeedItemsForMetrics` defined in `domains/research/dashboardMetrics.js` is a Query function.
+Only actions can be defined in Node.js.
+```
+
+### Root Cause
+- `getFeedItemsForMetrics` was an `internalQuery` defined in `dashboardMetrics.ts`
+- `dashboardMetrics.ts` uses `"use node"` directive for actions that need Node.js runtime
+- **Convex platform constraint:** Queries cannot use Node.js runtime - only actions can
+
+### Solution
+1. **Moved query to correct file:**
+   - From: `convex/domains/research/dashboardMetrics.ts` (has `"use node"`)
+   - To: `convex/domains/research/dashboardQueries.ts` (no `"use node"`)
+
+2. **Updated reference:**
+   ```typescript
+   // Before:
+   await ctx.runQuery(internal.domains.research.dashboardMetrics.getFeedItemsForMetrics)
+
+   // After:
+   await ctx.runQuery(internal.domains.research.dashboardQueries.getFeedItemsForMetrics)
+   ```
+
+3. **Cleaned up imports:**
+   - Removed `internalQuery` import from `dashboardMetrics.ts`
+
+**Commit:** `5d52916`
+
+---
+
 ## Daily Morning Brief - Automated Dashboard & Digest System
 
 **Completed December 11, 2025** - Comprehensive automated workflow that runs daily at 6:00 AM UTC to populate research dashboard and morning digest with fresh data from multiple free sources.
