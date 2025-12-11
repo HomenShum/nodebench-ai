@@ -1,7 +1,7 @@
 "use node";
 
 import { v } from "convex/values";
-import { internalAction, internalMutation, internalQuery } from "../../_generated/server";
+import { internalAction, internalMutation } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import type { DashboardState, KeyStat, CapabilityEntry, MarketShareSegment } from "../../../src/features/research/types";
 
@@ -13,9 +13,9 @@ export const calculateDashboardMetrics = internalAction({
   args: {},
   handler: async (ctx): Promise<DashboardState> => {
     const startTime = Date.now();
-    
+
     // Fetch recent feed items (last 24 hours)
-    const feedItems = await ctx.runQuery(internal.domains.research.dashboardMetrics.getFeedItemsForMetrics);
+    const feedItems = await ctx.runQuery(internal.domains.research.dashboardQueries.getFeedItemsForMetrics);
     
     // Calculate various metrics
     const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -56,37 +56,6 @@ export const calculateDashboardMetrics = internalAction({
       capabilities,
       agentCount,
     };
-  },
-});
-
-/**
- * Query to fetch feed items for metrics calculation
- */
-export const getFeedItemsForMetrics = internalQuery({
-  args: {},
-  handler: async (ctx) => {
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    
-    const items = await ctx.db
-      .query("feedItems")
-      .withIndex("by_score")
-      .order("desc")
-      .take(100);
-    
-    // Filter to last 24 hours and return relevant fields
-    return items
-      .filter(item => item.publishedAt && new Date(item.publishedAt).getTime() > oneDayAgo)
-      .map(item => ({
-        sourceId: item.sourceId,
-        type: item.type,
-        category: item.category,
-        title: item.title,
-        summary: item.summary,
-        source: item.source,
-        tags: item.tags,
-        score: item.score,
-        publishedAt: item.publishedAt,
-      }));
   },
 });
 

@@ -1,7 +1,39 @@
 import { v } from "convex/values";
-import { query, mutation, action } from "../../_generated/server";
+import { query, mutation, action, internalQuery } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import type { DashboardState } from "../../../src/features/research/types";
+
+/**
+ * Internal query to fetch feed items for metrics calculation
+ * Used by the daily morning brief workflow
+ */
+export const getFeedItemsForMetrics = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+    const items = await ctx.db
+      .query("feedItems")
+      .withIndex("by_score")
+      .order("desc")
+      .take(100);
+
+    // Filter to last 24 hours and return relevant fields
+    return items
+      .filter(item => item.publishedAt && new Date(item.publishedAt).getTime() > oneDayAgo)
+      .map(item => ({
+        sourceId: item.sourceId,
+        type: item.type,
+        category: item.category,
+        title: item.title,
+        summary: item.summary,
+        source: item.source,
+        tags: item.tags,
+        score: item.score,
+        publishedAt: item.publishedAt,
+      }));
+  },
+});
 
 /**
  * Get the latest daily brief snapshot for the dashboard
