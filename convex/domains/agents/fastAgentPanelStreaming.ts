@@ -470,7 +470,7 @@ const planSchema = z.object({
   ).default([]),
 });
 
-const createPlannerAgent = (model: string) => new Agent(components.agent, {
+export const createPlannerAgent = (model: string) => new Agent(components.agent, {
   name: "PlannerAgent",
   languageModel: getLanguageModel(model),
   instructions: `Classify and decompose the user's request.
@@ -717,6 +717,17 @@ export const createThread = action({
       agentThreadId,
       now,
     });
+
+    // Optionally create a timeline root for this agent thread
+    try {
+      await ctx.runMutation(api.domains.agents.agentTimelines.createForDocument as any, {
+        documentId: undefined as any,
+        name: title,
+        baseStartMs: now,
+      });
+    } catch (timelineErr) {
+      console.warn("[createThread] Failed to create timeline for agent thread", timelineErr);
+    }
 
     return threadId;
   },
@@ -1142,6 +1153,23 @@ export const initiateAsyncStreaming = mutation({
     const modelName = args.model || getLlmModel("chat", "openai");
     const chatAgent = createChatAgent(modelName);
 
+    // Ensure initializer has seeded plan and progress log
+    try {
+      const existingPlan = await ctx.runQuery(api.domains.agents.agentInitializer.getPlanByThread, {
+        agentThreadId: streamingThread.agentThreadId,
+      });
+      if (!existingPlan) {
+        console.log(`[initiateAsyncStreaming:${requestId}] 🔧 No plan found, running initializer`);
+        await ctx.runMutation(api.domains.agents.agentInitializer.initializeThread, {
+          threadId: args.threadId,
+          prompt: args.prompt,
+          model: modelName,
+        });
+      }
+    } catch (initErr) {
+      console.warn(`[initiateAsyncStreaming:${requestId}] Initializer failed:`, initErr);
+    }
+
     console.log(`[initiateAsyncStreaming:${requestId}] 💾 Saving user message, agentThreadId:`, streamingThread.agentThreadId);
     console.log(`[initiateAsyncStreaming:${requestId}] 📝 Prompt:`, args.prompt);
 
@@ -1151,6 +1179,17 @@ export const initiateAsyncStreaming = mutation({
       prompt: args.prompt,
       skipEmbeddings: true, // Skip embeddings in mutation, generate lazily when streaming
     });
+
+    // Log episodic memory entry for the new prompt
+    try {
+      await ctx.runMutation(api.domains.agents.agentMemory.logEpisodic, {
+        runId: streamingThread.agentThreadId,
+        tags: ["user_prompt"],
+        data: { prompt: args.prompt, messageId },
+      });
+    } catch (memErr) {
+      console.warn(`[initiateAsyncStreaming:${requestId}] Failed to log episodic memory`, memErr);
+    }
 
     console.log(`[initiateAsyncStreaming:${requestId}] ✅ User message saved, messageId:`, messageId);
 
@@ -1318,6 +1357,60 @@ export const streamAsync = internalAction({
       ...ctx,
       evaluationUserId: userIdTyped,
     };
+
+    // Inject plan + progress + scratchpad summary into prompt so the agent boots with memory
+    try {
+      const plan = await ctx.runQuery(api.domains.agents.agentInitializer.getPlanByThread, {
+        agentThreadId: args.threadId,
+      });
+      const scratchpad = await ctx.runQuery(api.domains.agents.agentScratchpads.getByAgentThread, {
+        agentThreadId: args.threadId,
+      });
+      const featureLines = (plan?.features ?? []).map(
+        (f: any, idx: number) => `${idx + 1}. [${f.status}] ${f.name} — Test: ${f.testCriteria}`
+      );
+      const progressLines = (plan?.progressLog ?? []).slice(-5).map(
+        (p: any) => `${new Date(p.ts).toISOString()}: [${p.status}] ${p.message}`
+      );
+      const scratchpadSummary = scratchpad ? [
+        `Scratchpad entities: ${(scratchpad.scratchpad?.activeEntities ?? []).join(", ") || "none"}`,
+        `Intent: ${scratchpad.scratchpad?.currentIntent ?? "unknown"}`,
+        `Pending tasks: ${(scratchpad.scratchpad?.pendingTasks ?? []).length}`,
+        scratchpad.scratchpad?.compactContext?.summary ? `Context summary: ${scratchpad.scratchpad.compactContext.summary}` : null,
+      ].filter(Boolean).join("\n") : null;
+
+      let userPromptText: string | undefined;
+      try {
+        const messages = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+          threadId: args.threadId,
+          order: "desc",
+          paginationOpts: { cursor: null, numItems: 20 },
+        });
+        const page: any[] = (messages as any)?.page ?? (messages as any) ?? [];
+        const found = page.find((m) => String(m.messageId ?? m.id ?? m._id) === args.promptMessageId);
+        if (found && typeof found.text === "string") {
+          userPromptText = found.text;
+        }
+      } catch (msgErr) {
+        console.warn(`[streamAsync:${executionId}] Could not fetch prompt text`, msgErr);
+      }
+
+      const header = [
+        "PROJECT CONTEXT (persistent domain memory)",
+        `Goal: ${plan?.goal ?? "(missing)"}`,
+        featureLines.length ? `Features:\n${featureLines.join("\n")}` : "Features: none",
+        progressLines.length ? `Recent Progress:\n${progressLines.join("\n")}` : "Recent Progress: none",
+        scratchpadSummary ? `Scratchpad:\n${scratchpadSummary}` : null,
+      ].filter(Boolean).join("\n");
+
+      if (userPromptText) {
+        responsePromptOverride = `${header}\n\nUSER REQUEST:\n${userPromptText}`;
+      } else {
+        responsePromptOverride = header;
+      }
+    } catch (ctxErr) {
+      console.warn(`[streamAsync:${executionId}] Failed to inject plan context`, ctxErr);
+    }
 
     if (customThread?.cancelRequested) {
       console.log(`[streamAsync:${executionId}] ❌ Stream already cancelled before start`);

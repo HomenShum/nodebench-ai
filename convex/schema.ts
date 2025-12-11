@@ -1105,7 +1105,8 @@ const userEvents = defineTable({
 /* ------------------------------------------------------------------ */
 const agentTimelines = defineTable({
   // Associate a timeline with a document so it can render in DocumentView
-  documentId: v.id("documents"),
+  documentId: v.optional(v.id("documents")),
+  agentThreadId: v.optional(v.string()),
   name: v.string(),
   // Base start used to compute absolute times: absoluteStart = baseStartMs + startOffsetMs
   baseStartMs: v.optional(v.number()),
@@ -1117,10 +1118,12 @@ const agentTimelines = defineTable({
   latestRunOutput: v.optional(v.string()),
   latestRunAt: v.optional(v.number()),
 }).index("by_document", ["documentId"])
-  .index("by_user", ["createdBy"]);
+  .index("by_user", ["createdBy"])
+  .index("by_agent_thread", ["agentThreadId"]);
 
 const agentTasks = defineTable({
   timelineId: v.id("agentTimelines"),
+  agentThreadId: v.optional(v.string()),
   parentId: v.optional(v.id("agentTasks")),
   name: v.string(),
   // Offsets, not absolute times (backward-compatible with legacy startMs)
@@ -1159,7 +1162,9 @@ const agentTasks = defineTable({
   order: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
-}).index("by_timeline", ["timelineId"]).index("by_parent", ["parentId"]);
+}).index("by_timeline", ["timelineId"])
+  .index("by_agent_thread", ["agentThreadId"])
+  .index("by_parent", ["parentId"]);
 
 const agentLinks = defineTable({
   timelineId: v.id("agentTimelines"),
@@ -1780,6 +1785,7 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   agentPlans: defineTable({
     userId: v.id("users"),
+    agentThreadId: v.optional(v.string()),
     goal: v.string(),
     steps: v.array(v.object({
       description: v.string(),
@@ -1789,11 +1795,35 @@ export default defineSchema({
         v.literal("completed")
       ),
     })),
+    features: v.optional(v.array(v.object({
+      name: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("failing"),
+        v.literal("passing")
+      ),
+      testCriteria: v.string(),
+      notes: v.optional(v.string()),
+    }))),
+    progressLog: v.optional(v.array(v.object({
+      ts: v.number(),
+      status: v.union(
+        v.literal("info"),
+        v.literal("pending"),
+        v.literal("working"),
+        v.literal("passing"),
+        v.literal("failing"),
+        v.literal("error")
+      ),
+      message: v.string(),
+      meta: v.optional(v.any()),
+    }))),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_user_updated", ["userId", "updatedAt"]),
+    .index("by_user_updated", ["userId", "updatedAt"])
+    .index("by_agent_thread", ["agentThreadId", "updatedAt"]),
 
   /* ------------------------------------------------------------------ */
   /* AGENT MEMORY - Persistent memory for Deep Agents                   */
@@ -1808,6 +1838,32 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_key", ["userId", "key"]),
+
+  /* ------------------------------------------------------------------ */
+  /* AGENT SCRATCHPADS - Persistent scratchpad per agent thread         */
+  /* ------------------------------------------------------------------ */
+  agentScratchpads: defineTable({
+    agentThreadId: v.string(),
+    userId: v.id("users"),
+    scratchpad: v.any(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_agent_thread", ["agentThreadId"])
+    .index("by_user", ["userId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* AGENT EPISODIC MEMORY - Per-run chronological memory               */
+  /* ------------------------------------------------------------------ */
+  agentEpisodicMemory: defineTable({
+    runId: v.string(),
+    userId: v.id("users"),
+    ts: v.number(),
+    tags: v.optional(v.array(v.string())),
+    data: v.any(),
+  })
+    .index("by_run", ["runId", "ts"])
+    .index("by_user", ["userId", "ts"]),
 
   /* ------------------------------------------------------------------ */
   /* GAM: RESEARCH JOBS - Background research job queue                 */

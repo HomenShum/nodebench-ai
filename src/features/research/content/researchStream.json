@@ -7,371 +7,415 @@
     },
     "content": {
       "body": [
-        "This week marks a pivotal moment in AI infrastructure investment. Total funding in the <SmartLink id='ai-infra'>AI infrastructure sector</SmartLink> has reached $47.2B YTD, with inference optimization emerging as the dominant category.",
-        "Three major themes are driving capital allocation: <SmartLink id='edge-ai'>edge AI deployment</SmartLink>, enterprise agent orchestration, and synthetic data generation. Notably, 62% of Series B+ rounds now include dedicated AI infrastructure components.",
-        "The competitive landscape is consolidating around a handful of platform players, while vertical-specific solutions continue to attract seed-stage interest."
+        "This week marks a pivotal moment in AI infrastructure investment. Total funding in the <SmartLink id='ai-infra'>AI infrastructure sector</SmartLink> has reached $47.2B YTD, driven by the desperate need to close the 'Reliability Gap'.",
+        "The chart below visualizes this gap - the dangerous lag between Model Capability (dashed projection) and actual Deployment Reliability (solid line)."
       ],
       "deepDives": [
         {
-          "title": "Why Infrastructure Matters Now",
-          "content": "Model capabilities have outpaced deployment infrastructure. Enterprises report 3-6 month delays between POC approval and production deployment. The bottleneck has shifted from 'can AI do this?' to 'can we run AI reliably at scale?' This creates a $12B+ TAM for infrastructure tooling."
-        },
-        {
-          "title": "Key Investor Thesis",
-          "content": "Leading VCs are betting that infrastructure margins will exceed model margins by 2026. The reasoning: models commoditize, but deployment complexity compounds. Winners will own the 'last mile' of AI delivery—monitoring, optimization, and compliance layers."
+          "title": "Methodology: Calculating the Gap",
+          "content": "We aggregate uptime logs from 500+ enterprise RAG deployments against standard benchmarks (MMLU, HumanEval) to quantify the delta between theoretical model performance and production reality."
         }
       ]
     },
     "timelineState": {
-      "sectionId": "phase-1-overview",
+      "sectionId": "phase-1-gap",
       "narrative": {
-        "title": "Market Velocity",
-        "date_display": "Dec 2025",
-        "summary": "Infrastructure funding hits an inflection point as deployment bottlenecks stifle model gains.",
-        "body": "The gap between model capability and enterprise readiness has forced a massive capital rotation into 'plumbing'—orchestration, observability, and specialized silicon."
+        "title": "The Deployment Gap",
+        "date_display": "Q1 2024 - Q3 2024",
+        "summary": "Models got smarter, but infrastructure broke under the load.",
+        "body": "Notice the divergence in early 2024. While model capability skyrocketed (ghost line), reliable deployment capability stalled due to vector database contention and context window limits."
       },
       "dashboard_state": {
-        "meta": { "currentDate": "Dec 2025", "timelineProgress": 0.2 },
+        "meta": {
+          "currentDate": "Sep 2024",
+          "timelineProgress": 0.2
+        },
         "charts": {
           "trendLine": {
-            "label": "Infra Funding Velocity (Billions)",
-            "data": [12, 18, 24, 32, 41, 47.2]
+            "title": "Capability vs. Reliability Index",
+            "gridScale": { "min": 0, "max": 100 },
+            "xAxisLabels": [
+              "Q1 '24",
+              "Q2 '24",
+              "Q3 '24",
+              "Q4 '24",
+              "Q1 '25",
+              "Q2 '25"
+            ],
+            "visibleEndIndex": 2,
+            "focusIndex": 2,
+            "series": [
+              {
+                "id": "model-capability",
+                "label": "Model Capability",
+                "type": "ghost",
+                "color": "gray",
+                "data": [
+                  { "value": 20, "tooltip": { "title": "GPT-4 Launch", "body": "High capability, low steerability." } },
+                  { "value": 45, "tooltip": { "title": "Context Expansion", "body": "128k context windows break legacy infra." } },
+                  { "value": 70, "tooltip": { "title": "Multimodal", "body": "Vision and audio inputs saturate bandwidth." } },
+                  { "value": 85, "tooltip": { "title": "Reasoning Models", "body": "O1 previews create new latency challenges." } },
+                  { "value": 95, "tooltip": { "title": "Agent Swarms", "body": "Theoretical peak of current transformer arch." } },
+                  { "value": 98, "tooltip": { "title": "AGI Threshold", "body": "Diminishing returns on pure scaling." } }
+                ]
+              },
+              {
+                "id": "infra-reliability",
+                "label": "Infra Reliability",
+                "type": "solid",
+                "color": "accent",
+                "data": [
+                  { "value": 18, "tooltip": { "title": "Status Quo", "body": "Standard MLOps works for simple chat." } },
+                  { "value": 22, "tooltip": { "title": "The Bottleneck", "body": "RAG pipelines begin failing at scale." } },
+                  { "value": 25, "tooltip": { "title": "Stagnation", "body": "Vector DBs struggle with high concurrency." } },
+                  { "value": 40, "tooltip": { "title": "The Fix", "body": "Specialized Agent Orchestration layers emerge." } },
+                  { "value": 75, "tooltip": { "title": "Catch Up", "body": "Infra matures to match model needs." } },
+                  { "value": 92, "tooltip": { "title": "Parity", "body": "Reliability matches capability." } }
+                ]
+              }
+            ]
           },
           "marketShare": [
-            { "label": "Inference Ops", "value": 45, "color": "accent" },
-            { "label": "Training Infra", "value": 30, "color": "black" },
-            { "label": "Data Tooling", "value": 25, "color": "gray" }
+            { "label": "Compute", "value": 60, "color": "black", "icon": "🖥️" },
+            { "label": "Storage", "value": 30, "color": "gray", "icon": "🗄️" },
+            { "label": "Orchestration", "value": 10, "color": "accent", "icon": "🛰️" }
           ]
         },
-        "techReadiness": { "existing": 8, "emerging": 2, "sciFi": 0 },
+        "techReadiness": {
+          "existing": 8,
+          "emerging": 2,
+          "sciFi": 0
+        },
         "keyStats": [
-          { "label": "YTD Funding", "value": "$47.2B", "trend": "up" },
-          { "label": "Deal Count", "value": "89", "sub": "deals" },
-          { "label": "Avg Round", "value": "$28M" }
+          { "label": "Gap Width", "value": "45 pts", "trend": "up", "context": "Critical Risk" },
+          { "label": "Fail Rate", "value": "12%", "trend": "up", "context": "In Production" },
+          { "label": "Avg Latency", "value": "2.4s", "trend": "up" }
         ],
         "capabilities": [
-          { "label": "Scale", "score": 85, "icon": "trending-up" },
-          { "label": "Reliability", "score": 60, "icon": "shield-check" },
-          { "label": "Cost", "score": 40, "icon": "dollar-sign" }
+          { "label": "Reasoning", "score": 85, "icon": "brain" },
+          { "label": "Uptime", "score": 30, "icon": "activity" },
+          { "label": "Safety", "score": 45, "icon": "shield" }
         ],
         "annotations": [
           {
-            "id": "note-overview-1",
-            "title": "The Deployment Wall",
-            "description": "Enterprises hit the 'POC Wall', forcing a surge in infra spending.",
-            "position": { "x": 65, "y": 40 }
+            "id": "gap-1",
+            "title": "The Reliability Gap",
+            "description": "Enterprise POC failure rate hits all-time high.",
+            "position": { "x": 42, "y": 55 },
+            "associatedDataIndex": 2,
+            "targetIndex": 2,
+            "sentiment": "negative"
           }
+        ],
+        "deltas": {
+          "reliability": { "value": "25%", "change": "+7 pts", "direction": "up" },
+          "gapWidth": { "value": "45 pts", "change": "-3 pts", "direction": "down" }
+        },
+        "skillToggles": [
+          { "id": "hacking", "label": "Hacking", "icon": "skull", "enabled": false, "score": 0.15, "description": "Cybersecurity penetration testing" },
+          { "id": "coding", "label": "Coding", "icon": "terminal", "enabled": true, "score": 0.45, "description": "Code generation & debugging" },
+          { "id": "robotics", "label": "Robotics", "icon": "bot", "enabled": false, "score": 0.1, "description": "Physical world manipulation" },
+          { "id": "ml-eng", "label": "ML Eng", "icon": "sparkles", "enabled": true, "score": 0.55, "description": "Machine learning engineering" },
+          { "id": "politics", "label": "Politics", "icon": "landmark", "enabled": false, "score": 0.2, "description": "Political analysis & forecasting" },
+          { "id": "forecasting", "label": "Forecast", "icon": "line-chart", "enabled": true, "score": 0.4, "description": "Trend prediction & modeling" }
+        ],
+        "statusBanner": {
+          "count": 12500,
+          "label": "Unreliable Agent copies",
+          "context": "operating at 2x human speed"
+        },
+        "agentCount": {
+          "count": 12500,
+          "label": "Unreliable Agent",
+          "speed": 2
+        },
+        "milestoneLabels": [
+          { "id": "gap-identified", "text": "Gap Identified", "icon": "⚠️", "sentiment": "negative" },
+          { "id": "poc-failures", "text": "Enterprise POC Failures Peak", "icon": "📉", "sentiment": "negative" }
         ]
       }
     },
     "smartLinks": {
       "ai-infra": {
-        "summary": "AI infrastructure includes compute orchestration, model serving, MLOps, vector databases, and inference optimization tools. The sector grew 340% YoY.",
-        "source": "PitchBook Q4 2024"
-      },
-      "edge-ai": {
-        "summary": "Edge AI refers to running inference on-device or at network edge, reducing latency from 200ms to <10ms. Key enablers: quantization, distillation, and custom silicon.",
-        "source": "Gartner Hype Cycle 2024"
+        "summary": "The stack of software and hardware required to deploy AI, distinct from the models themselves. Includes Vector DBs, Orchestrators, and GPU clouds.",
+        "source": "Gartner 2024"
       }
     }
   },
   {
-    "id": "daily-top-deals",
+    "id": "daily-investment-spike",
     "meta": {
-      "date": "Funding Highlights",
-      "title": "This Week's Notable Raises"
+      "date": "Investment Response",
+      "title": "The Capital Response"
     },
     "content": {
       "body": [
-        "<SmartLink id='contextual-ai'>Contextual AI</SmartLink> closed a $80M Series B led by Greycroft to build enterprise RAG infrastructure. The round values the company at $450M, a 3.2x step-up from their Series A just 9 months ago.",
-        "<SmartLink id='modular'>Modular</SmartLink> (founded by Chris Lattner) raised $100M at a $600M valuation for their Mojo programming language and inference engine. Strategic investors include Google and Amazon.",
-        "In the healthcare vertical, <SmartLink id='atropos'>Atropos Health</SmartLink> secured $33M to apply LLMs to clinical evidence generation, with Flare Capital and General Catalyst co-leading."
+        "Reacting to the bottleneck, the market flooded capital into <SmartLink id='infra-startups'>Infrastructure Startups</SmartLink> rather than new models.",
+        "Watch the Infra Reliability line (solid) begin to slope upward in Q4 2024 as this capital was deployed into engineering. This marks the transition from 'Experimental' to 'Industrial' AI."
       ],
-      "deepDives": [
-        {
-          "title": "What's Driving Valuations",
-          "content": "Enterprise AI infrastructure companies are commanding 15-25x ARR multiples, compared to 8-12x for general SaaS. Investors cite: (1) high switching costs once deployed, (2) usage-based pricing with strong net retention, and (3) regulatory moats in healthcare/finance verticals."
-        }
-      ]
+      "deepDives": []
     },
     "timelineState": {
-      "sectionId": "phase-2-deals",
+      "sectionId": "phase-2-investment",
       "narrative": {
-        "title": "Capital Concentration",
-        "date_display": "Late 2025",
-        "summary": "Valuations for 'Pick and Shovel' plays are decoupling from general SaaS.",
-        "body": "Investors are paying premium multiples for companies that solve the 'Last Mile' problem of AI—latency, compliance, and specific vertical integration."
+        "title": "The Capital Injection",
+        "date_display": "Q4 2024 - Q1 2025",
+        "summary": "Billions in funding translate to technical breakthroughs.",
+        "body": "The chart advances. Note the inflection point in reliability as AgentOps tools mature and specialized inference chips enter the market."
       },
       "dashboard_state": {
-        "meta": { "currentDate": "Dec 2025", "timelineProgress": 0.4 },
+        "meta": {
+          "currentDate": "Jan 2025",
+          "timelineProgress": 0.5
+        },
         "charts": {
           "trendLine": {
-            "label": "Avg Valuation Multiple (Revenue)",
-            "data": [8, 10, 12, 18, 22, 25]
+            "title": "Capability vs. Reliability Index",
+            "gridScale": { "min": 0, "max": 100 },
+            "xAxisLabels": [
+              "Q1 '24",
+              "Q2 '24",
+              "Q3 '24",
+              "Q4 '24",
+              "Q1 '25",
+              "Q2 '25"
+            ],
+            "visibleEndIndex": 4,
+            "focusIndex": 4,
+            "series": [
+              {
+                "id": "model-capability",
+                "label": "Model Capability",
+                "type": "ghost",
+                "color": "gray",
+                "data": [
+                  { "value": 20 },
+                  { "value": 45 },
+                  { "value": 70 },
+                  { "value": 85 },
+                  { "value": 95 },
+                  { "value": 98 }
+                ]
+              },
+              {
+                "id": "infra-reliability",
+                "label": "Infra Reliability",
+                "type": "solid",
+                "color": "accent",
+                "data": [
+                  { "value": 18 },
+                  { "value": 22 },
+                  { "value": 25 },
+                  { "value": 40, "tooltip": { "title": "The Fix", "body": "New orchestration layers stabilize swarms." } },
+                  { "value": 75, "tooltip": { "title": "The Catch Up", "body": "Infra matures rapidly due to $47B investment." } },
+                  { "value": 92 }
+                ]
+              }
+            ]
           },
           "marketShare": [
-            { "label": "Infrastructure", "value": 60, "color": "accent" },
-            { "label": "Applications", "value": 25, "color": "gray" },
-            { "label": "Services", "value": 15, "color": "black" }
+            { "label": "Compute", "value": 40, "color": "black", "icon": "🖥️" },
+            { "label": "Storage", "value": 20, "color": "gray", "icon": "🗄️" },
+            { "label": "Orchestration", "value": 40, "color": "accent", "icon": "🛰️" }
           ]
         },
-        "techReadiness": { "existing": 6, "emerging": 4, "sciFi": 0 },
+        "techReadiness": {
+          "existing": 6,
+          "emerging": 4,
+          "sciFi": 0
+        },
         "keyStats": [
-          { "label": "Top Raise", "value": "$100M", "trend": "up" },
-          { "label": "Med. Val.", "value": "$450M", "sub": "Series B" },
-          { "label": "Vertical AI", "value": "$33M" }
+          { "label": "Gap Width", "value": "10 pts", "trend": "down", "context": "Closing Fast" },
+          { "label": "New Unicorns", "value": "3", "sub": "This Quarter" },
+          { "label": "Reliability", "value": "99.9%", "trend": "up" }
         ],
         "capabilities": [
-          { "label": "Funding", "score": 90, "icon": "dollar-sign" },
-          { "label": "Hype", "score": 75, "icon": "zap" },
-          { "label": "Rev Growth", "score": 65, "icon": "trending-up" }
+          { "label": "Reasoning", "score": 90, "icon": "brain" },
+          { "label": "Uptime", "score": 75, "icon": "activity" },
+          { "label": "Safety", "score": 60, "icon": "shield" }
         ],
         "annotations": [
           {
-            "id": "note-deals-1",
-            "title": "The Infra Premium",
-            "description": "Multiples expanding as 'Lock-in' potential becomes clear.",
-            "position": { "x": 80, "y": 20 }
+            "id": "inflection-1",
+            "title": "Inflection Point",
+            "description": "Introduction of 'Self-Healing' Agent Frameworks.",
+            "position": { "x": 75, "y": 28 },
+            "associatedDataIndex": 4,
+            "targetIndex": 4,
+            "sentiment": "positive"
           }
+        ],
+        "deltas": {
+          "reliability": { "value": "75%", "change": "+35 pts", "direction": "up" },
+          "gapWidth": { "value": "10 pts", "change": "-35 pts", "direction": "down" }
+        },
+        "skillToggles": [
+          { "id": "hacking", "label": "Hacking", "icon": "skull", "enabled": true, "score": 0.55, "description": "Cybersecurity penetration testing" },
+          { "id": "coding", "label": "Coding", "icon": "terminal", "enabled": true, "score": 0.72, "description": "Code generation & debugging" },
+          { "id": "robotics", "label": "Robotics", "icon": "bot", "enabled": false, "score": 0.25, "description": "Physical world manipulation" },
+          { "id": "ml-eng", "label": "ML Eng", "icon": "sparkles", "enabled": true, "score": 0.78, "description": "Machine learning engineering" },
+          { "id": "politics", "label": "Politics", "icon": "landmark", "enabled": true, "score": 0.48, "description": "Political analysis & forecasting" },
+          { "id": "forecasting", "label": "Forecast", "icon": "line-chart", "enabled": true, "score": 0.68, "description": "Trend prediction & modeling" }
+        ],
+        "statusBanner": {
+          "count": 33000,
+          "label": "Reliable Agent copies",
+          "context": "thinking at 10x human speed"
+        },
+        "agentCount": {
+          "count": 33000,
+          "label": "Reliable Agent",
+          "speed": 10
+        },
+        "milestoneLabels": [
+          { "id": "self-healing", "text": "Self-Healing Frameworks", "icon": "🔄", "sentiment": "positive" },
+          { "id": "capital-deployed", "text": "$47B Capital Deployed", "icon": "💰", "sentiment": "positive" }
         ]
       }
     },
     "smartLinks": {
-      "contextual-ai": {
-        "summary": "Founded by Douwe Kiela (ex-Meta AI Research). Building enterprise RAG with citation guarantees. Customers include Fortune 500 legal teams.",
+      "infra-startups": {
+        "summary": "Companies like LangChain, Unstructured, and Pinecone saw 300% valuation increases in Q4 2024.",
         "source": "Crunchbase"
-      },
-      "modular": {
-        "summary": "Mojo promises 35,000x speedup over Python for ML workloads. Led by Chris Lattner (creator of Swift/LLVM).",
-        "source": "TechCrunch"
-      },
-      "atropos": {
-        "summary": "Spun out of Stanford. Uses LLMs to generate real-world evidence from EHR data. FDA engagement ongoing.",
-        "source": "STAT News"
       }
     }
   },
   {
-    "id": "daily-emerging-trends",
+    "id": "daily-future-parity",
     "meta": {
-      "date": "Emerging Signals",
-      "title": "Agentic Workflows Hit Inflection Point"
+      "date": "Future Outlook",
+      "title": "Achieving Parity"
     },
     "content": {
       "body": [
-        "Enterprise adoption of <SmartLink id='agentic'>agentic AI systems</SmartLink> crossed a critical threshold this quarter. 34% of Fortune 500 companies now have at least one agent-based workflow in production, up from 8% a year ago.",
-        "The shift is driven by three factors: improved <SmartLink id='tool-use'>tool-use capabilities</SmartLink> in frontier models, better guardrails for autonomous actions, and maturing orchestration frameworks like LangGraph and CrewAI.",
-        "However, challenges persist. Agent sprawl—similar to the microservices explosion of the 2010s—is creating observability nightmares. Companies report 40% of agent compute is wasted on redundant or failed task attempts."
+        "By mid-2025, we project the lines will converge. This is the 'iPhone Moment' for autonomous agents.",
+        "Reliability becomes a commodity, and value shifts to the <SmartLink id='app-layer'>Application Layer</SmartLink>. The infrastructure wars are effectively over; the implementation wars begin."
       ],
-      "deepDives": [
-        {
-          "title": "The Orchestration Wars",
-          "content": "LangChain, LlamaIndex, and Semantic Kernel are battling for the agent orchestration layer. LangChain leads in GitHub stars (78K) but faces criticism for abstraction complexity. LlamaIndex dominates RAG use cases. Microsoft's Semantic Kernel is gaining enterprise traction through Azure integration. The winner will likely be determined by who best solves multi-agent coordination and human-in-the-loop workflows."
-        },
-        {
-          "title": "What's Actually Working",
-          "content": "Successful agent deployments share common patterns: (1) Narrow scope with clear success metrics, (2) Human approval gates for high-stakes actions, (3) Extensive logging and replay capabilities, (4) Fallback to human operators within SLA windows. The 'fully autonomous' vision remains 2-3 years out for most use cases."
-        }
-      ]
+      "deepDives": []
     },
     "timelineState": {
-      "sectionId": "phase-3-agents",
+      "sectionId": "phase-3-parity",
       "narrative": {
-        "title": "The Agentic Era",
-        "date_display": "Q4 2025",
-        "summary": "Adoption skyrockets as 'Reasoning Models' (like o1) solve reliability issues.",
-        "body": "We are moving from 'Chatbots' to 'Workforce'. The bottleneck is no longer intelligence, but orchestration and safety."
+        "title": "Convergence",
+        "date_display": "Mid 2025",
+        "summary": "The plumbing problem is solved. Now we build the skyscrapers.",
+        "body": "The chart is now fully revealed. Reliability matches Capability, enabling truly autonomous agents to operate 24/7 without human oversight."
       },
       "dashboard_state": {
-        "meta": { "currentDate": "Dec 2025", "timelineProgress": 0.6 },
+        "meta": {
+          "currentDate": "Jun 2025",
+          "timelineProgress": 1.0
+        },
         "charts": {
           "trendLine": {
-            "label": "Agent Task Success Rate (%)",
-            "data": [45, 52, 60, 68, 85, 92]
+            "title": "Capability vs. Reliability Index",
+            "gridScale": { "min": 0, "max": 100 },
+            "xAxisLabels": [
+              "Q1 '24",
+              "Q2 '24",
+              "Q3 '24",
+              "Q4 '24",
+              "Q1 '25",
+              "Q2 '25"
+            ],
+            "visibleEndIndex": 5,
+            "focusIndex": 5,
+            "series": [
+              {
+                "id": "model-capability",
+                "label": "Model Capability",
+                "type": "ghost",
+                "color": "gray",
+                "data": [
+                  { "value": 20, "tooltip": { "title": "Baseline", "body": "Initial capability prior to surge." } },
+                  { "value": 45, "tooltip": { "title": "Context Expansion", "body": "Larger contexts improve planning." } },
+                  { "value": 70, "tooltip": { "title": "Multimodal", "body": "Vision/audio inputs expand scope." } },
+                  { "value": 85, "tooltip": { "title": "Reasoning Models", "body": "Reliability climbs with new models." } },
+                  { "value": 95, "tooltip": { "title": "Agent Swarms", "body": "Parallelized tool use." } },
+                  { "value": 98, "tooltip": { "title": "Plateau", "body": "Model size hits physical limits." } }
+                ]
+              },
+              {
+                "id": "infra-reliability",
+                "label": "Infra Reliability",
+                "type": "solid",
+                "color": "accent",
+                "data": [
+                  { "value": 18, "tooltip": { "title": "Status Quo", "body": "Basic MLOps in place." } },
+                  { "value": 22, "tooltip": { "title": "Bottleneck", "body": "Scale exposes infra limits." } },
+                  { "value": 25, "tooltip": { "title": "Stagnation", "body": "Concurrency issues persist." } },
+                  { "value": 40, "tooltip": { "title": "Recovery", "body": "New orchestration adopted." } },
+                  { "value": 75, "tooltip": { "title": "Catch Up", "body": "Reliability accelerates." } },
+                  { "value": 98, "tooltip": { "title": "Parity Reached", "body": "Agents can now run 24/7 without intervention." } }
+                ]
+              }
+            ]
           },
           "marketShare": [
-            { "label": "LangChain/Graph", "value": 50, "color": "accent" },
-            { "label": "LlamaIndex", "value": 30, "color": "gray" },
-            { "label": "Semantic Kernel", "value": 20, "color": "black" }
+            { "label": "Infra", "value": 30, "color": "black", "icon": "🧱" },
+            { "label": "Apps", "value": 60, "color": "accent", "icon": "📱" },
+            { "label": "Services", "value": 10, "color": "gray", "icon": "🧠" }
           ]
         },
-        "techReadiness": { "existing": 5, "emerging": 4, "sciFi": 1 },
+        "techReadiness": {
+          "existing": 5,
+          "emerging": 3,
+          "sciFi": 2
+        },
         "keyStats": [
-          { "label": "Adoption", "value": "34%", "trend": "up" },
-          { "label": "Growth", "value": "325%", "sub": "YoY" },
-          { "label": "Waste", "value": "40%", "trend": "down" }
+          { "label": "Gap Width", "value": "0 pts", "trend": "flat", "context": "Solved" },
+          { "label": "Market Focus", "value": "Apps", "sub": "Transition" },
+          { "label": "Agent Uptime", "value": "99.99%" }
         ],
         "capabilities": [
-          { "label": "Planning", "score": 85, "icon": "map" },
-          { "label": "Tool Use", "score": 90, "icon": "tool" },
-          { "label": "Autonomy", "score": 55, "icon": "cpu" }
+          { "label": "Reasoning", "score": 98, "icon": "brain" },
+          { "label": "Uptime", "score": 99, "icon": "activity" },
+          { "label": "Safety", "score": 95, "icon": "shield" }
         ],
         "annotations": [
           {
-            "id": "note-agents-1",
-            "title": "The Reasoning Jump",
-            "description": "Introduction of 'Chain-of-Thought' native models spiked reliability.",
-            "position": { "x": 75, "y": 15 }
+            "id": "parity-1",
+            "title": "The Golden Age",
+            "description": "Infrastructure is no longer the bottleneck.",
+            "position": { "x": 92, "y": 5 },
+            "associatedDataIndex": 5,
+            "targetIndex": 5,
+            "sentiment": "positive"
           }
+        ],
+        "deltas": {
+          "reliability": { "value": "98%", "change": "+23 pts", "direction": "up" },
+          "gapWidth": { "value": "0 pts", "change": "-10 pts", "direction": "down" }
+        },
+        "skillToggles": [
+          { "id": "hacking", "label": "Hacking", "icon": "skull", "enabled": true, "score": 0.92, "description": "Cybersecurity penetration testing" },
+          { "id": "coding", "label": "Coding", "icon": "terminal", "enabled": true, "score": 0.95, "description": "Code generation & debugging" },
+          { "id": "robotics", "label": "Robotics", "icon": "bot", "enabled": true, "score": 0.75, "description": "Physical world manipulation" },
+          { "id": "ml-eng", "label": "ML Eng", "icon": "sparkles", "enabled": true, "score": 0.98, "description": "Machine learning engineering" },
+          { "id": "politics", "label": "Politics", "icon": "landmark", "enabled": true, "score": 0.82, "description": "Political analysis & forecasting" },
+          { "id": "forecasting", "label": "Forecast", "icon": "line-chart", "enabled": true, "score": 0.91, "description": "Trend prediction & modeling" }
+        ],
+        "statusBanner": {
+          "count": 100000,
+          "label": "Autonomous Agent copies",
+          "context": "operating at 20x human speed"
+        },
+        "agentCount": {
+          "count": 100000,
+          "label": "Autonomous Agent",
+          "speed": 20
+        },
+        "milestoneLabels": [
+          { "id": "parity", "text": "Capability-Reliability Parity", "icon": "✅", "sentiment": "positive" },
+          { "id": "app-focus", "text": "App Layer Dominance", "icon": "📱", "sentiment": "positive" },
+          { "id": "autonomy", "text": "Autonomously replicating AI workers", "sentiment": "neutral" }
         ]
       }
     },
     "smartLinks": {
-      "agentic": {
-        "summary": "Agentic AI systems can autonomously plan, execute multi-step tasks, use tools, and adapt based on feedback. Distinguished from chatbots by their ability to take actions, not just generate text.",
-        "source": "Anthropic Research"
-      },
-      "tool-use": {
-        "summary": "Tool use allows LLMs to invoke external APIs and code execution. Accuracy has improved from ~60% to ~95% in the past year.",
-        "source": "Berkeley Function Calling Leaderboard"
-      }
-    }
-  },
-  {
-    "id": "daily-technical-spotlight",
-    "meta": {
-      "date": "Technical Deep Dive",
-      "title": "Inference Cost Optimization: The New Battleground"
-    },
-    "content": {
-      "body": [
-        "As model capabilities plateau, the competition shifts to <SmartLink id='inference-cost'>inference economics</SmartLink>. Leading labs report 10x cost reductions over 18 months through a combination of quantization, speculative decoding, and custom silicon.",
-        "<SmartLink id='groq'>Groq's LPU architecture</SmartLink> demonstrated 500 tokens/second throughput at $0.27 per million tokens—an order of magnitude cheaper than cloud GPU inference. This has forced incumbents to accelerate their own silicon programs.",
-        "The practical implication: use cases previously uneconomical (real-time translation, continuous monitoring, bulk document processing) are becoming viable. Expect a wave of 'inference-enabled' startups in 2025."
-      ],
-      "deepDives": [
-        {
-          "title": "Speculative Decoding Explained",
-          "content": "Speculative decoding uses a small 'draft' model to predict multiple tokens, then verifies them in parallel with the large model. This exploits the fact that verification is cheaper than generation. Results: 2-3x speedup with no quality loss. Now shipping in vLLM, TensorRT-LLM, and Hugging Face TGI."
-        },
-        {
-          "title": "The Quantization Frontier",
-          "content": "FP16 → INT8 → INT4 → INT2. Each step halves memory and improves throughput. The surprising finding: 4-bit quantization preserves 95%+ of model quality for most tasks. GPTQ, AWQ, and GGML are the leading quantization methods. The next frontier: 1-bit (binary) models for edge deployment."
-        }
-      ]
-    },
-    "timelineState": {
-      "sectionId": "phase-4-tech",
-      "narrative": {
-        "title": "The Race to Zero",
-        "date_display": "2024 - 2026",
-        "summary": "Inference costs are collapsing, unlocking 'Always On' intelligence.",
-        "body": "Custom silicon (LPUs) and extreme quantization are driving the cost of intelligence down faster than Moore's Law, enabling real-time voice and video agents."
-      },
-      "dashboard_state": {
-        "meta": { "currentDate": "Jan 2026", "timelineProgress": 0.8 },
-        "charts": {
-          "trendLine": {
-            "label": "Cost per 1M Tokens ($)",
-            "data": [30, 15, 5, 1.5, 0.5, 0.27]
-          },
-          "marketShare": [
-            { "label": "Nvidia", "value": 75, "color": "black" },
-            { "label": "Groq/Custom", "value": 15, "color": "accent" },
-            { "label": "Cloud TPU", "value": 10, "color": "gray" }
-          ]
-        },
-        "techReadiness": { "existing": 9, "emerging": 1, "sciFi": 0 },
-        "keyStats": [
-          { "label": "Cost Redux", "value": "-90%", "trend": "down" },
-          { "label": "Throughput", "value": "500", "sub": "tok/s" },
-          { "label": "Precision", "value": "INT4" }
-        ],
-        "capabilities": [
-          { "label": "Speed", "score": 95, "icon": "zap" },
-          { "label": "Efficiency", "score": 90, "icon": "battery-charging" },
-          { "label": "Quality", "score": 80, "icon": "check-circle" }
-        ],
-        "annotations": [
-          {
-            "id": "note-tech-1",
-            "title": "The LPU Disruption",
-            "description": "Deterministic silicon (Groq) breaks the GPU batching paradigm.",
-            "position": { "x": 85, "y": 80 }
-          }
-        ]
-      }
-    },
-    "smartLinks": {
-      "inference-cost": {
-        "summary": "Inference cost = (compute time × hardware cost) + (memory bandwidth × token count). Optimization targets all three: faster chips, efficient memory access patterns, and reduced precision arithmetic.",
-        "source": "MLSys 2024"
-      },
-      "groq": {
-        "summary": "Groq's LPU uses a deterministic execution model optimized for transformer inference. No batching required—each request gets dedicated silicon.",
-        "source": "Groq Technical Paper"
-      }
-    }
-  },
-  {
-    "id": "daily-outlook",
-    "meta": {
-      "date": "Week Ahead",
-      "title": "What to Watch"
-    },
-    "content": {
-      "body": [
-        "<SmartLink id='nvidia-earnings'>NVIDIA earnings</SmartLink> on Wednesday will set the tone for AI infrastructure sentiment. Consensus expects $32B revenue; whisper numbers suggest $35B+ is possible given H100 demand signals.",
-        "OpenAI's rumored <SmartLink id='o2-release'>o2 model release</SmartLink> could drop any day. Early testers report significant reasoning improvements, potentially obsoleting some agent orchestration complexity.",
-        "Three IPO filings expected: Databricks (direct listing), Scale AI (traditional), and Anthropic (SPAC rumors persist but unconfirmed). Total expected proceeds: $15-20B."
-      ],
-      "deepDives": [
-        {
-          "title": "Earnings Impact Analysis",
-          "content": "NVIDIA's data center revenue directly correlates with AI infrastructure startup funding (r=0.87). A beat typically triggers 15-20% valuation bumps for private AI companies within 30 days. A miss could accelerate the 'efficient AI' narrative and benefit inference optimization plays."
-        }
-      ]
-    },
-    "timelineState": {
-      "sectionId": "phase-5-outlook",
-      "narrative": {
-        "title": "Horizon Scanning",
-        "date_display": "Next Week",
-        "summary": "Markets brace for volatility as the 'Big Three' prepare announcements.",
-        "body": "With Nvidia earnings and the rumored 'O2' release, we expect significant repricing of both hardware stocks and application-layer startups."
-      },
-      "dashboard_state": {
-        "meta": { "currentDate": "Future", "timelineProgress": 1.0 },
-        "charts": {
-          "trendLine": {
-            "label": "Market Volatility Index (AI Sector)",
-            "data": [20, 25, 40, 35, 65, 80]
-          },
-          "marketShare": [
-            { "label": "Pricing In", "value": 50, "color": "accent" },
-            { "label": "Wait & See", "value": 30, "color": "gray" },
-            { "label": "Short", "value": 20, "color": "black" }
-          ]
-        },
-        "techReadiness": { "existing": 5, "emerging": 3, "sciFi": 2 },
-        "keyStats": [
-          { "label": "NVDA Est.", "value": "$32B", "trend": "flat" },
-          { "label": "IPO Vol", "value": "$18B", "sub": "Expected" },
-          { "label": "Conf.", "value": "74%" }
-        ],
-        "capabilities": [
-          { "label": "Prediction", "score": 60, "icon": "eye" },
-          { "label": "Risk", "score": 85, "icon": "alert-triangle" },
-          { "label": "Alpha", "score": 70, "icon": "trending-up" }
-        ],
-        "annotations": [
-          {
-            "id": "note-outlook-1",
-            "title": "Earnings Call",
-            "description": "The single most important event for 2026 AI CapEx forecasting.",
-            "position": { "x": 90, "y": 10 }
-          }
-        ]
-      }
-    },
-    "smartLinks": {
-      "nvidia-earnings": {
-        "summary": "NVIDIA reports Q4 FY25 earnings Wednesday. Key metrics: Data Center revenue, H100 shipment guidance, and Blackwell production timeline.",
-        "source": "Bloomberg"
-      },
-      "o2-release": {
-        "summary": "OpenAI's o2 (successor to o1) reportedly achieves PhD-level reasoning on GPQA. Expected to ship with improved tool use.",
-        "source": "The Information"
+      "app-layer": {
+        "summary": "Vertical AI Agents (Legal, Medical, Finance) replace general chatbots as the primary value driver.",
+        "source": "Sequoia Capital"
       }
     }
   }

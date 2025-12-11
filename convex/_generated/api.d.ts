@@ -21,9 +21,11 @@ import type * as crons_emailIntelligenceCron from "../crons/emailIntelligenceCro
 import type * as domains_agents_agentChat from "../domains/agents/agentChat.js";
 import type * as domains_agents_agentChatActions from "../domains/agents/agentChatActions.js";
 import type * as domains_agents_agentDelegations from "../domains/agents/agentDelegations.js";
+import type * as domains_agents_agentInitializer from "../domains/agents/agentInitializer.js";
 import type * as domains_agents_agentMemory from "../domains/agents/agentMemory.js";
 import type * as domains_agents_agentPlanning from "../domains/agents/agentPlanning.js";
 import type * as domains_agents_agentRouter from "../domains/agents/agentRouter.js";
+import type * as domains_agents_agentScratchpads from "../domains/agents/agentScratchpads.js";
 import type * as domains_agents_agentTimelines from "../domains/agents/agentTimelines.js";
 import type * as domains_agents_arbitrage_agent from "../domains/agents/arbitrage/agent.js";
 import type * as domains_agents_arbitrage_config from "../domains/agents/arbitrage/config.js";
@@ -302,9 +304,11 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/agentChat": typeof domains_agents_agentChat;
   "domains/agents/agentChatActions": typeof domains_agents_agentChatActions;
   "domains/agents/agentDelegations": typeof domains_agents_agentDelegations;
+  "domains/agents/agentInitializer": typeof domains_agents_agentInitializer;
   "domains/agents/agentMemory": typeof domains_agents_agentMemory;
   "domains/agents/agentPlanning": typeof domains_agents_agentPlanning;
   "domains/agents/agentRouter": typeof domains_agents_agentRouter;
+  "domains/agents/agentScratchpads": typeof domains_agents_agentScratchpads;
   "domains/agents/agentTimelines": typeof domains_agents_agentTimelines;
   "domains/agents/arbitrage/agent": typeof domains_agents_arbitrage_agent;
   "domains/agents/arbitrage/config": typeof domains_agents_arbitrage_config;

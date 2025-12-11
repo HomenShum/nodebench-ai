@@ -12,9 +12,11 @@ interface MemoryProps {
 
 export function MemoryPreview({ runId }: MemoryProps) {
   const [open, setOpen] = React.useState(false);
-  const episodicQuery = (api as any).agentMemory?.getEpisodicByRunId;
-  const shouldFetch = Boolean(runId && episodicQuery);
-  const episodic = useQuery(shouldFetch ? episodicQuery : 'skip', shouldFetch ? { runId } : 'skip');
+  const shouldFetch = Boolean(runId);
+  const episodic = useQuery(
+    shouldFetch ? api.domains.agents.agentMemory.getEpisodicByRunId : 'skip',
+    shouldFetch ? { runId: runId as string, limit: 50 } : 'skip'
+  );
 
   if (!runId) return null;
 
@@ -61,4 +63,3 @@ export function MemoryPreview({ runId }: MemoryProps) {
     </div>
   );
 }
-

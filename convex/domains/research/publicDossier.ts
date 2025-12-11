@@ -19,6 +19,74 @@ import { getLlmModel } from "../../../shared/llm/modelCatalog";
 // SCHEMA: ScrollySection type for the daily public dossier
 // ═══════════════════════════════════════════════════════════════════════════
 
+const tooltipPayload = v.object({
+  title: v.string(),
+  body: v.string(),
+  kicker: v.optional(v.string()),
+});
+
+const chartPoint = v.object({
+  value: v.number(),
+  tooltip: v.optional(tooltipPayload),
+});
+
+const chartSeries = v.object({
+  id: v.string(),
+  label: v.string(),
+  type: v.union(v.literal("solid"), v.literal("ghost")),
+  color: v.optional(v.string()),
+  data: v.array(chartPoint),
+});
+
+const trendLineConfig = v.object({
+  title: v.string(),
+  xAxisLabels: v.array(v.string()),
+  series: v.array(chartSeries),
+  visibleEndIndex: v.number(),
+  focusIndex: v.optional(v.number()),
+});
+
+const annotation = v.object({
+  id: v.string(),
+  title: v.string(),
+  description: v.string(),
+  position: v.object({ x: v.number(), y: v.number() }),
+  associatedDataIndex: v.optional(v.number()),
+});
+
+const dashboardState = v.object({
+  meta: v.object({
+    currentDate: v.string(),
+    timelineProgress: v.number(),
+  }),
+  charts: v.object({
+    trendLine: trendLineConfig,
+    marketShare: v.array(v.object({
+      label: v.string(),
+      value: v.number(),
+      color: v.string(),
+    })),
+  }),
+  techReadiness: v.object({
+    existing: v.number(),
+    emerging: v.number(),
+    sciFi: v.number(),
+  }),
+  keyStats: v.array(v.object({
+    label: v.string(),
+    value: v.string(),
+    sub: v.optional(v.string()),
+    trend: v.optional(v.union(v.literal("up"), v.literal("down"), v.literal("flat"))),
+    context: v.optional(v.string()),
+  })),
+  capabilities: v.array(v.object({
+    label: v.string(),
+    score: v.number(),
+    icon: v.string(),
+  })),
+  annotations: v.optional(v.array(annotation)),
+});
+
 export const scrollySectionValidator = v.object({
   id: v.string(),
   meta: v.object({
@@ -32,7 +100,8 @@ export const scrollySectionValidator = v.object({
       content: v.string(),
     })),
   }),
-  dashboard: v.object({
+  // Legacy dashboard still accepted; frontend will normalize to TrendLineConfig
+  dashboard: v.optional(v.object({
     phaseLabel: v.string(),
     kpis: v.array(v.object({
       label: v.string(),
@@ -42,7 +111,18 @@ export const scrollySectionValidator = v.object({
     })),
     marketSentiment: v.number(),
     activeRegion: v.string(),
-  }),
+  })),
+  // New timeline-aware dashboard state powering progressive charts
+  timelineState: v.optional(v.object({
+    sectionId: v.string(),
+    narrative: v.object({
+      title: v.string(),
+      date_display: v.string(),
+      summary: v.string(),
+      body: v.string(),
+    }),
+    dashboard_state: dashboardState,
+  })),
   smartLinks: v.optional(v.record(v.string(), v.object({
     summary: v.string(),
     source: v.optional(v.string()),
@@ -55,7 +135,7 @@ export const scrollySectionValidator = v.object({
 
 const DOSSIER_SYSTEM_PROMPT = `You are an AI research analyst generating a daily intelligence briefing in a specific JSON format.
 
-Your output MUST be a valid JSON array of sections following this exact structure:
+Your output MUST be a valid JSON array of sections following this structure (no markdown fences):
 [
   {
     "id": "unique-section-id",
@@ -64,11 +144,80 @@ Your output MUST be a valid JSON array of sections following this exact structur
       "body": ["Paragraph 1 with <SmartLink id='term-id'>linked terms</SmartLink>.", "Paragraph 2..."],
       "deepDives": [{ "title": "Deep Dive Title", "content": "Expanded explanation..." }]
     },
-    "dashboard": {
-      "phaseLabel": "Dashboard Label",
-      "kpis": [{ "label": "Metric Name", "value": 85, "unit": "%", "color": "bg-blue-500" }],
-      "marketSentiment": 75,
-      "activeRegion": "Global"
+    "timelineState": {
+      "sectionId": "phase-1",
+      "narrative": {
+        "title": "Narrative Title",
+        "date_display": "Q1 2024 - Q2 2024",
+        "summary": "One-line summary",
+        "body": "A short paragraph for this beat"
+      },
+      "dashboard_state": {
+        "meta": { "currentDate": "Apr 2024", "timelineProgress": 0.2 },
+        "charts": {
+          "trendLine": {
+            "title": "Capability vs Reliability",
+            "xAxisLabels": ["Q1 '24","Q2 '24","Q3 '24","Q4 '24","Q1 '25","Q2 '25"],
+            "visibleEndIndex": 2,
+            "focusIndex": 2,
+            "series": [
+              {
+                "id": "model-cap",
+                "label": "Model Capability",
+                "type": "ghost",
+                "color": "gray",
+                "data": [
+                  { "value": 20, "tooltip": { "title": "GPT-4", "body": "High capability, low steerability." } },
+                  { "value": 45, "tooltip": { "title": "Context Expansion", "body": "128k windows strain infra." } },
+                  { "value": 70, "tooltip": { "title": "Multimodal", "body": "Vision/audio saturates bandwidth." } },
+                  { "value": 85, "tooltip": { "title": "Reasoning Models", "body": "Latency/throughput challenges." } },
+                  { "value": 95, "tooltip": { "title": "Agent Swarms", "body": "Parallel tool calls." } },
+                  { "value": 98, "tooltip": { "title": "AGI Threshold", "body": "Diminishing returns." } }
+                ]
+              },
+              {
+                "id": "infra-rel",
+                "label": "Infra Reliability",
+                "type": "solid",
+                "color": "accent",
+                "data": [
+                  { "value": 18, "tooltip": { "title": "Status Quo", "body": "Basic MLOps." } },
+                  { "value": 22, "tooltip": { "title": "Bottleneck", "body": "RAG pipelines failing." } },
+                  { "value": 25, "tooltip": { "title": "Stagnation", "body": "DB contention." } },
+                  { "value": 40, "tooltip": { "title": "Recovery", "body": "New orchestration layers." } },
+                  { "value": 75, "tooltip": { "title": "Catch Up", "body": "Capital deployment impact." } },
+                  { "value": 92, "tooltip": { "title": "Parity", "body": "Reliability matches capability." } }
+                ]
+              }
+            ]
+          },
+          "marketShare": [
+            { "label": "Compute", "value": 60, "color": "black" },
+            { "label": "Storage", "value": 30, "color": "gray" },
+            { "label": "Orchestration", "value": 10, "color": "accent" }
+          ]
+        },
+        "techReadiness": { "existing": 8, "emerging": 2, "sciFi": 0 },
+        "keyStats": [
+          { "label": "Gap Width", "value": "45 pts", "trend": "up", "context": "Risk" },
+          { "label": "Fail Rate", "value": "12%", "trend": "up" },
+          { "label": "Latency", "value": "2.4s", "trend": "up" }
+        ],
+        "capabilities": [
+          { "label": "Scale", "score": 85, "icon": "trending-up" },
+          { "label": "Reliability", "score": 60, "icon": "shield-check" },
+          { "label": "Cost", "score": 40, "icon": "dollar-sign" }
+        ],
+        "annotations": [
+          {
+            "id": "gap-1",
+            "title": "Reliability Gap",
+            "description": "Where enterprise POCs fail.",
+            "position": { "x": 50, "y": 45 },
+            "associatedDataIndex": 2
+          }
+        ]
+      }
     },
     "smartLinks": {
       "term-id": { "summary": "Explanation of the term", "source": "Source Name" }
@@ -77,13 +226,13 @@ Your output MUST be a valid JSON array of sections following this exact structur
 ]
 
 Guidelines:
-1. Generate 5 sections: Executive Summary, Funding Highlights, Emerging Trends, Technical Deep Dive, Week Ahead
-2. Use <SmartLink id='x'>text</SmartLink> for key terms that deserve tooltips
-3. Include real companies, funding rounds, and technical concepts when possible
-4. KPI values should be numbers (0-100 for percentages, raw numbers for counts/amounts)
-5. Use Tailwind color classes for KPI colors: bg-emerald-500, bg-blue-500, bg-purple-500, bg-amber-500, bg-rose-500
-6. Make content actionable and insightful, not generic
-7. Include 1-2 deepDives per section with substantive analysis`;
+1. Generate 5 sections: Executive Summary, Funding Highlights, Emerging Trends, Technical Deep Dive, Week Ahead.
+2. Use <SmartLink id='x'>text</SmartLink> for key terms that deserve tooltips.
+3. Use a single master timeline (same xAxisLabels and series length) and adjust visibleEndIndex/focusIndex per section to create a progressive reveal.
+4. Include rich per-point tooltips; mark future/projection series as "ghost".
+5. Include real companies, funding rounds, and technical concepts when possible.
+6. Keep content actionable and specific (no generic filler).
+7. Output ONLY the JSON array, no markdown or prose.`;
 
 export const generateDailyDossier = internalAction({
   args: {

@@ -8,6 +8,37 @@ import { z } from "zod";
 import { GoogleGenAI, createUserContent, Type } from "@google/genai";
 import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
+// Persistence helpers (optional, keyed by agentThreadId + userId)
+async function loadPersistedScratchpad(ctx: any, agentThreadId?: string, userId?: string) {
+  if (!agentThreadId || !userId) return null;
+  const existing = await ctx.db
+    .query("agentScratchpads")
+    .withIndex("by_agent_thread", (q: any) => q.eq("agentThreadId", agentThreadId))
+    .first();
+  if (!existing || String(existing.userId) !== String(userId)) return null;
+  return existing;
+}
+
+async function savePersistedScratchpad(ctx: any, agentThreadId: string, userId: string, scratchpad: any) {
+  const now = Date.now();
+  const existing = await ctx.db
+    .query("agentScratchpads")
+    .withIndex("by_agent_thread", (q: any) => q.eq("agentThreadId", agentThreadId))
+    .first();
+
+  if (existing) {
+    await ctx.db.patch(existing._id, { scratchpad, updatedAt: now });
+  } else {
+    await ctx.db.insert("agentScratchpads", {
+      agentThreadId,
+      userId: userId as any,
+      scratchpad,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER: Generate unique messageId (browser-safe, no Node crypto)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -121,46 +152,70 @@ Generates a unique messageId that all subsequent tools must match.`,
     currentIntent: z.string().optional().describe("Classified intent: greeting|comparison|deep-research|etc"),
     activeEntities: z.array(z.string()).optional().describe("Initial entities to track"),
     activeTheme: z.string().optional().describe("Theme if applicable"),
+    agentThreadId: z.string().optional().describe("Optional agentThreadId to persist scratchpad"),
+    userId: z.string().optional().describe("User id for persistence (required if agentThreadId provided)"),
   }),
 
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
     // INVARIANT A: New messageId for every user message
     const messageId = newMessageId();
-    
-    const scratchpad: Scratchpad = {
-      // INVARIANT A: Message isolation
-      messageId,
-      
-      // INVARIANT C: Memory dedupe tracking (fresh)
-      memoryUpdatedEntities: [],
-      
-      // INVARIANT D: Capability version (will be set when discoverCapabilities runs)
-      capabilitiesVersion: null,
-      
-      // Existing fields
-      activeEntities: args.activeEntities || [],
-      activeTheme: args.activeTheme || null,
-      lastPlan: null,
-      lastCapabilities: null,
-      compactContext: null,
-      lastToolOutput: null,
-      pendingTasks: [],
-      completedTasks: [],
-      currentIntent: args.currentIntent || null,
-      
-      // Section tracking (null until setActiveSection is called)
-      activeSectionKey: null,
-      activeSectionId: null,
-      
-      // Safety limits (fresh counters)
-      stepCount: 0,
-      toolCallCount: 0,
-      planningCallCount: 0,
-      
-      // Timestamps
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+
+    // Try to load an existing scratchpad if persistence is enabled
+    let persisted = await loadPersistedScratchpad(ctx, args.agentThreadId, args.userId);
+    let scratchpad: Scratchpad;
+
+    if (persisted) {
+      scratchpad = {
+        ...(persisted.scratchpad as Scratchpad),
+        messageId,
+        currentIntent: args.currentIntent || persisted.scratchpad?.currentIntent || null,
+        activeEntities: args.activeEntities ?? persisted.scratchpad?.activeEntities ?? [],
+        activeTheme: args.activeTheme ?? persisted.scratchpad?.activeTheme ?? null,
+        stepCount: 0,
+        toolCallCount: 0,
+        planningCallCount: 0,
+        updatedAt: Date.now(),
+      };
+    } else {
+      scratchpad = {
+        // INVARIANT A: Message isolation
+        messageId,
+        
+        // INVARIANT C: Memory dedupe tracking (fresh)
+        memoryUpdatedEntities: [],
+        
+        // INVARIANT D: Capability version (will be set when discoverCapabilities runs)
+        capabilitiesVersion: null,
+        
+        // Existing fields
+        activeEntities: args.activeEntities || [],
+        activeTheme: args.activeTheme || null,
+        lastPlan: null,
+        lastCapabilities: null,
+        compactContext: null,
+        lastToolOutput: null,
+        pendingTasks: [],
+        completedTasks: [],
+        currentIntent: args.currentIntent || null,
+        
+        // Section tracking (null until setActiveSection is called)
+        activeSectionKey: null,
+        activeSectionId: null,
+        
+        // Safety limits (fresh counters)
+        stepCount: 0,
+        toolCallCount: 0,
+        planningCallCount: 0,
+        
+        // Timestamps
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+    }
+
+    if (args.agentThreadId && args.userId) {
+      await savePersistedScratchpad(ctx, args.agentThreadId, args.userId, scratchpad);
+    }
 
     return scratchpad;
   },
@@ -180,6 +235,8 @@ Call this AFTER each tool to maintain state continuity.`,
   args: z.object({
     messageId: z.string().describe("REQUIRED: Must match scratchpad.messageId"),
     currentScratchpad: scratchpadSchema.describe("Current scratchpad state"),
+    agentThreadId: z.string().optional().describe("Optional agentThreadId to persist scratchpad"),
+    userId: z.string().optional().describe("User id for persistence (required if agentThreadId provided)"),
     updates: z.object({
       activeEntities: z.array(z.string()).optional(),
       activeTheme: z.string().nullable().optional(),
@@ -206,7 +263,7 @@ Call this AFTER each tool to maintain state continuity.`,
     }).describe("Fields to update"),
   }),
 
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
     // INVARIANT A: Guard messageId
     if (args.currentScratchpad.messageId !== args.messageId) {
       console.error(`[updateScratchpad] messageId MISMATCH: expected ${args.currentScratchpad.messageId}, got ${args.messageId}`);
@@ -269,6 +326,10 @@ Call this AFTER each tool to maintain state continuity.`,
       updated.pendingTasks = [...updated.pendingTasks, ...args.updates.newPendingTasks];
     }
 
+    if (args.agentThreadId && args.userId) {
+      await savePersistedScratchpad(ctx, args.agentThreadId, args.userId, updated);
+    }
+
     return { ok: true, scratchpad: updated };
   },
 });
@@ -291,9 +352,11 @@ Example section keys: executive_summary, market_landscape, funding_signals, risk
     currentScratchpad: scratchpadSchema.describe("Current scratchpad state"),
     sectionKey: z.string().describe("Section key (e.g., 'market_landscape')"),
     runId: z.string().describe("The run/thread ID for stable ID generation"),
+    agentThreadId: z.string().optional().describe("Optional agentThreadId to persist scratchpad"),
+    userId: z.string().optional().describe("User id for persistence (required if agentThreadId provided)"),
   }),
 
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
     // INVARIANT A: Guard messageId
     if (args.currentScratchpad.messageId !== args.messageId) {
       return {
@@ -319,6 +382,10 @@ Example section keys: executive_summary, market_landscape, funding_signals, risk
       updatedAt: Date.now(),
     };
     
+    if (args.agentThreadId && args.userId) {
+      await savePersistedScratchpad(ctx, args.agentThreadId, args.userId, updated);
+    }
+
     return {
       ok: true,
       scratchpad: updated,
@@ -560,9 +627,11 @@ Call this after ANY tool that writes to entityContexts.`,
     messageId: z.string().describe("REQUIRED: Must match scratchpad.messageId"),
     canonicalKey: z.string().describe("Entity key, e.g., 'company:TSLA' or 'person:sam-altman'"),
     currentScratchpad: scratchpadSchema.describe("Current scratchpad state"),
+    agentThreadId: z.string().optional().describe("Optional agentThreadId to persist scratchpad"),
+    userId: z.string().optional().describe("User id for persistence (required if agentThreadId provided)"),
   }),
 
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
     // INVARIANT A: Guard messageId
     if (args.currentScratchpad.messageId !== args.messageId) {
       console.error(`[markMemoryUpdated] messageId MISMATCH`);
@@ -592,6 +661,10 @@ Call this after ANY tool that writes to entityContexts.`,
       updatedAt: Date.now(),
     };
     
+    if (args.agentThreadId && args.userId) {
+      await savePersistedScratchpad(ctx, args.agentThreadId, args.userId, updated);
+    }
+
     return {
       ok: true,
       alreadyMarked: false,

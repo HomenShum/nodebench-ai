@@ -183,17 +183,15 @@ export const createForDocument = mutation({
 export const listAgentTasksByThread = query({
   args: { agentThreadId: v.string() },
   handler: async (ctx, args) => {
-    // Find the timeline associated with this thread
-    // For now, we'll query all agentTasks and filter
-    // In production, we'd add an agentThreadId index to agentTimelines
-    
-    const allTasks = await ctx.db
+    // Use agentThreadId index for efficient filtering
+    const filtered = await ctx.db
       .query("agentTasks")
+      .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", args.agentThreadId))
       .order("desc")
       .take(100);
     
     // Return tasks sorted by creation time
-    return allTasks.map(task => ({
+    return filtered.map(task => ({
       _id: task._id,
       name: task.name,
       status: task.status ?? "pending",

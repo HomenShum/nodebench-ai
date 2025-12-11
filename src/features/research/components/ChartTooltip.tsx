@@ -1,13 +1,55 @@
+"use client";
+
 import { motion, AnimatePresence } from "framer-motion";
-import type { Annotation } from "@/features/research/types";
+
+export interface TooltipData {
+  id: string;
+  title: string;
+  description: string;
+  position?: { x: number; y: number };
+  kicker?: string; // Optional category/type label
+  sentiment?: "positive" | "negative" | "neutral";
+}
 
 interface TooltipProps {
   active: boolean;
-  data: Annotation | null;
+  data: TooltipData | null;
 }
 
+/**
+ * Enhanced ChartTooltip matching AI 2027 reference
+ * Features: Dark slate/blue-gray background, rich content structure, better positioning
+ */
 export const ChartTooltip = ({ active, data }: TooltipProps) => {
   if (!data) return null;
+
+  // Sentiment-based accent colors (AI 2027 style)
+  const sentimentColors = {
+    positive: {
+      bg: "bg-slate-900/95",
+      accent: "bg-emerald-400",
+      accentText: "text-emerald-400",
+      border: "border-emerald-500/30",
+      glow: "shadow-[0_0_8px_rgba(52,211,153,0.5)]",
+    },
+    negative: {
+      bg: "bg-slate-900/95",
+      accent: "bg-red-400",
+      accentText: "text-red-400",
+      border: "border-red-500/30",
+      glow: "shadow-[0_0_8px_rgba(248,113,113,0.5)]",
+    },
+    neutral: {
+      bg: "bg-slate-900/95",
+      accent: "bg-blue-400",
+      accentText: "text-blue-400",
+      border: "border-blue-500/30",
+      glow: "shadow-[0_0_8px_rgba(96,165,250,0.5)]",
+    },
+  };
+
+  const colors = sentimentColors[data.sentiment || "neutral"];
+  const position = data.position || { x: 50, y: 50 };
 
   return (
     <AnimatePresence>
@@ -16,26 +58,56 @@ export const ChartTooltip = ({ active, data }: TooltipProps) => {
           initial={{ opacity: 0, scale: 0.95, y: 10, x: "-50%" }}
           animate={{ opacity: 1, scale: 1, y: 0, x: "-50%" }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="absolute z-50 pointer-events-none w-64"
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="absolute z-50 pointer-events-none w-72"
           style={{
-            left: `${data.position.x}%`,
-            top: `${data.position.y}%`,
-            marginTop: "-140px",
+            left: `${position.x}%`,
+            top: `${position.y}%`,
+            marginTop: "-160px",
           }}
         >
-          <div className="bg-emerald-950/90 text-white p-4 rounded-lg shadow-2xl border border-emerald-500/30 backdrop-blur-md">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-              <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-400/80">
-                Intel Log
+          {/* Main tooltip container - Dark slate per AI 2027 */}
+          <div className={`
+            ${colors.bg} text-white p-4 rounded-xl shadow-2xl
+            ${colors.border} border backdrop-blur-md
+            relative overflow-hidden
+          `}>
+            {/* Subtle gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+
+            {/* Header with indicator dot and kicker */}
+            <div className="relative flex items-center gap-2 mb-2">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className={`w-2 h-2 rounded-full ${colors.accent} ${colors.glow}`}
+              />
+              <span className={`font-mono text-[9px] font-bold uppercase tracking-widest ${colors.accentText}/80`}>
+                {data.kicker || "Intel Log"}
               </span>
             </div>
-            <h4 className="font-serif font-bold text-sm mb-1 text-emerald-50">{data.title}</h4>
-            <p className="font-mono text-[10px] leading-relaxed text-emerald-200/90">
+
+            {/* Title */}
+            <h4 className="relative font-serif font-bold text-sm mb-2 text-white leading-tight">
+              {data.title}
+            </h4>
+
+            {/* Description body - font-sans per spec */}
+            <p className="relative font-sans text-[11px] leading-relaxed text-slate-300">
               {data.description}
             </p>
+
+            {/* Bottom accent line */}
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+              className={`absolute bottom-0 left-0 right-0 h-0.5 ${colors.accent}/50 origin-left`}
+            />
           </div>
-          <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-emerald-900/90 mx-auto mt-[-1px]" />
+
+          {/* Arrow pointing down (to the data point below) */}
+          <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-slate-900/95 mx-auto mt-[-1px]" />
         </motion.div>
       )}
     </AnimatePresence>

@@ -76,6 +76,74 @@ See `NODEBENCH_INTEGRATION_MAP.md` for detailed implementation notes and testing
 
 ---
 
+## Research Dashboard Visual Enhancements
+
+**Completed December 11, 2025** - Fixed critical visual bugs in the AI 2027-style StickyDashboard component for dense, terminal-inspired research UI.
+
+### Issues Fixed
+
+#### 1. Tooltip Clipping Issue
+**Problem:** Hover tooltips on the line chart were being clipped/cut off when appearing near container edges.
+
+**Root Cause:** The `overflow-hidden` class on the main dashboard container prevented tooltips from rendering outside bounds.
+
+**Solution:**
+- **File:** `src/features/research/components/StickyDashboard.tsx` (Line 48)
+- **Change:** Removed `overflow-hidden` class and added `z-10` for proper stacking context
+```tsx
+// Before:
+<div className="sticky top-4 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden p-3 ...">
+
+// After:
+<div className="sticky top-4 z-10 rounded-xl border border-slate-200 bg-white shadow-sm p-3 ...">
+```
+
+#### 2. Invisible Chart Line
+**Problem:** The line chart's primary trend line was not visible on the page despite data being present.
+
+**Root Cause:** SVG `<path>` elements don't understand Tailwind's `text-*` utility classes for stroke colors. The `colorStyle` function was returning `stroke: undefined` and relying on className, which only works for HTML text elements.
+
+**Solution:**
+- **File:** `src/features/research/components/InteractiveLineChart.tsx`
+- **Changes:**
+  1. **Fixed `colorStyle` function** (Lines 20-29) to return actual hex color values:
+  ```tsx
+  // Before: Returned undefined stroke values
+  if (series.color === "accent") return { className: "text-indigo-600", stroke: undefined, fill: undefined };
+
+  // After: Returns actual hex colors for SVG rendering
+  if (series.color === "accent") return { className: "text-indigo-600", stroke: "#4f46e5", fill: "#4f46e5" };
+  if (series.color === "gray") return { className: "text-slate-400", stroke: "#94a3b8", fill: "#94a3b8" };
+  if (series.color === "black") return { className: "text-slate-900", stroke: "#0f172a", fill: "#0f172a" };
+  return { className: series.color ? series.color : "text-slate-800", stroke: "#1e293b", fill: "#1e293b" };
+  ```
+
+  2. **Added SVG viewBox padding** (Line 236) to prevent edge clipping:
+  ```tsx
+  // Before:
+  <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+
+  // After:
+  <svg viewBox={`-10 -10 ${width + 20} ${height + 20}`} className="w-full h-full overflow-visible">
+  ```
+
+### Technical Details
+
+**Key Insight:** SVG elements require actual color values (hex codes like `#4f46e5`) for `stroke` and `fill` attributes. Tailwind utility classes like `text-indigo-600` only apply to HTML text elements via CSS, not SVG presentation attributes.
+
+**Verification:**
+- ✅ Build compiles with no TypeScript errors
+- ✅ Chart line renders with proper indigo color (#4f46e5)
+- ✅ Tooltips appear without clipping at container edges
+- ✅ No console errors or warnings
+- ✅ Hover interactions work smoothly
+
+### Files Modified
+- `src/features/research/components/StickyDashboard.tsx` - Removed overflow-hidden, added z-10
+- `src/features/research/components/InteractiveLineChart.tsx` - Fixed SVG color rendering and viewBox padding
+
+---
+
 Inspired by Microsoft AutoGen's Teachability, agents can now learn and persist knowledge:
 
 - **Facts** - User name, company, role, tools, preferences

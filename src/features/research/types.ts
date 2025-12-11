@@ -1,9 +1,109 @@
+export interface TooltipPayload {
+  title: string;
+  body: string;
+  kicker?: string;
+}
+
+export interface ChartPoint {
+  value: number;
+  tooltip?: TooltipPayload;
+}
+
+export interface ChartSeries {
+  id: string;
+  label: string;
+  type: "solid" | "ghost";
+  color?: string;
+  data: ChartPoint[];
+}
+
+export interface TrendLineConfig {
+  title: string;
+  xAxisLabels: string[];
+  series: ChartSeries[];
+  visibleEndIndex: number;
+  focusIndex?: number;
+   gridScale?: { min: number; max: number };
+}
+
 export interface Annotation {
   id: string;
   title: string;
   description: string;
   // Position as percentage (0-100) on the chart canvas
-  position: { x: number; y: number };
+  position?: { x: number; y: number };
+  // Optional index of the data point on the primary series to anchor the annotation
+  targetIndex?: number;
+  sentiment?: "positive" | "negative" | "neutral";
+  associatedDataIndex?: number;
+}
+
+// Delta indicator for animated value changes
+export interface DeltaValue {
+  value: string;
+  change: string;
+  direction: "up" | "down" | "flat";
+}
+
+// Key stat with optional context and trend
+export interface KeyStat {
+  label: string;
+  value: string;
+  sub?: string;
+  trend?: "up" | "down" | "flat";
+  context?: string; // e.g., "Critical Risk", "In Production"
+}
+
+// Capability bar entry
+export interface CapabilityEntry {
+  label: string;
+  score: number; // 0-100
+  icon: string; // lucide icon name: "brain" | "activity" | "shield" | etc.
+}
+
+// Market share segment for donut chart
+export interface MarketShareSegment {
+  label: string;
+  value: number;
+  color: string; // "black" | "gray" | "accent" or hex
+  icon?: string; // emoji or icon name
+}
+
+/**
+ * Skill toggle for AI 2027-style capability grid
+ * Displays as a progress bar with icon and label (matching AI 2027 visual style)
+ * Hover shows capability scale: Amateur → Human Pro → Superhuman → Superhuman+
+ */
+export interface SkillToggle {
+  id: string;
+  label: string; // e.g., "Hacking", "Coding", "Robotics"
+  icon: string; // lucide icon name or emoji
+  enabled: boolean; // whether capability is active/unlocked
+  score?: number; // 0-1 capability level (0=Amateur, 0.33=Human Pro, 0.66=Superhuman, 0.9+=Superhuman+)
+  description?: string; // optional tooltip description
+}
+
+/**
+ * Status banner for displaying animated counters with context
+ * e.g., "33,000 Unreliable Agent copies thinking at 20x human speed"
+ */
+export interface StatusBanner {
+  count: number; // animated number value
+  label: string; // e.g., "Unreliable Agent copies"
+  context: string; // e.g., "thinking at 20x human speed"
+  variant?: "default" | "warning" | "success"; // styling variant
+}
+
+/**
+ * Milestone label for visible text markers on the dashboard
+ * Shows important events or achievements as visible labels
+ */
+export interface MilestoneLabel {
+  id: string;
+  text: string; // e.g., "Hamlets", "Autonomously replicating..."
+  icon?: string; // optional icon or emoji
+  position?: "bottom" | "overlay"; // where to display
+  sentiment?: "positive" | "negative" | "neutral";
 }
 
 export interface DashboardState {
@@ -12,29 +112,85 @@ export interface DashboardState {
     timelineProgress: number; // 0.0 to 1.0
   };
   charts: {
-    trendLine: {
-      data: number[]; // Y-axis values
-      label: string;
-    };
-    marketShare: Array<{ label: string; value: number; color: "black" | "gray" | "accent" }>;
+    trendLine: TrendLineConfig;
+    marketShare: MarketShareSegment[];
   };
   techReadiness: {
-    existing: number; // 0-8
-    emerging: number; // 0-8
-    sciFi: number; // 0-8
+    existing: number; // 0-10
+    emerging: number; // 0-10
+    sciFi: number; // 0-10
   };
-  keyStats: Array<{
-    label: string;
-    value: string;
-    sub?: string;
-    trend?: "up" | "down" | "flat";
-  }>;
-  capabilities: Array<{
-    label: string;
-    score: number; // 0-100
-    icon: string; // lucide icon name
-  }>;
+  keyStats: KeyStat[];
+  capabilities: CapabilityEntry[];
   annotations?: Annotation[];
+  // Delta indicators for change tracking (optional)
+  deltas?: Record<string, DeltaValue>;
+  // AI 2027-style skill toggles grid
+  skillToggles?: SkillToggle[];
+  // Status banner with animated counter
+  statusBanner?: StatusBanner;
+  // Visible milestone labels
+  milestoneLabels?: MilestoneLabel[];
+  // Agent count footer (AI 2027 style)
+  agentCount?: {
+    count: number;
+    label: string;
+    speed: number;
+  };
+}
+
+// Agent-facing contract to ensure incoming dashboard updates match the UI slots
+export interface AgentDashboardUpdate {
+  timelineId?: string;
+  summary?: string;
+  meta: { currentDate: string; timelineProgress: number };
+  charts: {
+    mainTrend?: { data: number[]; label: string };
+    trendLine?: {
+      series: number[];
+      ghostSeries?: number[];
+      gridScale?: { min: number; max: number };
+      label?: string;
+      xAxisLabels?: string[];
+    };
+    marketShare: MarketShareSegment[];
+  };
+  techReadiness: { existing: number; emerging: number; sciFi: number };
+  keyStats: KeyStat[];
+  capabilities: CapabilityEntry[];
+  annotations?: Array<{
+    targetIndex?: number;
+    position?: { x: number; y: number };
+    title: string;
+    description: string;
+    sentiment?: "positive" | "negative" | "neutral";
+  }>;
+  deltas?: Record<
+    string,
+    { value: string; change: string; direction: "up" | "down" | "flat" }
+  >;
+  // AI 2027-style features
+  skillToggles?: Array<{
+    id: string;
+    label: string;
+    icon: string;
+    enabled: boolean;
+    score?: number; // 0-1 capability level
+    description?: string;
+  }>;
+  statusBanner?: {
+    count: number;
+    label: string;
+    context: string;
+    variant?: "default" | "warning" | "success";
+  };
+  milestoneLabels?: Array<{
+    id: string;
+    text: string;
+    icon?: string;
+    position?: "bottom" | "overlay";
+    sentiment?: "positive" | "negative" | "neutral";
+  }>;
 }
 
 export interface StorySection {

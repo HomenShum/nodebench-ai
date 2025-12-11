@@ -1,16 +1,22 @@
-import React, { useState } from "react";
+"use client";
+
+import React from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
-import { ShieldAlert, Code, Vote, Cpu, Globe } from "lucide-react";
-import ChartTooltip from "./ChartTooltip";
+import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock } from "lucide-react";
 import InteractiveLineChart from "./InteractiveLineChart";
-import type { Annotation, DashboardState } from "@/features/research/types";
+import type { DashboardState } from "@/features/research/types";
 
+// Icon Mapping for capabilities
 const IconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  "shield-alert": ShieldAlert,
-  code: Code,
-  vote: Vote,
-  globe: Globe,
+  hacking: ShieldAlert,
+  coding: Code,
+  politics: Vote,
+  robotics: Cpu,
+  forecasting: Activity,
+  reasoning: Brain,
+  uptime: Zap,
+  safety: Lock,
 };
 
 interface StickyDashboardProps {
@@ -18,118 +24,175 @@ interface StickyDashboardProps {
 }
 
 export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
-  const [hoveredAnnotation, setHoveredAnnotation] = useState<Annotation | null>(null);
+  if (!data) return null;
 
-  const [monthToken, yearToken] = data.meta.currentDate.split(" ");
-  const yearNumeric = Number.parseInt((yearToken || "").replace(/\D/g, ""), 10) || 0;
-  const timelinePct = Math.min(Math.max(data.meta.timelineProgress, 0), 1) * 100;
+  // Safe defaults
+  const safeMeta = data.meta ?? { currentDate: "Jan 2025", timelineProgress: 0 };
+  const safeCharts = {
+    trendLine: data.charts?.trendLine,
+    marketShare: data.charts?.marketShare ?? [],
+  };
+  const safeTech = data.techReadiness ?? { existing: 0, emerging: 0, sciFi: 0 };
+  const capabilities = data.capabilities ?? [];
+  const keyStats = data.keyStats ?? [];
+  const annotations = data.annotations ?? [];
+  const agentCount = data.agentCount;
+
+  // Calculate top market share for the donut center
+  const topShare = safeCharts.marketShare.length > 0
+    ? safeCharts.marketShare.reduce((prev, current) => (prev.value > current.value ? prev : current))
+    : { label: "N/A", value: 0, color: "gray" as const };
 
   return (
-    <div className="w-full font-mono text-slate-900 relative">
-      <div className="sticky top-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm overflow-hidden transition-all duration-500">
-        <div className="absolute inset-0 pointer-events-none z-50">
-          <ChartTooltip active={!!hoveredAnnotation} data={hoveredAnnotation} />
-        </div>
+    <div className="w-full font-mono text-slate-900 select-none">
+      <div className="sticky top-4 z-10 rounded-xl border border-slate-200 bg-white shadow-sm p-3 transition-all duration-500">
 
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex items-center bg-black text-white px-2 py-1 rounded text-xs gap-2 shadow-sm">
-            <span className="text-gray-300">{monthToken || "Now"}</span>
-            <NumberFlow value={yearNumeric} className="font-bold" />
-          </div>
-          <div className="flex-1 h-1 rounded-full bg-slate-100 overflow-hidden">
-            <motion.div
-              className="h-full bg-emerald-500"
-              initial={{ width: 0 }}
-              animate={{ width: `${timelinePct}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            />
-          </div>
-        </div>
-
-        <div className="relative h-[140px] w-full mb-8">
-          <span className="absolute top-0 left-0 text-[9px] text-gray-400 uppercase tracking-wider">
-            {data.charts.trendLine.label}
-          </span>
-          <InteractiveLineChart
-            data={data.charts.trendLine.data}
-            annotations={data.annotations}
-            onHover={setHoveredAnnotation}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="flex justify-center items-center relative">
-            <DonutChart data={data.charts.marketShare} />
-            <div className="absolute inset-0 flex items-center justify-center flex-col">
-              <span className="text-[10px] font-bold uppercase">Compute</span>
+        {/* --- ROW 1: HEADER & CHART --- */}
+        <div className="relative mb-4">
+          {/* Date Pill */}
+          <div className="absolute top-0 left-0 z-10">
+            <div className="flex items-center bg-black text-white px-2 py-1 rounded-[4px] text-[10px] tracking-widest gap-2 shadow-sm">
+              <span>{safeMeta.currentDate.split(" ")[0]}</span>
+              <NumberFlow value={parseInt(safeMeta.currentDate.split(" ")[1] || "2025", 10)} className="font-bold" />
             </div>
           </div>
-          <div className="flex flex-col justify-end gap-1">
-            <div className="flex justify-between text-[8px] uppercase tracking-wider text-slate-400">
-              <span>Exist</span>
-              <span>Emerging</span>
-              <span>Sci-Fi</span>
-            </div>
-            <div className="flex justify-between gap-1">
-              <BucketColumn count={data.techReadiness.existing} color="bg-slate-900" align="start" />
-              <BucketColumn count={data.techReadiness.emerging} color="bg-indigo-600" align="center" />
-              <BucketColumn count={data.techReadiness.sciFi} color="bg-slate-300" align="end" />
-            </div>
-          </div>
-        </div>
 
-        <div className="flex justify-between gap-2 border-t border-b border-slate-100 py-4 mb-4">
-          {data.keyStats.map((stat, i) => {
-            const { numericValue, format } = normalizeStatValue(stat.value);
-            return (
-              <div key={i} className="flex flex-col min-w-0">
-                <span className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{stat.label}</span>
-                <div className="flex items-baseline gap-0.5">
-                  <NumberFlow value={numericValue} format={format} className="text-sm font-bold text-slate-900" />
-                  {stat.sub && <span className="text-[10px] font-bold text-slate-400">{stat.sub}</span>}
-                </div>
+          {/* Line Chart */}
+          <div className="h-[140px] w-full mt-2">
+            {safeCharts.trendLine ? (
+              <InteractiveLineChart config={safeCharts.trendLine} annotations={annotations} />
+            ) : (
+              <div className="w-full h-full bg-slate-50 rounded flex items-center justify-center text-slate-300 text-xs">
+                No chart data
               </div>
-            );
-          })}
+            )}
+          </div>
         </div>
 
-        <div className="relative">
-          <div className="absolute left-0 top-0 h-full flex items-center">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 mr-2 rotate-180 [writing-mode:vertical-rl]">
+        {/* --- ROW 2: SPLIT GRID (Capabilities vs Donut) --- */}
+        <div className="grid grid-cols-12 gap-4 mb-4">
+          {/* LEFT COL (7/12): CAPABILITIES GRID */}
+          <div className="col-span-7 flex flex-col justify-end">
+            <div className="text-[9px] uppercase tracking-widest text-slate-400 mb-2 border-b border-slate-100 pb-1">
               AI Capabilities
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              {capabilities.map((cap) => (
+                <CapabilityBar key={cap.label} label={cap.label} score={cap.score} icon={cap.icon} />
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2 pl-6">
-            {data.capabilities.map((cap) => (
-              <CapabilityBar key={cap.label} label={cap.label} score={cap.score} icon={cap.icon} />
-            ))}
+
+          {/* RIGHT COL (5/12): DONUT & BUCKETS */}
+          <div className="col-span-5 flex flex-col justify-between h-full">
+            {/* Donut */}
+            <div className="flex justify-center items-center relative h-20 mb-2">
+              <DonutChart data={safeCharts.marketShare} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-[8px] font-bold uppercase text-slate-400 leading-none mb-0.5">Share</span>
+                <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-slate-900 leading-none" />
+              </div>
+            </div>
+
+            {/* Tech Readiness Buckets */}
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between text-[7px] uppercase tracking-wider text-slate-400">
+                <span>Exist</span><span>Emerging</span><span>Sci-Fi</span>
+              </div>
+              <div className="flex justify-between gap-1 h-8">
+                <BucketColumn count={safeTech.existing} color="bg-slate-900" />
+                <BucketColumn count={safeTech.emerging} color="bg-indigo-500" />
+                <BucketColumn count={safeTech.sciFi} color="bg-slate-200" />
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* --- ROW 3: KEY STATS --- */}
+        <div className="flex justify-between items-center gap-2 border-t border-slate-100 pt-3 mb-3">
+          {keyStats.map((stat, i) => (
+            <div key={i} className="flex flex-col">
+              <span className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5">{stat.label}</span>
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-xs font-bold text-slate-900">{stat.value}</span>
+                {stat.context && <span className="text-[8px] font-bold text-slate-400">{stat.context}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* --- ROW 4: AGENT FOOTER --- */}
+        {agentCount && <AgentFooter agentCount={agentCount} />}
+      </div>
+    </div>
+  );
+};
+
+// --- SUB-COMPONENTS ---
+
+interface CapabilityBarProps {
+  label: string;
+  score: number;
+  icon: string;
+}
+
+const CapabilityBar: React.FC<CapabilityBarProps> = ({ label, score, icon }) => {
+  const Icon = IconMap[icon.toLowerCase()] || Brain;
+  return (
+    <div className="relative h-6 w-full bg-slate-100/50 rounded overflow-hidden group">
+      {/* Background Fill Animation */}
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${score}%` }}
+        transition={{ duration: 1.2, ease: "circOut" }}
+        className="absolute left-0 top-0 h-full bg-gradient-to-r from-slate-900 to-slate-700 z-0"
+      />
+
+      {/* Content Layer */}
+      <div className="absolute inset-0 flex items-center justify-between px-2 z-10">
+        <div className="flex items-center gap-1.5">
+          <Icon size={10} className="text-white mix-blend-difference" />
+          <span className="text-[8px] font-bold tracking-wider uppercase text-white mix-blend-difference">{label}</span>
         </div>
       </div>
     </div>
   );
 };
 
-// --- Sub-components ---
+interface BucketColumnProps {
+  count: number;
+  color: string;
+}
 
-const DonutChart = ({ data }: { data: Array<{ value: number; color: string }> }) => {
-  const radius = 40;
+const BucketColumn: React.FC<BucketColumnProps> = ({ count, color }) => (
+  <div className="flex flex-col-reverse gap-[1px] w-full items-center">
+    {[...Array(6)].map((_, i) => (
+      <div key={i} className={`w-full h-1 rounded-[1px] ${i < count ? color : "bg-slate-100"}`} />
+    ))}
+  </div>
+);
+
+interface DonutChartProps {
+  data: Array<{ label: string; value: number; color: "accent" | "black" | "gray" }>;
+}
+
+const DonutChart: React.FC<DonutChartProps> = ({ data }) => {
+  const radius = 35;
   const circumference = 2 * Math.PI * radius;
   let accumulatedOffset = 0;
 
   const colorMap: Record<string, string> = {
     black: "text-slate-900",
-    accent: "text-indigo-600",
-    gray: "text-slate-300",
+    accent: "text-indigo-500",
+    gray: "text-slate-200",
   };
 
   return (
-    <svg viewBox="0 0 100 100" className="w-20 h-20 -rotate-90">
+    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
       {data.map((segment, i) => {
         const strokeDasharray = `${(segment.value / 100) * circumference} ${circumference}`;
         const offset = accumulatedOffset;
         accumulatedOffset -= (segment.value / 100) * circumference;
-
         return (
           <motion.circle
             key={i}
@@ -137,12 +200,12 @@ const DonutChart = ({ data }: { data: Array<{ value: number; color: string }> })
             cy="50"
             r={radius}
             fill="transparent"
-            strokeWidth="20"
+            strokeWidth="12"
             stroke="currentColor"
-            className={colorMap[segment.color] || "text-slate-200"}
-            initial={{ strokeDasharray: `0 ${circumference}`, strokeDashoffset: offset }}
+            className={colorMap[segment.color]}
+            initial={{ strokeDasharray: `0 ${circumference}`, strokeDashoffset: 0 }}
             animate={{ strokeDasharray, strokeDashoffset: offset }}
-            transition={{ duration: 1, delay: i * 0.2 }}
+            transition={{ duration: 1, delay: i * 0.1 }}
           />
         );
       })}
@@ -150,64 +213,26 @@ const DonutChart = ({ data }: { data: Array<{ value: number; color: string }> })
   );
 };
 
-const BucketColumn = ({ count, color, align }: { count: number; color: string; align: "start" | "center" | "end" }) => {
-  const totalSlots = 8;
-  const safeCount = Math.max(0, Math.min(totalSlots, Math.round(count)));
-  const alignmentClass = align === "center" ? "items-center" : align === "end" ? "items-end" : "items-start";
-  return (
-    <div className={`flex flex-col-reverse gap-0.5 w-1/3 ${alignmentClass}`}>
-      {Array.from({ length: totalSlots }).map((_, i) => (
-        <div key={i} className={`w-2 h-2 rounded-[1px] ${i < safeCount ? color : "bg-slate-100"}`} />
-      ))}
-    </div>
-  );
-};
+interface AgentFooterProps {
+  agentCount: { count: number; label: string; speed: number };
+}
 
-const CapabilityBar = ({ label, score, icon }: { label: string; score: number; icon: string }) => {
-  const Icon = IconMap[icon] || Cpu;
-  const safeScore = Math.max(0, Math.min(100, score));
-  return (
-    <div className="w-[48%] h-7 bg-slate-50 rounded overflow-hidden relative border border-slate-100">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${safeScore}%` }}
-        transition={{ duration: 1 }}
-        className="absolute left-0 top-0 h-full bg-slate-900 z-0"
-      />
-      <div className="absolute inset-0 flex items-center px-2 z-10 mix-blend-difference text-white">
-        <Icon size={12} className="mr-2" />
-        <span className="text-[10px] font-bold tracking-widest uppercase truncate">{label}</span>
+const AgentFooter: React.FC<AgentFooterProps> = ({ agentCount }) => (
+  <div className="bg-slate-50 rounded border border-slate-100 p-2 flex items-start gap-2">
+    <div className="w-1 h-full bg-indigo-500 rounded-full min-h-[20px]" />
+    <div>
+      <div className="text-[10px] leading-tight text-slate-700">
+        <span className="font-bold"><NumberFlow value={agentCount.count} /></span>
+        {" "}{agentCount.label} copies operating at
+        <span className="font-bold"> {agentCount.speed}x</span> human speed.
+      </div>
+      {/* Little green blocks visualizing agents */}
+      <div className="flex gap-0.5 mt-1.5 flex-wrap">
+        {[...Array(8)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-emerald-500 rounded-[1px] opacity-80" />)}
+        {[...Array(4)].map((_, i) => <div key={i + 10} className="w-1.5 h-1.5 bg-slate-200 rounded-[1px]" />)}
       </div>
     </div>
-  );
-};
-
-// Normalizes "value" strings like "-25%", "$18B", "900" into NumberFlow-friendly props
-const normalizeStatValue = (
-  raw: string,
-): { numericValue: number; format?: Intl.NumberFormatOptions } => {
-  const isPercent = raw.trim().includes("%");
-  const isCurrency = raw.trim().startsWith("$");
-  const numeric = Number.parseFloat(raw.replace(/[^0-9.-]+/g, "")) || 0;
-
-  if (isPercent) {
-    return {
-      numericValue: numeric / 100,
-      format: { style: "percent", minimumFractionDigits: 0, maximumFractionDigits: 0 },
-    };
-  }
-
-  if (isCurrency) {
-    return {
-      numericValue: numeric,
-      format: { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 },
-    };
-  }
-
-  return {
-    numericValue: numeric,
-    format: { notation: "compact", maximumFractionDigits: 1 },
-  };
-};
+  </div>
+);
 
 export default StickyDashboard;

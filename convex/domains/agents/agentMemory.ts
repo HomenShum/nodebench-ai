@@ -270,3 +270,60 @@ export const deleteMemoryAsService = mutation({
         return null;
     },
 });
+
+/**
+ * Query episodic memory entries for a given run/thread
+ */
+export const getEpisodicByRunId = query({
+    args: {
+        runId: v.string(),
+        limit: v.optional(v.number()),
+    },
+    returns: v.array(v.object({
+        _id: v.id("agentEpisodicMemory"),
+        runId: v.string(),
+        userId: v.id("users"),
+        ts: v.number(),
+        tags: v.optional(v.array(v.string())),
+        data: v.any(),
+    })),
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) return [];
+
+        const limit = args.limit ?? 50;
+        const items = await ctx.db
+            .query("agentEpisodicMemory")
+            .withIndex("by_run", (q) => q.eq("runId", args.runId))
+            .order("desc")
+            .take(limit);
+
+        return items.filter((e) => e.userId === userId);
+    },
+});
+
+/**
+ * Append an episodic memory entry for a run/thread
+ */
+export const logEpisodic = mutation({
+    args: {
+        runId: v.string(),
+        tags: v.optional(v.array(v.string())),
+        data: v.any(),
+    },
+    returns: v.id("agentEpisodicMemory"),
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new Error("Authentication required");
+
+        const now = Date.now();
+        const id = await ctx.db.insert("agentEpisodicMemory", {
+            runId: args.runId,
+            userId,
+            ts: now,
+            tags: args.tags,
+            data: args.data,
+        });
+        return id;
+    },
+});

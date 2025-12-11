@@ -232,6 +232,25 @@ export const createCoordinatorAgent = (
   artifactDeps?: ArtifactDeps,
   options?: CoordinatorAgentOptions
 ): Agent => {
+  const defaultAgentThreadId = artifactDeps?.runId;
+  const defaultUserId = artifactDeps?.userId;
+
+  // Helper: auto-inject persistence identifiers into context tools
+  function withContextDefaults(tool: any) {
+    const originalExecute = tool.execute ?? tool.handler;
+    if (!originalExecute) return tool;
+    return {
+      ...tool,
+      execute: async (args: any, opts: any) => {
+        const merged = { ...args };
+        if (defaultAgentThreadId && !merged.agentThreadId) merged.agentThreadId = defaultAgentThreadId;
+        if (defaultUserId && !merged.userId) merged.userId = defaultUserId;
+        return await originalExecute(merged, opts);
+      },
+      handler: originalExecute,
+    };
+  }
+
   const isArbitrageMode = options?.arbitrageMode ?? false;
   // Build base tools registry
   const baseTools = {
@@ -315,9 +334,17 @@ export const createCoordinatorAgent = (
   };
 
   // Wrap all tools for artifact extraction if deps provided
+  const contextWrapped = {
+    ...baseTools,
+    initScratchpad: withContextDefaults(initScratchpad),
+    updateScratchpad: withContextDefaults(updateScratchpad),
+    setActiveSection: withContextDefaults(setActiveSection),
+    markMemoryUpdated: withContextDefaults(markMemoryUpdated),
+  };
+
   const wrappedTools = artifactDeps 
-    ? wrapAllToolsWithArtifactPersistence(baseTools, artifactDeps)
-    : baseTools;
+    ? wrapAllToolsWithArtifactPersistence(contextWrapped, artifactDeps)
+    : contextWrapped;
   
   // Add setActiveSection with sectionIdRef update wrapper
   // This ensures artifact-producing tools pick up the current section

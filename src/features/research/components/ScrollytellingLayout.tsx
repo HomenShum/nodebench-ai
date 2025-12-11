@@ -1,9 +1,12 @@
+"use client";
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SmartLink from "./SmartLink";
 import DeepDiveAccordion from "./DeepDiveAccordion";
 import streamData from "@/features/research/content/researchStream.json";
 import StickyDashboard from "./StickyDashboard";
 import type { DashboardState, StorySection } from "@/features/research/types";
+import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
 
 // Define a proper type to avoid JSON inference issues
 export interface ScrollySection {
@@ -33,11 +36,16 @@ const useInView = (options?: IntersectionObserverInit) => {
     const node = ref.current;
     if (!node || typeof IntersectionObserver === "undefined") return;
 
+    const observerOptions: IntersectionObserverInit = {
+      threshold: options?.threshold ?? 0.55,
+      rootMargin: options?.rootMargin ?? "-20% 0px -50% 0px",
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => setInView(entry.isIntersecting));
       },
-      options ?? { threshold: 0.5 },
+      observerOptions,
     );
     observer.observe(node);
     return () => observer.disconnect();
@@ -79,12 +87,8 @@ interface SectionRendererProps {
   isLast?: boolean;
 }
 
-import HeroSection from "./HeroSection";
-
-// ... existing imports
-
 const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRendererProps) => {
-  const { ref, inView } = useInView({ threshold: 0.5 });
+  const { ref, inView } = useInView({ threshold: 0.6, rootMargin: "-20% 0px -50% 0px" });
   const onVisibleRef = useRef(onVisible);
 
   useEffect(() => {
@@ -96,7 +100,7 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
   }, [inView]);
 
   return (
-    <div ref={ref} className="relative mb-12 scroll-mt-16 pl-8 xl:pl-4">
+    <div ref={ref} className="relative mb-10 scroll-mt-16 pl-8 xl:pl-4">
       {/* Timeline Connector Line - Simplified for Clean Look */}
       {!isLast && (
         <div className="absolute left-0 top-10 bottom-[-48px] w-px bg-gray-200 hidden xl:block" />
@@ -120,7 +124,7 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
       </h2>
 
       {/* Narrative Body - Clean Sans */}
-      <div className="prose prose-lg prose-slate text-gray-600 leading-loose max-w-none not-italic">
+      <div className="prose prose-base prose-slate text-slate-900 leading-relaxed max-w-none not-italic">
         {section.content.body.map((paragraph, idx) => (
           <p key={idx} className="mb-6 last:mb-0">
             {parseSmartLinks(paragraph, (section.smartLinks ?? {}) as Record<string, { summary: string; source?: string }>)}
@@ -171,26 +175,198 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
   );
   const fallbackDashboardData = useCallback(
     (section: ScrollySection | undefined, idx: number): DashboardState => {
+      const normalizeTrendLine = (raw: any, labelFallback = "Briefing"): DashboardState["charts"]["trendLine"] => {
+        // Agent protocol: numeric series + optional ghost + gridScale
+        if (raw?.series && Array.isArray(raw.series) && raw.series.every((n: any) => typeof n === "number")) {
+          const safeData = raw.series.map((value: number) => ({ value: Number(value ?? 0) }));
+          if (safeData.length === 1) safeData.push({ ...safeData[0] });
+          if (safeData.length === 0) safeData.push({ value: 0 }, { value: 0 });
+          const labels =
+            raw.xAxisLabels?.length === safeData.length
+              ? raw.xAxisLabels
+              : safeData.map((_, i: number) => `T${i + 1}`);
+          const ghostSeries =
+            raw.ghostSeries && Array.isArray(raw.ghostSeries)
+              ? raw.ghostSeries.map((value: number) => ({ value: Number(value ?? 0) }))
+              : null;
+          return {
+            title: raw.label ?? labelFallback,
+            xAxisLabels: labels,
+            series: [
+              {
+                id: "series-0",
+                label: raw.label ?? labelFallback,
+                type: "solid",
+                color: "accent",
+                data: safeData,
+              },
+              ...(ghostSeries
+                ? [
+                    {
+                      id: "ghost-0",
+                      label: "Previous",
+                      type: "ghost",
+                      color: "gray",
+                      data:
+                        ghostSeries.length === safeData.length
+                          ? ghostSeries
+                          : safeData.map((v, idx) => ghostSeries[idx] ?? v),
+                    },
+                  ]
+                : []),
+            ],
+            visibleEndIndex: Math.max(0, safeData.length - 1),
+            focusIndex: Math.max(0, safeData.length - 1),
+            gridScale: raw.gridScale,
+          };
+        }
+
+        // Already enriched chart config
+        if (raw?.series?.length && Array.isArray(raw.series[0]?.data)) {
+          const safeLabels =
+            raw.xAxisLabels && raw.xAxisLabels.length
+              ? raw.xAxisLabels
+              : raw.series?.[0]?.data?.map((_: unknown, i: number) => `T${i + 1}`) ?? ["T0"];
+          return {
+            title: raw.title ?? labelFallback,
+            xAxisLabels: safeLabels,
+            series: raw.series.map((s: any, i: number) => {
+              const normalizedData = (s.data ?? []).map((pt: any) => ({
+                value: Number(pt?.value ?? 0),
+                tooltip: pt?.tooltip,
+              }));
+              if (normalizedData.length === 1) {
+                normalizedData.push({ ...normalizedData[0] });
+              }
+              if (normalizedData.length === 0) {
+                normalizedData.push({ value: 0 }, { value: 0 });
+              }
+
+              return {
+                id: s.id ?? `series-${i}`,
+                label: s.label ?? `Series ${i + 1}`,
+                type: s.type ?? "solid",
+                color: s.color,
+                data: normalizedData,
+              };
+            }),
+            visibleEndIndex: Math.max(
+              0,
+              Math.min(
+                typeof raw.visibleEndIndex === "number" ? raw.visibleEndIndex : safeLabels.length - 1,
+                safeLabels.length - 1,
+              ),
+            ),
+            focusIndex:
+              typeof raw.focusIndex === "number"
+                ? raw.focusIndex
+                : typeof raw.visibleEndIndex === "number"
+                  ? raw.visibleEndIndex
+                  : safeLabels.length - 1,
+            gridScale: raw.gridScale,
+          };
+        }
+
+        // Legacy flat data array
+        if (raw?.data?.length) {
+          const safeData = raw.data.map((value: number) => ({ value: Number(value ?? 0) }));
+          if (safeData.length === 1) {
+            safeData.push({ ...safeData[0] });
+          }
+          if (safeData.length === 0) {
+            safeData.push({ value: 0 }, { value: 0 });
+          }
+          return {
+            title: raw.label ?? labelFallback,
+            xAxisLabels: safeData.map((_, i) => `T${i + 1}`),
+            series: [
+              {
+                id: "series-0",
+                label: raw.label ?? labelFallback,
+                type: "solid",
+                color: "black",
+                data: safeData,
+              },
+            ],
+            visibleEndIndex: safeData.length - 1,
+            focusIndex: safeData.length - 1,
+          };
+        }
+
+        // Fallback zeroed config
+        return {
+          title: labelFallback,
+          xAxisLabels: ["T1", "T2"],
+          series: [
+            {
+              id: "series-0",
+              label: labelFallback,
+              type: "solid",
+              color: "black",
+              data: [{ value: 0 }, { value: 0 }],
+            },
+          ],
+          visibleEndIndex: 1,
+          focusIndex: 1,
+        };
+      };
+
       if (!section) {
         return {
           meta: { currentDate: "Now", timelineProgress: 0 },
-          charts: { trendLine: { data: [0], label: "Briefing" }, marketShare: [] },
+          charts: { trendLine: normalizeTrendLine(null), marketShare: [] },
           techReadiness: { existing: 0, emerging: 0, sciFi: 0 },
           keyStats: [],
           capabilities: [],
         };
       }
-      if (section.timelineState?.dashboard_state) return section.timelineState.dashboard_state;
+
+      if (section.timelineState?.dashboard_state) {
+        const ds = section.timelineState.dashboard_state;
+        const deltaStats =
+          (ds as any)?.deltas && typeof (ds as any).deltas === "object"
+            ? Object.entries((ds as any).deltas).map(([label, val]) => ({
+                label,
+                value: (val as any)?.value ?? "",
+                sub: (val as any)?.change,
+                trend: (val as any)?.direction,
+              }))
+            : [];
+        return {
+          ...ds,
+          charts: {
+            ...ds.charts,
+            trendLine: normalizeTrendLine(ds.charts.trendLine, ds.charts.trendLine?.title ?? "Briefing"),
+          },
+          annotations: ds.annotations,
+          keyStats: ds.keyStats?.length ? ds.keyStats : deltaStats,
+        };
+      }
+
       if (section.dashboard_update) {
-        // Convert legacy mainTrend → trendLine if present
+        // Convert legacy mainTrend ?+" trendLine if present
         const du = section.dashboard_update as any;
         const hasMain = du?.charts?.mainTrend;
+        const deltaStats =
+          du?.deltas && typeof du.deltas === "object"
+            ? Object.entries(du.deltas).map(([label, val]) => ({
+                label,
+                value: (val as any)?.value ?? "",
+                sub: (val as any)?.change,
+                trend: (val as any)?.direction,
+              }))
+            : [];
         return {
           ...du,
           charts: {
-            trendLine: hasMain ? du.charts.mainTrend : du.charts.trendLine ?? { data: [0], label: "Briefing" },
+            trendLine: normalizeTrendLine(
+              hasMain ? du.charts.mainTrend : du.charts.trendLine,
+              (hasMain ? du.charts.mainTrend : du.charts.trendLine)?.label ?? "Briefing",
+            ),
             marketShare: du.charts.marketShare ?? [],
           },
+          annotations: du.annotations ?? du?.charts?.trendLine?.annotations ?? [],
+          keyStats: du.keyStats?.length ? du.keyStats : deltaStats,
         };
       }
       const base = section.dashboard ?? {
@@ -205,10 +381,13 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
           timelineProgress: sectionCount > 1 ? idx / Math.max(sectionCount - 1, 1) : 1,
         },
         charts: {
-          trendLine: {
-            data: base.kpis?.map((kpi) => kpi.value) ?? [base.marketSentiment ?? 0],
-            label: base.phaseLabel ?? "Briefing",
-          },
+          trendLine: normalizeTrendLine(
+            {
+              data: base.kpis?.map((kpi) => kpi.value) ?? [base.marketSentiment ?? 0],
+              label: base.phaseLabel ?? "Briefing",
+            },
+            base.phaseLabel ?? "Briefing",
+          ),
           marketShare:
             base.kpis?.slice(0, 3).map((kpi, i) => ({
               label: kpi.label,
@@ -236,15 +415,16 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
     },
     [sectionCount],
   );
-
   const initialDashboardData = useMemo(() => fallbackDashboardData(sourceData[0], 0), [fallbackDashboardData, sourceData]);
 
   const [activeLegacy, setActiveLegacy] = useState(initialLegacy);
   const [activeDashboard, setActiveDashboard] = useState<DashboardState>(initialDashboardData);
+  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
 
   useEffect(() => {
     setActiveLegacy(initialLegacy);
     setActiveDashboard(initialDashboardData);
+    setActiveSectionIndex(0);
   }, [initialDashboardData, initialLegacy]);
 
   // Generate today's date for the header
@@ -259,14 +439,18 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
 
   return (
     <div className="w-full pb-12">
-      {/* Daily Briefing Header */}
+      {/* Compact header to keep content higher on the page */}
       {showGuestBadge && !hideHero && (
-        <HeroSection
-          todayFormatted={todayFormatted}
-          sectionCount={sectionCount}
-          readTimeMin={Math.ceil(sectionCount * 2.5)}
-          isLiveData_={isLiveData}
-        />
+        <div className="px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto pt-6 pb-4">
+          <PageHeroHeader
+            icon={<span className="text-sm font-semibold">AI</span>}
+            title="Daily Intelligence Briefing"
+            date={todayFormatted}
+            subtitle={`${sectionCount} stories · ~${Math.ceil(sectionCount * 2.5)} min read`}
+            className="pb-2"
+            accent
+          />
+        </div>
       )}
 
       {/* Mobile/Tablet Compact Dashboard (Sticky Top) */}
@@ -304,6 +488,8 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
               key={section.id}
               section={section as ScrollySection}
               onVisible={() => {
+                if (activeSectionIndex === idx) return;
+                setActiveSectionIndex(idx);
                 setActiveLegacy(section.dashboard ?? initialLegacy);
                 setActiveDashboard(fallbackDashboardData(section, idx));
               }}
