@@ -2866,6 +2866,118 @@ export default defineSchema({
     .index("by_generated_at", ["generatedAt"]),
 
   /* ------------------------------------------------------------------ */
+  /* DAILY BRIEF DOMAIN MEMORY - Two-agent persistent backlog/state     */
+  /* Derived from dailyBriefSnapshots and advanced by worker agent      */
+  /* ------------------------------------------------------------------ */
+  dailyBriefMemories: defineTable({
+    snapshotId: v.id("dailyBriefSnapshots"),
+    dateString: v.string(),         // YYYY-MM-DD
+    generatedAt: v.number(),        // Mirrors snapshot.generatedAt
+    version: v.number(),            // Mirrors snapshot.version
+
+    goal: v.string(),               // High-level daily objective
+
+    features: v.array(v.object({
+      id: v.string(),
+      type: v.string(),             // e.g. "repo_analysis", "paper_summary"
+      name: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("failing"),
+        v.literal("passing"),
+      ),
+      priority: v.optional(v.number()),
+      testCriteria: v.string(),
+      sourceRefs: v.optional(v.any()), // Links to feed items/repos/papers/docs/charts
+      notes: v.optional(v.string()),
+      resultId: v.optional(v.id("dailyBriefTaskResults")),
+      updatedAt: v.number(),
+    })),
+
+    progressLog: v.array(v.object({
+      ts: v.number(),
+      status: v.union(
+        v.literal("info"),
+        v.literal("pending"),
+        v.literal("working"),
+        v.literal("passing"),
+        v.literal("failing"),
+        v.literal("error"),
+      ),
+      message: v.string(),
+      meta: v.optional(v.any()),
+    })),
+
+    context: v.any(),               // Compacted machine-readable context bundle
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_snapshot", ["snapshotId"])
+    .index("by_date_string", ["dateString"])
+    .index("by_generated_at", ["generatedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DAILY BRIEF TASK RESULTS - Artifacts produced by worker tasks      */
+  /* ------------------------------------------------------------------ */
+  dailyBriefTaskResults: defineTable({
+    memoryId: v.id("dailyBriefMemories"),
+    taskId: v.string(),
+    resultMarkdown: v.string(),
+    citations: v.optional(v.any()),
+    artifacts: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_memory", ["memoryId"])
+    .index("by_task", ["taskId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DAILY BRIEF PERSONAL OVERLAYS - Per-user derived tasks/state        */
+  /* Built from tracked hashtags, docs, teachings                        */
+  /* ------------------------------------------------------------------ */
+  dailyBriefPersonalOverlays: defineTable({
+    userId: v.id("users"),
+    memoryId: v.id("dailyBriefMemories"),
+    dateString: v.string(),
+
+    features: v.array(v.object({
+      id: v.string(),
+      type: v.string(),
+      name: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("failing"),
+        v.literal("passing"),
+      ),
+      priority: v.optional(v.number()),
+      testCriteria: v.string(),
+      sourceRefs: v.optional(v.any()),
+      notes: v.optional(v.string()),
+      resultMarkdown: v.optional(v.string()),
+      updatedAt: v.number(),
+    })),
+
+    progressLog: v.array(v.object({
+      ts: v.number(),
+      status: v.union(
+        v.literal("info"),
+        v.literal("pending"),
+        v.literal("working"),
+        v.literal("passing"),
+        v.literal("failing"),
+        v.literal("error"),
+      ),
+      message: v.string(),
+      meta: v.optional(v.any()),
+    })),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_memory", ["userId", "memoryId"])
+    .index("by_user_date", ["userId", "dateString"]),
+
+  /* ------------------------------------------------------------------ */
   /* LLM USAGE TRACKING - Daily aggregates for rate limiting            */
   /* ------------------------------------------------------------------ */
   llmUsageDaily: defineTable({

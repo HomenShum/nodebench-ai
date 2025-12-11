@@ -1,7 +1,6 @@
 "use node";
 
-import { v } from "convex/values";
-import { internalAction, internalMutation } from "../../_generated/server";
+import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import type { DashboardState, KeyStat, CapabilityEntry, MarketShareSegment } from "../../../src/features/research/types";
 
@@ -11,11 +10,13 @@ import type { DashboardState, KeyStat, CapabilityEntry, MarketShareSegment } fro
  */
 export const calculateDashboardMetrics = internalAction({
   args: {},
-  handler: async (ctx): Promise<DashboardState> => {
+  handler: async (ctx): Promise<{ dashboardMetrics: DashboardState; sourceSummary: any }> => {
     const startTime = Date.now();
 
     // Fetch recent feed items (last 24 hours)
     const feedItems = await ctx.runQuery(internal.domains.research.dashboardQueries.getFeedItemsForMetrics);
+
+    const sourceSummary = calculateSourceSummary(feedItems);
     
     // Calculate various metrics
     const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -42,7 +43,7 @@ export const calculateDashboardMetrics = internalAction({
     const processingTime = Date.now() - startTime;
     console.log(`[dashboardMetrics] Calculated metrics in ${processingTime}ms`);
     
-    return {
+    const dashboardMetrics: DashboardState = {
       meta: {
         currentDate,
         timelineProgress,
@@ -56,43 +57,8 @@ export const calculateDashboardMetrics = internalAction({
       capabilities,
       agentCount,
     };
-  },
-});
 
-/**
- * Store calculated metrics in dailyBriefSnapshots table
- */
-export const storeDashboardMetrics = internalMutation({
-  args: {
-    dashboardMetrics: v.any(),
-    sourceSummary: v.any(),
-    processingTimeMs: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const dateString = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const generatedAt = Date.now();
-    
-    // Check if we already have a snapshot for today
-    const existing = await ctx.db
-      .query("dailyBriefSnapshots")
-      .withIndex("by_date_string", (q) => q.eq("dateString", dateString))
-      .first();
-    
-    const version = existing ? existing.version + 1 : 1;
-    
-    // Insert new snapshot
-    await ctx.db.insert("dailyBriefSnapshots", {
-      dateString,
-      generatedAt,
-      dashboardMetrics: args.dashboardMetrics,
-      sourceSummary: args.sourceSummary,
-      version,
-      processingTimeMs: args.processingTimeMs,
-    });
-    
-    console.log(`[dashboardMetrics] Stored snapshot for ${dateString} (version ${version})`);
-    
-    return { dateString, version };
+    return { dashboardMetrics, sourceSummary };
   },
 });
 
@@ -107,6 +73,37 @@ function calculateTimelineProgress(): number {
   const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
   const progress = (now.getTime() - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
   return Math.min(Math.max(progress, 0), 1);
+}
+
+function calculateSourceSummary(feedItems: any[]) {
+  const bySource: Record<string, number> = {};
+  const byCategory: Record<string, number> = {};
+  const tagCounts: Record<string, number> = {};
+
+  for (const item of feedItems) {
+    const source = item.source || "Unknown";
+    bySource[source] = (bySource[source] || 0) + 1;
+
+    const category = item.category || "uncategorized";
+    byCategory[category] = (byCategory[category] || 0) + 1;
+
+    const tags: string[] = Array.isArray(item.tags) ? item.tags : [];
+    for (const tag of tags) {
+      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+    }
+  }
+
+  const topTrending = Object.entries(tagCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([tag]) => tag);
+
+  return {
+    totalItems: feedItems.length,
+    bySource,
+    byCategory,
+    topTrending,
+  };
 }
 
 function calculateCapabilities(feedItems: any[]): CapabilityEntry[] {
@@ -277,4 +274,3 @@ function calculateAgentCount(feedItems: any[]): { count: number; label: string; 
 
   return { count, label, speed };
 }
-

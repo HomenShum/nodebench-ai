@@ -43,6 +43,8 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
     ? safeCharts.marketShare.reduce((prev, current) => (prev.value > current.value ? prev : current))
     : { label: "N/A", value: 0, color: "gray" as const };
 
+  const [monthLabel, yearLabel] = safeMeta.currentDate.split(" ");
+
   return (
     <div className="w-full font-mono text-slate-900 select-none">
       <div className="sticky top-4 z-10 rounded-xl border border-slate-200 bg-white shadow-sm p-3 transition-all duration-500">
@@ -52,8 +54,8 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
           {/* Date Pill */}
           <div className="absolute top-0 left-0 z-10">
             <div className="flex items-center bg-black text-white px-2 py-1 rounded-[4px] text-[10px] tracking-widest gap-2 shadow-sm">
-              <span>{safeMeta.currentDate.split(" ")[0]}</span>
-              <NumberFlow value={parseInt(safeMeta.currentDate.split(" ")[1] || "2025", 10)} className="font-bold" />
+              <span>{monthLabel}</span>
+              <span className="font-bold">{yearLabel || "2025"}</span>
             </div>
           </div>
 

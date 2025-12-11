@@ -166,4 +166,12 @@ crons.daily(
   {}
 );
 
+// Advance Daily Brief domain memory tasks hourly
+crons.interval(
+  "advance daily brief tasks",
+  { hours: 1 },
+  internal.domains.research.dailyBriefWorker.runNextTaskInternal,
+  {}
+);
+
 export default crons;

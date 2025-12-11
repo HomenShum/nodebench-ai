@@ -23,6 +23,7 @@ import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
 import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
 import { EditsTab } from './FastAgentPanel.EditsTab';
+import { BriefTab } from './FastAgentPanel.BriefTab';
 import { LiveAgentLanes } from '@/features/agents/views/LiveAgentLanes';
 import type { LiveEvent } from './LiveEventCard';
 import { RichMediaSection } from './RichMediaSection';
@@ -181,7 +182,7 @@ export function FastAgentPanel({
   const [liveSources, setLiveSources] = useState<Source[]>([]);
 
   // Tab state - MUST be declared before any conditional logic or loops
-  const [activeTab, setActiveTab] = useState<'thread' | 'tasks' | 'edits' | 'artifacts'>('thread');
+  const [activeTab, setActiveTab] = useState<'thread' | 'artifacts' | 'tasks' | 'brief' | 'edits'>('thread');
   const [isThreadDropdownOpen, setIsThreadDropdownOpen] = useState(false);
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1126,7 +1127,7 @@ export function FastAgentPanel({
 
             {/* Bottom Row: Tabs */}
             <div className="flex p-1 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
-              {(['thread', 'artifacts', 'tasks', 'edits'] as const).map((tab) => (
+              {(['thread', 'artifacts', 'tasks', 'brief', 'edits'] as const).map((tab) => (
                 <button
                   type="button"
                   key={tab}
@@ -1167,6 +1168,8 @@ export function FastAgentPanel({
               />
             ) : activeTab === 'tasks' ? (
               <AgentTasksTab agentThreadId={streamingThread?.agentThreadId || null} />
+            ) : activeTab === 'brief' ? (
+              <BriefTab />
             ) : activeTab === 'edits' ? (
               <EditsTab activeThreadId={streamingThread?.agentThreadId || null} />
             ) : (

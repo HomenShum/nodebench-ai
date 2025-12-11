@@ -101,10 +101,10 @@ export const getDashboardSnapshotByDate = query({
  */
 export const refreshDashboardMetrics = action({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<any> => {
     console.log("[dashboardQueries] Manually triggering dashboard metrics refresh...");
     
-    const result = await ctx.runAction(
+    const result: any = await ctx.runAction(
       internal.workflows.dailyMorningBrief.runDailyMorningBrief,
       {}
     );
@@ -140,4 +140,3 @@ export const getHistoricalSnapshots = query({
     }));
   },
 });
-

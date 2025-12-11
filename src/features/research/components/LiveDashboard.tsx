@@ -6,6 +6,7 @@ import { api } from "../../../../convex/_generated/api";
 import { StickyDashboard } from "./StickyDashboard";
 import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Calendar, RotateCcw } from "lucide-react";
 import type { DashboardState } from "@/features/research/types";
+import { useBriefDateSelection } from "@/lib/useBriefDateSelection";
 
 /**
  * LiveDashboard - Wrapper component that fetches live dashboard data
@@ -21,7 +22,7 @@ import type { DashboardState } from "@/features/research/types";
 export const LiveDashboard: React.FC<{
   fallbackData?: DashboardState;
 }> = ({ fallbackData }) => {
-  const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useBriefDateSelection();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // Fetch latest snapshot or specific date
@@ -286,4 +287,3 @@ export const LiveDashboard: React.FC<{
 };
 
 export default LiveDashboard;
-
