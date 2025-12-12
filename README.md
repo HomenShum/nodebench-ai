@@ -537,6 +537,128 @@ User Query
 
 ---
 
+## Agentic Context Engineering
+
+Based on Nate B. Jones's deep dive synthesizing findings from **Google ADK**, **Anthropic ACE**, and **Manus** architectures.
+
+### The Core Thesis
+
+> **"True Agentic Memory is not a prompt or a database; it is a system."**
+
+Simply increasing context windows (e.g., 1 million tokens) does not solve the memory problem for AI agents. In fact, it often **hurts performance** by introducing noise and "attention scarcity." The solution is a structured memory architecture with explicit tiers, retrieval mechanisms, and isolation guarantees.
+
+### 9 Principles of Agentic Context Engineering
+
+| # | Principle | Description | Status | Implementation |
+|---|-----------|-------------|--------|----------------|
+| 1 | **Compiled View** | Context is freshly computed per request, not a running transcript | ✅ | `contextHandler` in `createChatAgent()` |
+| 2 | **Tiered Memory** | Working Context → Sessions → Memory → Artifacts | ✅ | Scratchpad → Threads → agentMemory → Documents |
+| 3 | **Scope by Default** | Start minimal, pull on-demand | ✅ | Empty arrays, conditional retrieval |
+| 4 | **Retrieval Beats Pinning** | Semantic search over permanent context | ✅ | `searchTeachings`, `matchUserSkillTrigger` |
+| 5 | **Schema-Driven Summarization** | Structured compression preserves critical details | ✅ | `compactContextSchema` with Zod |
+| 6 | **Offload Heavy State** | Pointers to artifacts, not inline data | ✅ | Document IDs, fileIds, sectionIds |
+| 7 | **Isolate Sub-Agents** | No shared mutable state between agents | ✅ | `messageId` isolation (Invariant A) |
+| 8 | **Design for Caching** | Stable prefixes enable KV cache hits | ✅ | `CACHE_MARKERS`, `PROMPT_VERSION`, `buildCacheOptimizedPrompt()` |
+| 9 | **Evolving Strategies** | Agents can update their own instructions | ✅ | `logAgentOutcome`, `analyzeOutcomePatterns`, `storeStrategyRefinement` |
+
+### 9 Common Pitfalls (And How We Avoid Them)
+
+| # | Pitfall | Risk | Mitigation | Status |
+|---|---------|------|------------|--------|
+| 1 | **Dump Method** | Context bloat, attention dilution | `compactContext` compression, 30-message limit | ✅ Avoided |
+| 2 | **Blind Summarization** | Losing critical details | Schema-driven extraction (facts, constraints, missing) | ✅ Avoided |
+| 3 | **Unlimited RAM Assumption** | Token overflow, cost explosion | Safety limits (MAX_STEPS=8, MAX_TOOL_CALLS=12) | ✅ Avoided |
+| 4 | **Ignoring Retrieval Latency** | Slow context assembly | `LATENCY_BUDGETS`, `withLatencyBudget()`, `parallelWithBudgets()` | ✅ Avoided |
+| 5 | **Monolithic Memory** | No semantic organization | 5 memory tiers with different access patterns | ✅ Avoided |
+| 6 | **Cross-Talk Between Agents** | Hallucinations, state corruption | `messageId` guards on all mutations | ✅ Avoided |
+| 7 | **Prompt Injection via Memory** | Security vulnerabilities | `validateMessage()`, `fullSanitize()`, `detectInjection()` | ✅ Avoided |
+| 8 | **Unbounded Growth** | Memory leaks, cost creep | Per-message scratchpad reset, bounded buffers | ✅ Avoided |
+| 9 | **Ignoring Cache Invalidation** | Stale context, wrong answers | `capabilitiesVersion` with TTL, `messageId` freshness | ✅ Avoided |
+
+### 7 Use Cases Unlocked
+
+This architecture enables capabilities that are impossible with naive context management:
+
+| Use Case | Description | Enabling Principles |
+|----------|-------------|---------------------|
+| **Long-Horizon Autonomy** | Multi-day research projects without context loss | Tiered Memory, Compiled View |
+| **Self-Improving Agents** | Learning from user corrections and preferences | Teachability, Evolving Strategies |
+| **Multi-Agent Orchestration** | Coordinator delegates to specialists without cross-talk | Sub-Agent Isolation, Scope by Default |
+| **Artifact-Heavy Workflows** | Analyzing 100+ documents without token overflow | Offload Heavy State, Retrieval Beats Pinning |
+| **Deep Reasoning** | Analyzing entire repos or datasets as artifacts | Schema-Driven Summarization |
+| **Auditable/Compliant Systems** | Traceable decision chains for finance/med/legal | Compiled View, Tiered Memory |
+| **Cost-Stable Operations** | Sub-linear cost growth as tasks get longer | Scope by Default, Caching |
+
+### Implementation Mapping
+
+| Component | File | Key Functions |
+|-----------|------|---------------|
+| **Scratchpad (Working Context)** | `convex/tools/document/contextTools.ts` | `initScratchpad`, `updateScratchpad`, `compactContext` |
+| **Message Isolation** | `convex/tools/document/contextTools.ts` | `messageId` guards, `scratchpadSchema` |
+| **Memory Deduplication** | `convex/tools/document/contextTools.ts` | `markMemoryUpdated`, `isMemoryUpdated` |
+| **Latency Management** | `convex/tools/document/contextTools.ts` | `LATENCY_BUDGETS`, `withLatencyBudget`, `parallelWithBudgets` |
+| **Capability Discovery** | `convex/tools/integration/orchestrationTools.ts` | `discoverCapabilities`, `sequentialThinking` |
+| **Context Handler** | `convex/domains/agents/fastAgentPanelStreaming.ts` | `createChatAgent().contextHandler` |
+| **Teachability** | `convex/tools/teachability/userMemoryTools.ts` | `searchTeachings`, `analyzeAndStoreTeachings` |
+| **Episodic Memory** | `convex/domains/agents/agentMemory.ts` | `logEpisodic`, `getEpisodicByRunId` |
+| **Meta-Learning** | `convex/domains/agents/agentMemory.ts` | `logAgentOutcome`, `analyzeOutcomePatterns`, `storeStrategyRefinement` |
+| **Persistent Scratchpad** | `convex/domains/agents/agentScratchpads.ts` | `saveScratchpad`, `getByAgentThread` |
+| **Cache Optimization** | `convex/domains/agents/core/prompts.ts` | `CACHE_MARKERS`, `PROMPT_VERSION`, `buildCacheOptimizedPrompt` |
+| **Prompt Injection Protection** | `convex/tools/security/promptInjectionProtection.ts` | `validateMessage`, `fullSanitize`, `detectInjection` |
+
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         AGENTIC CONTEXT SYSTEM                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐     │
+│  │ WORKING CONTEXT │    │    SESSIONS     │    │     MEMORY      │     │
+│  │   (Scratchpad)  │    │   (Threads)     │    │  (Teachability) │     │
+│  ├─────────────────┤    ├─────────────────┤    ├─────────────────┤     │
+│  │ • messageId     │    │ • agentThreadId │    │ • Semantic      │     │
+│  │ • activeEntities│    │ • Recent 30 msgs│    │ • Preferences   │     │
+│  │ • compactContext│    │ • Lessons       │    │ • Skills        │     │
+│  │ • stepCount     │    │ • Summary       │    │ • Entity Memory │     │
+│  └────────┬────────┘    └────────┬────────┘    └────────┬────────┘     │
+│           │                      │                      │               │
+│           └──────────────────────┼──────────────────────┘               │
+│                                  │                                      │
+│                                  ▼                                      │
+│                    ┌─────────────────────────┐                          │
+│                    │    CONTEXT HANDLER      │                          │
+│                    │  (Compiled View)        │                          │
+│                    ├─────────────────────────┤                          │
+│                    │ 1. Fetch recent messages│                          │
+│                    │ 2. Retrieve memories    │                          │
+│                    │ 3. Match skill triggers │                          │
+│                    │ 4. Compose context      │                          │
+│                    └────────────┬────────────┘                          │
+│                                 │                                       │
+│                                 ▼                                       │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                         ARTIFACTS                                │   │
+│  │  Documents │ Media Files │ Dossiers │ SEC Filings │ Research    │   │
+│  │  (Referenced by ID, never inlined in context)                    │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Invariant Enforcement
+
+The 4 Code-Enforced Invariants (documented above) map directly to Agentic Context Engineering principles:
+
+| Invariant | Principle | Enforcement |
+|-----------|-----------|-------------|
+| **A: Message Isolation** | Isolate Sub-Agents | `messageId` mismatch → mutation refused |
+| **B: Safe Context Fallback** | Compiled View | Only same-messageId context preserved |
+| **C: Memory Deduplication** | Scope by Default | `memoryUpdatedEntities` tracking |
+| **D: Capability Version Check** | Design for Caching | `capabilitiesVersion` with TTL |
+
+---
+
 ## Skills System
 
 The platform implements a **Skills System** based on Anthropic's Skills specification (v1.0, October 2025). Skills are pre-defined multi-step workflows that combine tools for common tasks.

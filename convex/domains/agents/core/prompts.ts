@@ -1,8 +1,101 @@
 // Fast Agent Prompts - System prompts and templates
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENTIC CONTEXT ENGINEERING - PRINCIPLE 8: DESIGN FOR CACHING
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This module implements KV cache optimization hints to maximize LLM context
+// efficiency. Static instructions are designed for prefix stability to enable
+// cross-request caching of embedding computations.
+//
+// KEY STRATEGIES:
+// 1. STATIC PREFIX: Core instructions that rarely change come first
+// 2. CACHE BOUNDARY: Clear marker between static and dynamic content
+// 3. VERSIONING: Version tags enable cache invalidation when needed
+// 4. DETERMINISTIC ORDER: Fields always appear in the same sequence
+//
+// CACHE HINT MARKERS:
+// - [CACHE:STATIC] - Content that should be cached across requests
+// - [CACHE:SEMI-STATIC] - Content that changes per-session but not per-request
+// - [CACHE:DYNAMIC] - Content that changes per-request (after this, no caching)
+// ═══════════════════════════════════════════════════════════════════════════
 "use node";
 
 /**
+ * Prompt versioning for cache invalidation
+ * Increment MINOR for additive changes, MAJOR for breaking changes
+ */
+export const PROMPT_VERSION = {
+  major: 2,
+  minor: 1,
+  patch: 0,
+  get version() {
+    return `v${this.major}.${this.minor}.${this.patch}`;
+  },
+  get cacheKey() {
+    // Cache key only includes major.minor for stability
+    return `prompts_v${this.major}.${this.minor}`;
+  }
+};
+
+/**
+ * Cache boundary markers for LLM providers that support prefix caching
+ * These are invisible to the model but help with cache key generation
+ */
+export const CACHE_MARKERS = {
+  /** Start of static content that should be cached across all requests */
+  STATIC_START: "<!-- [CACHE:STATIC:START] -->",
+  STATIC_END: "<!-- [CACHE:STATIC:END] -->",
+
+  /** Semi-static content (per-session, like user preferences) */
+  SEMI_STATIC_START: "<!-- [CACHE:SEMI-STATIC:START] -->",
+  SEMI_STATIC_END: "<!-- [CACHE:SEMI-STATIC:END] -->",
+
+  /** Dynamic content boundary - no caching after this point */
+  DYNAMIC_START: "<!-- [CACHE:DYNAMIC:START] -->",
+
+  /** Helper to wrap content with cache markers */
+  wrapStatic: (content: string) =>
+    `${CACHE_MARKERS.STATIC_START}\n${content}\n${CACHE_MARKERS.STATIC_END}`,
+  wrapSemiStatic: (content: string) =>
+    `${CACHE_MARKERS.SEMI_STATIC_START}\n${content}\n${CACHE_MARKERS.SEMI_STATIC_END}`,
+  markDynamicStart: () => CACHE_MARKERS.DYNAMIC_START,
+};
+
+/**
+ * Build a cache-optimized system prompt with proper ordering:
+ * 1. Static instructions (cached across requests)
+ * 2. Semi-static context (cached per session)
+ * 3. Dynamic context (per-request, not cached)
+ */
+export function buildCacheOptimizedPrompt(config: {
+  staticInstructions: string;
+  semiStaticContext?: string;
+  dynamicContext?: string;
+}): string {
+  const parts: string[] = [];
+
+  // 1. Static instructions with cache hint
+  parts.push(CACHE_MARKERS.wrapStatic(config.staticInstructions));
+
+  // 2. Semi-static context (user preferences, session state)
+  if (config.semiStaticContext) {
+    parts.push(CACHE_MARKERS.wrapSemiStatic(config.semiStaticContext));
+  }
+
+  // 3. Dynamic context (per-request data)
+  if (config.dynamicContext) {
+    parts.push(CACHE_MARKERS.markDynamicStart());
+    parts.push(config.dynamicContext);
+  }
+
+  return parts.join("\n\n");
+}
+
+/**
  * System prompts for different agent roles
+ *
+ * CACHE STRATEGY: These are static prompts that should be cached.
+ * They are versioned via PROMPT_VERSION for cache invalidation.
  */
 
 export const SYSTEM_PROMPTS = {
@@ -213,4 +306,69 @@ export function buildPrompt(
     return (templateFn as (...a: any[]) => string).apply(null, args);
   }
   return "";
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CACHE-OPTIMIZED PROMPT BUILDERS
+// These functions build prompts with proper cache hint structure
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get a cache-optimized system prompt for an agent role
+ * Wraps static instructions with cache markers for LLM prefix caching
+ */
+export function getCacheOptimizedSystemPrompt(
+  role: keyof typeof SYSTEM_PROMPTS,
+  options?: {
+    userPreferences?: string;
+    sessionContext?: string;
+    dynamicContext?: string;
+  }
+): string {
+  const staticInstructions = SYSTEM_PROMPTS[role] || SYSTEM_PROMPTS.orchestrator;
+
+  // Build semi-static context from user preferences and session
+  const semiStaticParts: string[] = [];
+  if (options?.userPreferences) {
+    semiStaticParts.push(`[USER PREFERENCES]\n${options.userPreferences}`);
+  }
+  if (options?.sessionContext) {
+    semiStaticParts.push(`[SESSION CONTEXT]\n${options.sessionContext}`);
+  }
+
+  return buildCacheOptimizedPrompt({
+    staticInstructions: `[PROMPT VERSION: ${PROMPT_VERSION.version}]\n\n${staticInstructions}`,
+    semiStaticContext: semiStaticParts.length > 0 ? semiStaticParts.join("\n\n") : undefined,
+    dynamicContext: options?.dynamicContext,
+  });
+}
+
+/**
+ * Generate a cache key for a prompt configuration
+ * Used for external caching systems (Redis, KV stores)
+ */
+export function generatePromptCacheKey(
+  role: keyof typeof SYSTEM_PROMPTS,
+  userId?: string,
+  sessionId?: string
+): string {
+  const parts = [PROMPT_VERSION.cacheKey, role];
+  if (userId) parts.push(`u:${userId.slice(0, 8)}`);
+  if (sessionId) parts.push(`s:${sessionId.slice(0, 8)}`);
+  return parts.join(":");
+}
+
+/**
+ * Check if a cached prompt is still valid based on version
+ */
+export function isCacheValid(cachedVersion: string): boolean {
+  // Extract major.minor from cached version
+  const match = cachedVersion.match(/v(\d+)\.(\d+)/);
+  if (!match) return false;
+
+  const cachedMajor = parseInt(match[1], 10);
+  const cachedMinor = parseInt(match[2], 10);
+
+  // Cache is valid if major.minor matches
+  return cachedMajor === PROMPT_VERSION.major && cachedMinor === PROMPT_VERSION.minor;
 }

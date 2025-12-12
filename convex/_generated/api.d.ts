@@ -285,6 +285,7 @@ import type * as tools_meta_toolDiscoveryV2 from "../tools/meta/toolDiscoveryV2.
 import type * as tools_meta_toolRegistry from "../tools/meta/toolRegistry.js";
 import type * as tools_sec_secCompanySearch from "../tools/sec/secCompanySearch.js";
 import type * as tools_sec_secFilingTools from "../tools/sec/secFilingTools.js";
+import type * as tools_security_promptInjectionProtection from "../tools/security/promptInjectionProtection.js";
 import type * as tools_teachability_index from "../tools/teachability/index.js";
 import type * as tools_teachability_learnUserSkill from "../tools/teachability/learnUserSkill.js";
 import type * as tools_teachability_teachingAnalyzer from "../tools/teachability/teachingAnalyzer.js";
@@ -580,6 +581,7 @@ declare const fullApi: ApiFromModules<{
   "tools/meta/toolRegistry": typeof tools_meta_toolRegistry;
   "tools/sec/secCompanySearch": typeof tools_sec_secCompanySearch;
   "tools/sec/secFilingTools": typeof tools_sec_secFilingTools;
+  "tools/security/promptInjectionProtection": typeof tools_security_promptInjectionProtection;
   "tools/teachability/index": typeof tools_teachability_index;
   "tools/teachability/learnUserSkill": typeof tools_teachability_learnUserSkill;
   "tools/teachability/teachingAnalyzer": typeof tools_teachability_teachingAnalyzer;

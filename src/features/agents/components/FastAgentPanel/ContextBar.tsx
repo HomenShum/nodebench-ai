@@ -35,10 +35,10 @@ export function ContextBar({
 }: ContextBarProps) {
     const [isHovered, setIsHovered] = useState(false);
 
-    // Don't render if no constraints
-    if (constraints.length === 0) {
-        return null;
-    }
+    // Always render to allow adding context
+    // if (constraints.length === 0) {
+    //     return null;
+    // }
 
     const getTypeColor = (type?: ContextConstraint['type']) => {
         switch (type) {
@@ -72,33 +72,44 @@ export function ContextBar({
             </div>
 
             {/* Constraint tags */}
-            <div className="flex items-center gap-1.5 flex-wrap overflow-hidden">
-                {constraints.slice(0, 5).map((constraint) => (
-                    <span
-                        key={constraint.id}
-                        className={cn(
-                            "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
-                            getTypeColor(constraint.type),
-                            "group"
-                        )}
+            <div className="flex items-center gap-1.5 flex-wrap overflow-hidden flex-1">
+                {constraints.length === 0 ? (
+                    <button
+                        onClick={onAddConstraint}
+                        className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-[var(--bg-tertiary)]"
                     >
-                        {constraint.label}
-                        {constraint.value && (
-                            <span className="opacity-70">: {constraint.value}</span>
-                        )}
-                        {isHovered && onRemoveConstraint && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRemoveConstraint(constraint.id);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 ml-0.5 hover:text-red-600 transition-opacity"
-                            >
-                                <X className="w-2.5 h-2.5" />
-                            </button>
-                        )}
-                    </span>
-                ))}
+                        <span>None active</span>
+                        <Plus className="w-2.5 h-2.5" />
+                        <span>Add</span>
+                    </button>
+                ) : (
+                    constraints.slice(0, 5).map((constraint) => (
+                        <span
+                            key={constraint.id}
+                            className={cn(
+                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                getTypeColor(constraint.type),
+                                "group whitespace-nowrap"
+                            )}
+                        >
+                            {constraint.label}
+                            {constraint.value && (
+                                <span className="opacity-70">: {constraint.value}</span>
+                            )}
+                            {isHovered && onRemoveConstraint && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemoveConstraint(constraint.id);
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 ml-0.5 hover:text-red-600 transition-opacity"
+                                >
+                                    <X className="w-2.5 h-2.5" />
+                                </button>
+                            )}
+                        </span>
+                    ))
+                )}
 
                 {constraints.length > 5 && (
                     <span className="text-[10px] text-[var(--text-muted)]">

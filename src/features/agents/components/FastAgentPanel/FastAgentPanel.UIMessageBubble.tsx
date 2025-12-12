@@ -30,6 +30,7 @@ import {
   type ArbitrageStatus
 } from './FastAgentPanel.VisualCitation';
 import { ArbitrageReportCard } from './ArbitrageReportCard';
+import { MemoryPill } from './MemoryPill';
 
 interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
@@ -807,9 +808,9 @@ export function FastAgentUIMessageBubble({
         <div className="flex-shrink-0">
           <div className={cn(
             "w-8 h-8 rounded-full flex items-center justify-center shadow-sm ring-1 ring-white/20 backdrop-blur-sm",
-            "bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)]"
+            "bg-neutral-900 dark:bg-neutral-100"
           )}>
-            <Bot className="w-5 h-5 text-white" />
+            <Bot className="w-5 h-5 text-white dark:text-neutral-900" />
           </div>
         </div>
       )}
@@ -896,8 +897,63 @@ export function FastAgentUIMessageBubble({
               // Only render tool calls, not results (results are nested in steps)
               if (part.type !== 'tool-call' && part.type !== 'tool-result' && part.type !== 'tool-error') return null;
 
-              // We want to group call+result into one step if possible, but for now simple list
-              // Actually, let's just render all parts as steps for simplicity and robustness
+              // Check for Memory/Planning tools to render as Pills
+              const toolName = (part as any).toolName;
+
+              if (toolName && (
+                toolName.includes('writeMemory') ||
+                toolName.includes('createPlan') ||
+                toolName.includes('updatePlanStep') ||
+                toolName.includes('logEpisodic')
+              )) {
+
+                // Determine pill type and title based on tool name
+                let type: 'plan_update' | 'test_result' | 'memory_write' = 'memory_write';
+                let title = 'Memory Updated';
+                let details = '';
+
+                if (toolName.includes('createPlan')) {
+                  type = 'plan_update';
+                  title = 'New Plan Created';
+                  details = (part as any).args?.goal ? `Goal: ${(part as any).args.goal}` : 'New mission plan initialized';
+                } else if (toolName.includes('updatePlanStep')) {
+                  type = 'plan_update';
+                  title = 'Plan Updated';
+                  const status = (part as any).args?.status;
+                  details = status ? `Step marked as ${status}` : 'Plan progress updated';
+                } else if (toolName.includes('logEpisodic')) {
+                  type = 'test_result';
+                  title = 'Episodic Log';
+                  details = 'System event recorded';
+                } else {
+                  // writeMemory
+                  const key = (part as any).args?.key || 'unknown';
+                  title = key.startsWith('constraint:') ? 'Constraint Added' : 'Memory Updated';
+                  details = `Key: ${key}`;
+                }
+
+                // If this is a tool-call, render the pill
+                // We ignore the tool-result for these as the pill usually summarizes the action
+                if (part.type === 'tool-call') {
+                  return (
+                    <div key={idx} className="my-2 flex justify-center w-full">
+                      <MemoryPill
+                        event={{
+                          id: `pill-${idx}`,
+                          type,
+                          title,
+                          details,
+                          timestamp: Date.now()
+                        }}
+                      />
+                    </div>
+                  );
+                }
+                // Skip results/errors for memory tools to keep stream clean
+                return null;
+              }
+
+              // Default: Render as standard ToolStep
               return (
                 <ToolStep
                   key={idx}

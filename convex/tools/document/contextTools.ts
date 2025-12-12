@@ -2,11 +2,211 @@
 // Context management tools for Coordinator scratchpad and context compaction
 // These tools enable stateful multi-step reasoning without context bloat
 // INVARIANTS A/B/C enforced in code - not just prompts
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENTIC CONTEXT ENGINEERING - RETRIEVAL LATENCY MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This module implements explicit latency budgets and timeout handling for
+// context retrieval operations to prevent slow retrievals from blocking
+// agent responses.
+//
+// KEY STRATEGIES:
+// 1. LATENCY BUDGETS: Each retrieval operation has a max time budget
+// 2. TIMEOUT HANDLING: Graceful degradation with fallback values
+// 3. PERFORMANCE MONITORING: Track retrieval latencies for optimization
+// 4. PARALLEL EXECUTION: Use Promise.all with individual timeouts
+// ═══════════════════════════════════════════════════════════════════════════
 
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { GoogleGenAI, createUserContent, Type } from "@google/genai";
 import { getLlmModel } from "../../../shared/llm/modelCatalog";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LATENCY BUDGET CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Latency budgets for different retrieval operations (in milliseconds)
+ * These values are tuned for user-perceived responsiveness
+ */
+export const LATENCY_BUDGETS = {
+  /** Fast operations - immediate response expected */
+  FAST: 500,
+  /** Standard operations - brief wait acceptable */
+  STANDARD: 2000,
+  /** Heavy operations - longer wait acceptable for better results */
+  HEAVY: 5000,
+  /** LLM calls - allow more time for generation */
+  LLM_CALL: 15000,
+  /** Total context assembly budget */
+  CONTEXT_ASSEMBLY: 3000,
+} as const;
+
+/**
+ * Performance metrics for retrieval operations
+ * Used for monitoring and optimization
+ */
+export interface RetrievalMetrics {
+  operation: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  success: boolean;
+  timedOut: boolean;
+  fallbackUsed: boolean;
+  error?: string;
+}
+
+/**
+ * In-memory metrics buffer (last 100 operations)
+ * In production, this would be persisted to a monitoring system
+ */
+const metricsBuffer: RetrievalMetrics[] = [];
+const MAX_METRICS_BUFFER = 100;
+
+/**
+ * Record a retrieval metric
+ */
+function recordMetric(metric: RetrievalMetrics): void {
+  metricsBuffer.push(metric);
+  if (metricsBuffer.length > MAX_METRICS_BUFFER) {
+    metricsBuffer.shift();
+  }
+
+  // Log slow operations for debugging
+  if (metric.duration > LATENCY_BUDGETS.STANDARD) {
+    console.warn(`[LATENCY] Slow operation: ${metric.operation} took ${metric.duration}ms`);
+  }
+  if (metric.timedOut) {
+    console.warn(`[LATENCY] Operation timed out: ${metric.operation} (budget: ${metric.duration}ms)`);
+  }
+}
+
+/**
+ * Get recent retrieval metrics for analysis
+ */
+export function getRetrievalMetrics(): RetrievalMetrics[] {
+  return [...metricsBuffer];
+}
+
+/**
+ * Get average latency by operation type
+ */
+export function getAverageLatencies(): Map<string, number> {
+  const latencies = new Map<string, { total: number; count: number }>();
+
+  for (const metric of metricsBuffer) {
+    const existing = latencies.get(metric.operation) ?? { total: 0, count: 0 };
+    existing.total += metric.duration;
+    existing.count++;
+    latencies.set(metric.operation, existing);
+  }
+
+  const averages = new Map<string, number>();
+  for (const [op, stat] of latencies) {
+    averages.set(op, stat.total / stat.count);
+  }
+  return averages;
+}
+
+/**
+ * Execute an operation with a timeout and fallback
+ * Returns the result or fallback value if timeout/error occurs
+ */
+export async function withLatencyBudget<T>(
+  operation: string,
+  budgetMs: number,
+  fn: () => Promise<T>,
+  fallback: T
+): Promise<{ result: T; metrics: RetrievalMetrics }> {
+  const startTime = Date.now();
+
+  try {
+    const result = await Promise.race([
+      fn(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout after ${budgetMs}ms`)), budgetMs)
+      ),
+    ]);
+
+    const endTime = Date.now();
+    const metrics: RetrievalMetrics = {
+      operation,
+      startTime,
+      endTime,
+      duration: endTime - startTime,
+      success: true,
+      timedOut: false,
+      fallbackUsed: false,
+    };
+    recordMetric(metrics);
+
+    return { result, metrics };
+  } catch (err) {
+    const endTime = Date.now();
+    const isTimeout = err instanceof Error && err.message.includes("Timeout");
+
+    const metrics: RetrievalMetrics = {
+      operation,
+      startTime,
+      endTime,
+      duration: endTime - startTime,
+      success: false,
+      timedOut: isTimeout,
+      fallbackUsed: true,
+      error: err instanceof Error ? err.message : String(err),
+    };
+    recordMetric(metrics);
+
+    console.warn(`[LATENCY] ${operation} failed (${isTimeout ? 'timeout' : 'error'}), using fallback`);
+    return { result: fallback, metrics };
+  }
+}
+
+/**
+ * Execute multiple operations in parallel with individual budgets
+ * Each operation has its own timeout and fallback
+ */
+export async function parallelWithBudgets<T extends Record<string, unknown>>(
+  operations: {
+    [K in keyof T]: {
+      fn: () => Promise<T[K]>;
+      budget: number;
+      fallback: T[K];
+    };
+  }
+): Promise<{ results: T; metrics: RetrievalMetrics[] }> {
+  const keys = Object.keys(operations) as (keyof T)[];
+  const startTime = Date.now();
+
+  const promises = keys.map(async (key) => {
+    const op = operations[key];
+    const { result, metrics } = await withLatencyBudget(
+      String(key),
+      op.budget,
+      op.fn,
+      op.fallback
+    );
+    return { key, result, metrics };
+  });
+
+  const results = await Promise.all(promises);
+
+  const finalResults = {} as T;
+  const allMetrics: RetrievalMetrics[] = [];
+
+  for (const { key, result, metrics } of results) {
+    finalResults[key] = result;
+    allMetrics.push(metrics);
+  }
+
+  const totalDuration = Date.now() - startTime;
+  console.log(`[LATENCY] Parallel operations completed in ${totalDuration}ms`);
+
+  return { results: finalResults, metrics: allMetrics };
+}
 
 // Persistence helpers (optional, keyed by agentThreadId + userId)
 async function loadPersistedScratchpad(ctx: any, agentThreadId?: string, userId?: string) {

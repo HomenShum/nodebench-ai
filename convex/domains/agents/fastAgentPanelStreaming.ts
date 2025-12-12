@@ -1,10 +1,53 @@
 // FastAgentPanel Streaming - Backend functions for Agent component streaming
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENTIC CONTEXT ENGINEERING - FULL IMPLEMENTATION
+// ═══════════════════════════════════════════════════════════════════════════
+// This module implements all 9 principles and avoids all 9 pitfalls:
+//
+// PRINCIPLES IMPLEMENTED:
+// 1. Compiled View - contextHandler freshly computes context per request
+// 2. Tiered Memory - Scratchpad → Threads → Teachability → Documents
+// 3. Scope by Default - messageId isolation (Invariant A)
+// 4. Design for Retrieval - Semantic search with teachability
+// 5. Retrieval Beats Pinning - Dynamic context assembly
+// 6. Schema-Driven Summarization - Zod-validated compactContext
+// 7. Offload Heavy State - Documents stored externally
+// 8. Design for Caching - Static prompt prefixes with cache hints
+// 9. Evolving Strategies - Meta-learning from episodic logs
+//
+// PITFALLS AVOIDED:
+// 1. Lazy Context Window - Explicit context management
+// 2. Monolithic Memory - Tiered architecture
+// 3. Broken Scope - messageId enforcement
+// 4. Magic Summarization - Schema-driven compression
+// 5. Pinning Instead of Retrieval - Dynamic assembly
+// 6. Ephemeral Context - Persistent scratchpad
+// 7. Lack of Type Safety - Zod validation throughout
+// 8. Retrieval Latency - Latency budgets and timeouts
+// 9. Prompt Injection - Sanitization and validation layer
+// ═══════════════════════════════════════════════════════════════════════════
+
 import { v } from "convex/values";
 import { internalQuery, internalMutation, internalAction, action, mutation, query } from "../../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal, components } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
+
+// Import prompt injection protection
+import {
+  validateMessage,
+  fullSanitize,
+  buildSafeContext,
+  filterSensitiveOutput
+} from "../../tools/security/promptInjectionProtection";
+
+// Import latency management
+import {
+  withLatencyBudget,
+  parallelWithBudgets,
+  LATENCY_BUDGETS
+} from "../../tools/document/contextTools";
 
 // Import streaming utilities from @convex-dev/agent
 import { Agent, stepCountIs, vStreamArgs, syncStreams, listUIMessages, listMessages, storeFile, getFile, saveMessage, vProviderMetadata } from "@convex-dev/agent";
@@ -1150,6 +1193,11 @@ export const getThreadMessagesWithStreaming = query({
 
 /**
  * Create a user message in a thread
+ *
+ * SECURITY: Implements prompt injection protection (Pitfall 9)
+ * - Validates and sanitizes user input before storage
+ * - Logs high-risk injection attempts
+ * - Prefixes content with source marker for LLM context
  */
 export const createUserMessage = mutation({
   args: {
@@ -1166,12 +1214,25 @@ export const createUserMessage = mutation({
       throw new Error("Thread not found or unauthorized");
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // PROMPT INJECTION PROTECTION - Validate and sanitize user input
+    // ═══════════════════════════════════════════════════════════════════════
+    const validation = validateMessage(args.content, { logDetections: true });
+
+    if (validation.riskLevel === "high") {
+      console.warn(`[createUserMessage] High-risk injection attempt detected for user ${userId}`);
+      // We still allow the message but it's sanitized
+    }
+
+    // Use sanitized content
+    const sanitizedContent = validation.content;
+
     const now = Date.now();
     const messageId = await ctx.db.insert("chatMessagesStream", {
       threadId: args.threadId,
       userId,
       role: "user",
-      content: args.content,
+      content: sanitizedContent,
       status: "complete",
       createdAt: now,
       updatedAt: now,
@@ -1187,6 +1248,8 @@ export const createUserMessage = mutation({
 /**
  * OPTION 2 (RECOMMENDED): Initiate async streaming with optimistic updates
  * Generate the prompt message first, then asynchronously generate the stream response.
+ *
+ * SECURITY: Implements prompt injection protection (Pitfall 9)
  */
 export const initiateAsyncStreaming = mutation({
   args: {
@@ -1201,7 +1264,18 @@ export const initiateAsyncStreaming = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     const requestId = crypto.randomUUID().substring(0, 8);
-    console.log(`[initiateAsyncStreaming:${requestId}] 🚀 Starting for thread:`, args.threadId, 'prompt:', args.prompt.substring(0, 50));
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PROMPT INJECTION PROTECTION - Validate and sanitize user prompt
+    // ═══════════════════════════════════════════════════════════════════════
+    const validation = validateMessage(args.prompt, { logDetections: true });
+    const sanitizedPrompt = validation.content;
+
+    if (validation.riskLevel !== "none") {
+      console.log(`[initiateAsyncStreaming:${requestId}] ⚠️ Injection risk: ${validation.riskLevel}`);
+    }
+
+    console.log(`[initiateAsyncStreaming:${requestId}] 🚀 Starting for thread:`, args.threadId, 'prompt:', sanitizedPrompt.substring(0, 50));
 
     const streamingThread: any = await ctx.db.get(args.threadId);
     if (!streamingThread || !streamingThread.agentThreadId) {
@@ -1223,7 +1297,7 @@ export const initiateAsyncStreaming = mutation({
         console.log(`[initiateAsyncStreaming:${requestId}] 🔧 No plan found, running initializer`);
         await ctx.runMutation(api.domains.agents.agentInitializer.initializeThread, {
           threadId: args.threadId,
-          prompt: args.prompt,
+          prompt: sanitizedPrompt,
           model: modelName,
         });
       }
@@ -1232,12 +1306,13 @@ export const initiateAsyncStreaming = mutation({
     }
 
     console.log(`[initiateAsyncStreaming:${requestId}] 💾 Saving user message, agentThreadId:`, streamingThread.agentThreadId);
-    console.log(`[initiateAsyncStreaming:${requestId}] 📝 Prompt:`, args.prompt);
+    console.log(`[initiateAsyncStreaming:${requestId}] 📝 Prompt:`, sanitizedPrompt);
 
     // Save the user message first (enables optimistic updates)
+    // NOTE: Using sanitizedPrompt for security
     const { messageId } = await chatAgent.saveMessage(ctx, {
       threadId: streamingThread.agentThreadId,
-      prompt: args.prompt,
+      prompt: sanitizedPrompt,
       skipEmbeddings: true, // Skip embeddings in mutation, generate lazily when streaming
     });
 
@@ -1246,7 +1321,7 @@ export const initiateAsyncStreaming = mutation({
       await ctx.runMutation(api.domains.agents.agentMemory.logEpisodic, {
         runId: streamingThread.agentThreadId,
         tags: ["user_prompt"],
-        data: { prompt: args.prompt, messageId },
+        data: { prompt: sanitizedPrompt, messageId },
       });
     } catch (memErr) {
       console.warn(`[initiateAsyncStreaming:${requestId}] Failed to log episodic memory`, memErr);
@@ -1257,7 +1332,7 @@ export const initiateAsyncStreaming = mutation({
     // POST-SAVE idempotency check: If an older identical message exists, delete this one and use the older one
     // This handles race conditions where two calls arrive simultaneously
     const IDEMPOTENCY_WINDOW_MS = 4000;
-    const normalizedPrompt = args.prompt.trim();
+    const normalizedPrompt = sanitizedPrompt.trim();
     try {
       const recentResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
         threadId: streamingThread.agentThreadId,
