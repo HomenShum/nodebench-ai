@@ -76,7 +76,14 @@ function calculateTimelineProgress(): number {
 }
 
 function calculateSourceSummary(feedItems: any[]) {
-  const bySource: Record<string, number> = {};
+  // Initialize expected sources with 0 so they always appear
+  const bySource: Record<string, number> = {
+    GitHub: 0,
+    ArXiv: 0,
+    HackerNews: 0,
+    Reddit: 0,
+    "Dev.to": 0,
+  };
   const byCategory: Record<string, number> = {};
   const tagCounts: Record<string, number> = {};
 

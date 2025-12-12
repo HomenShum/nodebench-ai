@@ -7,7 +7,7 @@ import { api, internal, components } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 
 // Import streaming utilities from @convex-dev/agent
-import { Agent, stepCountIs, vStreamArgs, syncStreams, listUIMessages, storeFile, getFile, saveMessage, vProviderMetadata } from "@convex-dev/agent";
+import { Agent, stepCountIs, vStreamArgs, syncStreams, listUIMessages, listMessages, storeFile, getFile, saveMessage, vProviderMetadata } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
@@ -60,6 +60,11 @@ import {
   enrichCompanyDossier
 } from "../../tools/financial/enhancedFundingTools";
 import { searchFiles } from "../../tools/document/geminiFileSearch";
+import {
+  getDailyBrief,
+  getUserContext,
+  getSystemDateTime,
+} from "../../tools/context/nodebenchContextTools";
 import { getLlmModel, calculateRequestCost, getProviderForModel, isModelAllowedForTier, resolveModelAlias, DEFAULT_FALLBACK_MODEL, getModelWithFailover, validateContextWindow, type UserTier } from "../../../shared/llm/modelCatalog";
 
 const streamCancellationControllers = new Map<string, AbortController>();
@@ -70,26 +75,26 @@ const streamCancellationControllers = new Map<string, AbortController>();
 function getLanguageModel(modelInput: string) {
   // Resolve aliases (e.g., "claude" -> "claude-sonnet-4-5-20250929")
   const resolvedModel = resolveModelAlias(modelInput);
-  
+
   // Get model with failover (checks if provider API key is configured)
   const { model: modelName, provider, isFallback } = getModelWithFailover(resolvedModel);
-  
+
   if (isFallback) {
     console.warn(`[getLanguageModel] Failover activated: ${modelInput} → ${modelName} (${provider})`);
   }
-  
+
   // Handle Claude/Anthropic models
   if (modelName.startsWith("claude-")) {
     console.log(`[getLanguageModel] Using Anthropic model: ${modelName}`);
     return anthropic(modelName);
   }
-  
+
   // Handle Gemini/Google models
   if (modelName.startsWith("gemini-")) {
     console.log(`[getLanguageModel] Using Google Gemini model: ${modelName}`);
     return google(modelName);
   }
-  
+
   // Default to OpenAI (gpt-*, o1-*, o3-*, o4-*)
   return openai.chat(modelName || DEFAULT_FALLBACK_MODEL);
 }
@@ -334,6 +339,32 @@ Multi-Source Handling:
 - For cross-references, show connections between documents/tasks/events
 - Always provide source attribution for facts and data
 
+NODEBENCH CONTEXT TOOLS (CRITICAL):
+When the user asks about Nodebench-specific data, ALWAYS use these tools to get REAL data:
+
+1. getDailyBrief - Use for:
+   - "today's brief" or "morning digest"
+   - "what's happening today"
+   - "daily summary" or "news digest"
+   - Any question about the user's brief content
+   
+2. getUserContext - Use for:
+   - Understanding the user's current state
+   - Getting today's calendar overview
+   - Checking pending tasks
+   - Personalizing responses
+   
+3. getSystemDateTime - Use for:
+   - Knowing the current date/time
+   - Calculating relative dates ("yesterday", "next week")
+   - Temporal context for queries
+
+ANTI-HALLUCINATION RULES:
+- NEVER generate fake brief content, fake metrics, or made-up data
+- If getDailyBrief returns "No brief found", say exactly that - don't create fake content
+- If a tool returns no data, clearly state this to the user
+- Always cite which tool provided the data in your response
+
 Workflow Completion:
 - If user asks for multiple actions (e.g., "find, open, analyze, and edit"), complete ALL steps
 - Don't stop after partial completion - finish the entire workflow
@@ -422,6 +453,11 @@ Always provide clear, helpful responses and confirm actions you take.`,
 
     // Gemini File Search
     searchFiles,
+
+    // Nodebench context tools (for real data access)
+    getDailyBrief,
+    getUserContext,
+    getSystemDateTime,
   },
 
   // Allow up to 15 steps for complex multi-tool workflows
@@ -827,13 +863,13 @@ Examples:
 - "SEC Filing Review: Apple"
 - "Competitor Analysis: Stripe"`,
         },
-      {
-        role: "user",
-        content: args.firstMessage.slice(0, 500), // Limit input
-      },
-    ],
-    max_completion_tokens: 60,
-  });
+        {
+          role: "user",
+          content: args.firstMessage.slice(0, 500), // Limit input
+        },
+      ],
+      max_completion_tokens: 60,
+    });
 
     const generatedTitle = response.choices[0]?.message?.content?.trim() || "Research Thread";
 
@@ -1067,11 +1103,36 @@ export const getThreadMessagesWithStreaming = query({
 
     if (!agentThread || agentThread.userId !== userId) return emptyResponse;
 
+    // Debug: Fetch raw messages first to see the stored role
+    const rawMessages = await listMessages(ctx, components.agent, {
+      threadId: args.threadId,
+      paginationOpts: args.paginationOpts,
+    });
+
+    // Debug: Log raw messages to see stored role
+    console.log('[getThreadMessagesWithStreaming] Raw messages:', rawMessages.page.map(m => ({
+      id: m._id,
+      messageRole: m.message?.role,
+      text: m.text?.slice(0, 50),
+      order: m.order,
+      stepOrder: m.stepOrder,
+      messageContent: typeof m.message?.content === 'string' ? m.message.content.slice(0, 50) : 'array',
+    })));
+
     // Fetch UIMessages with streaming support
     const paginated = await listUIMessages(ctx, components.agent, {
       threadId: args.threadId,
       paginationOpts: args.paginationOpts,
     });
+
+    // Debug: Log the UIMessages to understand role detection
+    console.log('[getThreadMessagesWithStreaming] UIMessages:', paginated.page.map(m => ({
+      id: m.id,
+      role: m.role,
+      text: m.text?.slice(0, 50),
+      order: m.order,
+      stepOrder: m.stepOrder,
+    })));
 
     // Fetch streaming deltas
     const streams =
@@ -1314,7 +1375,7 @@ export const streamAsync = internalAction({
           estimatedInputTokens: 2000, // Estimate for pre-check
           estimatedOutputTokens: 1000,
         });
-        
+
         if (!rateLimitCheck.allowed) {
           console.warn(`[streamAsync:${executionId}] ⛔ Rate limit exceeded: ${rateLimitCheck.reason}`);
           throw new Error(`Rate limit exceeded: ${rateLimitCheck.reason}`);
@@ -1441,7 +1502,7 @@ export const streamAsync = internalAction({
       // Pass arbitrageMode option for receipts-first research persona
       agent = createCoordinatorAgent(args.model, artifactDeps, { arbitrageMode });
       agentType = arbitrageMode ? "arbitrage" : "coordinator";
-      
+
       console.log(`[streamAsync:${executionId}] Using CoordinatorAgent directly - GAM memory tools available, artifacts=${!!artifactDeps}, sectionRef=enabled`);
     } else {
       console.log(`[streamAsync:${executionId}] Using SIMPLE AGENT (legacy mode)`);
@@ -1551,7 +1612,7 @@ export const streamAsync = internalAction({
         // Estimate tokens from response (actual usage comes from provider metadata if available)
         const estimatedInputTokens = Math.ceil((finalText?.length || 0) / 4) + 500; // rough estimate
         const estimatedOutputTokens = Math.ceil((finalText?.length || 0) / 4);
-        
+
         await ctx.runMutation(api.domains.billing.rateLimiting.recordLlmUsage, {
           model: args.model,
           inputTokens: estimatedInputTokens,
@@ -1569,7 +1630,7 @@ export const streamAsync = internalAction({
       // Handle AI_NoOutputGeneratedError gracefully
       const errorName = (error as any)?.name || '';
       const errorMessage = (error as any)?.message || String(error);
-      
+
       if (errorName === 'AI_NoOutputGeneratedError') {
         console.warn(`[streamAsync:${executionId}] ⚠️ AI_NoOutputGeneratedError: Agent completed tool execution but didn't generate final text`);
         console.warn(`[streamAsync:${executionId}] This should be RARE with stopWhen: stepCountIs(15). If you see this often, raise the step count.`);

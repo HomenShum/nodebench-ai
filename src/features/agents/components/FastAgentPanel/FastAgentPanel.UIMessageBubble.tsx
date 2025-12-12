@@ -22,12 +22,12 @@ import { RichMediaSection } from './RichMediaSection';
 import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaExtractor';
 import { GoalCard, type TaskStatusItem } from './FastAgentPanel.GoalCard';
 import { DocumentActionGrid, extractDocumentActions, removeDocumentActionMarkers } from './DocumentActionCard';
-import { 
-  ArbitrageCitation, 
-  StatusBadge, 
-  parseArbitrageCitation, 
+import {
+  ArbitrageCitation,
+  StatusBadge,
+  parseArbitrageCitation,
   parseLegacyCitation,
-  type ArbitrageStatus 
+  type ArbitrageStatus
 } from './FastAgentPanel.VisualCitation';
 import { ArbitrageReportCard } from './ArbitrageReportCard';
 
@@ -478,7 +478,7 @@ function ToolStep({
           </div>
         </>
       )}
-      
+
       {/* Card */}
       <div className="mb-3 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] shadow-sm overflow-hidden hover:shadow-md transition-shadow">
         <button
@@ -507,61 +507,61 @@ function ToolStep({
         </button>
 
         {isExpanded && (
-        <div className="px-3 py-2 border-t border-[var(--border-color-light)] bg-[var(--bg-secondary)]/50 text-xs">
+          <div className="px-3 py-2 border-t border-[var(--border-color-light)] bg-[var(--bg-secondary)]/50 text-xs">
 
-          {/* Main Output Renderer (Visual) */}
-          {hasOutput && (
-            <div className="mb-2">
-              <ToolOutputRenderer
-                output={part.output}
-                onCompanySelect={onCompanySelect}
-                onPersonSelect={onPersonSelect}
-                onEventSelect={onEventSelect}
-                onNewsSelect={onNewsSelect}
-              />
-            </div>
-          )}
+            {/* Main Output Renderer (Visual) */}
+            {hasOutput && (
+              <div className="mb-2">
+                <ToolOutputRenderer
+                  output={part.output}
+                  onCompanySelect={onCompanySelect}
+                  onPersonSelect={onPersonSelect}
+                  onEventSelect={onEventSelect}
+                  onNewsSelect={onNewsSelect}
+                />
+              </div>
+            )}
 
-          {/* Collapsible Details (JSON) */}
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
-          >
-            {showDetails ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            <span>{showDetails ? "Hide Debug Details" : "View Debug Details"}</span>
-          </button>
+            {/* Collapsible Details (JSON) */}
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
+            >
+              {showDetails ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              <span>{showDetails ? "Hide Debug Details" : "View Debug Details"}</span>
+            </button>
 
-          {showDetails && (
-            <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-              {/* Arguments */}
-              {(part as any).args && (
-                <div>
-                  <div className="font-medium text-[var(--text-muted)] mb-1 text-[10px] uppercase tracking-wider">Input Arguments</div>
-                  <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[10px] text-[var(--text-secondary)]">
-                    {JSON.stringify((part as any).args, null, 2)}
-                  </pre>
-                </div>
-              )}
+            {showDetails && (
+              <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                {/* Arguments */}
+                {(part as any).args && (
+                  <div>
+                    <div className="font-medium text-[var(--text-muted)] mb-1 text-[10px] uppercase tracking-wider">Input Arguments</div>
+                    <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[10px] text-[var(--text-secondary)]">
+                      {JSON.stringify((part as any).args, null, 2)}
+                    </pre>
+                  </div>
+                )}
 
-              {/* Raw Output */}
-              {hasOutput && (
-                <div>
-                  <div className="font-medium text-[var(--text-muted)] mb-1 text-[10px] uppercase tracking-wider">Raw Output</div>
-                  <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[10px] text-[var(--text-secondary)] max-h-60">
-                    {typeof part.output === 'string' ? part.output : JSON.stringify(part.output, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
+                {/* Raw Output */}
+                {hasOutput && (
+                  <div>
+                    <div className="font-medium text-[var(--text-muted)] mb-1 text-[10px] uppercase tracking-wider">Raw Output</div>
+                    <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[10px] text-[var(--text-secondary)] max-h-60">
+                      {typeof part.output === 'string' ? part.output : JSON.stringify(part.output, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* Error */}
-          {isError && (part as any).error && (
-            <div className="mt-2 bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400">
-              {(part as any).error}
-            </div>
-          )}
-        </div>
+            {/* Error */}
+            {isError && (part as any).error && (
+              <div className="mt-2 bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400">
+                {(part as any).error}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -587,6 +587,15 @@ export function FastAgentUIMessageBubble({
   isChild,
   agentRole,
 }: FastAgentUIMessageBubbleProps) {
+  // Debug: Log message structure to understand role detection
+  console.log('[UIMessageBubble] Message structure:', {
+    role: message.role,
+    text: message.text?.slice(0, 50),
+    hasMessage: 'message' in message,
+    messageRole: (message as any).message?.role,
+    keys: Object.keys(message),
+  });
+
   const isUser = message.role === 'user';
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -754,16 +763,16 @@ export function FastAgentUIMessageBubble({
   // Extract arbitrage verification data from tool results
   const arbitrageData = useMemo(() => {
     if (isUser) return null;
-    
+
     const toolResultParts = message.parts.filter((p): p is any => p.type === 'tool-result');
-    
+
     for (const part of toolResultParts) {
       const resultText = String(part.result || '');
       // Look for arbitrage tool outputs
-      if (part.toolName?.includes('arbitrage') || 
-          part.toolName?.includes('contradiction') || 
-          part.toolName?.includes('sourceQuality') ||
-          part.toolName?.includes('delta')) {
+      if (part.toolName?.includes('arbitrage') ||
+        part.toolName?.includes('contradiction') ||
+        part.toolName?.includes('sourceQuality') ||
+        part.toolName?.includes('delta')) {
         try {
           const parsed = JSON.parse(resultText);
           if (parsed.contradictions || parsed.rankedSources || parsed.deltas || parsed.healthResults) {
@@ -789,11 +798,11 @@ export function FastAgentUIMessageBubble({
 
   return (
     <div className={cn(
-      "flex gap-4 mb-6",
+      "flex gap-3 mb-6 group",
       isUser ? "justify-end" : "justify-start",
       isChild && "ml-0" // Child messages already have margin from parent container
     )}>
-      {/* Avatar */}
+      {/* Agent Avatar - Show on LEFT side for agent messages */}
       {!isUser && (
         <div className="flex-shrink-0">
           <div className={cn(
@@ -973,10 +982,10 @@ export function FastAgentUIMessageBubble({
             className={cn(
               "relative p-4 rounded-xl shadow-sm transition-all duration-200 text-sm leading-relaxed",
               isUser
-                ? "bg-[var(--accent-primary)] text-white rounded-br-none shadow-md"
-                : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm",
+                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-none shadow-md"
+                : "bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-bl-none shadow-sm dark:bg-[var(--bg-secondary)]",
               message.status === 'streaming' && 'animate-pulse-subtle',
-              message.status === 'failed' && "bg-red-50/80 border-red-200"
+              message.status === 'failed' && "bg-red-50/80 border-red-200 dark:bg-red-900/20 dark:border-red-800"
             )}
           >
             {/* Show placeholder while streaming and no text yet */}
@@ -1102,10 +1111,10 @@ export function FastAgentUIMessageBubble({
         </div>
       </div>
 
-      {/* User Avatar */}
+      {/* User Avatar - Show on RIGHT side for user messages */}
       {isUser && (
         <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center shadow-sm ring-1 ring-white/50 backdrop-blur-sm">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm ring-1 ring-white/50">
             <User className="h-4 w-4 text-white" />
           </div>
         </div>

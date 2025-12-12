@@ -64,7 +64,9 @@ export const LiveDashboard: React.FC<{
   // Navigation helpers
   const availableDates = React.useMemo(() => {
     if (!historicalSnapshots) return [];
-    return historicalSnapshots.map(s => s.dateString).sort().reverse();
+    // Deduplicate dates using Set to avoid duplicate key errors
+    const uniqueDates = [...new Set(historicalSnapshots.map(s => s.dateString))];
+    return uniqueDates.sort().reverse();
   }, [historicalSnapshots]);
 
   const currentDateIndex = React.useMemo(() => {

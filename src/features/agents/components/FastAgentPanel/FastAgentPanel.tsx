@@ -24,6 +24,8 @@ import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
 import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
 import { EditsTab } from './FastAgentPanel.EditsTab';
 import { BriefTab } from './FastAgentPanel.BriefTab';
+import { MemoryStatusHeader, type PlanItem } from './MemoryStatusHeader';
+import { ContextBar, type ContextConstraint } from './ContextBar';
 import { LiveAgentLanes } from '@/features/agents/views/LiveAgentLanes';
 import type { LiveEvent } from './LiveEventCard';
 import { RichMediaSection } from './RichMediaSection';
@@ -190,11 +192,55 @@ export function FastAgentPanel({
   // Track auto-created documents to avoid duplicates (by agentThreadId) and processed message IDs
   const autoDocCreatedThreadIdsRef = useRef<Set<string>>(new Set());
 
-  // Query for human-in-the-loop requests
   const humanRequests = useQuery(
     api.domains.agents.humanInTheLoop.getPendingHumanRequests,
     activeThreadId ? { threadId: activeThreadId } : 'skip'
   );
+
+  // Query for agent planning data (ambient memory - plan progress)
+  const agentPlans = useQuery(
+    api.domains.agents.agentPlanning.listPlans,
+    isAuthenticated ? { limit: 5 } : 'skip'
+  );
+
+  // Query for agent memory (context constraints / scratchpad)
+  const agentMemory = useQuery(
+    api.domains.agents.agentMemory.listMemory,
+    isAuthenticated ? { limit: 10 } : 'skip'
+  );
+
+  // Transform plans into PlanItem format for MemoryStatusHeader
+  const planItems = useMemo((): PlanItem[] => {
+    if (!agentPlans || agentPlans.length === 0) return [];
+
+    // Get the most recent plan
+    const latestPlan = agentPlans[0];
+    if (!latestPlan?.steps) return [];
+
+    return latestPlan.steps.map((step: any, idx: number) => ({
+      id: `${latestPlan._id}-${idx}`,
+      name: step.name,
+      status: step.status === 'completed' ? 'done'
+        : step.status === 'in_progress' ? 'active'
+          : 'queued',
+    }));
+  }, [agentPlans]);
+
+  // Transform memory into constraints for ContextBar
+  const contextConstraints = useMemo((): ContextConstraint[] => {
+    if (!agentMemory) return [];
+
+    // Filter for constraint-type memory entries (e.g., keys like 'constraint:*' or 'context:*')
+    return agentMemory
+      .filter((m: any) => m.key.startsWith('constraint:') || m.key.startsWith('context:') || m.key === 'scratchpad')
+      .map((m: any) => ({
+        id: m._id,
+        label: m.key.replace(/^(constraint:|context:)/, ''),
+        value: m.content.length > 30 ? m.content.slice(0, 30) + '...' : m.content,
+        type: m.key.startsWith('constraint:') ? 'rule' as const : 'custom' as const,
+      }));
+  }, [agentMemory]);
+
   const processedDocMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Update active thread when initialThreadId changes (for external navigation)
@@ -912,11 +958,10 @@ export function FastAgentPanel({
               setActiveThreadId(thread._id);
               setIsMinimized(false);
             }}
-            className={`p-2 rounded-lg transition-colors ${
-              activeThreadId === thread._id
-                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
-                : 'hover:bg-[var(--bg-hover)] text-[var(--text-muted)]'
-            }`}
+            className={`p-2 rounded-lg transition-colors ${activeThreadId === thread._id
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
+              : 'hover:bg-[var(--bg-hover)] text-[var(--text-muted)]'
+              }`}
             title={thread.title || 'Untitled Thread'}
           >
             <MessageSquare className="w-4 h-4" />
@@ -1060,11 +1105,10 @@ export function FastAgentPanel({
                   <button
                     type="button"
                     onClick={() => setShowSkillsPanel(!showSkillsPanel)}
-                    className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${
-                      showSkillsPanel
-                        ? 'bg-blue-50 border-blue-200 text-blue-700'
-                        : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
-                    }`}
+                    className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${showSkillsPanel
+                      ? 'bg-blue-50 border-blue-200 text-blue-700'
+                      : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
+                      }`}
                     title="Browse Skills"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
@@ -1146,8 +1190,8 @@ export function FastAgentPanel({
 
         {/* Content Area */}
         <div className="fast-agent-panel-content bg-[var(--bg-primary)]">
-          {/* Left Sidebar (Thread List) - Only show if width allows or on mobile toggle */}
-          <div className={`panel-sidebar ${showSidebar ? 'visible' : ''} border-r border-[var(--border-color)] bg-[var(--bg-secondary)]`}>
+          {/* Left Sidebar (Thread List) - Only show on thread tab when sidebar is toggled */}
+          <div className={`panel-sidebar ${showSidebar && activeTab === 'thread' ? 'visible' : ''} border-r border-[var(--border-color)] bg-[var(--bg-secondary)]`}>
             <FastAgentThreadList
               threads={threads || []}
               activeThreadId={activeThreadId}
@@ -1174,6 +1218,13 @@ export function FastAgentPanel({
               <EditsTab activeThreadId={streamingThread?.agentThreadId || null} />
             ) : (
               <div className="flex-1 flex flex-col min-h-0">
+                {/* Memory Status Header (Plan Progress) */}
+                <MemoryStatusHeader
+                  planItems={planItems}
+                  currentFocus={agentPlans?.[0]?.goal}
+                  isLoading={agentPlans === undefined}
+                />
+
                 {/* Live Events Section - Inline collapsible */}
                 {showEventsPanel && liveEvents.length > 0 && (
                   <div className="flex-shrink-0 border-b border-[var(--border-color)] max-h-48 overflow-y-auto">
@@ -1278,6 +1329,11 @@ export function FastAgentPanel({
 
             {/* Input Area */}
             <div className="p-4 bg-[var(--bg-primary)]/80 backdrop-blur-sm border-t border-[var(--border-color)]">
+              {/* Context Bar - Shows active constraints */}
+              <ContextBar
+                constraints={contextConstraints}
+                onEditConstraints={() => toast.info('Edit constraints modal (coming soon)')}
+              />
               <FastAgentInputBar
                 input={input}
                 setInput={setInput}

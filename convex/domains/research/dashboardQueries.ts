@@ -6,32 +6,44 @@ import type { DashboardState } from "../../../src/features/research/types";
 /**
  * Internal query to fetch feed items for metrics calculation
  * Used by the daily morning brief workflow
+ *
+ * Note: Uses a 7-day window to ensure sufficient data for metrics.
+ * Feed items may not be refreshed daily, so a longer window provides
+ * more accurate statistics.
  */
 export const getFeedItemsForMetrics = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    // Use 7-day window to ensure we have data even if feeds aren't refreshed daily
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
     const items = await ctx.db
       .query("feedItems")
       .withIndex("by_score")
       .order("desc")
-      .take(100);
+      .take(200);
 
-    // Filter to last 24 hours and return relevant fields
-    return items
-      .filter(item => item.publishedAt && new Date(item.publishedAt).getTime() > oneDayAgo)
-      .map(item => ({
-        sourceId: item.sourceId,
-        type: item.type,
-        category: item.category,
-        title: item.title,
-        summary: item.summary,
-        source: item.source,
-        tags: item.tags,
-        score: item.score,
-        publishedAt: item.publishedAt,
-      }));
+    // Filter to last 7 days and return relevant fields
+    const recentItems = items.filter(item => {
+      if (!item.publishedAt) return false;
+      const pubTime = new Date(item.publishedAt).getTime();
+      return pubTime > sevenDaysAgo;
+    });
+
+    // If no recent items, return all items (fallback for demo/testing)
+    const resultItems = recentItems.length > 0 ? recentItems : items;
+
+    return resultItems.map(item => ({
+      sourceId: item.sourceId,
+      type: item.type,
+      category: item.category,
+      title: item.title,
+      summary: item.summary,
+      source: item.source,
+      tags: item.tags,
+      score: item.score,
+      publishedAt: item.publishedAt,
+    }));
   },
 });
 

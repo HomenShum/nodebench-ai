@@ -240,6 +240,7 @@ import type * as tools_arbitrage_index from "../tools/arbitrage/index.js";
 import type * as tools_calendar_confirmEventSelection from "../tools/calendar/confirmEventSelection.js";
 import type * as tools_calendar_emailEventExtractor from "../tools/calendar/emailEventExtractor.js";
 import type * as tools_calendar_recentEventSearch from "../tools/calendar/recentEventSearch.js";
+import type * as tools_context_nodebenchContextTools from "../tools/context/nodebenchContextTools.js";
 import type * as tools_document_contextTools from "../tools/document/contextTools.js";
 import type * as tools_document_deepAgentEditTools from "../tools/document/deepAgentEditTools.js";
 import type * as tools_document_documentEditingLiveTest from "../tools/document/documentEditingLiveTest.js";
@@ -534,6 +535,7 @@ declare const fullApi: ApiFromModules<{
   "tools/calendar/confirmEventSelection": typeof tools_calendar_confirmEventSelection;
   "tools/calendar/emailEventExtractor": typeof tools_calendar_emailEventExtractor;
   "tools/calendar/recentEventSearch": typeof tools_calendar_recentEventSearch;
+  "tools/context/nodebenchContextTools": typeof tools_context_nodebenchContextTools;
   "tools/document/contextTools": typeof tools_document_contextTools;
   "tools/document/deepAgentEditTools": typeof tools_document_deepAgentEditTools;
   "tools/document/documentEditingLiveTest": typeof tools_document_documentEditingLiveTest;

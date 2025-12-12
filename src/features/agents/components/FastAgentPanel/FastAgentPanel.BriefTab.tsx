@@ -43,12 +43,16 @@ function TaskCard({
   isPersonal,
   onRetry,
   retryDisabled,
+  queuePosition,
+  isNextUp,
 }: {
   task: any;
   resultMarkdown?: string;
   isPersonal?: boolean;
   onRetry?: () => void;
   retryDisabled?: boolean;
+  queuePosition?: number | null;
+  isNextUp?: boolean;
 }) {
   const friendlyNotes =
     typeof task.notes === "string" &&
@@ -78,6 +82,18 @@ function TaskCard({
             {isPersonal && (
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
                 Personal
+              </span>
+            )}
+            {queuePosition && (
+              <span
+                className={cn(
+                  "ml-auto text-[9px] px-1.5 py-0.5 rounded border",
+                  isNextUp
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-gray-600 border-gray-200",
+                )}
+              >
+                {isNextUp ? "Next up" : `#${queuePosition}`}
               </span>
             )}
           </div>
@@ -136,7 +152,9 @@ export function BriefTab() {
   );
   const availableDates = React.useMemo(() => {
     if (!historicalSnapshots) return [];
-    return historicalSnapshots.map((s) => s.dateString).sort().reverse();
+    // Deduplicate dates using Set to avoid duplicate key errors
+    const uniqueDates = [...new Set(historicalSnapshots.map((s) => s.dateString))];
+    return uniqueDates.sort().reverse();
   }, [historicalSnapshots]);
 
   const latestMemory = useQuery(
@@ -174,6 +192,7 @@ export function BriefTab() {
   );
 
   const [isRunning, setIsRunning] = React.useState(false);
+  const [runAllProgress, setRunAllProgress] = React.useState<{ current: number; total: number } | null>(null);
 
   // Lazily create per-user overlay when missing.
   React.useEffect(() => {
@@ -239,6 +258,63 @@ export function BriefTab() {
   };
   const handleReturnToLatest = () => setSelectedDate(null);
 
+  // "Run All" handler - runs all pending tasks sequentially
+  // Note: This uses data that's only available after memory loads, but the hook must be called unconditionally
+  const handleRunAll = React.useCallback(async () => {
+    if (!memory || selectedDate) return;
+
+    // Calculate pending tasks
+    const personalFeatures: any[] = overlay?.features ?? [];
+    const globalFeatures: any[] = memory.features ?? [];
+    const pendingPersonal = personalFeatures.filter((f) => f.status === "pending");
+    const pendingGlobal = globalFeatures.filter((f) => f.status === "pending");
+    const queueOrder = [...pendingPersonal, ...pendingGlobal];
+    const pendingTasks = queueOrder.length;
+
+    if (pendingTasks === 0) {
+      toast.message("No pending tasks to run");
+      return;
+    }
+    setIsRunning(true);
+    setRunAllProgress({ current: 0, total: pendingTasks });
+    let completed = 0;
+    let failed = 0;
+    try {
+      // Run personal tasks first
+      for (const task of pendingPersonal) {
+        try {
+          const res: any = await runNextPersonalTask({ memoryId: memory._id, taskId: task.id });
+          if (res.status === "failing") failed++;
+        } catch {
+          failed++;
+        }
+        completed++;
+        setRunAllProgress({ current: completed, total: pendingTasks });
+      }
+      // Then run global tasks
+      for (const task of pendingGlobal) {
+        try {
+          const res: any = await runNextGlobalTask({ memoryId: memory._id, taskId: task.id });
+          if (res.status === "failing") failed++;
+        } catch {
+          failed++;
+        }
+        completed++;
+        setRunAllProgress({ current: completed, total: pendingTasks });
+      }
+      if (failed === 0) {
+        toast.success(`Completed all ${completed} tasks`);
+      } else {
+        toast.warning(`Completed ${completed} tasks (${failed} failed)`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Run All failed");
+    } finally {
+      setIsRunning(false);
+      setRunAllProgress(null);
+    }
+  }, [memory, selectedDate, overlay, runNextPersonalTask, runNextGlobalTask, setIsRunning, setRunAllProgress]);
+
   if (memory === undefined) {
     return (
       <div className="flex-1 flex items-center justify-center text-sm text-gray-500">
@@ -283,6 +359,13 @@ export function BriefTab() {
   const passingPct = (passingCount / totalCount) * 100;
   const failingPct = (failingCount / totalCount) * 100;
   const pendingPct = (pendingCount / totalCount) * 100;
+
+  // Calculate queue positions for pending tasks (personal first, then global)
+  const pendingPersonal = personalFeatures.filter((f) => f.status === "pending");
+  const pendingGlobal = globalFeatures.filter((f) => f.status === "pending");
+  const queueOrder = [...pendingPersonal, ...pendingGlobal];
+  const queuePositionMap = new Map<string, number>();
+  queueOrder.forEach((f, idx) => queuePositionMap.set(f.id, idx + 1));
 
   const displayDate = selectedDate || memory.dateString;
   const displayDateLabel = formatBriefDate(displayDate);
@@ -382,31 +465,63 @@ export function BriefTab() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleRunNext}
-          disabled={isRunning || isViewingHistorical}
-          className={cn(
-            buttonSecondary,
-            "mt-1 w-full gap-2 px-3 py-2 text-xs font-medium",
-            (isRunning || isViewingHistorical) &&
-              "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:bg-gray-100",
-          )}
-        >
-          {isRunning ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Running next task...
-            </>
-          ) : isViewingHistorical ? (
-            "Switch to Latest to run tasks"
-          ) : (
-            <>
-              <Play className="w-3.5 h-3.5" />
-              Run next brief task
-            </>
-          )}
-        </button>
+        {/* Action buttons row */}
+        <div className="flex gap-2 mt-1">
+          <button
+            type="button"
+            onClick={handleRunNext}
+            disabled={isRunning || isViewingHistorical || pendingCount === 0}
+            className={cn(
+              buttonSecondary,
+              "flex-1 gap-2 px-3 py-2 text-xs font-medium",
+              (isRunning || isViewingHistorical || pendingCount === 0) &&
+                "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:bg-gray-100",
+            )}
+          >
+            {runAllProgress ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                {runAllProgress.current}/{runAllProgress.total}
+              </>
+            ) : isRunning ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Running...
+              </>
+            ) : isViewingHistorical ? (
+              "Historical"
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5" />
+                Run Next
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleRunAll}
+            disabled={isRunning || isViewingHistorical || pendingCount === 0}
+            className={cn(
+              buttonSecondary,
+              "flex-1 gap-2 px-3 py-2 text-xs font-medium",
+              (isRunning || isViewingHistorical || pendingCount === 0) &&
+                "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:bg-gray-100",
+            )}
+            title={`Run all ${pendingCount} pending tasks`}
+          >
+            {runAllProgress ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                {runAllProgress.current}/{runAllProgress.total}
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5" />
+                Run All ({pendingCount})
+              </>
+            )}
+          </button>
+        </div>
 
         {/* Date pills */}
         {availableDates.length > 1 && (
@@ -449,39 +564,44 @@ export function BriefTab() {
               Personalized Tasks
             </div>
             <div className="space-y-2">
-              {personalFeatures.map((f) => (
-                <TaskCard
-                  key={`personal-${f.id}`}
-                  task={f}
-                  resultMarkdown={f.resultMarkdown}
-                  isPersonal
-                  onRetry={
-                    !isViewingHistorical && f.status === "failing"
-                      ? async () => {
-                          setIsRunning(true);
-                          try {
-                            const res: any = await runNextPersonalTask({
-                              memoryId: memory._id,
-                              taskId: f.id,
-                            });
-                            if (res.status === "failing") {
-                              toast.error(
-                                "Retry failed. The AI response was still insufficient.",
-                              );
-                            } else {
-                              toast.success(`Retried ${f.id}`);
+              {personalFeatures.map((f) => {
+                const queuePos = f.status === "pending" ? queuePositionMap.get(f.id) : null;
+                return (
+                  <TaskCard
+                    key={`personal-${f.id}`}
+                    task={f}
+                    resultMarkdown={f.resultMarkdown}
+                    isPersonal
+                    queuePosition={queuePos}
+                    isNextUp={queuePos === 1}
+                    onRetry={
+                      !isViewingHistorical && f.status === "failing"
+                        ? async () => {
+                            setIsRunning(true);
+                            try {
+                              const res: any = await runNextPersonalTask({
+                                memoryId: memory._id,
+                                taskId: f.id,
+                              });
+                              if (res.status === "failing") {
+                                toast.error(
+                                  "Retry failed. The AI response was still insufficient.",
+                                );
+                              } else {
+                                toast.success(`Retried ${f.id}`);
+                              }
+                            } catch (err: any) {
+                              toast.error(err?.message || "Retry failed");
+                            } finally {
+                              setIsRunning(false);
                             }
-                          } catch (err: any) {
-                            toast.error(err?.message || "Retry failed");
-                          } finally {
-                            setIsRunning(false);
                           }
-                        }
-                      : undefined
-                  }
-                  retryDisabled={isRunning}
-                />
-              ))}
+                        : undefined
+                    }
+                    retryDisabled={isRunning}
+                  />
+                );
+              })}
             </div>
           </div>
         )}
@@ -493,11 +613,14 @@ export function BriefTab() {
           <div className="space-y-2">
             {globalFeatures.map((f) => {
               const result = resultsMap.get(f.id);
+              const queuePos = f.status === "pending" ? queuePositionMap.get(f.id) : null;
               return (
                 <TaskCard
                   key={f.id}
                   task={f}
                   resultMarkdown={result?.resultMarkdown}
+                  queuePosition={queuePos}
+                  isNextUp={queuePos === 1}
                   onRetry={
                     !isViewingHistorical && f.status === "failing"
                       ? async () => {
