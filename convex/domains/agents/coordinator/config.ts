@@ -90,13 +90,13 @@ export function getCoordinatorSystemPrompt(): string {
 export const SUBAGENT_REGISTRY = {
   dataAccess: {
     name: "DataAccessAgent",
-    triggers: ["calendar", "events", "schedule", "tasks", "todos", "reminder"],
-    description: "Handles calendar events and tasks",
+    triggers: ["calendar", "events", "schedule", "tasks", "todos", "reminder", "ics", "meeting", "appointment"],
+    description: "Handles calendar events, ICS artifacts, and tasks",
   },
   document: {
-    name: "DocumentAgent", 
-    triggers: ["document", "file", "note", "read", "write", "search docs"],
-    description: "Handles document operations",
+    name: "DocumentAgent",
+    triggers: ["document", "file", "note", "read", "write", "search docs", "edit document", "patch"],
+    description: "Handles document operations including patch-based editing",
   },
   media: {
     name: "MediaAgent",
@@ -112,5 +112,15 @@ export const SUBAGENT_REGISTRY = {
     name: "OpenBBAgent",
     triggers: ["stock", "price", "market", "crypto", "financial", "ticker"],
     description: "Handles financial data and market research",
+  },
+  email: {
+    name: "EmailAgent",
+    triggers: ["email", "send email", "compose", "inbox", "message", "mail", "notification"],
+    description: "Handles email composition and sending via Resend",
+  },
+  spreadsheet: {
+    name: "SpreadsheetAgent",
+    triggers: ["spreadsheet", "excel", "csv", "cells", "formula", "row", "column"],
+    description: "Handles spreadsheet editing with versioned artifacts",
   },
 };

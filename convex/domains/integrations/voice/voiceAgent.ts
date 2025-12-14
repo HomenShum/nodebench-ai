@@ -79,7 +79,7 @@ export const voicePlanSchema = z.object({
  * For simple queries: Responds quickly without tool usage
  * For complex queries: Uses tools efficiently with concise responses
  *
- * @param model - OpenAI model name (e.g., "gpt-4o-mini", "gpt-4o")
+ * @param model - Model name (e.g., "gpt-5.2", "claude-sonnet-4.5")
  * @returns Agent instance optimized for voice interactions
  */
 export const createVoiceAgent = (model: string) =>

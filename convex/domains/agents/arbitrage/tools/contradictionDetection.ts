@@ -62,7 +62,7 @@ export async function executeContradictionDetection(
     const factsJson = JSON.stringify(args.facts, null, 2);
     
     const result = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-5.2"),
       maxRetries: 2,
       system: `You are a contradiction detection expert. Analyze the provided facts and identify any contradictions.
 

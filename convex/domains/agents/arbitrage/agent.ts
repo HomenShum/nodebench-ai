@@ -11,9 +11,6 @@
 import { v } from "convex/values";
 import { action } from "../../../_generated/server";
 import { generateText, stepCountIs } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 
 import { getArbitrageSystemPrompt, contradictionSchema, sourceQualitySchema } from "./config";
 import {
@@ -32,23 +29,8 @@ import { executeListEvents } from "../dataAccess/tools/calendarTools";
 import { executeListTasks } from "../dataAccess/tools/taskTools";
 import { listEventsSchema, listTasksSchema, type ListEventsInput, type ListTasksInput } from "../dataAccess/config";
 
-// Model mapping
-const MODEL_MAP: Record<string, string> = {
-  'gpt-5.1': 'gpt-4o',
-  'gpt-5.1-codex': 'gpt-4o',
-  'gpt-5-mini': 'gpt-4o-mini',
-  'gpt-5-nano': 'gpt-4o-mini',
-  'gpt-5': 'gpt-4o',
-  'gpt-4.1-mini': 'gpt-4o-mini',
-  'gpt-4.1-nano': 'gpt-4o-mini',
-};
-
-function getModel(modelName: string) {
-  const resolved = MODEL_MAP[modelName] || modelName;
-  if (resolved.startsWith("claude-")) return anthropic(resolved);
-  if (resolved.startsWith("gemini-")) return google(resolved);
-  return openai(resolved);
-}
+// Import centralized model resolver (2025 consolidated - 7 models only)
+import { getLanguageModelSafe, DEFAULT_MODEL } from "../mcp_tools/models";
 
 /**
  * Arbitrage Agent - Research with verification
@@ -60,13 +42,13 @@ export const research = action({
     canonicalKey: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<string> => {
-    const modelName = args.model || "gpt-4o";
+    const modelName = args.model || DEFAULT_MODEL;
     console.log(`[ArbitrageAgent] Model: ${modelName}`);
     console.log(`[ArbitrageAgent] Prompt: ${args.prompt.substring(0, 100)}...`);
 
     try {
       const result = await generateText({
-        model: getModel(modelName),
+        model: getLanguageModelSafe(modelName),
         maxRetries: 3,
         stopWhen: stepCountIs(12), // More steps for multi-tool research
         tools: {

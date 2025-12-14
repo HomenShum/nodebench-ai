@@ -151,13 +151,19 @@ export const runNextTaskInternal = internalAction({
       ? features.find((f) => f.id === args.taskId)
       : null;
 
-    const pending = features.filter((f) => f.status !== "passing");
-    if (pending.length === 0) {
+    const pending = features.filter(
+      (f) => f?.status === "pending" || f?.status == null,
+    );
+    const failing = features.filter((f) => f?.status === "failing");
+
+    if (pending.length === 0 && failing.length === 0) {
       return { done: true, memoryId: memory._id, message: "All tasks passing." };
     }
 
-    pending.sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
-    const next = forced ?? pending[0];
+    const candidates = pending.length > 0 ? pending : failing;
+    candidates.sort((a, b) => (a?.priority ?? 999) - (b?.priority ?? 999));
+
+    const next = forced ?? candidates[0];
     if (!next) {
       return { done: true, memoryId: memory._id, message: "No runnable tasks." };
     }

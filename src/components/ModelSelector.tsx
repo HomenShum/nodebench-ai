@@ -1,50 +1,29 @@
 /**
  * Model Selector Component
  * Allows users to select their preferred LLM provider and model
+ *
+ * Uses shared/llm/approvedModels.ts as SINGLE SOURCE OF TRUTH
  */
 
 import React, { useState, useMemo } from "react";
 import { ChevronDown, Sparkles, Zap, Brain, Check } from "lucide-react";
 
-// Model definitions (mirrors modelCatalog.ts)
-interface ModelOption {
-  id: string;
-  name: string;
-  provider: "openai" | "anthropic" | "gemini";
-  description: string;
-  tier: "fast" | "balanced" | "powerful";
-  contextWindow: string;
-}
-
-const MODELS: ModelOption[] = [
-  // OpenAI
-  { id: "gpt-5.1", name: "GPT-5.1", provider: "openai", description: "Latest flagship", tier: "powerful", contextWindow: "128K" },
-  { id: "gpt-5-mini", name: "GPT-5 Mini", provider: "openai", description: "Balanced speed/quality", tier: "balanced", contextWindow: "400K" },
-  { id: "gpt-5-nano", name: "GPT-5 Nano", provider: "openai", description: "Fastest", tier: "fast", contextWindow: "400K" },
-  { id: "gpt-5.1-codex", name: "GPT-5.1 Codex", provider: "openai", description: "Coding optimized", tier: "powerful", contextWindow: "400K" },
-  
-  // Anthropic
-  { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", provider: "anthropic", description: "Best balance", tier: "balanced", contextWindow: "200K" },
-  { id: "claude-opus-4-5-20251101", name: "Claude Opus 4.5", provider: "anthropic", description: "Most capable", tier: "powerful", contextWindow: "200K" },
-  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", provider: "anthropic", description: "Fastest", tier: "fast", contextWindow: "200K" },
-  
-  // Gemini
-  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "gemini", description: "Fast, great quality", tier: "balanced", contextWindow: "1M" },
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", provider: "gemini", description: "Best quality", tier: "powerful", contextWindow: "2M" },
-  { id: "gemini-2.5-flash-lite", name: "Gemini Flash Lite", provider: "gemini", description: "Ultra-fast", tier: "fast", contextWindow: "1M" },
-];
-
-const PROVIDER_COLORS = {
-  openai: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", icon: "🟢" },
-  anthropic: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700", icon: "🟠" },
-  gemini: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "🔵" },
-};
+// Import from SINGLE SOURCE OF TRUTH
+import {
+  getModelUIList,
+  PROVIDER_COLORS,
+  type ApprovedModel,
+  type ModelUIInfo,
+} from "@shared/llm/approvedModels";
 
 const TIER_ICONS = {
   fast: Zap,
   balanced: Sparkles,
   powerful: Brain,
 };
+
+// Get models from shared module
+const MODELS = getModelUIList();
 
 interface ModelSelectorProps {
   value: string;
@@ -53,6 +32,8 @@ interface ModelSelectorProps {
   compact?: boolean;
 }
 
+type ProviderFilter = "all" | "openai" | "anthropic" | "google";
+
 export const ModelSelector: React.FC<ModelSelectorProps> = ({
   value,
   onChange,
@@ -60,7 +41,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   compact = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [filterProvider, setFilterProvider] = useState<"all" | "openai" | "anthropic" | "gemini">("all");
+  const [filterProvider, setFilterProvider] = useState<ProviderFilter>("all");
 
   const selectedModel = useMemo(() => 
     MODELS.find(m => m.id === value) ?? MODELS[0],
@@ -81,6 +62,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     return (
       <div className={`relative ${className}`}>
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
           className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${providerStyle.bg} ${providerStyle.border} border ${providerStyle.text} hover:opacity-80 transition-opacity`}
         >
@@ -99,6 +81,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 const isSelected = model.id === value;
                 return (
                   <button
+                    type="button"
                     key={model.id}
                     onClick={() => { onChange(model.id); setIsOpen(false); }}
                     className={`w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2 ${isSelected ? 'bg-gray-50' : ''}`}
@@ -124,8 +107,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     <div className={`space-y-3 ${className}`}>
       {/* Provider Filter */}
       <div className="flex gap-2">
-        {(["all", "openai", "anthropic", "gemini"] as const).map((provider) => (
+        {(["all", "openai", "anthropic", "google"] as const).map((provider) => (
           <button
+            type="button"
             key={provider}
             onClick={() => setFilterProvider(provider)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
@@ -134,7 +118,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {provider === "all" ? "All" : provider.charAt(0).toUpperCase() + provider.slice(1)}
+            {provider === "all" ? "All" : provider === "google" ? "Google" : provider.charAt(0).toUpperCase() + provider.slice(1)}
           </button>
         ))}
       </div>
@@ -148,6 +132,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 
           return (
             <button
+              type="button"
               key={model.id}
               onClick={() => onChange(model.id)}
               className={`p-3 rounded-lg border-2 text-left transition-all ${

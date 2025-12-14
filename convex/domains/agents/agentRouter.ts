@@ -88,7 +88,7 @@ export const route = action({
     mode: AgentMode;
     model: string;
   }> => {
-    const modelName = args.model || "gpt-4o-mini";
+    const modelName = args.model || "gpt-5.2";
     
     // Determine mode
     let mode: AgentMode;

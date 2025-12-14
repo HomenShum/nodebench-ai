@@ -286,10 +286,10 @@ Respond in JSON format:
   ]
 }`;
 
-    console.log("[validateSearchResults] Calling LLM judge with gpt-5-nano...");
+    console.log("[validateSearchResults] Calling LLM judge with gpt-5.2...");
 
     const completion = await openaiClient.chat.completions.create({
-      model: "gpt-5-nano",
+      model: "gpt-5.2",
       messages: [
         {
           role: "system",
@@ -661,7 +661,7 @@ export const answerQuestionEnhanced = internalAction({
 
       const openaiClient = new OpenAI({ apiKey });
       const completion: any = await openaiClient.chat.completions.create({
-        model: "gpt-5-nano",
+        model: "gpt-5.2",
         messages: [
           {
             role: "system",

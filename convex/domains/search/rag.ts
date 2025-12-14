@@ -281,7 +281,8 @@ export const answerQuestionViaRAG = internalAction({
       const client = new OpenAI({ apiKey, baseURL, ...(Object.keys(headers).length ? { defaultHeaders: headers as any } : {}) } as any);
       const system =
         "Use the provided context to answer the user's question. Cite which parts of the context you used. If unsure, say so.";
-      const model = process.env.OPENAI_MODEL || (orKey ? 'z-ai/glm-4.6' : 'gpt-5-nano');
+      // 2025 Model Consolidation: Use gpt-5.2 as default (7 approved models only)
+      const model = process.env.OPENAI_MODEL || (orKey ? 'z-ai/glm-4.6' : 'gpt-5.2');
       const completion: any = await client.chat.completions.create({
         model,
         messages: [

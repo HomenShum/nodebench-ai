@@ -30,7 +30,7 @@ function mapTasksToFeatures(tasks: PlannerTask[] | null, prompt: string) {
 
 async function generatePlanForThread(ctx: any, prompt: string, model?: string): Promise<{ mode: string; tasks: PlannerTask[]; raw: string }> {
   const { createPlannerAgent } = await import("./fastAgentPanelStreaming");
-  const planner = createPlannerAgent(model || "gpt-4o-mini");
+  const planner = createPlannerAgent(model || "gpt-5.2");
 
   try {
     const res = await planner.generateText(

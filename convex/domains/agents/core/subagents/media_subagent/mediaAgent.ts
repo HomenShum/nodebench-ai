@@ -42,7 +42,7 @@ import {
 /**
  * Create a Media Agent instance
  * 
- * @param model - Language model to use ("gpt-4o", "gpt-5-chat-latest", etc.)
+ * @param model - Language model to use ("gpt-5.2", "claude-sonnet-4.5", etc.)
  * @returns Configured Media Agent
  */
 export function createMediaAgent(model: string) {
@@ -129,7 +129,7 @@ Always structure responses with:
  * - Vector semantic search for conceptual similarity
  * - Reciprocal Rank Fusion for optimal ranking
  *
- * @param model - Language model to use ("gpt-4o", "gpt-5-chat-latest", etc.)
+ * @param model - Language model to use ("gpt-5.2", "claude-sonnet-4.5", etc.)
  * @returns Configured Media Agent with meta-tools
  */
 export function createMediaAgentWithMetaTools(model: string) {

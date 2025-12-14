@@ -60,7 +60,7 @@ Respond with ONLY a JSON object:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5.2",
       messages: [
         {
           role: "user",
@@ -107,7 +107,7 @@ USER REQUEST: "${userRequest}"
 Generate a specific edit proposal. Return ONLY the proposed new content or changes, no JSON.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5.2",
       messages: [
         {
           role: "user",

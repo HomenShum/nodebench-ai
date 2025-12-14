@@ -9,6 +9,16 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useSelection } from '@/features/agents/context/SelectionContext';
 
+// Import from SINGLE SOURCE OF TRUTH for models
+import {
+  getModelUIList,
+  MODEL_UI_INFO,
+  type ApprovedModel,
+} from '@shared/llm/approvedModels';
+
+// Get models from shared module
+const APPROVED_MODEL_LIST = getModelUIList();
+
 // File size limits
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -426,20 +436,17 @@ export function FastAgentInputBar({
           {/* Model Selector Pill */}
           <div className="relative">
             <button
+              type="button"
               onClick={() => setShowModelSelector(!showModelSelector)}
               className="flex items-center gap-1.5 px-2 py-1 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] rounded-full text-xs font-medium text-[var(--text-primary)] transition-colors"
             >
               <Sparkles className="w-3 h-3 text-[var(--accent-secondary)]" />
-              <span>{
-                selectedModel.includes('claude') ? (selectedModel.includes('sonnet') ? 'Claude Sonnet' : 'Claude Haiku') :
-                selectedModel.includes('gemini') ? (selectedModel.includes('pro') ? 'Gemini Pro' : 'Gemini Flash') :
-                selectedModel === 'gpt-5.1' ? 'GPT-5.1' :
-                selectedModel === 'gpt-5-mini' ? 'GPT-5 Mini' : 'GPT-5 Nano'
-              }</span>
+              {/* 2025 Model Consolidation: Uses shared/llm/approvedModels.ts */}
+              <span>{MODEL_UI_INFO[selectedModel as ApprovedModel]?.name ?? 'GPT-5.2'}</span>
               <ChevronUp className={cn("w-3 h-3 transition-transform", showModelSelector ? "rotate-180" : "")} />
             </button>
 
-            {/* Model Dropdown */}
+            {/* Model Dropdown - Uses APPROVED_MODEL_LIST from shared module */}
             {showModelSelector && (
               <>
                 <div
@@ -448,22 +455,12 @@ export function FastAgentInputBar({
                 />
                 <div className="absolute bottom-full left-0 mb-2 w-48 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl overflow-hidden z-20 flex flex-col py-1">
                   <div className="px-3 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Select Model</div>
-                  {[
-                    // OpenAI
-                    { id: 'gpt-5.1', label: 'GPT-5.1', desc: 'Most capable', icon: '🟢' },
-                    { id: 'gpt-5-mini', label: 'GPT-5 Mini', desc: 'Balanced', icon: '🟢' },
-                    { id: 'gpt-5-nano', label: 'GPT-5 Nano', desc: 'Fastest', icon: '🟢' },
-                    // Anthropic
-                    { id: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet', desc: 'Best balance', icon: '🟠' },
-                    { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku', desc: 'Fast', icon: '🟠' },
-                    // Gemini
-                    { id: 'gemini-2.5-flash', label: 'Gemini Flash', desc: '1M context', icon: '🔵' },
-                    { id: 'gemini-2.5-pro', label: 'Gemini Pro', desc: '2M context', icon: '🔵' },
-                  ].map((model) => (
+                  {APPROVED_MODEL_LIST.map((model) => (
                     <button
+                      type="button"
                       key={model.id}
                       onClick={() => {
-                        onSelectModel(model.id as any);
+                        onSelectModel(model.id);
                         setShowModelSelector(false);
                       }}
                       className={cn(
@@ -472,10 +469,10 @@ export function FastAgentInputBar({
                       )}
                     >
                       <span className={cn("text-xs font-medium flex items-center gap-1.5", selectedModel === model.id ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]")}>
-                        <span>{(model as any).icon}</span>
-                        {model.label}
+                        <span>{model.icon}</span>
+                        {model.name}
                       </span>
-                      <span className="text-[10px] text-[var(--text-muted)]">{model.desc}</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">{model.description}</span>
                     </button>
                   ))}
                 </div>

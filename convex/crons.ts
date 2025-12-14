@@ -166,10 +166,10 @@ crons.daily(
   {}
 );
 
-// Advance Daily Brief domain memory tasks hourly
+// Advance Daily Brief domain memory tasks every 15 minutes
 crons.interval(
   "advance daily brief tasks",
-  { hours: 1 },
+  { minutes: 15 },
   internal.domains.research.dailyBriefWorker.runNextTaskInternal,
   {}
 );

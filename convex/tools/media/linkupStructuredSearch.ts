@@ -275,7 +275,7 @@ IMPORTANT:
 
       // Track API usage
       const responseTime = Date.now() - startTime;
-      _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+      _ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
         apiName: "linkup",
         operation: "structured_search",
         unitsUsed: 1,
@@ -296,7 +296,7 @@ IMPORTANT:
       
       // Track failed call
       const responseTime = Date.now() - startTime;
-      _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+      _ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
         apiName: "linkup",
         operation: "structured_search",
         unitsUsed: 0,
@@ -431,7 +431,7 @@ Returns structured JSON with deal data. Sources are stored in artifacts.`,
 
       // Track usage
       const responseTime = Date.now() - startTime;
-      _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+      _ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
         apiName: "linkup",
         operation: "funding_search",
         unitsUsed: 1,

@@ -101,7 +101,7 @@ export const youtubeSearch = createTool({
         success = true;
         
         // Track empty result
-        _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+        _ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
           apiName: "youtube",
           operation: "search",
           unitsUsed: 100,
@@ -162,7 +162,7 @@ export const youtubeSearch = createTool({
       
       // Track successful search
       const responseTime = Date.now() - startTime;
-      _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+      _ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
         apiName: "youtube",
         operation: "search",
         unitsUsed: 100, // YouTube charges 100 units per search
@@ -185,7 +185,7 @@ export const youtubeSearch = createTool({
       // Track failed search
       const responseTime = Date.now() - startTime;
       try {
-        _ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+        _ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
           apiName: "youtube",
           operation: "search",
           unitsUsed: 0,

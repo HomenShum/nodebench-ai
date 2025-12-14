@@ -9,37 +9,14 @@
 import { v } from "convex/values";
 import { action } from "../../../_generated/server";
 import { generateText, stepCountIs } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 
 import { getDataAccessSystemPrompt, type ListEventsInput, type ListTasksInput } from "./config";
 import { executeListEvents, executeCreateEvent } from "./tools/calendarTools";
 import { executeListTasks, executeCreateTask, executeUpdateTask } from "./tools/taskTools";
 import { listEventsSchema, createEventSchema, listTasksSchema, createTaskSchema, updateTaskSchema } from "./config";
 
-// Model name mapping: catalog names → real API model names
-// Based on shared/llm/modelCatalog.ts
-const MODEL_MAP: Record<string, string> = {
-  // GPT-5.1 Series → gpt-4o (latest)
-  'gpt-5.1': 'gpt-4o',
-  'gpt-5.1-codex': 'gpt-4o',
-  // GPT-5 Series → gpt-4o-mini
-  'gpt-5-mini': 'gpt-4o-mini',
-  'gpt-5-nano': 'gpt-4o-mini',
-  'gpt-5': 'gpt-4o',
-  // GPT-4.1 Series → gpt-4o-mini (fallback)
-  'gpt-4.1-mini': 'gpt-4o-mini',
-  'gpt-4.1-nano': 'gpt-4o-mini',
-  'gpt-4.1': 'gpt-4o',
-};
-
-function getModel(modelName: string) {
-  const resolved = MODEL_MAP[modelName] || modelName;
-  if (resolved.startsWith("claude-")) return anthropic(resolved);
-  if (resolved.startsWith("gemini-")) return google(resolved);
-  return openai(resolved);
-}
+// Import centralized model resolver (2025 consolidated - 7 models only)
+import { getLanguageModelSafe, DEFAULT_MODEL } from "../mcp_tools/models";
 
 /**
  * Data Access Agent - Query with tools
@@ -50,12 +27,12 @@ export const query = action({
     model: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<string> => {
-    const modelName = args.model || "gpt-4o-mini";
+    const modelName = args.model || DEFAULT_MODEL;
     console.log(`[DataAccessAgent] Model: ${modelName}, Prompt: ${args.prompt.substring(0, 100)}...`);
 
     try {
       const result = await generateText({
-        model: getModel(modelName),
+        model: getLanguageModelSafe(modelName),
         maxRetries: 3,
         stopWhen: stepCountIs(5),
         tools: {
@@ -93,9 +70,9 @@ export const execute = action({
     allowWrites: v.optional(v.boolean()),
   },
   handler: async (ctx, args): Promise<string> => {
-    const modelName = args.model || "gpt-4o-mini";
+    const modelName = args.model || DEFAULT_MODEL;
     const allowWrites = args.allowWrites ?? false;
-    
+
     console.log(`[DataAccessAgent.execute] Model: ${modelName}, Writes: ${allowWrites}`);
 
     // Build tools based on permissions
@@ -133,7 +110,7 @@ export const execute = action({
 
     try {
       const result = await generateText({
-        model: getModel(modelName),
+        model: getLanguageModelSafe(modelName),
         maxRetries: 3,
         stopWhen: stepCountIs(7),
         tools,

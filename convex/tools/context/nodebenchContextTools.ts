@@ -71,31 +71,75 @@ A brief may not exist because:
 You can ask me to help you set up tracked topics or check your research feeds.`;
             }
 
-            // Format the brief content
-            const generatedAt = new Date(brief.generatedAt).toLocaleString();
+            const results: any[] = await ctx.runQuery(
+                api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+                { memoryId: brief._id }
+            );
 
-            let response = `📰 **Daily Brief for ${brief.dateString}**
-Generated: ${generatedAt}
+            const resultsByTaskId = new Map<string, any>();
+            (results ?? []).forEach((r: any) => {
+                if (!r?.taskId) return;
+                // listTaskResultsByMemory orders desc, so the first result per taskId is the latest
+                if (!resultsByTaskId.has(r.taskId)) resultsByTaskId.set(r.taskId, r);
+            });
 
-`;
+            const features: any[] = Array.isArray(brief.features) ? brief.features : [];
+            const passingCount = features.filter((f) => f?.status === "passing").length;
+            const failingCount = features.filter((f) => f?.status === "failing").length;
+            const pendingCount = features.filter(
+                (f) => f?.status === "pending" || f?.status == null,
+            ).length;
 
-            // Add main summary content
-            if (brief.summaryMarkdown) {
-                response += brief.summaryMarkdown;
-            } else if (brief.content) {
-                response += brief.content;
-            } else {
-                response += `Brief exists but content is empty. It may still be generating.`;
+            // Format the brief content (real DB-backed, no hallucinated summary fields)
+            const generatedAtIso = new Date(brief.generatedAt).toISOString();
+
+            let response = `📰 **Daily Brief for ${brief.dateString}**\n`;
+            response += `Generated (UTC): ${generatedAtIso}\n`;
+            response += `Version: ${brief.version}\n\n`;
+            response += `**Goal:** ${brief.goal}\n\n`;
+            response += `**Progress:** ${passingCount} passing / ${failingCount} failing / ${pendingCount} pending\n\n`;
+
+            if (features.length === 0) {
+                response += `No tasks were generated for this brief.`;
+                return response;
             }
 
-            // Add metadata if available
-            if (brief.topicsCount || brief.sourcesCount) {
-                response += `\n\n---\n📊 **Stats**: `;
-                if (brief.topicsCount) response += `${brief.topicsCount} topics covered`;
-                if (brief.sourcesCount) response += `, ${brief.sourcesCount} sources analyzed`;
+            const ordered = features
+                .slice()
+                .sort((a, b) => (a?.priority ?? 999) - (b?.priority ?? 999));
+
+            response += `---\n`;
+
+            for (const f of ordered) {
+                const taskId = f?.id ?? "";
+                const title = f?.name ?? taskId;
+                const status = f?.status ?? "pending";
+                const type = f?.type ?? "";
+                const notes = typeof f?.notes === "string" ? f.notes : "";
+                const result = resultsByTaskId.get(taskId);
+                const resultMarkdown = typeof result?.resultMarkdown === "string" ? result.resultMarkdown : "";
+
+                response += `### ${taskId} — ${title}\n`;
+                response += `- Status: ${status}\n`;
+                if (type) response += `- Type: ${type}\n`;
+                if (typeof f?.testCriteria === "string" && f.testCriteria.trim()) {
+                    response += `- Criteria: ${f.testCriteria.trim()}\n`;
+                }
+                if (notes) response += `- Notes: ${notes}\n`;
+                response += `\n`;
+
+                if (resultMarkdown) {
+                    response += `${resultMarkdown}\n\n`;
+                } else if (status === "pending") {
+                    response += `Result not generated yet.\n\n`;
+                } else if (status === "failing") {
+                    response += `No usable result yet (last attempt failed validation).\n\n`;
+                } else {
+                    response += `No stored result found.\n\n`;
+                }
             }
 
-            return response;
+            return response.trim();
         } catch (error) {
             console.error('[getDailyBrief] Error:', error);
             return `Error retrieving daily brief: ${error instanceof Error ? error.message : 'Unknown error'}. 

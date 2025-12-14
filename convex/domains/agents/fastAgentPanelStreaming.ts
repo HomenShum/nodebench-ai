@@ -58,6 +58,7 @@ import { z } from "zod";
 
 // Import tools
 import { linkupSearch } from "../../tools/media/linkupSearch";
+import { fusionSearch, quickSearch } from "../../tools/search";
 import { youtubeSearch } from "../../tools/media/youtubeSearch";
 import {
   findDocument,
@@ -108,38 +109,38 @@ import {
   getUserContext,
   getSystemDateTime,
 } from "../../tools/context/nodebenchContextTools";
-import { getLlmModel, calculateRequestCost, getProviderForModel, isModelAllowedForTier, resolveModelAlias, DEFAULT_FALLBACK_MODEL, getModelWithFailover, validateContextWindow, type UserTier } from "../../../shared/llm/modelCatalog";
+
+// Email operations
+import { sendEmail } from "../../tools/sendEmail";
+
+// Calendar ICS artifact management
+import {
+  createCalendarEvent,
+  updateCalendarEvent,
+  cancelCalendarEvent,
+} from "../../tools/calendarIcs";
+
+// Patch-based editing tools
+import { editDocument } from "../../tools/editDocument";
+import { editSpreadsheet } from "../../tools/editSpreadsheet";
+import { getLlmModel, calculateRequestCost, getProviderForModel, isModelAllowedForTier, getModelWithFailover, validateContextWindow, type UserTier } from "../../../shared/llm/modelCatalog";
+
+// Import from centralized model resolver (SINGLE SOURCE OF TRUTH)
+import {
+  getLanguageModelSafe,
+  normalizeModelInput,
+  DEFAULT_MODEL,
+  type ApprovedModel
+} from "./mcp_tools/models";
 
 const streamCancellationControllers = new Map<string, AbortController>();
 
 // Helper to get the appropriate language model based on model name
-// Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
-// Includes alias resolution, failover support, and env var validation
+// Uses centralized model resolver for 7 approved models only
 function getLanguageModel(modelInput: string) {
-  // Resolve aliases (e.g., "claude" -> "claude-sonnet-4-5-20250929")
-  const resolvedModel = resolveModelAlias(modelInput);
-
-  // Get model with failover (checks if provider API key is configured)
-  const { model: modelName, provider, isFallback } = getModelWithFailover(resolvedModel);
-
-  if (isFallback) {
-    console.warn(`[getLanguageModel] Failover activated: ${modelInput} → ${modelName} (${provider})`);
-  }
-
-  // Handle Claude/Anthropic models
-  if (modelName.startsWith("claude-")) {
-    console.log(`[getLanguageModel] Using Anthropic model: ${modelName}`);
-    return anthropic(modelName);
-  }
-
-  // Handle Gemini/Google models
-  if (modelName.startsWith("gemini-")) {
-    console.log(`[getLanguageModel] Using Google Gemini model: ${modelName}`);
-    return google(modelName);
-  }
-
-  // Default to OpenAI (gpt-*, o1-*, o3-*, o4-*)
-  return openai.chat(modelName || DEFAULT_FALLBACK_MODEL);
+  // Normalize and resolve using centralized resolver
+  // This logs ModelResolutionEvent for observability
+  return getLanguageModelSafe(modelInput);
 }
 
 // Simple, lightweight agent for Mini Note Agent (no tools, fast responses)
@@ -453,6 +454,10 @@ Always provide clear, helpful responses and confirm actions you take.`,
     linkupSearch,
     youtubeSearch,
 
+    // Multi-source fusion search
+    fusionSearch,
+    quickSearch,
+
     // Document operations
     findDocument,
     getDocumentContent,
@@ -501,6 +506,20 @@ Always provide clear, helpful responses and confirm actions you take.`,
     getDailyBrief,
     getUserContext,
     getSystemDateTime,
+
+    // Email operations (audit-logged via emailEvents)
+    sendEmail,
+
+    // Calendar ICS artifact management (RFC 5545 compliant)
+    createCalendarEvent,
+    updateCalendarEvent,
+    cancelCalendarEvent,
+
+    // Patch-based document editing with locators
+    editDocument,
+
+    // Spreadsheet editing (versioned artifacts)
+    editSpreadsheet,
   },
 
   // Allow up to 15 steps for complex multi-tool workflows
@@ -772,7 +791,8 @@ export const createThread = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const modelName = args.model || getLlmModel("chat", "openai");
+    // Normalize model at API boundary (7 approved models only)
+    const modelName = normalizeModelInput(args.model);
     const chatAgent = createChatAgent(modelName);
     const title = (args.title ?? "").trim() || "Research Thread";
 
@@ -888,12 +908,12 @@ export const autoNameThread = action({
       return { title: thread.title, skipped: true };
     }
 
-    // Generate title using OpenAI
+    // Generate title using OpenAI (use DEFAULT_MODEL from centralized resolver)
     const OpenAI = (await import("openai")).default;
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const response = await openai.chat.completions.create({
-      model: getLlmModel("chat", "openai"),
+      model: DEFAULT_MODEL, // gpt-5.2
       messages: [
         {
           role: "system",
@@ -1285,7 +1305,8 @@ export const initiateAsyncStreaming = mutation({
       throw new Error("Unauthorized");
     }
 
-    const modelName = args.model || getLlmModel("chat", "openai");
+    // Normalize model at API boundary (7 approved models only)
+    const modelName = normalizeModelInput(args.model);
     const chatAgent = createChatAgent(modelName);
 
     // Ensure initializer has seeded plan and progress log
@@ -1431,7 +1452,11 @@ export const streamAsync = internalAction({
   handler: async (ctx, args) => {
     const executionId = crypto.randomUUID().substring(0, 8);
     const startTime = Date.now();
-    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId);
+
+    // Normalize model at API boundary (7 approved models only)
+    const normalizedModel = normalizeModelInput(args.model);
+
+    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId, 'model:', normalizedModel);
 
     // Get userId for coordinator agent from thread
     const thread = await ctx.runQuery(components.agent.threads.getThread, {
@@ -1446,7 +1471,7 @@ export const streamAsync = internalAction({
     if (userId) {
       try {
         const rateLimitCheck = await ctx.runQuery(api.domains.billing.rateLimiting.checkRequestAllowed, {
-          model: args.model,
+          model: normalizedModel,
           estimatedInputTokens: 2000, // Estimate for pre-check
           estimatedOutputTokens: 1000,
         });
@@ -1575,13 +1600,13 @@ export const streamAsync = internalAction({
       // Always use CoordinatorAgent - it has GAM tools and decides internally when to use them
       // Pass artifactDeps to wrap all tools for artifact extraction
       // Pass arbitrageMode option for receipts-first research persona
-      agent = createCoordinatorAgent(args.model, artifactDeps, { arbitrageMode });
+      agent = createCoordinatorAgent(normalizedModel, artifactDeps, { arbitrageMode });
       agentType = arbitrageMode ? "arbitrage" : "coordinator";
 
       console.log(`[streamAsync:${executionId}] Using CoordinatorAgent directly - GAM memory tools available, artifacts=${!!artifactDeps}, sectionRef=enabled`);
     } else {
       console.log(`[streamAsync:${executionId}] Using SIMPLE AGENT (legacy mode)`);
-      agent = createSimpleChatAgent(args.model);
+      agent = createSimpleChatAgent(normalizedModel);
       agentType = "simple";
     }
 
@@ -1689,7 +1714,7 @@ export const streamAsync = internalAction({
         const estimatedOutputTokens = Math.ceil((finalText?.length || 0) / 4);
 
         await ctx.runMutation(api.domains.billing.rateLimiting.recordLlmUsage, {
-          model: args.model,
+          model: normalizedModel,
           inputTokens: estimatedInputTokens,
           outputTokens: estimatedOutputTokens,
           cachedTokens: 0,
@@ -1718,7 +1743,7 @@ export const streamAsync = internalAction({
       if (!errorMessage.includes("Rate limit")) {
         try {
           await ctx.runMutation(api.domains.billing.rateLimiting.recordLlmUsage, {
-            model: args.model,
+            model: normalizedModel,
             inputTokens: 100, // Minimal estimate for failed request
             outputTokens: 0,
             success: false,
@@ -1766,7 +1791,7 @@ export const generateDocumentContent = action({
   handler: async (ctx, args) => {
     console.log(`[generateDocumentContent] Generating content for prompt: "${args.prompt}"`);
 
-    const modelName = getLlmModel("chat", "openai");
+    const modelName = DEFAULT_MODEL; // Use centralized default (gpt-5.2)
     const chatAgent = createChatAgent(modelName);
 
     // Create or get thread
@@ -2199,7 +2224,7 @@ export const sendMessageInternal = internalAction({
   }),
   handler: async (ctx, args): Promise<{ response: string; toolsCalled: string[]; threadId: string; toolResults: any[] }> => {
     console.log('[sendMessageInternal] Starting with message:', args.message);
-    const modelName = getLlmModel("chat", "openai");
+    const modelName = DEFAULT_MODEL; // Use centralized default (gpt-5.2)
 
     // Create a context with userId for tools to access
     const contextWithUserId = {
@@ -2268,7 +2293,17 @@ export const sendMessageInternal = internalAction({
     const streamResult = await chatAgent.streamText(
       contextWithUserId as any,
       { threadId },
-      { prompt }
+      {
+        prompt,
+        // CRITICAL: Add onError callback to catch errors during streaming
+        // Without this, errors are silently suppressed per Vercel AI SDK docs
+        onError: ({ error }) => {
+          console.error('[sendMessageInternal] ❌ Stream error:', error);
+          console.error('[sendMessageInternal] Error name:', (error as any)?.name);
+          console.error('[sendMessageInternal] Error message:', (error as any)?.message);
+          console.error('[sendMessageInternal] Error stack:', (error as any)?.stack);
+        },
+      }
       // Note: saveStreamDeltas disabled to avoid race conditions in evaluation tests
     );
 
@@ -2282,18 +2317,41 @@ export const sendMessageInternal = internalAction({
 
     // Now we can safely access the results
     let responseText = await streamResult.text;
-    const toolCalls = await streamResult.toolCalls;
+
+    // CRITICAL FIX: Extract tool calls from ALL steps, not just top-level
+    // According to Vercel AI SDK docs: const allToolCalls = steps.flatMap(step => step.toolCalls);
+    const steps = await streamResult.steps;
+    console.log('[sendMessageInternal] Steps:', steps?.length || 0);
+
+    const toolsCalled: string[] = [];
+    if (steps && steps.length > 0) {
+      for (const step of steps) {
+        const stepToolCalls = (step as any).toolCalls || [];
+        console.log('[sendMessageInternal] Step type:', (step as any).stepType, 'tool calls:', stepToolCalls.length);
+        for (const call of stepToolCalls) {
+          if (!toolsCalled.includes(call.toolName)) {
+            toolsCalled.push(call.toolName);
+            console.log('[sendMessageInternal] ✅ Extracted tool from step:', call.toolName);
+          }
+        }
+      }
+    }
+
+    // Also check top-level toolCalls for backwards compatibility
+    const topLevelToolCalls = await streamResult.toolCalls;
     let toolResults: any[] = (await streamResult.toolResults) ?? [];
 
     console.log('[sendMessageInternal] Text received, length:', responseText.length);
-    console.log('[sendMessageInternal] Tool calls:', toolCalls?.length || 0);
+    console.log('[sendMessageInternal] Top-level tool calls:', topLevelToolCalls?.length || 0);
     console.log('[sendMessageInternal] Tool results:', toolResults?.length || 0);
+    console.log('[sendMessageInternal] Tools extracted from steps:', toolsCalled.length, toolsCalled);
 
-    // Extract tool names from tool calls
-    const toolsCalled: string[] = [];
-    if (toolCalls) {
-      for (const toolCall of toolCalls) {
-        toolsCalled.push(toolCall.toolName);
+    if (topLevelToolCalls) {
+      for (const call of topLevelToolCalls) {
+        if (!toolsCalled.includes(call.toolName)) {
+          toolsCalled.push(call.toolName);
+          console.log('[sendMessageInternal] ✅ Extracted tool from top-level:', call.toolName);
+        }
       }
     }
 
@@ -2317,7 +2375,13 @@ export const sendMessageInternal = internalAction({
       const forced = await chatAgent.streamText(
         contextWithUserId as any,
         { threadId },
-        { prompt: toolForcePrompt },
+        {
+          prompt: toolForcePrompt,
+          onError: ({ error }) => {
+            console.error('[sendMessageInternal] ❌ Forced follow-up stream error:', error);
+            console.error('[sendMessageInternal] Error details:', (error as any)?.message);
+          },
+        },
         {
           saveStreamDeltas: {
             chunking: "word",
@@ -2328,14 +2392,34 @@ export const sendMessageInternal = internalAction({
 
       await forced.consumeStream();
 
-      const forcedCalls = await forced.toolCalls;
+      // Extract from steps (same fix as above)
+      const forcedSteps = await forced.steps;
       const forcedResults = (await forced.toolResults) ?? [];
       const forcedText = await forced.text;
 
-      if (forcedCalls) {
+      console.log('[sendMessageInternal] Forced follow-up - steps:', forcedSteps?.length || 0, 'tool results:', forcedResults?.length || 0);
+
+      if (forcedSteps && forcedSteps.length > 0) {
+        for (const step of forcedSteps) {
+          const stepToolCalls = (step as any).toolCalls || [];
+          console.log('[sendMessageInternal] Forced step type:', (step as any).stepType, 'tool calls:', stepToolCalls.length);
+          for (const call of stepToolCalls) {
+            if (!toolsCalled.includes(call.toolName)) {
+              toolsCalled.push(call.toolName);
+              console.log('[sendMessageInternal] ✅ Extracted tool from forced step:', call.toolName);
+            }
+          }
+        }
+      }
+
+      // Also check top-level for backwards compatibility
+      const forcedCalls = await forced.toolCalls;
+      if (forcedCalls && forcedCalls.length > 0) {
+        console.log('[sendMessageInternal] Forced top-level tool calls:', forcedCalls.map((c: any) => c.toolName));
         for (const call of forcedCalls) {
           if (!toolsCalled.includes(call.toolName)) {
             toolsCalled.push(call.toolName);
+            console.log('[sendMessageInternal] ✅ Extracted tool from forced top-level:', call.toolName);
           }
         }
       }
@@ -2360,7 +2444,13 @@ export const sendMessageInternal = internalAction({
         const strict = await chatAgent.streamText(
           contextWithUserId as any,
           { threadId },
-          { prompt: strictPrompt },
+          {
+            prompt: strictPrompt,
+            onError: ({ error }) => {
+              console.error('[sendMessageInternal] ❌ Strict follow-up stream error:', error);
+              console.error('[sendMessageInternal] Error details:', (error as any)?.message);
+            },
+          },
           {
             saveStreamDeltas: {
               chunking: "word",
@@ -2371,14 +2461,34 @@ export const sendMessageInternal = internalAction({
 
         await strict.consumeStream();
 
-        const strictCalls = await strict.toolCalls;
+        // Extract from steps (same fix as above)
+        const strictSteps = await strict.steps;
         const strictResults = (await strict.toolResults) ?? [];
         const strictText = await strict.text;
 
-        if (strictCalls) {
+        console.log('[sendMessageInternal] Strict follow-up - steps:', strictSteps?.length || 0, 'tool results:', strictResults?.length || 0);
+
+        if (strictSteps && strictSteps.length > 0) {
+          for (const step of strictSteps) {
+            const stepToolCalls = (step as any).toolCalls || [];
+            console.log('[sendMessageInternal] Strict step type:', (step as any).stepType, 'tool calls:', stepToolCalls.length);
+            for (const call of stepToolCalls) {
+              if (!toolsCalled.includes(call.toolName)) {
+                toolsCalled.push(call.toolName);
+                console.log('[sendMessageInternal] ✅ Extracted tool from strict step:', call.toolName);
+              }
+            }
+          }
+        }
+
+        // Also check top-level for backwards compatibility
+        const strictCalls = await strict.toolCalls;
+        if (strictCalls && strictCalls.length > 0) {
+          console.log('[sendMessageInternal] Strict top-level tool calls:', strictCalls.map((c: any) => c.toolName));
           for (const call of strictCalls) {
             if (!toolsCalled.includes(call.toolName)) {
               toolsCalled.push(call.toolName);
+              console.log('[sendMessageInternal] ✅ Extracted tool from strict top-level:', call.toolName);
             }
           }
         }
@@ -2387,6 +2497,54 @@ export const sendMessageInternal = internalAction({
         }
         if (strictText && strictText.trim().length > 0) {
           responseText = responseText || strictText;
+        }
+      }
+    }
+
+    // Extract tools from delegation results (subagent tool calls)
+    // Delegation tools return { delegate, threadId, messageId, text, toolsUsed }
+    if (toolResults && toolResults.length > 0) {
+      console.log(`[sendMessageInternal] Inspecting ${toolResults.length} tool results for subagent tools...`);
+      for (let i = 0; i < toolResults.length; i++) {
+        const result = toolResults[i];
+        console.log(`[sendMessageInternal] Tool result ${i}:`, JSON.stringify(result, null, 2).slice(0, 500));
+
+        // Check if this is a parallelDelegate result (JSON string with runId)
+        // NOTE: We don't wait for delegations here to avoid OCC issues
+        // Evaluation tests should use waitForDelegationsAndExtractTools() helper
+        if (typeof result === "string" && result.includes("delegations_scheduled")) {
+          try {
+            const parsed = JSON.parse(result);
+            if (parsed.runId) {
+              console.log(`[sendMessageInternal] Found parallelDelegate result, runId: ${parsed.runId}`);
+              console.log(`[sendMessageInternal] Delegations will complete asynchronously. Use waitForDelegationsAndExtractTools() to extract tools.`);
+            }
+          } catch (e) {
+            console.log(`[sendMessageInternal] Failed to parse parallelDelegate result:`, e);
+          }
+        }
+
+        // Check if this is a regular delegation result with toolsUsed
+        if (result && typeof result === "object") {
+          // Try multiple paths to find toolsUsed
+          const output = result.result ?? result.output ?? result;
+          console.log(`[sendMessageInternal] Output type: ${typeof output}, keys: ${output ? Object.keys(output).join(', ') : 'null'}`);
+
+          // Check for toolsUsed in various locations
+          const toolsUsedArray =
+            (output && typeof output === "object" && Array.isArray(output.toolsUsed)) ? output.toolsUsed :
+            (result && typeof result === "object" && Array.isArray(result.toolsUsed)) ? result.toolsUsed :
+            null;
+
+          if (toolsUsedArray) {
+            console.log(`[sendMessageInternal] Found toolsUsed array:`, toolsUsedArray);
+            for (const subTool of toolsUsedArray) {
+              if (typeof subTool === "string" && !toolsCalled.includes(subTool)) {
+                toolsCalled.push(subTool);
+                console.log(`[sendMessageInternal] ✅ Extracted subagent tool: ${subTool}`);
+              }
+            }
+          }
         }
       }
     }
@@ -2680,12 +2838,12 @@ export const submitFileQuestion = mutation({
       updatedAt: Date.now(),
     });
 
-    // Trigger async response generation
+    // Trigger async response generation (normalize model at API boundary)
     await ctx.scheduler.runAfter(0, internal.domains.agents.fastAgentPanelStreaming.generateFileResponse, {
       threadId: thread.agentThreadId,
       promptMessageId: messageId,
       streamThreadId: args.threadId,
-      model: thread.model || getLlmModel("chat", "openai"),
+      model: normalizeModelInput(thread.model),
     });
 
     return {

@@ -16,16 +16,10 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
 
-// Helper to get the appropriate language model based on model name
-function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) return anthropic(modelName);
-  if (modelName.startsWith("gemini-")) return google(modelName);
-  return openai.chat(modelName);
-}
+// Import centralized model resolver (2025 consolidated - 7 models only)
+import { getLanguageModelSafe } from "../../../../agents/mcp_tools/models";
 
 // Import meta-tools (hybrid search)
 import {
@@ -44,13 +38,13 @@ import {
  * - Reciprocal Rank Fusion for optimal ranking
  * - Query result caching for performance
  *
- * @param model - Language model to use ("gpt-4o", "gpt-5-chat-latest", etc.)
+ * @param model - Language model to use ("gpt-5.2", "claude-sonnet-4.5", etc.)
  * @returns Configured Document Agent with meta-tools
  */
 export function createDocumentAgentWithMetaTools(model: string) {
   return new Agent(components.agent, {
     name: "DocumentAgent",
-    languageModel: getLanguageModel(model),
+    languageModel: getLanguageModelSafe(model),
     textEmbeddingModel: openai.embedding("text-embedding-3-small"),
     instructions: `You are a specialized document analyst and manager for NodeBench AI.
 
@@ -147,7 +141,7 @@ export function createMinimalDocumentAgent(model: string) {
 
   return new Agent(components.agent, {
     name: "DocumentAgent",
-    languageModel: getLanguageModel(model),
+    languageModel: getLanguageModelSafe(model),
     instructions: `You are a document assistant. You can search, read, create, and update documents.
 
 Available tools:

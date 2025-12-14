@@ -84,6 +84,10 @@ The tool returns verified sources that get stored in the artifact system.`,
     // NEW: Max results
     maxResults: z.number().optional().describe("Maximum number of results to return (default: API decides)"),
     
+    // Source control (per Linkup API spec)
+    includeSources: z.boolean().default(true)
+      .describe("Include source URLs in response. Always true for traceability - sources stored in artifact system."),
+
     // Existing
     includeImages: z.boolean().default(false).describe("Set TRUE only when user explicitly asks for images, pictures, photos."),
     includeDomains: z.array(z.string()).optional().describe("Limit search to these domains (e.g., ['techcrunch.com', 'sec.gov'])"),
@@ -146,6 +150,7 @@ The tool returns verified sources that get stored in the artifact system.`,
     if (args.toDate) requestBody.toDate = args.toDate;
     if (args.includeInlineCitations !== undefined) requestBody.includeInlineCitations = args.includeInlineCitations;
     if (args.maxResults) requestBody.maxResults = args.maxResults;
+    if (args.includeSources !== undefined) requestBody.includeSources = args.includeSources;
     if (args.includeDomains?.length) requestBody.includeDomains = args.includeDomains;
     if (args.excludeDomains?.length) requestBody.excludeDomains = args.excludeDomains;
     
@@ -360,7 +365,7 @@ The tool returns verified sources that get stored in the artifact system.`,
       // Linkup Pricing (2025): €5/1,000 standard searches = ~$0.0055/search = 0.55 cents
       // Deep search would be ~5.5 cents but we only use standard
       const responseTime = Date.now() - startTime;
-      ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+      ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
         apiName: "linkup",
         operation: "search",
         unitsUsed: 1,
@@ -378,7 +383,7 @@ The tool returns verified sources that get stored in the artifact system.`,
       // Track failed API call (asynchronously)
       const responseTime = Date.now() - startTime;
       try {
-        ctx.scheduler.runAfter(0, "apiUsageTracking:trackApiUsage" as any, {
+        ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
           apiName: "linkup",
           operation: "search",
           unitsUsed: 0,

@@ -3,7 +3,7 @@
 // OCC-safe: seq owned by action, not mutated per event
 
 import { v } from "convex/values";
-import { query, internalMutation } from "../../_generated/server";
+import { query, internalMutation, internalQuery } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -47,8 +47,24 @@ export const listByRun = query({
   handler: async (ctx, { runId }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
-    
+
     // Filter by userId to prevent run bleed
+    return await ctx.db
+      .query("agentDelegations")
+      .withIndex("by_user_run", (q) => q.eq("userId", userId).eq("runId", runId))
+      .collect();
+  },
+});
+
+/**
+ * Internal version of listByRun (no auth check, for evaluation)
+ */
+export const listByRunInternal = internalQuery({
+  args: {
+    runId: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, { runId, userId }) => {
     return await ctx.db
       .query("agentDelegations")
       .withIndex("by_user_run", (q) => q.eq("userId", userId).eq("runId", runId))
@@ -59,7 +75,7 @@ export const listByRun = query({
 /**
  * Get write events for a delegation (UI streaming)
  * Range query + bounded to prevent unbounded reads
- * 
+ *
  * Fix B applied: proper index usage, no JS filter, bounded results
  */
 export const getWriteEvents = query({
@@ -72,28 +88,51 @@ export const getWriteEvents = query({
     // First verify user owns this delegation (auth guard)
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
-    
+
     const delegation = await ctx.db
       .query("agentDelegations")
       .withIndex("by_delegation", (q) => q.eq("delegationId", delegationId))
       .unique();
-    
+
     if (!delegation || delegation.userId !== userId) {
       return []; // Not found or not owned by user
     }
-    
+
     // Range query using compound index (delegationId, seq)
     // Convex compound index allows eq on first field, then range on second
     let q = ctx.db
       .query("agentWriteEvents")
       .withIndex("by_delegation", (q) => q.eq("delegationId", delegationId));
-    
+
     // Apply seq filter if provided (incremental fetch)
     if (afterSeq !== undefined) {
       q = q.filter((q) => q.gt(q.field("seq"), afterSeq));
     }
-    
+
     // Bounded results to prevent runaway queries
+    const boundedLimit = Math.min(limit ?? 200, 500);
+    return await q.take(boundedLimit);
+  },
+});
+
+/**
+ * Internal version of getWriteEvents (no auth check, for evaluation)
+ */
+export const getWriteEventsInternal = internalQuery({
+  args: {
+    delegationId: v.string(),
+    afterSeq: v.optional(v.number()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { delegationId, afterSeq, limit }) => {
+    let q = ctx.db
+      .query("agentWriteEvents")
+      .withIndex("by_delegation", (q) => q.eq("delegationId", delegationId));
+
+    if (afterSeq !== undefined) {
+      q = q.filter((q) => q.gt(q.field("seq"), afterSeq));
+    }
+
     const boundedLimit = Math.min(limit ?? 200, 500);
     return await q.take(boundedLimit);
   },

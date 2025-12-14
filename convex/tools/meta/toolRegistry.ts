@@ -69,6 +69,14 @@ export const toolCategories = {
     name: "Human Input",
     description: "Request human clarification or approval",
   },
+  email: {
+    name: "Email Operations",
+    description: "Compose and send emails via Resend",
+  },
+  spreadsheet: {
+    name: "Spreadsheet Operations",
+    description: "Edit spreadsheets with versioned artifacts",
+  },
 } as const;
 
 export type ToolCategory = keyof typeof toolCategories;
@@ -466,6 +474,58 @@ export const toolSummaries: Record<string, ToolSummary> = {
     category: "humanInput",
     keywords: ["human", "ask", "clarify", "confirm", "approval"],
     module: "integration/humanInputTools",
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Email Operations
+  // ─────────────────────────────────────────────────────────────────────────
+  sendEmail: {
+    description: "Send email via Resend with full audit logging",
+    category: "email",
+    keywords: ["email", "send", "compose", "resend", "mail", "notification"],
+    module: "sendEmail",
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Calendar ICS Operations
+  // ─────────────────────────────────────────────────────────────────────────
+  createCalendarEvent: {
+    description: "Create a calendar event and generate RFC 5545 ICS artifact",
+    category: "calendar",
+    keywords: ["calendar", "event", "ics", "meeting", "schedule", "create"],
+    module: "calendarIcs",
+  },
+  updateCalendarEvent: {
+    description: "Update an existing calendar event with new ICS version",
+    category: "calendar",
+    keywords: ["calendar", "event", "ics", "update", "modify", "reschedule"],
+    module: "calendarIcs",
+  },
+  cancelCalendarEvent: {
+    description: "Cancel a calendar event and generate cancellation ICS",
+    category: "calendar",
+    keywords: ["calendar", "event", "ics", "cancel", "delete", "remove"],
+    module: "calendarIcs",
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Patch-Based Document Editing
+  // ─────────────────────────────────────────────────────────────────────────
+  editDocument: {
+    description: "Apply patch-based edits to documents using locators (heading, paragraph, line, search)",
+    category: "deepEdit",
+    keywords: ["edit", "patch", "document", "insert", "replace", "delete", "locator"],
+    module: "editDocument",
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Spreadsheet Operations
+  // ─────────────────────────────────────────────────────────────────────────
+  editSpreadsheet: {
+    description: "Edit spreadsheet with versioned artifacts (set cell, insert row, apply formula, add sheet)",
+    category: "spreadsheet",
+    keywords: ["spreadsheet", "excel", "cell", "row", "column", "formula", "edit"],
+    module: "editSpreadsheet",
   },
 };
 

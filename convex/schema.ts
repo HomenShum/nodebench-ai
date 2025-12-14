@@ -1339,6 +1339,197 @@ export default defineSchema({
   voiceSessions,
   feedItems,
 
+  /* ------------------------------------------------------------------ */
+  /* EMAIL EVENTS - Audit log for all email sends via agent tools       */
+  /* ------------------------------------------------------------------ */
+  emailEvents: defineTable({
+    userId: v.id("users"),
+    threadId: v.optional(v.string()),           // Agent thread that triggered send
+    runId: v.optional(v.string()),              // Agent run ID for provenance
+    messageId: v.optional(v.string()),          // Resend message ID (on success)
+    to: v.string(),                             // Recipient email
+    cc: v.optional(v.array(v.string())),        // CC recipients
+    bcc: v.optional(v.array(v.string())),       // BCC recipients
+    subject: v.string(),
+    bodyPreview: v.optional(v.string()),        // First 200 chars of body
+    status: v.union(
+      v.literal("queued"),
+      v.literal("sent"),
+      v.literal("delivered"),
+      v.literal("failed"),
+      v.literal("bounced"),
+    ),
+    providerResponse: v.optional(v.any()),      // Raw response from Resend
+    errorMessage: v.optional(v.string()),
+    createdAt: v.number(),
+    sentAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_thread", ["threadId"])
+    .index("by_status", ["status"])
+    .index("by_user_createdAt", ["userId", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SPREADSHEET EVENTS - Patch/diff log for spreadsheet edits          */
+  /* ------------------------------------------------------------------ */
+  spreadsheetEvents: defineTable({
+    userId: v.id("users"),
+    spreadsheetId: v.id("spreadsheets"),
+    threadId: v.optional(v.string()),           // Agent thread that triggered edit
+    runId: v.optional(v.string()),              // Agent run ID for provenance
+    operation: v.union(
+      v.literal("set_cell"),
+      v.literal("insert_row"),
+      v.literal("delete_row"),
+      v.literal("add_column"),
+      v.literal("delete_column"),
+      v.literal("apply_formula"),
+      v.literal("add_sheet"),
+      v.literal("rename_sheet"),
+    ),
+    targetRange: v.optional(v.string()),        // A1 notation (e.g., "A1:B5")
+    payload: v.any(),                           // Operation-specific data (before/after)
+    previousArtifactId: v.optional(v.string()), // Link to previous versioned artifact
+    newArtifactId: v.optional(v.string()),      // Link to new versioned artifact
+    validationErrors: v.optional(v.array(v.string())), // Formula/type validation errors
+    status: v.union(
+      v.literal("applied"),
+      v.literal("reverted"),
+      v.literal("failed"),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_spreadsheet", ["spreadsheetId"])
+    .index("by_user", ["userId"])
+    .index("by_thread", ["threadId"])
+    .index("by_spreadsheet_createdAt", ["spreadsheetId", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CALENDAR ARTIFACTS - ICS VEVENT artifacts for calendar operations  */
+  /* ------------------------------------------------------------------ */
+  calendarArtifacts: defineTable({
+    userId: v.id("users"),
+    threadId: v.optional(v.string()),           // Agent thread that created artifact
+    runId: v.optional(v.string()),
+    eventUid: v.string(),                       // VEVENT UID (stable across updates)
+    operation: v.union(
+      v.literal("create"),
+      v.literal("update"),
+      v.literal("cancel"),
+    ),
+    icsContent: v.string(),                     // Full ICS VEVENT string
+    summary: v.string(),                        // Event title
+    dtStart: v.number(),                        // Start timestamp (ms)
+    dtEnd: v.optional(v.number()),              // End timestamp (ms)
+    location: v.optional(v.string()),
+    description: v.optional(v.string()),
+    attendees: v.optional(v.array(v.string())), // Attendee emails
+    sequence: v.number(),                       // SEQUENCE number for updates
+    version: v.number(),                        // Internal version counter
+    linkedEventId: v.optional(v.id("events")),  // Link to actual calendar event if synced
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_eventUid", ["eventUid"])
+    .index("by_user_dtStart", ["userId", "dtStart"])
+    .index("by_thread", ["threadId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DOCUMENT PATCHES - Edit history for patch-based document editing   */
+  /* ------------------------------------------------------------------ */
+  documentPatches: defineTable({
+    documentId: v.string(),
+    operations: v.any(),                        // Array of patch operations
+    description: v.optional(v.string()),
+    originalContentPreview: v.optional(v.string()),
+    newContentPreview: v.optional(v.string()),
+    appliedCount: v.number(),
+    failedCount: v.number(),
+    threadId: v.optional(v.string()),
+    runId: v.optional(v.string()),
+    userId: v.optional(v.id("users")),
+    createdAt: v.number(),
+  })
+    .index("by_document", ["documentId"])
+    .index("by_document_createdAt", ["documentId", "createdAt"])
+    .index("by_thread", ["threadId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CONTEXT PACKS - Cached multi-document context bundles              */
+  /* ------------------------------------------------------------------ */
+  contextPacks: defineTable({
+    packId: v.string(),
+    threadId: v.string(),
+    docSetHash: v.string(),                     // Hash of sorted docIds for cache key
+    documents: v.array(v.object({
+      docId: v.string(),
+      title: v.string(),
+      excerpts: v.array(v.object({
+        text: v.string(),
+        section: v.optional(v.string()),
+        relevanceScore: v.optional(v.number()),
+      })),
+      totalTokensEstimate: v.number(),
+    })),
+    totalTokens: v.number(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    metadata: v.object({
+      docCount: v.number(),
+      truncatedDocs: v.number(),
+      maxTokensUsed: v.number(),
+    }),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_thread_hash", ["threadId", "docSetHash"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* EVAL RUNS - Benchmark evaluation runs for agent testing            */
+  /* ------------------------------------------------------------------ */
+  evalRuns: defineTable({
+    suiteId: v.string(),                        // Test suite identifier
+    model: v.string(),                          // Model used for evaluation
+    status: v.union(
+      v.literal("pending"),
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    totalCases: v.number(),
+    passedCases: v.number(),
+    failedCases: v.number(),
+    passRate: v.number(),                       // 0-1
+    avgLatencyMs: v.number(),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    metadata: v.optional(v.any()),              // Extra run configuration
+  })
+    .index("by_suite", ["suiteId"])
+    .index("by_status", ["status"])
+    .index("by_startedAt", ["startedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* EVAL RESULTS - Individual test case results within an eval run     */
+  /* ------------------------------------------------------------------ */
+  evalResults: defineTable({
+    runId: v.id("evalRuns"),
+    testId: v.string(),                         // Test case ID
+    passed: v.boolean(),
+    latencyMs: v.number(),
+    toolsCalled: v.array(v.string()),
+    response: v.string(),
+    reasoning: v.string(),                      // Judge's reasoning
+    failureCategory: v.optional(v.string()),    // For failure analysis
+    suggestedFix: v.optional(v.string()),       // Judge's suggestion
+    artifacts: v.optional(v.array(v.string())), // Artifact IDs produced
+    createdAt: v.number(),
+  })
+    .index("by_run", ["runId"])
+    .index("by_testId", ["testId"])
+    .index("by_run_passed", ["runId", "passed"]),
+
   // Human-in-the-Loop (HITL) Interrupts for agent approval workflow
   agentInterrupts: defineTable({
     threadId: v.string(),
@@ -2992,7 +3183,7 @@ export default defineSchema({
     successCount: v.number(),       // Successful requests
     errorCount: v.number(),         // Failed requests
     providers: v.optional(v.any()), // { openai: 5, anthropic: 3 }
-    models: v.optional(v.any()),    // { "gpt-5.1": 3, "claude-sonnet-4-5": 2 }
+    models: v.optional(v.any()),    // { "gpt-5.2": 3, "claude-sonnet-4.5": 2 }
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
@@ -3005,7 +3196,7 @@ export default defineSchema({
   llmUsageLog: defineTable({
     userId: v.id("users"),
     timestamp: v.number(),
-    model: v.string(),              // e.g., "gpt-5.1", "claude-sonnet-4-5-20250929"
+    model: v.string(),              // e.g., "gpt-5.2", "claude-sonnet-4.5"
     provider: v.string(),           // "openai", "anthropic", "gemini"
     inputTokens: v.number(),
     outputTokens: v.number(),

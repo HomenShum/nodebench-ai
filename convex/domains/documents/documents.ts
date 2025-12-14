@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "../../_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "../../_generated/dataModel";
 import { api, internal, components } from "../../_generated/api";
@@ -11,6 +11,33 @@ export const markRagIndexed = internalMutation({
   handler: async (ctx, { documentId, timestamp }) => {
     await ctx.db.patch(documentId, { ragIndexedAt: timestamp });
     return null;
+  },
+});
+
+// Internal: update document content (for agent tools, bypasses auth)
+export const updateDocumentContent = internalMutation({
+  args: {
+    documentId: v.id("documents"),
+    content: v.string(),
+  },
+  handler: async (ctx, { documentId, content }) => {
+    const doc = await ctx.db.get(documentId);
+    if (!doc) throw new Error("Document not found");
+    await ctx.db.patch(documentId, {
+      content,
+      lastModified: Date.now(),
+    });
+    // Re-index after updates
+    await ctx.scheduler.runAfter(0, (internal as any).fileSearch.upsertDocument, { documentId });
+    return { success: true };
+  },
+});
+
+// Internal: get document by ID (for agent tools, bypasses auth)
+export const getDocumentById = internalQuery({
+  args: { documentId: v.id("documents") },
+  handler: async (ctx, { documentId }) => {
+    return await ctx.db.get(documentId);
   },
 });
 

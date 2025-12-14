@@ -3,18 +3,10 @@
 
 import { internalAction, internalQuery, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
-import { getLlmModel } from "../../../shared/llm/modelCatalog";
 
-// Helper to get the appropriate language model based on model name
-function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) return anthropic(modelName);
-  if (modelName.startsWith("gemini-")) return google(modelName);
-  return openai.chat(modelName);
-}
+// Import centralized model resolver (2025 consolidated - 7 models only)
+import { getLanguageModelSafe, DEFAULT_MODEL } from "../../domains/agents/mcp_tools/models";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VALIDATORS - Extracted to avoid "Type instantiation is excessively deep"
@@ -255,7 +247,7 @@ Return a JSON array with this exact structure:
 IMPORTANT: Return ONLY the JSON array, no other text.`;
 
       const result = await generateText({
-        model: getLanguageModel(getLlmModel("router", "openai")),
+        model: getLanguageModelSafe(DEFAULT_MODEL),
         prompt,
       });
 

@@ -98,7 +98,8 @@ export function FastAgentPanel({
 
   // Settings
   const [fastMode, setFastMode] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<'gpt-5.1' | 'gpt-5-mini' | 'gpt-5-nano' | 'gemini' | 'claude-sonnet-4-5-20250929'>('gpt-5-mini');
+  // Use approved model aliases only (7 approved models)
+  const [selectedModel, setSelectedModel] = useState<'gpt-5.2' | 'claude-sonnet-4.5' | 'claude-opus-4.5' | 'claude-haiku-4.5' | 'gemini-3-pro' | 'gemini-2.5-flash' | 'gemini-2.5-pro'>('gpt-5.2');
   const [arbitrageEnabled, setArbitrageEnabled] = useState(false);
 
   // Thread list collapse state

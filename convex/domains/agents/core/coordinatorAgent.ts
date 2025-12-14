@@ -10,38 +10,10 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 import { components } from "../../../_generated/api";
 
-// Model name mapping: custom names → real API model names
-const MODEL_NAME_MAP: Record<string, string> = {
-  // GPT-5 series → GPT-4o (current best OpenAI models)
-  'gpt-5.1': 'gpt-4o',
-  'gpt-5.1-codex': 'gpt-4o',
-  'gpt-5-mini': 'gpt-4o-mini',
-  'gpt-5-nano': 'gpt-4o-mini',
-  'gpt-5': 'gpt-4o',
-  'gpt-5-chat-latest': 'gpt-4o',
-  // GPT-4.1 series → GPT-4o-mini (fallback)
-  'gpt-4.1-mini': 'gpt-4o-mini',
-  'gpt-4.1-nano': 'gpt-4o-mini',
-};
-
-// Helper to get the appropriate language model based on model name
-// Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
-function getLanguageModel(modelName: string) {
-  // Map custom model names to real API model names
-  const resolvedModel = MODEL_NAME_MAP[modelName] || modelName;
-  
-  if (resolvedModel.startsWith("claude-")) {
-    return anthropic(resolvedModel);
-  }
-  if (resolvedModel.startsWith("gemini-")) {
-    return google(resolvedModel);
-  }
-  return openai.chat(resolvedModel);
-}
+// Import centralized model resolver (2025 consolidated - 7 models only)
+import { getLanguageModelSafe, DEFAULT_MODEL } from "../mcp_tools/models";
 
 // Import delegation tools (Deep Agents 2.0 hierarchical delegation)
 import { buildDelegationTools } from "./delegation/delegationTools";
@@ -82,6 +54,12 @@ import {
   setActiveSection,
 } from "../../../tools/document/contextTools";
 
+import {
+  getDailyBrief,
+  getUserContext,
+  getSystemDateTime,
+} from "../../../tools/context/nodebenchContextTools";
+
 // Import direct-access tools (for simple operations)
 import { linkupSearch } from "../../../tools/media/linkupSearch";
 import { youtubeSearch } from "../../../tools/media/youtubeSearch";
@@ -120,6 +98,10 @@ import { ARBITRAGE_MODE_PROMPT } from "./prompts";
 
 // Import arbitrage tools
 import { analyzeWithArbitrage } from "../../../tools/arbitrage";
+
+// Import 2025 Deep Agents pattern tools
+import { contextInitializerTool } from "../mcp_tools/context";
+import { initTaskTracker, updateTaskStatus, getTaskSummary } from "../mcp_tools/tracking";
 
 /**
  * Options for coordinator agent creation
@@ -163,7 +145,7 @@ import type { Id } from "../../../_generated/dataModel";
 // Section ID generation for artifact linking
 import { generateSectionId } from "../../../../shared/sectionIds";
 
-export const DEFAULT_MODEL = "gpt-5-chat-latest";
+// Note: DEFAULT_MODEL is imported from "../mcp_tools/models" (line 16)
 
 /** Mutable reference for dynamic section ID */
 type SectionIdRef = { current: string | undefined };
@@ -222,7 +204,7 @@ function withSectionRefUpdate(
 /**
  * Create a Deep Agents 2.0 Coordinator Agent
  *
- * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-5-chat-latest")
+ * @param model - Model name (e.g., "gpt-5.2", "claude-sonnet-4.5")
  * @param artifactDeps - Optional: If provided, all tools will be wrapped for artifact extraction
  * @param options - Optional: Configuration options including arbitrageMode
  * @returns Orchestrator agent configured with delegation and planning tools
@@ -296,6 +278,10 @@ export const createCoordinatorAgent = (
     isMemoryUpdated,
     // setActiveSection is wrapped below to update sectionIdRef
 
+    getDailyBrief,
+    getUserContext,
+    getSystemDateTime,
+
     // === DIRECT ACCESS TOOLS ===
     linkupSearch,
     youtubeSearch,
@@ -331,6 +317,14 @@ export const createCoordinatorAgent = (
 
     // === ARBITRAGE TOOLS (Receipts-first research) ===
     analyzeWithArbitrage,
+
+    // === 2025 DEEP AGENTS PATTERN TOOLS ===
+    // Context Initializer (Initializer Agent pattern - prevents "wasted time")
+    contextInitializerTool,
+    // Task Tracker (Feature List pattern - prevents "premature victory")
+    initTaskTracker,
+    updateTaskStatus,
+    getTaskSummary,
   };
 
   // Wrap all tools for artifact extraction if deps provided
@@ -906,7 +900,7 @@ Structure your responses clearly:
 
   return new Agent(components.agent, {
     name: agentName,
-    languageModel: getLanguageModel(model),
+    languageModel: getLanguageModelSafe(model),
     textEmbeddingModel: openai.embedding("text-embedding-3-small"),
     tools,
     stopWhen: stepCountIs(25),
