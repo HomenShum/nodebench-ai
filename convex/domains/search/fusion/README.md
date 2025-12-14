@@ -173,13 +173,14 @@ Example log output:
    - [x] Dry-run mode with safety confirmation for actual migration
    - Found 91 threads needing migration (gpt-5, gpt-5-chat-latest, gpt-5-mini, gpt-5.1)
 
-### Medium Priority (In Progress)
+6. **UI Behavior for Fused Results** ✅
+   - [x] Show per-source facets (filter by source) - SourceBadge component with toggle
+   - [x] Consistent citation display - ResultCard with citation numbers
+   - [x] Partial failure warnings ("SEC tool unavailable") - PartialFailureWarning component
+   - [x] Source attribution badges - 7 source types with icons and colors
+   - Created `FusedSearchResults.tsx` component in FastAgentPanel
 
-6. **UI Behavior for Fused Results**
-   - [ ] Show per-source facets (filter by source)
-   - [ ] Consistent citation display
-   - [ ] Partial failure warnings ("SEC tool unavailable")
-   - [ ] Source attribution badges
+### Medium Priority (Remaining)
 
 7. **Python MCP Server (Pattern 5)**
    - [ ] Create `mcp/python/` directory structure
