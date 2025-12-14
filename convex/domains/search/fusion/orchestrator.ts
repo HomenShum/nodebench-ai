@@ -15,7 +15,15 @@ import type {
   SearchSourceAdapter,
   SearchMode,
 } from "./types";
-import { linkupAdapter, secAdapter, createRagAdapter, createDocumentAdapter } from "./adapters";
+import {
+  linkupAdapter,
+  secAdapter,
+  createRagAdapter,
+  createDocumentAdapter,
+  youtubeAdapter,
+  arxivAdapter,
+  newsAdapter,
+} from "./adapters";
 import { llmReranker } from "./reranker";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -25,8 +33,8 @@ import { llmReranker } from "./reranker";
 /** Default sources per mode */
 const MODE_SOURCES: Record<SearchMode, SearchSource[]> = {
   fast: ["linkup"],
-  balanced: ["linkup", "rag", "documents"],
-  comprehensive: ["linkup", "sec", "rag", "documents"],
+  balanced: ["linkup", "rag", "documents", "news"],
+  comprehensive: ["linkup", "sec", "rag", "documents", "youtube", "arxiv", "news"],
 };
 
 /** Default limits per mode */
@@ -55,6 +63,9 @@ export class SearchOrchestrator {
     this.adapters.set("sec", secAdapter);
     this.adapters.set("rag", createRagAdapter(ctx));
     this.adapters.set("documents", createDocumentAdapter(ctx));
+    this.adapters.set("youtube", youtubeAdapter);
+    this.adapters.set("arxiv", arxivAdapter);
+    this.adapters.set("news", newsAdapter);
   }
   
   /**

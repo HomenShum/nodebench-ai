@@ -16,24 +16,26 @@ The Search Fusion module provides a unified interface for searching across multi
 ┌─────────────────────────────────────────────────────────────────┐
 │                    SearchOrchestrator                           │
 ├─────────────────────────────────────────────────────────────────┤
-│  1. Parallel Execution (Promise.allSettled)                     │
-│  2. RRF Fusion (Reciprocal Rank Fusion)                         │
-│  3. LLM Reranking (optional, for comprehensive mode)            │
+│  1. Rate Limiting (rateLimiter.ts)                              │
+│  2. Cache Check (cache.ts)                                      │
+│  3. Parallel Execution (Promise.allSettled)                     │
+│  4. RRF Fusion (Reciprocal Rank Fusion)                         │
+│  5. LLM Reranking (optional, for comprehensive mode)            │
+│  6. Observability Persistence (observability.ts)                │
 └─────────────────────────────────────────────────────────────────┘
-         │                    │                    │
-    ┌────▼────┐          ┌────▼────┐          ┌────▼────┐
-    │ LinkUp  │          │   SEC   │          │   RAG   │
-    │ Adapter │          │ Adapter │          │ Adapter │
-    └─────────┘          └─────────┘          └─────────┘
+    │         │         │         │         │         │         │
+┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐
+│LinkUp │ │  SEC  │ │  RAG  │ │ Docs  │ │YouTube│ │ arXiv │ │ News  │
+└───────┘ └───────┘ └───────┘ └───────┘ └───────┘ └───────┘ └───────┘
 ```
 
 ## Search Modes
 
-| Mode | Sources | Fusion | Reranking | Use Case |
-|------|---------|--------|-----------|----------|
-| `fast` | LinkUp only | None | No | Quick answers |
-| `balanced` | LinkUp, RAG, Documents | RRF | No | General research |
-| `comprehensive` | All sources | RRF | Yes (LLM) | Deep research |
+| Mode | Sources | Fusion | Reranking | Cache TTL | Use Case |
+|------|---------|--------|-----------|-----------|----------|
+| `fast` | LinkUp only | None | No | 5 min | Quick answers |
+| `balanced` | LinkUp, RAG, Documents, News | RRF | No | 15 min | General research |
+| `comprehensive` | All 7 sources | RRF | Yes (LLM) | 15 min | Deep research |
 
 ## Usage
 
@@ -137,29 +139,30 @@ Example log output:
 
 ## Future Enhancements / Remaining Work
 
-### High Priority
+### High Priority (COMPLETED ✅)
 
-1. **Add More Search Adapters**
-   - [ ] YouTube adapter (using existing youtubeSearch.ts)
-   - [ ] arXiv adapter (for academic papers)
-   - [ ] News adapter (aggregated news sources)
+1. **Add More Search Adapters** ✅
+   - [x] YouTube adapter (`adapters/youtubeAdapter.ts`) - YouTube Data API v3
+   - [x] arXiv adapter (`adapters/arxivAdapter.ts`) - Academic papers via Atom API
+   - [x] News adapter (`adapters/newsAdapter.ts`) - NewsAPI with LinkUp fallback
 
-2. **Observability Persistence**
-   - [ ] Store `searchRun` records with per-tool latency/errors + fused IDs
-   - [ ] Create `searchRuns` and `searchRunResults` tables in schema
-   - [ ] Add query for historical search performance analysis
+2. **Observability Persistence** ✅
+   - [x] Store `searchRun` records with per-tool latency/errors + fused IDs
+   - [x] Created `searchRuns` and `searchRunResults` tables in schema
+   - [x] Added queries: `getRecentSearchRuns`, `getSearchRunResults`, `getSourceAnalytics`
+   - [x] Module: `observability.ts`
 
-3. **Rate Limiting + Concurrency Control**
-   - [ ] Per-user rate limiting for parallel searches
-   - [ ] Per-provider rate limiting (respect API quotas)
-   - [ ] Thread-level concurrency control
-   - [ ] Implement token bucket or sliding window algorithm
+3. **Rate Limiting + Concurrency Control** ✅
+   - [x] Per-user rate limiting (10/min, 100/hour)
+   - [x] Per-provider rate limiting (configurable per source)
+   - [x] Thread-level concurrency control (max 3 concurrent/thread)
+   - [x] Module: `rateLimiter.ts`
 
-4. **Caching Layer**
-   - [ ] TTL-based caching for repeated queries
-   - [ ] Cache key: `hash(query + sources + mode)`
-   - [ ] Cache invalidation strategy
-   - [ ] Prevent repeated web calls on retries/reruns
+4. **Caching Layer** ✅
+   - [x] TTL-based caching (5 min fast, 15 min balanced/comprehensive)
+   - [x] Cache key: `hash(query + sources + mode)`
+   - [x] Cache hit tracking for analytics
+   - [x] Module: `cache.ts`, Table: `searchFusionCache`
 
 ### Medium Priority
 
@@ -194,4 +197,15 @@ Example log output:
    - [ ] Query expansion for better recall
    - [ ] Source-specific relevance boosting
    - [ ] User preference learning for result ranking
+
+## New Files Added
+
+| File | Description |
+|------|-------------|
+| `adapters/youtubeAdapter.ts` | YouTube Data API v3 adapter |
+| `adapters/arxivAdapter.ts` | arXiv Atom API adapter |
+| `adapters/newsAdapter.ts` | NewsAPI with LinkUp fallback |
+| `observability.ts` | Search run persistence and analytics |
+| `rateLimiter.ts` | Rate limiting and concurrency control |
+| `cache.ts` | TTL-based result caching |
 

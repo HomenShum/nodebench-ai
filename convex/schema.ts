@@ -3211,4 +3211,62 @@ export default defineSchema({
     .index("by_model", ["model"])
     .index("by_provider", ["provider"]),
 
+  /* ------------------------------------------------------------------ */
+  /* SEARCH RUNS - Observability for multi-source search fusion          */
+  /* ------------------------------------------------------------------ */
+  searchRuns: defineTable({
+    userId: v.optional(v.id("users")),
+    threadId: v.optional(v.string()),      // Agent thread ID if from agent
+    query: v.string(),                      // The search query
+    mode: v.string(),                       // "fast" | "balanced" | "comprehensive"
+    sourcesRequested: v.array(v.string()),  // Sources requested
+    sourcesQueried: v.array(v.string()),    // Sources actually queried
+    totalResults: v.number(),               // Total results after fusion
+    totalBeforeFusion: v.number(),          // Total results before fusion
+    reranked: v.boolean(),                  // Whether LLM reranking was applied
+    totalTimeMs: v.number(),                // Total execution time
+    cacheHit: v.optional(v.boolean()),      // Whether cache was hit
+    timestamp: v.number(),                  // When search was executed
+    fusedResultIds: v.optional(v.array(v.string())), // IDs of fused results
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_timestamp", ["userId", "timestamp"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_mode", ["mode"])
+    .index("by_thread", ["threadId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SEARCH RUN RESULTS - Per-source results for each search run         */
+  /* ------------------------------------------------------------------ */
+  searchRunResults: defineTable({
+    searchRunId: v.id("searchRuns"),        // Reference to parent search run
+    source: v.string(),                      // "linkup" | "youtube" | "arxiv" etc.
+    latencyMs: v.number(),                   // Time taken for this source
+    resultCount: v.number(),                 // Number of results from this source
+    success: v.boolean(),                    // Whether source search succeeded
+    errorMessage: v.optional(v.string()),    // Error message if failed
+    resultIds: v.optional(v.array(v.string())), // IDs of results from this source
+  })
+    .index("by_search_run", ["searchRunId"])
+    .index("by_source", ["source"])
+    .index("by_source_success", ["source", "success"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SEARCH FUSION CACHE - TTL-based cache for fusion search results     */
+  /* ------------------------------------------------------------------ */
+  searchFusionCache: defineTable({
+    cacheKey: v.string(),                   // hash(query + sources + mode + userId)
+    query: v.string(),                      // Original query
+    mode: v.string(),                       // Search mode
+    sources: v.array(v.string()),           // Sources queried
+    results: v.string(),                    // JSON-stringified results
+    resultCount: v.number(),                // Number of results
+    createdAt: v.number(),                  // When cache entry was created
+    expiresAt: v.number(),                  // When cache expires
+    hitCount: v.optional(v.number()),       // Number of times cache was hit
+  })
+    .index("by_cache_key", ["cacheKey"])
+    .index("by_expires_at", ["expiresAt"])
+    .index("by_query", ["query"]),
+
 });

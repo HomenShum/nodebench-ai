@@ -1,16 +1,19 @@
 "use node";
 /**
  * Search Fusion Actions
- * 
+ *
  * Convex actions for multi-source search fusion.
- * 
+ * Includes observability persistence, rate limiting, and caching.
+ *
  * @module search/fusion/actions
  */
 
 import { action } from "../../../_generated/server";
+import { internal } from "../../../_generated/api";
 import { v } from "convex/values";
 import { SearchOrchestrator } from "./orchestrator";
-import type { SearchMode, SearchSource } from "./types";
+import type { SearchMode, SearchSource, SearchResponse } from "./types";
+import { generateCacheKey, CACHE_TTL_MS } from "./cache";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VALIDATORS
@@ -93,16 +96,63 @@ export const fusionSearch = action({
       end: v.optional(v.string()),
     })),
     userId: v.optional(v.id("users")),
+    threadId: v.optional(v.string()),
+    skipRateLimit: v.optional(v.boolean()), // For internal/admin use
+    skipCache: v.optional(v.boolean()),     // Force fresh results
   },
   returns: searchResponseValidator,
   handler: async (ctx, args) => {
-    console.log(`[fusionSearch] Query: "${args.query}", Mode: ${args.mode || "balanced"}`);
-    
+    const mode = (args.mode || "balanced") as SearchMode;
+    const sources = (args.sources || []) as string[];
+    console.log(`[fusionSearch] Query: "${args.query}", Mode: ${mode}`);
+
+    // Check rate limit (unless explicitly skipped)
+    if (!args.skipRateLimit) {
+      const rateLimitCheck = await ctx.runQuery(
+        internal.domains.search.fusion.rateLimiter.checkRateLimit,
+        {
+          userId: args.userId,
+          threadId: args.threadId,
+          sources,
+        }
+      );
+
+      if (!rateLimitCheck.allowed) {
+        console.warn(`[fusionSearch] Rate limited: ${rateLimitCheck.reason}`);
+        throw new Error(
+          `Rate limit exceeded. ${rateLimitCheck.reason}. Retry after ${Math.ceil((rateLimitCheck.retryAfterMs || 0) / 1000)}s.`
+        );
+      }
+    }
+
+    // Check cache (unless explicitly skipped)
+    const cacheKey = generateCacheKey(args.query, mode, sources);
+    if (!args.skipCache) {
+      const cached = await ctx.runQuery(
+        internal.domains.search.fusion.cache.getCachedResults,
+        { cacheKey }
+      );
+
+      if (cached.hit) {
+        console.log(`[fusionSearch] Cache HIT (age: ${cached.age}ms)`);
+        // Increment hit count
+        await ctx.runMutation(
+          internal.domains.search.fusion.cache.incrementCacheHit,
+          { cacheKey }
+        );
+        // Persist observability with cache hit flag
+        const cachedResponse = JSON.parse(cached.results) as SearchResponse;
+        await persistObservability(ctx, args.query, cachedResponse, args.userId, args.threadId, true);
+        return cachedResponse;
+      }
+      console.log(`[fusionSearch] Cache MISS`);
+    }
+
     const orchestrator = new SearchOrchestrator(ctx);
-    
+
     const response = await orchestrator.search({
       query: args.query,
-      mode: (args.mode || "balanced") as SearchMode,
+      mode,
       sources: args.sources as SearchSource[] | undefined,
       maxPerSource: args.maxPerSource,
       maxTotal: args.maxTotal,
@@ -111,12 +161,30 @@ export const fusionSearch = action({
       dateRange: args.dateRange,
       userId: args.userId,
     });
-    
+
     // Log observability metrics
     console.log(`[fusionSearch] Results: ${response.results.length}/${response.totalBeforeFusion}`);
     console.log(`[fusionSearch] Timing:`, response.timing);
     console.log(`[fusionSearch] Total: ${response.totalTimeMs}ms, Reranked: ${response.reranked}`);
-    
+
+    // Store in cache
+    const ttlMs = CACHE_TTL_MS[mode];
+    await ctx.runMutation(
+      internal.domains.search.fusion.cache.setCachedResults,
+      {
+        cacheKey,
+        query: args.query,
+        mode,
+        sources: response.sourcesQueried,
+        results: JSON.stringify(response),
+        resultCount: response.results.length,
+        ttlMs,
+      }
+    );
+
+    // Persist observability data
+    await persistObservability(ctx, args.query, response, args.userId, args.threadId, false);
+
     return response;
   },
 });
@@ -128,18 +196,93 @@ export const quickSearch = action({
   args: {
     query: v.string(),
     maxResults: v.optional(v.number()),
+    userId: v.optional(v.id("users")),
+    threadId: v.optional(v.string()),
+    skipRateLimit: v.optional(v.boolean()),
   },
   returns: v.array(searchResultValidator),
   handler: async (ctx, args) => {
+    // Check rate limit (unless explicitly skipped)
+    if (!args.skipRateLimit) {
+      const rateLimitCheck = await ctx.runQuery(
+        internal.domains.search.fusion.rateLimiter.checkRateLimit,
+        {
+          userId: args.userId,
+          threadId: args.threadId,
+          sources: ["linkup"], // Fast mode uses linkup
+        }
+      );
+
+      if (!rateLimitCheck.allowed) {
+        console.warn(`[quickSearch] Rate limited: ${rateLimitCheck.reason}`);
+        throw new Error(
+          `Rate limit exceeded. ${rateLimitCheck.reason}. Retry after ${Math.ceil((rateLimitCheck.retryAfterMs || 0) / 1000)}s.`
+        );
+      }
+    }
+
     const orchestrator = new SearchOrchestrator(ctx);
-    
+
     const response = await orchestrator.search({
       query: args.query,
       mode: "fast",
       maxTotal: args.maxResults || 10,
     });
-    
+
+    // Persist observability data
+    await persistObservability(ctx, args.query, response, args.userId, args.threadId, false);
+
     return response.results;
   },
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPER: Persist observability data
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function persistObservability(
+  ctx: any,
+  query: string,
+  response: SearchResponse,
+  userId?: any,
+  threadId?: string,
+  cacheHit?: boolean
+) {
+  try {
+    // Build per-source results from timing and errors
+    const sourceResults = Object.entries(response.timing).map(([source, latencyMs]) => {
+      const error = response.errors?.find((e) => e.source === source);
+      const sourceResultCount = response.results.filter((r) => r.source === source).length;
+      return {
+        source,
+        latencyMs: latencyMs as number,
+        resultCount: sourceResultCount,
+        success: !error,
+        errorMessage: error?.error,
+        resultIds: response.results
+          .filter((r) => r.source === source)
+          .map((r) => r.id),
+      };
+    });
+
+    await ctx.runMutation(internal.domains.search.fusion.observability.persistSearchRun, {
+      userId,
+      threadId,
+      query,
+      mode: response.mode,
+      sourcesRequested: response.sourcesQueried, // We don't track requested separately yet
+      sourcesQueried: response.sourcesQueried,
+      totalResults: response.results.length,
+      totalBeforeFusion: response.totalBeforeFusion,
+      reranked: response.reranked,
+      totalTimeMs: response.totalTimeMs,
+      cacheHit,
+      fusedResultIds: response.results.map((r) => r.id),
+      sourceResults,
+    });
+  } catch (error) {
+    // Don't fail the search if observability persistence fails
+    console.warn("[fusionSearch] Failed to persist observability:", error);
+  }
+}
 

@@ -44,5 +44,16 @@ export {
   createRagAdapter,
   DocumentAdapter,
   createDocumentAdapter,
+  YouTubeAdapter,
+  youtubeAdapter,
+  ArxivAdapter,
+  arxivAdapter,
+  NewsAdapter,
+  newsAdapter,
 } from "./adapters";
 
+// Rate Limiting
+export { RATE_LIMITS } from "./rateLimiter";
+
+// Caching
+export { generateCacheKey, CACHE_TTL_MS } from "./cache";
