@@ -169,3 +169,142 @@ export interface SearchAdapterOptions {
   userId?: Id<"users">;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// VERSIONED TOOL OUTPUT CONTRACT
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Current version of the FusionSearchPayload schema.
+ * Increment when making breaking changes to payload structure.
+ */
+export const FUSION_SEARCH_PAYLOAD_VERSION = 1 as const;
+
+/**
+ * Discriminated wrapper for fusion search tool outputs.
+ * This contract is shared between:
+ * - Producer: fusionSearch/quickSearch actions (backend)
+ * - Consumer: parseFusionSearchOutput (UI)
+ *
+ * @version 1 - Initial versioned contract
+ */
+export interface FusionSearchPayload {
+  /** Discriminator for type identification */
+  kind: "fusion_search_results";
+  /** Schema version for forward compatibility */
+  version: typeof FUSION_SEARCH_PAYLOAD_VERSION;
+  /** The actual search response */
+  payload: SearchResponse;
+  /** Timestamp of payload generation (ISO 8601) */
+  generatedAt: string;
+}
+
+/**
+ * Per-source streaming status for UI state management.
+ * Used to distinguish between: pending, completed, failed, disabled.
+ */
+export interface SourceStreamingStatus {
+  source: SearchSource;
+  status: "pending" | "completed" | "failed" | "disabled";
+  latencyMs?: number;
+  error?: string;
+  resultCount?: number;
+}
+
+/**
+ * Streaming-aware search response with per-source status.
+ * Extends SearchResponse with real-time status tracking.
+ */
+export interface StreamingSearchResponse extends SearchResponse {
+  /** Whether all sources have completed */
+  isComplete: boolean;
+  /** Per-source streaming status */
+  sourceStatus: SourceStreamingStatus[];
+}
+
+/**
+ * Type guard to validate FusionSearchPayload structure at runtime.
+ * Returns detailed error message on failure.
+ */
+export function validateFusionSearchPayload(
+  data: unknown
+): { valid: true; payload: FusionSearchPayload } | { valid: false; error: string } {
+  if (!data || typeof data !== "object") {
+    return { valid: false, error: "Payload must be a non-null object" };
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Check discriminator
+  if (obj.kind !== "fusion_search_results") {
+    return {
+      valid: false,
+      error: `Invalid discriminator: expected 'fusion_search_results', got '${obj.kind}'`
+    };
+  }
+
+  // Check version
+  if (typeof obj.version !== "number" || obj.version < 1) {
+    return {
+      valid: false,
+      error: `Invalid version: expected number >= 1, got '${obj.version}'`
+    };
+  }
+
+  // Version compatibility check
+  if (obj.version > FUSION_SEARCH_PAYLOAD_VERSION) {
+    return {
+      valid: false,
+      error: `Unsupported version: payload is v${obj.version}, consumer supports up to v${FUSION_SEARCH_PAYLOAD_VERSION}`
+    };
+  }
+
+  // Check payload structure
+  if (!obj.payload || typeof obj.payload !== "object") {
+    return { valid: false, error: "Missing or invalid 'payload' field" };
+  }
+
+  const payload = obj.payload as Record<string, unknown>;
+
+  // Validate required SearchResponse fields
+  if (!Array.isArray(payload.results)) {
+    return { valid: false, error: "payload.results must be an array" };
+  }
+
+  if (typeof payload.mode !== "string") {
+    return { valid: false, error: "payload.mode must be a string" };
+  }
+
+  if (!Array.isArray(payload.sourcesQueried)) {
+    return { valid: false, error: "payload.sourcesQueried must be an array" };
+  }
+
+  // Validate each result has required fields
+  for (let i = 0; i < payload.results.length; i++) {
+    const result = payload.results[i] as Record<string, unknown>;
+    if (!result.id || typeof result.id !== "string") {
+      return { valid: false, error: `payload.results[${i}].id must be a string` };
+    }
+    if (!result.source || typeof result.source !== "string") {
+      return { valid: false, error: `payload.results[${i}].source must be a string` };
+    }
+    if (!result.title || typeof result.title !== "string") {
+      return { valid: false, error: `payload.results[${i}].title must be a string` };
+    }
+  }
+
+  return { valid: true, payload: data as FusionSearchPayload };
+}
+
+/**
+ * Create a versioned FusionSearchPayload from a SearchResponse.
+ * Use this in actions to wrap responses before returning.
+ */
+export function wrapSearchResponse(response: SearchResponse): FusionSearchPayload {
+  return {
+    kind: "fusion_search_results",
+    version: FUSION_SEARCH_PAYLOAD_VERSION,
+    payload: response,
+    generatedAt: new Date().toISOString(),
+  };
+}
+

@@ -427,17 +427,33 @@ function ThinkingAccordion({
 // FUSION SEARCH RESULT PARSING
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Current supported version of the FusionSearchPayload schema.
+ * Must match FUSION_SEARCH_PAYLOAD_VERSION from backend.
+ */
+const SUPPORTED_PAYLOAD_VERSION = 1;
+
+/**
+ * Parsed result from fusion search tool output.
+ * Includes validation status and error details for debugging.
+ */
 interface ParsedFusionSearchResult {
   results: FusedResult[];
   sourcesQueried: SearchSource[];
   errors: SourceError[];
   timing: Record<SearchSource, number>;
   totalTimeMs: number;
+  /** Whether parsing succeeded with valid versioned payload */
   isValid: boolean;
+  /** Parse error message if isValid is false */
+  parseError?: string;
+  /** Schema version of the parsed payload */
+  payloadVersion?: number;
 }
 
 /**
- * Check if a tool name is a fusion search tool
+ * Check if a tool name is a fusion search tool.
+ * Used to determine render precedence for fusion results.
  */
 function isFusionSearchTool(toolName: string | undefined): boolean {
   if (!toolName) return false;
@@ -447,7 +463,21 @@ function isFusionSearchTool(toolName: string | undefined): boolean {
 }
 
 /**
- * Parse fusion search tool output into structured data for FusedSearchResults component
+ * Valid search sources for validation.
+ */
+const VALID_SEARCH_SOURCES = ['linkup', 'sec', 'rag', 'documents', 'news', 'youtube', 'arxiv'] as const;
+
+/**
+ * Parse fusion search tool output into structured data for FusedSearchResults component.
+ *
+ * Supports two payload formats:
+ * 1. Versioned FusionSearchPayload (preferred): { kind, version, payload, generatedAt }
+ * 2. Legacy SearchResponse (fallback): { results, mode, sourcesQueried, ... }
+ *
+ * Contract Enforcement:
+ * - Versioned payloads are validated strictly with clear error messages
+ * - Legacy payloads are supported for backward compatibility but logged
+ * - Invalid payloads return isValid=false with parseError details
  */
 function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
   const emptyResult: ParsedFusionSearchResult = {
@@ -459,74 +489,160 @@ function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
     isValid: false,
   };
 
-  if (!output) return emptyResult;
-
-  try {
-    // Handle string output (tool returns formatted string)
-    if (typeof output === 'string') {
-      // Try to parse embedded JSON if present
-      const jsonMatch = output.match(/<!-- FUSION_SEARCH_DATA\n([\s\S]*?)\n-->/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[1]);
-        return parseFusionSearchOutput(parsed);
-      }
-
-      // Otherwise, it's a formatted text response - not parseable
-      return emptyResult;
-    }
-
-    // Handle object output (raw SearchResponse)
-    if (typeof output === 'object') {
-      const data = output as Record<string, unknown>;
-
-      // Check if it looks like a SearchResponse
-      if (Array.isArray(data.results) && data.results.length > 0) {
-        const results: FusedResult[] = (data.results as Array<Record<string, unknown>>).map((r, idx) => ({
-          id: String(r.id || `result-${idx}`),
-          source: (r.source || 'linkup') as SearchSource,
-          title: String(r.title || 'Untitled'),
-          snippet: String(r.snippet || ''),
-          url: r.url ? String(r.url) : undefined,
-          score: Number(r.score || 0),
-          originalRank: Number(r.originalRank || idx + 1),
-          fusedRank: r.fusedRank ? Number(r.fusedRank) : undefined,
-          contentType: (r.contentType || 'text') as FusedResult['contentType'],
-          publishedAt: r.publishedAt ? String(r.publishedAt) : undefined,
-          author: r.author ? String(r.author) : undefined,
-          metadata: r.metadata as Record<string, unknown> | undefined,
-        }));
-
-        const sourcesQueried: SearchSource[] = Array.isArray(data.sourcesQueried)
-          ? (data.sourcesQueried as string[]).filter(s =>
-              ['linkup', 'sec', 'rag', 'documents', 'news', 'youtube', 'arxiv'].includes(s)
-            ) as SearchSource[]
-          : [...new Set(results.map(r => r.source))];
-
-        const errors: SourceError[] = Array.isArray(data.errors)
-          ? (data.errors as Array<{source: string; error: string}>).map(e => ({
-              source: e.source as SearchSource,
-              error: String(e.error),
-            }))
-          : [];
-
-        const timing = (data.timing || {}) as Record<SearchSource, number>;
-        const totalTimeMs = Number(data.totalTimeMs || 0);
-
-        return {
-          results,
-          sourcesQueried,
-          errors,
-          timing,
-          totalTimeMs,
-          isValid: true,
-        };
-      }
-    }
-  } catch (e) {
-    console.warn('[parseFusionSearchOutput] Failed to parse:', e);
+  if (!output) {
+    return { ...emptyResult, parseError: 'Output is null or undefined' };
   }
 
-  return emptyResult;
+  try {
+    // Handle string output (embedded JSON in HTML comment)
+    if (typeof output === 'string') {
+      const jsonMatch = output.match(/<!-- FUSION_SEARCH_DATA\n([\s\S]*?)\n-->/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[1]);
+          return parseFusionSearchOutput(parsed);
+        } catch (jsonErr) {
+          return { ...emptyResult, parseError: `Failed to parse embedded JSON: ${jsonErr}` };
+        }
+      }
+      return { ...emptyResult, parseError: 'String output without embedded FUSION_SEARCH_DATA marker' };
+    }
+
+    if (typeof output !== 'object') {
+      return { ...emptyResult, parseError: `Invalid output type: ${typeof output}` };
+    }
+
+    const data = output as Record<string, unknown>;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // VERSIONED PAYLOAD VALIDATION (preferred path)
+    // ═══════════════════════════════════════════════════════════════════════
+    if (data.kind === 'fusion_search_results') {
+      // Validate version
+      if (typeof data.version !== 'number') {
+        return { ...emptyResult, parseError: `Invalid version type: ${typeof data.version}` };
+      }
+
+      if (data.version > SUPPORTED_PAYLOAD_VERSION) {
+        console.warn(`[parseFusionSearchOutput] Payload version ${data.version} is newer than supported version ${SUPPORTED_PAYLOAD_VERSION}`);
+        return {
+          ...emptyResult,
+          parseError: `Unsupported payload version: ${data.version} (max supported: ${SUPPORTED_PAYLOAD_VERSION})`,
+          payloadVersion: data.version,
+        };
+      }
+
+      // Extract payload
+      if (!data.payload || typeof data.payload !== 'object') {
+        return { ...emptyResult, parseError: 'Missing or invalid payload field' };
+      }
+
+      const payload = data.payload as Record<string, unknown>;
+      return parseSearchResponsePayload(payload, data.version);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // LEGACY PAYLOAD FALLBACK (for backward compatibility)
+    // ═══════════════════════════════════════════════════════════════════════
+    if (Array.isArray(data.results)) {
+      console.info('[parseFusionSearchOutput] Using legacy SearchResponse format (no version discriminator)');
+      return parseSearchResponsePayload(data, undefined);
+    }
+
+    return { ...emptyResult, parseError: 'Unknown payload structure: missing kind or results' };
+
+  } catch (e) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    console.error('[parseFusionSearchOutput] Unexpected error:', e);
+    return { ...emptyResult, parseError: `Unexpected error: ${errorMsg}` };
+  }
+}
+
+/**
+ * Parse the inner SearchResponse payload (shared by versioned and legacy paths).
+ */
+function parseSearchResponsePayload(
+  data: Record<string, unknown>,
+  version: number | undefined
+): ParsedFusionSearchResult {
+  const emptyResult: ParsedFusionSearchResult = {
+    results: [],
+    sourcesQueried: [],
+    errors: [],
+    timing: {} as Record<SearchSource, number>,
+    totalTimeMs: 0,
+    isValid: false,
+    payloadVersion: version,
+  };
+
+  // Validate results array
+  if (!Array.isArray(data.results)) {
+    return { ...emptyResult, parseError: 'payload.results is not an array' };
+  }
+
+  // Parse results with validation
+  const results: FusedResult[] = [];
+  for (let idx = 0; idx < data.results.length; idx++) {
+    const r = data.results[idx] as Record<string, unknown>;
+
+    // Required field validation
+    if (!r.id || typeof r.id !== 'string') {
+      console.warn(`[parseFusionSearchOutput] Result ${idx} missing valid id, using fallback`);
+    }
+    if (!r.source || typeof r.source !== 'string') {
+      console.warn(`[parseFusionSearchOutput] Result ${idx} missing valid source, using 'linkup'`);
+    }
+    if (!r.title || typeof r.title !== 'string') {
+      console.warn(`[parseFusionSearchOutput] Result ${idx} missing valid title, using 'Untitled'`);
+    }
+
+    // Validate source is known
+    const source = String(r.source || 'linkup');
+    if (!VALID_SEARCH_SOURCES.includes(source as SearchSource)) {
+      console.warn(`[parseFusionSearchOutput] Result ${idx} has unknown source: ${source}`);
+    }
+
+    results.push({
+      id: String(r.id || `result-${idx}`),
+      source: source as SearchSource,
+      title: String(r.title || 'Untitled'),
+      snippet: String(r.snippet || ''),
+      url: r.url ? String(r.url) : undefined,
+      score: Number(r.score || 0),
+      originalRank: Number(r.originalRank || idx + 1),
+      fusedRank: r.fusedRank ? Number(r.fusedRank) : undefined,
+      contentType: (r.contentType || 'text') as FusedResult['contentType'],
+      publishedAt: r.publishedAt ? String(r.publishedAt) : undefined,
+      author: r.author ? String(r.author) : undefined,
+      metadata: r.metadata as Record<string, unknown> | undefined,
+    });
+  }
+
+  // Parse sourcesQueried
+  const sourcesQueried: SearchSource[] = Array.isArray(data.sourcesQueried)
+    ? (data.sourcesQueried as string[]).filter(s => VALID_SEARCH_SOURCES.includes(s as SearchSource)) as SearchSource[]
+    : [...new Set(results.map(r => r.source))];
+
+  // Parse errors
+  const errors: SourceError[] = Array.isArray(data.errors)
+    ? (data.errors as Array<{source: string; error: string}>).map(e => ({
+        source: e.source as SearchSource,
+        error: String(e.error),
+      }))
+    : [];
+
+  const timing = (data.timing || {}) as Record<SearchSource, number>;
+  const totalTimeMs = Number(data.totalTimeMs || 0);
+
+  return {
+    results,
+    sourcesQueried,
+    errors,
+    timing,
+    totalTimeMs,
+    isValid: results.length > 0,
+    payloadVersion: version,
+  };
 }
 
 /**
@@ -590,6 +706,7 @@ function ToolStep({
       {/* Card */}
       <div className="mb-3 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] shadow-sm overflow-hidden hover:shadow-md transition-shadow">
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-[var(--bg-hover)] transition-colors"
         >
@@ -632,6 +749,7 @@ function ToolStep({
 
             {/* Collapsible Details (JSON) */}
             <button
+              type="button"
               onClick={() => setShowDetails(!showDetails)}
               className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
             >
@@ -997,7 +1115,27 @@ export function FastAgentUIMessageBubble({
           />
         )}
 
-        {/* Tool Steps List */}
+        {/*
+          ═══════════════════════════════════════════════════════════════════════
+          TOOL STEPS LIST - RENDER PRECEDENCE DOCUMENTATION
+          ═══════════════════════════════════════════════════════════════════════
+
+          Render precedence for tool parts (in order):
+
+          1. FUSION SEARCH (fusionSearch, quickSearch):
+             - tool-result: Render FusedSearchResults component (if valid)
+             - tool-call: Skip (no spinner) - results shown when complete
+             - Invalid parse: Fall through to default ToolStep
+
+          2. MEMORY/PLANNING TOOLS (writeMemory, createPlan, etc.):
+             - Render as compact ToolPill component
+
+          3. DEFAULT:
+             - Render as ToolStep with expandable details
+
+          This ensures each tool has exactly ONE visual representation.
+          ═══════════════════════════════════════════════════════════════════════
+        */}
         {!isUser && toolParts.length > 0 && (
           <div className="mb-4 w-full">
             {toolParts.map((part, idx) => {
@@ -1006,7 +1144,9 @@ export function FastAgentUIMessageBubble({
 
               const toolName = (part as any).toolName;
 
-              // Check for Fusion Search tools - render with FusedSearchResults component
+              // ═══════════════════════════════════════════════════════════════
+              // PRECEDENCE 1: Fusion Search tools → FusedSearchResults
+              // ═══════════════════════════════════════════════════════════════
               if (isFusionSearchTool(toolName) && part.type === 'tool-result') {
                 const parsed = parseFusionSearchOutput((part as ToolUIPart).output);
                 if (parsed.isValid && parsed.results.length > 0) {
@@ -1023,13 +1163,20 @@ export function FastAgentUIMessageBubble({
                     </div>
                   );
                 }
-                // If parsing failed, fall through to default ToolStep rendering
+                // If parsing failed, log and fall through to default ToolStep rendering
+                if (parsed.parseError) {
+                  console.warn(`[UIMessageBubble] Fusion search parse failed: ${parsed.parseError}`);
+                }
               }
 
-              // Skip tool-call for fusion search (we render the result above)
+              // Skip tool-call for fusion search (we render the result above, no spinner needed)
               if (isFusionSearchTool(toolName) && part.type === 'tool-call') {
                 return null;
               }
+
+              // ═══════════════════════════════════════════════════════════════
+              // PRECEDENCE 2: Memory/Planning tools → ToolPill
+              // ═══════════════════════════════════════════════════════════════
 
               // Check for Memory/Planning tools to render as Pills
 
@@ -1245,6 +1392,7 @@ export function FastAgentUIMessageBubble({
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               {/* Copy button */}
               <button
+                type="button"
                 onClick={() => { void handleCopy(); }}
                 className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
                 title="Copy response"
@@ -1259,6 +1407,7 @@ export function FastAgentUIMessageBubble({
               {/* Regenerate button for assistant messages */}
               {!isUser && onRegenerateMessage && (
                 <button
+                  type="button"
                   onClick={handleRegenerate}
                   disabled={isRegenerating}
                   className="text-xs text-gray-400 hover:text-gray-600 disabled:text-gray-300 flex items-center gap-1 transition-colors"
@@ -1273,12 +1422,14 @@ export function FastAgentUIMessageBubble({
                 showDeleteConfirm ? (
                   <div className="flex items-center gap-1">
                     <button
+                      type="button"
                       onClick={handleDelete}
                       className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors px-2 py-0.5 bg-red-50 rounded"
                     >
                       Confirm
                     </button>
                     <button
+                      type="button"
                       onClick={() => setShowDeleteConfirm(false)}
                       className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-0.5"
                     >
@@ -1287,6 +1438,7 @@ export function FastAgentUIMessageBubble({
                   </div>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => setShowDeleteConfirm(true)}
                     className="text-xs text-gray-400 hover:text-red-600 flex items-center gap-1 transition-colors"
                     title="Delete message"

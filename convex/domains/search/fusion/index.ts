@@ -26,6 +26,17 @@ export type {
   SearchResponse,
   SearchSourceAdapter,
   SearchAdapterOptions,
+  // Versioned Payload Contract
+  FusionSearchPayload,
+  SourceStreamingStatus,
+  StreamingSearchResponse,
+} from "./types";
+
+// Versioned Payload Utilities
+export {
+  FUSION_SEARCH_PAYLOAD_VERSION,
+  validateFusionSearchPayload,
+  wrapSearchResponse,
 } from "./types";
 
 // Orchestrator
@@ -72,10 +83,13 @@ export type {
   UserSearchPreferences,
   ExpandedQuery,
   UserInteraction,
+  DeduplicationMetrics,
+  QueryType,
 } from "./advanced";
 export {
   deduplicateResults,
   expandQuery,
+  detectQueryType,
   applySourceBoosts,
   applyRecencyBias,
   updatePreferencesFromInteractions,

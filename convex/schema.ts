@@ -1285,10 +1285,26 @@ const feedItems = defineTable({
 /* ------------------------------------------------------------------ */
 /* SEARCH EVALUATIONS - LLM-as-judge benchmark results                 */
 /* ------------------------------------------------------------------ */
+/**
+ * Stores search quality evaluation results from LLM-as-judge.
+ *
+ * Retention Policy:
+ * - Evaluations are retained for 90 days by default
+ * - No PII is stored (queries may contain user intent but not personal data)
+ * - judgeInput/judgeResult are JSON strings for flexibility
+ *
+ * Indexes:
+ * - by_evaluation_id: Unique lookup
+ * - by_pass: Filter by pass/fail status
+ * - by_created: Time-based queries and cleanup
+ * - by_query_hash: Deduplicate evaluations for same query (future)
+ * - by_judge_model: Analyze performance by model
+ */
 const searchEvaluations = defineTable({
   evaluationId: v.string(),                 // Unique evaluation ID
   query: v.string(),                        // Search query evaluated
   mode: v.string(),                         // Search mode (fast/balanced/comprehensive)
+  judgeModel: v.optional(v.string()),       // Approved model alias used for evaluation
   judgeInput: v.string(),                   // JSON-serialized JudgeInput
   judgeResult: v.string(),                  // JSON-serialized JudgeResult
   pass: v.boolean(),                        // Overall pass/fail
@@ -1297,7 +1313,8 @@ const searchEvaluations = defineTable({
 })
   .index("by_evaluation_id", ["evaluationId"])
   .index("by_pass", ["pass"])
-  .index("by_created", ["createdAt"]);
+  .index("by_created", ["createdAt"])
+  .index("by_judge_model", ["judgeModel"]);
 
 export default defineSchema({
   ...authTables,       // `users`, `sessions`

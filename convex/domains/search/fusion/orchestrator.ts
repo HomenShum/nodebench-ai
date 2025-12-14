@@ -1,8 +1,24 @@
 /**
  * Search Orchestrator
- * 
+ *
  * Coordinates parallel search across multiple sources and fuses results.
- * 
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * PIPELINE ORDER (with advanced features)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * 1. expandQuery() - BEFORE retrieval (expands query for better recall)
+ * 2. [Parallel source retrieval] - Fetch from all sources
+ * 3. applySourceBoosts() - AFTER retrieval (boost by source type)
+ * 4. [RRF fusion] - Combine results from sources
+ * 5. [LLM reranking] - Semantic reranking (if enabled)
+ * 6. deduplicateResults() - AFTER reranking (remove duplicates)
+ * 7. applyRecencyBias() - AFTER dedup (boost recent content)
+ *
+ * NOTE: User preference learning (applyUserPreferences) is NOT integrated
+ * because the UI does not currently emit click/bookmark/share/dismiss/dwell
+ * events. This is marked as FUTURE WORK.
+ *
  * @module search/fusion/orchestrator
  */
 
@@ -25,6 +41,12 @@ import {
   newsAdapter,
 } from "./adapters";
 import { llmReranker } from "./reranker";
+import {
+  expandQuery,
+  applySourceBoosts,
+  deduplicateResults,
+  applyRecencyBias,
+} from "./advanced";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -69,38 +91,61 @@ export class SearchOrchestrator {
   }
   
   /**
-   * Execute search across multiple sources with fusion.
+   * Execute search across multiple sources with fusion and advanced features.
+   *
+   * Pipeline order:
+   * 1. Query expansion (gated by query type)
+   * 2. Parallel source retrieval
+   * 3. Source boosting
+   * 4. RRF fusion
+   * 5. LLM reranking (if enabled)
+   * 6. Deduplication
+   * 7. Recency bias
    */
   async search(request: SearchRequest): Promise<SearchResponse> {
     const startTime = Date.now();
     const mode = request.mode || "balanced";
     const sources = request.sources || MODE_SOURCES[mode];
     const limits = MODE_LIMITS[mode];
-    
+
     console.log(`[SearchOrchestrator] Starting ${mode} search: "${request.query}"`);
     console.log(`[SearchOrchestrator] Sources: ${sources.join(", ")}`);
-    
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 1: Query Expansion (gated by query type)
+    // ═══════════════════════════════════════════════════════════════════════
+    const expanded = expandQuery(request.query);
+    const searchQuery = expanded.expansionApplied && expanded.expanded.length > 1
+      ? expanded.expanded[0] // Use first expanded variant
+      : request.query;
+
+    if (expanded.expansionApplied) {
+      console.log(`[SearchOrchestrator] Query expanded: "${request.query}" → "${searchQuery}" (type: ${expanded.queryType})`);
+    }
+
     // Filter to available sources
     const availableSources = sources.filter(source => {
       const adapter = this.adapters.get(source);
       return adapter?.isAvailable();
     });
-    
+
     if (availableSources.length === 0) {
       console.warn("[SearchOrchestrator] No sources available");
       return this.emptyResponse(mode, sources, Date.now() - startTime);
     }
-    
-    // Execute searches in parallel
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 2: Parallel Source Retrieval
+    // ═══════════════════════════════════════════════════════════════════════
     const timing: Record<SearchSource, number> = {} as Record<SearchSource, number>;
     const errors: SearchResponse["errors"] = [];
-    
+
     const searchPromises = availableSources.map(async (source) => {
       const adapter = this.adapters.get(source)!;
       const sourceStart = Date.now();
-      
+
       try {
-        const results = await adapter.search(request.query, {
+        const results = await adapter.search(searchQuery, {
           maxResults: request.maxPerSource || limits.perSource,
           contentTypes: request.contentTypes,
           dateRange: request.dateRange,
@@ -114,23 +159,32 @@ export class SearchOrchestrator {
         return { source, results: [] };
       }
     });
-    
+
     const searchResults = await Promise.allSettled(searchPromises);
-    
+
     // Collect all results
-    const allResults: SearchResult[] = [];
+    let allResults: SearchResult[] = [];
     for (const result of searchResults) {
       if (result.status === "fulfilled") {
         allResults.push(...result.value.results);
       }
     }
-    
+
     console.log(`[SearchOrchestrator] Collected ${allResults.length} results from ${availableSources.length} sources`);
-    
-    // Apply RRF fusion
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 3: Source Boosting
+    // ═══════════════════════════════════════════════════════════════════════
+    allResults = applySourceBoosts(allResults, request.query);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 4: RRF Fusion
+    // ═══════════════════════════════════════════════════════════════════════
     let fusedResults = this.applyRRF(allResults, request.maxTotal || limits.total);
 
-    // Apply LLM reranking if enabled (comprehensive mode or explicit request)
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 5: LLM Reranking (if enabled)
+    // ═══════════════════════════════════════════════════════════════════════
     let reranked = false;
     if (request.enableReranking || mode === "comprehensive") {
       fusedResults = await llmReranker.rerank(
@@ -141,8 +195,23 @@ export class SearchOrchestrator {
       reranked = true;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 6: Deduplication (staged approach)
+    // ═══════════════════════════════════════════════════════════════════════
+    const dedupResult = deduplicateResults(fusedResults);
+    fusedResults = dedupResult.results;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 7: Recency Bias
+    // ═══════════════════════════════════════════════════════════════════════
+    // Apply moderate recency bias (0.3) - can be made configurable
+    fusedResults = applyRecencyBias(fusedResults, 0.3);
+
+    // Re-sort after recency adjustment
+    fusedResults.sort((a, b) => b.score - a.score);
+
     const totalTimeMs = Date.now() - startTime;
-    console.log(`[SearchOrchestrator] Search completed in ${totalTimeMs}ms (reranked: ${reranked})`);
+    console.log(`[SearchOrchestrator] Search completed in ${totalTimeMs}ms (reranked: ${reranked}, deduped: ${dedupResult.duplicatesRemoved})`);
 
     return {
       results: fusedResults,

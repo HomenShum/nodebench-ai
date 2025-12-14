@@ -179,6 +179,11 @@ Example log output:
    - [x] Partial failure warnings ("SEC tool unavailable") - PartialFailureWarning component
    - [x] Source attribution badges - 7 source types with icons and colors
    - Created `FusedSearchResults.tsx` component in FastAgentPanel
+   - [x] **AUDIT**: Versioned payload contract (`FusionSearchPayload` with `kind` + `version`)
+   - [x] **AUDIT**: Runtime validation (`validateFusionSearchPayload()`)
+   - [x] **AUDIT**: Frontend parser hardening with version checking
+   - [x] **AUDIT**: ARIA accessibility documentation and button type fixes
+   - [x] **AUDIT**: Streaming behavior documentation (not streaming, returns complete)
 
 7. **Python MCP Server (Pattern 5)** ✅
    - [x] Create `python-mcp-servers/research/` directory structure
@@ -195,12 +200,19 @@ Example log output:
    - [x] Saved artifacts to feed the coding agent (`searchEvaluations` table)
    - [x] LLM-as-judge integration for search quality evaluation (`evaluateSearch` action)
    - [x] Pass/fail scoring based on relevance criteria (weighted scoring with 0.7 threshold)
+   - [x] **AUDIT**: Judge model via modelResolver (7 approved models)
+   - [x] **AUDIT**: Ground truth fields (`expectedKeyFacts`, `constraints`, `publishedAt`)
+   - [x] **AUDIT**: Database indexes (`by_judge_model`) and retention policy documentation
 
 9. **Advanced Features** ✅
    - [x] Result deduplication by content similarity (`deduplicateResults` with Jaccard similarity)
    - [x] Query expansion for better recall (`expandQuery` with synonym mapping)
    - [x] Source-specific relevance boosting (`applySourceBoosts` with query-type detection)
    - [x] User preference learning for result ranking (`updatePreferencesFromInteractions`, `applyRecencyBias`)
+   - [x] **AUDIT**: Staged deduplication (URL canonicalization → exact match → Jaccard)
+   - [x] **AUDIT**: Query expansion gated by query type (disabled for news/internal)
+   - [x] **AUDIT**: Pipeline integration in orchestrator (correct order)
+   - [x] **AUDIT**: Preference learning marked as FUTURE WORK (UI events not emitted)
 
 ## New Files Added
 

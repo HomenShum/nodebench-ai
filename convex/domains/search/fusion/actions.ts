@@ -12,8 +12,9 @@ import { action } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 import { v } from "convex/values";
 import { SearchOrchestrator } from "./orchestrator";
-import type { SearchMode, SearchSource, SearchResponse } from "./types";
+import type { SearchMode, SearchSource, SearchResponse, FusionSearchPayload } from "./types";
 import { generateCacheKey, CACHE_TTL_MS } from "./cache";
+import { wrapSearchResponse, FUSION_SEARCH_PAYLOAD_VERSION } from "./types";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VALIDATORS
@@ -75,12 +76,28 @@ const searchResponseValidator = v.object({
   }))),
 });
 
+/**
+ * Versioned payload validator for FusionSearchPayload.
+ * This is the contract shared with UI consumers.
+ */
+const fusionSearchPayloadValidator = v.object({
+  kind: v.literal("fusion_search_results"),
+  version: v.number(),
+  payload: searchResponseValidator,
+  generatedAt: v.string(),
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ACTIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Execute multi-source search with fusion.
+ *
+ * Returns a versioned FusionSearchPayload with discriminator for type-safe
+ * consumption by UI components.
+ *
+ * @returns FusionSearchPayload with kind="fusion_search_results" and version=1
  */
 export const fusionSearch = action({
   args: {
@@ -100,7 +117,7 @@ export const fusionSearch = action({
     skipRateLimit: v.optional(v.boolean()), // For internal/admin use
     skipCache: v.optional(v.boolean()),     // Force fresh results
   },
-  returns: searchResponseValidator,
+  returns: fusionSearchPayloadValidator,
   handler: async (ctx, args) => {
     const mode = (args.mode || "balanced") as SearchMode;
     const sources = (args.sources || []) as string[];
@@ -143,7 +160,8 @@ export const fusionSearch = action({
         // Persist observability with cache hit flag
         const cachedResponse = JSON.parse(cached.results) as SearchResponse;
         await persistObservability(ctx, args.query, cachedResponse, args.userId, args.threadId, true);
-        return cachedResponse;
+        // Wrap cached response in versioned payload
+        return wrapSearchResponse(cachedResponse);
       }
       console.log(`[fusionSearch] Cache MISS`);
     }
@@ -185,7 +203,8 @@ export const fusionSearch = action({
     // Persist observability data
     await persistObservability(ctx, args.query, response, args.userId, args.threadId, false);
 
-    return response;
+    // Return versioned payload
+    return wrapSearchResponse(response);
   },
 });
 

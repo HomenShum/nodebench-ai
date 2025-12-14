@@ -1,17 +1,57 @@
 /**
  * FusedSearchResults - Display multi-source search results with facets and attribution
- * 
+ *
  * Features:
  * - Per-source facet filters (toggle sources on/off)
  * - Source attribution badges with icons
- * - Partial failure warnings
- * - Consistent citation display
+ * - Partial failure warnings with expandable details
+ * - Consistent citation numbering
+ * - Accessible keyboard navigation and screen reader support
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * STREAMING BEHAVIOR DOCUMENTATION
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Current Implementation:
+ * - This component receives COMPLETE tool results, not streaming partial results
+ * - The fusionSearch action returns a single FusionSearchPayload after all sources complete
+ * - Per-source "pending" state is NOT currently implemented at the streaming level
+ *
+ * Source Status Indicators:
+ * - "completed": Source returned results (shown in facet with count > 0)
+ * - "failed": Source returned an error (shown in PartialFailureWarning)
+ * - "disabled": Source not queried based on mode (not in sourcesQueried)
+ * - "pending": NOT IMPLEMENTED - would require streaming partial payloads
+ *
+ * Future Streaming Support:
+ * To implement true streaming with pending indicators, the backend would need to:
+ * 1. Emit incremental FusionSearchPayload updates as each source completes
+ * 2. Include SourceStreamingStatus[] in the payload (see types.ts)
+ * 3. UI would update progressively as partial results arrive
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * RENDER PRECEDENCE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * This component is rendered INSTEAD OF the default ToolStep for fusion search tools.
+ * See FastAgentPanel.UIMessageBubble.tsx for render precedence logic:
+ *
+ * 1. Check if tool is fusion search (isFusionSearchTool)
+ * 2. If yes AND tool-result: render FusedSearchResults
+ * 3. If yes AND tool-call: skip rendering (no spinner shown)
+ * 4. If no: render default ToolStep
+ *
+ * This ensures:
+ * - Only ONE representation per tool (no duplicate ToolStep + FusedSearchResults)
+ * - Clean UI with results only shown after completion
+ *
+ * @module FastAgentPanel/FusedSearchResults
  */
 
 import React, { useState, useMemo } from 'react';
-import { 
+import {
   Globe, FileText, Youtube, BookOpen, Newspaper, Database, Building2,
-  AlertTriangle, Filter, X, ExternalLink, Clock, ChevronDown, ChevronUp
+  AlertTriangle, Filter, X, ExternalLink, Clock, ChevronDown, ChevronUp, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -112,6 +152,11 @@ function PartialFailureWarning({ errors }: { errors: SourceError[] }) {
       role="alert"
       aria-live="polite"
     >
+      {/*
+        eslint-disable-next-line jsx-a11y/aria-proptypes
+        aria-expanded accepts boolean in React, converted to "true"/"false" string at runtime.
+        This is valid per WAI-ARIA 1.2 spec and React's DOM attribute handling.
+      */}
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
@@ -309,7 +354,11 @@ export function FusedSearchResults({
         ))}
       </div>
 
-      {/* Show more button - accessible */}
+      {/*
+        Show more button - accessible
+        eslint-disable-next-line jsx-a11y/aria-proptypes
+        aria-expanded boolean is valid in React, per WAI-ARIA 1.2
+      */}
       {hasMore && (
         <button
           type="button"
