@@ -57,3 +57,12 @@ export { RATE_LIMITS } from "./rateLimiter";
 
 // Caching
 export { generateCacheKey, CACHE_TTL_MS } from "./cache";
+
+// Benchmark Harness
+export type {
+  JudgeInput,
+  JudgeResultItem,
+  JudgeRubric,
+  JudgeResult,
+} from "./benchmark";
+export { toJudgeInput } from "./benchmark";

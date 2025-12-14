@@ -190,11 +190,11 @@ Example log output:
 
 ### Lower Priority
 
-8. **Benchmark Harness Alignment**
-   - [ ] Standard output schema for search runs + judge rubric input
-   - [ ] Saved artifacts to feed the coding agent
-   - [ ] LLM-as-judge integration for search quality evaluation
-   - [ ] Pass/fail scoring based on relevance criteria
+8. **Benchmark Harness Alignment** ✅
+   - [x] Standard output schema for search runs + judge rubric input (`JudgeInput`, `JudgeRubric`)
+   - [x] Saved artifacts to feed the coding agent (`searchEvaluations` table)
+   - [x] LLM-as-judge integration for search quality evaluation (`evaluateSearch` action)
+   - [x] Pass/fail scoring based on relevance criteria (weighted scoring with 0.7 threshold)
 
 9. **Advanced Features**
    - [ ] Result deduplication by content similarity

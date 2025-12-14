@@ -1282,6 +1282,23 @@ const feedItems = defineTable({
   .index("by_category", ["category"])      // Segmented view filtering
   .index("by_source_id", ["sourceId"]);    // Fast deduplication lookup
 
+/* ------------------------------------------------------------------ */
+/* SEARCH EVALUATIONS - LLM-as-judge benchmark results                 */
+/* ------------------------------------------------------------------ */
+const searchEvaluations = defineTable({
+  evaluationId: v.string(),                 // Unique evaluation ID
+  query: v.string(),                        // Search query evaluated
+  mode: v.string(),                         // Search mode (fast/balanced/comprehensive)
+  judgeInput: v.string(),                   // JSON-serialized JudgeInput
+  judgeResult: v.string(),                  // JSON-serialized JudgeResult
+  pass: v.boolean(),                        // Overall pass/fail
+  overallScore: v.number(),                 // Weighted score (0-1)
+  createdAt: v.number(),                    // Timestamp
+})
+  .index("by_evaluation_id", ["evaluationId"])
+  .index("by_pass", ["pass"])
+  .index("by_created", ["createdAt"]);
+
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
   documents,
@@ -1338,6 +1355,7 @@ export default defineSchema({
   agentImageResults,
   voiceSessions,
   feedItems,
+  searchEvaluations,
 
   /* ------------------------------------------------------------------ */
   /* EMAIL EVENTS - Audit log for all email sends via agent tools       */
