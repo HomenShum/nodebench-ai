@@ -135,12 +135,63 @@ Example log output:
 [SearchOrchestrator] Search completed in 520ms (reranked: false)
 ```
 
-## Future Enhancements
+## Future Enhancements / Remaining Work
 
-- [ ] Add YouTube adapter
-- [ ] Add arXiv adapter
-- [ ] Add news adapter
-- [ ] Implement Python MCP server for iterative search
-- [ ] Add caching layer
-- [ ] Add result deduplication by content similarity
+### High Priority
+
+1. **Add More Search Adapters**
+   - [ ] YouTube adapter (using existing youtubeSearch.ts)
+   - [ ] arXiv adapter (for academic papers)
+   - [ ] News adapter (aggregated news sources)
+
+2. **Observability Persistence**
+   - [ ] Store `searchRun` records with per-tool latency/errors + fused IDs
+   - [ ] Create `searchRuns` and `searchRunResults` tables in schema
+   - [ ] Add query for historical search performance analysis
+
+3. **Rate Limiting + Concurrency Control**
+   - [ ] Per-user rate limiting for parallel searches
+   - [ ] Per-provider rate limiting (respect API quotas)
+   - [ ] Thread-level concurrency control
+   - [ ] Implement token bucket or sliding window algorithm
+
+4. **Caching Layer**
+   - [ ] TTL-based caching for repeated queries
+   - [ ] Cache key: `hash(query + sources + mode)`
+   - [ ] Cache invalidation strategy
+   - [ ] Prevent repeated web calls on retries/reruns
+
+### Medium Priority
+
+5. **Persisted Normalization for Legacy Threads**
+   - [ ] Migrate legacy model strings in existing threads to normalized aliases
+   - [ ] One-time migration script
+   - [ ] Ensure backward compatibility during transition
+
+6. **UI Behavior for Fused Results**
+   - [ ] Show per-source facets (filter by source)
+   - [ ] Consistent citation display
+   - [ ] Partial failure warnings ("SEC tool unavailable")
+   - [ ] Source attribution badges
+
+7. **Python MCP Server (Pattern 5)**
+   - [ ] Create `mcp/python/` directory structure
+   - [ ] Implement ConvexClient wrapper for Python
+   - [ ] Create `servers/research/server.py` with FastMCP
+   - [ ] Iterative search with reflection loops
+   - [ ] Security model: avoid broad admin keys, constrain callable functions
+
+### Lower Priority
+
+8. **Benchmark Harness Alignment**
+   - [ ] Standard output schema for search runs + judge rubric input
+   - [ ] Saved artifacts to feed the coding agent
+   - [ ] LLM-as-judge integration for search quality evaluation
+   - [ ] Pass/fail scoring based on relevance criteria
+
+9. **Advanced Features**
+   - [ ] Result deduplication by content similarity
+   - [ ] Query expansion for better recall
+   - [ ] Source-specific relevance boosting
+   - [ ] User preference learning for result ranking
 
