@@ -69,43 +69,64 @@ const SOURCE_CONFIG: Record<SearchSource, { icon: React.ElementType; label: stri
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Source badge with icon */
-function SourceBadge({ source, count, active, onClick }: { 
-  source: SearchSource; count: number; active: boolean; onClick: () => void 
+/** Source badge with icon - accessible toggle button */
+function SourceBadge({ source, count, active, onClick }: {
+  source: SearchSource; count: number; active: boolean; onClick: () => void
 }) {
   const config = SOURCE_CONFIG[source];
   const Icon = config.icon;
   return (
     <button
+      type="button"
       onClick={onClick}
+      onKeyDown={(e) => {
+        // Support keyboard navigation with Enter and Space
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      aria-pressed={active}
+      aria-label={`Filter by ${config.label} source (${count} result${count !== 1 ? 's' : ''})`}
       className={cn(
         "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
+        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
         active ? config.color : "bg-gray-100 text-gray-400 border-gray-200 opacity-50"
       )}
     >
-      <Icon className="w-3.5 h-3.5" />
+      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
       <span>{config.label}</span>
-      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-white/50 text-[10px]">{count}</span>
+      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-white/50 text-[10px]" aria-label={`${count} results`}>{count}</span>
     </button>
   );
 }
 
-/** Partial failure warning banner */
+/** Partial failure warning banner - accessible alert */
 function PartialFailureWarning({ errors }: { errors: SourceError[] }) {
   const [expanded, setExpanded] = useState(false);
   if (errors.length === 0) return null;
-  
+
   return (
-    <div className="mb-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-2 text-left">
-        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+    <div
+      className="mb-3 p-3 rounded-lg bg-amber-50 border border-amber-200"
+      role="alert"
+      aria-live="polite"
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2 text-left focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 rounded"
+        aria-expanded={expanded}
+        aria-controls="source-error-details"
+      >
+        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" aria-hidden="true" />
         <span className="text-sm font-medium text-amber-800">
           {errors.length} source{errors.length > 1 ? 's' : ''} unavailable
         </span>
-        {expanded ? <ChevronUp className="w-4 h-4 ml-auto text-amber-600" /> : <ChevronDown className="w-4 h-4 ml-auto text-amber-600" />}
+        {expanded ? <ChevronUp className="w-4 h-4 ml-auto text-amber-600" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 ml-auto text-amber-600" aria-hidden="true" />}
       </button>
       {expanded && (
-        <ul className="mt-2 space-y-1 text-xs text-amber-700">
+        <ul id="source-error-details" className="mt-2 space-y-1 text-xs text-amber-700">
           {errors.map((e, i) => (
             <li key={i} className="flex items-center gap-2">
               <span className="font-medium">{SOURCE_CONFIG[e.source]?.label || e.source}:</span>
@@ -118,21 +139,27 @@ function PartialFailureWarning({ errors }: { errors: SourceError[] }) {
   );
 }
 
-/** Single result card with source attribution */
+/** Single result card with source attribution - accessible link card */
 function ResultCard({ result, citationNumber }: { result: FusedResult; citationNumber?: number }) {
   const config = SOURCE_CONFIG[result.source];
   const Icon = config.icon;
+
+  // Build accessible label
+  const ariaLabel = citationNumber !== undefined
+    ? `Result ${citationNumber} from ${config.label}: ${result.title}${result.fusedRank ? `, ranked #${result.fusedRank}` : ''}`
+    : `${config.label} result: ${result.title}`;
 
   return (
     <a
       href={result.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all bg-white"
+      aria-label={ariaLabel}
+      className="group block p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
     >
       <div className="flex items-start gap-3">
         {/* Source icon */}
-        <div className={cn("flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center", config.color.split(' ')[0])}>
+        <div className={cn("flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center", config.color.split(' ')[0])} aria-hidden="true">
           <Icon className="w-4 h-4" />
         </div>
         {/* Content */}
@@ -140,7 +167,10 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
           <div className="flex items-center gap-2 mb-1">
             <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-600">{result.title}</h4>
             {citationNumber !== undefined && (
-              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-semibold">
+              <span
+                className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-semibold"
+                aria-label={`Citation ${citationNumber}`}
+              >
                 {citationNumber}
               </span>
             )}
@@ -149,12 +179,15 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
           <div className="flex items-center gap-3 mt-2 text-[10px] text-gray-400">
             <span className={cn("px-1.5 py-0.5 rounded", config.color)}>{config.label}</span>
             {result.publishedAt && (
-              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{result.publishedAt}</span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" aria-hidden="true" />
+                <span aria-label={`Published ${result.publishedAt}`}>{result.publishedAt}</span>
+              </span>
             )}
-            {result.fusedRank && <span>Rank #{result.fusedRank}</span>}
+            {result.fusedRank && <span aria-label={`Fusion rank ${result.fusedRank}`}>Rank #{result.fusedRank}</span>}
           </div>
         </div>
-        <ExternalLink className="w-4 h-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0" />
+        <ExternalLink className="w-4 h-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0" aria-hidden="true" />
       </div>
     </a>
   );
@@ -243,8 +276,12 @@ export function FusedSearchResults({
         )}
       </div>
 
-      {/* Source facets */}
-      <div className="flex flex-wrap gap-2">
+      {/* Source facets - accessible filter group */}
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Filter results by source"
+      >
         {sourcesQueried.map(source => (
           <SourceBadge
             key={source}
@@ -256,28 +293,35 @@ export function FusedSearchResults({
         ))}
       </div>
 
-      {/* Results list */}
-      <div className="space-y-2">
+      {/* Results list - accessible list */}
+      <div
+        className="space-y-2"
+        role="list"
+        aria-label="Search results"
+      >
         {displayedResults.map((result, idx) => (
-          <ResultCard
-            key={result.id}
-            result={result}
-            citationNumber={showCitations ? idx + 1 : undefined}
-          />
+          <div key={result.id} role="listitem">
+            <ResultCard
+              result={result}
+              citationNumber={showCitations ? idx + 1 : undefined}
+            />
+          </div>
         ))}
       </div>
 
-      {/* Show more button */}
+      {/* Show more button - accessible */}
       {hasMore && (
         <button
           type="button"
           onClick={() => setShowAll(!showAll)}
-          className="w-full py-2 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center gap-1"
+          className="w-full py-2 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded"
+          aria-expanded={showAll}
+          aria-label={showAll ? "Show fewer results" : `Show ${filteredResults.length - INITIAL_COUNT} more results`}
         >
           {showAll ? (
-            <><ChevronUp className="w-4 h-4" /> Show less</>
+            <><ChevronUp className="w-4 h-4" aria-hidden="true" /> Show less</>
           ) : (
-            <><ChevronDown className="w-4 h-4" /> Show {filteredResults.length - INITIAL_COUNT} more</>
+            <><ChevronDown className="w-4 h-4" aria-hidden="true" /> Show {filteredResults.length - INITIAL_COUNT} more</>
           )}
         </button>
       )}

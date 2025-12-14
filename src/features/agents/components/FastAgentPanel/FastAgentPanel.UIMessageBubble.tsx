@@ -31,6 +31,7 @@ import {
 } from './FastAgentPanel.VisualCitation';
 import { ArbitrageReportCard } from './ArbitrageReportCard';
 import { MemoryPill } from './MemoryPill';
+import { FusedSearchResults, type FusedResult, type SourceError, type SearchSource } from './FusedSearchResults';
 
 interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
@@ -420,6 +421,112 @@ function ThinkingAccordion({
       )}
     </div>
   );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FUSION SEARCH RESULT PARSING
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface ParsedFusionSearchResult {
+  results: FusedResult[];
+  sourcesQueried: SearchSource[];
+  errors: SourceError[];
+  timing: Record<SearchSource, number>;
+  totalTimeMs: number;
+  isValid: boolean;
+}
+
+/**
+ * Check if a tool name is a fusion search tool
+ */
+function isFusionSearchTool(toolName: string | undefined): boolean {
+  if (!toolName) return false;
+  return toolName === 'fusionSearch' ||
+         toolName === 'quickSearch' ||
+         toolName.includes('fusion') && toolName.includes('Search');
+}
+
+/**
+ * Parse fusion search tool output into structured data for FusedSearchResults component
+ */
+function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
+  const emptyResult: ParsedFusionSearchResult = {
+    results: [],
+    sourcesQueried: [],
+    errors: [],
+    timing: {} as Record<SearchSource, number>,
+    totalTimeMs: 0,
+    isValid: false,
+  };
+
+  if (!output) return emptyResult;
+
+  try {
+    // Handle string output (tool returns formatted string)
+    if (typeof output === 'string') {
+      // Try to parse embedded JSON if present
+      const jsonMatch = output.match(/<!-- FUSION_SEARCH_DATA\n([\s\S]*?)\n-->/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[1]);
+        return parseFusionSearchOutput(parsed);
+      }
+
+      // Otherwise, it's a formatted text response - not parseable
+      return emptyResult;
+    }
+
+    // Handle object output (raw SearchResponse)
+    if (typeof output === 'object') {
+      const data = output as Record<string, unknown>;
+
+      // Check if it looks like a SearchResponse
+      if (Array.isArray(data.results) && data.results.length > 0) {
+        const results: FusedResult[] = (data.results as Array<Record<string, unknown>>).map((r, idx) => ({
+          id: String(r.id || `result-${idx}`),
+          source: (r.source || 'linkup') as SearchSource,
+          title: String(r.title || 'Untitled'),
+          snippet: String(r.snippet || ''),
+          url: r.url ? String(r.url) : undefined,
+          score: Number(r.score || 0),
+          originalRank: Number(r.originalRank || idx + 1),
+          fusedRank: r.fusedRank ? Number(r.fusedRank) : undefined,
+          contentType: (r.contentType || 'text') as FusedResult['contentType'],
+          publishedAt: r.publishedAt ? String(r.publishedAt) : undefined,
+          author: r.author ? String(r.author) : undefined,
+          metadata: r.metadata as Record<string, unknown> | undefined,
+        }));
+
+        const sourcesQueried: SearchSource[] = Array.isArray(data.sourcesQueried)
+          ? (data.sourcesQueried as string[]).filter(s =>
+              ['linkup', 'sec', 'rag', 'documents', 'news', 'youtube', 'arxiv'].includes(s)
+            ) as SearchSource[]
+          : [...new Set(results.map(r => r.source))];
+
+        const errors: SourceError[] = Array.isArray(data.errors)
+          ? (data.errors as Array<{source: string; error: string}>).map(e => ({
+              source: e.source as SearchSource,
+              error: String(e.error),
+            }))
+          : [];
+
+        const timing = (data.timing || {}) as Record<SearchSource, number>;
+        const totalTimeMs = Number(data.totalTimeMs || 0);
+
+        return {
+          results,
+          sourcesQueried,
+          errors,
+          timing,
+          totalTimeMs,
+          isValid: true,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('[parseFusionSearchOutput] Failed to parse:', e);
+  }
+
+  return emptyResult;
 }
 
 /**
@@ -897,8 +1004,34 @@ export function FastAgentUIMessageBubble({
               // Only render tool calls, not results (results are nested in steps)
               if (part.type !== 'tool-call' && part.type !== 'tool-result' && part.type !== 'tool-error') return null;
 
-              // Check for Memory/Planning tools to render as Pills
               const toolName = (part as any).toolName;
+
+              // Check for Fusion Search tools - render with FusedSearchResults component
+              if (isFusionSearchTool(toolName) && part.type === 'tool-result') {
+                const parsed = parseFusionSearchOutput((part as ToolUIPart).output);
+                if (parsed.isValid && parsed.results.length > 0) {
+                  return (
+                    <div key={idx} className="my-3 w-full">
+                      <FusedSearchResults
+                        results={parsed.results}
+                        sourcesQueried={parsed.sourcesQueried}
+                        errors={parsed.errors}
+                        timing={parsed.timing}
+                        totalTimeMs={parsed.totalTimeMs}
+                        showCitations={true}
+                      />
+                    </div>
+                  );
+                }
+                // If parsing failed, fall through to default ToolStep rendering
+              }
+
+              // Skip tool-call for fusion search (we render the result above)
+              if (isFusionSearchTool(toolName) && part.type === 'tool-call') {
+                return null;
+              }
+
+              // Check for Memory/Planning tools to render as Pills
 
               if (toolName && (
                 toolName.includes('writeMemory') ||
