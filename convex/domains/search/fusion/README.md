@@ -214,6 +214,121 @@ Example log output:
    - [x] **AUDIT**: Pipeline integration in orchestrator (correct order)
    - [x] **AUDIT**: Preference learning marked as FUTURE WORK (UI events not emitted)
 
+## Production Hardening (December 2024)
+
+### Pipeline Order (Cost-Optimized)
+
+The search pipeline is ordered to minimize LLM costs:
+
+```
+expandQuery → retrieval → boost → RRF → dedup → rerank (top-K) → recency
+                                          ↑           ↑
+                                    BEFORE rerank   Limited to 20
+```
+
+**Key optimizations:**
+- Deduplication runs BEFORE LLM reranking to reduce token usage
+- Reranking is limited to top-K (20) results, not all fused results
+- Query expansion is gated by query type (disabled for news/internal queries)
+
+### Judge Model Policy
+
+The benchmark judge model is **server-side only** and NOT user-configurable:
+
+```typescript
+// Server-side enforcement
+function getServerJudgeModel(): string {
+  return process.env.SEARCH_JUDGE_MODEL || "gpt-5.2";
+}
+```
+
+**Rationale:** Prevents users from selecting cheaper/weaker models that would produce unreliable evaluations.
+
+### Retention Policy
+
+Search evaluations are retained for **90 days**:
+
+```typescript
+// Cleanup mutation (run via cron or manual trigger)
+await ctx.runMutation(api.domains.search.fusion.benchmark.cleanupOldEvaluations, {
+  retentionDays: 90
+});
+```
+
+### Observability
+
+#### Correlation IDs
+
+Every search request generates a unique correlation ID for tracing:
+
+```
+correlationId = search_${timestamp}_${random6chars}
+Example: search_1765698511058_a3b2c1
+```
+
+#### Pipeline Metrics
+
+Structured logging at pipeline completion:
+
+```typescript
+{
+  event: 'search_pipeline_complete',
+  correlationId: 'search_1765698511058_a3b2c1',
+  mode: 'comprehensive',
+  query: 'machine learning research papers',
+  queryType: 'research',
+  expansionApplied: true,
+  sourcesQueried: ['linkup', 'sec', 'rag', 'documents', 'youtube', 'arxiv', 'news'],
+  perSourceMetrics: [
+    { source: 'linkup', timeMs: 3225, resultCount: 10 },
+    { source: 'youtube', timeMs: 359, resultCount: 10 },
+    // ...
+  ],
+  totalBeforeFusion: 32,
+  afterRRF: 32,
+  afterDedup: 28,
+  afterRerank: 20,
+  finalResultCount: 5,
+  totalTimeMs: 14690,
+  errorsCount: 0,
+  timestamp: '2024-12-14T04:48:42.000Z'
+}
+```
+
+#### Query Expansion Events
+
+```typescript
+{
+  event: 'query_expansion',
+  queryType: 'financial',
+  originalLength: 25,
+  synonymsFound: 8,
+  synonymsUsed: 8,
+  expandedQueriesCount: 3,
+  expansionApplied: true,
+  cappedSynonyms: false,
+  cappedQueries: false,
+  processingTimeMs: 2,
+  timestamp: '2024-12-14T04:48:27.000Z'
+}
+```
+
+### Feature Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `ENABLE_EMBEDDING_DEDUP` | `false` | Enable embedding-based deduplication (requires vector DB) |
+| `SEARCH_JUDGE_MODEL` | `gpt-5.2` | Server-side judge model for evaluations |
+
+### Caps and Limits
+
+| Limit | Value | Description |
+|-------|-------|-------------|
+| `MAX_EXPANDED_QUERIES` | 5 | Maximum expanded query variants |
+| `MAX_TOTAL_SYNONYMS` | 10 | Maximum synonyms per query |
+| `RERANK_TOP_K` | 20 | Maximum results sent to LLM reranker |
+| `RETENTION_DAYS` | 90 | Evaluation retention period |
+
 ## New Files Added
 
 | File | Description |

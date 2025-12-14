@@ -449,6 +449,35 @@ interface ParsedFusionSearchResult {
   parseError?: string;
   /** Schema version of the parsed payload */
   payloadVersion?: number;
+  /** Whether legacy fallback was used (for observability) */
+  usedLegacyFallback?: boolean;
+}
+
+/**
+ * Structured event for observability logging.
+ * Used to track legacy payload fallback usage.
+ */
+interface FusionPayloadEvent {
+  event: 'fusion_payload_legacy_fallback' | 'fusion_payload_parse_error' | 'fusion_payload_success';
+  toolName?: string;
+  source: 'versioned' | 'legacy' | 'unknown';
+  shapeSignature: string;
+  payloadVersion?: number;
+  error?: string;
+  timestamp: string;
+}
+
+/**
+ * Log structured observability event for fusion payload parsing.
+ * Does NOT log payload content (PII risk).
+ */
+function logFusionPayloadEvent(event: FusionPayloadEvent): void {
+  // Log structured event (can be picked up by observability systems)
+  console.info(`[FusionPayload] ${event.event}`, {
+    ...event,
+    // Explicit omission of payload content for PII safety
+    _note: 'Payload content intentionally omitted for PII safety',
+  });
 }
 
 /**
@@ -479,7 +508,7 @@ const VALID_SEARCH_SOURCES = ['linkup', 'sec', 'rag', 'documents', 'news', 'yout
  * - Legacy payloads are supported for backward compatibility but logged
  * - Invalid payloads return isValid=false with parseError details
  */
-function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
+function parseFusionSearchOutput(output: unknown, toolName?: string): ParsedFusionSearchResult {
   const emptyResult: ParsedFusionSearchResult = {
     results: [],
     sourcesQueried: [],
@@ -489,7 +518,23 @@ function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
     isValid: false,
   };
 
+  /**
+   * Helper to compute shape signature for observability (no PII)
+   */
+  const getShapeSignature = (obj: Record<string, unknown>): string => {
+    const keys = Object.keys(obj).sort().slice(0, 5);
+    return `{${keys.join(',')}}`;
+  };
+
   if (!output) {
+    logFusionPayloadEvent({
+      event: 'fusion_payload_parse_error',
+      toolName,
+      source: 'unknown',
+      shapeSignature: 'null',
+      error: 'Output is null or undefined',
+      timestamp: new Date().toISOString(),
+    });
     return { ...emptyResult, parseError: 'Output is null or undefined' };
   }
 
@@ -500,8 +545,16 @@ function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
       if (jsonMatch) {
         try {
           const parsed = JSON.parse(jsonMatch[1]);
-          return parseFusionSearchOutput(parsed);
+          return parseFusionSearchOutput(parsed, toolName);
         } catch (jsonErr) {
+          logFusionPayloadEvent({
+            event: 'fusion_payload_parse_error',
+            toolName,
+            source: 'unknown',
+            shapeSignature: 'embedded-json-parse-error',
+            error: `Failed to parse embedded JSON: ${jsonErr}`,
+            timestamp: new Date().toISOString(),
+          });
           return { ...emptyResult, parseError: `Failed to parse embedded JSON: ${jsonErr}` };
         }
       }
@@ -509,10 +562,19 @@ function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
     }
 
     if (typeof output !== 'object') {
+      logFusionPayloadEvent({
+        event: 'fusion_payload_parse_error',
+        toolName,
+        source: 'unknown',
+        shapeSignature: typeof output,
+        error: `Invalid output type: ${typeof output}`,
+        timestamp: new Date().toISOString(),
+      });
       return { ...emptyResult, parseError: `Invalid output type: ${typeof output}` };
     }
 
     const data = output as Record<string, unknown>;
+    const shapeSignature = getShapeSignature(data);
 
     // ═══════════════════════════════════════════════════════════════════════
     // VERSIONED PAYLOAD VALIDATION (preferred path)
@@ -520,11 +582,27 @@ function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
     if (data.kind === 'fusion_search_results') {
       // Validate version
       if (typeof data.version !== 'number') {
+        logFusionPayloadEvent({
+          event: 'fusion_payload_parse_error',
+          toolName,
+          source: 'versioned',
+          shapeSignature,
+          error: `Invalid version type: ${typeof data.version}`,
+          timestamp: new Date().toISOString(),
+        });
         return { ...emptyResult, parseError: `Invalid version type: ${typeof data.version}` };
       }
 
       if (data.version > SUPPORTED_PAYLOAD_VERSION) {
-        console.warn(`[parseFusionSearchOutput] Payload version ${data.version} is newer than supported version ${SUPPORTED_PAYLOAD_VERSION}`);
+        logFusionPayloadEvent({
+          event: 'fusion_payload_parse_error',
+          toolName,
+          source: 'versioned',
+          shapeSignature,
+          payloadVersion: data.version,
+          error: `Unsupported payload version: ${data.version}`,
+          timestamp: new Date().toISOString(),
+        });
         return {
           ...emptyResult,
           parseError: `Unsupported payload version: ${data.version} (max supported: ${SUPPORTED_PAYLOAD_VERSION})`,
@@ -534,26 +612,75 @@ function parseFusionSearchOutput(output: unknown): ParsedFusionSearchResult {
 
       // Extract payload
       if (!data.payload || typeof data.payload !== 'object') {
+        logFusionPayloadEvent({
+          event: 'fusion_payload_parse_error',
+          toolName,
+          source: 'versioned',
+          shapeSignature,
+          payloadVersion: data.version,
+          error: 'Missing or invalid payload field',
+          timestamp: new Date().toISOString(),
+        });
         return { ...emptyResult, parseError: 'Missing or invalid payload field' };
       }
 
       const payload = data.payload as Record<string, unknown>;
-      return parseSearchResponsePayload(payload, data.version);
+      const result = parseSearchResponsePayload(payload, data.version);
+
+      // Log success for versioned payload
+      if (result.isValid) {
+        logFusionPayloadEvent({
+          event: 'fusion_payload_success',
+          toolName,
+          source: 'versioned',
+          shapeSignature,
+          payloadVersion: data.version,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      return result;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     // LEGACY PAYLOAD FALLBACK (for backward compatibility)
     // ═══════════════════════════════════════════════════════════════════════
     if (Array.isArray(data.results)) {
-      console.info('[parseFusionSearchOutput] Using legacy SearchResponse format (no version discriminator)');
-      return parseSearchResponsePayload(data, undefined);
+      // Log legacy fallback event (structured for observability)
+      logFusionPayloadEvent({
+        event: 'fusion_payload_legacy_fallback',
+        toolName,
+        source: 'legacy',
+        shapeSignature,
+        timestamp: new Date().toISOString(),
+      });
+
+      const result = parseSearchResponsePayload(data, undefined);
+      return { ...result, usedLegacyFallback: true };
     }
 
+    logFusionPayloadEvent({
+      event: 'fusion_payload_parse_error',
+      toolName,
+      source: 'unknown',
+      shapeSignature,
+      error: 'Unknown payload structure: missing kind or results',
+      timestamp: new Date().toISOString(),
+    });
     return { ...emptyResult, parseError: 'Unknown payload structure: missing kind or results' };
 
   } catch (e) {
     const errorMsg = e instanceof Error ? e.message : String(e);
-    console.error('[parseFusionSearchOutput] Unexpected error:', e);
+    logFusionPayloadEvent({
+      event: 'fusion_payload_parse_error',
+      toolName,
+      source: 'unknown',
+      shapeSignature: 'exception',
+      error: errorMsg,
+      timestamp: new Date().toISOString(),
+    });
+    // NOTE: Do NOT log `e` directly as it may contain payload content (PII risk)
+    console.error('[parseFusionSearchOutput] Unexpected error (details omitted for PII safety)');
     return { ...emptyResult, parseError: `Unexpected error: ${errorMsg}` };
   }
 }
@@ -1148,7 +1275,8 @@ export function FastAgentUIMessageBubble({
               // PRECEDENCE 1: Fusion Search tools → FusedSearchResults
               // ═══════════════════════════════════════════════════════════════
               if (isFusionSearchTool(toolName) && part.type === 'tool-result') {
-                const parsed = parseFusionSearchOutput((part as ToolUIPart).output);
+                // Pass toolName for structured observability logging
+                const parsed = parseFusionSearchOutput((part as ToolUIPart).output, toolName);
                 if (parsed.isValid && parsed.results.length > 0) {
                   return (
                     <div key={idx} className="my-3 w-full">

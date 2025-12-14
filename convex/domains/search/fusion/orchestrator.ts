@@ -4,16 +4,21 @@
  * Coordinates parallel search across multiple sources and fuses results.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * PIPELINE ORDER (with advanced features)
+ * PIPELINE ORDER (COST-OPTIMIZED)
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * 1. expandQuery() - BEFORE retrieval (expands query for better recall)
  * 2. [Parallel source retrieval] - Fetch from all sources
  * 3. applySourceBoosts() - AFTER retrieval (boost by source type)
  * 4. [RRF fusion] - Combine results from sources
- * 5. [LLM reranking] - Semantic reranking (if enabled)
- * 6. deduplicateResults() - AFTER reranking (remove duplicates)
- * 7. applyRecencyBias() - AFTER dedup (boost recent content)
+ * 5. deduplicateResults() - BEFORE reranking (saves LLM tokens!)
+ * 6. [LLM reranking] - Semantic reranking (if enabled) - limited to top-K
+ * 7. applyRecencyBias() - AFTER reranking (boost recent content)
+ *
+ * COST OPTIMIZATION RATIONALE:
+ * - Dedup BEFORE reranking saves LLM tokens by not processing duplicates
+ * - LLM reranking limited to top-K (default 20) to control costs
+ * - Recency bias applied last to fine-tune final ordering
  *
  * NOTE: User preference learning (applyUserPreferences) is NOT integrated
  * because the UI does not currently emit click/bookmark/share/dismiss/dwell
@@ -93,13 +98,13 @@ export class SearchOrchestrator {
   /**
    * Execute search across multiple sources with fusion and advanced features.
    *
-   * Pipeline order:
+   * Pipeline order (COST-OPTIMIZED):
    * 1. Query expansion (gated by query type)
    * 2. Parallel source retrieval
    * 3. Source boosting
    * 4. RRF fusion
-   * 5. LLM reranking (if enabled)
-   * 6. Deduplication
+   * 5. Deduplication (BEFORE reranking to save tokens)
+   * 6. LLM reranking (if enabled, limited to top-K)
    * 7. Recency bias
    */
   async search(request: SearchRequest): Promise<SearchResponse> {
@@ -108,8 +113,11 @@ export class SearchOrchestrator {
     const sources = request.sources || MODE_SOURCES[mode];
     const limits = MODE_LIMITS[mode];
 
+    // Generate correlation ID for observability
+    const correlationId = `search_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
     console.log(`[SearchOrchestrator] Starting ${mode} search: "${request.query}"`);
-    console.log(`[SearchOrchestrator] Sources: ${sources.join(", ")}`);
+    console.log(`[SearchOrchestrator] correlationId=${correlationId}, sources=${sources.join(",")}`);
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 1: Query Expansion (gated by query type)
@@ -162,11 +170,13 @@ export class SearchOrchestrator {
 
     const searchResults = await Promise.allSettled(searchPromises);
 
-    // Collect all results
+    // Collect all results and track per-source counts
     let allResults: SearchResult[] = [];
+    const perSourceCounts: Record<string, number> = {};
     for (const result of searchResults) {
       if (result.status === "fulfilled") {
         allResults.push(...result.value.results);
+        perSourceCounts[result.value.source] = result.value.results.length;
       }
     }
 
@@ -183,23 +193,35 @@ export class SearchOrchestrator {
     let fusedResults = this.applyRRF(allResults, request.maxTotal || limits.total);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 5: LLM Reranking (if enabled)
+    // STEP 5: Deduplication BEFORE reranking (COST OPTIMIZATION)
     // ═══════════════════════════════════════════════════════════════════════
-    let reranked = false;
-    if (request.enableReranking || mode === "comprehensive") {
-      fusedResults = await llmReranker.rerank(
-        request.query,
-        fusedResults,
-        request.maxTotal || limits.total
-      );
-      reranked = true;
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // STEP 6: Deduplication (staged approach)
-    // ═══════════════════════════════════════════════════════════════════════
+    // Dedup BEFORE LLM reranking saves tokens by not processing duplicates
     const dedupResult = deduplicateResults(fusedResults);
     fusedResults = dedupResult.results;
+    console.log(`[SearchOrchestrator] Dedup removed ${dedupResult.duplicatesRemoved} duplicates before reranking`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 6: LLM Reranking (if enabled) - LIMITED TO TOP-K
+    // ═══════════════════════════════════════════════════════════════════════
+    // Limit reranking to top-K results to control LLM costs
+    const RERANK_TOP_K = 20;
+    let reranked = false;
+    if (request.enableReranking || mode === "comprehensive") {
+      // Only rerank top-K to save tokens
+      const toRerank = fusedResults.slice(0, RERANK_TOP_K);
+      const notReranked = fusedResults.slice(RERANK_TOP_K);
+
+      const rerankedTop = await llmReranker.rerank(
+        request.query,
+        toRerank,
+        Math.min(request.maxTotal || limits.total, RERANK_TOP_K)
+      );
+
+      // Combine reranked top with remaining results
+      fusedResults = [...rerankedTop, ...notReranked];
+      reranked = true;
+      console.log(`[SearchOrchestrator] LLM reranked top ${toRerank.length} results (${notReranked.length} skipped)`);
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 7: Recency Bias
@@ -211,7 +233,35 @@ export class SearchOrchestrator {
     fusedResults.sort((a, b) => b.score - a.score);
 
     const totalTimeMs = Date.now() - startTime;
-    console.log(`[SearchOrchestrator] Search completed in ${totalTimeMs}ms (reranked: ${reranked}, deduped: ${dedupResult.duplicatesRemoved})`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // OBSERVABILITY: Structured Pipeline Metrics
+    // ═══════════════════════════════════════════════════════════════════════
+    const pipelineMetrics = {
+      event: 'search_pipeline_complete',
+      correlationId,
+      mode,
+      query: request.query.slice(0, 100), // Truncate for safety
+      queryType: expanded.queryType,
+      expansionApplied: expanded.expansionApplied,
+      sourcesQueried: availableSources,
+      perSourceMetrics: Object.entries(timing).map(([source, timeMs]) => ({
+        source,
+        timeMs,
+        resultCount: perSourceCounts[source] ?? 0,
+      })),
+      totalBeforeFusion: allResults.length,
+      totalAfterDedup: dedupResult.results.length,
+      duplicatesRemoved: dedupResult.duplicatesRemoved,
+      dedupByStage: dedupResult.metrics.byStage,
+      reranked,
+      rerankTopK: reranked ? RERANK_TOP_K : 0,
+      finalResultCount: fusedResults.length,
+      totalTimeMs,
+      errorsCount: errors.length,
+      timestamp: new Date().toISOString(),
+    };
+    console.info(`[SearchOrchestrator] Pipeline complete`, pipelineMetrics);
 
     return {
       results: fusedResults,

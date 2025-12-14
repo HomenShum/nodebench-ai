@@ -8,7 +8,7 @@
  * - User preference learning for result ranking
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * PIPELINE INTEGRATION ORDER
+ * PIPELINE INTEGRATION ORDER (COST-OPTIMIZED)
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * These functions should be called in the following order in the orchestrator:
@@ -17,10 +17,19 @@
  * 2. [Parallel source retrieval] - Fetch from all sources
  * 3. applySourceBoosts() - AFTER retrieval (boost by source type)
  * 4. [RRF fusion] - Combine results from sources
- * 5. [LLM reranking] - Semantic reranking
- * 6. deduplicateResults() - AFTER reranking (remove duplicates)
- * 7. applyRecencyBias() - AFTER dedup (boost recent content)
+ * 5. deduplicateResults() - BEFORE reranking (saves LLM tokens!)
+ * 6. [LLM reranking] - Semantic reranking (limited to top-K)
+ * 7. applyRecencyBias() - AFTER reranking (boost recent content)
  * 8. applyUserPreferences() - LAST (personalize for user)
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * FEATURE FLAGS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ENABLE_EMBEDDING_DEDUP: Controls embedding-based deduplication
+ * - Default: false (placeholder implementation)
+ * - Set via environment variable: ENABLE_EMBEDDING_DEDUP=true
+ * - When false, embedding stage is skipped entirely (no Convex bundling issues)
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * PREFERENCE LEARNING EVENT TRACKING
@@ -41,6 +50,26 @@
  */
 
 import type { SearchResult, SearchSource } from "./types";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE FLAGS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Feature flag for embedding-based deduplication.
+ *
+ * When false (default):
+ * - Embedding stage is completely skipped
+ * - No embedding-related code is executed
+ * - Prevents Convex bundling issues with embedding libraries
+ *
+ * When true:
+ * - Embedding-based semantic dedup is enabled
+ * - Requires embedding infrastructure to be available
+ *
+ * Set via environment variable: ENABLE_EMBEDDING_DEDUP=true
+ */
+const ENABLE_EMBEDDING_DEDUP = process.env.ENABLE_EMBEDDING_DEDUP === "true";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -218,11 +247,20 @@ export function deduplicateResults(
     }
   }
 
-  // Stage 4: Embedding similarity (FUTURE)
-  // TODO: Implement embedding-based deduplication when embeddings are available
-  // This would use cosine similarity on result embeddings for semantic dedup
-  if (options.useEmbeddings) {
-    console.log("[deduplicateResults] Embedding-based dedup not yet implemented");
+  // Stage 4: Embedding similarity (FEATURE-FLAGGED)
+  // Controlled by ENABLE_EMBEDDING_DEDUP environment variable
+  // When disabled, this stage is completely skipped to prevent Convex bundling issues
+  if (options.useEmbeddings && ENABLE_EMBEDDING_DEDUP) {
+    // TODO: Implement embedding-based deduplication when embeddings are available
+    // This would use cosine similarity on result embeddings for semantic dedup
+    console.log("[deduplicateResults] Embedding-based dedup enabled but not yet implemented");
+    // Placeholder for future implementation:
+    // 1. Generate embeddings for each result's title + snippet
+    // 2. Compute pairwise cosine similarity
+    // 3. Remove results with similarity > threshold (e.g., 0.9)
+    // 4. Track removed count in metrics.byStage.embedding
+  } else if (options.useEmbeddings && !ENABLE_EMBEDDING_DEDUP) {
+    console.log("[deduplicateResults] Embedding-based dedup requested but disabled by feature flag");
   }
 
   metrics.totalOutput = seen.length;
@@ -255,6 +293,18 @@ interface ExpansionConfig {
   includeRelated: boolean;
 }
 
+/**
+ * Global maximum cap for expanded queries.
+ * Prevents runaway expansion that could overwhelm search backends.
+ */
+const MAX_EXPANDED_QUERIES = 5;
+
+/**
+ * Global maximum cap for total synonyms.
+ * Prevents token bloat in expanded queries.
+ */
+const MAX_TOTAL_SYNONYMS = 10;
+
 const EXPANSION_CONFIG: Record<QueryType, ExpansionConfig> = {
   financial: { enabled: true, maxSynonyms: 3, includeRelated: true },
   research: { enabled: true, maxSynonyms: 2, includeRelated: true },
@@ -263,6 +313,24 @@ const EXPANSION_CONFIG: Record<QueryType, ExpansionConfig> = {
   internal: { enabled: false, maxSynonyms: 0, includeRelated: false }, // Internal docs need exact match
   general: { enabled: true, maxSynonyms: 2, includeRelated: false },
 };
+
+/**
+ * Query expansion observability event.
+ * Logged for each expansion operation.
+ */
+interface QueryExpansionEvent {
+  event: 'query_expansion';
+  queryType: QueryType;
+  originalLength: number;
+  synonymsFound: number;
+  synonymsUsed: number;
+  expandedQueriesCount: number;
+  expansionApplied: boolean;
+  cappedSynonyms: boolean;
+  cappedQueries: boolean;
+  processingTimeMs: number;
+  timestamp: string;
+}
 
 /**
  * Common synonym mappings for query expansion
@@ -333,12 +401,32 @@ export function expandQuery(
   query: string,
   options: { forceExpand?: boolean; queryType?: QueryType } = {}
 ): ExpandedQuery {
+  const startTime = Date.now();
   const queryType = options.queryType ?? detectQueryType(query);
   const config = EXPANSION_CONFIG[queryType];
 
+  /**
+   * Log structured observability event for query expansion.
+   */
+  const logExpansionEvent = (event: QueryExpansionEvent): void => {
+    console.info(`[QueryExpansion] ${event.event}`, event);
+  };
+
   // Check if expansion is enabled for this query type
   if (!config.enabled && !options.forceExpand) {
-    console.log(`[expandQuery] Expansion disabled for query type: ${queryType}`);
+    logExpansionEvent({
+      event: 'query_expansion',
+      queryType,
+      originalLength: query.length,
+      synonymsFound: 0,
+      synonymsUsed: 0,
+      expandedQueriesCount: 1,
+      expansionApplied: false,
+      cappedSynonyms: false,
+      cappedQueries: false,
+      processingTimeMs: Date.now() - startTime,
+      timestamp: new Date().toISOString(),
+    });
     return {
       original: query,
       expanded: [query],
@@ -350,31 +438,53 @@ export function expandQuery(
   }
 
   const words = query.toLowerCase().split(/\s+/);
-  const synonyms: string[] = [];
+  const allSynonyms: string[] = [];
   const relatedTerms: string[] = [];
 
   for (const word of words) {
     const wordSynonyms = SYNONYM_MAP[word];
     if (wordSynonyms) {
-      synonyms.push(...wordSynonyms.slice(0, config.maxSynonyms));
+      allSynonyms.push(...wordSynonyms.slice(0, config.maxSynonyms));
     }
   }
+
+  // Apply global caps
+  const uniqueSynonyms = [...new Set(allSynonyms)];
+  const cappedSynonyms = uniqueSynonyms.length > MAX_TOTAL_SYNONYMS;
+  const synonymsToUse = uniqueSynonyms.slice(0, MAX_TOTAL_SYNONYMS);
 
   // Generate expanded queries
   const expanded: string[] = [query];
 
   // Add query with synonym augmentation (not substitution)
-  if (synonyms.length > 0) {
-    const uniqueSynonyms = [...new Set(synonyms)].slice(0, config.maxSynonyms);
-    expanded.push(`${query} ${uniqueSynonyms.join(" ")}`);
+  if (synonymsToUse.length > 0) {
+    const limitedSynonyms = synonymsToUse.slice(0, config.maxSynonyms);
+    expanded.push(`${query} ${limitedSynonyms.join(" ")}`);
   }
 
-  console.log(`[expandQuery] Query type: ${queryType}, synonyms found: ${synonyms.length}`);
+  // Apply global cap on expanded queries
+  const cappedQueries = expanded.length > MAX_EXPANDED_QUERIES;
+  const finalExpanded = expanded.slice(0, MAX_EXPANDED_QUERIES);
+
+  // Log structured observability event
+  logExpansionEvent({
+    event: 'query_expansion',
+    queryType,
+    originalLength: query.length,
+    synonymsFound: allSynonyms.length,
+    synonymsUsed: synonymsToUse.length,
+    expandedQueriesCount: finalExpanded.length,
+    expansionApplied: true,
+    cappedSynonyms,
+    cappedQueries,
+    processingTimeMs: Date.now() - startTime,
+    timestamp: new Date().toISOString(),
+  });
 
   return {
     original: query,
-    expanded,
-    synonyms: [...new Set(synonyms)],
+    expanded: finalExpanded,
+    synonyms: synonymsToUse,
     relatedTerms: config.includeRelated ? [...new Set(relatedTerms)] : [],
     queryType,
     expansionApplied: true,

@@ -8,16 +8,33 @@
  * - Saved artifacts for iterative improvement
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * JUDGE MODEL CONFIGURATION
+ * JUDGE MODEL POLICY (SERVER-SIDE ENFORCEMENT)
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * The judge model is selected via modelResolver to ensure only approved models
- * are used. Default is "gpt-5.2" (OpenAI flagship).
+ * The judge model is SERVER-CONTROLLED and NOT user-configurable.
+ * Configuration hierarchy:
+ * 1. Environment variable: SEARCH_JUDGE_MODEL (must be approved model alias)
+ * 2. Default fallback: "gpt-5.2" (OpenAI flagship)
  *
- * Supported judge models (all 7 approved models):
- * - gpt-5.2 (default, recommended for evaluation)
- * - claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5
- * - gemini-3-pro, gemini-2.5-flash, gemini-2.5-pro
+ * This prevents users from selecting expensive/slow models for evaluation.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DETERMINISM REQUIREMENTS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * For reproducible evaluations:
+ * - Temperature is pinned to 0 (deterministic output)
+ * - judgePromptVersion is stored with each evaluation
+ * - Raw LLM response is stored for replay/debugging
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * RETENTION POLICY
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * - Evaluations are retained for 90 days
+ * - Cleanup via `cleanupOldEvaluations` mutation (scheduled or manual)
+ * - Uses `by_created` index for efficient deletion
+ * - No PII is stored in evaluations (only query text and model outputs)
  *
  * @module search/fusion/benchmark
  */
@@ -30,8 +47,40 @@ import {
   normalizeModelInput,
   getModelSpec,
   APPROVED_MODELS,
+  DEFAULT_MODEL,
   type ApprovedModel
 } from "../../agents/mcp_tools/models/modelResolver";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Current version of the judge prompt for tracking */
+const JUDGE_PROMPT_VERSION = "1.0.0";
+
+/** Pinned temperature for deterministic LLM output */
+const JUDGE_TEMPERATURE = 0;
+
+/** Retention period in milliseconds (90 days) */
+const RETENTION_PERIOD_MS = 90 * 24 * 60 * 60 * 1000;
+
+/**
+ * Get the server-controlled judge model.
+ * User cannot override this - it's determined by environment variable or default.
+ */
+function getServerJudgeModel(): ApprovedModel {
+  const envModel = process.env.SEARCH_JUDGE_MODEL;
+  if (envModel) {
+    const normalized = normalizeModelInput(envModel);
+    // Verify it's actually an approved model
+    if (APPROVED_MODELS.includes(normalized as ApprovedModel)) {
+      console.log(`[benchmark] Using env SEARCH_JUDGE_MODEL: ${normalized}`);
+      return normalized as ApprovedModel;
+    }
+    console.warn(`[benchmark] Invalid SEARCH_JUDGE_MODEL: ${envModel}, falling back to default`);
+  }
+  return DEFAULT_MODEL;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BENCHMARK TYPES
@@ -80,8 +129,14 @@ export interface JudgeInput {
 }
 
 /**
+ * Timestamp source type for freshness scoring.
+ * Helps judge understand reliability of timestamp.
+ */
+export type TimestampSource = "published" | "modified" | "crawled" | "unknown";
+
+/**
  * Simplified result item for judge evaluation.
- * Includes publishedAt for freshness scoring.
+ * Includes structured timestamp for freshness scoring.
  */
 export interface JudgeResultItem {
   rank: number;
@@ -90,7 +145,20 @@ export interface JudgeResultItem {
   snippet: string;
   url?: string;
   contentType: string;
-  /** ISO timestamp of publication (for freshness scoring) */
+  /**
+   * Timestamp in milliseconds since epoch (for freshness scoring).
+   * Parsed from publishedAt string for reliable comparison.
+   */
+  timestampMs?: number;
+  /**
+   * Source of the timestamp for reliability assessment.
+   * - "published": Original publication date (most reliable)
+   * - "modified": Last modification date
+   * - "crawled": When we fetched it (least reliable for freshness)
+   * - "unknown": No timestamp available
+   */
+  timestampSource: TimestampSource;
+  /** @deprecated Use timestampMs + timestampSource instead */
   publishedAt?: string;
 }
 
@@ -126,7 +194,7 @@ export interface JudgeRubric {
 }
 
 /**
- * Judge evaluation result
+ * Judge evaluation result with determinism metadata.
  */
 export interface JudgeResult {
   /** Overall pass/fail */
@@ -149,6 +217,14 @@ export interface JudgeResult {
   suggestions: string[];
   /** Timestamp */
   evaluatedAt: number;
+  /** Version of the judge prompt used (for reproducibility) */
+  judgePromptVersion: string;
+  /** Raw LLM response for replay/debugging */
+  rawResponse?: string;
+  /** Model used for evaluation */
+  judgeModel: ApprovedModel;
+  /** Temperature used (should always be 0 for determinism) */
+  temperature: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -375,8 +451,24 @@ function parseJudgeResponse(response: string, rubric: JudgeRubric): JudgeResult 
 /**
  * Evaluate search quality using LLM-as-judge.
  *
- * Uses modelResolver to ensure only approved models are used for evaluation.
- * Supports ground truth validation with expectedKeyFacts and constraints.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * SECURITY: Judge model is SERVER-CONTROLLED
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * The judge model is NOT user-configurable. It is determined by:
+ * 1. Environment variable: SEARCH_JUDGE_MODEL
+ * 2. Default fallback: gpt-5.2
+ *
+ * This prevents users from selecting expensive/slow models for evaluation.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DETERMINISM: Temperature pinned to 0
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * For reproducible evaluations:
+ * - Temperature is pinned to 0 (deterministic output)
+ * - judgePromptVersion is stored with each evaluation
+ * - Raw LLM response is stored for replay/debugging
  */
 export const evaluateSearch = action({
   args: {
@@ -389,8 +481,7 @@ export const evaluateSearch = action({
     /** Constraints that results must satisfy */
     constraints: v.optional(v.array(v.string())),
     maxResults: v.optional(v.number()),
-    /** Judge model - must be an approved model alias (default: gpt-5.2) */
-    model: v.optional(v.string()),
+    // NOTE: No 'model' arg - judge model is server-controlled
   },
   returns: v.object({
     judgeInput: v.any(),
@@ -398,12 +489,16 @@ export const evaluateSearch = action({
     searchResponse: v.any(),
     /** The resolved model alias used for evaluation */
     judgeModel: v.string(),
+    /** Version of the judge prompt used */
+    judgePromptVersion: v.string(),
+    /** Temperature used (always 0 for determinism) */
+    temperature: v.number(),
   }),
   handler: async (ctx, args) => {
     const mode = args.mode || "balanced";
 
-    // Resolve judge model via modelResolver (ensures only approved models)
-    const judgeModel = normalizeModelInput(args.model);
+    // SERVER-CONTROLLED judge model (not user-configurable)
+    const judgeModel = getServerJudgeModel();
     const modelSpec = getModelSpec(judgeModel);
 
     console.log(`[evaluateSearch] Evaluating query: "${args.query}" in ${mode} mode`);
@@ -433,6 +528,7 @@ export const evaluateSearch = action({
     const prompt = buildJudgePrompt(judgeInput, DEFAULT_RUBRIC);
 
     // Determine API endpoint and headers based on provider
+    // DETERMINISM: Temperature pinned to 0 for reproducible evaluations
     let llmResponse: string;
 
     if (modelSpec.provider === "openai") {
@@ -448,7 +544,7 @@ export const evaluateSearch = action({
             { role: "system", content: "You are an expert search quality evaluator. Respond only with valid JSON." },
             { role: "user", content: prompt },
           ],
-          temperature: 0.1,
+          temperature: JUDGE_TEMPERATURE, // Pinned to 0 for determinism
           max_tokens: 1500,
         }),
       });
@@ -471,6 +567,7 @@ export const evaluateSearch = action({
         body: JSON.stringify({
           model: modelSpec.sdkId,
           max_tokens: 1500,
+          temperature: JUDGE_TEMPERATURE, // Pinned to 0 for determinism
           messages: [
             { role: "user", content: `You are an expert search quality evaluator. Respond only with valid JSON.\n\n${prompt}` },
           ],
@@ -492,7 +589,7 @@ export const evaluateSearch = action({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: `You are an expert search quality evaluator. Respond only with valid JSON.\n\n${prompt}` }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 1500 },
+            generationConfig: { temperature: JUDGE_TEMPERATURE, maxOutputTokens: 1500 }, // Pinned to 0 for determinism
           }),
         }
       );
@@ -508,28 +605,42 @@ export const evaluateSearch = action({
       throw new Error(`Unsupported provider: ${modelSpec.provider}`);
     }
 
-    // 4. Parse judge result
+    // 4. Parse judge result with determinism metadata
     const judgeResult = parseJudgeResponse(llmResponse, DEFAULT_RUBRIC);
 
-    // 5. Save evaluation artifact
+    // Augment with determinism metadata
+    const augmentedJudgeResult: JudgeResult = {
+      ...judgeResult,
+      judgePromptVersion: JUDGE_PROMPT_VERSION,
+      rawResponse: llmResponse,
+      judgeModel,
+      temperature: JUDGE_TEMPERATURE,
+    };
+
+    // 5. Save evaluation artifact with determinism metadata
     await ctx.runMutation(internal.domains.search.fusion.benchmark.saveEvaluation, {
       evaluationId: judgeInput.evaluationId,
       query: args.query,
       mode,
       judgeModel,
+      judgePromptVersion: JUDGE_PROMPT_VERSION,
+      rawResponse: llmResponse,
       judgeInput: JSON.stringify(judgeInput),
-      judgeResult: JSON.stringify(judgeResult),
-      pass: judgeResult.pass,
-      overallScore: judgeResult.overallScore,
+      judgeResult: JSON.stringify(augmentedJudgeResult),
+      pass: augmentedJudgeResult.pass,
+      overallScore: augmentedJudgeResult.overallScore,
     });
 
-    console.log(`[evaluateSearch] Result: ${judgeResult.pass ? "PASS" : "FAIL"} (score: ${judgeResult.overallScore.toFixed(2)})`);
+    console.log(`[evaluateSearch] Result: ${augmentedJudgeResult.pass ? "PASS" : "FAIL"} (score: ${augmentedJudgeResult.overallScore.toFixed(2)})`);
+    console.log(`[evaluateSearch] Determinism: model=${judgeModel}, promptVersion=${JUDGE_PROMPT_VERSION}, temp=${JUDGE_TEMPERATURE}`);
 
     return {
       judgeInput,
-      judgeResult,
+      judgeResult: augmentedJudgeResult,
       searchResponse,
       judgeModel,
+      judgePromptVersion: JUDGE_PROMPT_VERSION,
+      temperature: JUDGE_TEMPERATURE,
     };
   },
 });
@@ -538,7 +649,7 @@ export const evaluateSearch = action({
  * Save evaluation artifact to database.
  *
  * Stores complete evaluation data for analysis and iteration.
- * Includes judgeModel for reproducibility.
+ * Includes determinism metadata for reproducibility.
  */
 export const saveEvaluation = internalMutation({
   args: {
@@ -547,6 +658,10 @@ export const saveEvaluation = internalMutation({
     mode: v.string(),
     /** The approved model alias used for evaluation */
     judgeModel: v.string(),
+    /** Version of the judge prompt used */
+    judgePromptVersion: v.string(),
+    /** Raw LLM response for replay/debugging */
+    rawResponse: v.string(),
     judgeInput: v.string(),
     judgeResult: v.string(),
     pass: v.boolean(),
@@ -558,12 +673,54 @@ export const saveEvaluation = internalMutation({
       query: args.query,
       mode: args.mode,
       judgeModel: args.judgeModel,
+      judgePromptVersion: args.judgePromptVersion,
+      rawResponse: args.rawResponse,
       judgeInput: args.judgeInput,
       judgeResult: args.judgeResult,
       pass: args.pass,
       overallScore: args.overallScore,
       createdAt: Date.now(),
     });
+  },
+});
+
+/**
+ * Cleanup old evaluations based on retention policy.
+ *
+ * Deletes evaluations older than RETENTION_PERIOD_MS (90 days).
+ * Uses by_created index for efficient deletion.
+ *
+ * Can be called manually or scheduled via cron.
+ */
+export const cleanupOldEvaluations = internalMutation({
+  args: {},
+  returns: v.object({
+    deleted: v.number(),
+    cutoffDate: v.string(),
+  }),
+  handler: async (ctx) => {
+    const cutoffMs = Date.now() - RETENTION_PERIOD_MS;
+    const cutoffDate = new Date(cutoffMs).toISOString();
+
+    console.log(`[cleanupOldEvaluations] Deleting evaluations older than ${cutoffDate}`);
+
+    // Query old evaluations using the by_created index
+    const oldEvaluations = await ctx.db
+      .query("searchEvaluations")
+      .withIndex("by_created", (q) => q.lt("createdAt", cutoffMs))
+      .collect();
+
+    // Delete each old evaluation
+    for (const evaluation of oldEvaluations) {
+      await ctx.db.delete(evaluation._id);
+    }
+
+    console.log(`[cleanupOldEvaluations] Deleted ${oldEvaluations.length} evaluations`);
+
+    return {
+      deleted: oldEvaluations.length,
+      cutoffDate,
+    };
   },
 });
 

@@ -210,6 +210,10 @@ export const fusionSearch = action({
 
 /**
  * Quick search using fast mode (single source, no fusion).
+ *
+ * Returns a versioned FusionSearchPayload for consistency with fusionSearch.
+ *
+ * @returns FusionSearchPayload with kind="fusion_search_results" and version=1
  */
 export const quickSearch = action({
   args: {
@@ -219,7 +223,7 @@ export const quickSearch = action({
     threadId: v.optional(v.string()),
     skipRateLimit: v.optional(v.boolean()),
   },
-  returns: v.array(searchResultValidator),
+  returns: fusionSearchPayloadValidator,
   handler: async (ctx, args) => {
     // Check rate limit (unless explicitly skipped)
     if (!args.skipRateLimit) {
@@ -251,7 +255,8 @@ export const quickSearch = action({
     // Persist observability data
     await persistObservability(ctx, args.query, response, args.userId, args.threadId, false);
 
-    return response.results;
+    // Return versioned payload (same as fusionSearch for consistency)
+    return wrapSearchResponse(response);
   },
 });
 

@@ -1305,6 +1305,8 @@ const searchEvaluations = defineTable({
   query: v.string(),                        // Search query evaluated
   mode: v.string(),                         // Search mode (fast/balanced/comprehensive)
   judgeModel: v.optional(v.string()),       // Approved model alias used for evaluation
+  judgePromptVersion: v.optional(v.string()), // Version of judge prompt for reproducibility
+  rawResponse: v.optional(v.string()),      // Raw LLM response for replay/debugging
   judgeInput: v.string(),                   // JSON-serialized JudgeInput
   judgeResult: v.string(),                  // JSON-serialized JudgeResult
   pass: v.boolean(),                        // Overall pass/fail
