@@ -10,41 +10,11 @@ import type { ActionCtx } from "../../_generated/server";
 import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Agent } from "@convex-dev/agent";
-import { components } from "../../_generated/api";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { getLlmModel } from "../../../shared/llm/modelCatalog";
+import { createCoordinatorAgent } from "./core/coordinatorAgent";
+import { DEFAULT_MODEL, normalizeModelInput } from "./mcp_tools/models";
 
-// Helper to get the appropriate language model based on model name
-// Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
-function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) {
-    return anthropic(modelName);
-  }
-  if (modelName.startsWith("gemini-")) {
-    return google(modelName);
-  }
-  return openai.chat(modelName);
-}
-
-// Define the agent configuration (simplified version of FastChatAgent)
-const createChatAgent = (model: string) => new Agent(components.agent, {
-  name: "FastChatAgent",
-  languageModel: getLanguageModel(model),
-  instructions: `You are a helpful AI assistant with access to the user's documents, tasks, events, and media files.
-  
-  CRITICAL BEHAVIOR RULES:
-  1. BE PROACTIVE - Don't ask for clarification when you can take reasonable action
-  2. USE CONTEXT - If a query is ambiguous, make a reasonable assumption and act
-  3. COMPLETE WORKFLOWS - When a user asks for multiple actions, complete ALL of them
-  
-  Always provide clear, helpful responses.`,
-  // We can add tools here if needed, but for now let's start with basic chat
-  // to fix the end-to-end flow.
-  tools: {},
-});
+// Agent-mode chat should use the same CoordinatorAgent wiring as streaming mode.
+const createChatAgent = (model: string) => createCoordinatorAgent(model);
 
 /**
  * Utility function to safely extract and validate user ID from authentication
@@ -100,7 +70,7 @@ export const createThreadWithMessageInternal = internalAction({
   },
   handler: async (ctx, args): Promise<{ success: boolean; threadId: string; messageId?: string }> => {
     const { userId, message, model } = args;
-    const modelName = model || getLlmModel("chat", "openai");
+    const modelName = normalizeModelInput(model ?? DEFAULT_MODEL);
     const chatAgent = createChatAgent(modelName);
 
     // Create agent thread
@@ -110,7 +80,7 @@ export const createThreadWithMessageInternal = internalAction({
     const threadId = await ctx.runMutation(internal.domains.agents.agentChat.createThread, {
       userId,
       title: message.slice(0, 50) + (message.length > 50 ? "..." : ""),
-      model: model,
+      model: modelName,
       agentThreadId,
     });
 
@@ -137,7 +107,6 @@ export const continueThread = action({
     message: v.string(),
   },
   handler: async (ctx, args) => {
-    const chatAgent = createChatAgent("gpt-5-chat-latest");
     let agentThreadId = args.threadId;
 
     // Check if the threadId is a chatThreadsStream ID
@@ -152,6 +121,22 @@ export const continueThread = action({
     if (streamThread && streamThread.agentThreadId) {
       agentThreadId = streamThread.agentThreadId;
     }
+
+    // Resolve per-thread model (stored on the linked stream thread if available)
+    let modelName = DEFAULT_MODEL;
+    try {
+      const streamThreadByAgentId = await ctx.runQuery(
+        internal.domains.agents.agentChat.getStreamThreadByAgentThreadId,
+        { agentThreadId }
+      );
+      if (streamThreadByAgentId?.model) {
+        modelName = normalizeModelInput(streamThreadByAgentId.model);
+      }
+    } catch (err) {
+      console.warn("[agentChatActions.continueThread] Failed to resolve thread model, using default.", err);
+    }
+
+    const chatAgent = createChatAgent(modelName);
 
     // Save the user message
     const { messageId } = await chatAgent.saveMessage(ctx, {
@@ -174,4 +159,3 @@ export const continueThread = action({
     };
   },
 });
-

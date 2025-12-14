@@ -206,3 +206,19 @@ export const getStreamThread = internalQuery({
   },
 });
 
+/**
+ * Internal query to get a streaming thread by agent thread ID.
+ * Used by actions to resolve per-thread settings (e.g., selected model).
+ */
+export const getStreamThreadByAgentThreadId = internalQuery({
+  args: {
+    agentThreadId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("chatThreadsStream")
+      .withIndex("by_agentThreadId", (q) => q.eq("agentThreadId", args.agentThreadId))
+      .order("desc")
+      .first();
+  },
+});

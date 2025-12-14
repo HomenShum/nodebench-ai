@@ -99,6 +99,29 @@ You can ask me to help you set up tracked topics or check your research feeds.`;
             response += `**Goal:** ${brief.goal}\n\n`;
             response += `**Progress:** ${passingCount} passing / ${failingCount} failing / ${pendingCount} pending\n\n`;
 
+            // Include top feed headlines if available (grounding for "today's news" requests)
+            const topFeedItems: any[] = Array.isArray((brief as any)?.context?.topFeedItems)
+                ? ((brief as any).context.topFeedItems as any[])
+                : [];
+
+            if (topFeedItems.length > 0) {
+                response += `**Top Headlines (from NodeBench live feed)**\n\n`;
+                topFeedItems.slice(0, 8).forEach((item, idx) => {
+                    const title = item?.title ?? "Untitled";
+                    const source = item?.source ?? "Unknown";
+                    const publishedAt = item?.publishedAt ?? "";
+                    const url = item?.url ?? "";
+                    const summary = typeof item?.summary === "string" ? item.summary.trim() : "";
+
+                    response += `${idx + 1}. ${title}\n`;
+                    response += `   - Source: ${source}${publishedAt ? ` | Published: ${publishedAt}` : ""}\n`;
+                    if (summary) response += `   - Summary: ${summary.slice(0, 200)}${summary.length > 200 ? "..." : ""}\n`;
+                    if (url) response += `   - URL: ${url}\n`;
+                    response += `\n`;
+                });
+                response += `---\n`;
+            }
+
             if (features.length === 0) {
                 response += `No tasks were generated for this brief.`;
                 return response;
@@ -151,6 +174,76 @@ The brief query failed. This might be due to:
 
 Please try again or check the system logs.`;
         }
+    },
+});
+
+/**
+ * Get the latest items from the shared NodeBench live feed.
+ *
+ * This is the primary grounding tool for questions like:
+ * - "What's in today's news?"
+ * - "Top headlines today"
+ * - "What happened in AI today?"
+ *
+ * Unlike web search tools, this requires no external API key and reflects the
+ * app's continuously ingested sources (HN, GitHub, ArXiv, RSS, etc).
+ */
+export const getLiveFeed = createTool({
+    description: `Get the latest items from NodeBench's live intelligence feed.
+
+Use this for "today's news"/"latest headlines"/"what's happening" questions.
+Returns REAL items ingested by the system (Hacker News, GitHub, Dev.to, ArXiv, Reddit, RSS).
+
+If the user asks for a timeframe, set hoursBack accordingly.
+If the user asks for a category, set category to filter.
+`,
+
+    args: z.object({
+        hoursBack: z.number().optional().default(24).describe("How far back to look, in hours (default: 24)."),
+        limit: z.number().optional().default(10).describe("Max items to return (default: 10)."),
+        type: z.enum(["news", "signal", "dossier", "repo", "product"]).optional().describe("Optional feed type filter."),
+        category: z.enum(["tech", "ai_ml", "startups", "products", "opensource", "finance", "research"]).optional().describe("Optional feed category filter."),
+    }),
+
+    handler: async (ctx, args): Promise<string> => {
+        const hoursBack = Math.max(1, Math.min(168, args.hoursBack ?? 24)); // 1h..7d
+        const limit = Math.max(1, Math.min(25, args.limit ?? 10)); // hard cap for UI readability
+
+        const now = new Date();
+        const from = new Date(now.getTime() - hoursBack * 60 * 60 * 1000).toISOString();
+        const to = now.toISOString();
+
+        const items: any[] = await ctx.runQuery(api.feed.getRecent, {
+            limit: Math.max(limit, 10),
+            from,
+            to,
+            ...(args.type ? { type: args.type as any } : {}),
+            ...(args.category ? { category: args.category as any } : {}),
+        });
+
+        if (!items || items.length === 0) {
+            return `No feed items found in the last ${hoursBack} hours${args.category ? ` for category "${args.category}"` : ""}.`;
+        }
+
+        const header = `Latest feed items (last ${hoursBack}h, ${items.length} found):`;
+        const lines: string[] = [header, ""];
+
+        for (const [idx, item] of items.slice(0, limit).entries()) {
+            const title = item?.title ?? "Untitled";
+            const source = item?.source ?? "Unknown";
+            const category = item?.category ?? "n/a";
+            const publishedAt = item?.publishedAt ?? "unknown";
+            const summary = typeof item?.summary === "string" ? item.summary.trim() : "";
+            const url = item?.url ?? "";
+
+            lines.push(`${idx + 1}. ${title}`);
+            lines.push(`   Source: ${source} | Category: ${category} | Published: ${publishedAt}`);
+            if (summary) lines.push(`   Summary: ${summary.slice(0, 240)}${summary.length > 240 ? "..." : ""}`);
+            if (url) lines.push(`   URL: ${url}`);
+            lines.push("");
+        }
+
+        return lines.join("\n").trim();
     },
 });
 

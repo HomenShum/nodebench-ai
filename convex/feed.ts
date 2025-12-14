@@ -117,6 +117,66 @@ export const getTrending = query({
   },
 });
 
+// Get recent items ordered by published time (most recent first).
+// Useful for "today's news" and time-bounded summaries.
+export const getRecent = query({
+  args: {
+    limit: v.optional(v.number()),
+    from: v.optional(v.string()), // ISO string (inclusive)
+    to: v.optional(v.string()), // ISO string (inclusive)
+    type: v.optional(v.union(
+      v.literal("news"),
+      v.literal("signal"),
+      v.literal("dossier"),
+      v.literal("repo"),
+      v.literal("product"),
+    )),
+    category: v.optional(v.union(
+      v.literal("tech"),
+      v.literal("ai_ml"),
+      v.literal("startups"),
+      v.literal("products"),
+      v.literal("opensource"),
+      v.literal("finance"),
+      v.literal("research"),
+    )),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 20;
+    const from = args.from;
+    const to = args.to;
+
+    const qBase =
+      from && to
+        ? ctx.db
+            .query("feedItems")
+            .withIndex("by_published", (q) =>
+              q.gte("publishedAt", from).lte("publishedAt", to),
+            )
+        : from
+          ? ctx.db
+              .query("feedItems")
+              .withIndex("by_published", (q) => q.gte("publishedAt", from))
+          : to
+            ? ctx.db
+                .query("feedItems")
+                .withIndex("by_published", (q) => q.lte("publishedAt", to))
+            : ctx.db.query("feedItems").withIndex("by_published");
+
+    let q = qBase;
+
+    // Optional filters (post-index). This may scan within the bounded range.
+    if (args.type) {
+      q = q.filter((q) => q.eq(q.field("type"), args.type));
+    }
+    if (args.category) {
+      q = q.filter((q) => q.eq(q.field("category"), args.category));
+    }
+
+    return await q.order("desc").take(limit);
+  },
+});
+
 // ============================================================================
 // 2. INTERNAL MUTATION: Save items to DB (with deduplication)
 // ============================================================================
@@ -1095,4 +1155,3 @@ export const ingestDevToInternal = internalAction({
     } catch { return { status: "error", ingested: 0, checked: 0 }; }
   }
 });
-

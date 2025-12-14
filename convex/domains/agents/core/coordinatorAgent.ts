@@ -56,12 +56,14 @@ import {
 
 import {
   getDailyBrief,
+  getLiveFeed,
   getUserContext,
   getSystemDateTime,
 } from "../../../tools/context/nodebenchContextTools";
 
 // Import direct-access tools (for simple operations)
 import { linkupSearch } from "../../../tools/media/linkupSearch";
+import { fusionSearch, quickSearch } from "../../../tools/search";
 import { youtubeSearch } from "../../../tools/media/youtubeSearch";
 // Data access tools for calendar/tasks/folder operations
 import { listTasks, createTask, updateTask, listEvents, createEvent, getFolderContents } from "../../../tools/integration/dataAccessTools";
@@ -279,11 +281,14 @@ export const createCoordinatorAgent = (
     // setActiveSection is wrapped below to update sectionIdRef
 
     getDailyBrief,
+    getLiveFeed,
     getUserContext,
     getSystemDateTime,
 
     // === DIRECT ACCESS TOOLS ===
     linkupSearch,
+    fusionSearch,
+    quickSearch,
     youtubeSearch,
     externalOrchestratorTool,
     ...dataAccessTools,
@@ -370,6 +375,15 @@ Use tools (GAM memory, research, SEC, web) when:
 - The request involves a company, person, sector, or theme
 - The request mentions SEC, 10-K, funding, investors, valuations, or financial data
 - You need to verify something or are uncertain → prefer tools over guessing
+
+## REAL-TIME NEWS (MANDATORY)
+
+If the user asks about current events, "today's news", "latest headlines", or "what happened today":
+1. Call \`getSystemDateTime\` for the current date.
+2. Call \`getLiveFeed({ hoursBack: 24, limit: 10 })\` to ground the answer in our live feed.
+3. If the feed is empty or the user wants broader web coverage, use \`fusionSearch\` (or \`linkupSearch\`) with date filters.
+
+Never respond with "I don't have access to live news/the internet". If a tool is unavailable, explain that limitation and offer the closest alternative.
 
 ## IMPORTANT
 

@@ -32,6 +32,7 @@ import { RichMediaSection } from './RichMediaSection';
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from './DocumentActionCard';
 import { extractMediaFromText, type ExtractedMedia } from './utils/mediaExtractor';
 import type { SpawnedAgent } from './types/agent';
+import type { AgentOpenOptions } from '@/features/agents/context/FastAgentContext';
 
 import type {
   Message,
@@ -48,6 +49,10 @@ interface FastAgentPanelProps {
   selectedDocumentIds?: Id<"documents">[];
   initialThreadId?: string | null; // Allow external components to set the active thread
   variant?: 'overlay' | 'sidebar';
+  /** Contextual open options from FastAgentContext (prefill/autosend/context docs/urls). */
+  openOptions?: AgentOpenOptions | null;
+  /** Called after openOptions has been applied (prevents duplicate processing). */
+  onOptionsConsumed?: () => void;
 }
 
 /**
@@ -71,6 +76,8 @@ export function FastAgentPanel({
   selectedDocumentIds: _selectedDocumentIds,
   initialThreadId,
   variant = 'overlay',
+  openOptions = null,
+  onOptionsConsumed,
 }: FastAgentPanelProps) {
   // ========== AUTH ==========
   const { isAuthenticated } = useConvexAuth();
@@ -89,11 +96,15 @@ export function FastAgentPanel({
   );
   const [showDocumentSelector, setShowDocumentSelector] = useState(false);
 
+  // Contextual-open handling (FastAgentContext.openWithContext)
+  const lastHandledOpenRequestIdRef = useRef<string | null>(null);
+  const [pendingAutoSend, setPendingAutoSend] = useState<null | { requestId: string; message: string }>(null);
+
   // Chat mode: 'agent' (non-streaming) or 'agent-streaming' (with streaming output)
   const [chatMode, setChatMode] = useState<'agent' | 'agent-streaming'>(() => {
     // Load from localStorage
     const saved = localStorage.getItem('fastAgentPanel.chatMode');
-    return (saved === 'agent-streaming' || saved === 'agent') ? saved : 'agent';
+    return (saved === 'agent-streaming' || saved === 'agent') ? saved : 'agent-streaming';
   });
 
   // Settings
@@ -251,6 +262,51 @@ export function FastAgentPanel({
       setActiveThreadId(initialThreadId);
     }
   }, [initialThreadId, activeThreadId]);
+
+  // Apply openOptions once per requestId, and optionally auto-send.
+  useEffect(() => {
+    if (!isOpen) return;
+    const requestId = openOptions?.requestId;
+    if (!requestId) return;
+    if (lastHandledOpenRequestIdRef.current === requestId) return;
+    lastHandledOpenRequestIdRef.current = requestId;
+
+    const contextDocIds = (openOptions?.contextDocumentIds ?? []).map(String).filter(Boolean);
+    if (contextDocIds.length > 0) {
+      setSelectedDocumentIds((prev) => {
+        const next = new Set(prev);
+        for (const id of contextDocIds) next.add(id);
+        return next;
+      });
+    }
+
+    const initial = typeof openOptions?.initialMessage === "string" ? openOptions.initialMessage.trim() : "";
+    const titleLine = typeof openOptions?.contextTitle === "string" && openOptions.contextTitle.trim()
+      ? `Context: ${openOptions.contextTitle.trim()}`
+      : "";
+
+    const urlLines = (openOptions?.contextWebUrls ?? [])
+      .map((u) => (typeof u === "string" ? u.trim() : ""))
+      .filter(Boolean)
+      .map((u) => `- ${u}`)
+      .join("\n");
+
+    const extraContext = [titleLine, urlLines ? `URLs:\n${urlLines}` : ""].filter(Boolean).join("\n\n");
+    const message = initial ? (extraContext ? `${initial}\n\n${extraContext}` : initial) : "";
+
+    if (!message) {
+      // Only context docs (no prompt) - mark consumed so it doesn't re-run.
+      onOptionsConsumed?.();
+      return;
+    }
+
+    // Start a new chat for contextual requests to avoid cross-thread leakage.
+    setActiveThreadId(null);
+    setAttachedFiles([]);
+    setInput(message);
+    setChatMode("agent-streaming");
+    setPendingAutoSend({ requestId, message });
+  }, [isOpen, openOptions, onOptionsConsumed]);
 
   // ========== CONVEX QUERIES & MUTATIONS ==========
   // Agent mode: Using @convex-dev/agent component
@@ -686,6 +742,21 @@ export function FastAgentPanel({
     streamingThread,
     autoNameThread,
   ]);
+
+  // Auto-send contextual open prompt once streaming mode is active.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!pendingAutoSend) return;
+    if (chatMode !== "agent-streaming") return;
+    if (isStreaming) return;
+
+    const { message, requestId } = pendingAutoSend;
+    if (openOptions?.requestId && openOptions.requestId !== requestId) return;
+
+    handleSendMessage(message);
+    setPendingAutoSend(null);
+    onOptionsConsumed?.();
+  }, [isOpen, pendingAutoSend, chatMode, isStreaming, openOptions?.requestId, handleSendMessage, onOptionsConsumed]);
 
   // No client heuristics; coordinator-only routing
 

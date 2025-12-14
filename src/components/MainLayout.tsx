@@ -69,7 +69,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   // Removed MCP panel persistence and shortcut (no AIChatPanel)
 
   // Sync Fast Agent panel state with global context
-  const { registerExternalState } = useFastAgent();
+  const { registerExternalState, options: fastAgentOpenOptions, clearOptions: clearFastAgentOptions } = useFastAgent();
   const showFastAgentRef = useRef(showFastAgent);
   showFastAgentRef.current = showFastAgent;
 
@@ -711,6 +711,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               selectedDocumentIds={selectedDocumentIdsForAgent}
               initialThreadId={fastAgentThreadId}
               variant="sidebar"
+              openOptions={fastAgentOpenOptions}
+              onOptionsConsumed={clearFastAgentOptions}
             />
           </div>
         )}
@@ -725,6 +727,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           selectedDocumentIds={selectedDocumentIdsForAgent}
           initialThreadId={fastAgentThreadId}
           variant="overlay"
+          openOptions={fastAgentOpenOptions}
+          onOptionsConsumed={clearFastAgentOptions}
         />
       </div>
 
@@ -756,4 +760,3 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     </div>
   );
 }
-

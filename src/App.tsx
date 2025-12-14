@@ -35,6 +35,8 @@ function GlobalFastAgentPanel() {
       isOpen={isOpen}
       onClose={handleClose}
       variant="overlay"
+      openOptions={options}
+      onOptionsConsumed={clearOptions}
     />
   );
 }

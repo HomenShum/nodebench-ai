@@ -12,6 +12,8 @@ import React, { createContext, useContext, useState, useCallback, ReactNode, use
 
 /** Options for opening the agent with context */
 export interface AgentOpenOptions {
+  /** Unique identifier for this open request (used to prevent duplicate auto-sends) */
+  requestId?: string;
   /** Pre-filled initial message/prompt */
   initialMessage?: string;
   /** Document IDs to load as context */
@@ -68,6 +70,15 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
 
   const isOpen = externalGetter ? externalGetter() : internalIsOpen;
 
+  const withRequestId = useCallback((opts: AgentOpenOptions): AgentOpenOptions => {
+    if (opts.requestId) return opts;
+    const requestId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    return { ...opts, requestId };
+  }, []);
+
   const setIsOpen = useCallback((open: boolean) => {
     if (externalSetter) {
       externalSetter(open);
@@ -78,15 +89,15 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
 
   const open = useCallback((opts?: AgentOpenOptions) => {
     if (opts) {
-      setOptions(opts);
+      setOptions(withRequestId(opts));
     }
     setIsOpen(true);
-  }, [setIsOpen]);
+  }, [setIsOpen, withRequestId]);
 
   const openWithContext = useCallback((opts: AgentOpenOptions) => {
-    setOptions(opts);
+    setOptions(withRequestId(opts));
     setIsOpen(true);
-  }, [setIsOpen]);
+  }, [setIsOpen, withRequestId]);
 
   const close = useCallback(() => setIsOpen(false), [setIsOpen]);
   const toggle = useCallback(() => setIsOpen(!isOpen), [setIsOpen, isOpen]);
@@ -147,4 +158,3 @@ export function useFastAgentSync(
 }
 
 export default FastAgentContext;
-

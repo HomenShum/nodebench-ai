@@ -493,8 +493,6 @@ function WelcomeLandingInner({
     return extractScrollySectionsFromDoc(candidate);
   }, [documents]);
 
-  const scrollyData = dossierSections ?? undefined;
-
   // ============================================================================
   // LIVE FEED: Central Newsstand data from Hacker News, ArXiv, RSS, etc.
   // "Write Once, Read Many" - shared across all users, free forever
@@ -503,6 +501,13 @@ function WelcomeLandingInner({
     limit: feedLimit,
     ...(selectedCategory ? { category: selectedCategory as any } : {})
   });
+
+  // Daily brief memory (Initializer/Worker agent output) - drives "Today's Briefing" content
+  const latestBriefMemory = useQuery(api.domains.research.dailyBriefMemoryQueries.getLatestMemory);
+  const latestBriefTaskResults = useQuery(
+    api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+    latestBriefMemory ? { memoryId: latestBriefMemory._id } : "skip"
+  );
 
   // AI-enriched data: Simulate sentiment and relevance scores
   // In production, these would come from AI classification endpoints
@@ -1862,10 +1867,74 @@ While commercial fusion is still years away, the pace of innovation has accelera
     );
   }
 
-  // Scrolly data - cast imported JSON to proper type
-  const scrollySections = useMemo(() => {
+  // Scrolly data: Prefer real dossier/doc-derived sections, then daily brief memory, then live feed, then static fallback.
+  const scrollySections = useMemo((): ScrollySection[] => {
+    if (dossierSections && dossierSections.length > 0) return dossierSections;
+
+    const briefTopFeed: any[] = Array.isArray((latestBriefMemory as any)?.context?.topFeedItems)
+      ? ((latestBriefMemory as any).context.topFeedItems as any[])
+      : [];
+
+    const taskResults: any[] = Array.isArray(latestBriefTaskResults) ? latestBriefTaskResults : [];
+    const resultsByTaskId = new Map<string, any>();
+    taskResults.forEach((r) => {
+      if (!r?.taskId) return;
+      if (!resultsByTaskId.has(r.taskId)) resultsByTaskId.set(r.taskId, r);
+    });
+
+    const briefFeatures: any[] = Array.isArray((latestBriefMemory as any)?.features)
+      ? ((latestBriefMemory as any).features as any[])
+      : [];
+
+    const deepDives = briefFeatures
+      .map((f) => {
+        const result = f?.id ? resultsByTaskId.get(f.id) : null;
+        const resultMarkdown = typeof result?.resultMarkdown === "string" ? result.resultMarkdown : "";
+        if (!resultMarkdown) return null;
+        return {
+          title: (f?.name ?? f?.id ?? "Brief Task") as string,
+          content: resultMarkdown,
+        };
+      })
+      .filter(Boolean)
+      .slice(0, 4) as Array<{ title: string; content: string }>;
+
+    const mapFeedItemToSection = (item: any, idx: number, includeDeepDives: boolean): ScrollySection => {
+      const source = item?.source ?? "Live Feed";
+      const title = item?.title ?? `Story ${idx + 1}`;
+      const summary = typeof item?.summary === "string" ? item.summary.trim() : "";
+      const publishedAt = typeof item?.publishedAt === "string" ? item.publishedAt : "";
+      const publishedLabel = publishedAt ? new Date(publishedAt).toLocaleString() : "";
+      const score = typeof item?.score === "number" ? item.score : 50;
+
+      const body = [
+        summary || `Top item from ${source}.`,
+        [source, publishedLabel].filter(Boolean).join(" • "),
+      ].filter(Boolean);
+
+      return {
+        id: typeof item?.sourceId === "string" ? item.sourceId : `brief-${idx}`,
+        meta: { date: idx === 0 ? "Today's Briefing" : source, title },
+        content: { body, deepDives: includeDeepDives ? deepDives : [] },
+        dashboard: {
+          phaseLabel: source,
+          kpis: [{ label: "Heat", value: score, unit: "pts", color: "bg-slate-900" }],
+          marketSentiment: Math.min(100, Math.max(0, Math.round(score % 100))),
+          activeRegion: "Global",
+        },
+      };
+    };
+
+    if (briefTopFeed.length > 0) {
+      return briefTopFeed.slice(0, 3).map((item, idx) => mapFeedItemToSection(item, idx, idx === 0));
+    }
+
+    if (liveFeed && liveFeed.length > 0) {
+      return liveFeed.slice(0, 3).map((item, idx) => mapFeedItemToSection(item, idx, false));
+    }
+
     return researchStreamData as ScrollySection[];
-  }, []);
+  }, [dossierSections, latestBriefMemory, latestBriefTaskResults, liveFeed]);
 
   // Main Content Area - shared between embedded and standalone modes
   const mainContentArea = (
