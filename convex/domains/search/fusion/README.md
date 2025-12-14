@@ -196,11 +196,11 @@ Example log output:
    - [x] LLM-as-judge integration for search quality evaluation (`evaluateSearch` action)
    - [x] Pass/fail scoring based on relevance criteria (weighted scoring with 0.7 threshold)
 
-9. **Advanced Features**
-   - [ ] Result deduplication by content similarity
-   - [ ] Query expansion for better recall
-   - [ ] Source-specific relevance boosting
-   - [ ] User preference learning for result ranking
+9. **Advanced Features** ✅
+   - [x] Result deduplication by content similarity (`deduplicateResults` with Jaccard similarity)
+   - [x] Query expansion for better recall (`expandQuery` with synonym mapping)
+   - [x] Source-specific relevance boosting (`applySourceBoosts` with query-type detection)
+   - [x] User preference learning for result ranking (`updatePreferencesFromInteractions`, `applyRecencyBias`)
 
 ## New Files Added
 

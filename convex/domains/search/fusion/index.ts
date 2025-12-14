@@ -66,3 +66,18 @@ export type {
   JudgeResult,
 } from "./benchmark";
 export { toJudgeInput } from "./benchmark";
+
+// Advanced Features
+export type {
+  UserSearchPreferences,
+  ExpandedQuery,
+  UserInteraction,
+} from "./advanced";
+export {
+  deduplicateResults,
+  expandQuery,
+  applySourceBoosts,
+  applyRecencyBias,
+  updatePreferencesFromInteractions,
+  DEFAULT_USER_PREFERENCES,
+} from "./advanced";
