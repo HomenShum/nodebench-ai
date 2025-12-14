@@ -180,14 +180,13 @@ Example log output:
    - [x] Source attribution badges - 7 source types with icons and colors
    - Created `FusedSearchResults.tsx` component in FastAgentPanel
 
-### Medium Priority (Remaining)
-
-7. **Python MCP Server (Pattern 5)**
-   - [ ] Create `mcp/python/` directory structure
-   - [ ] Implement ConvexClient wrapper for Python
-   - [ ] Create `servers/research/server.py` with FastMCP
-   - [ ] Iterative search with reflection loops
-   - [ ] Security model: avoid broad admin keys, constrain callable functions
+7. **Python MCP Server (Pattern 5)** ✅
+   - [x] Create `python-mcp-servers/research/` directory structure
+   - [x] Implement SecureConvexClient wrapper with function allowlist
+   - [x] Create `research/server.py` with FastAPI
+   - [x] Iterative search with reflection loops (quick_search, fusion_search tools)
+   - [x] Security model: explicit ALLOWED_QUERIES/MUTATIONS/ACTIONS sets
+   - [x] Docker support with docker-compose.yml
 
 ### Lower Priority
 

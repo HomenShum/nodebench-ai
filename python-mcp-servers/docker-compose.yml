@@ -54,6 +54,34 @@ services:
       retries: 3
       start_period: 40s
 
+  research:
+    build:
+      context: ./research
+      dockerfile: Dockerfile
+    container_name: research-mcp-server
+    ports:
+      - "8002:8002"
+    environment:
+      - RESEARCH_PORT=8002
+      - RESEARCH_HOST=0.0.0.0
+      - CONVEX_URL=${CONVEX_URL}
+      - MCP_SECRET=${MCP_SECRET:-nodebench_dev_secret}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    env_file:
+      - .env
+    volumes:
+      - ./research:/app
+      - ./shared:/app/shared
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8002/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 networks:
   default:
     name: mcp-servers-network

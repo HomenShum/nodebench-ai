@@ -119,11 +119,22 @@ docker-compose down
 - `GET /admin/available_tools` - List available tools
 - `POST /tools/execute` - Execute a tool
 
-### Research Server (Future)
+### Research Server
 
-**Port**: 8002  
-**Status**: ⏳ Planned  
-**Purpose**: Web scraping, content extraction, research automation
+**Port**: 8002
+**Status**: ✅ Implemented
+**Purpose**: Iterative research with Convex integration and security model
+
+**Features**:
+- Secure Convex client with function allowlist
+- Iterative search with reflection loops
+- Multi-source fusion search
+- Context initialization and task tracking
+
+**Endpoints**:
+- `GET /health` - Health check
+- `GET /tools/list` - List available tools
+- `POST /tools/execute` - Execute a research tool
 
 ### Newsletter Server (Future)
 
