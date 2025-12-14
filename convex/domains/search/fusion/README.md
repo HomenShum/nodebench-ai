@@ -214,7 +214,7 @@ Example log output:
    - [x] **AUDIT**: Pipeline integration in orchestrator (correct order)
    - [x] **AUDIT**: Preference learning marked as FUTURE WORK (UI events not emitted)
 
-## Production Hardening (December 2024)
+## Production Hardening (December 2025)
 
 ### Pipeline Order (Cost-Optimized)
 
@@ -317,8 +317,26 @@ Structured logging at pipeline completion:
 
 | Flag | Default | Description |
 |------|---------|-------------|
+| `ENABLE_FUSION_SEARCH` | `true` | **Master kill switch** - Set to `false` to disable all fusion search |
 | `ENABLE_EMBEDDING_DEDUP` | `false` | Enable embedding-based deduplication (requires vector DB) |
 | `SEARCH_JUDGE_MODEL` | `gpt-5.2` | Server-side judge model for evaluations |
+
+#### Kill Switch Usage
+
+To disable fusion search in production (emergency):
+
+```bash
+# Via Convex environment variables
+npx convex env set ENABLE_FUSION_SEARCH false
+
+# To re-enable
+npx convex env set ENABLE_FUSION_SEARCH true
+```
+
+When disabled, `fusionSearch` and `quickSearch` will throw:
+```
+"Fusion search is currently disabled. Please try again later or contact support."
+```
 
 ### Caps and Limits
 
@@ -340,3 +358,61 @@ Structured logging at pipeline completion:
 | `rateLimiter.ts` | Rate limiting and concurrency control |
 | `cache.ts` | TTL-based result caching |
 
+## Release: v1.0.0-fusion-search (December 2025)
+
+### Changelog
+
+**Features:**
+- Multi-source search fusion with 7 adapters (LinkUp, SEC, RAG, Documents, YouTube, arXiv, News)
+- RRF (Reciprocal Rank Fusion) for result combination
+- LLM reranking for comprehensive mode
+- Versioned payload contract (`FusionSearchPayload` v1)
+- Runtime validation with detailed error messages
+- Staged deduplication (URL → title → Jaccard)
+- Query expansion with synonym mapping
+- Source-specific relevance boosting
+
+**Observability:**
+- Correlation IDs for end-to-end tracing
+- Per-source metrics and timing
+- Structured logging for pipeline events
+- Query expansion event logging
+
+**Operational:**
+- Feature flag kill switch (`ENABLE_FUSION_SEARCH`)
+- 90-day retention policy with weekly cleanup cron
+- Rate limiting (per-user, per-provider, per-thread)
+- TTL-based caching (5-15 min by mode)
+
+**Testing:**
+- Contract verification tests
+- Legacy fallback tests
+- Partial failure tests
+- Rerank gating tests
+- Version compatibility tests
+
+### Rollback Procedure
+
+If issues are detected in production:
+
+1. **Immediate (Kill Switch):**
+   ```bash
+   npx convex env set ENABLE_FUSION_SEARCH false
+   ```
+
+2. **Revert to Previous Version:**
+   ```bash
+   git revert HEAD~N  # Where N is commits since last stable
+   npx convex deploy
+   ```
+
+3. **Verify Rollback:**
+   - Check Convex dashboard for deployment status
+   - Verify fusion search returns disabled error
+   - Monitor error rates in observability logs
+
+### Known Limitations
+
+- Streaming not implemented (returns complete results)
+- Preference learning requires UI event integration (FUTURE WORK)
+- Embedding-based deduplication requires vector DB setup

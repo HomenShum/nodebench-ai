@@ -56,6 +56,93 @@ export const MEMORY_FLAGS = {
 
 export type MemoryFlagKey = keyof typeof MEMORY_FLAGS;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FUSION SEARCH FEATURE FLAGS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fusion Search Feature Flags
+ *
+ * Kill switches and feature gates for the multi-source search fusion system.
+ *
+ * Environment variable overrides:
+ * - ENABLE_FUSION_SEARCH: Master kill switch (default: true)
+ * - ENABLE_EMBEDDING_DEDUP: Embedding-based deduplication (default: false)
+ * - SEARCH_JUDGE_MODEL: Override judge model for benchmarks
+ */
+export const FUSION_SEARCH_FLAGS = {
+  /**
+   * Master kill switch for fusion search.
+   * When false, fusionSearch and quickSearch will throw an error.
+   * Set via ENABLE_FUSION_SEARCH environment variable.
+   */
+  ENABLE_FUSION_SEARCH: true,
+
+  /**
+   * Enable embedding-based deduplication (expensive, high quality).
+   * Set via ENABLE_EMBEDDING_DEDUP environment variable.
+   */
+  ENABLE_EMBEDDING_DEDUP: false,
+
+  /**
+   * Enable LLM reranking for comprehensive mode.
+   * Can be disabled to reduce costs during high load.
+   */
+  ENABLE_LLM_RERANKING: true,
+
+  /**
+   * Enable query expansion for financial/research queries.
+   * Can be disabled to reduce latency.
+   */
+  ENABLE_QUERY_EXPANSION: true,
+
+  /**
+   * Maximum results to pass to reranker (cost control).
+   */
+  RERANK_TOP_K: 20,
+};
+
+export type FusionSearchFlagKey = keyof typeof FUSION_SEARCH_FLAGS;
+
+/**
+ * Check if fusion search is enabled.
+ * Reads from environment variable ENABLE_FUSION_SEARCH if available.
+ *
+ * @returns true if fusion search is enabled
+ */
+export function isFusionSearchEnabled(): boolean {
+  // Check environment variable override (server-side only)
+  if (typeof process !== "undefined" && process.env?.ENABLE_FUSION_SEARCH !== undefined) {
+    return process.env.ENABLE_FUSION_SEARCH !== "false" && process.env.ENABLE_FUSION_SEARCH !== "0";
+  }
+  return FUSION_SEARCH_FLAGS.ENABLE_FUSION_SEARCH;
+}
+
+/**
+ * Check if embedding deduplication is enabled.
+ * Reads from environment variable ENABLE_EMBEDDING_DEDUP if available.
+ *
+ * @returns true if embedding dedup is enabled
+ */
+export function isEmbeddingDedupEnabled(): boolean {
+  if (typeof process !== "undefined" && process.env?.ENABLE_EMBEDDING_DEDUP !== undefined) {
+    return process.env.ENABLE_EMBEDDING_DEDUP === "true" || process.env.ENABLE_EMBEDDING_DEDUP === "1";
+  }
+  return FUSION_SEARCH_FLAGS.ENABLE_EMBEDDING_DEDUP;
+}
+
+/**
+ * Get a fusion search flag value.
+ *
+ * @param flag - Flag key to check
+ * @returns Flag value
+ */
+export function getFusionSearchFlag<K extends FusionSearchFlagKey>(
+  flag: K
+): typeof FUSION_SEARCH_FLAGS[K] {
+  return FUSION_SEARCH_FLAGS[flag];
+}
+
 /**
  * Simple hash function for consistent user bucketing.
  */

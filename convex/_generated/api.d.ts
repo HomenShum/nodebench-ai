@@ -202,6 +202,8 @@ import type * as domains_search_fusion_adapters_newsAdapter from "../domains/sea
 import type * as domains_search_fusion_adapters_ragAdapter from "../domains/search/fusion/adapters/ragAdapter.js";
 import type * as domains_search_fusion_adapters_secAdapter from "../domains/search/fusion/adapters/secAdapter.js";
 import type * as domains_search_fusion_adapters_youtubeAdapter from "../domains/search/fusion/adapters/youtubeAdapter.js";
+import type * as domains_search_fusion_advanced from "../domains/search/fusion/advanced.js";
+import type * as domains_search_fusion_benchmark from "../domains/search/fusion/benchmark.js";
 import type * as domains_search_fusion_cache from "../domains/search/fusion/cache.js";
 import type * as domains_search_fusion_index from "../domains/search/fusion/index.js";
 import type * as domains_search_fusion_observability from "../domains/search/fusion/observability.js";
@@ -269,6 +271,7 @@ import type * as schema_toolSearchSchema from "../schema/toolSearchSchema.js";
 import type * as tags from "../tags.js";
 import type * as tags_actions from "../tags_actions.js";
 import type * as tests_fastAgentPanelStreamingTests from "../tests/fastAgentPanelStreamingTests.js";
+import type * as tests_fusionSearchContractTests from "../tests/fusionSearchContractTests.js";
 import type * as tools_arbitrage_analyzeWithArbitrage from "../tools/arbitrage/analyzeWithArbitrage.js";
 import type * as tools_arbitrage_index from "../tools/arbitrage/index.js";
 import type * as tools_calendarIcs from "../tools/calendarIcs.js";
@@ -543,6 +546,8 @@ declare const fullApi: ApiFromModules<{
   "domains/search/fusion/adapters/ragAdapter": typeof domains_search_fusion_adapters_ragAdapter;
   "domains/search/fusion/adapters/secAdapter": typeof domains_search_fusion_adapters_secAdapter;
   "domains/search/fusion/adapters/youtubeAdapter": typeof domains_search_fusion_adapters_youtubeAdapter;
+  "domains/search/fusion/advanced": typeof domains_search_fusion_advanced;
+  "domains/search/fusion/benchmark": typeof domains_search_fusion_benchmark;
   "domains/search/fusion/cache": typeof domains_search_fusion_cache;
   "domains/search/fusion/index": typeof domains_search_fusion_index;
   "domains/search/fusion/observability": typeof domains_search_fusion_observability;
@@ -610,6 +615,7 @@ declare const fullApi: ApiFromModules<{
   tags: typeof tags;
   tags_actions: typeof tags_actions;
   "tests/fastAgentPanelStreamingTests": typeof tests_fastAgentPanelStreamingTests;
+  "tests/fusionSearchContractTests": typeof tests_fusionSearchContractTests;
   "tools/arbitrage/analyzeWithArbitrage": typeof tools_arbitrage_analyzeWithArbitrage;
   "tools/arbitrage/index": typeof tools_arbitrage_index;
   "tools/calendarIcs": typeof tools_calendarIcs;

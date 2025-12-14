@@ -138,6 +138,19 @@ crons.interval(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Search Fusion: Benchmark evaluation retention cleanup
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Cleanup old search evaluations weekly (90-day retention policy)
+// Runs Sunday at 5:00 AM UTC to avoid peak usage hours
+crons.weekly(
+  "cleanup search evaluations",
+  { dayOfWeek: "sunday", hourUTC: 5, minuteUTC: 0 },
+  internal.domains.search.fusion.benchmark.cleanupOldEvaluations,
+  {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Feed Ingestion Crons
 // ═══════════════════════════════════════════════════════════════════════════
 

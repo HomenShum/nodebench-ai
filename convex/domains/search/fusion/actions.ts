@@ -15,6 +15,7 @@ import { SearchOrchestrator } from "./orchestrator";
 import type { SearchMode, SearchSource, SearchResponse, FusionSearchPayload } from "./types";
 import { generateCacheKey, CACHE_TTL_MS } from "./cache";
 import { wrapSearchResponse, FUSION_SEARCH_PAYLOAD_VERSION } from "./types";
+import { isFusionSearchEnabled } from "../../../lib/featureFlags";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VALIDATORS
@@ -119,6 +120,16 @@ export const fusionSearch = action({
   },
   returns: fusionSearchPayloadValidator,
   handler: async (ctx, args) => {
+    // ═══════════════════════════════════════════════════════════════════════
+    // KILL SWITCH CHECK
+    // ═══════════════════════════════════════════════════════════════════════
+    if (!isFusionSearchEnabled()) {
+      console.warn("[fusionSearch] DISABLED via ENABLE_FUSION_SEARCH=false");
+      throw new Error(
+        "Fusion search is currently disabled. Please try again later or contact support."
+      );
+    }
+
     const mode = (args.mode || "balanced") as SearchMode;
     const sources = (args.sources || []) as string[];
     console.log(`[fusionSearch] Query: "${args.query}", Mode: ${mode}`);
@@ -225,6 +236,16 @@ export const quickSearch = action({
   },
   returns: fusionSearchPayloadValidator,
   handler: async (ctx, args) => {
+    // ═══════════════════════════════════════════════════════════════════════
+    // KILL SWITCH CHECK
+    // ═══════════════════════════════════════════════════════════════════════
+    if (!isFusionSearchEnabled()) {
+      console.warn("[quickSearch] DISABLED via ENABLE_FUSION_SEARCH=false");
+      throw new Error(
+        "Fusion search is currently disabled. Please try again later or contact support."
+      );
+    }
+
     // Check rate limit (unless explicitly skipped)
     if (!args.skipRateLimit) {
       const rateLimitCheck = await ctx.runQuery(

@@ -42,7 +42,7 @@
 import { v } from "convex/values";
 import { action, internalMutation, internalQuery } from "../../../_generated/server";
 import { internal, api } from "../../../_generated/api";
-import type { SearchResponse, SearchSource } from "./types";
+import type { SearchResponse, SearchSource, FusionSearchPayload } from "./types";
 import {
   normalizeModelInput,
   getModelSpec,
@@ -292,6 +292,11 @@ export function toJudgeInput(
       contentType: r.contentType,
       // Include publishedAt for freshness scoring
       publishedAt: r.publishedAt,
+      // Parse timestamp for reliable comparison
+      timestampMs: r.publishedAt ? new Date(r.publishedAt).getTime() : undefined,
+      // Infer timestamp source from metadata or default to "unknown"
+      timestampSource: (r.metadata?.timestampSource as TimestampSource) ||
+        (r.publishedAt ? "published" : "unknown") as TimestampSource,
     })),
     expectedBehavior: options.expectedBehavior,
     groundTruth: options.groundTruth,
@@ -397,7 +402,11 @@ Respond in JSON format:
 /**
  * Parse LLM judge response
  */
-function parseJudgeResponse(response: string, rubric: JudgeRubric): JudgeResult {
+function parseJudgeResponse(
+  response: string,
+  rubric: JudgeRubric,
+  metadata: { judgeModel: ApprovedModel; rawResponse: string }
+): JudgeResult {
   try {
     // Extract JSON from response (handle markdown code blocks)
     const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -429,6 +438,10 @@ function parseJudgeResponse(response: string, rubric: JudgeRubric): JudgeResult 
       issues: Array.isArray(parsed.issues) ? parsed.issues : [],
       suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
       evaluatedAt: Date.now(),
+      judgePromptVersion: JUDGE_PROMPT_VERSION,
+      judgeModel: metadata.judgeModel,
+      temperature: JUDGE_TEMPERATURE,
+      rawResponse: metadata.rawResponse,
     };
   } catch (error) {
     console.error("[parseJudgeResponse] Failed to parse:", error);
@@ -440,6 +453,10 @@ function parseJudgeResponse(response: string, rubric: JudgeRubric): JudgeResult 
       issues: ["Evaluation failed to complete"],
       suggestions: [],
       evaluatedAt: Date.now(),
+      judgePromptVersion: JUDGE_PROMPT_VERSION,
+      judgeModel: metadata.judgeModel,
+      temperature: JUDGE_TEMPERATURE,
+      rawResponse: metadata.rawResponse,
     };
   }
 }
@@ -505,7 +522,7 @@ export const evaluateSearch = action({
     console.log(`[evaluateSearch] Judge model: ${judgeModel} (sdkId: ${modelSpec.sdkId})`);
 
     // 1. Execute the search
-    const searchPayload = await ctx.runAction(api.domains.search.fusion.actions.fusionSearch, {
+    const searchPayload: FusionSearchPayload = await ctx.runAction(api.domains.search.fusion.actions.fusionSearch, {
       query: args.query,
       mode,
       skipRateLimit: true,
@@ -513,7 +530,7 @@ export const evaluateSearch = action({
     });
 
     // Extract SearchResponse from versioned payload
-    const searchResponse = searchPayload.payload || searchPayload;
+    const searchResponse: SearchResponse = searchPayload.payload;
 
     // 2. Convert to JudgeInput with all ground truth fields
     const judgeInput = toJudgeInput(args.query, searchResponse, {
@@ -606,16 +623,10 @@ export const evaluateSearch = action({
     }
 
     // 4. Parse judge result with determinism metadata
-    const judgeResult = parseJudgeResponse(llmResponse, DEFAULT_RUBRIC);
-
-    // Augment with determinism metadata
-    const augmentedJudgeResult: JudgeResult = {
-      ...judgeResult,
-      judgePromptVersion: JUDGE_PROMPT_VERSION,
-      rawResponse: llmResponse,
+    const judgeResult = parseJudgeResponse(llmResponse, DEFAULT_RUBRIC, {
       judgeModel,
-      temperature: JUDGE_TEMPERATURE,
-    };
+      rawResponse: llmResponse,
+    });
 
     // 5. Save evaluation artifact with determinism metadata
     await ctx.runMutation(internal.domains.search.fusion.benchmark.saveEvaluation, {
@@ -626,17 +637,17 @@ export const evaluateSearch = action({
       judgePromptVersion: JUDGE_PROMPT_VERSION,
       rawResponse: llmResponse,
       judgeInput: JSON.stringify(judgeInput),
-      judgeResult: JSON.stringify(augmentedJudgeResult),
-      pass: augmentedJudgeResult.pass,
-      overallScore: augmentedJudgeResult.overallScore,
+      judgeResult: JSON.stringify(judgeResult),
+      pass: judgeResult.pass,
+      overallScore: judgeResult.overallScore,
     });
 
-    console.log(`[evaluateSearch] Result: ${augmentedJudgeResult.pass ? "PASS" : "FAIL"} (score: ${augmentedJudgeResult.overallScore.toFixed(2)})`);
+    console.log(`[evaluateSearch] Result: ${judgeResult.pass ? "PASS" : "FAIL"} (score: ${judgeResult.overallScore.toFixed(2)})`);
     console.log(`[evaluateSearch] Determinism: model=${judgeModel}, promptVersion=${JUDGE_PROMPT_VERSION}, temp=${JUDGE_TEMPERATURE}`);
 
     return {
       judgeInput,
-      judgeResult: augmentedJudgeResult,
+      judgeResult,
       searchResponse,
       judgeModel,
       judgePromptVersion: JUDGE_PROMPT_VERSION,

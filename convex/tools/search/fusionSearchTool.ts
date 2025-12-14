@@ -41,18 +41,21 @@ Examples:
     console.log(`[fusionSearch tool] Query: "${args.query}", Mode: ${args.mode}`);
 
     try {
-      const response = await ctx.runAction(api.domains.search.fusion.actions.fusionSearch, {
+      const fusionPayload = await ctx.runAction(api.domains.search.fusion.actions.fusionSearch, {
         query: args.query,
         mode: args.mode,
         maxTotal: args.maxResults,
       });
+
+      // Extract SearchResponse from versioned FusionSearchPayload
+      const response = fusionPayload.payload;
 
       if (response.results.length === 0) {
         return `No results found for "${args.query}". Try a different query or search mode.`;
       }
 
       // Format results for agent consumption
-      const formattedResults = response.results.map((r, i) => {
+      const formattedResults = response.results.map((r: { title: string; source: string; contentType: string; url?: string; snippet: string; publishedAt?: string }, i: number) => {
         const parts = [
           `${i + 1}. **${r.title}**`,
           `   Source: ${r.source} | Type: ${r.contentType}`,
@@ -99,16 +102,19 @@ Use this for simple queries where speed matters more than comprehensiveness.`,
     console.log(`[quickSearch tool] Query: "${args.query}"`);
 
     try {
-      const results = await ctx.runAction(api.domains.search.fusion.actions.quickSearch, {
+      const fusionPayload = await ctx.runAction(api.domains.search.fusion.actions.quickSearch, {
         query: args.query,
         maxResults: args.maxResults,
       });
+
+      // Extract results from versioned FusionSearchPayload
+      const results = fusionPayload.payload.results;
 
       if (results.length === 0) {
         return `No results found for "${args.query}".`;
       }
 
-      const formatted = results.map((r, i) => 
+      const formatted = results.map((r: { title: string; url?: string }, i: number) =>
         `${i + 1}. ${r.title}${r.url ? ` - ${r.url}` : ""}`
       );
 
