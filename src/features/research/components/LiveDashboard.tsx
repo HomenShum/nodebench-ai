@@ -23,9 +23,17 @@ import { buttonIcon, buttonSecondary } from "@/lib/buttonClasses";
  */
 export const LiveDashboard: React.FC<{
   fallbackData?: DashboardState;
-}> = ({ fallbackData }) => {
+  mode?: "live" | "controlled";
+}> = ({ fallbackData, mode = "live" }) => {
   const [selectedDate, setSelectedDate] = useBriefDateSelection();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  // Scrolly/story mode wants a stable "latest" snapshot for source summaries and
+  // renders the passed-in dashboard state (progressive charts) instead.
+  React.useEffect(() => {
+    if (mode !== "controlled") return;
+    if (selectedDate !== null) setSelectedDate(null);
+  }, [mode, selectedDate, setSelectedDate]);
 
   // Fetch latest snapshot or specific date
   const latestSnapshot = useQuery(
@@ -94,6 +102,57 @@ export const LiveDashboard: React.FC<{
   };
 
   const isViewingHistorical = selectedDate !== null;
+
+  // Controlled mode: always render the passed-in data (progressive charts),
+  // while still showing live source summaries when available.
+  if (mode === "controlled" && fallbackData) {
+    const lastUpdated = snapshot?.generatedAt ? formatBriefDateTime(snapshot.generatedAt) : null;
+    return (
+      <div className="relative">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div className="text-[10px] text-slate-500 font-mono">
+            {lastUpdated ? <span>Latest: {lastUpdated}</span> : <span>Loading live metrics…</span>}
+          </div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`${buttonSecondary} px-2 py-1 text-xs`}
+            title="Refresh dashboard metrics"
+          >
+            <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        <StickyDashboard data={fallbackData} />
+
+        {/* Source summary footer */}
+        {snapshot?.sourceSummary && (
+          <div className="mt-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-[9px] uppercase tracking-widest text-slate-400">
+                Data Sources
+              </div>
+              {availableDates.length > 0 && (
+                <div className="text-[9px] text-slate-500">
+                  {availableDates.length} day{availableDates.length !== 1 ? "s" : ""} available
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 text-[10px] text-slate-600">
+              {Object.entries(snapshot.sourceSummary.bySource || {}).map(([source, count]) => (
+                <span key={source} className="flex items-center gap-1">
+                  <span className="font-medium">{source}:</span>
+                  <span className="text-slate-500">{count as number}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Show loading state while fetching
   if (snapshot === undefined) {

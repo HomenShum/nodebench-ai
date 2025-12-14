@@ -63,9 +63,31 @@ export const initializeForSnapshot = internalAction({
       return { memoryId: existing._id };
     }
 
-    const feedItems: FeedItem[] = await ctx.runQuery(api.feed.get, {
-      limit: 100,
+    const dayStart = `${snapshot.dateString}T00:00:00.000Z`;
+    const dayEnd = `${snapshot.dateString}T23:59:59.999Z`;
+
+    // Prefer time-bounded data for "Today's Briefing" so we don't pull stale high-score items.
+    let feedItems: FeedItem[] = await ctx.runQuery(api.feed.getRecent, {
+      limit: 200,
+      from: dayStart,
+      to: dayEnd,
     });
+
+    // If ingest is sparse for the day, widen the window to the last 4 days.
+    if (feedItems.length < 12) {
+      const fromMs = new Date(`${snapshot.dateString}T00:00:00.000Z`).getTime() - 3 * 24 * 60 * 60 * 1000;
+      const from = new Date(fromMs).toISOString();
+      feedItems = await ctx.runQuery(api.feed.getRecent, {
+        limit: 200,
+        from,
+        to: dayEnd,
+      });
+    }
+
+    // Final fallback: trending-by-score.
+    if (feedItems.length === 0) {
+      feedItems = await ctx.runQuery(api.feed.get, { limit: 100 });
+    }
 
     const repoItems = feedItems.filter((i) => i.type === "repo").slice(0, 5);
     const paperItems = feedItems
@@ -204,4 +226,3 @@ export const initializeForSnapshot = internalAction({
     return { memoryId };
   },
 });
-

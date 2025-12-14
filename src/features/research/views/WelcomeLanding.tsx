@@ -52,6 +52,8 @@ import { OvernightMovesCard, type MoveItem } from "@/features/research/component
 import { DealListPanel, DealFlyout, type Deal } from "@/features/research/components/DealListPanel";
 import SourceFeed from "@/features/research/components/SourceFeed";
 import researchStreamData from "@/features/research/content/researchStream.json";
+import type { DashboardState } from "@/features/research/types";
+import { formatBriefDate, formatBriefMonthYear } from "@/lib/briefDate";
 
 const SAMPLE_DEALS: Deal[] = [
   {
@@ -507,6 +509,30 @@ function WelcomeLandingInner({
   const latestBriefTaskResults = useQuery(
     api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
     latestBriefMemory ? { memoryId: latestBriefMemory._id } : "skip"
+  );
+
+  // Latest brief date window for truly "today" content (UTC day boundary).
+  const dashboardHistory = useQuery(api.domains.research.dashboardQueries.getHistoricalSnapshots, { days: 7 });
+  const availableBriefDates = useMemo(() => {
+    const snapshots = Array.isArray(dashboardHistory) ? dashboardHistory : [];
+    const unique = [...new Set(snapshots.map((s: any) => s?.dateString).filter(Boolean))] as string[];
+    return unique.sort().reverse();
+  }, [dashboardHistory]);
+
+  const briefingDateString =
+    typeof (latestBriefMemory as any)?.dateString === "string"
+      ? ((latestBriefMemory as any).dateString as string)
+      : availableBriefDates[0] ?? null;
+
+  const briefRecentFeed = useQuery(
+    api.feed.getRecent,
+    briefingDateString
+      ? {
+          limit: 60,
+          from: `${briefingDateString}T00:00:00.000Z`,
+          to: `${briefingDateString}T23:59:59.999Z`,
+        }
+      : "skip",
   );
 
   // AI-enriched data: Simulate sentiment and relevance scores
@@ -1871,9 +1897,19 @@ While commercial fusion is still years away, the pace of innovation has accelera
   const scrollySections = useMemo((): ScrollySection[] => {
     if (dossierSections && dossierSections.length > 0) return dossierSections;
 
-    const briefTopFeed: any[] = Array.isArray((latestBriefMemory as any)?.context?.topFeedItems)
-      ? ((latestBriefMemory as any).context.topFeedItems as any[])
-      : [];
+    const memory: any = latestBriefMemory as any;
+    const snapshotSummary = memory?.context?.snapshotSummary;
+    const memoryDashboard = memory?.context?.dashboardMetrics as DashboardState | undefined;
+
+    const briefDate = typeof briefingDateString === "string" ? briefingDateString : null;
+    const briefDateLabel = briefDate ? formatBriefDate(briefDate) : "Today";
+    const briefMonthYear = briefDate
+      ? formatBriefMonthYear(new Date(`${briefDate}T00:00:00.000Z`).getTime())
+      : formatBriefMonthYear(Date.now());
+
+    const briefTopFeed: any[] = Array.isArray(memory?.context?.topFeedItems) ? (memory.context.topFeedItems as any[]) : [];
+    const recentFeed: any[] = Array.isArray(briefRecentFeed) ? (briefRecentFeed as any[]) : [];
+    const headlineCandidates = recentFeed.length ? recentFeed : briefTopFeed;
 
     const taskResults: any[] = Array.isArray(latestBriefTaskResults) ? latestBriefTaskResults : [];
     const resultsByTaskId = new Map<string, any>();
@@ -1882,22 +1918,294 @@ While commercial fusion is still years away, the pace of innovation has accelera
       if (!resultsByTaskId.has(r.taskId)) resultsByTaskId.set(r.taskId, r);
     });
 
-    const briefFeatures: any[] = Array.isArray((latestBriefMemory as any)?.features)
-      ? ((latestBriefMemory as any).features as any[])
-      : [];
+    const briefFeatures: any[] = Array.isArray(memory?.features) ? (memory.features as any[]) : [];
 
     const deepDives = briefFeatures
+      .slice(0, 6)
       .map((f) => {
+        const title = (f?.name ?? f?.id ?? "Brief Task") as string;
         const result = f?.id ? resultsByTaskId.get(f.id) : null;
-        const resultMarkdown = typeof result?.resultMarkdown === "string" ? result.resultMarkdown : "";
-        if (!resultMarkdown) return null;
-        return {
-          title: (f?.name ?? f?.id ?? "Brief Task") as string,
-          content: resultMarkdown,
-        };
+        const resultMarkdown = typeof result?.resultMarkdown === "string" ? result.resultMarkdown.trim() : "";
+        const content =
+          resultMarkdown ||
+          (f?.status === "completed"
+            ? "Completed — no notes captured."
+            : "Pending — run this follow-up from the Fast Agent panel.");
+        return { title, content };
       })
-      .filter(Boolean)
-      .slice(0, 4) as Array<{ title: string; content: string }>;
+      .filter((d) => Boolean(d?.title)) as Array<{ title: string; content: string }>;
+
+    // ---------------------------------------------------------------------
+    // 3-Act Story: Setup → Signals → Actions (with progressive charts)
+    // ---------------------------------------------------------------------
+    const canBuildStory =
+      Boolean(briefDate) ||
+      Boolean(snapshotSummary) ||
+      Boolean(memoryDashboard?.charts?.trendLine) ||
+      headlineCandidates.length > 0 ||
+      deepDives.length > 0;
+
+    if (canBuildStory) {
+      const fallbackTrending: any[] = Array.isArray(liveFeed) ? (liveFeed as any[]) : [];
+      const headlinePool = headlineCandidates.length ? headlineCandidates : fallbackTrending;
+      const headlines = headlinePool.filter((i) => i && typeof i.title === "string").slice(0, 4);
+
+      const hasSameDayHeadline =
+        !briefDate ||
+        headlines.some((i: any) => typeof i?.publishedAt === "string" && i.publishedAt.startsWith(briefDate));
+
+      const bySource: Record<string, number> =
+        snapshotSummary?.bySource && typeof snapshotSummary.bySource === "object" ? snapshotSummary.bySource : {};
+      const nonZeroSources = Object.entries(bySource).filter(([, count]) => typeof count === "number" && count > 0);
+      const sourcesCount = nonZeroSources.length;
+      const totalItems =
+        typeof snapshotSummary?.totalItems === "number" ? snapshotSummary.totalItems : (headlinePool?.length ?? 0);
+
+      const topSources = nonZeroSources
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 6)
+        .map(([source, count]) => `${source}: ${count}`);
+
+      const trendingTags = Array.isArray(snapshotSummary?.topTrending) ? (snapshotSummary.topTrending as string[]) : [];
+
+      const suggestedPrompts = [
+        "Suggested prompts",
+        "",
+        ...(headlines.length
+          ? [
+              `- Summarize impacts of: ${headlines[0]?.title}`,
+              `- Use Linkup + Fusion Search to find more context on today’s top themes (${briefDateLabel}).`,
+              "- Turn one story into a 1-page dossier with key risks, upside, and action items.",
+            ]
+          : [
+              `- Use Linkup + Fusion Search to pull today’s top themes (${briefDateLabel}).`,
+              "- Ask for a 3-act briefing: setup → signals → actions.",
+            ]),
+      ].join("\n");
+
+      const act3DeepDives = deepDives.length
+        ? [...deepDives, { title: "Next steps (Fast Agent)", content: suggestedPrompts }]
+        : [{ title: "Next steps (Fast Agent)", content: suggestedPrompts }];
+
+      const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+
+      const toMarketShare = (sourceCounts: Record<string, number>): DashboardState["charts"]["marketShare"] => {
+        const entries = Object.entries(sourceCounts).filter(([, v]) => typeof v === "number" && v > 0);
+        if (entries.length === 0) return [];
+        const total = entries.reduce((sum, [, v]) => sum + (v as number), 0) || 1;
+        const colors: Array<"black" | "accent" | "gray"> = ["black", "accent", "gray"];
+        return entries
+          .sort(([, a], [, b]) => (b as number) - (a as number))
+          .slice(0, 3)
+          .map(([label, value], idx) => ({
+            label,
+            value: Math.max(0, Math.min(100, Math.round(((value as number) / total) * 100))),
+            color: colors[idx] ?? "gray",
+          }));
+      };
+
+      const derivedCoverage = clamp(Math.round((totalItems / 2) * 1.0), 10, 100);
+      const topScore = headlines.reduce(
+        (max, item: any) => (typeof item?.score === "number" ? Math.max(max, item.score) : max),
+        0,
+      );
+      const derivedSignals = clamp(topScore || Math.round(derivedCoverage * 0.9), 10, 100);
+      const derivedDepth = clamp(Math.round((act3DeepDives.length / 7) * 100), 5, 100);
+
+      const fallbackBase: DashboardState = {
+        meta: { currentDate: briefMonthYear, timelineProgress: 0.1 },
+        charts: {
+          trendLine: {
+            title: "Briefing Pipeline",
+            xAxisLabels: ["Ingest", "Normalize", "Rank", "Synthesize", "Deep Dive", "Ship"],
+            series: [
+              {
+                id: "briefing-pipeline",
+                label: "Momentum",
+                type: "solid",
+                color: "accent",
+                data: [
+                  { value: clamp(derivedCoverage - 25, 0, 100) },
+                  { value: derivedCoverage },
+                  { value: clamp(derivedSignals - 10, 0, 100) },
+                  { value: derivedSignals },
+                  { value: derivedDepth },
+                  { value: clamp(derivedDepth + 5, 0, 100) },
+                ],
+              },
+            ],
+            visibleEndIndex: 1,
+            focusIndex: 1,
+            gridScale: { min: 0, max: 100 },
+          },
+          marketShare: toMarketShare(bySource),
+        },
+        techReadiness: memoryDashboard?.techReadiness ?? { existing: 0, emerging: 0, sciFi: 0 },
+        keyStats: [],
+        capabilities: memoryDashboard?.capabilities ?? [],
+        agentCount: memoryDashboard?.agentCount,
+      };
+
+      const baseDashboard: DashboardState = memoryDashboard?.charts?.trendLine ? memoryDashboard : fallbackBase;
+
+      const makeActDashboard = (actIndex: 0 | 1 | 2): DashboardState => {
+        const n = baseDashboard.charts?.trendLine?.xAxisLabels?.length ?? 0;
+        const end1 = clamp(Math.floor((n - 1) / 3), 1, Math.max(1, n - 1));
+        const end2 = clamp(Math.floor(((n - 1) * 2) / 3), end1 + 1, Math.max(end1 + 1, n - 1));
+        const ends = [end1, end2, Math.max(1, n - 1)] as const;
+        const visibleEndIndex = ends[actIndex];
+
+        const actTitles = ["Coverage & Freshness", "Signals", "Deep Dives"] as const;
+        const actKeyStats: DashboardState["keyStats"] =
+          actIndex === 0
+            ? [
+                { label: "Items", value: String(totalItems) },
+                { label: "Sources", value: String(sourcesCount || Object.keys(bySource).length || 0) },
+                { label: "Top Tags", value: trendingTags.slice(0, 2).join(", ") || "—" },
+              ]
+            : actIndex === 1
+              ? [
+                  { label: "Headlines", value: String(headlines.length || 0) },
+                  { label: "Top Heat", value: topScore ? `${topScore} pts` : "—" },
+                  { label: "Brief Date", value: briefDateLabel },
+                ]
+              : [
+                  { label: "Tasks", value: String(briefFeatures.length || 0) },
+                  { label: "Deep Dives", value: String(act3DeepDives.length || 0) },
+                  { label: "Ship", value: "Fast Agent" },
+                ];
+
+        return {
+          ...baseDashboard,
+          meta: {
+            ...(baseDashboard.meta ?? { currentDate: briefMonthYear, timelineProgress: 0 }),
+            currentDate: briefMonthYear,
+            timelineProgress: [0.25, 0.62, 0.96][actIndex],
+          },
+          charts: {
+            ...(baseDashboard.charts ?? fallbackBase.charts),
+            trendLine: {
+              ...(baseDashboard.charts?.trendLine ?? fallbackBase.charts.trendLine),
+              title: actTitles[actIndex],
+              visibleEndIndex,
+              focusIndex: visibleEndIndex,
+            },
+            marketShare: baseDashboard.charts?.marketShare?.length ? baseDashboard.charts.marketShare : toMarketShare(bySource),
+          },
+          keyStats: actKeyStats,
+        };
+      };
+
+      const act1Body: string[] = [
+        `Briefing for ${briefDateLabel}.`,
+        totalItems
+          ? `Coverage: ${totalItems} items across ${sourcesCount || Object.keys(bySource).length || 0} sources.`
+          : "Coverage: building…",
+        topSources.length ? `Top sources: ${topSources.join(" · ")}` : "",
+        trendingTags.length ? `Trending tags: ${trendingTags.slice(0, 5).join(", ")}` : "",
+      ].filter(Boolean);
+
+      const act2Body: string[] = [
+        !hasSameDayHeadline && briefDate
+          ? `No fresh items detected for ${briefDateLabel} yet — showing the most recent items in the current window.`
+          : `What’s new (as of ${briefDateLabel}):`,
+        ...headlines.flatMap((item: any) => {
+          const source = item?.source ?? "Live Feed";
+          const title = item?.title ?? "Untitled";
+          const summary = typeof item?.summary === "string" ? item.summary.trim() : "";
+          const publishedAt = typeof item?.publishedAt === "string" ? item.publishedAt : "";
+          const publishedLabel = publishedAt ? new Date(publishedAt).toLocaleString() : "";
+          const score = typeof item?.score === "number" ? item.score : null;
+
+          const metaBits = [source, publishedLabel, score !== null ? `${score} pts` : null].filter(Boolean);
+
+          return [
+            `${title}`,
+            summary ? summary : metaBits.join(" · "),
+            metaBits.length ? metaBits.join(" · ") : "",
+          ].filter(Boolean);
+        }),
+      ].filter(Boolean);
+
+      const act3Body: string[] = [
+        "Turn today’s signals into decisions.",
+        act3DeepDives.length ? "Open the follow-ups below to review or continue the work." : "Ask Fast Agent to generate follow-ups.",
+        "Tip: Ask Fast Agent to use Linkup + Fusion Search to enrich any headline with fresh sources.",
+      ];
+
+      const act1Dashboard = makeActDashboard(0);
+      const act2Dashboard = makeActDashboard(1);
+      const act3Dashboard = makeActDashboard(2);
+
+      return [
+        {
+          id: `brief-${briefDate ?? "today"}-act-1`,
+          meta: { date: "Today's Briefing", title: "Act I — Setup: Coverage & Freshness" },
+          content: { body: act1Body, deepDives: [] },
+          dashboard: {
+            phaseLabel: "Act I",
+            kpis: [
+              { label: "Items", value: totalItems || 0, unit: "", color: "bg-slate-900" },
+              { label: "Sources", value: sourcesCount || 0, unit: "", color: "bg-slate-600" },
+            ],
+            marketSentiment: derivedCoverage,
+            activeRegion: "Global",
+          },
+          timelineState: {
+            sectionId: "act-1-setup",
+            narrative: {
+              title: "Setup",
+              date_display: briefDateLabel,
+              summary: "What’s in scope and how fresh it is.",
+              body: "Coverage and source composition for today’s briefing.",
+            },
+            dashboard_state: act1Dashboard,
+          },
+        },
+        {
+          id: `brief-${briefDate ?? "today"}-act-2`,
+          meta: { date: "Signals", title: "Act II — Rising Action: What’s New Today" },
+          content: { body: act2Body, deepDives: [] },
+          dashboard: {
+            phaseLabel: "Act II",
+            kpis: [{ label: "Top Heat", value: derivedSignals, unit: "pts", color: "bg-slate-900" }],
+            marketSentiment: derivedSignals,
+            activeRegion: "Global",
+          },
+          timelineState: {
+            sectionId: "act-2-signals",
+            narrative: {
+              title: "Signals",
+              date_display: briefDateLabel,
+              summary: "The top stories and why they matter.",
+              body: "Key headlines from the most recent feed window.",
+            },
+            dashboard_state: act2Dashboard,
+          },
+        },
+        {
+          id: `brief-${briefDate ?? "today"}-act-3`,
+          meta: { date: "Actions", title: "Act III — Deep Dives: Turn Signals Into Moves" },
+          content: { body: act3Body, deepDives: act3DeepDives },
+          dashboard: {
+            phaseLabel: "Act III",
+            kpis: [{ label: "Tasks", value: briefFeatures.length || 0, unit: "", color: "bg-slate-900" }],
+            marketSentiment: derivedDepth,
+            activeRegion: "Global",
+          },
+          timelineState: {
+            sectionId: "act-3-actions",
+            narrative: {
+              title: "Actions",
+              date_display: briefDateLabel,
+              summary: "Follow-ups to deepen and ship.",
+              body: "Queue analyses and generate artifacts.",
+            },
+            dashboard_state: act3Dashboard,
+          },
+        },
+      ];
+    }
 
     const mapFeedItemToSection = (item: any, idx: number, includeDeepDives: boolean): ScrollySection => {
       const source = item?.source ?? "Live Feed";
@@ -1934,7 +2242,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
     }
 
     return researchStreamData as ScrollySection[];
-  }, [dossierSections, latestBriefMemory, latestBriefTaskResults, liveFeed]);
+  }, [dossierSections, latestBriefMemory, latestBriefTaskResults, liveFeed, briefRecentFeed, briefingDateString]);
 
   // Main Content Area - shared between embedded and standalone modes
   const mainContentArea = (

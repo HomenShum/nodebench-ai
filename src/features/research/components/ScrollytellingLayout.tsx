@@ -499,7 +499,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
         </div>
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
           <div className="sticky top-24 min-h-[400px]">
-            <LiveDashboard fallbackData={activeDashboard} />
+            <LiveDashboard mode="controlled" fallbackData={activeDashboard} />
           </div>
         </div>
       </div>
