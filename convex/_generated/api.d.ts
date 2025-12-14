@@ -97,6 +97,7 @@ import type * as domains_agents_mcp_tools_context_index from "../domains/agents/
 import type * as domains_agents_mcp_tools_index from "../domains/agents/mcp_tools/index.js";
 import type * as domains_agents_mcp_tools_models_healthcheck from "../domains/agents/mcp_tools/models/healthcheck.js";
 import type * as domains_agents_mcp_tools_models_index from "../domains/agents/mcp_tools/models/index.js";
+import type * as domains_agents_mcp_tools_models_migration from "../domains/agents/mcp_tools/models/migration.js";
 import type * as domains_agents_mcp_tools_models_modelResolver from "../domains/agents/mcp_tools/models/modelResolver.js";
 import type * as domains_agents_mcp_tools_tracking_index from "../domains/agents/mcp_tools/tracking/index.js";
 import type * as domains_agents_mcp_tools_tracking_taskTrackerTool from "../domains/agents/mcp_tools/tracking/taskTrackerTool.js";
@@ -437,6 +438,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/mcp_tools/index": typeof domains_agents_mcp_tools_index;
   "domains/agents/mcp_tools/models/healthcheck": typeof domains_agents_mcp_tools_models_healthcheck;
   "domains/agents/mcp_tools/models/index": typeof domains_agents_mcp_tools_models_index;
+  "domains/agents/mcp_tools/models/migration": typeof domains_agents_mcp_tools_models_migration;
   "domains/agents/mcp_tools/models/modelResolver": typeof domains_agents_mcp_tools_models_modelResolver;
   "domains/agents/mcp_tools/tracking/index": typeof domains_agents_mcp_tools_tracking_index;
   "domains/agents/mcp_tools/tracking/taskTrackerTool": typeof domains_agents_mcp_tools_tracking_taskTrackerTool;

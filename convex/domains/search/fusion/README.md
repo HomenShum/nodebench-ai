@@ -164,12 +164,16 @@ Example log output:
    - [x] Cache hit tracking for analytics
    - [x] Module: `cache.ts`, Table: `searchFusionCache`
 
-### Medium Priority
+### Medium Priority (COMPLETED ✅)
 
-5. **Persisted Normalization for Legacy Threads**
-   - [ ] Migrate legacy model strings in existing threads to normalized aliases
-   - [ ] One-time migration script
-   - [ ] Ensure backward compatibility during transition
+5. **Persisted Normalization for Legacy Threads** ✅
+   - [x] Migrate legacy model strings in existing threads to normalized aliases
+   - [x] One-time migration script (`mcp_tools/models/migration.ts`)
+   - [x] Ensure backward compatibility with LEGACY_ALIASES mapping
+   - [x] Dry-run mode with safety confirmation for actual migration
+   - Found 91 threads needing migration (gpt-5, gpt-5-chat-latest, gpt-5-mini, gpt-5.1)
+
+### Medium Priority (In Progress)
 
 6. **UI Behavior for Fused Results**
    - [ ] Show per-source facets (filter by source)

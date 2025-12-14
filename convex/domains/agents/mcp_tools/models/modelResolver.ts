@@ -177,6 +177,7 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "gpt-5": "gpt-5.2",
   "gpt-5-mini": "gpt-5.2",
   "gpt-5-nano": "gpt-5.2",
+  "gpt-5-chat-latest": "gpt-5.2",  // Found in legacy threads
   "gpt-4.1-mini": "gpt-5.2",
   "gpt-4.1-nano": "gpt-5.2",
   "gpt-4o": "gpt-5.2",

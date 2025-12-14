@@ -53,3 +53,8 @@ export {
   isModelAvailable,
   logHealthcheck,
 } from "./healthcheck";
+
+// Migration exports
+export {
+  type MigrationResult,
+} from "./migration";
