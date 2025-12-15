@@ -125,6 +125,9 @@
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.1.0",
     "tavily-mcp": "^0.2.9",
+    "vega": "^5.33.0",
+    "vega-embed": "^6.29.0",
+    "vega-lite": "^5.23.0",
     "xlsx": "^0.18.5",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.24.6"

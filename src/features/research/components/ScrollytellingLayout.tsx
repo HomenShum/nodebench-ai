@@ -5,8 +5,13 @@ import SmartLink from "./SmartLink";
 import DeepDiveAccordion from "./DeepDiveAccordion";
 import streamData from "@/features/research/content/researchStream.json";
 import LiveDashboard from "./LiveDashboard";
+import SafeVegaChart from "./SafeVegaChart";
 import type { DashboardState, StorySection } from "@/features/research/types";
+import { isUIFlagEnabled } from "../../../../convex/lib/featureFlags";
+import type { Signal, Action, VizArtifact } from "@/features/research/types/dailyBriefSchema";
 import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
+import { SignalList } from "./SignalCard";
+import { ActionList } from "./ActionCard";
 
 // Define a proper type to avoid JSON inference issues
 export interface ScrollySection {
@@ -15,6 +20,10 @@ export interface ScrollySection {
   content: {
     body: string[];
     deepDives: Array<{ title: string; content: string }>;
+    /** Optional: Structured signals for Act II (replaces raw body when present) */
+    signals?: Signal[];
+    /** Optional: Structured actions for Act III (replaces raw body when present) */
+    actions?: Action[];
   };
   dashboard: {
     phaseLabel: string;
@@ -25,6 +34,8 @@ export interface ScrollySection {
   dashboard_update?: DashboardState;
   timelineState?: StorySection;
   smartLinks?: Record<string, { summary: string; source?: string }>;
+  /** Optional section-specific visualization artifact (Vega-Lite) */
+  vizArtifact?: VizArtifact;
 }
 
 // Lightweight intersection observer hook to avoid external dependency
@@ -123,14 +134,33 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
         {section.meta.title}
       </h2>
 
-      {/* Narrative Body - Clean Sans */}
-      <div className="prose prose-base prose-slate text-slate-900 leading-relaxed max-w-none not-italic">
-        {section.content.body.map((paragraph, idx) => (
-          <p key={idx} className="mb-6 last:mb-0">
-            {parseSmartLinks(paragraph, (section.smartLinks ?? {}) as Record<string, { summary: string; source?: string }>)}
-          </p>
-        ))}
-      </div>
+      {/* Narrative Body */}
+      {section.content.body.length > 0 && (
+        <div className="prose prose-base prose-slate text-slate-900 leading-relaxed max-w-none not-italic">
+          {section.content.body.map((paragraph, idx) => (
+            <p key={idx} className="mb-6 last:mb-0">
+              {parseSmartLinks(
+                paragraph,
+                (section.smartLinks ?? {}) as Record<string, { summary: string; source?: string }>
+              )}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Act II: Structured Signals */}
+      {section.content.signals && section.content.signals.length > 0 && (
+        <div className="mt-6">
+          <SignalList signals={section.content.signals} />
+        </div>
+      )}
+
+      {/* Act III: Structured Actions */}
+      {section.content.actions && section.content.actions.length > 0 && (
+        <div className="mt-6">
+          <ActionList actions={section.content.actions} />
+        </div>
+      )}
 
       {section.content.deepDives.length > 0 && (
         <div className="mt-8 space-y-4">
@@ -149,9 +179,11 @@ interface ScrollytellingLayoutProps {
   isGuestMode?: boolean;
   /** If true, hides the HeroSection (useful when parent already has a hero) */
   hideHero?: boolean;
+  /** Callback when active act changes (for right-rail dashboard sync) */
+  onActChange?: (act: "actI" | "actII" | "actIII") => void;
 }
 
-export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data, isGuestMode, hideHero }) => {
+export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data, isGuestMode, hideHero, onActChange }) => {
   // Priority: props data > static fallback
   const sourceData = useMemo(() => {
     if (data && data.length) return data;
@@ -416,16 +448,19 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
     [sectionCount],
   );
   const initialDashboardData = useMemo(() => fallbackDashboardData(sourceData[0], 0), [fallbackDashboardData, sourceData]);
+  const initialVizArtifact = useMemo(() => (sourceData[0] as ScrollySection | undefined)?.vizArtifact ?? null, [sourceData]);
 
   const [activeLegacy, setActiveLegacy] = useState(initialLegacy);
   const [activeDashboard, setActiveDashboard] = useState<DashboardState>(initialDashboardData);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
+  const [activeVizArtifact, setActiveVizArtifact] = useState<VizArtifact | null>(initialVizArtifact);
 
   useEffect(() => {
     setActiveLegacy(initialLegacy);
     setActiveDashboard(initialDashboardData);
     setActiveSectionIndex(0);
-  }, [initialDashboardData, initialLegacy]);
+    setActiveVizArtifact(initialVizArtifact);
+  }, [initialDashboardData, initialLegacy, initialVizArtifact]);
 
   // Generate today's date for the header
   const todayFormatted = useMemo(() => {
@@ -492,6 +527,12 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
                 setActiveSectionIndex(idx);
                 setActiveLegacy(section.dashboard ?? initialLegacy);
                 setActiveDashboard(fallbackDashboardData(section, idx));
+                setActiveVizArtifact((section as ScrollySection).vizArtifact ?? null);
+                // Notify parent of act change for right-rail dashboard sync
+                if (onActChange) {
+                  const actMap: Record<number, "actI" | "actII" | "actIII"> = { 0: "actI", 1: "actII", 2: "actIII" };
+                  onActChange(actMap[idx] ?? "actI");
+                }
               }}
               isLast={idx === sourceData.length - 1}
             />
@@ -499,6 +540,10 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
         </div>
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
           <div className="sticky top-24 min-h-[400px]">
+            {/* VizArtifact rendering behind feature flag */}
+            {isUIFlagEnabled("ENABLE_VIZ_ARTIFACT") && activeVizArtifact && (
+              <SafeVegaChart artifact={activeVizArtifact} className="mb-3" />
+            )}
             <LiveDashboard mode="controlled" fallbackData={activeDashboard} />
           </div>
         </div>

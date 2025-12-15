@@ -181,6 +181,7 @@ import type * as domains_mcp_mcpClient from "../domains/mcp/mcpClient.js";
 import type * as domains_mcp_mcpLearning from "../domains/mcp/mcpLearning.js";
 import type * as domains_mcp_mcpMemory from "../domains/mcp/mcpMemory.js";
 import type * as domains_mcp_mcpPlans from "../domains/mcp/mcpPlans.js";
+import type * as domains_research_briefGenerator from "../domains/research/briefGenerator.js";
 import type * as domains_research_dailyBriefInitializer from "../domains/research/dailyBriefInitializer.js";
 import type * as domains_research_dailyBriefMemoryMutations from "../domains/research/dailyBriefMemoryMutations.js";
 import type * as domains_research_dailyBriefMemoryQueries from "../domains/research/dailyBriefMemoryQueries.js";
@@ -191,6 +192,7 @@ import type * as domains_research_dailyBriefWorker from "../domains/research/dai
 import type * as domains_research_dashboardMetrics from "../domains/research/dashboardMetrics.js";
 import type * as domains_research_dashboardMutations from "../domains/research/dashboardMutations.js";
 import type * as domains_research_dashboardQueries from "../domains/research/dashboardQueries.js";
+import type * as domains_research_executiveBrief from "../domains/research/executiveBrief.js";
 import type * as domains_research_publicDossier from "../domains/research/publicDossier.js";
 import type * as domains_research_publicDossierQueries from "../domains/research/publicDossierQueries.js";
 import type * as domains_search_fusion_actions from "../domains/search/fusion/actions.js";
@@ -525,6 +527,7 @@ declare const fullApi: ApiFromModules<{
   "domains/mcp/mcpLearning": typeof domains_mcp_mcpLearning;
   "domains/mcp/mcpMemory": typeof domains_mcp_mcpMemory;
   "domains/mcp/mcpPlans": typeof domains_mcp_mcpPlans;
+  "domains/research/briefGenerator": typeof domains_research_briefGenerator;
   "domains/research/dailyBriefInitializer": typeof domains_research_dailyBriefInitializer;
   "domains/research/dailyBriefMemoryMutations": typeof domains_research_dailyBriefMemoryMutations;
   "domains/research/dailyBriefMemoryQueries": typeof domains_research_dailyBriefMemoryQueries;
@@ -535,6 +538,7 @@ declare const fullApi: ApiFromModules<{
   "domains/research/dashboardMetrics": typeof domains_research_dashboardMetrics;
   "domains/research/dashboardMutations": typeof domains_research_dashboardMutations;
   "domains/research/dashboardQueries": typeof domains_research_dashboardQueries;
+  "domains/research/executiveBrief": typeof domains_research_executiveBrief;
   "domains/research/publicDossier": typeof domains_research_publicDossier;
   "domains/research/publicDossierQueries": typeof domains_research_publicDossierQueries;
   "domains/search/fusion/actions": typeof domains_search_fusion_actions;

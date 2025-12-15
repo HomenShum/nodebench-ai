@@ -2,19 +2,24 @@
 
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import ChartTooltip from "./ChartTooltip";
-import type { Annotation, ChartSeries, TrendLineConfig, TooltipPayload } from "@/features/research/types";
+import ChartTooltip, { type TooltipEvidence } from "./ChartTooltip";
+import type { Annotation, ChartSeries, ChartPoint, TrendLineConfig, TooltipPayload } from "@/features/research/types";
 
 interface ChartProps {
   config: TrendLineConfig;
   annotations?: Annotation[];
   onAnnotationHover?: (note: Annotation | null) => void;
+  /** Callback when user clicks a data point with linked evidence */
+  onEvidenceClick?: (evidenceId: string) => void;
+  /** Map of evidence ID -> evidence data for tooltip display */
+  evidenceMap?: Map<string, { id: string; title: string; source?: string; url?: string }>;
 }
 
 type HoveredPoint = {
   x: number;
   y: number;
   content: TooltipPayload;
+  linkedEvidenceIds?: string[];
 };
 
 const colorStyle = (series: ChartSeries) => {
@@ -28,8 +33,22 @@ const colorStyle = (series: ChartSeries) => {
   return { className: series.color ? series.color : "text-slate-800", stroke: "#1e293b", fill: "#1e293b" };
 };
 
-export const InteractiveLineChart: React.FC<ChartProps> = ({ config, annotations = [], onAnnotationHover }) => {
+export const InteractiveLineChart: React.FC<ChartProps> = ({
+  config,
+  annotations = [],
+  onAnnotationHover,
+  onEvidenceClick,
+  evidenceMap,
+}) => {
   const [hoveredData, setHoveredData] = useState<HoveredPoint | null>(null);
+
+  // Build linked evidence for tooltip from evidenceMap
+  const getLinkedEvidence = (linkedIds?: string[]): TooltipEvidence[] => {
+    if (!linkedIds?.length || !evidenceMap) return [];
+    return linkedIds
+      .map((id) => evidenceMap.get(id))
+      .filter(Boolean) as TooltipEvidence[];
+  };
 
   if (!config?.series?.length) {
     return <div className="w-full h-full rounded-md bg-slate-50" />;
@@ -178,7 +197,7 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({ config, annotations
                 cx={x}
                 cy={y}
                 r={12}
-                className="fill-transparent cursor-pointer"
+                className={`fill-transparent ${point.linkedEvidenceIds?.length ? "cursor-pointer" : "cursor-default"}`}
                 onMouseEnter={() => {
                   const fallbackTitle = config.xAxisLabels[i]
                     ? `${series.label} - ${config.xAxisLabels[i]}`
@@ -187,9 +206,18 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({ config, annotations
                     title: fallbackTitle,
                     body: `Value: ${point.value}`,
                   };
-                  setHoveredData({ x, y, content: tooltipContent });
+                  // Merge linkedEvidenceIds from both point and tooltip
+                  const linkedIds = point.linkedEvidenceIds ?? point.tooltip?.linkedEvidenceIds ?? [];
+                  setHoveredData({ x, y, content: tooltipContent, linkedEvidenceIds: linkedIds });
                 }}
                 onMouseLeave={() => setHoveredData(null)}
+                onClick={() => {
+                  // On click, scroll to first linked evidence
+                  const linkedIds = point.linkedEvidenceIds ?? point.tooltip?.linkedEvidenceIds ?? [];
+                  if (linkedIds.length > 0 && onEvidenceClick) {
+                    onEvidenceClick(linkedIds[0]);
+                  }
+                }}
               />
             </g>
           );
@@ -214,7 +242,7 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({ config, annotations
 
   return (
     <div className="relative w-full h-full">
-      <div className="absolute inset-0 pointer-events-none z-50">
+      <div className="absolute inset-0 z-50" style={{ pointerEvents: hoveredData?.linkedEvidenceIds?.length ? "auto" : "none" }}>
         <ChartTooltip
           active={!!hoveredData}
           data={
@@ -227,9 +255,12 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({ config, annotations
                     x: (hoveredData.x / width) * 100,
                     y: (hoveredData.y / height) * 100,
                   },
+                  kicker: hoveredData.content.kicker,
+                  linkedEvidence: getLinkedEvidence(hoveredData.linkedEvidenceIds),
                 }
               : null
           }
+          onEvidenceClick={onEvidenceClick}
         />
       </div>
 

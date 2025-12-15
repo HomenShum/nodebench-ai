@@ -104,6 +104,36 @@ export const FUSION_SEARCH_FLAGS = {
 
 export type FusionSearchFlagKey = keyof typeof FUSION_SEARCH_FLAGS;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// UI FEATURE FLAGS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * UI Feature Flags
+ *
+ * Feature gates for experimental UI components.
+ */
+export const UI_FLAGS = {
+  /**
+   * Enable VizArtifact rendering in StickyDashboard.
+   * When true, agent-emitted Vega-Lite specs will be rendered via SafeVegaChart.
+   * Requires sandbox validation (data.url rejection) to be in place.
+   */
+  ENABLE_VIZ_ARTIFACT: true,
+};
+
+export type UIFlagKey = keyof typeof UI_FLAGS;
+
+/**
+ * Check if a UI feature is enabled.
+ *
+ * @param flag - Flag key to check
+ * @returns Flag value
+ */
+export function isUIFlagEnabled(flag: UIFlagKey): boolean {
+  return UI_FLAGS[flag];
+}
+
 /**
  * Check if fusion search is enabled.
  * Reads from environment variable ENABLE_FUSION_SEARCH if available.

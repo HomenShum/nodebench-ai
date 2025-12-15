@@ -1,6 +1,14 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { ExternalLink, FileText } from "lucide-react";
+
+export interface TooltipEvidence {
+  id: string;
+  title: string;
+  source?: string;
+  url?: string;
+}
 
 export interface TooltipData {
   id: string;
@@ -9,18 +17,22 @@ export interface TooltipData {
   position?: { x: number; y: number };
   kicker?: string; // Optional category/type label
   sentiment?: "positive" | "negative" | "neutral";
+  /** Linked evidence items to display in tooltip */
+  linkedEvidence?: TooltipEvidence[];
 }
 
 interface TooltipProps {
   active: boolean;
   data: TooltipData | null;
+  /** Callback when user clicks "scroll to evidence" */
+  onEvidenceClick?: (evidenceId: string) => void;
 }
 
 /**
  * Enhanced ChartTooltip matching AI 2027 reference
- * Features: Dark slate/blue-gray background, rich content structure, better positioning
+ * Features: Dark slate/blue-gray background, rich content structure, evidence links
  */
-export const ChartTooltip = ({ active, data }: TooltipProps) => {
+export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) => {
   if (!data) return null;
 
   // Sentiment-based accent colors (AI 2027 style)
@@ -96,6 +108,48 @@ export const ChartTooltip = ({ active, data }: TooltipProps) => {
             <p className="relative font-sans text-[11px] leading-relaxed text-slate-300">
               {data.description}
             </p>
+
+            {/* Evidence links section */}
+            {data.linkedEvidence && data.linkedEvidence.length > 0 && (
+              <div className="relative mt-3 pt-2 border-t border-slate-700/50">
+                <div className="flex items-center gap-1 mb-1.5">
+                  <FileText size={10} className={colors.accentText} />
+                  <span className="font-mono text-[8px] uppercase tracking-wide text-slate-400">
+                    Sources ({data.linkedEvidence.length})
+                  </span>
+                </div>
+                <div className="space-y-1 max-h-24 overflow-y-auto">
+                  {data.linkedEvidence.slice(0, 3).map((ev) => (
+                    <button
+                      key={ev.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEvidenceClick?.(ev.id);
+                      }}
+                      className="w-full text-left group flex items-start gap-1.5 pointer-events-auto hover:bg-slate-800/50 rounded px-1 py-0.5 transition-colors"
+                    >
+                      <ExternalLink size={9} className="text-slate-500 mt-0.5 shrink-0 group-hover:text-blue-400" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] text-slate-200 truncate group-hover:text-blue-300 transition-colors">
+                          {ev.title}
+                        </p>
+                        {ev.source && (
+                          <p className="text-[8px] text-slate-500 truncate">
+                            {ev.source}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                  {data.linkedEvidence.length > 3 && (
+                    <p className="text-[9px] text-slate-500 italic pl-1">
+                      +{data.linkedEvidence.length - 3} more...
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Bottom accent line */}
             <motion.div

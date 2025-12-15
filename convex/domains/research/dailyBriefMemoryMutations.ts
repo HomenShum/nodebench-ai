@@ -121,3 +121,50 @@ export const updateTaskStatus = internalMutation({
   },
 });
 
+export const setExecutiveBrief = internalMutation({
+  args: {
+    memoryId: v.id("dailyBriefMemories"),
+    payload: v.any(),
+    generatedAt: v.number(),
+    validation: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    const memory = await ctx.db.get(args.memoryId);
+    if (!memory) throw new Error("Memory not found");
+
+    const now = Date.now();
+    const context = (memory.context ?? {}) as any;
+
+    await ctx.db.patch(memory._id, {
+      context: {
+        ...context,
+        executiveBrief: args.payload,
+        executiveBriefGeneratedAt: args.generatedAt,
+        executiveBriefValidation: args.validation,
+      },
+      updatedAt: now,
+    });
+  },
+});
+
+export const updateMemoryContext = internalMutation({
+  args: {
+    memoryId: v.id("dailyBriefMemories"),
+    contextPatch: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const memory = await ctx.db.get(args.memoryId);
+    if (!memory) throw new Error("Memory not found");
+
+    const now = Date.now();
+    const context = (memory.context ?? {}) as any;
+
+    await ctx.db.patch(memory._id, {
+      context: {
+        ...context,
+        ...args.contextPatch,
+      },
+      updatedAt: now,
+    });
+  },
+});

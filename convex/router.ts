@@ -5,18 +5,8 @@ import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { PersistentTextStreaming, StreamId } from "@convex-dev/persistent-text-streaming";
 import { components } from "./_generated/api";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { getLlmModel } from "../shared/llm/modelCatalog";
-import { Agent } from "@convex-dev/agent";
-
-// Helper to get the appropriate language model based on model name
-function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) return anthropic(modelName);
-  if (modelName.startsWith("gemini-")) return google(modelName);
-  return openai.chat(modelName);
-}
+import { createCoordinatorAgent } from "./domains/agents/core/coordinatorAgent";
+import { DEFAULT_MODEL, normalizeModelInput } from "./domains/agents/mcp_tools/models";
 import { z } from "zod";
 
 const http = httpRouter();
@@ -934,15 +924,12 @@ http.route({
       }
 
       const prompt = lastUserMessage.content;
-      const modelName = model || getLlmModel("chat", "openai");
+      const threadModel = (streamingThread as any)?.model as string | undefined;
+      const modelName = normalizeModelInput(model || threadModel || DEFAULT_MODEL);
       const agentThreadId = streamingThread.agentThreadId;
       console.log(`[chat-stream-agent] Prompt: "${prompt.substring(0, 50)}..." for thread ${agentThreadId} with model ${modelName}`);
 
-      const chatAgent = new Agent(components.agent, {
-        name: "RouterChatAgent",
-        languageModel: getLanguageModel(modelName),
-        instructions: "You are a helpful AI assistant. Respond naturally and helpfully to user questions.",
-      });
+      const chatAgent = createCoordinatorAgent(modelName);
 
       const generateChat = async (
         innerCtx: any,
@@ -952,11 +939,19 @@ http.route({
       ) => {
         let fullResponse = "";
         try {
-          const result = await chatAgent.streamText(
-            innerCtx,
-            { threadId: agentThreadId },
-            { prompt }
-          );
+          const { messageId: promptMessageId } = await chatAgent.saveMessage(innerCtx, {
+            threadId: agentThreadId,
+            prompt,
+          });
+
+          const result = await chatAgent.streamText(innerCtx, { threadId: agentThreadId }, { promptMessageId });
+
+          if (result.messageId) {
+            await ctx.runMutation(internal.domains.agents.fastAgentPanelStreaming.markStreamStarted, {
+              messageId: streamingMessage._id,
+              agentMessageId: result.messageId,
+            });
+          }
 
           for await (const chunk of result.textStream) {
             fullResponse += chunk;

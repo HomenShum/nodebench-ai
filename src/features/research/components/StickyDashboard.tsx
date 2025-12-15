@@ -7,6 +7,7 @@ import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock } from "lucide
 import InteractiveLineChart from "./InteractiveLineChart";
 import type { DashboardState } from "@/features/research/types";
 import { formatBriefMonthYear } from "@/lib/briefDate";
+import { useEvidence } from "../contexts/EvidenceContext";
 
 // Icon Mapping for capabilities
 const IconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -25,6 +26,9 @@ interface StickyDashboardProps {
 }
 
 export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
+  // Evidence context for chart ↔ evidence linking
+  const evidenceCtx = useEvidence();
+
   if (!data) return null;
 
   // Safe defaults
@@ -38,6 +42,11 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
   const keyStats = data.keyStats ?? [];
   const annotations = data.annotations ?? [];
   const agentCount = data.agentCount;
+
+  // Build evidence map for tooltip display
+  const evidenceMap = new Map(
+    evidenceCtx.getEvidenceList().map((ev) => [ev.id, ev])
+  );
 
   // Calculate top market share for the donut center
   const topShare = safeCharts.marketShare.length > 0
@@ -64,7 +73,12 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
           {/* Line Chart */}
           <div className="h-[140px] w-full mt-2">
             {safeCharts.trendLine ? (
-              <InteractiveLineChart config={safeCharts.trendLine} annotations={annotations} />
+              <InteractiveLineChart
+                config={safeCharts.trendLine}
+                annotations={annotations}
+                onEvidenceClick={evidenceCtx.scrollToEvidence}
+                evidenceMap={evidenceMap}
+              />
             ) : (
               <div className="w-full h-full bg-slate-50 rounded flex items-center justify-center text-slate-300 text-xs">
                 No chart data

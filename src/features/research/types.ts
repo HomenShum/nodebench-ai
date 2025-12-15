@@ -2,11 +2,15 @@ export interface TooltipPayload {
   title: string;
   body: string;
   kicker?: string;
+  /** Evidence IDs linked to this tooltip - shown on hover */
+  linkedEvidenceIds?: string[];
 }
 
 export interface ChartPoint {
   value: number;
   tooltip?: TooltipPayload;
+  /** Evidence IDs that back this data point - enables scroll-to-highlight on click */
+  linkedEvidenceIds?: string[];
 }
 
 export interface ChartSeries {

@@ -101,6 +101,24 @@ export const runDailyMorningBrief = internalAction({
         console.warn("[dailyMorningBrief] Domain memory init failed:", initErr);
       }
 
+      // STEP 5b: Generate executive narrative brief (Structured Outputs + lint gate)
+      // Best-effort: fetch the latest memory (should be the one we just initialized).
+      try {
+        const memory: any = await ctx.runQuery(
+          internal.domains.research.dailyBriefMemoryQueries.getLatestMemoryInternal,
+          {},
+        );
+        if (memory?._id && memory.dateString === storeResult.dateString) {
+          await ctx.runAction(
+            internal.domains.research.executiveBrief.generateExecutiveBriefForMemoryInternal,
+            { memoryId: memory._id },
+          );
+          console.log("[dailyMorningBrief] ’'o. Executive brief generated");
+        }
+      } catch (briefErr) {
+        console.warn("[dailyMorningBrief] Executive brief generation failed:", briefErr);
+      }
+
       // ========================================================================
       // STEP 6: Summary and completion
       // ========================================================================

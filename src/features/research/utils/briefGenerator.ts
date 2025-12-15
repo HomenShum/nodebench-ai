@@ -1,0 +1,300 @@
+/**
+ * Brief Generator Utilities
+ *
+ * Helper functions for generating validated Daily Briefs with retry logic.
+ */
+
+import type { DailyBriefPayload } from "../types/dailyBriefSchema";
+import { validateBriefPayload, formatValidationErrorsForRetry, type ValidationResult } from "../validators/briefValidator";
+import { BRIEF_OUTPUT_CONSTRAINTS, BRIEF_RETRY_PROMPT } from "../prompts/briefConstraints";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface GenerationResult {
+  success: boolean;
+  payload: DailyBriefPayload | null;
+  validation: ValidationResult;
+  attempts: number;
+  lastError?: string;
+}
+
+export interface GeneratorOptions {
+  /** Maximum retry attempts (default: 2) */
+  maxRetries?: number;
+  /** Whether to include warnings in retry prompt (default: false) */
+  includeWarningsInRetry?: boolean;
+  /** Callback for each attempt */
+  onAttempt?: (attempt: number, result: ValidationResult) => void;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BRIEF GENERATION WITH VALIDATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Parses and validates a JSON string as a DailyBriefPayload.
+ *
+ * @param jsonString - Raw JSON string from LLM
+ * @returns Validation result with parsed payload if valid
+ */
+export function parseAndValidateBrief(jsonString: string): {
+  payload: DailyBriefPayload | null;
+  validation: ValidationResult;
+  parseError?: string;
+} {
+  // Try to parse JSON
+  let payload: unknown;
+  try {
+    payload = JSON.parse(jsonString);
+  } catch (e) {
+    return {
+      payload: null,
+      validation: {
+        valid: false,
+        errors: [`JSON parse error: ${e instanceof Error ? e.message : String(e)}`],
+        warnings: []
+      },
+      parseError: e instanceof Error ? e.message : String(e)
+    };
+  }
+
+  // Validate the parsed payload
+  const validation = validateBriefPayload(payload);
+
+  return {
+    payload: validation.valid ? (payload as DailyBriefPayload) : null,
+    validation
+  };
+}
+
+/**
+ * Builds a retry prompt with validation errors.
+ *
+ * @param validation - Previous validation result
+ * @param includeWarnings - Whether to include warnings
+ * @returns Formatted retry prompt
+ */
+export function buildRetryPrompt(
+  validation: ValidationResult,
+  includeWarnings = false
+): string {
+  const errorSection = formatValidationErrorsForRetry(validation);
+
+  const prompt = [
+    BRIEF_RETRY_PROMPT,
+    "",
+    errorSection,
+    "",
+    "Remember to follow the output constraints:",
+    BRIEF_OUTPUT_CONSTRAINTS
+  ];
+
+  return prompt.join("\n");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONVERSION UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Converts a DailyBriefPayload to ScrollySection format for the UI.
+ *
+ * This bridges the canonical schema to the existing ScrollytellingLayout component.
+ */
+export function briefToScrollySections(brief: DailyBriefPayload): Array<{
+  id: string;
+  meta: { date: string; title: string };
+  content: { body: string[]; deepDives: Array<{ title: string; content: string }> };
+  dashboard: {
+    phaseLabel: string;
+    kpis: Array<{ label: string; value: number; unit: string; color: string }>;
+    marketSentiment: number;
+    activeRegion: string;
+  };
+}> {
+  const sections = [];
+
+  // Act I - Setup
+  sections.push({
+    id: `brief-${brief.meta.date}-act-1`,
+    meta: {
+      date: "Today's Briefing",
+      title: "Act I — Setup: Coverage & Freshness"
+    },
+    content: {
+      body: [
+        `Briefing for ${new Date(brief.meta.date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        })}.`,
+        brief.actI.synthesis,
+        brief.actI.topSources.length
+          ? `Top sources: ${brief.actI.topSources
+              .map((s) => `${s.source}: ${s.count}`)
+              .join(" · ")}`
+          : ""
+      ].filter(Boolean),
+      deepDives: []
+    },
+    dashboard: {
+      phaseLabel: "Act I",
+      kpis: [
+        { label: "Items", value: brief.actI.totalItems, unit: "", color: "bg-slate-900" },
+        { label: "Sources", value: brief.actI.sourcesCount, unit: "", color: "bg-slate-600" }
+      ],
+      marketSentiment: Math.min(100, brief.actI.totalItems),
+      activeRegion: "Global"
+    }
+  });
+
+  // Act II - Signals
+  const signalBodies: string[] = [brief.actII.synthesis];
+  brief.actII.signals.forEach((signal) => {
+    signalBodies.push(`**${signal.headline}**: ${signal.synthesis}`);
+  });
+
+  sections.push({
+    id: `brief-${brief.meta.date}-act-2`,
+    meta: {
+      date: "Signals",
+      title: "Act II — Rising Action: What's New Today"
+    },
+    content: {
+      body: signalBodies,
+      deepDives: brief.actII.signals.map((signal) => ({
+        title: signal.headline,
+        content: [
+          signal.synthesis,
+          "",
+          "**Evidence:**",
+          ...signal.evidence.map(
+            (ev) => `- [${ev.title}](${ev.url}) — ${ev.relevance}`
+          )
+        ].join("\n")
+      }))
+    },
+    dashboard: {
+      phaseLabel: "Act II",
+      kpis: [
+        {
+          label: "Signals",
+          value: brief.actII.signals.length,
+          unit: "",
+          color: "bg-slate-900"
+        }
+      ],
+      marketSentiment: Math.min(
+        100,
+        brief.actII.signals.reduce(
+          (sum, s) => sum + s.evidence.reduce((eSum, e) => eSum + (e.score || 0), 0),
+          0
+        )
+      ),
+      activeRegion: "Global"
+    }
+  });
+
+  // Act III - Actions
+  const proposedActions = brief.actIII.actions.filter(
+    (a) => a.status === "proposed" || a.status === "in_progress" || a.status === "completed"
+  );
+
+  sections.push({
+    id: `brief-${brief.meta.date}-act-3`,
+    meta: {
+      date: "Actions",
+      title: "Act III — Deep Dives: Turn Signals Into Moves"
+    },
+    content: {
+      body: [
+        brief.actIII.synthesis,
+        proposedActions.length
+          ? "Open the follow-ups below to review or continue the work."
+          : "No actionable items identified for today.",
+        "Tip: Ask Fast Agent to use Linkup + Fusion Search to enrich any headline."
+      ],
+      deepDives: brief.actIII.actions.map((action) => ({
+        title: `${action.label}${action.status !== "proposed" ? ` (${action.status})` : ""}`,
+        content: action.content
+      }))
+    },
+    dashboard: {
+      phaseLabel: "Act III",
+      kpis: [
+        { label: "Actions", value: brief.actIII.actions.length, unit: "", color: "bg-slate-900" },
+        { label: "Proposed", value: proposedActions.length, unit: "", color: "bg-emerald-600" }
+      ],
+      marketSentiment: Math.round((proposedActions.length / Math.max(brief.actIII.actions.length, 1)) * 100),
+      activeRegion: "Global"
+    }
+  });
+
+  return sections;
+}
+
+/**
+ * Extracts all evidence from a brief for the evidence panel.
+ */
+export function extractAllEvidence(brief: DailyBriefPayload): Array<{
+  id: string;
+  signalId: string;
+  signalHeadline: string;
+  source: string;
+  title: string;
+  url: string;
+  publishedAt: string;
+  relevance: string;
+  score?: number;
+}> {
+  const evidence: Array<{
+    id: string;
+    signalId: string;
+    signalHeadline: string;
+    source: string;
+    title: string;
+    url: string;
+    publishedAt: string;
+    relevance: string;
+    score?: number;
+  }> = [];
+
+  brief.actII.signals.forEach((signal) => {
+    signal.evidence.forEach((ev) => {
+      evidence.push({
+        id: ev.id,
+        signalId: signal.id,
+        signalHeadline: signal.headline,
+        source: ev.source,
+        title: ev.title,
+        url: ev.url,
+        publishedAt: ev.publishedAt,
+        relevance: ev.relevance,
+        score: ev.score
+      });
+    });
+  });
+
+  return evidence;
+}
+
+/**
+ * Gets all unique sources from a brief.
+ */
+export function getSourceBreakdown(brief: DailyBriefPayload): Record<string, number> {
+  if (brief.dashboard?.sourceBreakdown) {
+    return brief.dashboard.sourceBreakdown;
+  }
+
+  // Fallback: count from evidence
+  const counts: Record<string, number> = {};
+  brief.actII.signals.forEach((signal) => {
+    signal.evidence.forEach((ev) => {
+      counts[ev.source] = (counts[ev.source] || 0) + 1;
+    });
+  });
+
+  return counts;
+}

@@ -52,8 +52,13 @@ import { OvernightMovesCard, type MoveItem } from "@/features/research/component
 import { DealListPanel, DealFlyout, type Deal } from "@/features/research/components/DealListPanel";
 import SourceFeed from "@/features/research/components/SourceFeed";
 import researchStreamData from "@/features/research/content/researchStream.json";
-import type { DashboardState } from "@/features/research/types";
+import type { DashboardState, DailyBriefPayload } from "@/features/research/types";
+import { validateBriefPayload } from "@/features/research/validators/briefValidator";
 import { formatBriefDate, formatBriefMonthYear } from "@/lib/briefDate";
+import { EvidenceProvider, useEvidence } from "@/features/research/contexts/EvidenceContext";
+import { ExecutiveBriefHeader } from "@/features/research/components/ExecutiveBriefHeader";
+import { ExportBriefButton } from "@/features/research/components/ExportBriefButton";
+import { ActAwareDashboard, type ActiveAct } from "@/features/research/components/ActAwareDashboard";
 
 const SAMPLE_DEALS: Deal[] = [
   {
@@ -535,6 +540,27 @@ function WelcomeLandingInner({
       : "skip",
   );
 
+  // Evidence context for chart ↔ evidence linking
+  const evidenceContext = useEvidence();
+
+  // Register evidence from structured brief when available
+  useEffect(() => {
+    const memory: any = latestBriefMemory as any;
+    const executiveBrief = memory?.context?.executiveBrief as DailyBriefPayload | undefined;
+    const generatedBrief = memory?.context?.generatedBrief as DailyBriefPayload | undefined;
+    const candidateBrief = executiveBrief ?? generatedBrief;
+
+    if (!candidateBrief?.actII?.signals?.length) return;
+
+    const evidenceToRegister = candidateBrief.actII.signals.flatMap((signal) =>
+      Array.isArray(signal.evidence) ? signal.evidence : [],
+    );
+
+    if (evidenceToRegister.length > 0) {
+      evidenceContext.registerEvidence(evidenceToRegister);
+    }
+  }, [latestBriefMemory, evidenceContext]);
+
   // AI-enriched data: Simulate sentiment and relevance scores
   // In production, these would come from AI classification endpoints
   const enrichFeedItem = (title: string, tags: string[]): { sentiment: SentimentType; relevanceScore: number } => {
@@ -876,6 +902,9 @@ Include outreach angle, credibility notes, and 3 tailored questions.`
 
   const [showHero, setShowHero] = useState(true);
   const [hasActiveSearch, setHasActiveSearch] = useState(false);
+
+  // Active act for right-rail dashboard synchronization
+  const [activeAct, setActiveAct] = useState<ActiveAct>("actI");
 
   const [isFromCache, setIsFromCache] = useState(false);
   const [cacheHistory, setCacheHistory] = useState<Array<{ prompt: string; date: string; threadId: string; timestamp: number }>>([]);
@@ -1423,7 +1452,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
     ].slice(0, 5));
 
     const modeInstruction = selectedMode === "deep"
-      ? "Create a comprehensive research dossier with cross-verified sources, SEC/filing checks, and section-level confidence scores."
+      ? "Create a comprehensive research dossier with cross-verified sources, SEC/filing checks, and evidence-backed sections with clear citations."
       : "Produce a concise quick brief (30-second read) with the top 3-5 findings, key numbers, and the sources used.";
 
     if (shouldAppendToExisting && threadId) {
@@ -1901,7 +1930,20 @@ While commercial fusion is still years away, the pace of innovation has accelera
     const snapshotSummary = memory?.context?.snapshotSummary;
     const memoryDashboard = memory?.context?.dashboardMetrics as DashboardState | undefined;
 
-    const briefDate = typeof briefingDateString === "string" ? briefingDateString : null;
+    // Prefer the executive brief (strict schema + lint) and fall back to legacy generatedBrief if present.
+    const executiveBrief = memory?.context?.executiveBrief as DailyBriefPayload | undefined;
+    const generatedBrief = memory?.context?.generatedBrief as DailyBriefPayload | undefined;
+    const candidateBrief = executiveBrief ?? generatedBrief;
+    const candidateValidation = candidateBrief ? validateBriefPayload(candidateBrief) : null;
+    const structuredBrief = candidateBrief && candidateValidation?.valid ? candidateBrief : undefined;
+    const hasStructuredBrief = Boolean(structuredBrief?.actII?.signals?.length);
+
+    const briefDate =
+      typeof structuredBrief?.meta?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(structuredBrief.meta.date)
+        ? structuredBrief.meta.date
+        : typeof briefingDateString === "string"
+          ? briefingDateString
+          : null;
     const briefDateLabel = briefDate ? formatBriefDate(briefDate) : "Today";
     const briefMonthYear = briefDate
       ? formatBriefMonthYear(new Date(`${briefDate}T00:00:00.000Z`).getTime())
@@ -1920,20 +1962,18 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
     const briefFeatures: any[] = Array.isArray(memory?.features) ? (memory.features as any[]) : [];
 
+    // Only show deep dives with meaningful output; never surface placeholder strings.
     const deepDives = briefFeatures
       .slice(0, 6)
       .map((f) => {
-        const title = (f?.name ?? f?.id ?? "Brief Task") as string;
+        const title = String(f?.name ?? f?.id ?? "Deep Dive").trim();
         const result = f?.id ? resultsByTaskId.get(f.id) : null;
         const resultMarkdown = typeof result?.resultMarkdown === "string" ? result.resultMarkdown.trim() : "";
-        const content =
-          resultMarkdown ||
-          (f?.status === "completed"
-            ? "Completed — no notes captured."
-            : "Pending — run this follow-up from the Fast Agent panel.");
+        const content = resultMarkdown && resultMarkdown !== "No meaningful output produced." ? resultMarkdown : "";
+        if (!title || !content) return null;
         return { title, content };
       })
-      .filter((d) => Boolean(d?.title)) as Array<{ title: string; content: string }>;
+      .filter(Boolean) as Array<{ title: string; content: string }>;
 
     // ---------------------------------------------------------------------
     // 3-Act Story: Setup → Signals → Actions (with progressive charts)
@@ -1955,18 +1995,34 @@ While commercial fusion is still years away, the pace of innovation has accelera
         headlines.some((i: any) => typeof i?.publishedAt === "string" && i.publishedAt.startsWith(briefDate));
 
       const bySource: Record<string, number> =
-        snapshotSummary?.bySource && typeof snapshotSummary.bySource === "object" ? snapshotSummary.bySource : {};
+        structuredBrief?.dashboard?.sourceBreakdown && typeof structuredBrief.dashboard.sourceBreakdown === "object"
+          ? (structuredBrief.dashboard.sourceBreakdown as Record<string, number>)
+          : snapshotSummary?.bySource && typeof snapshotSummary.bySource === "object"
+            ? snapshotSummary.bySource
+            : {};
       const nonZeroSources = Object.entries(bySource).filter(([, count]) => typeof count === "number" && count > 0);
-      const sourcesCount = nonZeroSources.length;
+      const sourcesCount =
+        typeof structuredBrief?.actI?.sourcesCount === "number" ? structuredBrief.actI.sourcesCount : nonZeroSources.length;
       const totalItems =
-        typeof snapshotSummary?.totalItems === "number" ? snapshotSummary.totalItems : (headlinePool?.length ?? 0);
+        typeof structuredBrief?.actI?.totalItems === "number"
+          ? structuredBrief.actI.totalItems
+          : typeof snapshotSummary?.totalItems === "number"
+            ? snapshotSummary.totalItems
+            : (headlinePool?.length ?? 0);
 
-      const topSources = nonZeroSources
-        .sort(([, a], [, b]) => (b as number) - (a as number))
-        .slice(0, 6)
-        .map(([source, count]) => `${source}: ${count}`);
+      const topSources =
+        structuredBrief?.actI?.topSources?.length
+          ? structuredBrief.actI.topSources.slice(0, 6).map((s) => `${s.source}: ${s.count}`)
+          : nonZeroSources
+              .sort(([, a], [, b]) => (b as number) - (a as number))
+              .slice(0, 6)
+              .map(([source, count]) => `${source}: ${count}`);
 
-      const trendingTags = Array.isArray(snapshotSummary?.topTrending) ? (snapshotSummary.topTrending as string[]) : [];
+      const trendingTags = Array.isArray(structuredBrief?.dashboard?.trendingTags)
+        ? (structuredBrief!.dashboard!.trendingTags as string[])
+        : Array.isArray(snapshotSummary?.topTrending)
+          ? (snapshotSummary.topTrending as string[])
+          : [];
 
       const suggestedPrompts = [
         "Suggested prompts",
@@ -1986,6 +2042,23 @@ While commercial fusion is still years away, the pace of innovation has accelera
       const act3DeepDives = deepDives.length
         ? [...deepDives, { title: "Next steps (Fast Agent)", content: suggestedPrompts }]
         : [{ title: "Next steps (Fast Agent)", content: suggestedPrompts }];
+
+      // Filter out empty/pending deep dives (Gap 3 fix)
+      // When structured brief is available, use Action status enum for filtering
+      // Otherwise fall back to string-matching for legacy data
+      const act3Actions = (structuredBrief?.actIII?.actions ?? []).filter((action) =>
+        ["proposed", "in_progress", "completed"].includes(action.status),
+      );
+
+      const filteredAct3DeepDives = act3DeepDives.filter((dd) => {
+        const content = dd.content?.trim() || "";
+        if (!content) return false;
+        if (content === "No meaningful output produced.") return false;
+        if (content.startsWith("Pending")) return false;
+        if (content === "Completed — no notes captured.") return false;
+        if (content.length < 20) return false; // Too short to be useful
+        return true;
+      });
 
       const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
@@ -2010,7 +2083,8 @@ While commercial fusion is still years away, the pace of innovation has accelera
         0,
       );
       const derivedSignals = clamp(topScore || Math.round(derivedCoverage * 0.9), 10, 100);
-      const derivedDepth = clamp(Math.round((act3DeepDives.length / 7) * 100), 5, 100);
+      const deepDiveCountForMetric = act3Actions.length > 0 ? act3Actions.length : filteredAct3DeepDives.length;
+      const derivedDepth = clamp(Math.round((deepDiveCountForMetric / 7) * 100), 5, 100);
 
       const fallbackBase: DashboardState = {
         meta: { currentDate: briefMonthYear, timelineProgress: 0.1 },
@@ -2071,7 +2145,7 @@ While commercial fusion is still years away, the pace of innovation has accelera
                 ]
               : [
                   { label: "Tasks", value: String(briefFeatures.length || 0) },
-                  { label: "Deep Dives", value: String(act3DeepDives.length || 0) },
+                  { label: "Deep Dives", value: String((act3Actions.length > 0 ? act3Actions.length : filteredAct3DeepDives.length) || 0) },
                   { label: "Ship", value: "Fast Agent" },
                 ];
 
@@ -2096,40 +2170,41 @@ While commercial fusion is still years away, the pace of innovation has accelera
         };
       };
 
+      const latestItemAt =
+        structuredBrief?.actI?.latestItemAt ||
+        (typeof headlines?.[0]?.publishedAt === "string" ? headlines[0].publishedAt : undefined);
+      const latestItemLabel = latestItemAt ? new Date(latestItemAt).toLocaleString() : null;
+
       const act1Body: string[] = [
-        `Briefing for ${briefDateLabel}.`,
+        structuredBrief?.actI?.synthesis || `Briefing for ${briefDateLabel}.`,
         totalItems
           ? `Coverage: ${totalItems} items across ${sourcesCount || Object.keys(bySource).length || 0} sources.`
           : "Coverage: building…",
         topSources.length ? `Top sources: ${topSources.join(" · ")}` : "",
         trendingTags.length ? `Trending tags: ${trendingTags.slice(0, 5).join(", ")}` : "",
+        latestItemLabel ? `Latest item: ${latestItemLabel}.` : "",
       ].filter(Boolean);
 
-      const act2Body: string[] = [
-        !hasSameDayHeadline && briefDate
-          ? `No fresh items detected for ${briefDateLabel} yet — showing the most recent items in the current window.`
-          : `What’s new (as of ${briefDateLabel}):`,
-        ...headlines.flatMap((item: any) => {
-          const source = item?.source ?? "Live Feed";
-          const title = item?.title ?? "Untitled";
-          const summary = typeof item?.summary === "string" ? item.summary.trim() : "";
-          const publishedAt = typeof item?.publishedAt === "string" ? item.publishedAt : "";
-          const publishedLabel = publishedAt ? new Date(publishedAt).toLocaleString() : "";
-          const score = typeof item?.score === "number" ? item.score : null;
-
-          const metaBits = [source, publishedLabel, score !== null ? `${score} pts` : null].filter(Boolean);
-
-          return [
-            `${title}`,
-            summary ? summary : metaBits.join(" · "),
-            metaBits.length ? metaBits.join(" · ") : "",
-          ].filter(Boolean);
-        }),
-      ].filter(Boolean);
+      const act2Body: string[] = (hasStructuredBrief
+        ? [structuredBrief?.actII?.synthesis || "Today’s key signals synthesized from multiple sources."]
+        : [
+            !hasSameDayHeadline && briefDate
+              ? `No fresh items detected for ${briefDateLabel} yet — showing the most recent window.`
+              : `Signals (as of ${briefDateLabel}):`,
+            headlines.length
+              ? `Notable headlines: ${headlines
+                  .map((h: any) => h?.title)
+                  .filter(Boolean)
+                  .slice(0, 3)
+                  .join("; ")}.`
+              : "No headlines available yet.",
+          ]).filter(Boolean);
 
       const act3Body: string[] = [
-        "Turn today’s signals into decisions.",
-        act3DeepDives.length ? "Open the follow-ups below to review or continue the work." : "Ask Fast Agent to generate follow-ups.",
+        structuredBrief?.actIII?.synthesis || "Turn today’s signals into decisions.",
+        act3Actions.length || filteredAct3DeepDives.length
+          ? "Open the follow-ups below to review or continue the work."
+          : "Ask Fast Agent to generate follow-ups.",
         "Tip: Ask Fast Agent to use Linkup + Fusion Search to enrich any headline with fresh sources.",
       ];
 
@@ -2137,11 +2212,97 @@ While commercial fusion is still years away, the pace of innovation has accelera
       const act2Dashboard = makeActDashboard(1);
       const act3Dashboard = makeActDashboard(2);
 
+      const act1Viz: VizArtifact | undefined =
+        structuredBrief?.dashboard?.vizArtifact ||
+        (topSources.length
+          ? {
+              intent: "category_compare",
+              rationale: "Source volume provides a quick read on where attention is concentrated.",
+              data: topSources.map((s) => {
+                const [source, count] = String(s).split(":").map((v) => v.trim());
+                return { source, count: Number(count || 0) };
+              }),
+              spec: {
+                $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+                width: "container",
+                height: 160,
+                mark: "bar",
+                encoding: {
+                  y: { field: "source", type: "nominal", sort: "-x", axis: { title: null } },
+                  x: { field: "count", type: "quantitative", axis: { title: "Items" } },
+                  color: { field: "source", legend: null },
+                  tooltip: [{ field: "source", type: "nominal" }, { field: "count", type: "quantitative" }],
+                },
+              },
+            }
+          : undefined);
+
+      const act2Viz: VizArtifact | undefined = (() => {
+        const counts = new Map<string, number>();
+        headlinePool.forEach((item: any) => {
+          const tags: string[] = Array.isArray(item?.tags) ? item.tags : [];
+          tags.forEach((t) => counts.set(t, (counts.get(t) ?? 0) + 1));
+        });
+        if (counts.size === 0 && trendingTags.length > 0) {
+          trendingTags.slice(0, 8).forEach((t) => counts.set(t, 1));
+        }
+        const data = [...counts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([tag, count]) => ({ tag, count }));
+        if (data.length === 0) return undefined;
+        return {
+          intent: "category_compare",
+          rationale: "Tag density shows what themes are surfacing across sources.",
+          data,
+          spec: {
+            $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+            width: "container",
+            height: 160,
+            mark: "bar",
+            encoding: {
+              y: { field: "tag", type: "nominal", sort: "-x", axis: { title: null } },
+              x: { field: "count", type: "quantitative", axis: { title: "Mentions" } },
+              color: { field: "tag", legend: null },
+              tooltip: [{ field: "tag", type: "nominal" }, { field: "count", type: "quantitative" }],
+            },
+          },
+        };
+      })();
+
+      const act3Viz: VizArtifact | undefined = (() => {
+        if (!act3Actions.length) return undefined;
+        const counts = new Map<string, number>();
+        act3Actions.forEach((a) => counts.set(a.status, (counts.get(a.status) ?? 0) + 1));
+        const data = [...counts.entries()].map(([status, count]) => ({ status, count }));
+        return {
+          intent: "category_compare",
+          rationale: "Action status shows how many follow-ups are ready vs. underway.",
+          data,
+          spec: {
+            $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+            width: "container",
+            height: 160,
+            mark: "bar",
+            encoding: {
+              y: { field: "status", type: "nominal", sort: "-x", axis: { title: null } },
+              x: { field: "count", type: "quantitative", axis: { title: "Count" } },
+              color: { field: "status", legend: null },
+              tooltip: [{ field: "status", type: "nominal" }, { field: "count", type: "quantitative" }],
+            },
+          },
+        };
+      })();
+
       return [
         {
           id: `brief-${briefDate ?? "today"}-act-1`,
-          meta: { date: "Today's Briefing", title: "Act I — Setup: Coverage & Freshness" },
+          meta: {
+            date: "Today's Briefing",
+            title: structuredBrief?.actI?.title ?? "Act I — Setup: Coverage & Freshness",
+          },
           content: { body: act1Body, deepDives: [] },
+          vizArtifact: act1Viz,
           dashboard: {
             phaseLabel: "Act I",
             kpis: [
@@ -2164,11 +2325,25 @@ While commercial fusion is still years away, the pace of innovation has accelera
         },
         {
           id: `brief-${briefDate ?? "today"}-act-2`,
-          meta: { date: "Signals", title: "Act II — Rising Action: What’s New Today" },
-          content: { body: act2Body, deepDives: [] },
+          meta: {
+            date: "Signals",
+            title: structuredBrief?.actII?.title ?? "Act II — Rising Action: What’s New Today",
+          },
+          content: {
+            body: act2Body,
+            deepDives: [],
+            // Include structured signals when available (renders SignalList in SectionRenderer)
+            signals: hasStructuredBrief ? (structuredBrief?.actII?.signals || []) : undefined,
+          },
+          vizArtifact: act2Viz,
           dashboard: {
             phaseLabel: "Act II",
-            kpis: [{ label: "Top Heat", value: derivedSignals, unit: "pts", color: "bg-slate-900" }],
+            kpis: [{
+              label: hasStructuredBrief ? "Signals" : "Top Heat",
+              value: hasStructuredBrief ? (structuredBrief?.actII?.signals?.length || 0) : derivedSignals,
+              unit: hasStructuredBrief ? "" : "pts",
+              color: "bg-slate-900"
+            }],
             marketSentiment: derivedSignals,
             activeRegion: "Global",
           },
@@ -2177,19 +2352,38 @@ While commercial fusion is still years away, the pace of innovation has accelera
             narrative: {
               title: "Signals",
               date_display: briefDateLabel,
-              summary: "The top stories and why they matter.",
-              body: "Key headlines from the most recent feed window.",
+              summary: hasStructuredBrief
+                ? ((structuredBrief?.actII?.synthesis || "").slice(0, 100) + (structuredBrief?.actII?.synthesis && structuredBrief.actII.synthesis.length > 100 ? "..." : ""))
+                : "The top stories and why they matter.",
+              body: hasStructuredBrief
+                ? `${structuredBrief?.actII?.signals?.length || 0} signals synthesized from the latest feed window.`
+                : "Key headlines from the most recent feed window.",
             },
             dashboard_state: act2Dashboard,
           },
         },
         {
           id: `brief-${briefDate ?? "today"}-act-3`,
-          meta: { date: "Actions", title: "Act III — Deep Dives: Turn Signals Into Moves" },
-          content: { body: act3Body, deepDives: act3DeepDives },
+          meta: {
+            date: "Actions",
+            title: structuredBrief?.actIII?.title ?? "Act III — Deep Dives: Turn Signals Into Moves",
+          },
+          content: {
+            body: act3Body,
+            deepDives: filteredAct3DeepDives,
+            actions: act3Actions.length > 0 ? act3Actions : undefined,
+          },
+          vizArtifact: act3Viz,
           dashboard: {
             phaseLabel: "Act III",
-            kpis: [{ label: "Tasks", value: briefFeatures.length || 0, unit: "", color: "bg-slate-900" }],
+            kpis: [
+              {
+                label: act3Actions.length > 0 ? "Actions" : "Deep Dives",
+                value: act3Actions.length > 0 ? act3Actions.length : (filteredAct3DeepDives.length || 0),
+                unit: "",
+                color: "bg-slate-900",
+              },
+            ],
             marketSentiment: derivedDepth,
             activeRegion: "Global",
           },
@@ -2199,7 +2393,9 @@ While commercial fusion is still years away, the pace of innovation has accelera
               title: "Actions",
               date_display: briefDateLabel,
               summary: "Follow-ups to deepen and ship.",
-              body: "Queue analyses and generate artifacts.",
+              body: act3Actions.length > 0
+                ? `${act3Actions.length} actions mapped from today’s signals.`
+                : `${filteredAct3DeepDives.length} actionable deep dives ready.`,
             },
             dashboard_state: act3Dashboard,
           },
@@ -2243,6 +2439,29 @@ While commercial fusion is still years away, the pace of innovation has accelera
 
     return researchStreamData as ScrollySection[];
   }, [dossierSections, latestBriefMemory, latestBriefTaskResults, liveFeed, briefRecentFeed, briefingDateString]);
+
+  // Extract structured brief for ExecutiveBriefHeader
+  const structuredBriefData = useMemo(() => {
+    const memory: any = latestBriefMemory as any;
+    const executiveBrief = memory?.context?.executiveBrief as DailyBriefPayload | undefined;
+    const generatedBrief = memory?.context?.generatedBrief as DailyBriefPayload | undefined;
+    const candidateBrief = executiveBrief ?? generatedBrief;
+    const candidateValidation = candidateBrief ? validateBriefPayload(candidateBrief) : null;
+    return candidateBrief && candidateValidation?.valid ? candidateBrief : undefined;
+  }, [latestBriefMemory]);
+
+  // Source breakdown for dashboard
+  const sourceBreakdown = useMemo(() => {
+    if (structuredBriefData?.dashboard?.sourceBreakdown) {
+      return structuredBriefData.dashboard.sourceBreakdown as Record<string, number>;
+    }
+    const memory: any = latestBriefMemory as any;
+    const snapshotSummary = memory?.context?.snapshotSummary;
+    if (snapshotSummary?.bySource && typeof snapshotSummary.bySource === "object") {
+      return snapshotSummary.bySource as Record<string, number>;
+    }
+    return undefined;
+  }, [structuredBriefData, latestBriefMemory]);
 
   // Main Content Area - shared between embedded and standalone modes
   const mainContentArea = (
@@ -2297,10 +2516,38 @@ While commercial fusion is still years away, the pace of innovation has accelera
               </div>
             </header>
 
+            {/* Executive Brief Header - Above the fold KPIs */}
+            {structuredBriefData && (
+              <div className="max-w-[1400px] mx-auto px-6 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
+                <div className="flex items-start justify-between gap-4">
+                  <ExecutiveBriefHeader
+                    dayThesis={structuredBriefData.meta?.dayThesis}
+                    quality={structuredBriefData.quality}
+                    topics={structuredBriefData.dashboard?.trendingTags?.slice(0, 6)}
+                    sources={Object.keys(sourceBreakdown || {}).slice(0, 6)}
+                    onTopicFilter={(topic) => {
+                      setFeedSearchQuery(topic);
+                      setSelectedCategory(null);
+                    }}
+                    onSourceFilter={(source) => {
+                      setSourceFilter(source.toLowerCase());
+                    }}
+                    className="flex-1"
+                  />
+                  <ExportBriefButton brief={structuredBriefData} />
+                </div>
+              </div>
+            )}
+
             {/* Scrollytelling Section */}
             {scrollySections.length > 0 && (
               <div className="max-w-[1400px] mx-auto px-6 mb-12">
-                <ScrollytellingLayout data={scrollySections} isGuestMode={!isAuthenticated} hideHero />
+                <ScrollytellingLayout
+                  data={scrollySections}
+                  isGuestMode={!isAuthenticated}
+                  hideHero
+                  onActChange={setActiveAct}
+                />
               </div>
             )}
 
@@ -2799,7 +3046,9 @@ class LandingErrorBoundary extends React.Component<{ children: React.ReactNode }
 export default function WelcomeLanding(props: WelcomeLandingProps) {
   return (
     <LandingErrorBoundary>
-      <WelcomeLandingInner {...props} />
+      <EvidenceProvider>
+        <WelcomeLandingInner {...props} />
+      </EvidenceProvider>
     </LandingErrorBoundary>
   );
 }

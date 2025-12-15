@@ -285,7 +285,7 @@ async function executePersonalFeature(
   if (!text || text.trim().length < 20) {
     return {
       status: "failing",
-      markdown: text || "No meaningful output produced.",
+      markdown: text?.trim() ? text : "",
       notes: "Worker returned insufficient output.",
     };
   }
