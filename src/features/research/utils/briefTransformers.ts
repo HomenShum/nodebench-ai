@@ -107,6 +107,17 @@ export function buildResearchStreamViewModel(args: {
   const evidence = Array.isArray(record.evidence) ? record.evidence : [];
   if (evidence.length === 0) return [];
 
+  const visibleActions = (brief.actIII?.actions ?? []).filter((action) => {
+    if (!action) return false;
+    if (!["proposed", "in_progress", "completed"].includes(action.status)) return false;
+    const text = (action.resultMarkdown ?? action.content ?? "").trim();
+    if (!text) return false;
+    if (/no meaningful output produced/i.test(text)) return false;
+    if (/^pending\b/i.test(text)) return false;
+    if (/^completed\b/i.test(text) && /no notes/i.test(text)) return false;
+    return true;
+  });
+
   const presentIndex = 3;
   const { xAxisLabels, values } = buildSharedSeriesFromHistory({
     todayDateString: brief.meta.date,
@@ -173,7 +184,7 @@ export function buildResearchStreamViewModel(args: {
               { label: "Evidence", value: String(uniqueEvidenceIds.length) },
             ]
           : [
-              { label: "Actions", value: String(brief.actIII.actions.length) },
+              { label: "Actions", value: String(visibleActions.length) },
               { label: "Projection", value: "+2 days" },
               { label: "Ship", value: "Fast Agent" },
             ];
@@ -190,13 +201,13 @@ export function buildResearchStreamViewModel(args: {
       techReadiness: {
         existing: Math.min(8, Math.round((brief.meta.confidence ?? 55) / 15)),
         emerging: Math.min(8, Math.round(brief.actII.signals.length)),
-        sciFi: Math.min(8, Math.round(brief.actIII.actions.length)),
+        sciFi: Math.min(8, Math.round(visibleActions.length)),
       },
       keyStats: keyStats.map((s) => ({ label: s.label, value: s.value })),
       capabilities: [
         { label: "Coverage", score: clamp(Math.round((brief.actI.totalItems / 200) * 100), 0, 100), icon: "shield-alert" },
         { label: "Signals", score: clamp(Math.round((brief.actII.signals.length / 6) * 100), 0, 100), icon: "code" },
-        { label: "Actions", score: clamp(Math.round((brief.actIII.actions.length / 6) * 100), 0, 100), icon: "vote" },
+        { label: "Actions", score: clamp(Math.round((visibleActions.length / 6) * 100), 0, 100), icon: "vote" },
       ],
       annotations: [],
     };
@@ -256,12 +267,12 @@ export function buildResearchStreamViewModel(args: {
       content: {
         body: [brief.actIII.synthesis, "Open the follow-ups below to review or continue the work."].filter(Boolean),
         deepDives: [],
-        actions: brief.actIII.actions,
+        actions: visibleActions,
       },
       dashboard: {
         phaseLabel: "Act III",
         kpis: [
-          { label: "Actions", value: brief.actIII.actions.length, unit: "", color: "bg-slate-900" },
+          { label: "Actions", value: visibleActions.length, unit: "", color: "bg-slate-900" },
         ],
         marketSentiment: clamp(Math.round((brief.meta.confidence ?? 55)), 0, 100),
         activeRegion: "Global",
@@ -272,4 +283,3 @@ export function buildResearchStreamViewModel(args: {
 
   return sections;
 }
-

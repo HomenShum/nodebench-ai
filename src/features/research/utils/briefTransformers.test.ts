@@ -58,6 +58,14 @@ describe("buildResearchStreamViewModel", () => {
               linkedSignalIds: ["sig-1"],
               priority: 1,
             },
+            {
+              id: "act-2",
+              label: "Analyze trending repos",
+              status: "insufficient_data",
+              content: "Not enough validated output is available yet. Rerun this deep dive with additional context.",
+              linkedSignalIds: ["sig-1"],
+              priority: 2,
+            },
           ],
         },
         dashboard: {
@@ -107,6 +115,9 @@ describe("buildResearchStreamViewModel", () => {
     const act2 = sections[1].dashboard_update!;
     const act3 = sections[2].dashboard_update!;
 
+    // Act III suppresses "insufficient_data" / "skipped" actions (no visible failures).
+    expect(sections[2].content.actions?.map((a) => a.id)).toEqual(["act-1"]);
+
     expect(act1.charts.trendLine.visibleEndIndex).toBe(2);
     expect(act2.charts.trendLine.visibleEndIndex).toBe(3);
     expect(act3.charts.trendLine.visibleEndIndex).toBe(5);
@@ -141,4 +152,3 @@ describe("buildResearchStreamViewModel", () => {
     expect(buildResearchStreamViewModel({ record: invalid, history: [] })).toEqual([]);
   });
 });
-
