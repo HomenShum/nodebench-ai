@@ -21,13 +21,13 @@ describe('UnifiedHubPills', () => {
     expect(agents.getAttribute('aria-selected')).toBe('false');
   });
 
-  it('navigates to #calendar and #calendar/agents on click', () => {
+  it('navigates to #calendar and #agents on click', () => {
     render(<UnifiedHubPills active="documents" />);
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
     expect(window.location.hash).toBe('#calendar');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Agents' }));
-    expect(window.location.hash).toBe('#calendar/agents');
+    expect(window.location.hash).toBe('#agents');
   });
 
   it('dispatches navigate:documents when clicking Documents', () => {
@@ -65,4 +65,3 @@ describe('UnifiedHubPills', () => {
     spy.mockRestore();
   });
 });
-

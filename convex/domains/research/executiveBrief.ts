@@ -20,6 +20,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 
 import OpenAI from "openai";
 import { getLlmModel } from "../../../shared/llm/modelCatalog";
+import { createHash, randomUUID } from "crypto";
 
 import {
   DailyBriefJSONSchema,
@@ -53,6 +54,23 @@ type FeedItem = {
   metrics?: Array<{ label: string; value: string; trend?: "up" | "down" }>;
 };
 
+type RetrievalRun = {
+  runId: string;
+  tool: string;
+  query: string;
+  executedAt: string;
+  topK: number;
+  datasetHash: string;
+};
+
+type ExecutiveBriefRecord = {
+  status: "valid" | "invalid";
+  brief: DailyBriefPayload;
+  evidence: Evidence[];
+  provenance: { retrievalRuns: RetrievalRun[] };
+  errors?: string[];
+};
+
 function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -64,6 +82,23 @@ function slugify(input: string): string {
 
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
+}
+
+function sha256Hex(input: string): string {
+  return createHash("sha256").update(input).digest("hex");
+}
+
+function evidenceIdForUrl(url: string): string {
+  const canonical = url.trim();
+  return `ev-${sha256Hex(canonical).slice(0, 12)}`;
+}
+
+function safeSourceDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "unknown";
+  }
 }
 
 function safeDateString(dateString: string): string {
@@ -88,7 +123,7 @@ function toEvidence(item: FeedItem, idx: number, dateString: string): Evidence {
   const score = typeof item.score === "number" ? item.score : undefined;
 
   return {
-    id: `ev-${slugify(source)}-${idx + 1}`,
+    id: evidenceIdForUrl(url || `https://example.com/unknown/${slugify(title)}`),
     source,
     title,
     url: url || `https://example.com/unknown/${slugify(title)}`,
@@ -97,7 +132,43 @@ function toEvidence(item: FeedItem, idx: number, dateString: string): Evidence {
       (typeof item.summary === "string" && item.summary.trim().slice(0, 220)) ||
       "Primary source supporting this signal.",
     score,
+    sourceDomain: safeSourceDomain(url || `https://example.com/unknown/${slugify(title)}`),
   };
+}
+
+function buildEvidenceLibrary(args: {
+  dateString: string;
+  runId: string;
+  feedItems: FeedItem[];
+  topK: number;
+}): Evidence[] {
+  const dateString = safeDateString(args.dateString);
+  const items = args.feedItems
+    .filter((i) => i && typeof i.url === "string" && i.url.trim())
+    .slice(0, clamp(args.topK, 1, 80));
+
+  return items.map((item, idx) => {
+    const url = (item.url ?? "").trim();
+    const publishedAt =
+      typeof item.publishedAt === "string" && item.publishedAt
+        ? item.publishedAt
+        : safeIso(dateString, 9);
+
+    return {
+      id: evidenceIdForUrl(url),
+      source: (item.source ?? "Other") as string,
+      title: (item.title ?? `Evidence ${idx + 1}`).slice(0, 240),
+      url,
+      publishedAt,
+      relevance:
+        (typeof item.summary === "string" && item.summary.trim().slice(0, 220)) ||
+        "Primary source supporting this signal.",
+      score: typeof item.score === "number" ? item.score : undefined,
+      runId: args.runId,
+      rank: idx + 1,
+      sourceDomain: safeSourceDomain(url),
+    } as any;
+  });
 }
 
 function buildDeterministicBrief(args: {
@@ -303,6 +374,61 @@ function validateEvidenceUrlsAgainstFeed(
   return errors;
 }
 
+function canonicalizeEvidenceFromLibrary(
+  brief: DailyBriefPayload,
+  evidenceLibrary: Evidence[],
+): DailyBriefPayload {
+  const byUrl = new Map<string, Evidence>();
+  for (const ev of evidenceLibrary) {
+    const url = typeof ev.url === "string" ? ev.url.trim() : "";
+    if (!url) continue;
+    byUrl.set(url, ev);
+  }
+
+  const signals = Array.isArray(brief.actII?.signals) ? brief.actII.signals : [];
+  const nextSignals = signals.map((signal) => {
+    const evs = Array.isArray(signal.evidence) ? signal.evidence : [];
+    const canonicalEvidence = evs
+      .map((ev) => {
+        const url = typeof ev?.url === "string" ? ev.url.trim() : "";
+        const lib = url ? byUrl.get(url) : undefined;
+        const canonicalId = lib?.id ?? (url ? evidenceIdForUrl(url) : ev?.id);
+        return {
+          ...ev,
+          id: canonicalId,
+          source: lib?.source ?? ev.source,
+          title: lib?.title ?? ev.title,
+          publishedAt: lib?.publishedAt ?? ev.publishedAt,
+          score: lib?.score ?? ev.score,
+          sourceDomain: (lib as any)?.sourceDomain ?? (ev as any)?.sourceDomain ?? safeSourceDomain(url),
+          rank: (lib as any)?.rank ?? (ev as any)?.rank,
+          runId: (lib as any)?.runId ?? (ev as any)?.runId,
+        } as any;
+      })
+      .filter((ev) => typeof ev.url === "string" && ev.url.trim());
+
+    // De-dupe within the signal by evidence ID.
+    const seen = new Set<string>();
+    const deduped = canonicalEvidence.filter((ev) => {
+      const id = typeof ev.id === "string" ? ev.id : "";
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+
+    return { ...signal, evidence: deduped };
+  });
+
+  return {
+    ...brief,
+    meta: {
+      ...(brief.meta as any),
+      hasEvidence: evidenceLibrary.length > 0,
+    } as any,
+    actII: { ...brief.actII, signals: nextSignals },
+  };
+}
+
 export const generateExecutiveBriefForMemoryInternal = internalAction({
   args: {
     memoryId: v.id("dailyBriefMemories"),
@@ -339,6 +465,24 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
         to: dayEnd,
       });
     }
+
+    const retrievalRunId = `feed-${safeDateString(memory.dateString)}-${randomUUID().slice(0, 8)}`;
+    const evidenceLibrary = buildEvidenceLibrary({
+      dateString: memory.dateString,
+      runId: retrievalRunId,
+      feedItems,
+      topK: 40,
+    });
+    const datasetHash = sha256Hex(evidenceLibrary.map((e) => e.url).join("\n")).slice(0, 16);
+
+    const retrievalRun: RetrievalRun = {
+      runId: retrievalRunId,
+      tool: "feed.getRecent",
+      query: JSON.stringify({ from: dayStart, to: dayEnd, limit: 80 }),
+      executedAt: new Date().toISOString(),
+      topK: evidenceLibrary.length,
+      datasetHash,
+    };
 
     const taskResults: any[] = await ctx.runQuery(
       api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
@@ -391,13 +535,17 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
           metrics: i.metrics,
         })),
       tasks: featuresWithResults.slice(0, 20),
+      evidenceLibrary: evidenceLibrary.slice(0, 30).map((e: any) => ({
+        evidenceId: e.id,
+        title: e.title,
+        url: e.url,
+        source: e.source,
+        publishedAt: e.publishedAt,
+        score: e.score,
+      })),
     };
 
-    const allowedEvidenceUrls = new Set<string>(
-      (context.feedItems || [])
-        .map((i: any) => (typeof i?.url === "string" ? i.url.trim() : ""))
-        .filter(Boolean),
-    );
+    const allowedEvidenceUrls = new Set<string>(evidenceLibrary.map((e) => e.url.trim()).filter(Boolean));
 
     const system = [BRIEF_SYSTEM_PROMPT, BRIEF_OUTPUT_CONSTRAINTS, BRIEF_EXAMPLE_PROMPT].join("\n\n");
     const model = args.model ?? getLlmModel("analysis", "openai");
@@ -406,6 +554,7 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
       `Generate an executive Daily Brief for ${memory.dateString}.`,
       "",
       "Use ONLY the provided feed items as evidence. Do not invent URLs or sources.",
+      "Prefer using the provided evidenceLibrary evidenceId values as evidence.id when possible.",
       "All synthesis fields must be editorial prose (no bullets, no log lines, no timestamps, no URLs).",
       "Act II signals must each include 1-5 evidence objects from the feed items (evidence.url must match).",
       "Act III actions must NEVER include failure strings; use status=\"insufficient_data\" with an explanation instead.",
@@ -431,6 +580,7 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
       validation = first.validation;
 
       if (parsed) {
+        parsed = canonicalizeEvidenceFromLibrary(parsed, evidenceLibrary);
         const evidenceUrlErrors = validateEvidenceUrlsAgainstFeed(parsed, allowedEvidenceUrls);
         if (evidenceUrlErrors.length > 0) {
           parsed = null;
@@ -463,15 +613,16 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
           temperature: 0.15,
         });
         const second = parseAndValidateBrief(json);
-        parsed = second.payload;
-        validation = second.validation;
+      parsed = second.payload;
+      validation = second.validation;
 
-        if (parsed) {
-          const evidenceUrlErrors = validateEvidenceUrlsAgainstFeed(parsed, allowedEvidenceUrls);
-          if (evidenceUrlErrors.length > 0) {
-            parsed = null;
-            validation = {
-              valid: false,
+      if (parsed) {
+        parsed = canonicalizeEvidenceFromLibrary(parsed, evidenceLibrary);
+        const evidenceUrlErrors = validateEvidenceUrlsAgainstFeed(parsed, allowedEvidenceUrls);
+        if (evidenceUrlErrors.length > 0) {
+          parsed = null;
+          validation = {
+            valid: false,
               errors: [...(second.validation?.errors ?? []), ...evidenceUrlErrors],
               warnings: second.validation?.warnings ?? [],
             };
@@ -491,15 +642,27 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
         feedItems,
         features,
       });
+      parsed = canonicalizeEvidenceFromLibrary(parsed, evidenceLibrary);
     }
 
     const generatedAt = Date.now();
+    const status: ExecutiveBriefRecord["status"] =
+      validation?.valid && evidenceLibrary.length > 0 ? "valid" : "invalid";
+
+    const record: ExecutiveBriefRecord = {
+      status,
+      brief: parsed,
+      evidence: evidenceLibrary,
+      provenance: { retrievalRuns: [retrievalRun] },
+      errors: status === "valid" ? [] : (validation?.errors ?? ["Missing evidence/provenance"]),
+    };
+
     await ctx.runMutation(
       internal.domains.research.dailyBriefMemoryMutations.setExecutiveBrief,
-      { memoryId: memory._id, payload: parsed, generatedAt, validation },
+      { memoryId: memory._id, payload: parsed, generatedAt, validation, record },
     );
 
-    return { ok: true, cached: false, brief: parsed, validation };
+    return { ok: true, cached: false, brief: parsed, validation, record };
   },
 });
 

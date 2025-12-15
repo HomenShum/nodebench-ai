@@ -26,8 +26,20 @@ export interface TrendLineConfig {
   xAxisLabels: string[];
   series: ChartSeries[];
   visibleEndIndex: number;
+  /** Index of "today"/present point (solid history ends here; projections begin after) */
+  presentIndex?: number;
   focusIndex?: number;
-   gridScale?: { min: number; max: number };
+  gridScale?: { min: number; max: number };
+  /** Y-axis unit label (e.g., "%", "pts", "items") */
+  yAxisUnit?: string;
+  /** Time window description (e.g., "last 7 days", "24h") */
+  timeWindow?: string;
+  /** Baseline value for reference (e.g., target, previous period average) */
+  baseline?: { value: number; label: string };
+  /** Delta from baseline or previous period */
+  delta?: { value: number; label: string; direction: "up" | "down" | "flat" };
+  /** Last updated timestamp */
+  lastUpdated?: string;
 }
 
 export interface Annotation {

@@ -3,8 +3,8 @@
 import React from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
-import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock } from "lucide-react";
-import InteractiveLineChart from "./InteractiveLineChart";
+import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock, PieChart } from "lucide-react";
+import EnhancedLineChart from "./EnhancedLineChart";
 import type { DashboardState } from "@/features/research/types";
 import { formatBriefMonthYear } from "@/lib/briefDate";
 import { useEvidence } from "../contexts/EvidenceContext";
@@ -40,7 +40,6 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
   const safeTech = data.techReadiness ?? { existing: 0, emerging: 0, sciFi: 0 };
   const capabilities = data.capabilities ?? [];
   const keyStats = data.keyStats ?? [];
-  const annotations = data.annotations ?? [];
   const agentCount = data.agentCount;
 
   // Build evidence map for tooltip display
@@ -71,11 +70,15 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
           </div>
 
           {/* Line Chart */}
-          <div className="h-[140px] w-full mt-2">
+          <div className="h-[180px] w-full mt-2">
             {safeCharts.trendLine ? (
-              <InteractiveLineChart
-                config={safeCharts.trendLine}
-                annotations={annotations}
+              <EnhancedLineChart
+                config={{
+                  ...safeCharts.trendLine,
+                  timeWindow: safeCharts.trendLine.timeWindow ?? "Last 7 days",
+                  yAxisUnit: safeCharts.trendLine.yAxisUnit ?? "%",
+                  lastUpdated: "today",
+                }}
                 onEvidenceClick={evidenceCtx.scrollToEvidence}
                 evidenceMap={evidenceMap}
               />
@@ -103,14 +106,24 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
 
           {/* RIGHT COL (5/12): DONUT & BUCKETS */}
           <div className="col-span-5 flex flex-col justify-between h-full">
-            {/* Donut */}
-            <div className="flex justify-center items-center relative h-20 mb-2">
-              <DonutChart data={safeCharts.marketShare} />
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[8px] font-bold uppercase text-slate-400 leading-none mb-0.5">Share</span>
-                <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-slate-900 leading-none" />
+            {/* Donut - Only render if we have data */}
+            {safeCharts.marketShare.length > 0 ? (
+              <div className="flex justify-center items-center relative h-20 mb-2">
+                <DonutChart data={safeCharts.marketShare} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[7px] font-bold uppercase text-slate-400 leading-none mb-0.5">
+                    {topShare.label}
+                  </span>
+                  <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-slate-900 leading-none" />
+                  <span className="text-[6px] text-slate-300 mt-0.5">of sources</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-20 mb-2 bg-slate-50 rounded">
+                <PieChart className="w-6 h-6 text-slate-200 mb-1" />
+                <span className="text-[8px] text-slate-300">No share data</span>
+              </div>
+            )}
 
             {/* Tech Readiness Buckets */}
             <div className="flex flex-col gap-1">
@@ -191,7 +204,7 @@ const BucketColumn: React.FC<BucketColumnProps> = ({ count, color }) => (
 );
 
 interface DonutChartProps {
-  data: Array<{ label: string; value: number; color: "accent" | "black" | "gray" }>;
+  data: Array<{ label: string; value: number; color: string }>;
 }
 
 const DonutChart: React.FC<DonutChartProps> = ({ data }) => {

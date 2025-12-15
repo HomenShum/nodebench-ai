@@ -13,3 +13,5 @@ export {
   type GenerationResult,
   type GeneratorOptions
 } from "./briefGenerator";
+
+export { buildResearchStreamViewModel } from "./briefTransformers";

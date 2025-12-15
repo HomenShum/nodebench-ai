@@ -30,12 +30,18 @@ export type EvidenceSource =
 export interface Evidence {
   /** Unique evidence ID (e.g., "ev-aws-blog-001") */
   id: string;
+  /** Optional retrieval run ID that produced this evidence */
+  runId?: string;
+  /** Optional rank within the retrieval run (1 = highest) */
+  rank?: number;
   /** Source provider */
   source: EvidenceSource | string;
   /** Article/repo/paper title */
   title: string;
   /** Canonical URL to the source */
   url: string;
+  /** Optional derived domain (e.g., "news.ycombinator.com") */
+  sourceDomain?: string;
   /** ISO 8601 timestamp */
   publishedAt: string;
   /** Why this evidence supports the claim (1-2 sentences) */
@@ -229,6 +235,8 @@ export interface DailyBriefMeta {
   headline: string;
   /** 1-sentence executive summary (the "day thesis") */
   summary: string;
+  /** Whether the record includes a resolved evidence bundle */
+  hasEvidence?: boolean;
   /** Optional: Overall confidence score (0-100) */
   confidence?: number;
   /** Optional: Brief version for same-day updates */
@@ -300,6 +308,24 @@ export interface DailyBriefPayload {
   dashboard?: DailyBriefDashboard;
   /** Provenance for agentic reproducibility */
   provenance?: Provenance;
+}
+
+/** Minimal provenance for retrieval-backed briefs (PROV-inspired). */
+export interface RetrievalRun {
+  runId: string;
+  tool: string;
+  query: string;
+  executedAt: string;
+  topK: number;
+  datasetHash: string;
+}
+
+export interface ExecutiveBriefRecord {
+  status: "valid" | "invalid";
+  brief: DailyBriefPayload;
+  evidence: Evidence[];
+  provenance: { retrievalRuns: RetrievalRun[] };
+  errors?: string[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

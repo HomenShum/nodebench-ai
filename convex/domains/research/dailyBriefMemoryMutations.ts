@@ -127,6 +127,7 @@ export const setExecutiveBrief = internalMutation({
     payload: v.any(),
     generatedAt: v.number(),
     validation: v.optional(v.any()),
+    record: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const memory = await ctx.db.get(args.memoryId);
@@ -141,6 +142,7 @@ export const setExecutiveBrief = internalMutation({
         executiveBrief: args.payload,
         executiveBriefGeneratedAt: args.generatedAt,
         executiveBriefValidation: args.validation,
+        ...(args.record ? { executiveBriefRecord: args.record } : {}),
       },
       updatedAt: now,
     });

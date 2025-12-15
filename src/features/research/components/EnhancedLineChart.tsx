@@ -1,0 +1,799 @@
+"use client";
+
+/**
+ * EnhancedLineChart - Production-ready chart with full utility
+ *
+ * Features:
+ * - Title with metric + unit + window
+ * - Y-axis with units and baseline reference
+ * - Delta callout showing change from baseline
+ * - Voronoi-style nearest-point selection (no pixel hunting)
+ * - WCAG-compliant tooltips (keyboard accessible, hoverable, persistent)
+ * - Empty state handling
+ * - Crosshair/vertical rule on hover
+ */
+
+import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { TrendingUp, TrendingDown, Minus, Clock, RefreshCw } from "lucide-react";
+import type { ChartSeries, ChartPoint, TrendLineConfig, TooltipPayload } from "@/features/research/types";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface EnhancedLineChartProps {
+  config: TrendLineConfig;
+  /** Callback when user clicks a data point with linked evidence */
+  onEvidenceClick?: (evidenceId: string) => void;
+  /** Map of evidence ID -> evidence data for tooltip display */
+  evidenceMap?: Map<string, { id: string; title: string; source?: string; url?: string }>;
+  /** Show loading state */
+  isLoading?: boolean;
+  /** Error message to display */
+  error?: string;
+  /** Callback for refresh button */
+  onRefresh?: () => void;
+  /** Hide the header section */
+  compact?: boolean;
+}
+
+interface HoveredPoint {
+  index: number;
+  seriesId: string;
+  x: number;
+  y: number;
+  value: number;
+  label: string;
+  linkedEvidenceIds?: string[];
+  pointTooltip?: TooltipPayload;
+  isPinned?: boolean;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CHART DIMENSIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CHART = {
+  width: 400,
+  height: 160,
+  paddingX: 40,
+  paddingY: 25,
+  paddingTop: 10,
+} as const;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const getSeriesColor = (series: ChartSeries) => {
+  if (series.color?.startsWith("#")) return series.color;
+  const colorMap: Record<string, string> = {
+    accent: "#4f46e5",
+    gray: "#94a3b8",
+    black: "#0f172a",
+    emerald: "#10b981",
+    red: "#ef4444",
+    amber: "#f59e0b",
+  };
+  return colorMap[series.color ?? "accent"] ?? "#4f46e5";
+};
+
+const formatValue = (value: number, unit?: string): string => {
+  if (unit === "%") return `${Math.round(value)}%`;
+  if (unit === "pts") return `${value.toFixed(1)} pts`;
+  return value.toLocaleString();
+};
+
+const getPointEvidenceIds = (pt: ChartPoint): string[] => {
+  const raw = [...(pt.linkedEvidenceIds ?? []), ...(pt.tooltip?.linkedEvidenceIds ?? [])]
+    .map((id) => String(id || "").trim())
+    .filter(Boolean);
+  return [...new Set(raw)];
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUB-COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Delta badge showing change from baseline */
+function DeltaCallout({ delta }: { delta: TrendLineConfig["delta"] }) {
+  if (!delta) return null;
+  
+  const Icon = delta.direction === "up" ? TrendingUp : delta.direction === "down" ? TrendingDown : Minus;
+  const colorClass = delta.direction === "up" ? "text-emerald-600 bg-emerald-50" 
+    : delta.direction === "down" ? "text-red-600 bg-red-50" 
+    : "text-slate-600 bg-slate-50";
+  const sign = delta.direction === "up" ? "+" : delta.direction === "down" ? "" : "";
+  
+  return (
+    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+      <Icon className="w-3 h-3" />
+      <span>{sign}{formatValue(delta.value, "%")}</span>
+      {delta.label && <span className="text-[10px] opacity-70">{delta.label}</span>}
+    </div>
+  );
+}
+
+/** Chart header with title, time window, delta, and last updated */
+function ChartHeader({ config, isLoading, onRefresh }: { 
+  config: TrendLineConfig; 
+  isLoading?: boolean; 
+  onRefresh?: () => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-2 mb-2">
+      <div className="min-w-0 flex-1">
+        {/* Title with unit */}
+        <div className="flex items-center gap-2">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide truncate">
+            {config.title || "Trend"}
+            {config.yAxisUnit && <span className="text-slate-400 font-normal"> ({config.yAxisUnit})</span>}
+          </h3>
+          {config.delta && <DeltaCallout delta={config.delta} />}
+        </div>
+        
+        {/* Time window and last updated */}
+        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+          {config.timeWindow && <span>{config.timeWindow}</span>}
+          {config.lastUpdated && (
+            <>
+              <span>•</span>
+              <span className="flex items-center gap-0.5">
+                <Clock className="w-2.5 h-2.5" />
+                Updated {config.lastUpdated}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      
+      {/* Refresh button */}
+      {onRefresh && (
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={isLoading}
+          className="p-1 rounded hover:bg-slate-100 transition-colors disabled:opacity-50"
+          aria-label="Refresh chart data"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isLoading ? "animate-spin" : ""}`} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
+  config,
+  onEvidenceClick,
+  evidenceMap,
+  isLoading,
+  error,
+  onRefresh,
+  compact,
+}) => {
+  const [hoveredPoint, setHoveredPoint] = useState<HoveredPoint | null>(null);
+  const [pinnedPoint, setPinnedPoint] = useState<HoveredPoint | null>(null);
+  const [isTooltipHovered, setIsTooltipHovered] = useState(false);
+  const [isFocusDismissed, setIsFocusDismissed] = useState(false);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const hoverClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+
+  // Compute all points with coordinates for nearest-point selection
+  const allPointsWithCoords = useMemo(() => {
+    if (!config?.series?.length) return [];
+
+    const allValues = config.series.flatMap((s) => s.data.map((d) => d.value));
+    const minY = config.gridScale?.min ?? Math.min(0, ...allValues);
+    const maxY = config.gridScale?.max ?? Math.max(...allValues) * 1.1;
+    const range = Math.max(maxY - minY, 1);
+    const xSteps = Math.max(...config.series.map((s) => s.data.length - 1), config.xAxisLabels.length - 1, 1);
+
+    const points: Array<{
+      seriesId: string;
+      seriesLabel: string;
+      index: number;
+      point: ChartPoint;
+      x: number;
+      y: number;
+      color: string;
+    }> = [];
+
+    config.series.forEach((series) => {
+      const color = getSeriesColor(series);
+      const visibleEnd = Math.min(config.visibleEndIndex, series.data.length - 1);
+      series.data.forEach((point, i) => {
+        if (i > visibleEnd) return;
+        const x = CHART.paddingX + (i / xSteps) * (CHART.width - CHART.paddingX * 2);
+        const y = CHART.height - CHART.paddingY - ((point.value - minY) / range) * (CHART.height - CHART.paddingY - CHART.paddingTop);
+        points.push({
+          seriesId: series.id,
+          seriesLabel: series.label,
+          index: i,
+          point,
+          x,
+          y,
+          color,
+        });
+      });
+    });
+    return points;
+  }, [config]);
+
+  // Find nearest point using Euclidean distance (Voronoi-style)
+  const findNearestPoint = useCallback((mouseX: number, mouseY: number) => {
+    if (!allPointsWithCoords.length) return null;
+
+    let nearest = allPointsWithCoords[0];
+    let minDist = Infinity;
+
+    allPointsWithCoords.forEach((pt) => {
+      const dist = Math.hypot(pt.x - mouseX, pt.y - mouseY);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = pt;
+      }
+    });
+
+    // Only select if within reasonable range (50px)
+    if (minDist > 50) return null;
+
+    return {
+      index: nearest.index,
+      seriesId: nearest.seriesId,
+      x: nearest.x,
+      y: nearest.y,
+      value: nearest.point.value,
+      label: nearest.seriesLabel,
+      linkedEvidenceIds: getPointEvidenceIds(nearest.point),
+      pointTooltip: nearest.point.tooltip,
+    };
+  }, [allPointsWithCoords]);
+
+  // Handle mouse move for nearest-point selection
+  const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (pinnedPoint || isTooltipHovered) return; // Don't update hover when pinned or tooltip hovered
+
+    if (hoverClearTimeoutRef.current) {
+      clearTimeout(hoverClearTimeoutRef.current);
+      hoverClearTimeoutRef.current = null;
+    }
+
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const scaleX = CHART.width / rect.width;
+    const scaleY = CHART.height / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
+
+    const nearest = findNearestPoint(mouseX, mouseY);
+    setHoveredPoint(nearest);
+  }, [findNearestPoint, pinnedPoint, isTooltipHovered]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (pinnedPoint) return;
+    hoverClearTimeoutRef.current = setTimeout(() => {
+      setHoveredPoint(null);
+    }, 80);
+  }, [pinnedPoint]);
+
+  const handleClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const scaleX = CHART.width / rect.width;
+    const scaleY = CHART.height / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
+
+    const nearest = findNearestPoint(mouseX, mouseY);
+
+    if (nearest) {
+      if (pinnedPoint?.index === nearest.index && pinnedPoint?.seriesId === nearest.seriesId) {
+        // Clicking same point unpins it
+        setPinnedPoint(null);
+      } else {
+        setPinnedPoint({ ...nearest, isPinned: true });
+        // Scroll to first evidence if available
+        if (nearest.linkedEvidenceIds?.length && onEvidenceClick) {
+          onEvidenceClick(nearest.linkedEvidenceIds[0]);
+        }
+      }
+    } else {
+      setPinnedPoint(null);
+    }
+  }, [findNearestPoint, pinnedPoint, onEvidenceClick]);
+
+  // Keyboard navigation
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!config?.series?.length) return;
+
+    const primarySeries = config.series[0];
+    const maxIndex = primarySeries.data.length - 1;
+
+    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      const direction = e.key === "ArrowRight" ? 1 : -1;
+      const newIndex = Math.max(0, Math.min(maxIndex, (focusedIndex ?? 0) + direction));
+      setFocusedIndex(newIndex);
+
+      // Find the point at this index
+      const pt = allPointsWithCoords.find((p) => p.seriesId === primarySeries.id && p.index === newIndex);
+        if (pt) {
+          setHoveredPoint({
+            index: pt.index,
+            seriesId: pt.seriesId,
+            x: pt.x,
+            y: pt.y,
+            value: pt.point.value,
+            label: pt.seriesLabel,
+            linkedEvidenceIds: getPointEvidenceIds(pt.point),
+            pointTooltip: pt.point.tooltip,
+          });
+        }
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (hoveredPoint) {
+        setPinnedPoint(hoveredPoint.isPinned ? null : { ...hoveredPoint, isPinned: true });
+        if (hoveredPoint.linkedEvidenceIds?.length && onEvidenceClick) {
+          onEvidenceClick(hoveredPoint.linkedEvidenceIds[0]);
+        }
+      }
+    } else if (e.key === "Escape") {
+      setPinnedPoint(null);
+      setHoveredPoint(null);
+      setFocusedIndex(null);
+      setIsTooltipHovered(false);
+      setIsFocusDismissed(true);
+    }
+  }, [config, focusedIndex, hoveredPoint, allPointsWithCoords, onEvidenceClick]);
+
+  // Dismiss pinned tooltip on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (!pinnedPoint) return;
+      const target = e.target as Node;
+      if (svgRef.current?.contains(target)) return;
+      if (tooltipRef.current?.contains(target)) return;
+      setPinnedPoint(null);
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, [pinnedPoint]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverClearTimeoutRef.current) clearTimeout(hoverClearTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof config.focusIndex === "number") setFocusedIndex(config.focusIndex);
+    else setFocusedIndex(null);
+    setIsFocusDismissed(false);
+  }, [config.focusIndex]);
+
+  const focusFallback = useMemo<HoveredPoint | null>(() => {
+    if (typeof config.focusIndex !== "number") return null;
+    const primary = config.series.find((s) => s.type === "solid") ?? config.series[0];
+    if (!primary) return null;
+    const pt = allPointsWithCoords.find((p) => p.seriesId === primary.id && p.index === config.focusIndex);
+    if (!pt) return null;
+    return {
+      index: pt.index,
+      seriesId: pt.seriesId,
+      x: pt.x,
+      y: pt.y,
+      value: pt.point.value,
+      label: pt.seriesLabel,
+      linkedEvidenceIds: getPointEvidenceIds(pt.point),
+      pointTooltip: pt.point.tooltip,
+    };
+  }, [allPointsWithCoords, config.focusIndex, config.series]);
+
+  const activePoint = pinnedPoint ?? hoveredPoint ?? (!isFocusDismissed ? focusFallback : null);
+
+  // Empty state
+  if (!config?.series?.length) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-lg border border-slate-200 text-slate-400 text-xs">
+        No chart data available
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 rounded-lg border border-red-200 text-red-600 text-xs p-4">
+        <span className="font-medium mb-1">Chart Error</span>
+        <span className="text-red-500">{error}</span>
+        {onRefresh && (
+          <button type="button" onClick={onRefresh} className="mt-2 text-red-600 underline">
+            Retry
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Compute scales
+  const allValues = config.series.flatMap((s) => s.data.map((d) => d.value));
+  const minY = config.gridScale?.min ?? Math.min(0, ...allValues);
+  const maxY = config.gridScale?.max ?? Math.max(...allValues) * 1.1;
+  const range = Math.max(maxY - minY, 1);
+  const xSteps = Math.max(...config.series.map((s) => s.data.length - 1), config.xAxisLabels.length - 1, 1);
+
+  const getCoord = (index: number, value: number) => ({
+    x: CHART.paddingX + (index / xSteps) * (CHART.width - CHART.paddingX * 2),
+    y: CHART.height - CHART.paddingY - ((value - minY) / range) * (CHART.height - CHART.paddingY - CHART.paddingTop),
+  });
+
+  // Build smooth path
+  const buildPath = (points: Array<{ x: number; y: number }>) => {
+    if (points.length < 2) return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+
+    let d = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i - 1] ?? points[i];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[i + 2] ?? p2;
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${c1x} ${c1y} ${c2x} ${c2y} ${p2.x} ${p2.y}`;
+    }
+    return d;
+  };
+
+  // Y-axis tick values
+  const yTicks = [minY, minY + range * 0.5, maxY].map((v) => ({
+    value: v,
+    y: getCoord(0, v).y,
+    label: formatValue(v, config.yAxisUnit),
+  }));
+
+  const primarySeriesId = (config.series.find((s) => s.type === "solid") ?? config.series[0]).id;
+
+  return (
+    <div className="w-full h-full flex flex-col">
+      {/* Header */}
+      {!compact && <ChartHeader config={config} isLoading={isLoading} onRefresh={onRefresh} />}
+
+      {/* Chart container */}
+      <div className="relative flex-1 min-h-0">
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded">
+            <RefreshCw className="w-5 h-5 text-slate-400 animate-spin" />
+          </div>
+        )}
+
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+          className="w-full h-full overflow-visible cursor-crosshair"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          role="img"
+          aria-label={`${config.title} chart showing ${config.series.length} series`}
+        >
+          {/* Y-axis labels */}
+          {yTicks.map((tick, i) => (
+            <g key={i}>
+              <line
+                x1={CHART.paddingX}
+                x2={CHART.width - CHART.paddingX + 10}
+                y1={tick.y}
+                y2={tick.y}
+                className="stroke-slate-100"
+                strokeDasharray="2 2"
+              />
+              <text
+                x={CHART.paddingX - 5}
+                y={tick.y + 3}
+                textAnchor="end"
+                className="text-[8px] fill-slate-400 font-mono"
+              >
+                {tick.label}
+              </text>
+            </g>
+          ))}
+
+          {/* Baseline reference line */}
+          {config.baseline && (
+            <g>
+              <line
+                x1={CHART.paddingX}
+                x2={CHART.width - CHART.paddingX}
+                y1={getCoord(0, config.baseline.value).y}
+                y2={getCoord(0, config.baseline.value).y}
+                className="stroke-amber-400"
+                strokeWidth={1.5}
+                strokeDasharray="4 2"
+              />
+              <text
+                x={CHART.width - CHART.paddingX + 3}
+                y={getCoord(0, config.baseline.value).y + 3}
+                className="text-[8px] fill-amber-600 font-medium"
+              >
+                {config.baseline.label}
+              </text>
+            </g>
+          )}
+
+           {/* X-axis labels */}
+           {config.xAxisLabels.map((label, i) => {
+             const { x } = getCoord(i, 0);
+             const muted = i > config.visibleEndIndex;
+             return (
+               <text
+                 key={i}
+                 x={x}
+                 y={CHART.height - 3}
+                 textAnchor="middle"
+                 className={`text-[8px] font-mono ${muted ? "fill-slate-200" : "fill-slate-400"}`}
+               >
+                 {label}
+               </text>
+             );
+           })}
+
+           {/* Series lines */}
+           {config.series.map((series) => {
+             const color = getSeriesColor(series);
+             const isGhost = series.type === "ghost";
+             const visibleEnd = Math.min(config.visibleEndIndex, series.data.length - 1);
+
+             const points = series.data.map((pt, i) => ({ i, ...getCoord(i, pt.value), point: pt }));
+             const visiblePoints = points.filter((p) => p.i <= visibleEnd);
+
+             const presentIndexRaw = typeof config.presentIndex === "number" ? config.presentIndex : null;
+             const presentIndex =
+               presentIndexRaw === null ? null : Math.max(0, Math.min(presentIndexRaw, visibleEnd));
+
+             const historyPoints =
+               presentIndex !== null && !isGhost
+                 ? visiblePoints.filter((p) => p.i <= presentIndex)
+                 : visiblePoints;
+
+             const projectionPoints =
+               presentIndex !== null && !isGhost && presentIndex < visibleEnd
+                 ? visiblePoints.filter((p) => p.i >= presentIndex && p.i <= visibleEnd)
+                 : [];
+
+             const historyPath = buildPath(historyPoints.map((p) => ({ x: p.x, y: p.y })));
+             const projectionPath =
+               projectionPoints.length >= 2
+                 ? buildPath(projectionPoints.map((p) => ({ x: p.x, y: p.y })))
+                 : "";
+
+             return (
+               <g key={series.id}>
+                 <motion.path
+                   d={historyPath}
+                   fill="none"
+                   stroke={color}
+                   strokeWidth={isGhost ? 1.5 : 2.5}
+                   strokeLinecap="round"
+                   strokeLinejoin="round"
+                   strokeDasharray={isGhost ? "6 4" : "0"}
+                   opacity={isGhost ? 0.4 : 1}
+                   initial={{ pathLength: 0 }}
+                   animate={{ pathLength: 1 }}
+                   transition={{ duration: 1.2, ease: "easeOut" }}
+                 />
+
+                 {!isGhost && projectionPath && (
+                   <motion.path
+                     d={projectionPath}
+                     fill="none"
+                     stroke={color}
+                     strokeWidth={2.2}
+                     strokeLinecap="round"
+                     strokeLinejoin="round"
+                     strokeDasharray="6 4"
+                     opacity={0.55}
+                     initial={{ pathLength: 0 }}
+                     animate={{ pathLength: 1 }}
+                     transition={{ duration: 1.2, ease: "easeOut" }}
+                   />
+                 )}
+
+                 {/* Data points */}
+                 {series.data.map((pt, i) => {
+                   if (i > visibleEnd) return null;
+                   const coord = getCoord(i, pt.value);
+                   const isActive = activePoint?.seriesId === series.id && activePoint?.index === i;
+                   const isFocus = series.id === primarySeriesId && config.focusIndex === i;
+                   const isProjected = !isGhost && presentIndex !== null && i > presentIndex;
+                   const evidenceIds = getPointEvidenceIds(pt);
+                   const hasEvidence = evidenceIds.length > 0;
+
+                   return (
+                     <g key={i}>
+                       {/* Point circle */}
+                       <motion.circle
+                         cx={coord.x}
+                         cy={coord.y}
+                         r={isActive || isFocus ? 6 : 4}
+                         fill="white"
+                         stroke={color}
+                         strokeWidth={2}
+                         strokeDasharray={isProjected ? "3 3" : "0"}
+                         opacity={isProjected ? 0.65 : isGhost ? 0.45 : 1}
+                         initial={{ scale: 0 }}
+                         animate={{ scale: 1 }}
+                         transition={{ delay: i * 0.05 }}
+                       />
+
+                       {/* Evidence indicator */}
+                       {hasEvidence && (
+                         <circle
+                           cx={coord.x}
+                           cy={coord.y}
+                           r={2}
+                           fill={color}
+                           opacity={isProjected ? 0.65 : 1}
+                         />
+                       )}
+
+                       {/* Active pulse */}
+                       {isActive && (
+                         <motion.circle
+                           cx={coord.x}
+                           cy={coord.y}
+                           r={6}
+                           fill={color}
+                           initial={{ opacity: 0.5, scale: 1 }}
+                           animate={{ opacity: 0, scale: 2 }}
+                           transition={{ repeat: Infinity, duration: 1.5 }}
+                         />
+                       )}
+
+                       {/* Focus pulse (when not actively hovered/pinned) */}
+                       {isFocus && !isActive && (
+                         <motion.circle
+                           cx={coord.x}
+                           cy={coord.y}
+                           r={6}
+                           fill={color}
+                           initial={{ opacity: 0.4, scale: 1 }}
+                           animate={{ opacity: 0, scale: 2 }}
+                           transition={{ repeat: Infinity, duration: 1.5 }}
+                         />
+                       )}
+                     </g>
+                   );
+                 })}
+               </g>
+             );
+           })}
+
+          {/* Vertical crosshair on hover */}
+          {activePoint && (
+            <line
+              x1={activePoint.x}
+              x2={activePoint.x}
+              y1={CHART.paddingTop}
+              y2={CHART.height - CHART.paddingY}
+              className="stroke-slate-300"
+              strokeDasharray="3 3"
+              strokeWidth={1}
+            />
+          )}
+        </svg>
+
+        {/* Tooltip */}
+        <AnimatePresence>
+          {activePoint && (
+            <motion.div
+              ref={tooltipRef}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="absolute z-50 pointer-events-auto"
+              onMouseEnter={() => {
+                if (hoverClearTimeoutRef.current) {
+                  clearTimeout(hoverClearTimeoutRef.current);
+                  hoverClearTimeoutRef.current = null;
+                }
+                setIsTooltipHovered(true);
+              }}
+              onMouseLeave={() => {
+                setIsTooltipHovered(false);
+                if (!pinnedPoint) setHoveredPoint(null);
+              }}
+              style={{
+                left: `${(activePoint.x / CHART.width) * 100}%`,
+                top: `${(activePoint.y / CHART.height) * 100}%`,
+                transform: "translate(-50%, -100%)",
+                marginTop: "-12px",
+              }}
+            >
+              <div className={`bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs min-w-[120px] ${
+                activePoint.isPinned ? "ring-2 ring-indigo-400" : ""
+              }`}>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[9px] uppercase tracking-wider text-indigo-200">
+                    {activePoint.pointTooltip?.kicker ?? "Intel"}
+                  </span>
+                  {activePoint.isPinned && (
+                    <span className="text-[8px] bg-indigo-500 px-1 rounded">PINNED</span>
+                  )}
+                </div>
+
+                <div className="font-medium text-[11px] leading-snug">
+                  {activePoint.pointTooltip?.title ?? config.xAxisLabels[activePoint.index] ?? `Point ${activePoint.index + 1}`}
+                </div>
+                <div className="text-lg font-bold">
+                  {formatValue(activePoint.value, config.yAxisUnit)}
+                </div>
+                <div className="text-slate-400 text-[10px]">{activePoint.label}</div>
+                {activePoint.pointTooltip?.body && (
+                  <div className="mt-1 text-[10px] text-slate-300 leading-relaxed">
+                    {activePoint.pointTooltip.body}
+                  </div>
+                )}
+
+                {/* Evidence count */}
+                {(activePoint.linkedEvidenceIds?.length ?? 0) > 0 && (
+                  <div className="mt-2 pt-2 border-t border-slate-700">
+                    <div className="text-[9px] text-slate-400 uppercase tracking-wider">
+                      Sources ({activePoint.linkedEvidenceIds?.length})
+                    </div>
+                    <div className="mt-1 space-y-1">
+                      {activePoint.linkedEvidenceIds!.slice(0, 3).map((id) => {
+                        const ev = evidenceMap?.get(id);
+                        const title = ev?.title ?? id;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEvidenceClick?.(id);
+                            }}
+                            className="w-full text-left text-[10px] text-slate-200 hover:text-indigo-200 hover:bg-slate-800/60 rounded px-1 py-0.5 transition-colors"
+                          >
+                            {title}
+                            {ev?.source ? <span className="text-slate-500 ml-1">· {ev.source}</span> : null}
+                          </button>
+                        );
+                      })}
+                      {(activePoint.linkedEvidenceIds?.length ?? 0) > 3 && (
+                        <div className="text-[9px] text-slate-500 italic px-1">
+                          +{(activePoint.linkedEvidenceIds?.length ?? 0) - 3} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Arrow */}
+              <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-900 mx-auto" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+export default EnhancedLineChart;

@@ -48,8 +48,9 @@ const useInView = (options?: IntersectionObserverInit) => {
     if (!node || typeof IntersectionObserver === "undefined") return;
 
     const observerOptions: IntersectionObserverInit = {
-      threshold: options?.threshold ?? 0.55,
-      rootMargin: options?.rootMargin ?? "-20% 0px -50% 0px",
+      // Center-band activation for deterministic scrolly binding.
+      threshold: options?.threshold ?? 0,
+      rootMargin: options?.rootMargin ?? "-45% 0px -45% 0px",
     };
 
     const observer = new IntersectionObserver(
@@ -99,7 +100,7 @@ interface SectionRendererProps {
 }
 
 const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRendererProps) => {
-  const { ref, inView } = useInView({ threshold: 0.6, rootMargin: "-20% 0px -50% 0px" });
+  const { ref, inView } = useInView({ threshold: 0, rootMargin: "-45% 0px -45% 0px" });
   const onVisibleRef = useRef(onVisible);
 
   useEffect(() => {

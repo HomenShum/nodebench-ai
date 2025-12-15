@@ -39,7 +39,9 @@ export type {
   ActII,
   ActIII,
   DailyBriefDashboard,
-  DailyBriefPayload
+  DailyBriefPayload,
+  RetrievalRun,
+  ExecutiveBriefRecord
 } from "./dailyBriefSchema";
 
 export { DailyBriefJSONSchema } from "./dailyBriefSchema";

@@ -37,17 +37,17 @@ window.addEventListener('message', async (message) => {
     // End of code for taking screenshots on chef.convex.dev.
   ].filter(Boolean),
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@features": path.resolve(__dirname, "./src/features"),
-      "@shared": path.resolve(__dirname, "./src/shared"),
-    },
+    // Order matters: keep specific aliases above the generic "@/" alias.
+    alias: [
+      { find: "@features", replacement: path.resolve(__dirname, "./src/features").replace(/\\/g, "/") },
+      { find: "@shared", replacement: path.resolve(__dirname, "./src/shared").replace(/\\/g, "/") },
+      { find: /^@\//, replacement: `${path.resolve(__dirname, "./src").replace(/\\/g, "/")}/` },
+    ],
   },
   optimizeDeps: {
     include: [
       "react",
       "react-dom",
-      "wx-react-gantt",
       "rehype-raw",
       "rehype-sanitize",
       "rehype-parse",

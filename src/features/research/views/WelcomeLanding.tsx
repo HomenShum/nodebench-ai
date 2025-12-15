@@ -52,8 +52,9 @@ import { OvernightMovesCard, type MoveItem } from "@/features/research/component
 import { DealListPanel, DealFlyout, type Deal } from "@/features/research/components/DealListPanel";
 import SourceFeed from "@/features/research/components/SourceFeed";
 import researchStreamData from "@/features/research/content/researchStream.json";
-import type { DashboardState, DailyBriefPayload } from "@/features/research/types";
+import type { DashboardState, DailyBriefPayload, ExecutiveBriefRecord } from "@/features/research/types";
 import { validateBriefPayload } from "@/features/research/validators/briefValidator";
+import { buildResearchStreamViewModel } from "@/features/research/utils/briefTransformers";
 import { formatBriefDate, formatBriefMonthYear } from "@/lib/briefDate";
 import { EvidenceProvider, useEvidence } from "@/features/research/contexts/EvidenceContext";
 import { ExecutiveBriefHeader } from "@/features/research/components/ExecutiveBriefHeader";
@@ -524,10 +525,15 @@ function WelcomeLandingInner({
     return unique.sort().reverse();
   }, [dashboardHistory]);
 
-  const briefingDateString =
+  const latestMemoryDateString =
     typeof (latestBriefMemory as any)?.dateString === "string"
       ? ((latestBriefMemory as any).dateString as string)
-      : availableBriefDates[0] ?? null;
+      : null;
+
+  const briefingDateString =
+    latestMemoryDateString && availableBriefDates.includes(latestMemoryDateString)
+      ? latestMemoryDateString
+      : availableBriefDates[0] ?? latestMemoryDateString ?? null;
 
   const briefRecentFeed = useQuery(
     api.feed.getRecent,
@@ -546,6 +552,13 @@ function WelcomeLandingInner({
   // Register evidence from structured brief when available
   useEffect(() => {
     const memory: any = latestBriefMemory as any;
+    const record = memory?.context?.executiveBriefRecord as ExecutiveBriefRecord | undefined;
+
+    if (record?.status === "valid" && Array.isArray(record.evidence) && record.evidence.length > 0) {
+      evidenceContext.registerEvidence(record.evidence);
+      return;
+    }
+
     const executiveBrief = memory?.context?.executiveBrief as DailyBriefPayload | undefined;
     const generatedBrief = memory?.context?.generatedBrief as DailyBriefPayload | undefined;
     const candidateBrief = executiveBrief ?? generatedBrief;
@@ -1927,13 +1940,49 @@ While commercial fusion is still years away, the pace of innovation has accelera
     if (dossierSections && dossierSections.length > 0) return dossierSections;
 
     const memory: any = latestBriefMemory as any;
+    const record = memory?.context?.executiveBriefRecord as ExecutiveBriefRecord | undefined;
+    if (record) {
+      if (record.status === "valid") {
+        const viewModel = buildResearchStreamViewModel({ record, history: dashboardHistory as any });
+        if (viewModel.length > 0) return viewModel;
+
+        return [
+          {
+            id: "brief-unavailable",
+            meta: { date: "Today's Briefing", title: "Brief unavailable" },
+            content: {
+              body: ["Brief data is present but could not be adapted for rendering."],
+              deepDives: [],
+            },
+            dashboard: { phaseLabel: "Brief", kpis: [], marketSentiment: 0, activeRegion: "Global" },
+          },
+        ];
+      } else {
+        const errors = Array.isArray(record.errors) ? record.errors.filter(Boolean).slice(0, 3) : [];
+        return [
+          {
+            id: "brief-unavailable",
+            meta: { date: "Today's Briefing", title: "Brief unavailable" },
+            content: {
+              body: [
+                "We couldn't generate an evidence-backed brief for this date yet.",
+                errors.length ? `Reason: ${errors.join("; ")}` : "Try clicking Refresh to retry.",
+              ],
+              deepDives: [],
+            },
+            dashboard: { phaseLabel: "Brief", kpis: [], marketSentiment: 0, activeRegion: "Global" },
+          },
+        ];
+      }
+    }
     const snapshotSummary = memory?.context?.snapshotSummary;
     const memoryDashboard = memory?.context?.dashboardMetrics as DashboardState | undefined;
 
     // Prefer the executive brief (strict schema + lint) and fall back to legacy generatedBrief if present.
+    const recordBrief = record?.status === "valid" ? record.brief : undefined;
     const executiveBrief = memory?.context?.executiveBrief as DailyBriefPayload | undefined;
     const generatedBrief = memory?.context?.generatedBrief as DailyBriefPayload | undefined;
-    const candidateBrief = executiveBrief ?? generatedBrief;
+    const candidateBrief = recordBrief ?? executiveBrief ?? generatedBrief;
     const candidateValidation = candidateBrief ? validateBriefPayload(candidateBrief) : null;
     const structuredBrief = candidateBrief && candidateValidation?.valid ? candidateBrief : undefined;
     const hasStructuredBrief = Boolean(structuredBrief?.actII?.signals?.length);
@@ -2438,14 +2487,16 @@ While commercial fusion is still years away, the pace of innovation has accelera
     }
 
     return researchStreamData as ScrollySection[];
-  }, [dossierSections, latestBriefMemory, latestBriefTaskResults, liveFeed, briefRecentFeed, briefingDateString]);
+  }, [dossierSections, latestBriefMemory, dashboardHistory, latestBriefTaskResults, liveFeed, briefRecentFeed, briefingDateString]);
 
   // Extract structured brief for ExecutiveBriefHeader
   const structuredBriefData = useMemo(() => {
     const memory: any = latestBriefMemory as any;
+    const record = memory?.context?.executiveBriefRecord as ExecutiveBriefRecord | undefined;
+    const recordBrief = record?.status === "valid" ? record.brief : undefined;
     const executiveBrief = memory?.context?.executiveBrief as DailyBriefPayload | undefined;
     const generatedBrief = memory?.context?.generatedBrief as DailyBriefPayload | undefined;
-    const candidateBrief = executiveBrief ?? generatedBrief;
+    const candidateBrief = recordBrief ?? executiveBrief ?? generatedBrief;
     const candidateValidation = candidateBrief ? validateBriefPayload(candidateBrief) : null;
     return candidateBrief && candidateValidation?.valid ? candidateBrief : undefined;
   }, [latestBriefMemory]);
@@ -2521,7 +2572,13 @@ While commercial fusion is still years away, the pace of innovation has accelera
               <div className="max-w-[1400px] mx-auto px-6 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
                 <div className="flex items-start justify-between gap-4">
                   <ExecutiveBriefHeader
-                    dayThesis={structuredBriefData.meta?.dayThesis}
+                    headline={structuredBriefData.meta?.headline}
+                    thesis={structuredBriefData.meta?.summary}
+                    date={
+                      typeof structuredBriefData.meta?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(structuredBriefData.meta.date)
+                        ? formatBriefDate(structuredBriefData.meta.date)
+                        : undefined
+                    }
                     quality={structuredBriefData.quality}
                     topics={structuredBriefData.dashboard?.trendingTags?.slice(0, 6)}
                     sources={Object.keys(sourceBreakdown || {}).slice(0, 6)}

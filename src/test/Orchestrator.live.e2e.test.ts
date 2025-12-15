@@ -12,13 +12,19 @@ if (!live) {
     it(
       'runs a real search -> answer pipeline (no mocks) and returns output',
       async () => {
-        // Dynamic imports to avoid loading networked modules when gated off
+        // Dynamic imports to avoid loading networked modules when gated off.
+        // Use non-literal specifiers so Vite doesn't try to resolve them during transform.
+        const orchestratorModule = '../../' + 'agents/core/orchestrator';
+        const traceModule = '../../' + 'agents/core/trace';
+        const searchModule = '../../' + 'agents/tools/search';
+        const openaiModule = '../../' + 'agents/tools/openai';
+        const structuredModule = '../../' + 'agents/tools/structured';
         const [{ orchestrate }, { Trace }, { searchTool }, { answerTool }, { structuredTool }] = await Promise.all([
-          import(/* @vite-ignore */ '../../agents/core/orchestrator'),
-          import(/* @vite-ignore */ '../../agents/core/trace'),
-          import(/* @vite-ignore */ '../../agents/tools/search'),
-          import(/* @vite-ignore */ '../../agents/tools/openai'),
-          import(/* @vite-ignore */ '../../agents/tools/structured'),
+          import(/* @vite-ignore */ orchestratorModule as any),
+          import(/* @vite-ignore */ traceModule as any),
+          import(/* @vite-ignore */ searchModule as any),
+          import(/* @vite-ignore */ openaiModule as any),
+          import(/* @vite-ignore */ structuredModule as any),
         ]);
 
         const demoRoot = `${process.cwd()}/agents/app/demo_scenarios`;
@@ -59,4 +65,3 @@ if (!live) {
     );
   });
 }
-

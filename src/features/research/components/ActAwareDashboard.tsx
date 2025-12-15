@@ -11,8 +11,8 @@
 import React from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
-import { Database, Clock, Shield, TrendingUp, Target, AlertTriangle } from "lucide-react";
-import InteractiveLineChart from "./InteractiveLineChart";
+import { Database, Clock, Shield, TrendingUp, Target, AlertTriangle, BarChart3 } from "lucide-react";
+import EnhancedLineChart from "./EnhancedLineChart";
 import type { DashboardState } from "@/features/research/types";
 import type { QualityMetrics, Signal, Action } from "../types/dailyBriefSchema";
 import { useEvidence } from "../contexts/EvidenceContext";
@@ -159,6 +159,41 @@ function ActIIChangeView({ dashboardState, activeSignal, annotations = [] }: Act
   const evidenceCtx = useEvidence();
   const evidenceMap = new Map(evidenceCtx.getEvidenceList().map((ev) => [ev.id, ev]));
 
+  // Enhance chart config with signal-specific metadata
+  const enhancedChartConfig = dashboardState?.charts?.trendLine ? {
+    ...dashboardState.charts.trendLine,
+    // Add time window if not present
+    timeWindow: dashboardState.charts.trendLine.timeWindow ?? "Last 7 days",
+    // Add Y-axis unit if not present
+    yAxisUnit: dashboardState.charts.trendLine.yAxisUnit ?? "%",
+    // Add delta from signal if available
+    delta: activeSignal?.deltaSummary ? {
+      value: parseFloat(activeSignal.deltaSummary.match(/[-+]?\d+\.?\d*/)?.[0] ?? "0"),
+      label: "vs prior",
+      direction: activeSignal.deltaSummary.includes("+") || activeSignal.deltaSummary.includes("up")
+        ? "up" as const
+        : activeSignal.deltaSummary.includes("-") || activeSignal.deltaSummary.includes("down")
+        ? "down" as const
+        : "flat" as const,
+    } : dashboardState.charts.trendLine.delta,
+    // Add last updated
+    lastUpdated: dashboardState.meta?.currentDate ? "today" : undefined,
+  } : null;
+
+  const hasChartData = enhancedChartConfig && enhancedChartConfig.series?.length > 0;
+  const hasKeyStats = dashboardState?.keyStats && dashboardState.keyStats.length > 0;
+
+  // Don't render empty section
+  if (!activeSignal && !hasChartData && !hasKeyStats) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <BarChart3 className="w-8 h-8 text-slate-200 mb-2" />
+        <div className="text-xs text-slate-400">No signal data available</div>
+        <div className="text-[10px] text-slate-300 mt-1">Scroll to Act II to see changes</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Change Header */}
@@ -178,26 +213,21 @@ function ActIIChangeView({ dashboardState, activeSignal, annotations = [] }: Act
         </div>
       )}
 
-      {/* Trend Chart */}
-      {dashboardState?.charts?.trendLine ? (
-        <div className="h-[140px] w-full">
-          <InteractiveLineChart
-            config={dashboardState.charts.trendLine}
-            annotations={annotations}
+      {/* Enhanced Trend Chart */}
+      {hasChartData && enhancedChartConfig && (
+        <div className="h-[180px] w-full">
+          <EnhancedLineChart
+            config={enhancedChartConfig}
             onEvidenceClick={evidenceCtx.scrollToEvidence}
             evidenceMap={evidenceMap}
           />
         </div>
-      ) : (
-        <div className="h-[100px] bg-slate-50 rounded flex items-center justify-center text-slate-300 text-xs">
-          No trend data
-        </div>
       )}
 
-      {/* Key Stats */}
-      {dashboardState?.keyStats && dashboardState.keyStats.length > 0 && (
+      {/* Key Stats - only show if we have data */}
+      {hasKeyStats && (
         <div className="grid grid-cols-2 gap-2">
-          {dashboardState.keyStats.slice(0, 4).map((stat, i) => (
+          {dashboardState!.keyStats!.slice(0, 4).map((stat, i) => (
             <div key={i} className="bg-slate-50 rounded px-2 py-1.5">
               <div className="text-[8px] text-slate-400 uppercase tracking-wider">{stat.label}</div>
               <div className="text-sm font-bold text-slate-900">{stat.value}</div>
@@ -303,6 +333,58 @@ function ActIIIDecisionView({ actions = [] }: ActIIIDecisionViewProps) {
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** Always-visible Context KPIs strip */
+function ContextKPIs({ quality, dashboardState }: { quality?: QualityMetrics; dashboardState?: DashboardState }) {
+  // Compute top change from key stats
+  const topChange = dashboardState?.keyStats?.find(s =>
+    s.label?.toLowerCase().includes("change") || s.label?.toLowerCase().includes("delta")
+  ) ?? dashboardState?.keyStats?.[0];
+
+  return (
+    <div className="grid grid-cols-4 gap-1.5 mb-3 pb-3 border-b border-slate-100">
+      {/* Freshness */}
+      <div className="text-center">
+        <div className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5">Fresh</div>
+        <div className="text-xs font-bold text-slate-700">
+          {quality?.freshness?.medianAgeHours != null
+            ? quality.freshness.medianAgeHours < 1 ? "<1h" : `${Math.round(quality.freshness.medianAgeHours)}h`
+            : "—"}
+        </div>
+      </div>
+
+      {/* Coverage */}
+      <div className="text-center">
+        <div className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5">Items</div>
+        <div className="text-xs font-bold text-slate-700">
+          {quality?.coverage?.itemsScanned ?? "—"}
+        </div>
+      </div>
+
+      {/* Confidence */}
+      <div className="text-center">
+        <div className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5">Conf</div>
+        <div className={`text-xs font-bold ${
+          quality?.confidence?.level === "high" ? "text-emerald-600"
+          : quality?.confidence?.level === "low" ? "text-red-600"
+          : "text-amber-600"
+        }`}>
+          {quality?.confidence?.score != null ? `${quality.confidence.score}%` : "—"}
+        </div>
+      </div>
+
+      {/* Top Change */}
+      <div className="text-center">
+        <div className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5 truncate">
+          {topChange?.label ?? "Δ"}
+        </div>
+        <div className="text-xs font-bold text-indigo-600 truncate">
+          {topChange?.value ?? "—"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ActAwareDashboard({
   activeAct,
   dashboardState,
@@ -314,6 +396,9 @@ export function ActAwareDashboard({
 }: ActAwareDashboardProps) {
   return (
     <div className="sticky top-24 rounded-xl border border-slate-200 bg-white shadow-sm p-4 transition-all duration-300">
+      {/* Always-visible Context KPIs */}
+      <ContextKPIs quality={quality} dashboardState={dashboardState} />
+
       {/* Act Indicator Tabs */}
       <div className="flex items-center gap-1 mb-4 border-b border-slate-100 pb-2">
         {(["actI", "actII", "actIII"] as ActiveAct[]).map((act) => (

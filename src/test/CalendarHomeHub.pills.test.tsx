@@ -31,18 +31,10 @@ describe('CalendarHomeHub pills + hash sync', () => {
     expect(cal.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('switches to Agents when hash is #calendar/agents', () => {
-    window.location.hash = '#calendar/agents';
-    render(<CalendarHomeHub onDocumentSelect={() => {}} />);
-    const agents = screen.getByRole('tab', { name: 'Agents' });
-    expect(agents.getAttribute('aria-selected')).toBe('true');
-  });
-
-  it('clicking Agents sets hash to #calendar/agents', () => {
+  it('clicking Agents sets hash to #agents', () => {
     render(<CalendarHomeHub onDocumentSelect={() => {}} />);
     const agents = screen.getByRole('tab', { name: 'Agents' });
     fireEvent.click(agents);
-    expect(window.location.hash).toBe('#calendar/agents');
+    expect(window.location.hash).toBe('#agents');
   });
 });
-
