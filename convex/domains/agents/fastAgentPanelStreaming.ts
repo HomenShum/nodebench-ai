@@ -82,7 +82,12 @@ import {
   updateTask,
   listEvents,
   createEvent,
-  getFolderContents
+  getFolderContents,
+  // Email calendar tools (MVP)
+  listTodaysEmailEvents,
+  listProposedEmailEvents,
+  confirmEmailEvent,
+  dismissEmailEvent
 } from "../../tools/integration/dataAccessTools";
 import {
   searchSecFilings,
@@ -481,6 +486,12 @@ Always provide clear, helpful responses and confirm actions you take.`,
     listEvents,
     createEvent,
     getFolderContents,
+
+    // Email calendar tools (MVP - Gmail integration)
+    listTodaysEmailEvents,
+    listProposedEmailEvents,
+    confirmEmailEvent,
+    dismissEmailEvent,
 
     // SEC filings
     searchSecFilings,

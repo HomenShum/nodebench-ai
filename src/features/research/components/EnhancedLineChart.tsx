@@ -22,10 +22,21 @@ import type { ChartSeries, ChartPoint, TrendLineConfig, TooltipPayload } from "@
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** Data point context for AI agent integration */
+export interface ChartDataPointContext {
+  seriesId: string;
+  dataIndex: number;
+  dataLabel: string;
+  value: number;
+  unit?: string;
+}
+
 interface EnhancedLineChartProps {
   config: TrendLineConfig;
   /** Callback when user clicks a data point with linked evidence */
   onEvidenceClick?: (evidenceId: string) => void;
+  /** Callback when user clicks a data point (for AI agent integration) */
+  onDataPointClick?: (point: ChartDataPointContext) => void;
   /** Map of evidence ID -> evidence data for tooltip display */
   evidenceMap?: Map<string, { id: string; title: string; source?: string; url?: string }>;
   /** Show loading state */
@@ -171,6 +182,7 @@ function ChartHeader({ config, isLoading, onRefresh }: {
 export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
   config,
   onEvidenceClick,
+  onDataPointClick,
   evidenceMap,
   isLoading,
   error,
@@ -308,11 +320,21 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
         if (nearest.linkedEvidenceIds?.length && onEvidenceClick) {
           onEvidenceClick(nearest.linkedEvidenceIds[0]);
         }
+        // Notify AI agent integration (for bidirectional focus)
+        if (onDataPointClick) {
+          onDataPointClick({
+            seriesId: nearest.seriesId,
+            dataIndex: nearest.index,
+            dataLabel: nearest.label,
+            value: nearest.value,
+            unit: config.yAxisUnit,
+          });
+        }
       }
     } else {
       setPinnedPoint(null);
     }
-  }, [findNearestPoint, pinnedPoint, onEvidenceClick]);
+  }, [findNearestPoint, pinnedPoint, onEvidenceClick, onDataPointClick, config.yAxisUnit]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -427,12 +449,30 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
     );
   }
 
-  // Compute scales
+  // Compute scales (domain will be animated on change for smooth transitions)
   const allValues = config.series.flatMap((s) => s.data.map((d) => d.value));
   const minY = config.gridScale?.min ?? Math.min(0, ...allValues);
   const maxY = config.gridScale?.max ?? Math.max(...allValues) * 1.1;
   const range = Math.max(maxY - minY, 1);
-  const xSteps = Math.max(...config.series.map((s) => s.data.length - 1), config.xAxisLabels.length - 1, 1);
+  const xSteps = Math.max(
+    ...config.series.map((s) => s.data.length - 1),
+    config.xAxisLabels.length - 1,
+    1,
+  );
+
+  // Track domain changes to trigger subtle highlight animations
+  const previousDomain = useRef<{ minY: number; maxY: number } | null>(null);
+  const [isDomainTransitioning, setIsDomainTransitioning] = useState(false);
+
+  useEffect(() => {
+    const prev = previousDomain.current;
+    if (prev && (prev.minY !== minY || prev.maxY !== maxY)) {
+      setIsDomainTransitioning(true);
+      const timeout = setTimeout(() => setIsDomainTransitioning(false), 600);
+      return () => clearTimeout(timeout);
+    }
+    previousDomain.current = { minY, maxY };
+  }, [minY, maxY]);
 
   const getCoord = (index: number, value: number) => ({
     x: CHART.paddingX + (index / xSteps) * (CHART.width - CHART.paddingX * 2),
@@ -493,47 +533,74 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
           role="img"
           aria-label={`${config.title} chart showing ${config.series.length} series`}
         >
-          {/* Y-axis labels */}
+          {/* Domain transition highlight */}
+          <AnimatePresence>
+            {isDomainTransitioning && (
+              <motion.rect
+                key="domain-highlight"
+                x={CHART.paddingX}
+                y={CHART.paddingTop}
+                width={CHART.width - CHART.paddingX * 2}
+                height={CHART.height - CHART.paddingY - CHART.paddingTop}
+                fill="rgba(79,70,229,0.10)"
+                initial={{ opacity: 0.35 }}
+                animate={{ opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Y-axis labels (animate vertically when domain changes) */}
           {yTicks.map((tick, i) => (
             <g key={i}>
-              <line
+              <motion.line
                 x1={CHART.paddingX}
                 x2={CHART.width - CHART.paddingX + 10}
-                y1={tick.y}
-                y2={tick.y}
+                initial={false}
+                animate={{ y1: tick.y, y2: tick.y }}
                 className="stroke-slate-100"
                 strokeDasharray="2 2"
+                transition={{ duration: 0.4, ease: "easeOut" }}
               />
-              <text
+              <motion.text
                 x={CHART.paddingX - 5}
-                y={tick.y + 3}
+                initial={false}
+                animate={{ y: tick.y + 3 }}
                 textAnchor="end"
                 className="text-[8px] fill-slate-400 font-mono"
+                transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 {tick.label}
-              </text>
+              </motion.text>
             </g>
           ))}
 
           {/* Baseline reference line */}
           {config.baseline && (
             <g>
-              <line
+              <motion.line
                 x1={CHART.paddingX}
                 x2={CHART.width - CHART.paddingX}
-                y1={getCoord(0, config.baseline.value).y}
-                y2={getCoord(0, config.baseline.value).y}
+                initial={false}
+                animate={{
+                  y1: getCoord(0, config.baseline.value).y,
+                  y2: getCoord(0, config.baseline.value).y,
+                }}
                 className="stroke-amber-400"
                 strokeWidth={1.5}
                 strokeDasharray="4 2"
+                transition={{ duration: 0.4, ease: "easeOut" }}
               />
-              <text
+              <motion.text
                 x={CHART.width - CHART.paddingX + 3}
-                y={getCoord(0, config.baseline.value).y + 3}
+                initial={false}
+                animate={{ y: getCoord(0, config.baseline.value).y + 3 }}
                 className="text-[8px] fill-amber-600 font-medium"
+                transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 {config.baseline.label}
-              </text>
+              </motion.text>
             </g>
           )}
 
@@ -595,24 +662,24 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                    strokeDasharray={isGhost ? "6 4" : "0"}
                    opacity={isGhost ? 0.4 : 1}
                    initial={{ pathLength: 0 }}
-                   animate={{ pathLength: 1 }}
-                   transition={{ duration: 1.2, ease: "easeOut" }}
+                   animate={{ pathLength: 1, d: historyPath }}
+                   transition={{ duration: 1.0, ease: "easeOut" }}
                  />
 
                  {!isGhost && projectionPath && (
-                   <motion.path
-                     d={projectionPath}
-                     fill="none"
-                     stroke={color}
-                     strokeWidth={2.2}
-                     strokeLinecap="round"
-                     strokeLinejoin="round"
-                     strokeDasharray="6 4"
-                     opacity={0.55}
-                     initial={{ pathLength: 0 }}
-                     animate={{ pathLength: 1 }}
-                     transition={{ duration: 1.2, ease: "easeOut" }}
-                   />
+                     <motion.path
+                       d={projectionPath}
+                       fill="none"
+                       stroke={color}
+                       strokeWidth={2.2}
+                       strokeLinecap="round"
+                       strokeLinejoin="round"
+                       strokeDasharray="6 4"
+                       opacity={0.55}
+                       initial={{ pathLength: 0 }}
+                       animate={{ pathLength: 1, d: projectionPath }}
+                       transition={{ duration: 1.0, ease: "easeOut" }}
+                     />
                  )}
 
                  {/* Data points */}

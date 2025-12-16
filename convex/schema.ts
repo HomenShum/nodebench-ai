@@ -3,6 +3,13 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
+// Domain schema imports
+import {
+  dossierFocusState,
+  dossierAnnotations,
+  dossierEnrichment,
+} from "./domains/dossier/schema";
+
 /* ------------------------------------------------------------------ */
 /* 1.  DOCUMENTS  –  page/board/post level metadata                    */
 /* ------------------------------------------------------------------ */
@@ -1009,7 +1016,8 @@ const events = defineTable({
   .index("by_user", ["userId"])
   .index("by_user_status", ["userId", "status"]) // status filtering
   .index("by_user_start", ["userId", "startTime"]) // for range queries
-  .index("by_document", ["documentId"]);
+  .index("by_document", ["documentId"])
+  .index("by_user_source", ["userId", "sourceType", "sourceId"]); // for gmail/gcal dedup
 
 
 /* ------------------------------------------------------------------ */
@@ -1375,6 +1383,13 @@ export default defineSchema({
   voiceSessions,
   feedItems,
   searchEvaluations,
+
+  /* ------------------------------------------------------------------ */
+  /* DOSSIER DOMAIN - Bidirectional focus sync for agent↔chart views    */
+  /* ------------------------------------------------------------------ */
+  dossierFocusState,
+  dossierAnnotations,
+  dossierEnrichment,
 
   /* ------------------------------------------------------------------ */
   /* EMAIL EVENTS - Audit log for all email sends via agent tools       */

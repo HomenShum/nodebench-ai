@@ -53,4 +53,6 @@ docs/
 !docs/agents/
 !docs/architecture/
 !docs/prototypes/
+!docs/BIDIRECTIONAL_FOCUS_IMPLEMENTATION_PLAN.md
+!docs/BIDIRECTIONAL_FOCUS_TEST_PLAN.md
 .node-24/

@@ -8,7 +8,7 @@
     "content": {
       "body": [
         "This week marks a pivotal moment in AI infrastructure investment. Total funding in the <SmartLink id='ai-infra'>AI infrastructure sector</SmartLink> has reached $47.2B YTD, driven by the desperate need to close the 'Reliability Gap'.",
-        "The chart below visualizes this gap - the dangerous lag between Model Capability (dashed projection) and actual Deployment Reliability (solid line)."
+        "The chart below visualizes this gap – the dangerous lag between [[Model Capability|dataIndex:2]] (dashed projection) and [[Infra Reliability|dataIndex:2]] (solid line)."
       ],
       "deepDives": [
         {

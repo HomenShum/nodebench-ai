@@ -9,6 +9,8 @@ import { extractMediaFromTipTap, countMediaAssets, type TipTapDocument } from "@
 import UnifiedEditor from "@features/editor/components/UnifiedEditor";
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import type { VideoAsset, ImageAsset, DocumentAsset } from "@/features/research/components/dossier/mediaExtractor";
+import { FocusSyncProvider } from "@/features/research/contexts/FocusSyncContext";
+import { useDossierAgentHandlers } from "@/features/research/hooks/useDossierAgentHandlers";
 
 type ViewMode = 'split' | 'unified';
 
@@ -96,6 +98,16 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
 
   // Analysis state
   const [showAnalysisPopover, setShowAnalysisPopover] = useState(false);
+
+  // Dossier agent handlers for bidirectional focus sync
+  const {
+    handleChartPointClick,
+    handleSectionAskAI,
+    handleDossierAnalysis,
+  } = useDossierAgentHandlers({
+    briefId: documentId,
+    documentTitle: document?.title ?? "Dossier",
+  });
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [analysisPrompt, setAnalysisPrompt] = useState('');
   const [savePromptDefault, setSavePromptDefault] = useState(false);
@@ -599,34 +611,47 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           </div>
 
           {/* View Mode Toggles */}
-          <div className="flex items-center gap-0.5 bg-[var(--bg-secondary)] rounded-lg p-0.5 border border-[var(--border-color)]">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 bg-[var(--bg-secondary)] rounded-lg p-0.5 border border-[var(--border-color)]">
+              <button
+                type="button"
+                onClick={() => setViewMode('split')}
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${
+                  viewMode === 'split'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-sm'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                }`}
+                title="Classic view"
+                aria-label="Switch to classic view"
+              >
+                <LayoutList className="h-3.5 w-3.5" />
+                <span className="font-medium hidden sm:inline">Classic</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('unified')}
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${
+                  viewMode === 'unified'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-sm'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                }`}
+                title="Edit mode"
+                aria-label="Switch to edit mode"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                <span className="font-medium hidden sm:inline">Edit</span>
+              </button>
+            </div>
+            {/* Ask AI Button */}
             <button
               type="button"
-              onClick={() => setViewMode('split')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${
-                viewMode === 'split'
-                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-              }`}
-              title="Classic view"
-              aria-label="Switch to classic view"
+              onClick={() => handleDossierAnalysis()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+              title="Ask AI about this dossier"
+              aria-label="Ask AI about this dossier"
             >
-              <LayoutList className="h-3.5 w-3.5" />
-              <span className="font-medium hidden sm:inline">Classic</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('unified')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${
-                viewMode === 'unified'
-                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-              }`}
-              title="Edit mode"
-              aria-label="Switch to edit mode"
-            >
-              <Edit3 className="h-3.5 w-3.5" />
-              <span className="font-medium hidden sm:inline">Edit</span>
+              <Sparkles className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Ask AI</span>
             </button>
           </div>
         </div>

@@ -42,7 +42,7 @@ import FeedTimeline from "@/features/research/components/FeedTimeline";
 import ScrollytellingLayout, { type ScrollySection } from "@/features/research/components/ScrollytellingLayout";
 import FeedReaderModal from "@/features/research/components/FeedReaderModal";
 import { InlineMetrics, type WorkflowMetrics } from "@/features/agents/views/WorkflowMetricsBar";
-import { useFastAgent } from "@/features/agents/context/FastAgentContext";
+import { useFastAgent, type DossierContext } from "@/features/agents/context/FastAgentContext";
 import { SmartWatchlist } from "@/features/research/components/SmartWatchlist";
 import { LiveRadarWidget } from "@/features/research/components/LiveRadarWidget";
 import { useKeyboardNavigation, KeyboardShortcutsHint } from "@/hooks/useKeyboardNavigation";
@@ -808,13 +808,14 @@ function WelcomeLandingInner({
     return keywords.filter(kw => title.toLowerCase().includes(kw.toLowerCase())).slice(0, 3);
   }
 
-  const runWithFastAgent = (prompt: string) => {
+  const runWithFastAgent = (prompt: string, dossierContext?: DossierContext) => {
     const personaInstruction = persona ? `Persona: ${persona}.` : '';
     const guestInstruction = isAuthenticated
       ? ''
       : 'You are working in guest mode. Use only public sources (news, patents, FDA/public filings, academic papers). Do not rely on workspace documents.';
     openWithContext({
       initialMessage: `${prompt}\n\n${personaInstruction} Use deep agent tools to pull filings, FDA status, patents, and academic papers. Include founders' past companies and credibility signals.\n${guestInstruction}`.trim(),
+      dossierContext,
     });
     setShowHero(false);
     setHasActiveSearch(true);
@@ -2604,6 +2605,36 @@ While commercial fusion is still years away, the pace of innovation has accelera
                   isGuestMode={!isAuthenticated}
                   hideHero
                   onActChange={setActiveAct}
+                  onAskAI={(sectionId, sectionTitle) => {
+                    // Build dossier context for act-aware agent interactions
+                    const dossierContext: DossierContext = {
+                      briefId: `brief-${briefingDateString ?? "today"}`,
+                      currentAct: activeAct,
+                      activeSectionId: sectionId,
+                    };
+                    runWithFastAgent(
+                      `Analyze the "${sectionTitle}" section and provide deeper insights on the key points.`,
+                      dossierContext
+                    );
+                  }}
+                  onChartPointClick={(point) => {
+                    // Build dossier context with chart focus for bidirectional sync
+                    const dossierContext: DossierContext = {
+                      briefId: `brief-${briefingDateString ?? "today"}`,
+                      currentAct: activeAct,
+                      focusedDataIndex: point.dataIndex,
+                      chartContext: {
+                        seriesId: point.seriesId ?? "primary",
+                        dataLabel: point.dataLabel,
+                        value: point.value,
+                        unit: point.unit,
+                      },
+                    };
+                    runWithFastAgent(
+                      `Tell me more about this data point: ${point.dataLabel} = ${point.value}${point.unit ?? ""}`,
+                      dossierContext
+                    );
+                  }}
                 />
               </div>
             )}

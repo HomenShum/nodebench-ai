@@ -33,6 +33,8 @@ import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from 
 import { extractMediaFromText, type ExtractedMedia } from './utils/mediaExtractor';
 import type { SpawnedAgent } from './types/agent';
 import type { AgentOpenOptions } from '@/features/agents/context/FastAgentContext';
+import { buildDossierContextPrefix, useFastAgentDossierMode } from '@/features/agents/context/FastAgentContext';
+import { DossierModeIndicator } from '@/features/agents/components/DossierModeIndicator';
 
 import type {
   Message,
@@ -291,7 +293,15 @@ export function FastAgentPanel({
       .map((u) => `- ${u}`)
       .join("\n");
 
-    const extraContext = [titleLine, urlLines ? `URLs:\n${urlLines}` : ""].filter(Boolean).join("\n\n");
+    // Build dossier context prefix if in dossier mode
+    const dossierPrefix = buildDossierContextPrefix(openOptions?.dossierContext ?? null);
+
+    const extraContext = [
+      dossierPrefix, // Include dossier context first for agent awareness
+      titleLine,
+      urlLines ? `URLs:\n${urlLines}` : "",
+    ].filter(Boolean).join("\n\n");
+
     const message = initial ? (extraContext ? `${initial}\n\n${extraContext}` : initial) : "";
 
     if (!message) {
@@ -623,6 +633,12 @@ export function FastAgentPanel({
     // Build message with document context if documents are selected or dragged
     let messageContent = text;
 
+    // Include dossier context if present (for act-aware agent interactions)
+    const dossierPrefix = buildDossierContextPrefix(openOptions?.dossierContext ?? null);
+    if (dossierPrefix) {
+      messageContent = `${dossierPrefix}\n\n${messageContent}`;
+    }
+
     // Include drag-and-drop context documents
     if (contextDocuments.length > 0) {
       const contextInfo = contextDocuments
@@ -630,7 +646,7 @@ export function FastAgentPanel({
         .map(doc => `${doc.title} (ID: ${doc.id})`)
         .join(', ');
       if (contextInfo) {
-        messageContent = `[CONTEXT: Analyzing documents: ${contextInfo}]\n\n${text}`;
+        messageContent = `[CONTEXT: Analyzing documents: ${contextInfo}]\n\n${messageContent}`;
       }
     }
 
@@ -1153,6 +1169,9 @@ export function FastAgentPanel({
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Dossier Mode Indicator - shows when synced with a dossier */}
+                <DossierModeIndicator compact />
+
                 {/* Live Events toggle */}
                 <button
                   type="button"

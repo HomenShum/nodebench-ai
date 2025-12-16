@@ -10,6 +10,25 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 
+/** Dossier context for bidirectional sync */
+export interface DossierContext {
+  /** Brief/dossier ID for focus state sync */
+  briefId: string;
+  /** Current act (scrolly section) */
+  currentAct?: "actI" | "actII" | "actIII";
+  /** Currently focused data point index */
+  focusedDataIndex?: number;
+  /** Chart context for agent awareness */
+  chartContext?: {
+    seriesId: string;
+    dataLabel: string;
+    value: number;
+    unit?: string;
+  };
+  /** Active section ID in scrolly layout */
+  activeSectionId?: string;
+}
+
 /** Options for opening the agent with context */
 export interface AgentOpenOptions {
   /** Unique identifier for this open request (used to prevent duplicate auto-sends) */
@@ -22,6 +41,8 @@ export interface AgentOpenOptions {
   contextWebUrls?: string[];
   /** Title of the content being analyzed (for display) */
   contextTitle?: string;
+  /** Dossier context for bidirectional sync */
+  dossierContext?: DossierContext;
 }
 
 interface FastAgentContextValue {
@@ -155,6 +176,57 @@ export function useFastAgentSync(
   useEffect(() => {
     registerExternalState(setShowFastAgent, () => showFastAgent);
   }, [registerExternalState, setShowFastAgent, showFastAgent]);
+}
+
+/**
+ * Hook to check if agent is in dossier mode and get dossier context
+ */
+export function useFastAgentDossierMode() {
+  const { options, isOpen } = useFastAgent();
+
+  const isDossierMode = !!(isOpen && options?.dossierContext?.briefId);
+  const dossierContext = options?.dossierContext ?? null;
+
+  return {
+    isDossierMode,
+    dossierContext,
+    briefId: dossierContext?.briefId ?? null,
+    currentAct: dossierContext?.currentAct ?? "actI",
+    focusedDataIndex: dossierContext?.focusedDataIndex ?? null,
+    chartContext: dossierContext?.chartContext ?? null,
+    activeSectionId: dossierContext?.activeSectionId ?? null,
+  };
+}
+
+/**
+ * Helper to build context prefix for agent messages when in dossier mode
+ */
+export function buildDossierContextPrefix(dossierContext: DossierContext | null): string {
+  if (!dossierContext) return "";
+
+  const parts: string[] = [];
+
+  if (dossierContext.currentAct) {
+    const actLabels = {
+      actI: "Act I (Overview)",
+      actII: "Act II (Deep Dive)",
+      actIII: "Act III (Implications)",
+    };
+    parts.push(`Current section: ${actLabels[dossierContext.currentAct]}`);
+  }
+
+  if (dossierContext.chartContext) {
+    const { seriesId, dataLabel, value, unit } = dossierContext.chartContext;
+    parts.push(`Focused data point: ${dataLabel} = ${value}${unit ?? ""} (${seriesId})`);
+  }
+
+  if (dossierContext.activeSectionId) {
+    parts.push(`Active section: ${dossierContext.activeSectionId}`);
+  }
+
+  if (parts.length === 0) return "";
+
+  return `[Dossier Context]\n${parts.join("\n")}\n\n`;
 }
 
 export default FastAgentContext;

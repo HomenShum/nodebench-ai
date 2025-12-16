@@ -4,7 +4,7 @@ import React from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock, PieChart } from "lucide-react";
-import EnhancedLineChart from "./EnhancedLineChart";
+import EnhancedLineChart, { type ChartDataPointContext } from "./EnhancedLineChart";
 import type { DashboardState } from "@/features/research/types";
 import { formatBriefMonthYear } from "@/lib/briefDate";
 import { useEvidence } from "../contexts/EvidenceContext";
@@ -23,9 +23,11 @@ const IconMap: Record<string, React.ComponentType<{ size?: number; className?: s
 
 interface StickyDashboardProps {
   data: DashboardState;
+  /** Callback for chart data point clicks (AI agent integration) */
+  onDataPointClick?: (point: ChartDataPointContext) => void;
 }
 
-export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
+export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data, onDataPointClick }) => {
   // Evidence context for chart ↔ evidence linking
   const evidenceCtx = useEvidence();
 
@@ -80,6 +82,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data }) => {
                   lastUpdated: "today",
                 }}
                 onEvidenceClick={evidenceCtx.scrollToEvidence}
+                onDataPointClick={onDataPointClick}
                 evidenceMap={evidenceMap}
               />
             ) : (

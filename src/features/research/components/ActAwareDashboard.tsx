@@ -12,7 +12,7 @@ import React from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
 import { Database, Clock, Shield, TrendingUp, Target, AlertTriangle, BarChart3 } from "lucide-react";
-import EnhancedLineChart from "./EnhancedLineChart";
+import EnhancedLineChart, { type ChartDataPointContext } from "./EnhancedLineChart";
 import type { DashboardState } from "@/features/research/types";
 import type { QualityMetrics, Signal, Action } from "../types/dailyBriefSchema";
 import { useEvidence } from "../contexts/EvidenceContext";
@@ -38,6 +38,8 @@ export interface ActAwareDashboardProps {
   actions?: Action[];
   /** Annotations for line chart */
   annotations?: Array<{ x: number; text: string }>;
+  /** Callback for chart data point clicks (AI agent integration) */
+  onDataPointClick?: (point: ChartDataPointContext) => void;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -153,9 +155,10 @@ interface ActIIChangeViewProps {
   dashboardState?: DashboardState;
   activeSignal?: Signal;
   annotations?: Array<{ x: number; text: string }>;
+  onDataPointClick?: (point: ChartDataPointContext) => void;
 }
 
-function ActIIChangeView({ dashboardState, activeSignal, annotations = [] }: ActIIChangeViewProps) {
+function ActIIChangeView({ dashboardState, activeSignal, annotations = [], onDataPointClick }: ActIIChangeViewProps) {
   const evidenceCtx = useEvidence();
   const evidenceMap = new Map(evidenceCtx.getEvidenceList().map((ev) => [ev.id, ev]));
 
@@ -219,6 +222,7 @@ function ActIIChangeView({ dashboardState, activeSignal, annotations = [] }: Act
           <EnhancedLineChart
             config={enhancedChartConfig}
             onEvidenceClick={evidenceCtx.scrollToEvidence}
+            onDataPointClick={onDataPointClick}
             evidenceMap={evidenceMap}
           />
         </div>
@@ -393,6 +397,7 @@ export function ActAwareDashboard({
   activeSignal,
   actions,
   annotations,
+  onDataPointClick,
 }: ActAwareDashboardProps) {
   return (
     <div className="sticky top-24 rounded-xl border border-slate-200 bg-white shadow-sm p-4 transition-all duration-300">
@@ -431,6 +436,7 @@ export function ActAwareDashboard({
             dashboardState={dashboardState}
             activeSignal={activeSignal}
             annotations={annotations}
+            onDataPointClick={onDataPointClick}
           />
         )}
         {activeAct === "actIII" && (

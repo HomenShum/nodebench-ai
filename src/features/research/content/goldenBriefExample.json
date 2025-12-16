@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "date": "2025-12-14",
+    "headline": "AI Infrastructure: The Inference Economics Shift",
+    "summary": "As cloud providers compete on inference pricing, the AI infrastructure landscape is consolidating around serverless GPU models, fundamentally changing deployment economics for startups.",
+    "confidence": 85,
+    "version": 1
+  },
+  "actI": {
+    "title": "Act I: Setup — Coverage & Freshness",
+    "synthesis": "Today's briefing covers 140 items across 5 major sources with strong representation from technical discussions and funding announcements. The feed skews heavily toward AI infrastructure topics, reflecting the ongoing attention on inference costs and deployment patterns.",
+    "topSources": [
+      { "source": "TechCrunch", "count": 61 },
+      { "source": "ArXiv", "count": 47 },
+      { "source": "GitHub", "count": 20 },
+      { "source": "YCombinator", "count": 10 },
+      { "source": "DevTo", "count": 2 }
+    ],
+    "totalItems": 140,
+    "sourcesCount": 5,
+    "latestItemAt": "2025-12-14T09:00:00Z"
+  },
+  "actII": {
+    "title": "Act II: Rising Action — What's New Today",
+    "synthesis": "The dominant signal today centers on inference economics following TechCrunch's coverage of Rivian's AI infrastructure investments. This dovetails with several HackerNews discussions about the gap between model capability and deployment cost. The research community is responding with papers on KV-cache compression that could materially reduce inference costs at scale.",
+    "signals": [
+      {
+        "id": "sig-rivian-ai",
+        "headline": "Rivian's AI Infrastructure Investment",
+        "synthesis": "Rivian's survival strategy now explicitly includes significant AI infrastructure buildout, signaling that even traditional automotive players view inference capability as existential. This represents a broader pattern of non-tech companies internalizing AI compute rather than relying on API providers.",
+        "evidence": [
+          {
+            "id": "ev-tc-rivian",
+            "source": "TechCrunch",
+            "title": "Rivian's survival plan involves more than cars",
+            "url": "https://techcrunch.com/2025/12/14/rivian-survival-plan-ai-infrastructure/",
+            "publishedAt": "2025-12-14T09:00:00Z",
+            "relevance": "Primary source covering Rivian's strategic pivot to include AI infrastructure as core competency.",
+            "score": 46
+          }
+        ],
+        "relatedSignalIds": ["sig-inference-costs"]
+      },
+      {
+        "id": "sig-inference-costs",
+        "headline": "Inference Cost Debates Heat Up",
+        "synthesis": "Hacker News discussions today reflect growing frustration with inference pricing, particularly for latency-sensitive applications. The community consensus is shifting toward self-hosted solutions despite higher operational complexity.",
+        "evidence": [
+          {
+            "id": "ev-hn-costs",
+            "source": "HackerNews",
+            "title": "AI and the ironies of automation – Part 2",
+            "url": "https://news.ycombinator.com/item?id=42391804",
+            "publishedAt": "2025-12-14T05:45:41Z",
+            "relevance": "High-engagement discussion (36 pts) analyzing the economics of AI automation and inference costs.",
+            "score": 36
+          },
+          {
+            "id": "ev-hn-apple",
+            "source": "HackerNews",
+            "title": "Apple Maps claims it's 29,905 miles away",
+            "url": "https://news.ycombinator.com/item?id=42391721",
+            "publishedAt": "2025-12-14T05:45:41Z",
+            "relevance": "Example of edge-case failures that increase pressure on inference reliability.",
+            "score": 36
+          }
+        ]
+      },
+      {
+        "id": "sig-kv-cache",
+        "headline": "KV-Cache Compression Research",
+        "synthesis": "ArXiv papers this week demonstrate provable attention fidelity guarantees for KV-cache compression, potentially enabling 2-4x memory reduction without quality degradation. This research could significantly impact inference cost structures.",
+        "evidence": [
+          {
+            "id": "ev-arxiv-kv",
+            "source": "ArXiv",
+            "title": "KQ-SVD: Compressing the KV Cache with Provable Guarantees on Attention Fidelity",
+            "url": "https://arxiv.org/abs/2412.10000",
+            "publishedAt": "2025-12-14T00:00:00Z",
+            "relevance": "Novel compression technique with mathematical guarantees on attention preservation.",
+            "score": 28
+          }
+        ]
+      }
+    ]
+  },
+  "actIII": {
+    "title": "Act III: Deep Dives — Turn Signals Into Moves",
+    "synthesis": "Given the shift in inference economics and Rivian's strategic pivot, three actionable investigations emerge: auditing current inference costs, evaluating KV-cache compression implementations, and tracking enterprise AI infrastructure adoption patterns.",
+    "actions": [
+      {
+        "id": "act-cost-audit",
+        "label": "Audit Inference Cost Structure",
+        "status": "proposed",
+        "content": "Generate a detailed breakdown of current inference costs across providers. Compare spot vs reserved pricing for GPU compute. Model the break-even point for self-hosted vs API-based inference at different volume tiers.",
+        "linkedSignalIds": ["sig-inference-costs", "sig-rivian-ai"],
+        "priority": 1
+      },
+      {
+        "id": "act-kv-eval",
+        "label": "Evaluate KV-Cache Implementations",
+        "status": "proposed",
+        "content": "Review the KQ-SVD paper methodology and existing open-source implementations. Assess integration complexity with current inference stack. Benchmark compression ratio vs latency tradeoffs.",
+        "linkedSignalIds": ["sig-kv-cache"],
+        "priority": 2
+      },
+      {
+        "id": "act-enterprise-tracking",
+        "label": "Track Enterprise AI Adoption",
+        "status": "proposed",
+        "content": "Build a watchlist of traditional enterprises announcing AI infrastructure investments. Monitor for patterns in build vs buy decisions. Identify emerging vendor relationships and technology choices.",
+        "linkedSignalIds": ["sig-rivian-ai"],
+        "priority": 3
+      },
+      {
+        "id": "act-repo-analysis",
+        "label": "Analyze Trending Inference Repos",
+        "status": "insufficient_data",
+        "content": "Several trending GitHub repos mentioned in discussions lack sufficient documentation for meaningful analysis. Will revisit when READMEs are populated.",
+        "linkedSignalIds": ["sig-inference-costs"]
+      }
+    ]
+  },
+  "dashboard": {
+    "vizArtifact": {
+      "intent": "category_compare",
+      "rationale": "Comparison of engagement volume shows infrastructure topics dominating all other tech themes today.",
+      "data": [
+        { "topic": "AI Infrastructure", "volume": 89, "sentiment": 0.72 },
+        { "topic": "LLM/Models", "volume": 32, "sentiment": 0.58 },
+        { "topic": "Startups/VC", "volume": 28, "sentiment": 0.65 },
+        { "topic": "Research/Papers", "volume": 47, "sentiment": 0.81 },
+        { "topic": "DevTools", "volume": 15, "sentiment": 0.69 }
+      ],
+      "spec": {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "width": "container",
+        "height": 150,
+        "mark": "bar",
+        "encoding": {
+          "y": { "field": "topic", "type": "nominal", "sort": "-x", "axis": { "title": null } },
+          "x": { "field": "volume", "type": "quantitative", "axis": { "title": "Engagement Volume" } },
+          "color": { "field": "topic", "legend": null }
+        }
+      }
+    },
+    "sourceBreakdown": {
+      "TechCrunch": 61,
+      "ArXiv": 47,
+      "GitHub": 20,
+      "YCombinator": 10,
+      "DevTo": 2
+    },
+    "trendingTags": ["Tech", "Startups", "Research", "AI", "ML"]
+  }
+}

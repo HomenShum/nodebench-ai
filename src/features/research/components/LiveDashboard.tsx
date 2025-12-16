@@ -9,6 +9,7 @@ import type { DashboardState } from "@/features/research/types";
 import { useBriefDateSelection } from "@/lib/useBriefDateSelection";
 import { formatBriefDate, formatBriefDateTime } from "@/lib/briefDate";
 import { buttonIcon, buttonSecondary } from "@/lib/buttonClasses";
+import type { ChartDataPointContext } from "./EnhancedLineChart";
 
 /**
  * LiveDashboard - Wrapper component that fetches live dashboard data
@@ -24,7 +25,9 @@ import { buttonIcon, buttonSecondary } from "@/lib/buttonClasses";
 export const LiveDashboard: React.FC<{
   fallbackData?: DashboardState;
   mode?: "live" | "controlled";
-}> = ({ fallbackData, mode = "live" }) => {
+  /** Callback for chart data point clicks (AI agent integration) */
+  onDataPointClick?: (point: ChartDataPointContext) => void;
+}> = ({ fallbackData, mode = "live", onDataPointClick }) => {
   const [selectedDate, setSelectedDate] = useBriefDateSelection();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -125,7 +128,7 @@ export const LiveDashboard: React.FC<{
           </button>
         </div>
 
-        <StickyDashboard data={fallbackData} />
+        <StickyDashboard data={fallbackData} onDataPointClick={onDataPointClick} />
 
         {/* Source summary footer */}
         {snapshot?.sourceSummary && (
@@ -187,7 +190,7 @@ export const LiveDashboard: React.FC<{
               <span>Generate</span>
             </button>
           </div>
-          <StickyDashboard data={fallbackData} />
+          <StickyDashboard data={fallbackData} onDataPointClick={onDataPointClick} />
         </div>
       );
     }
@@ -295,7 +298,7 @@ export const LiveDashboard: React.FC<{
       </div>
 
       {/* Dashboard component */}
-      <StickyDashboard data={snapshot.dashboardMetrics} />
+      <StickyDashboard data={snapshot.dashboardMetrics} onDataPointClick={onDataPointClick} />
 
       {/* Source summary footer */}
       {snapshot.sourceSummary && (

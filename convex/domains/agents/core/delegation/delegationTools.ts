@@ -18,6 +18,7 @@ import { createMediaAgent } from "../subagents/media_subagent/mediaAgent";
 import { createSECAgent } from "../subagents/sec_subagent/secAgent";
 import { createOpenBBAgent } from "../subagents/openbb_subagent/openbbAgent";
 import { createEntityResearchAgent } from "../subagents/entity_subagent/entityResearchAgent";
+import { createDossierAgent } from "../subagents/dossier_subagent/dossierAgent";
 import { getLlmModel } from "../../../../../shared/llm/modelCatalog";
 
 // Import helpers
@@ -40,6 +41,7 @@ export function buildDelegationTools(model: string): Record<string, DelegationTo
   const mediaAgent = createMediaAgent(model);
   const secAgent: Agent = createSECAgent(model);
   const openbbAgent = createOpenBBAgent(model);
+  const dossierAgent = createDossierAgent(model);
 
   /**
    * Safety helper: Enforce maximum delegation depth
@@ -336,6 +338,65 @@ The EntityResearchAgent has specialized tools for deep enrichment and will retur
   });
 
   /**
+   * Delegate to Dossier Agent
+   * Use for: bidirectional focus sync, chart annotations, data point enrichment
+   */
+  const delegateToDossierAgent: DelegationTool = createTool({
+    description: `Delegate dossier interaction tasks to the DossierAgent specialist.
+
+Use this tool when the user is viewing a Morning Dossier and asks to:
+- Highlight or focus on a specific data point
+- Annotate a chart point with a label
+- Get more context about "this point" or "this spike"
+- Explain what happened at a specific data point
+- Update or expand a narrative section
+
+The DossierAgent has specialized tools for bidirectional focus sync between the chat panel and the dossier view.
+It can highlight data points, add annotations, and enrich data with context.`,
+
+    args: z.object({
+      query: z.string().describe("The user's question or task for the DossierAgent"),
+      briefId: z.string().describe("The brief/memory ID being viewed"),
+      dataIndex: z.number().optional().describe("Specific data point index if known"),
+      currentAct: z.enum(["actI", "actII", "actIII"]).optional().describe("Current act being viewed"),
+      threadId: z.string().optional().describe("Optional thread ID to continue previous conversation"),
+    }),
+
+    handler: async (ctx: DelegationCtx, args) => {
+      const nextDepth = enforceSafety(ctx);
+      const threadId = await ensureThreadHelper(dossierAgent, ctx, args.threadId);
+
+      // Build prompt with dossier context
+      let prompt = args.query;
+      if (args.briefId) {
+        prompt = `[Dossier Context: briefId=${args.briefId}`;
+        if (args.dataIndex !== undefined) prompt += `, dataIndex=${args.dataIndex}`;
+        if (args.currentAct) prompt += `, act=${args.currentAct}`;
+        prompt += `]\n\n${args.query}`;
+      }
+
+      const result = await runWithTimeout(dossierAgent.generateText(
+        { ...ctx, depth: nextDepth, userId: pickUserIdHelper(ctx) } as any,
+        { threadId, userId: pickUserIdHelper(ctx) },
+        {
+          prompt,
+          stopWhen: stepCountIs(6),
+        }
+      ));
+
+      const toolsUsed = extractTools(result);
+
+      return formatResult(
+        "DossierAgent",
+        threadId,
+        result.messageId || "",
+        result.text,
+        toolsUsed
+      );
+    },
+  });
+
+  /**
    * Parallel Delegation (Scheduler-based, OCC-safe)
    * Use for: running multiple subagents simultaneously
    * 
@@ -358,7 +419,7 @@ UI can subscribe to live updates using the returned runId and delegationIds.`,
 
     args: z.object({
       tasks: z.array(z.object({
-        agentName: z.enum(["DocumentAgent", "MediaAgent", "SECAgent", "OpenBBAgent", "EntityResearchAgent"]),
+        agentName: z.enum(["DocumentAgent", "MediaAgent", "SECAgent", "OpenBBAgent", "EntityResearchAgent", "DossierAgent"]),
         query: z.string(),
       })).describe("List of tasks to delegate (max 5 for cost control)"),
     }),
@@ -372,17 +433,17 @@ UI can subscribe to live updates using the returned runId and delegationIds.`,
           error: `Too many parallel tasks. Maximum is ${MAX_PARALLEL}, got ${args.tasks.length}.`,
         });
       }
-      
+
       enforceSafety(ctx);
-      
+
       const userId = pickUserIdHelper(ctx);
       // Use coordinator's threadId as runId for UI scoping
       const runId = ctx.threadId ?? crypto.randomUUID();
-      
+
       // Generate unique delegationIds for each task
       const tasks = args.tasks.map(task => ({
         delegationId: crypto.randomUUID(),
-        agentName: task.agentName as "DocumentAgent" | "MediaAgent" | "SECAgent" | "OpenBBAgent" | "EntityResearchAgent",
+        agentName: task.agentName as "DocumentAgent" | "MediaAgent" | "SECAgent" | "OpenBBAgent" | "EntityResearchAgent" | "DossierAgent",
         query: task.query,
       }));
       
@@ -416,6 +477,7 @@ UI can subscribe to live updates using the returned runId and delegationIds.`,
     delegateToSECAgent,
     delegateToOpenBBAgent,
     delegateToEntityResearchAgent,
+    delegateToDossierAgent,
     parallelDelegate,
   };
 }

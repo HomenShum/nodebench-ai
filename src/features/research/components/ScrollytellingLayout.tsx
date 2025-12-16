@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Sparkles } from "lucide-react";
 import SmartLink from "./SmartLink";
+import { InteractiveSpanParser } from "./InteractiveSpanParser";
 import DeepDiveAccordion from "./DeepDiveAccordion";
 import streamData from "@/features/research/content/researchStream.json";
 import LiveDashboard from "./LiveDashboard";
@@ -12,6 +14,7 @@ import type { Signal, Action, VizArtifact } from "@/features/research/types/dail
 import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
 import { SignalList } from "./SignalCard";
 import { ActionList } from "./ActionCard";
+import TimelineScrubber from "./TimelineScrubber";
 
 // Define a proper type to avoid JSON inference issues
 export interface ScrollySection {
@@ -37,6 +40,14 @@ export interface ScrollySection {
   /** Optional section-specific visualization artifact (Vega-Lite) */
   vizArtifact?: VizArtifact;
 }
+
+type ActId = "actI" | "actII" | "actIII";
+
+const getActForIndex = (idx: number): ActId => {
+	if (idx <= 0) return "actI";
+	if (idx === 1) return "actII";
+	return "actIII";
+};
 
 // Lightweight intersection observer hook to avoid external dependency
 const useInView = (options?: IntersectionObserverInit) => {
@@ -97,9 +108,11 @@ interface SectionRendererProps {
   section: ScrollySection;
   onVisible: () => void;
   isLast?: boolean;
+  /** Callback for Ask AI button click */
+  onAskAI?: (sectionId: string, sectionTitle: string) => void;
 }
 
-const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRendererProps) => {
+const SectionRenderer = ({ section, onVisible, isLast = false, onAskAI }: SectionRendererProps) => {
   const { ref, inView } = useInView({ threshold: 0, rootMargin: "-45% 0px -45% 0px" });
   const onVisibleRef = useRef(onVisible);
 
@@ -112,7 +125,7 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
   }, [inView]);
 
   return (
-    <div ref={ref} className="relative mb-10 scroll-mt-16 pl-8 xl:pl-4">
+	    <div ref={ref} id={section.id} className="relative mb-10 scroll-mt-16 pl-8 xl:pl-4">
       {/* Timeline Connector Line - Simplified for Clean Look */}
       {!isLast && (
         <div className="absolute left-0 top-10 bottom-[-48px] w-px bg-gray-200 hidden xl:block" />
@@ -131,19 +144,35 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
       </div>
 
       {/* Section Title - Clean Sans */}
-      <h2 className="mb-4 text-2xl font-semibold tracking-tight text-gray-900 leading-tight">
-        {section.meta.title}
-      </h2>
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <h2 className="text-2xl font-semibold tracking-tight text-gray-900 leading-tight">
+          {section.meta.title}
+        </h2>
+        {onAskAI && (
+          <button
+            type="button"
+            onClick={() => onAskAI(section.id, section.meta.title)}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full transition-colors shrink-0"
+            title="Ask AI about this section"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Ask AI</span>
+          </button>
+        )}
+      </div>
 
       {/* Narrative Body */}
       {section.content.body.length > 0 && (
         <div className="prose prose-base prose-slate text-slate-900 leading-relaxed max-w-none not-italic">
           {section.content.body.map((paragraph, idx) => (
             <p key={idx} className="mb-6 last:mb-0">
-              {parseSmartLinks(
-                paragraph,
-                (section.smartLinks ?? {}) as Record<string, { summary: string; source?: string }>
-              )}
+              <InteractiveSpanParser
+                text={paragraph}
+                smartLinks={
+                  (section.smartLinks ?? {}) as Record<string, { summary: string; source?: string }>
+                }
+                spanPrefix={`${section.id}-p${idx}`}
+              />
             </p>
           ))}
         </div>
@@ -174,6 +203,15 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
   );
 };
 
+/** Chart data point context for AI agent integration */
+export interface ChartPointClickContext {
+  seriesId: string;
+  dataIndex: number;
+  dataLabel: string;
+  value: number;
+  unit?: string;
+}
+
 interface ScrollytellingLayoutProps {
   data?: ScrollySection[];
   /** If true, shows the "free daily" badge and sign-in prompt */
@@ -181,10 +219,14 @@ interface ScrollytellingLayoutProps {
   /** If true, hides the HeroSection (useful when parent already has a hero) */
   hideHero?: boolean;
   /** Callback when active act changes (for right-rail dashboard sync) */
-  onActChange?: (act: "actI" | "actII" | "actIII") => void;
+	  onActChange?: (act: ActId) => void;
+  /** Callback for Ask AI button click (opens Fast Agent panel with section context) */
+  onAskAI?: (sectionId: string, sectionTitle: string) => void;
+  /** Callback for chart data point clicks (opens Fast Agent panel with data point context) */
+  onChartPointClick?: (point: ChartPointClickContext) => void;
 }
 
-export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data, isGuestMode, hideHero, onActChange }) => {
+export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data, isGuestMode, hideHero, onActChange, onAskAI, onChartPointClick }) => {
   // Priority: props data > static fallback
   const sourceData = useMemo(() => {
     if (data && data.length) return data;
@@ -455,6 +497,32 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
   const [activeDashboard, setActiveDashboard] = useState<DashboardState>(initialDashboardData);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeVizArtifact, setActiveVizArtifact] = useState<VizArtifact | null>(initialVizArtifact);
+	  const currentAct: ActId = getActForIndex(activeSectionIndex);
+
+	  const handleScrubToSection = useCallback(
+	    (index: number) => {
+	      if (!Number.isFinite(index) || sourceData.length === 0) return;
+	      const clamped = Math.max(0, Math.min(index, sourceData.length - 1));
+	      const section = sourceData[clamped] as ScrollySection;
+
+	      setActiveSectionIndex(clamped);
+	      setActiveLegacy(section.dashboard ?? initialLegacy);
+	      setActiveDashboard(fallbackDashboardData(section, clamped));
+	      setActiveVizArtifact(section.vizArtifact ?? null);
+
+	      if (onActChange) {
+	        onActChange(getActForIndex(clamped));
+	      }
+
+	      if (typeof document !== "undefined") {
+	        const el = document.getElementById(section.id);
+	        if (el) {
+	          el.scrollIntoView({ behavior: "smooth", block: "start" });
+	        }
+	      }
+	    },
+	    [fallbackDashboardData, initialLegacy, onActChange, sourceData],
+	  );
 
   useEffect(() => {
     setActiveLegacy(initialLegacy);
@@ -531,23 +599,33 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
                 setActiveVizArtifact((section as ScrollySection).vizArtifact ?? null);
                 // Notify parent of act change for right-rail dashboard sync
                 if (onActChange) {
-                  const actMap: Record<number, "actI" | "actII" | "actIII"> = { 0: "actI", 1: "actII", 2: "actIII" };
-                  onActChange(actMap[idx] ?? "actI");
+	                  onActChange(getActForIndex(idx));
                 }
               }}
               isLast={idx === sourceData.length - 1}
+              onAskAI={onAskAI}
             />
           ))}
         </div>
-        <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
-          <div className="sticky top-24 min-h-[400px]">
-            {/* VizArtifact rendering behind feature flag */}
-            {isUIFlagEnabled("ENABLE_VIZ_ARTIFACT") && activeVizArtifact && (
-              <SafeVegaChart artifact={activeVizArtifact} className="mb-3" />
-            )}
-            <LiveDashboard mode="controlled" fallbackData={activeDashboard} />
-          </div>
-        </div>
+	        <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
+	          <div className="sticky top-24 min-h-[400px] space-y-3">
+	            <TimelineScrubber
+	              totalSections={sectionCount}
+	              activeIndex={activeSectionIndex}
+	              currentAct={currentAct}
+	              onScrubToSection={handleScrubToSection}
+	            />
+	            {/* VizArtifact rendering behind feature flag */}
+	            {isUIFlagEnabled("ENABLE_VIZ_ARTIFACT") && activeVizArtifact && (
+	              <SafeVegaChart artifact={activeVizArtifact} className="mb-3" />
+	            )}
+	            <LiveDashboard
+	              mode="controlled"
+	              fallbackData={activeDashboard}
+	              onDataPointClick={onChartPointClick}
+	            />
+	          </div>
+	        </div>
       </div>
 
       {/* Footer / CTA for Guests */}
