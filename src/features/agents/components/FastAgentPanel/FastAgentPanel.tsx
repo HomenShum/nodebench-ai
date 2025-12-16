@@ -126,72 +126,7 @@ export function FastAgentPanel({
 
   // Live Events Panel state
   const [showEventsPanel, setShowEventsPanel] = useState(false);
-  const liveEvents = useMemo<LiveEvent[]>(() => {
-    if (chatMode !== "agent-streaming") return [];
-    if (!streamingMessages || streamingMessages.length === 0) return [];
-
-    const events: LiveEvent[] = [];
-    let eventCounter = 0;
-
-    const toToolName = (part: any): string => {
-      if (typeof part?.toolName === "string" && part.toolName.trim()) return part.toolName.trim();
-      if (typeof part?.name === "string" && part.name.trim()) return part.name.trim();
-
-      const type = typeof part?.type === "string" ? part.type : "";
-      const match = type.match(/^(tool-(?:call|result|error))-(.+)$/);
-      if (match?.[2]) return match[2];
-      return "unknown";
-    };
-
-    for (const raw of streamingMessages as any[]) {
-      const msg = raw?.message ?? raw;
-      const role = msg?.role ?? raw?.role;
-      const parts = Array.isArray(msg?.parts) ? msg.parts : Array.isArray(raw?.parts) ? raw.parts : [];
-      if (role !== "assistant" || parts.length === 0) continue;
-
-      const baseTimestamp =
-        typeof raw?._creationTime === "number"
-          ? raw._creationTime
-          : typeof msg?._creationTime === "number"
-            ? msg._creationTime
-            : Date.now();
-
-      for (const part of parts) {
-        const partType = typeof part?.type === "string" ? part.type : "";
-        const isCall = partType === "tool-call" || partType.startsWith("tool-call-");
-        const isResult = partType === "tool-result" || partType.startsWith("tool-result-");
-        const isError = partType === "tool-error" || partType.startsWith("tool-error-");
-        if (!isCall && !isResult && !isError) continue;
-
-        const toolName = toToolName(part);
-        const title = toolName;
-        const idBase = raw?._id ?? raw?.id ?? msg?._id ?? msg?.id ?? "msg";
-        const timestamp = baseTimestamp + eventCounter;
-        eventCounter += 1;
-
-        events.push({
-          id: `${idBase}-${eventCounter}`,
-          type: isError ? "tool_error" : isResult ? "tool_end" : "tool_start",
-          status: isError ? "error" : isResult ? "success" : "running",
-          title,
-          toolName,
-          details:
-            isResult && part?.output
-              ? typeof part.output === "string"
-                ? part.output.slice(0, 160)
-                : "Completed"
-              : isError && (part?.error || part?.output)
-                ? String(part.error ?? part.output).slice(0, 160)
-                : isCall
-                  ? "Executing..."
-                  : undefined,
-          timestamp,
-        });
-      }
-    }
-
-    return events;
-  }, [chatMode, streamingMessages]);
+  // Note: liveEvents useMemo is defined after streamingMessages to avoid reference before initialization
 
   // Skills Panel state
   const [showSkillsPanel, setShowSkillsPanel] = useState(false);
@@ -451,6 +386,85 @@ export function FastAgentPanel({
       }
     }
   }, [streamingMessages, chatMode]);
+
+  // Live Events - extracted from streaming messages (must be after streamingMessages definition)
+  const liveEvents = useMemo<LiveEvent[]>(() => {
+    if (chatMode !== "agent-streaming") return [];
+    if (!streamingMessages || streamingMessages.length === 0) return [];
+
+    const events: LiveEvent[] = [];
+    let eventCounter = 0;
+
+    const toToolName = (part: any): string => {
+      if (typeof part?.toolName === "string" && part.toolName.trim()) return part.toolName.trim();
+      if (typeof part?.name === "string" && part.name.trim()) return part.name.trim();
+
+      const type = typeof part?.type === "string" ? part.type : "";
+      const typed = type.match(/^tool-(?:call|result|error)-(.+)$/);
+      if (typed?.[1]) return typed[1];
+
+      const generic = type.match(/^tool-(.+)$/);
+      if (generic?.[1]) return generic[1];
+      return "unknown";
+    };
+
+    for (const raw of streamingMessages as any[]) {
+      const msg = raw?.message ?? raw;
+      const role = msg?.role ?? raw?.role;
+      const parts = Array.isArray(msg?.parts) ? msg.parts : Array.isArray(raw?.parts) ? raw.parts : [];
+      if (role !== "assistant" || parts.length === 0) continue;
+
+      const baseTimestamp =
+        typeof raw?._creationTime === "number"
+          ? raw._creationTime
+          : typeof msg?._creationTime === "number"
+            ? msg._creationTime
+            : Date.now();
+
+      for (const part of parts) {
+        const partType = typeof part?.type === "string" ? part.type : "";
+        const isResult = partType === "tool-result" || partType.startsWith("tool-result");
+        const isError = partType === "tool-error" || partType.startsWith("tool-error");
+        const isCall =
+          !isResult &&
+          !isError &&
+          (partType === "tool-call" || partType.startsWith("tool-"));
+        if (!isCall && !isResult && !isError) continue;
+
+        const toolName = toToolName(part);
+        const title = toolName;
+        const toolCallId =
+          typeof part?.toolCallId === "string" && part.toolCallId.trim() ? part.toolCallId.trim() : null;
+        const idBase = toolCallId ?? raw?._id ?? raw?.id ?? msg?._id ?? msg?.id ?? "msg";
+        const timestamp = baseTimestamp + eventCounter;
+        eventCounter += 1;
+
+        const resultText = part?.output ?? part?.result;
+        const errorText = part?.error ?? part?.output ?? part?.result;
+
+        events.push({
+          id: `${idBase}-${eventCounter}`,
+          type: isError ? "tool_error" : isResult ? "tool_end" : "tool_start",
+          status: isError ? "error" : isResult ? "success" : "running",
+          title,
+          toolName,
+          details:
+            isResult && resultText
+              ? typeof resultText === "string"
+                ? String(resultText).slice(0, 160)
+                : "Completed"
+              : isError && errorText
+                ? String(errorText).slice(0, 160)
+                : isCall
+                  ? "Executing..."
+                  : undefined,
+          timestamp,
+        });
+      }
+    }
+
+    return events;
+  }, [chatMode, streamingMessages]);
 
   const createStreamingThread = useAction(api.domains.agents.fastAgentPanelStreaming.createThread);
   const sendStreamingMessage = useMutation(api.domains.agents.fastAgentPanelStreaming.initiateAsyncStreaming);
