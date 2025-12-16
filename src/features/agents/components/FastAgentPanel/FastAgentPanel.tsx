@@ -126,7 +126,72 @@ export function FastAgentPanel({
 
   // Live Events Panel state
   const [showEventsPanel, setShowEventsPanel] = useState(false);
-  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
+  const liveEvents = useMemo<LiveEvent[]>(() => {
+    if (chatMode !== "agent-streaming") return [];
+    if (!streamingMessages || streamingMessages.length === 0) return [];
+
+    const events: LiveEvent[] = [];
+    let eventCounter = 0;
+
+    const toToolName = (part: any): string => {
+      if (typeof part?.toolName === "string" && part.toolName.trim()) return part.toolName.trim();
+      if (typeof part?.name === "string" && part.name.trim()) return part.name.trim();
+
+      const type = typeof part?.type === "string" ? part.type : "";
+      const match = type.match(/^(tool-(?:call|result|error))-(.+)$/);
+      if (match?.[2]) return match[2];
+      return "unknown";
+    };
+
+    for (const raw of streamingMessages as any[]) {
+      const msg = raw?.message ?? raw;
+      const role = msg?.role ?? raw?.role;
+      const parts = Array.isArray(msg?.parts) ? msg.parts : Array.isArray(raw?.parts) ? raw.parts : [];
+      if (role !== "assistant" || parts.length === 0) continue;
+
+      const baseTimestamp =
+        typeof raw?._creationTime === "number"
+          ? raw._creationTime
+          : typeof msg?._creationTime === "number"
+            ? msg._creationTime
+            : Date.now();
+
+      for (const part of parts) {
+        const partType = typeof part?.type === "string" ? part.type : "";
+        const isCall = partType === "tool-call" || partType.startsWith("tool-call-");
+        const isResult = partType === "tool-result" || partType.startsWith("tool-result-");
+        const isError = partType === "tool-error" || partType.startsWith("tool-error-");
+        if (!isCall && !isResult && !isError) continue;
+
+        const toolName = toToolName(part);
+        const title = toolName;
+        const idBase = raw?._id ?? raw?.id ?? msg?._id ?? msg?.id ?? "msg";
+        const timestamp = baseTimestamp + eventCounter;
+        eventCounter += 1;
+
+        events.push({
+          id: `${idBase}-${eventCounter}`,
+          type: isError ? "tool_error" : isResult ? "tool_end" : "tool_start",
+          status: isError ? "error" : isResult ? "success" : "running",
+          title,
+          toolName,
+          details:
+            isResult && part?.output
+              ? typeof part.output === "string"
+                ? part.output.slice(0, 160)
+                : "Completed"
+              : isError && (part?.error || part?.output)
+                ? String(part.error ?? part.output).slice(0, 160)
+                : isCall
+                  ? "Executing..."
+                  : undefined,
+          timestamp,
+        });
+      }
+    }
+
+    return events;
+  }, [chatMode, streamingMessages]);
 
   // Skills Panel state
   const [showSkillsPanel, setShowSkillsPanel] = useState(false);
@@ -437,38 +502,7 @@ export function FastAgentPanel({
     toast.info(`Switched to ${chatMode === 'agent' ? 'Agent' : 'Agent Streaming'} mode`);
   }, [chatMode]);
 
-  // Extract live events from streaming messages
-  useEffect(() => {
-    if (!streamingMessages || streamingMessages.length === 0) return;
-
-    const events: LiveEvent[] = [];
-    let eventCounter = 0;
-
-    streamingMessages.forEach((msg: any) => {
-      if (msg.role !== 'assistant' || !msg.parts) return;
-
-      msg.parts.forEach((part: any) => {
-        if (part.type === 'tool-call' || part.type === 'tool-result') {
-          const isResult = part.type === 'tool-result';
-          const toolName = part.toolName || 'unknown';
-
-          events.push({
-            id: `${msg._id || msg.id}-${eventCounter++}`,
-            type: isResult ? 'tool_end' : 'tool_start',
-            status: isResult ? 'done' : 'running',
-            title: toolName,
-            toolName,
-            details: isResult && part.output ?
-              (typeof part.output === 'string' ? part.output.slice(0, 100) : 'Completed') :
-              'Executing...',
-            timestamp: Date.now() - (streamingMessages.length - eventCounter) * 1000,
-          });
-        }
-      });
-    });
-
-    setLiveEvents(events);
-  }, [streamingMessages]);
+  // Live events are derived from streaming messages (no state updates; avoids render loops).
 
   // Client no longer triggers workflows directly; coordinator handles routing via useCoordinator: true
 
