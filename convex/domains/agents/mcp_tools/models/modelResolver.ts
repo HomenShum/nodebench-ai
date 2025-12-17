@@ -36,8 +36,7 @@ export const APPROVED_MODELS = [
   "claude-sonnet-4.5", // Anthropic balanced
   "claude-haiku-4.5",  // Anthropic fast (DEFAULT)
   "gemini-3-pro",      // Google flagship
-  "gemini-2.5-flash",  // Google balanced
-  "gemini-2.5-pro",    // Google quality
+  "gemini-3-flash",    // Google fast (Dec 17, 2025) - frontier intelligence built for speed
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
@@ -167,28 +166,16 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
       maxContext: 2_000_000
     },
   },
-  "gemini-2.5-flash": {
-    alias: "gemini-2.5-flash",
+  "gemini-3-flash": {
+    alias: "gemini-3-flash",
     provider: "google",
-    sdkId: "gemini-2.5-flash-preview-04-17",  // Pinned preview version
+    sdkId: "gemini-3-flash",  // Gemini 3 Flash (Dec 17, 2025) - frontier intelligence built for speed
     capabilities: {
       vision: true,
       toolUse: true,
       streaming: true,
       structuredOutputs: true,
       maxContext: 1_000_000
-    },
-  },
-  "gemini-2.5-pro": {
-    alias: "gemini-2.5-pro",
-    provider: "google",
-    sdkId: "gemini-2.5-pro-preview-05-06",  // Pinned preview version
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 2_000_000
     },
   },
 };
@@ -215,11 +202,13 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "claude-opus": "claude-opus-4.5",
   "claude-haiku": "claude-haiku-4.5",
   "claude": "claude-haiku-4.5",  // Default claude → haiku (fast)
-  // Old Gemini names
-  "gemini-2.5-flash-lite": "gemini-2.5-flash",
-  "gemini-flash": "gemini-2.5-flash",
-  "gemini-pro": "gemini-2.5-pro",
-  "gemini": "gemini-2.5-flash",
+  // Old Gemini names → Gemini 3 Flash (Dec 17, 2025)
+  "gemini-2.5-flash-lite": "gemini-3-flash",
+  "gemini-2.5-flash": "gemini-3-flash",
+  "gemini-2.5-pro": "gemini-3-flash",
+  "gemini-flash": "gemini-3-flash",
+  "gemini-pro": "gemini-3-pro",
+  "gemini": "gemini-3-flash",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

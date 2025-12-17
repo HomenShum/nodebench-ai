@@ -22,8 +22,7 @@ export const APPROVED_MODELS = [
   "claude-sonnet-4.5", // Anthropic balanced
   "claude-haiku-4.5",  // Anthropic fast (DEFAULT)
   "gemini-3-pro",      // Google flagship
-  "gemini-2.5-flash",  // Google balanced
-  "gemini-2.5-pro",    // Google quality
+  "gemini-3-flash",    // Google fast (Dec 17, 2025) - frontier intelligence built for speed
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
@@ -111,22 +110,13 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     contextWindow: "2M",
     icon: "🔵",
   },
-  "gemini-2.5-flash": {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
+  "gemini-3-flash": {
+    id: "gemini-3-flash",
+    name: "Gemini 3 Flash",
     provider: "google",
-    description: "Fast, great quality",
-    tier: "balanced",
+    description: "Frontier intelligence, fast (Dec 2025)",
+    tier: "fast",
     contextWindow: "1M",
-    icon: "🔵",
-  },
-  "gemini-2.5-pro": {
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
-    provider: "google",
-    description: "Best quality",
-    tier: "powerful",
-    contextWindow: "2M",
     icon: "🔵",
   },
 };

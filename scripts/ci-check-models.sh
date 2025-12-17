@@ -4,10 +4,10 @@
 # ═══════════════════════════════════════════════════════════════════════════
 #
 # This script blocks disallowed model strings from being committed.
-# Only 7 approved models are allowed:
-#   - gpt-5.2 (OpenAI)
+# Only 8 approved models are allowed:
+#   - gpt-5.2, gpt-5-mini, gpt-5-nano (OpenAI)
 #   - claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5 (Anthropic)
-#   - gemini-3-pro, gemini-2.5-flash, gemini-2.5-pro (Google)
+#   - gemini-3-pro, gemini-3-flash (Google)
 #
 # Usage: ./scripts/ci-check-models.sh
 # Exit code: 0 = pass, 1 = fail
@@ -22,10 +22,9 @@ echo "════════════════════════�
 echo ""
 
 # Disallowed model patterns (legacy models that should not be used)
+# Note: gpt-5-mini and gpt-5-nano are NOW APPROVED (removed from disallowed)
 DISALLOWED_PATTERNS=(
   "gpt-5.1"
-  "gpt-5-mini"
-  "gpt-5-nano"
   "gpt-5.1-codex"
   "gpt-4.1"
   "gpt-4.1-mini"

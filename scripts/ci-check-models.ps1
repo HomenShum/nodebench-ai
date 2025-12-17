@@ -3,10 +3,10 @@
 # ═══════════════════════════════════════════════════════════════════════════
 #
 # This script blocks disallowed model strings from being committed.
-# Only 7 approved models are allowed:
-#   - gpt-5.2 (OpenAI)
+# Only 8 approved models are allowed:
+#   - gpt-5.2, gpt-5-mini, gpt-5-nano (OpenAI)
 #   - claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5 (Anthropic)
-#   - gemini-3-pro, gemini-2.5-flash, gemini-2.5-pro (Google)
+#   - gemini-3-pro, gemini-3-flash (Google)
 #
 # Usage: .\scripts\ci-check-models.ps1
 # Exit code: 0 = pass, 1 = fail
@@ -21,10 +21,9 @@ Write-Host "══════════════════════�
 Write-Host ""
 
 # Disallowed model patterns (legacy models that should not be used)
+# Note: gpt-5-mini and gpt-5-nano are NOW APPROVED (removed from disallowed)
 $DisallowedPatterns = @(
     "gpt-5.1",
-    "gpt-5-mini",
-    "gpt-5-nano",
     "gpt-5.1-codex",
     "gpt-4.1",
     "gpt-4.1-mini",
@@ -135,14 +134,10 @@ Write-Host "══════════════════════�
 if ($FoundIssues -gt 0) {
     Write-Host "❌ FAILED: Found $FoundIssues model/SDK ID issue(s)" -ForegroundColor Red
     Write-Host ""
-    Write-Host "Allowed models (2025 consolidated):"
-    Write-Host "  - gpt-5.2"
-    Write-Host "  - claude-opus-4.5"
-    Write-Host "  - claude-sonnet-4.5"
-    Write-Host "  - claude-haiku-4.5"
-    Write-Host "  - gemini-3-pro"
-    Write-Host "  - gemini-2.5-flash"
-    Write-Host "  - gemini-2.5-pro"
+    Write-Host "Allowed models (2025 consolidated - 8 models):"
+    Write-Host "  - gpt-5.2, gpt-5-mini, gpt-5-nano (OpenAI)"
+    Write-Host "  - claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5 (Anthropic)"
+    Write-Host "  - gemini-3-pro, gemini-3-flash (Google)"
     Write-Host ""
     Write-Host "SDK IDs (dated versions) should ONLY appear in:"
     Write-Host "  - modelResolver.ts"

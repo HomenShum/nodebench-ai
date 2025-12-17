@@ -2,21 +2,22 @@
  * Central registry for LLM model selection across providers.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * 2025 MODEL CONSOLIDATION - 7 APPROVED MODELS ONLY
+ * 2025 MODEL CONSOLIDATION - 8 APPROVED MODELS ONLY
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * OpenAI (1 model):
+ * OpenAI (3 models):
  * - gpt-5.2: Latest flagship (Dec 11, 2025), 256K context
+ * - gpt-5-mini: Efficient reasoning (Aug 7, 2025), 272K context
+ * - gpt-5-nano: Ultra-efficient (Aug 7, 2025), 272K context
  *
  * Anthropic (3 models):
  * - claude-opus-4.5: Most capable (200K context)
  * - claude-sonnet-4.5: Best balance (200K context)
- * - claude-haiku-4.5: Fastest (200K context)
+ * - claude-haiku-4.5: Fastest (200K context) - DEFAULT
  *
- * Google (3 models):
- * - gemini-3-pro: Preview flagship (2M context)
- * - gemini-2.5-pro: Best quality (2M context)
- * - gemini-2.5-flash: Fast, great quality (1M context)
+ * Google (2 models):
+ * - gemini-3-pro: Flagship (2M context)
+ * - gemini-3-flash: Frontier intelligence, fast (Dec 17, 2025), 1M context
  *
  * For model resolution logic, see: convex/domains/agents/mcp_tools/models/
  */
@@ -64,8 +65,7 @@ export const modelPricing: Record<string, ModelPricing> = {
 
   // Google Gemini (2025)
   "gemini-3-pro": { inputPer1M: 2.00, outputPer1M: 8.00, cachedInputPer1M: 0.20, contextWindow: 2000000 },
-  "gemini-2.5-pro": { inputPer1M: 1.25, outputPer1M: 5.00, contextWindow: 2000000 },
-  "gemini-2.5-flash": { inputPer1M: 0.075, outputPer1M: 0.30, contextWindow: 1000000 },
+  "gemini-3-flash": { inputPer1M: 0.10, outputPer1M: 0.40, cachedInputPer1M: 0.01, contextWindow: 1000000 },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -154,15 +154,15 @@ export const llmModelCatalog: ModelCatalog = {
     coding: ["claude-sonnet-4.5", "claude-opus-4.5"],
   },
   gemini: {
-    chat: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-pro"],
-    agent: ["gemini-2.5-pro", "gemini-3-pro", "gemini-2.5-flash"],
-    router: ["gemini-2.5-flash"],
-    judge: ["gemini-2.5-pro", "gemini-3-pro"],
-    analysis: ["gemini-2.5-pro", "gemini-3-pro", "gemini-2.5-flash"],
-    vision: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-pro"],
-    fileSearch: ["gemini-2.5-flash"],
-    voice: ["gemini-2.5-flash"],
-    coding: ["gemini-2.5-pro", "gemini-3-pro", "gemini-2.5-flash"],
+    chat: ["gemini-3-flash", "gemini-3-pro"],
+    agent: ["gemini-3-pro", "gemini-3-flash"],
+    router: ["gemini-3-flash"],
+    judge: ["gemini-3-pro", "gemini-3-flash"],
+    analysis: ["gemini-3-pro", "gemini-3-flash"],
+    vision: ["gemini-3-flash", "gemini-3-pro"],
+    fileSearch: ["gemini-3-flash"],
+    voice: ["gemini-3-flash"],
+    coding: ["gemini-3-pro", "gemini-3-flash"],
   },
 };
 
@@ -430,13 +430,15 @@ export const modelAliases: Record<string, string> = {
   "haiku": "claude-haiku-4.5",
   "anthropic": "claude-sonnet-4.5",
 
-  // Gemini aliases
-  "gemini": "gemini-2.5-flash",
-  "gemini-flash": "gemini-2.5-flash",
-  "gemini-pro": "gemini-2.5-pro",
+  // Gemini aliases → Gemini 3 Flash (Dec 17, 2025)
+  "gemini": "gemini-3-flash",
+  "gemini-flash": "gemini-3-flash",
+  "gemini-2.5-flash": "gemini-3-flash",
+  "gemini-2.5-pro": "gemini-3-flash",
+  "gemini-pro": "gemini-3-pro",
   "gemini-3": "gemini-3-pro",
-  "flash": "gemini-2.5-flash",
-  "google": "gemini-2.5-flash",
+  "flash": "gemini-3-flash",
+  "google": "gemini-3-flash",
 };
 
 /**
@@ -596,22 +598,21 @@ export const providerFallbackChain: Record<LlmProvider, LlmProvider[]> = {
   gemini: ["openai", "anthropic"],
 };
 
-/** Model equivalents across providers (for failover) - 9 approved models */
+/** Model equivalents across providers (for failover) - 8 approved models */
 export const modelEquivalents: Record<string, Record<LlmProvider, string>> = {
   // High-tier models
-  "gpt-5.2": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-2.5-pro" },
+  "gpt-5.2": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro" },
   "claude-opus-4.5": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro" },
-  "claude-sonnet-4.5": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-2.5-pro" },
+  "claude-sonnet-4.5": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro" },
   "gemini-3-pro": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro" },
-  "gemini-2.5-pro": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-2.5-pro" },
 
   // Mid-tier/balanced models
-  "gpt-5-mini": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
+  "gpt-5-mini": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash" },
 
   // Fast/efficient models
-  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
-  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
-  "gemini-2.5-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
+  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash" },
+  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash" },
+  "gemini-3-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash" },
 };
 
 /**
@@ -623,11 +624,11 @@ export function getEquivalentModel(modelName: string, targetProvider: LlmProvide
     return equivalents[targetProvider];
   }
 
-  // Default fallback by provider (9 approved models)
+  // Default fallback by provider (8 approved models)
   const defaults: Record<LlmProvider, string> = {
     openai: "gpt-5-nano",          // Cheapest OpenAI
     anthropic: "claude-haiku-4.5", // Cheapest Anthropic (DEFAULT)
-    gemini: "gemini-2.5-flash",    // Cheapest Google
+    gemini: "gemini-3-flash",      // Cheapest Google (Dec 17, 2025)
   };
 
   return defaults[targetProvider];
