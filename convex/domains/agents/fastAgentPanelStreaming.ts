@@ -1420,6 +1420,7 @@ export const streamAsync = internalAction({
           model: normalizedModel,
           estimatedInputTokens: 2000, // Estimate for pre-check
           estimatedOutputTokens: 1000,
+          userId: userId as Id<"users">, // Pass userId explicitly since auth context isn't available in actions
         });
 
         if (!rateLimitCheck.allowed) {

@@ -35,6 +35,7 @@ import type { SpawnedAgent } from './types/agent';
 import type { AgentOpenOptions, DossierContext } from '@/features/agents/context/FastAgentContext';
 import { buildDossierContextPrefix } from '@/features/agents/context/FastAgentContext';
 import { DossierModeIndicator } from '@/features/agents/components/DossierModeIndicator';
+import { DEFAULT_MODEL, type ApprovedModel } from '@shared/llm/approvedModels';
 
 import type {
   Message,
@@ -149,8 +150,8 @@ export function FastAgentPanel({
 
   // Settings
   const [fastMode, setFastMode] = useState(true);
-  // Use approved model aliases only (7 approved models)
-  const [selectedModel, setSelectedModel] = useState<'gpt-5.2' | 'claude-sonnet-4.5' | 'claude-opus-4.5' | 'claude-haiku-4.5' | 'gemini-3-pro' | 'gemini-2.5-flash' | 'gemini-2.5-pro'>('gpt-5.2');
+  // Use approved model aliases only (9 approved models) - uses DEFAULT_MODEL from shared/llm/approvedModels.ts
+  const [selectedModel, setSelectedModel] = useState<ApprovedModel>(DEFAULT_MODEL);
   const [arbitrageEnabled, setArbitrageEnabled] = useState(false);
 
   // Thread list collapse state

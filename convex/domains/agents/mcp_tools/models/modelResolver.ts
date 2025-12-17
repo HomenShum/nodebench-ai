@@ -2,12 +2,13 @@
  * Model Resolver - 2025 Consolidated LLM Model Registry
  *
  * This is the SINGLE SOURCE OF TRUTH for model selection across NodeBench.
- * Only 7 approved models are allowed. GPT-5.2 is now available (Dec 11, 2025).
+ * 9 approved models: GPT-5 series (flagship/mini/nano), Claude 4.5 series, Gemini series.
  *
  * POLICY:
- * - UI shows ONLY the 7 approved ALIASES (e.g., "gpt-5.2", "claude-sonnet-4.5")
+ * - UI shows ONLY the approved ALIASES (e.g., "gpt-5.2", "claude-haiku-4.5")
  * - Dated SDK IDs are INTERNAL ONLY (stored in ModelSpec.sdkId)
  * - Every resolution logs BOTH requestedAlias and resolvedSdkId
+ * - Default model is claude-haiku-4.5 (fast, cost-effective)
  *
  * @see MODEL_CONSOLIDATION_PLAN.md for architecture details
  */
@@ -25,13 +26,15 @@ import type { LanguageModel } from "ai";
 export type Provider = "openai" | "anthropic" | "google";
 
 /**
- * The 7 approved model aliases - ONLY these are allowed
+ * The 9 approved model aliases - ONLY these are allowed
  */
 export const APPROVED_MODELS = [
   "gpt-5.2",           // OpenAI flagship (Dec 11, 2025)
+  "gpt-5-mini",        // OpenAI efficient reasoning (Aug 7, 2025)
+  "gpt-5-nano",        // OpenAI ultra-efficient (Aug 7, 2025)
   "claude-opus-4.5",   // Anthropic flagship
   "claude-sonnet-4.5", // Anthropic balanced
-  "claude-haiku-4.5",  // Anthropic fast
+  "claude-haiku-4.5",  // Anthropic fast (DEFAULT)
   "gemini-3-pro",      // Google flagship
   "gemini-2.5-flash",  // Google balanced
   "gemini-2.5-pro",    // Google quality
@@ -39,7 +42,7 @@ export const APPROVED_MODELS = [
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 
-export const DEFAULT_MODEL: ApprovedModel = "gpt-5.2";
+export const DEFAULT_MODEL: ApprovedModel = "claude-haiku-4.5";
 
 /**
  * Check if a string is a valid approved model
@@ -90,6 +93,30 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
       streaming: true,
       structuredOutputs: true,
       maxContext: 256_000
+    },
+  },
+  "gpt-5-mini": {
+    alias: "gpt-5-mini",
+    provider: "openai",
+    sdkId: "gpt-5-mini",  // GPT-5 Mini (Aug 7, 2025) - efficient reasoning
+    capabilities: {
+      vision: true,
+      toolUse: true,
+      streaming: true,
+      structuredOutputs: true,
+      maxContext: 272_000  // 272K input, 128K output
+    },
+  },
+  "gpt-5-nano": {
+    alias: "gpt-5-nano",
+    provider: "openai",
+    sdkId: "gpt-5-nano",  // GPT-5 Nano (Aug 7, 2025) - ultra-efficient
+    capabilities: {
+      vision: true,
+      toolUse: true,
+      streaming: true,
+      structuredOutputs: true,
+      maxContext: 272_000  // 272K input, 128K output
     },
   },
   "claude-opus-4.5": {
@@ -171,17 +198,15 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
  * Maps old model names to approved models
  */
 export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
-  // Old GPT names → gpt-5.2
+  // Old GPT names → appropriate models
   "gpt-5.1": "gpt-5.2",
   "gpt-5.1-codex": "gpt-5.2",
   "gpt-5": "gpt-5.2",
-  "gpt-5-mini": "gpt-5.2",
-  "gpt-5-nano": "gpt-5.2",
   "gpt-5-chat-latest": "gpt-5.2",  // Found in legacy threads
-  "gpt-4.1-mini": "gpt-5.2",
-  "gpt-4.1-nano": "gpt-5.2",
+  "gpt-4.1-mini": "gpt-5-mini",    // Mini → Mini
+  "gpt-4.1-nano": "gpt-5-nano",    // Nano → Nano
   "gpt-4o": "gpt-5.2",
-  "gpt-4o-mini": "gpt-5.2",
+  "gpt-4o-mini": "gpt-5-mini",     // Mini → Mini
   // Old Claude names → new aliases
   "claude-sonnet-4-5-20250929": "claude-sonnet-4.5",
   "claude-opus-4-5-20251101": "claude-opus-4.5",
@@ -189,7 +214,7 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "claude-sonnet": "claude-sonnet-4.5",
   "claude-opus": "claude-opus-4.5",
   "claude-haiku": "claude-haiku-4.5",
-  "claude": "claude-sonnet-4.5",
+  "claude": "claude-haiku-4.5",  // Default claude → haiku (fast)
   // Old Gemini names
   "gemini-2.5-flash-lite": "gemini-2.5-flash",
   "gemini-flash": "gemini-2.5-flash",

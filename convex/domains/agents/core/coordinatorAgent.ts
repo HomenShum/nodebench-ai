@@ -101,6 +101,10 @@ import { ARBITRAGE_MODE_PROMPT } from "./prompts";
 // Import arbitrage tools
 import { analyzeWithArbitrage } from "../../../tools/arbitrage";
 
+// Import email and SMS tools (Resend + Twilio A2P 10DLC)
+import { sendEmail } from "../../../tools/sendEmail";
+import { sendSms } from "../../../tools/sendSms";
+
 // Import 2025 Deep Agents pattern tools
 import { contextInitializerTool } from "../mcp_tools/context";
 import { initTaskTracker, updateTaskStatus, getTaskSummary } from "../mcp_tools/tracking";
@@ -322,6 +326,10 @@ export const createCoordinatorAgent = (
 
     // === ARBITRAGE TOOLS (Receipts-first research) ===
     analyzeWithArbitrage,
+
+    // === EMAIL & SMS TOOLS (Resend + Twilio A2P 10DLC) ===
+    sendEmail,
+    sendSms,
 
     // === 2025 DEEP AGENTS PATTERN TOOLS ===
     // Context Initializer (Initializer Agent pattern - prevents "wasted time")

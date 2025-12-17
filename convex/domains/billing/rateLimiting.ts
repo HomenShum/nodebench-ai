@@ -30,16 +30,22 @@ function todayISO(): string {
 
 async function getUserTier(ctx: any, userId: any): Promise<UserTier> {
   if (!userId) return "anonymous";
-  
+
   try {
-    // Check subscription status
-    const sub = await ctx.runQuery(api.domains.billing.billing.getSubscription, {});
-    if (sub?.status === "active") {
+    // Query subscription directly from the database since we have the userId
+    // This works even when called from actions where auth context isn't available
+    const sub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_user_status", (q: any) => q.eq("userId", userId).eq("status", "active"))
+      .first();
+
+    if (sub) {
       // Map subscription plan to tier
-      const planId = sub.planId?.toLowerCase() || "";
-      if (planId.includes("enterprise")) return "enterprise";
-      if (planId.includes("team")) return "team";
-      if (planId.includes("pro")) return "pro";
+      const plan = (sub.plan as string)?.toLowerCase() || "";
+      if (plan.includes("enterprise")) return "enterprise";
+      if (plan.includes("team")) return "team";
+      if (plan.includes("pro")) return "pro";
+      if (plan.includes("supporter")) return "pro"; // Supporter plan = pro tier
       return "pro"; // Default active subscription to pro
     }
     return "free";
@@ -155,12 +161,16 @@ export const canUseModel = query({
 
 /**
  * Pre-flight check before making an LLM request
+ *
+ * Note: When called from an action, pass the userId explicitly since auth context
+ * is not available in action -> query calls.
  */
 export const checkRequestAllowed = query({
   args: {
     model: v.string(),
     estimatedInputTokens: v.number(),
     estimatedOutputTokens: v.optional(v.number()),
+    userId: v.optional(v.id("users")), // Optional: pass explicitly from actions
   },
   returns: v.object({
     allowed: v.boolean(),
@@ -168,8 +178,9 @@ export const checkRequestAllowed = query({
     estimatedCost: v.number(),
     suggestedModel: v.optional(v.string()),
   }),
-  handler: async (ctx, { model, estimatedInputTokens, estimatedOutputTokens }) => {
-    const userId = await getAuthUserId(ctx);
+  handler: async (ctx, { model, estimatedInputTokens, estimatedOutputTokens, userId: explicitUserId }) => {
+    // Use explicit userId if provided (from actions), otherwise try auth context
+    const userId = explicitUserId ?? await getAuthUserId(ctx);
     const tier = await getUserTier(ctx, userId) as UserTier;
     const limits = getTierLimits(tier);
     const date = todayISO();

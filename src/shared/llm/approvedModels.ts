@@ -1,24 +1,26 @@
 /**
  * 2025 Approved Models - SINGLE SOURCE OF TRUTH
- * 
- * This module defines the ONLY 7 approved LLM models for NodeBench.
+ *
+ * This module defines the 9 approved LLM models for NodeBench.
  * All UI components and backend logic should import from here.
- * 
+ *
  * @see convex/domains/agents/MODEL_CONSOLIDATION_PLAN.md
  */
 
 // ═══════════════════════════════════════════════════════════════════════════
-// THE 7 APPROVED MODELS
+// THE 9 APPROVED MODELS
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * The 7 approved model aliases - ONLY these are allowed in UI and user-facing code
+ * The 9 approved model aliases - ONLY these are allowed in UI and user-facing code
  */
 export const APPROVED_MODELS = [
   "gpt-5.2",           // OpenAI flagship (Dec 11, 2025)
+  "gpt-5-mini",        // OpenAI efficient reasoning (Aug 7, 2025)
+  "gpt-5-nano",        // OpenAI ultra-efficient (Aug 7, 2025)
   "claude-opus-4.5",   // Anthropic flagship
   "claude-sonnet-4.5", // Anthropic balanced
-  "claude-haiku-4.5",  // Anthropic fast
+  "claude-haiku-4.5",  // Anthropic fast (DEFAULT)
   "gemini-3-pro",      // Google flagship
   "gemini-2.5-flash",  // Google balanced
   "gemini-2.5-pro",    // Google quality
@@ -53,6 +55,24 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     description: "Latest flagship (Dec 2025)",
     tier: "powerful",
     contextWindow: "256K",
+    icon: "🟢",
+  },
+  "gpt-5-mini": {
+    id: "gpt-5-mini",
+    name: "GPT-5 Mini",
+    provider: "openai",
+    description: "Efficient reasoning",
+    tier: "balanced",
+    contextWindow: "272K",
+    icon: "🟢",
+  },
+  "gpt-5-nano": {
+    id: "gpt-5-nano",
+    name: "GPT-5 Nano",
+    provider: "openai",
+    description: "Ultra-efficient",
+    tier: "fast",
+    contextWindow: "272K",
     icon: "🟢",
   },
   "claude-opus-4.5": {
@@ -115,7 +135,7 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const DEFAULT_MODEL: ApprovedModel = "gpt-5.2";
+export const DEFAULT_MODEL: ApprovedModel = "claude-haiku-4.5";
 
 /**
  * Check if a string is a valid approved model

@@ -52,8 +52,10 @@ export interface ModelPricing {
 }
 
 export const modelPricing: Record<string, ModelPricing> = {
-  // OpenAI - GPT-5.2 (Dec 11, 2025)
+  // OpenAI - GPT-5 Series (Aug-Dec 2025)
   "gpt-5.2": { inputPer1M: 3.00, outputPer1M: 12.00, cachedInputPer1M: 0.30, contextWindow: 256000 },
+  "gpt-5-mini": { inputPer1M: 1.10, outputPer1M: 4.40, cachedInputPer1M: 0.275, contextWindow: 272000 },
+  "gpt-5-nano": { inputPer1M: 0.55, outputPer1M: 2.20, cachedInputPer1M: 0.138, contextWindow: 272000 },
 
   // Anthropic Claude 4.5 Series (Sep-Nov 2025)
   "claude-opus-4.5": { inputPer1M: 15.00, outputPer1M: 75.00, cachedInputPer1M: 1.50, contextWindow: 200000 },
@@ -84,8 +86,8 @@ export const tierLimits: Record<UserTier, TierLimits> = {
     requestsPerDay: 5,
     tokensPerDay: 10_000,
     maxTokensPerRequest: 2_000,
-    allowedProviders: ["openai"],
-    allowedModels: ["gemini-2.5-flash"],  // Cheapest available
+    allowedProviders: ["openai", "anthropic", "gemini"],
+    allowedModels: ["gpt-5-nano", "gemini-2.5-flash", "claude-haiku-4.5"],  // Cheapest options
     costLimitPerDay: 0.01,
   },
   free: {
@@ -93,7 +95,7 @@ export const tierLimits: Record<UserTier, TierLimits> = {
     tokensPerDay: 100_000,
     maxTokensPerRequest: 8_000,
     allowedProviders: ["openai", "anthropic", "gemini"],
-    allowedModels: ["gpt-5.2", "gemini-2.5-flash", "claude-haiku-4.5"],
+    allowedModels: ["gpt-5-mini", "gpt-5-nano", "gemini-2.5-flash", "claude-haiku-4.5"],
     costLimitPerDay: 0.50,
   },
   pro: {
@@ -130,19 +132,19 @@ type ModelCatalog = Record<LlmProvider, Record<LlmTask, string[]>>;
 
 export const llmModelCatalog: ModelCatalog = {
   openai: {
-    chat: ["gpt-5.2"],
-    agent: ["gpt-5.2"],
-    router: ["gpt-5.2"],
-    judge: ["gpt-5.2"],
-    analysis: ["gpt-5.2"],
-    vision: ["gpt-5.2"],
-    fileSearch: ["gpt-5.2"],
-    voice: ["gpt-5.2"],
-    coding: ["gpt-5.2"],
+    chat: ["gpt-5.2", "gpt-5-mini", "gpt-5-nano"],
+    agent: ["gpt-5.2", "gpt-5-mini"],
+    router: ["gpt-5-nano", "gpt-5-mini"],  // Fast routing with nano/mini
+    judge: ["gpt-5.2", "gpt-5-mini"],
+    analysis: ["gpt-5.2", "gpt-5-mini"],
+    vision: ["gpt-5.2", "gpt-5-mini", "gpt-5-nano"],
+    fileSearch: ["gpt-5-nano", "gpt-5-mini"],
+    voice: ["gpt-5-nano", "gpt-5-mini"],
+    coding: ["gpt-5.2", "gpt-5-mini"],
   },
   anthropic: {
-    chat: ["claude-sonnet-4.5", "claude-haiku-4.5"],
-    agent: ["claude-sonnet-4.5", "claude-opus-4.5"],
+    chat: ["claude-haiku-4.5", "claude-sonnet-4.5"],  // Haiku first (default)
+    agent: ["claude-haiku-4.5", "claude-sonnet-4.5", "claude-opus-4.5"],
     router: ["claude-haiku-4.5"],
     judge: ["claude-opus-4.5", "claude-sonnet-4.5"],
     analysis: ["claude-sonnet-4.5", "claude-opus-4.5"],
@@ -165,7 +167,7 @@ export const llmModelCatalog: ModelCatalog = {
 };
 
 /** Default fallback model if everything else fails */
-export const DEFAULT_FALLBACK_MODEL = "gpt-5.2";
+export const DEFAULT_FALLBACK_MODEL = "claude-haiku-4.5";
 
 /**
  * Check if Gemini is fully integrated with the Agent SDK.
@@ -594,7 +596,7 @@ export const providerFallbackChain: Record<LlmProvider, LlmProvider[]> = {
   gemini: ["openai", "anthropic"],
 };
 
-/** Model equivalents across providers (for failover) - 7 approved models only */
+/** Model equivalents across providers (for failover) - 9 approved models */
 export const modelEquivalents: Record<string, Record<LlmProvider, string>> = {
   // High-tier models
   "gpt-5.2": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-2.5-pro" },
@@ -603,9 +605,13 @@ export const modelEquivalents: Record<string, Record<LlmProvider, string>> = {
   "gemini-3-pro": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro" },
   "gemini-2.5-pro": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-2.5-pro" },
 
-  // Fast/balanced models
-  "claude-haiku-4.5": { openai: "gpt-5.2", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
-  "gemini-2.5-flash": { openai: "gpt-5.2", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
+  // Mid-tier/balanced models
+  "gpt-5-mini": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
+
+  // Fast/efficient models
+  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
+  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
+  "gemini-2.5-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash" },
 };
 
 /**
@@ -617,11 +623,11 @@ export function getEquivalentModel(modelName: string, targetProvider: LlmProvide
     return equivalents[targetProvider];
   }
 
-  // Default fallback by provider (7 approved models)
+  // Default fallback by provider (9 approved models)
   const defaults: Record<LlmProvider, string> = {
-    openai: "gpt-5.2",
-    anthropic: "claude-haiku-4.5",
-    gemini: "gemini-2.5-flash",
+    openai: "gpt-5-nano",          // Cheapest OpenAI
+    anthropic: "claude-haiku-4.5", // Cheapest Anthropic (DEFAULT)
+    gemini: "gemini-2.5-flash",    // Cheapest Google
   };
 
   return defaults[targetProvider];
