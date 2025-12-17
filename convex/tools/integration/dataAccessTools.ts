@@ -1,10 +1,11 @@
 // convex/tools/dataAccessTools.ts
-// Data access tools for tasks, events, folders, and calendar
+// Data access tools for tasks, events, folders, calendar, and email calendar integration
 // Enables voice-controlled data operations
 
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { api } from "../../_generated/api";
+import type { Id } from "../../_generated/dataModel";
 
 /**
  * List tasks with optional filtering
@@ -389,3 +390,195 @@ ${formattedDocs}`;
   },
 });
 
+// ────────────────────────────────────────────────────────────────────────────
+// Email Calendar Integration Tools
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * List today's email-extracted events
+ * Voice: "What meetings do I have today from email?" or "Show my email calendar events"
+ */
+export const listTodaysEmailEvents = createTool({
+  description: `List calendar events that were extracted from emails for today.
+Use when:
+- User asks "what meetings do I have today from email"
+- User asks "what's on my calendar from Gmail"
+- User wants to see email-sourced events specifically
+- User asks about proposed events that need confirmation
+
+Returns events with their details including whether they need user confirmation.`,
+
+  args: z.object({
+    includeProposed: z.boolean().default(true).describe("Include proposed events that need confirmation"),
+  }),
+
+  handler: async (ctx, args): Promise<string> => {
+    console.log(`[listTodaysEmailEvents] Listing today's email events`);
+
+    // Get today's email events
+    const events = await ctx.runQuery(api.domains.calendar.events.listTodaysEmailEvents, {});
+
+    // Filter by proposed status if needed
+    let filteredEvents = events;
+    if (!args.includeProposed) {
+      filteredEvents = events.filter((e: any) => !e.proposed);
+    }
+
+    if (filteredEvents.length === 0) {
+      return `No email-extracted events found for today.
+
+To see all calendar events, use the listEvents tool instead.`;
+    }
+
+    // Separate confirmed and proposed events
+    const confirmed = filteredEvents.filter((e: any) => !e.proposed);
+    const proposed = filteredEvents.filter((e: any) => e.proposed);
+
+    // Format events
+    const formatEvent = (event: any, idx: number) => {
+      const startTime = new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const endTime = event.endTime ? new Date(event.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const timeStr = endTime ? `${startTime} - ${endTime}` : startTime;
+      const confidenceIcon = event.ingestionConfidence === 'high' ? '✅' : event.ingestionConfidence === 'med' ? '⚠️' : '❓';
+
+      return `${idx + 1}. ${confidenceIcon} "${event.title}"
+   Time: ${event.allDay ? 'All day' : timeStr}
+   ${event.location ? `Location: ${event.location}` : ''}
+   Source: Gmail (${event.sourceId})
+   Confidence: ${event.ingestionConfidence || 'unknown'}
+   ${event.rawSummary ? `Summary: ${event.rawSummary.substring(0, 100)}...` : ''}`;
+    };
+
+    let response = `Found ${filteredEvents.length} email-extracted event(s) for today:\n\n`;
+
+    if (confirmed.length > 0) {
+      response += `**Confirmed Events (${confirmed.length}):**\n\n`;
+      response += confirmed.map(formatEvent).join('\n\n');
+      response += '\n\n';
+    }
+
+    if (proposed.length > 0) {
+      response += `**Proposed Events Needing Confirmation (${proposed.length}):**\n\n`;
+      response += proposed.map((e: any, i: number) => formatEvent(e, i)).join('\n\n');
+      response += '\n\nTo confirm a proposed event, use the confirmEmailEvent tool with the event ID.';
+    }
+
+    return response;
+  },
+});
+
+/**
+ * List all proposed email events that need confirmation
+ * Voice: "Show me proposed events" or "What events need my confirmation"
+ */
+export const listProposedEmailEvents = createTool({
+  description: `List all email-extracted events that are proposed and need user confirmation.
+Use when:
+- User asks "what events need confirmation"
+- User asks about proposed meetings
+- User wants to review tentative events from email
+
+These are events extracted with lower confidence that require user review.`,
+
+  args: z.object({}),
+
+  handler: async (ctx): Promise<string> => {
+    console.log(`[listProposedEmailEvents] Listing proposed email events`);
+
+    const events = await ctx.runQuery(api.domains.calendar.events.listProposedFromEmail, {});
+
+    if (events.length === 0) {
+      return `No proposed events need confirmation.
+
+All email-extracted events have been reviewed.`;
+    }
+
+    const formattedEvents = events.map((event: any, idx: number) => {
+      const startTime = new Date(event.startTime).toLocaleString();
+      const endTime = event.endTime ? new Date(event.endTime).toLocaleString() : '';
+      const timeStr = endTime ? `${startTime} - ${endTime}` : startTime;
+
+      return `${idx + 1}. ❓ "${event.title}"
+   ID: ${event._id}
+   Time: ${event.allDay ? 'All day' : timeStr}
+   ${event.location ? `Location: ${event.location}` : ''}
+   Confidence: ${event.ingestionConfidence || 'low'}
+   ${event.rawSummary ? `From email: ${event.rawSummary.substring(0, 100)}...` : ''}`;
+    }).join('\n\n');
+
+    return `Found ${events.length} proposed event(s) needing confirmation:
+
+${formattedEvents}
+
+To confirm an event, use the confirmEmailEvent tool with the event ID.
+To dismiss an event, use the dismissEmailEvent tool with the event ID.`;
+  },
+});
+
+/**
+ * Confirm a proposed email event
+ * Voice: "Confirm that meeting" or "Accept the proposed event"
+ */
+export const confirmEmailEvent = createTool({
+  description: `Confirm a proposed email-extracted event. Changes the event from proposed/tentative to confirmed.
+Use when:
+- User says "confirm this event"
+- User says "accept this meeting"
+- User wants to add a proposed event to their calendar`,
+
+  args: z.object({
+    eventId: z.string().describe("The event ID to confirm"),
+  }),
+
+  handler: async (ctx, args): Promise<string> => {
+    console.log(`[confirmEmailEvent] Confirming event: ${args.eventId}`);
+
+    try {
+      await ctx.runMutation(api.domains.calendar.events.confirmProposed, {
+        eventId: args.eventId as Id<"events">,
+      });
+
+      return `Event confirmed successfully!
+
+The event has been added to your calendar as a confirmed event.`;
+    } catch (error: any) {
+      return `Failed to confirm event: ${error.message}
+
+Make sure the event ID is correct and the event exists.`;
+    }
+  },
+});
+
+/**
+ * Dismiss a proposed email event
+ * Voice: "Dismiss that event" or "Remove the proposed meeting"
+ */
+export const dismissEmailEvent = createTool({
+  description: `Dismiss/delete a proposed email-extracted event. Removes it from the calendar entirely.
+Use when:
+- User says "dismiss this event"
+- User says "remove this meeting"
+- User doesn't want the proposed event on their calendar`,
+
+  args: z.object({
+    eventId: z.string().describe("The event ID to dismiss"),
+  }),
+
+  handler: async (ctx, args): Promise<string> => {
+    console.log(`[dismissEmailEvent] Dismissing event: ${args.eventId}`);
+
+    try {
+      await ctx.runMutation(api.domains.calendar.events.dismissProposed, {
+        eventId: args.eventId as Id<"events">,
+      });
+
+      return `Event dismissed successfully!
+
+The proposed event has been removed from your calendar.`;
+    } catch (error: any) {
+      return `Failed to dismiss event: ${error.message}
+
+Make sure the event ID is correct and the event exists.`;
+    }
+  },
+});

@@ -37,7 +37,7 @@ export const sendEmail = action({
     const fromAddress = process.env.EMAIL_FROM || "NodeBench AI <research@nodebench.ai>";
 
     try {
-      const response = await fetch("https://api.domains.integrations.resend.com/emails", {
+      const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,

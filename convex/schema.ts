@@ -223,10 +223,40 @@ export const tagRefs = defineTable({
 export const smsLogs = defineTable({
   to: v.string(),
   body: v.string(),
-  status: v.string(),       // "sent" | "failed"
+  status: v.string(),       // "sent" | "failed" | "delivered" | "undelivered"
   createdAt: v.number(),
+  // Enhanced tracking for cost analytics
+  userId: v.optional(v.id("users")),
+  messageSid: v.optional(v.string()),  // Twilio message SID
+  eventType: v.optional(v.string()),   // "meeting_created" | "meeting_reminder" | "morning_digest"
+  eventId: v.optional(v.id("events")),
+  segments: v.optional(v.number()),    // Number of SMS segments (160 chars = 1 segment)
+  estimatedCostCents: v.optional(v.number()), // Estimated cost in cents
 })
-  .index("by_to", ["to"]);
+  .index("by_to", ["to"])
+  .index("by_user", ["userId"])
+  .index("by_user_date", ["userId", "createdAt"])
+  .index("by_status", ["status"]);
+
+/* ------------------------------------------------------------------ */
+/* 7a. SMS USAGE DAILY - Aggregated usage per user per day            */
+/* ------------------------------------------------------------------ */
+export const smsUsageDaily = defineTable({
+  userId: v.id("users"),
+  date: v.string(),                    // YYYY-MM-DD
+  totalMessages: v.number(),
+  successfulMessages: v.number(),
+  failedMessages: v.number(),
+  totalSegments: v.number(),
+  estimatedCostCents: v.number(),      // Total estimated cost in cents
+  // Breakdown by event type
+  meetingCreatedCount: v.optional(v.number()),
+  meetingReminderCount: v.optional(v.number()),
+  morningDigestCount: v.optional(v.number()),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_date", ["userId", "date"])
+  .index("by_date", ["date"]);
 
 /* ------------------------------------------------------------------ */
 /* 8.  VECTOR CACHE  (optional)                                        */
@@ -712,6 +742,13 @@ const userPreferences = defineTable({
   calendarAutoAddMode: v.optional(v.union(v.literal("auto"), v.literal("propose"))),
   // Onboarding status
   onboardingSeededAt: v.optional(v.number()),
+  // SMS notification preferences
+  phoneNumber: v.optional(v.string()),           // E.164 format (e.g., "+14083335386")
+  smsNotificationsEnabled: v.optional(v.boolean()), // Master toggle for SMS notifications
+  smsMeetingCreated: v.optional(v.boolean()),    // Notify when meeting is created
+  smsMeetingReminder: v.optional(v.boolean()),   // Notify before meeting starts
+  smsMorningDigest: v.optional(v.boolean()),     // Include in morning digest SMS
+  smsReminderMinutes: v.optional(v.number()),    // Minutes before meeting to send reminder (default: 15)
   // Future: more UI preferences can be added here
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -1335,6 +1372,7 @@ export default defineSchema({
   tags,
   tagRefs,
   smsLogs,
+  smsUsageDaily,
   embeddings,
   gridProjects,
   files,
@@ -3320,5 +3358,22 @@ export default defineSchema({
     .index("by_cache_key", ["cacheKey"])
     .index("by_expires_at", ["expiresAt"])
     .index("by_query", ["query"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DIGEST SUMMARY CACHE - Cached AI-generated digest summaries        */
+  /* Avoids regenerating LLM summary on every component mount           */
+  /* ------------------------------------------------------------------ */
+  digestSummaryCache: defineTable({
+    dateString: v.string(),                 // YYYY-MM-DD
+    userId: v.optional(v.id("users")),      // Optional: per-user personalization
+    summary: v.string(),                    // AI-generated summary text
+    dataHash: v.string(),                   // Hash of input data (for invalidation)
+    generatedAt: v.number(),                // When summary was generated
+    expiresAt: v.number(),                  // TTL expiration (4 hours from generation)
+    hitCount: v.optional(v.number()),       // Cache hit counter
+  })
+    .index("by_date", ["dateString"])
+    .index("by_date_user", ["dateString", "userId"])
+    .index("by_expires_at", ["expiresAt"]),
 
 });

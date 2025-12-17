@@ -328,7 +328,8 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
 
   const markers = useMemo(() => {
     // Count per grid day using the SAME UTC bounds the preview uses.
-    const m: Record<string, { events: number; tasks: number; holidays: number; notes: number; maxPriority: number }> = {};
+    // emailProposed: proposed events from Gmail that need user confirmation
+    const m: Record<string, { events: number; tasks: number; holidays: number; notes: number; emailProposed: number; maxPriority: number }> = {};
     const events = monthEvents;
     const tasks = monthTasks;
     const holidays = monthHolidays as Array<{ dateKey: string }>;
@@ -355,7 +356,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
       const endUtc = startUtc + 24 * 60 * 60 * 1000 - 1;
 
       // Initialize bucket
-      if (!m[key]) m[key] = { events: 0, tasks: 0, holidays: 0, notes: 0, maxPriority: 0 };
+      if (!m[key]) m[key] = { events: 0, tasks: 0, holidays: 0, notes: 0, emailProposed: 0, maxPriority: 0 };
 
       // Holidays: match by canonical key
       m[key].holidays += holidays.filter((h) => h.dateKey === key).length;
@@ -372,13 +373,19 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
       }
 
       // Events: overlap with [startUtc, endUtc]
+      // Track proposed email events separately for visual distinction
       for (const e of events) {
         const sRaw = (e as any).startTime;
         if (typeof sRaw !== "number") continue;
         const enRaw = (e as any).endTime;
         const en = typeof enRaw === "number" ? enRaw : undefined;
         if (overlaps(sRaw, en, startUtc, endUtc)) {
-          m[key].events += 1;
+          const isEmailProposed = (e as any).proposed && (e as any).sourceType === "gmail";
+          if (isEmailProposed) {
+            m[key].emailProposed += 1;
+          } else {
+            m[key].events += 1;
+          }
         }
       }
 
@@ -659,8 +666,8 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
         </div>
         <div className="grid grid-cols-7 gap-1">
           {gridDays.map((d, idx) => {
-            const m = markers[d.key] ?? { events: 0, tasks: 0, holidays: 0, notes: 0, maxPriority: 0 };
-            const _hasMarkers = m.events > 0 || m.tasks > 0 || m.holidays > 0 || m.notes > 0;
+            const m = markers[d.key] ?? { events: 0, tasks: 0, holidays: 0, notes: 0, emailProposed: 0, maxPriority: 0 };
+            const _hasMarkers = m.events > 0 || m.tasks > 0 || m.holidays > 0 || m.notes > 0 || m.emailProposed > 0;
             const pr = m.maxPriority ?? 0;
             const priorityRing = pr >= 4
               ? "ring-2 ring-red-500"
@@ -733,11 +740,16 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 </div>
                 {/* Markers (fixed positions; always rendered, zero counts muted) */}
                 <div className="absolute bottom-1 left-1 right-1 space-y-0.5">
-                    {/* Top row: events (left), holidays (right) */}
+                    {/* Top row: events (left), email proposed (center), holidays (right) */}
                     <div className="flex items-center justify-between">
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.events > 0 ? "bg-blue-500" : "opacity-0"}`} />
                         <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.events > 0 ? "text-blue-600" : "text-gray-300"}`}>{m.events > 0 ? fmtSmall(m.events) : ""}</span>
+                      </span>
+                      {/* Email proposed events (pulsing orange dot) */}
+                      <span className="relative inline-flex items-center" title="Proposed email events needing confirmation">
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${m.emailProposed > 0 ? "bg-orange-500 animate-pulse" : "opacity-0"}`} />
+                        <span className={`ml-0.5 text-[8px] leading-none font-semibold w-3 text-center ${m.emailProposed > 0 ? "text-orange-600" : "text-gray-300"}`}>{m.emailProposed > 0 ? fmtSmall(m.emailProposed) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.holidays > 0 ? "bg-purple-500" : "opacity-0"}`} />

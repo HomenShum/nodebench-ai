@@ -1,13 +1,153 @@
-import { action, internalAction, internalMutation, internalQuery, query } from "../../_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, query } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "../../_generated/api";
 import { getLlmModel } from "../../../shared/llm/modelCatalog";
+import { Id } from "../../_generated/dataModel";
+
+/**
+ * Internal query to get user preferences for Gmail ingestion
+ */
+export const getUserPreferencesForGmail = internalQuery({
+  args: { userId: v.id("users") },
+  returns: v.union(
+    v.object({
+      gmailIngestEnabled: v.optional(v.boolean()),
+      calendarAutoAddMode: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const prefs = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+    if (!prefs) return null;
+    return {
+      gmailIngestEnabled: prefs.gmailIngestEnabled,
+      calendarAutoAddMode: prefs.calendarAutoAddMode,
+    };
+  },
+});
+
+/**
+ * Internal mutation to upsert an event from Gmail ingestion
+ */
+export const upsertEventFromGmail = internalMutation({
+  args: {
+    userId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    startTime: v.number(),
+    endTime: v.optional(v.number()),
+    allDay: v.boolean(),
+    location: v.optional(v.string()),
+    confidence: v.number(),
+    rawSummary: v.optional(v.string()),
+    sourceId: v.string(),
+    hash: v.string(),
+    from: v.optional(v.string()),
+    dateHeader: v.optional(v.string()),
+    people: v.optional(v.array(v.string())),
+    autoAddMode: v.string(),
+  },
+  returns: v.object({
+    action: v.union(v.literal("created"), v.literal("updated"), v.literal("skipped")),
+    eventId: v.optional(v.id("events")),
+  }),
+  handler: async (ctx, args) => {
+    const { userId, title, description, startTime, endTime, allDay, location, confidence, rawSummary, sourceId, hash, from, dateHeader, people, autoAddMode } = args;
+
+    // Dedup within ±2 hours
+    const window = 2 * 60 * 60 * 1000;
+    const candidates = await ctx.db
+      .query("events")
+      .withIndex("by_user_start", (q) =>
+        q.eq("userId", userId).gte("startTime", startTime - window).lte("startTime", startTime + window)
+      )
+      .collect();
+
+    const existing = candidates.find((e) => (e.meta as any)?.hash === hash || e.sourceId === sourceId);
+
+    const ingestionConf = (confidence >= 0.7 ? "high" : confidence >= 0.4 ? "med" : "low") as "high" | "med" | "low";
+    const baseEvent = {
+      userId,
+      title,
+      description: rawSummary || description,
+      startTime,
+      endTime,
+      allDay,
+      location,
+      status: (allDay ? "confirmed" : "tentative") as "confirmed" | "tentative" | "cancelled",
+      sourceType: "gmail" as const,
+      sourceId,
+      ingestionConfidence: ingestionConf,
+      proposed: autoAddMode === "propose" ? true : confidence < 0.7 || !endTime,
+      rawSummary,
+      meta: { hash, people, from, dateHeader },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        ...baseEvent,
+        createdAt: existing.createdAt,
+      });
+      return { action: "updated" as const, eventId: existing._id };
+    } else {
+      const eventId = await ctx.db.insert("events", baseEvent);
+      return { action: "created" as const, eventId };
+    }
+  },
+});
 
 const DEFAULT_SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
+
+/**
+ * Get the Google OAuth URL for connecting Gmail.
+ * This action returns the OAuth URL that the frontend can redirect to.
+ * The user must be authenticated to get the URL.
+ */
+export const getOAuthUrl = action({
+  args: {},
+  returns: v.object({
+    success: v.boolean(),
+    url: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.CONVEX_SITE_URL}/api/google/oauth/callback`;
+
+    if (!clientId) {
+      return { success: false, error: "Missing GOOGLE_CLIENT_ID environment variable" };
+    }
+    if (!redirectUri) {
+      return { success: false, error: "Missing GOOGLE_REDIRECT_URI environment variable" };
+    }
+
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("scope", DEFAULT_SCOPES);
+    authUrl.searchParams.set("access_type", "offline");
+    authUrl.searchParams.set("include_granted_scopes", "true");
+    authUrl.searchParams.set("prompt", "consent");
+    authUrl.searchParams.set("state", userId);
+
+    return { success: true, url: authUrl.toString() };
+  },
+});
 
 export const getConnection = query({
   args: {},
@@ -58,6 +198,8 @@ export const updateProfile = internalMutation({
 
 export const saveTokens = internalMutation({
   args: {
+    // userId can be passed from HTTP callback (from state parameter) or derived from auth context
+    userId: v.optional(v.id("users")),
     email: v.optional(v.string()),
     accessToken: v.string(),
     refreshToken: v.optional(v.string()),
@@ -67,8 +209,12 @@ export const saveTokens = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    // Use provided userId (from OAuth callback state) or fall back to auth context
+    let userId: Id<"users"> | null = args.userId ?? null;
+    if (!userId) {
+      userId = await getAuthUserId(ctx);
+    }
+    if (!userId) throw new Error("Not authenticated and no userId provided");
 
     const existing = await ctx.db
       .query("googleAccounts")
@@ -391,22 +537,31 @@ export const startWatch = action({
   args: {},
   returns: v.object({ success: v.boolean(), historyId: v.optional(v.string()), error: v.optional(v.string()) }),
   handler: async (ctx) => {
+    console.log("[gmail.startWatch] Starting...");
     const userId = await getAuthUserId(ctx);
+    console.log("[gmail.startWatch] userId:", userId);
     if (!userId) return { success: false, error: "Not authenticated" };
     const account = await ctx.runQuery(internal.domains.integrations.gmail.getAccount, {});
+    console.log("[gmail.startWatch] account:", account ? "found" : "not found");
     if (!account) return { success: false, error: "No Google account connected" };
 
+    console.log("[gmail.startWatch] Refreshing access token...");
     const accessToken = await refreshAccessTokenIfNeeded(ctx, account);
+    console.log("[gmail.startWatch] accessToken:", accessToken ? "obtained" : "failed");
 
     // Use profile endpoint to grab current historyId (avoids Pub/Sub requirement).
+    console.log("[gmail.startWatch] Fetching Gmail profile...");
     const profileRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    console.log("[gmail.startWatch] profileRes.ok:", profileRes.ok, "status:", profileRes.status);
     if (!profileRes.ok) {
       const text = await profileRes.text();
+      console.log("[gmail.startWatch] Profile fetch failed:", text);
       return { success: false, error: `Failed to fetch profile: ${text}` };
     }
     const profile = await profileRes.json();
+    console.log("[gmail.startWatch] profile:", JSON.stringify(profile));
     const historyId: string | undefined = profile.historyId ? String(profile.historyId) : undefined;
 
     if (historyId) {
@@ -416,6 +571,7 @@ export const startWatch = action({
       });
     }
 
+    console.log("[gmail.startWatch] Success, historyId:", historyId);
     return { success: true, historyId };
   },
 });
@@ -498,35 +654,56 @@ export const ingestMessages = action({
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args): Promise<{ success: boolean; created: number; updated: number; skipped: number; error?: string }> => {
+    console.log("[gmail.ingestMessages] Starting ingestion...");
     const userId = await getAuthUserId(ctx);
+    console.log("[gmail.ingestMessages] userId:", userId);
     if (!userId) return { success: false, created: 0, updated: 0, skipped: 0, error: "Not authenticated" };
 
     const account = await ctx.runQuery(internal.domains.integrations.gmail.getAccount, {});
+    console.log("[gmail.ingestMessages] account:", account ? "found" : "not found");
     if (!account) return { success: false, created: 0, updated: 0, skipped: 0, error: "No Google account connected" };
 
-    const db = (ctx as any).db;
-    const prefs = db
-      ? await db.query("userPreferences").withIndex("by_user", (q: any) => q.eq("userId", userId)).first()
-      : null;
+    // Get user preferences via internal query
+    const prefs = await ctx.runQuery(internal.domains.integrations.gmail.getUserPreferencesForGmail, { userId });
     if (prefs && prefs.gmailIngestEnabled === false) {
+      console.log("[gmail.ingestMessages] Gmail ingest disabled by user preferences");
       return { success: true, created: 0, updated: 0, skipped: 0 };
     }
     const autoAddMode = prefs?.calendarAutoAddMode ?? "propose";
 
-    const historyResult = await ctx.runAction(api.domains.integrations.gmail.fetchHistory, {
-      startHistoryId: args.historyId,
-      maxResults: args.maxResults ?? 25,
-    });
-    if (!historyResult.success || !historyResult.messageIds) {
-      return { success: false, created: 0, updated: 0, skipped: 0, error: historyResult.error };
+    const accessToken = await refreshAccessTokenIfNeeded(ctx, account);
+
+    // Check if we have a historyId; if not, initialize it first
+    if (!account.historyId && !args.historyId) {
+      console.log("[gmail.ingestMessages] No historyId found, initializing via startWatch...");
+      const watchResult = await ctx.runAction(api.domains.integrations.gmail.startWatch, {});
+      console.log("[gmail.ingestMessages] startWatch result:", watchResult.success, "historyId:", watchResult.historyId);
+      if (!watchResult.success) {
+        return { success: false, created: 0, updated: 0, skipped: 0, error: watchResult.error };
+      }
     }
 
-    const accessToken = await refreshAccessTokenIfNeeded(ctx, account);
+    // Fetch recent messages directly from Gmail API (more reliable than history for initial sync)
+    console.log("[gmail.ingestMessages] Fetching recent messages...");
+    const listUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
+    listUrl.searchParams.set("maxResults", String(args.maxResults ?? 25));
+    // Search for calendar-related emails
+    listUrl.searchParams.set("q", "has:attachment filename:ics OR subject:(meeting OR invite OR calendar OR appointment OR call OR sync)");
+
+    const listRes = await fetch(listUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!listRes.ok) {
+      const text = await listRes.text();
+      console.log("[gmail.ingestMessages] Failed to list messages:", text);
+      return { success: false, created: 0, updated: 0, skipped: 0, error: `Failed to list messages: ${text}` };
+    }
+    const listData: any = await listRes.json();
+    const messageIds: string[] = (listData.messages || []).map((m: any) => m.id).filter(Boolean);
+    console.log("[gmail.ingestMessages] Found", messageIds.length, "potential calendar messages");
     let created = 0;
     let updated = 0;
     let skipped = 0;
 
-    for (const id of historyResult.messageIds) {
+    for (const id of messageIds) {
       try {
         const detailUrl = new URL(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}`);
         detailUrl.searchParams.set("format", "full");
@@ -600,20 +777,8 @@ export const ingestMessages = action({
         const end = ev.endTime;
         const hash = `${ev.title.toLowerCase().trim()}::${start}::${from ?? ""}`;
 
-        // Dedup within ±2 hours
-        const window = 2 * 60 * 60 * 1000;
-        const candidates = db
-          ? await db
-              .query("events")
-              .withIndex("by_user_start", (q: any) =>
-                q.eq("userId", userId).gte("startTime", start - window).lte("startTime", start + window)
-              )
-              .collect()
-          : [];
-
-        const existing = candidates.find((e: any) => (e.meta as any)?.hash === hash || e.sourceId === id);
-
-        const baseEvent = {
+        // Use internal mutation to upsert the event (actions don't have direct db access)
+        const result = await ctx.runMutation(internal.domains.integrations.gmail.upsertEventFromGmail, {
           userId,
           title: ev.title,
           description: ev.rawSummary,
@@ -621,26 +786,35 @@ export const ingestMessages = action({
           endTime: end,
           allDay: ev.allDay || false,
           location: ev.location,
-          status: ev.allDay ? "confirmed" : "tentative",
-          sourceType: "gmail" as const,
-          sourceId: id,
-          ingestionConfidence: ev.confidence >= 0.7 ? "high" : ev.confidence >= 0.4 ? "med" : "low",
-          proposed: autoAddMode === "propose" ? true : ev.confidence < 0.7 || !end,
+          confidence: ev.confidence,
           rawSummary: ev.rawSummary,
-          meta: { hash, people: ev.people, from, dateHeader },
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
+          sourceId: id,
+          hash,
+          from,
+          dateHeader,
+          people: ev.people,
+          autoAddMode,
+        });
 
-        if (existing && db) {
-          await db.patch(existing._id, {
-            ...baseEvent,
-            createdAt: existing.createdAt,
-          });
-          updated++;
-        } else if (db) {
-          await db.insert("events", baseEvent);
+        if (result.action === "created") {
           created++;
+          // Send SMS notification for newly created meeting
+          if (result.eventId) {
+            try {
+              await ctx.runAction(internal.domains.integrations.sms.sendMeetingCreatedSms, {
+                userId,
+                eventId: result.eventId,
+                title: ev.title,
+                startTime: start,
+                location: ev.location,
+              });
+            } catch (smsErr) {
+              console.warn("[gmail.ingestMessages] SMS notification failed:", smsErr);
+              // Don't fail the ingestion if SMS fails
+            }
+          }
+        } else if (result.action === "updated") {
+          updated++;
         } else {
           skipped++;
         }

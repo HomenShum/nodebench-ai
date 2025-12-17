@@ -1,6 +1,129 @@
 import { v } from "convex/values";
-import { query } from "../../_generated/server";
+import { query, mutation, internalMutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+// TTL for cached digest summaries (4 hours)
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+
+/**
+ * Get cached digest summary if available and valid
+ * Returns null if cache miss or expired
+ */
+export const getCachedDigestSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    const today = new Date().toISOString().split('T')[0];
+
+    // Try user-specific cache first
+    if (userId) {
+      const userCache = await ctx.db
+        .query("digestSummaryCache")
+        .withIndex("by_date_user", (q) =>
+          q.eq("dateString", today).eq("userId", userId as any)
+        )
+        .first();
+
+      if (userCache && userCache.expiresAt > Date.now()) {
+        return {
+          summary: userCache.summary,
+          generatedAt: userCache.generatedAt,
+          isFromCache: true,
+        };
+      }
+    }
+
+    // Fall back to global cache (anonymous users or no user cache)
+    const globalCache = await ctx.db
+      .query("digestSummaryCache")
+      .withIndex("by_date", (q) => q.eq("dateString", today))
+      .filter((q) => q.eq(q.field("userId"), undefined))
+      .first();
+
+    if (globalCache && globalCache.expiresAt > Date.now()) {
+      return {
+        summary: globalCache.summary,
+        generatedAt: globalCache.generatedAt,
+        isFromCache: true,
+      };
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Save generated digest summary to cache
+ */
+export const cacheDigestSummary = mutation({
+  args: {
+    summary: v.string(),
+    dataHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const today = new Date().toISOString().split('T')[0];
+    const now = Date.now();
+
+    // Check if we already have a cache entry for today
+    const existingQuery = userId
+      ? ctx.db
+          .query("digestSummaryCache")
+          .withIndex("by_date_user", (q) =>
+            q.eq("dateString", today).eq("userId", userId as any)
+          )
+      : ctx.db
+          .query("digestSummaryCache")
+          .withIndex("by_date", (q) => q.eq("dateString", today))
+          .filter((q) => q.eq(q.field("userId"), undefined));
+
+    const existing = await existingQuery.first();
+
+    if (existing) {
+      // Update existing cache entry
+      await ctx.db.patch(existing._id, {
+        summary: args.summary,
+        dataHash: args.dataHash,
+        generatedAt: now,
+        expiresAt: now + CACHE_TTL_MS,
+        hitCount: (existing.hitCount ?? 0) + 1,
+      });
+      return existing._id;
+    }
+
+    // Create new cache entry
+    return await ctx.db.insert("digestSummaryCache", {
+      dateString: today,
+      userId: userId as any,
+      summary: args.summary,
+      dataHash: args.dataHash,
+      generatedAt: now,
+      expiresAt: now + CACHE_TTL_MS,
+      hitCount: 0,
+    });
+  },
+});
+
+/**
+ * Internal mutation to clean up expired cache entries
+ */
+export const cleanupExpiredCache = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const expired = await ctx.db
+      .query("digestSummaryCache")
+      .withIndex("by_expires_at")
+      .filter((q) => q.lt(q.field("expiresAt"), now))
+      .take(100);
+
+    for (const entry of expired) {
+      await ctx.db.delete(entry._id);
+    }
+
+    return { deleted: expired.length };
+  },
+});
 
 // Get digest data from feed items filtered by user's tracked topics
 export const getDigestData = query({

@@ -101,6 +101,18 @@ crons.interval(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SMS Meeting Reminders
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Send SMS reminders for upcoming meetings (runs every 5 minutes)
+crons.interval(
+  "send meeting reminder SMS",
+  { minutes: 5 },
+  internal.domains.integrations.sms.sendMeetingRemindersCron,
+  {}
+);
+
 // Deduplicate global artifacts (merge race-condition duplicates)
 crons.daily(
   "dedupe global artifacts",

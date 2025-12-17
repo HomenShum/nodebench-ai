@@ -384,12 +384,15 @@ http.route({
     path: "/api/google/oauth/callback",
     method: "GET",
     handler: httpAction(async (ctx, request) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return new Response("Unauthorized", { status: 401 });
-    }
+    // The state parameter contains the user's identity.subject from the OAuth start
+    // We use this to identify the user since the callback is a direct browser redirect
+    // and doesn't have the auth context
     const url = new URL(request.url);
-    // no-op
+    const state = url.searchParams.get("state");
+    if (!state) {
+      return new Response("Missing state parameter", { status: 400 });
+    }
+
     const code = url.searchParams.get("code");
     const err = url.searchParams.get("error");
     if (err) {
@@ -446,7 +449,9 @@ http.route({
     }
 
     const refs = await import("./_generated/api");
+    // Pass the userId (from state) to saveTokens so it can associate tokens with the correct user
     await ctx.runMutation((refs as any).internal.domains.integrations.gmail.saveTokens, {
+      userId: state,
       email,
       accessToken,
       refreshToken,
@@ -454,10 +459,11 @@ http.route({
       expiryDate,
       tokenType,
     });
-    // Enqueue Gmail sync
-    await ctx.runMutation((refs as any).internal.domains.documents.syncMutations.enqueueGmailSync, {});
+    // Note: Gmail sync will be triggered by the user from the UI after redirect
+    // The tokens are already saved with the correct userId from the state parameter
 
-    const postRedirect = process.env.GOOGLE_POST_LOGIN_REDIRECT || "/";
+    // Redirect back to the app (localhost for dev, or production URL)
+    const postRedirect = process.env.GOOGLE_POST_LOGIN_REDIRECT || "http://localhost:5173";
     return new Response(null, { status: 302, headers: { Location: postRedirect } });
   }),
 });
@@ -1014,6 +1020,116 @@ http.route({
   path: "/voice/action",
   method: "POST",
   handler: voiceAction,
+});
+
+// ============================================================================
+// Twilio SMS Webhooks (for A2P 10DLC compliance)
+// ============================================================================
+
+/**
+ * Incoming SMS webhook - receives messages from users
+ * Handles: STOP, HELP, START, and conversational replies
+ * Twilio sends form-urlencoded POST with: From, To, Body, MessageSid, etc.
+ */
+http.route({
+  path: "/twilio/sms/incoming",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      // Parse form-urlencoded body from Twilio
+      const formData = await request.formData();
+      const from = formData.get("From") as string;
+      const to = formData.get("To") as string;
+      const body = (formData.get("Body") as string || "").trim();
+      const messageSid = formData.get("MessageSid") as string;
+
+      console.log(`[twilio/sms/incoming] From: ${from}, Body: "${body}", SID: ${messageSid}`);
+
+      // Normalize the message for keyword detection
+      const normalizedBody = body.toUpperCase();
+
+      // Standard TCPA/A2P compliance keywords
+      const STOP_KEYWORDS = ["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT", "OPTOUT", "REVOKE"];
+      const HELP_KEYWORDS = ["HELP", "INFO"];
+      const START_KEYWORDS = ["START", "YES", "SUBSCRIBE", "UNSTOP"];
+
+      let responseMessage = "";
+
+      if (STOP_KEYWORDS.includes(normalizedBody)) {
+        // User wants to opt-out
+        // Note: Twilio automatically handles STOP at the carrier level, but we log it
+        await ctx.runMutation(internal.domains.integrations.sms.handleSmsOptOut, { phoneNumber: from });
+        responseMessage = "You have successfully been unsubscribed. You will not receive any more messages from this number. Reply START to resubscribe.";
+        console.log(`[twilio/sms/incoming] Opt-out processed for ${from}`);
+      } else if (HELP_KEYWORDS.includes(normalizedBody)) {
+        // User needs help
+        responseMessage = "NodeBench AI SMS Notifications. Reply STOP to unsubscribe. Msg&Data Rates May Apply. For support visit nodebench.ai/help";
+      } else if (START_KEYWORDS.includes(normalizedBody)) {
+        // User wants to opt back in
+        await ctx.runMutation(internal.domains.integrations.sms.handleSmsOptIn, { phoneNumber: from });
+        responseMessage = "NodeBench AI: You're now subscribed to SMS notifications. Reply HELP for support or STOP to unsubscribe at any time.";
+        console.log(`[twilio/sms/incoming] Opt-in processed for ${from}`);
+      } else {
+        // Log the incoming message for potential agent processing
+        await ctx.runMutation(internal.domains.integrations.sms.logIncomingSms, {
+          from,
+          to,
+          body,
+          messageSid,
+        });
+        // Don't auto-reply to conversational messages - agent will handle if needed
+        responseMessage = "";
+      }
+
+      // Return TwiML response
+      const twiml = responseMessage
+        ? `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${responseMessage}</Message></Response>`
+        : `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`;
+
+      return new Response(twiml, {
+        status: 200,
+        headers: { "Content-Type": "text/xml" },
+      });
+    } catch (error) {
+      console.error("[twilio/sms/incoming] Error:", error);
+      // Return empty TwiML to acknowledge receipt
+      return new Response(
+        `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`,
+        { status: 200, headers: { "Content-Type": "text/xml" } }
+      );
+    }
+  }),
+});
+
+/**
+ * SMS Status callback - receives delivery status updates
+ * Twilio sends: MessageSid, MessageStatus, ErrorCode, etc.
+ */
+http.route({
+  path: "/twilio/sms/status",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const formData = await request.formData();
+      const messageSid = formData.get("MessageSid") as string;
+      const messageStatus = formData.get("MessageStatus") as string;
+      const errorCode = formData.get("ErrorCode") as string | null;
+
+      console.log(`[twilio/sms/status] SID: ${messageSid}, Status: ${messageStatus}, Error: ${errorCode || "none"}`);
+
+      // Update the SMS log with delivery status
+      await ctx.runMutation(internal.domains.integrations.sms.updateSmsStatus, {
+        messageSid,
+        status: messageStatus,
+        errorCode: errorCode || undefined,
+      });
+
+      return new Response("OK", { status: 200 });
+    } catch (error) {
+      console.error("[twilio/sms/status] Error:", error);
+      return new Response("OK", { status: 200 });
+    }
+  }),
 });
 
 export default http;

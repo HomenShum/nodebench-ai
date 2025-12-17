@@ -170,6 +170,7 @@ import type * as domains_eval_runBatchNative from "../domains/eval/runBatchNativ
 import type * as domains_integrations_email from "../domains/integrations/email.js";
 import type * as domains_integrations_email_dossierEmailExample from "../domains/integrations/email/dossierEmailExample.js";
 import type * as domains_integrations_email_dossierEmailTemplate from "../domains/integrations/email/dossierEmailTemplate.js";
+import type * as domains_integrations_email_morningDigestEmailTemplate from "../domains/integrations/email/morningDigestEmailTemplate.js";
 import type * as domains_integrations_gcal from "../domains/integrations/gcal.js";
 import type * as domains_integrations_gmail from "../domains/integrations/gmail.js";
 import type * as domains_integrations_gmail_types from "../domains/integrations/gmail/types.js";
@@ -528,6 +529,7 @@ declare const fullApi: ApiFromModules<{
   "domains/integrations/email": typeof domains_integrations_email;
   "domains/integrations/email/dossierEmailExample": typeof domains_integrations_email_dossierEmailExample;
   "domains/integrations/email/dossierEmailTemplate": typeof domains_integrations_email_dossierEmailTemplate;
+  "domains/integrations/email/morningDigestEmailTemplate": typeof domains_integrations_email_morningDigestEmailTemplate;
   "domains/integrations/gcal": typeof domains_integrations_gcal;
   "domains/integrations/gmail": typeof domains_integrations_gmail;
   "domains/integrations/gmail/types": typeof domains_integrations_gmail_types;

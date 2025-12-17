@@ -22,8 +22,82 @@ import {
   Github,
   Slack,
   Webhook,
+  Phone,
 } from "lucide-react";
 import { ApiUsageDisplay } from "./ApiUsageDisplay";
+
+// SMS Usage Stats Component
+function SmsUsageStats() {
+  const smsUsage = useQuery(api.domains.integrations.sms.getSmsUsageStats, { days: 30 });
+  const costBreakdown = useQuery(api.domains.integrations.sms.getSmsCostBreakdown);
+
+  if (!smsUsage && !costBreakdown) {
+    return null;
+  }
+
+  return (
+    <div className="pt-3 mt-3 border-t border-gray-100 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-gray-700">Usage & Cost (Last 30 Days)</span>
+        <BarChart2 className="h-3.5 w-3.5 text-gray-400" />
+      </div>
+
+      {smsUsage?.totals && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-gray-50 rounded p-2 text-center">
+            <div className="text-lg font-bold text-gray-900">{smsUsage.totals.totalMessages}</div>
+            <div className="text-[10px] text-gray-500">Messages</div>
+          </div>
+          <div className="bg-gray-50 rounded p-2 text-center">
+            <div className="text-lg font-bold text-gray-900">{smsUsage.totals.totalSegments}</div>
+            <div className="text-[10px] text-gray-500">Segments</div>
+          </div>
+          <div className="bg-green-50 rounded p-2 text-center">
+            <div className="text-lg font-bold text-green-700">${smsUsage.totals.estimatedCostDollars}</div>
+            <div className="text-[10px] text-gray-500">Est. Cost</div>
+          </div>
+        </div>
+      )}
+
+      {smsUsage?.totals && smsUsage.totals.totalMessages > 0 && (
+        <div className="text-[10px] text-gray-500 space-y-1">
+          <div className="flex justify-between">
+            <span>Success rate:</span>
+            <span className="font-medium text-green-600">{smsUsage.totals.successRate}</span>
+          </div>
+          {smsUsage.totals.meetingReminderCount > 0 && (
+            <div className="flex justify-between">
+              <span>Meeting reminders:</span>
+              <span>{smsUsage.totals.meetingReminderCount}</span>
+            </div>
+          )}
+          {smsUsage.totals.morningDigestCount > 0 && (
+            <div className="flex justify-between">
+              <span>Morning digests:</span>
+              <span>{smsUsage.totals.morningDigestCount}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {costBreakdown && (
+        <details className="text-[10px] text-gray-500">
+          <summary className="cursor-pointer hover:text-gray-700">Pricing details</summary>
+          <div className="mt-2 pl-2 space-y-1 border-l-2 border-gray-200">
+            <div className="flex justify-between">
+              <span>Per segment:</span>
+              <span>~{costBreakdown.perMessage.totalPerSegment.toFixed(2)}¢</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Monthly campaign fee:</span>
+              <span>${costBreakdown.monthly.campaignFeeMin}-${costBreakdown.monthly.campaignFeeMax}</span>
+            </div>
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
 
 type SettingsTab =
   | "profile"
@@ -84,6 +158,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const createPolarCheckout = useAction(api.domains.billing.billing.createPolarCheckout);
   const runGmailIngest = useAction(api.domains.integrations.gmail.ingestMessages);
   const runGcalSync = useAction(api.domains.integrations.gcal.syncPrimaryCalendar);
+
+  // Gmail connection status and OAuth
+  const gmailConnection = useQuery(api.domains.integrations.gmail.getConnection, {});
+  const getGmailOAuthUrl = useAction(api.domains.integrations.gmail.getOAuthUrl);
+  const [connectingGmail, setConnectingGmail] = useState(false);
   
   // Calendar UI prefs (timezone)
   const calendarPrefs = useQuery(api.domains.auth.userPreferences.getCalendarUiPrefs, {});
@@ -149,6 +228,19 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const setPlannerViewPrefs = useMutation(api.domains.auth.userPreferences.setPlannerViewPrefs);
   const setPlannerMode = useMutation(api.domains.auth.userPreferences.setPlannerMode);
   const upsertCalendarHubSizePct = useMutation(api.domains.auth.userPreferences.upsertCalendarHubSizePct);
+
+  // SMS notification preferences
+  const smsPreferences = useQuery(api.domains.auth.userPreferences.getSmsPreferences);
+  const updateSmsPreferences = useMutation(api.domains.auth.userPreferences.updateSmsPreferences);
+  const [smsPhoneInput, setSmsPhoneInput] = useState("");
+  const [savingSmsPrefs, setSavingSmsPrefs] = useState(false);
+
+  // Initialize SMS phone input from preferences
+  useEffect(() => {
+    if (smsPreferences?.phoneNumber && !smsPhoneInput) {
+      setSmsPhoneInput(smsPreferences.phoneNumber);
+    }
+  }, [smsPreferences?.phoneNumber, smsPhoneInput]);
   // OSS Stats integration
   const githubOwner = useQuery(api.domains.analytics.ossStats.getGithubOwner, { owner: "get-convex" });
   const npmOrg = useQuery(api.domains.analytics.ossStats.getNpmOrg, { name: "convex-dev" });
@@ -1049,6 +1141,48 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-900">Calendar Ingestion</h3>
                   <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+                    {/* Gmail Connection Status */}
+                    <div className="flex items-center justify-between p-2 rounded bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <div className="text-sm font-medium">
+                            {gmailConnection?.connected ? (
+                              <span className="text-green-600">Gmail Connected</span>
+                            ) : (
+                              <span className="text-amber-600">Gmail Not Connected</span>
+                            )}
+                          </div>
+                          {gmailConnection?.email && (
+                            <div className="text-xs text-gray-500">{gmailConnection.email}</div>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                        disabled={connectingGmail}
+                        onClick={async () => {
+                          setConnectingGmail(true);
+                          try {
+                            const result = await getGmailOAuthUrl({});
+                            if (result.success && result.url) {
+                              // Redirect to Google OAuth
+                              window.location.href = result.url;
+                            } else {
+                              toast.error(result.error ?? "Failed to get OAuth URL");
+                            }
+                          } catch (err: any) {
+                            toast.error(err?.message ?? "Failed to connect Gmail");
+                          } finally {
+                            setConnectingGmail(false);
+                          }
+                        }}
+                      >
+                        {connectingGmail ? "Connecting..." : gmailConnection?.connected ? "Reconnect Gmail" : "Connect Gmail"}
+                      </button>
+                    </div>
+
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-semibold">Auto-sync sources</div>
@@ -1247,10 +1381,207 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
                 </div>
 
+                {/* SMS Notifications */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900">SMS Notifications</h3>
+
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
+                    <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <Phone className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold">Twilio SMS</div>
+                        <div className="text-xs text-gray-500">
+                          Receive meeting reminders via text message
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Phone Number Input */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-gray-700">Phone Number (E.164 format)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="tel"
+                          className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="+14083335386"
+                          value={smsPhoneInput}
+                          onChange={(e) => setSmsPhoneInput(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="px-3 py-2 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                          disabled={savingSmsPrefs || !smsPhoneInput}
+                          onClick={async () => {
+                            setSavingSmsPrefs(true);
+                            try {
+                              await updateSmsPreferences({ phoneNumber: smsPhoneInput });
+                              toast.success("Phone number saved");
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Failed to save phone number");
+                            } finally {
+                              setSavingSmsPrefs(false);
+                            }
+                          }}
+                        >
+                          {savingSmsPrefs ? "Saving..." : "Save"}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Enter your phone number in E.164 format (e.g., +14083335386)
+                      </p>
+                    </div>
+
+                    {/* Master Toggle */}
+                    <div className="flex items-center justify-between py-2 border-t border-gray-100">
+                      <div>
+                        <div className="text-sm font-medium">Enable SMS Notifications</div>
+                        <div className="text-xs text-gray-500">Master toggle for all SMS notifications</div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={smsPreferences?.smsNotificationsEnabled ?? false}
+                          onChange={async (e) => {
+                            setSavingSmsPrefs(true);
+                            try {
+                              await updateSmsPreferences({ smsNotificationsEnabled: e.target.checked });
+                              toast.success(e.target.checked ? "SMS notifications enabled" : "SMS notifications disabled");
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Failed to update");
+                            } finally {
+                              setSavingSmsPrefs(false);
+                            }
+                          }}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    {/* Notification Types */}
+                    <div className="space-y-3 pt-2 border-t border-gray-100">
+                      <div className="text-xs font-medium text-gray-700">Notification Types</div>
+
+                      <label className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm">Meeting Created</div>
+                          <div className="text-xs text-gray-500">When a new meeting is added from Gmail</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          checked={smsPreferences?.smsMeetingCreated ?? false}
+                          disabled={!smsPreferences?.smsNotificationsEnabled}
+                          onChange={async (e) => {
+                            try {
+                              await updateSmsPreferences({ smsMeetingCreated: e.target.checked });
+                              toast.success("Preference saved");
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Failed to update");
+                            }
+                          }}
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm">Meeting Reminder</div>
+                          <div className="text-xs text-gray-500">Before meeting starts</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          checked={smsPreferences?.smsMeetingReminder ?? false}
+                          disabled={!smsPreferences?.smsNotificationsEnabled}
+                          onChange={async (e) => {
+                            try {
+                              await updateSmsPreferences({ smsMeetingReminder: e.target.checked });
+                              toast.success("Preference saved");
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Failed to update");
+                            }
+                          }}
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm">Morning Digest</div>
+                          <div className="text-xs text-gray-500">Daily summary of today's meetings</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          checked={smsPreferences?.smsMorningDigest ?? false}
+                          disabled={!smsPreferences?.smsNotificationsEnabled}
+                          onChange={async (e) => {
+                            try {
+                              await updateSmsPreferences({ smsMorningDigest: e.target.checked });
+                              toast.success("Preference saved");
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Failed to update");
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Reminder Time */}
+                    <div className="space-y-2 pt-2 border-t border-gray-100">
+                      <label className="text-xs font-medium text-gray-700">Reminder Time (minutes before meeting)</label>
+                      <select
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={smsPreferences?.smsReminderMinutes ?? 15}
+                        disabled={!smsPreferences?.smsNotificationsEnabled}
+                        onChange={async (e) => {
+                          try {
+                            await updateSmsPreferences({ smsReminderMinutes: parseInt(e.target.value, 10) });
+                            toast.success("Reminder time saved");
+                          } catch (err: any) {
+                            toast.error(err?.message ?? "Failed to update");
+                          }
+                        }}
+                      >
+                        <option value={5}>5 minutes</option>
+                        <option value={10}>10 minutes</option>
+                        <option value={15}>15 minutes</option>
+                        <option value={30}>30 minutes</option>
+                        <option value={60}>1 hour</option>
+                      </select>
+                    </div>
+
+                    {/* Status */}
+                    <div className="pt-2 border-t border-gray-100">
+                      <div className="flex items-center gap-2 text-xs">
+                        {smsPreferences?.phoneNumber && smsPreferences?.smsNotificationsEnabled ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="text-green-700">SMS notifications active for {smsPreferences.phoneNumber}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Phone className="h-4 w-4 text-gray-400" />
+                            <span className="text-gray-500">
+                              {!smsPreferences?.phoneNumber
+                                ? "Add a phone number to enable SMS notifications"
+                                : "Enable SMS notifications above"}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* SMS Usage Stats */}
+                    <SmsUsageStats />
+                  </div>
+                </div>
+
                 {/* Development & Productivity */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-900">Development & Productivity</h3>
-                  
+
                   <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="text-sm font-semibold mb-3">Connected Tools</div>
                     <div className="space-y-3">

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "../../_generated/server";
+import { mutation, query, internalMutation } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -777,6 +777,154 @@ export const updateUngroupedExpandedState = mutation({
         updatedAt: now,
       });
 
+    }
+
+    return { success: true };
+  },
+});
+
+/**
+ * Update SMS notification preferences
+ */
+export const updateSmsPreferences = mutation({
+  args: {
+    phoneNumber: v.optional(v.string()),
+    smsNotificationsEnabled: v.optional(v.boolean()),
+    smsMeetingCreated: v.optional(v.boolean()),
+    smsMeetingReminder: v.optional(v.boolean()),
+    smsMorningDigest: v.optional(v.boolean()),
+    smsReminderMinutes: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getSafeUserId(ctx);
+
+    if (!userId) {
+      throw new Error("Not authenticated. Please sign out and sign back in.");
+    }
+
+    // Validate phone number format if provided (E.164 format)
+    if (args.phoneNumber) {
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(args.phoneNumber)) {
+        throw new Error("Invalid phone number format. Please use E.164 format (e.g., +14083335386)");
+      }
+    }
+
+    const existingPreferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    const now = Date.now();
+
+    const updates: Record<string, any> = { updatedAt: now };
+    if (args.phoneNumber !== undefined) updates.phoneNumber = args.phoneNumber;
+    if (args.smsNotificationsEnabled !== undefined) updates.smsNotificationsEnabled = args.smsNotificationsEnabled;
+    if (args.smsMeetingCreated !== undefined) updates.smsMeetingCreated = args.smsMeetingCreated;
+    if (args.smsMeetingReminder !== undefined) updates.smsMeetingReminder = args.smsMeetingReminder;
+    if (args.smsMorningDigest !== undefined) updates.smsMorningDigest = args.smsMorningDigest;
+    if (args.smsReminderMinutes !== undefined) updates.smsReminderMinutes = args.smsReminderMinutes;
+
+    if (existingPreferences) {
+      await ctx.db.patch(existingPreferences._id, updates);
+    } else {
+      await ctx.db.insert("userPreferences", {
+        userId,
+        ungroupedSectionName: "Ungrouped Documents",
+        isUngroupedExpanded: true,
+        organizationMode: "folders",
+        createdAt: now,
+        updatedAt: now,
+        ...updates,
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+/**
+ * Get SMS preferences for a user (for internal use)
+ */
+export const getSmsPreferences = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getSafeUserId(ctx);
+
+    if (!userId) {
+      return null;
+    }
+
+    const prefs = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!prefs) {
+      return {
+        phoneNumber: null,
+        smsNotificationsEnabled: false,
+        smsMeetingCreated: false,
+        smsMeetingReminder: false,
+        smsMorningDigest: false,
+        smsReminderMinutes: 15,
+      };
+    }
+
+    return {
+      phoneNumber: prefs.phoneNumber ?? null,
+      smsNotificationsEnabled: prefs.smsNotificationsEnabled ?? false,
+      smsMeetingCreated: prefs.smsMeetingCreated ?? false,
+      smsMeetingReminder: prefs.smsMeetingReminder ?? false,
+      smsMorningDigest: prefs.smsMorningDigest ?? false,
+      smsReminderMinutes: prefs.smsReminderMinutes ?? 15,
+    };
+  },
+});
+
+/**
+ * Internal mutation to set SMS preferences by userId (for admin/testing)
+ */
+export const setSmsPreferencesInternal = internalMutation({
+  args: {
+    userId: v.id("users"),
+    phoneNumber: v.optional(v.string()),
+    smsNotificationsEnabled: v.optional(v.boolean()),
+    smsMeetingCreated: v.optional(v.boolean()),
+    smsMeetingReminder: v.optional(v.boolean()),
+    smsMorningDigest: v.optional(v.boolean()),
+    smsReminderMinutes: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { userId, ...smsArgs } = args;
+
+    const existingPreferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    const now = Date.now();
+
+    const updates: Record<string, any> = { updatedAt: now };
+    if (smsArgs.phoneNumber !== undefined) updates.phoneNumber = smsArgs.phoneNumber;
+    if (smsArgs.smsNotificationsEnabled !== undefined) updates.smsNotificationsEnabled = smsArgs.smsNotificationsEnabled;
+    if (smsArgs.smsMeetingCreated !== undefined) updates.smsMeetingCreated = smsArgs.smsMeetingCreated;
+    if (smsArgs.smsMeetingReminder !== undefined) updates.smsMeetingReminder = smsArgs.smsMeetingReminder;
+    if (smsArgs.smsMorningDigest !== undefined) updates.smsMorningDigest = smsArgs.smsMorningDigest;
+    if (smsArgs.smsReminderMinutes !== undefined) updates.smsReminderMinutes = smsArgs.smsReminderMinutes;
+
+    if (existingPreferences) {
+      await ctx.db.patch(existingPreferences._id, updates);
+    } else {
+      await ctx.db.insert("userPreferences", {
+        userId,
+        ungroupedSectionName: "Ungrouped Documents",
+        isUngroupedExpanded: true,
+        organizationMode: "folders",
+        createdAt: now,
+        updatedAt: now,
+        ...updates,
+      });
     }
 
     return { success: true };

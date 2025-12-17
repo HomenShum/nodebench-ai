@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "../../_generated/server";
+import { mutation, query, internalQuery } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -270,3 +270,370 @@ export const listEventsByStatus = query({
 });
 
 // Removed listEventsForDay and listEventsForWeek - use listAgendaInRange via useCalendarAgenda hook instead
+
+// ────────────────────────────────────────────────────────────────────────────
+// Email Calendar Integration - MVP Queries & Mutations
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Find event by source (gmail/gcal) and sourceId
+ * Used for deduplication during email ingestion
+ */
+export const findBySourceId = query({
+  args: {
+    sourceType: v.union(v.literal("gmail"), v.literal("gcal"), v.literal("doc")),
+    sourceId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getOptionalUserId(ctx);
+    if (!userId) return null;
+    return await ctx.db
+      .query("events")
+      .withIndex("by_user_source", (q: any) =>
+        q.eq("userId", userId).eq("sourceType", args.sourceType).eq("sourceId", args.sourceId)
+      )
+      .first();
+  },
+});
+
+/**
+ * List email-sourced events for a date range
+ * Used by mini calendar to show email event indicators
+ */
+export const listEmailEventsInRange = query({
+  args: {
+    start: v.number(),
+    end: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getOptionalUserId(ctx);
+    if (!userId) return [];
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_user_start", (q: any) =>
+        q.eq("userId", userId).gte("startTime", args.start).lte("startTime", args.end)
+      )
+      .filter((q: any) => q.eq(q.field("sourceType"), "gmail"))
+      .collect();
+
+    return events.map((e: any) => ({
+      _id: e._id,
+      title: e.title,
+      startTime: e.startTime,
+      endTime: e.endTime,
+      allDay: e.allDay,
+      location: e.location,
+      status: e.status,
+      proposed: e.proposed ?? false,
+      ingestionConfidence: e.ingestionConfidence,
+      sourceId: e.sourceId,
+      rawSummary: e.rawSummary,
+    }));
+  },
+});
+
+/**
+ * List proposed events from email that need user confirmation
+ */
+export const listProposedFromEmail = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getOptionalUserId(ctx);
+    if (!userId) return [];
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_user", (q: any) => q.eq("userId", userId))
+      .filter((q: any) =>
+        q.and(
+          q.eq(q.field("sourceType"), "gmail"),
+          q.eq(q.field("proposed"), true)
+        )
+      )
+      .order("asc")
+      .take(50);
+
+    return events.map((e: any) => ({
+      _id: e._id,
+      title: e.title,
+      startTime: e.startTime,
+      endTime: e.endTime,
+      allDay: e.allDay,
+      location: e.location,
+      status: e.status,
+      sourceId: e.sourceId,
+      rawSummary: e.rawSummary,
+      ingestionConfidence: e.ingestionConfidence,
+      meta: e.meta,
+    }));
+  },
+});
+
+/**
+ * Confirm a proposed event - changes proposed to false, status to confirmed
+ */
+export const confirmProposed = mutation({
+  args: { eventId: v.id("events") },
+  handler: async (ctx, args) => {
+    const userId = await getSafeUserId(ctx);
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+    if (event.userId !== userId) throw new Error("Not authorized");
+
+    await ctx.db.patch(args.eventId, {
+      proposed: false,
+      status: "confirmed",
+      ingestionConfidence: "high",
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Dismiss a proposed event - deletes it entirely
+ */
+export const dismissProposed = mutation({
+  args: { eventId: v.id("events") },
+  handler: async (ctx, args) => {
+    const userId = await getSafeUserId(ctx);
+    const event = await ctx.db.get(args.eventId);
+    if (!event) return { success: true }; // Already deleted
+    if (event.userId !== userId) throw new Error("Not authorized");
+
+    await ctx.db.delete(args.eventId);
+    return { success: true };
+  },
+});
+
+/**
+ * Link a document to an event
+ */
+export const linkDocument = mutation({
+  args: {
+    eventId: v.id("events"),
+    documentId: v.id("documents"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getSafeUserId(ctx);
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+    if (event.userId !== userId) throw new Error("Not authorized");
+
+    await ctx.db.patch(args.eventId, {
+      documentId: args.documentId,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Get today's email events - for agent "what's on my calendar today" queries
+ */
+export const listTodaysEmailEvents = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getOptionalUserId(ctx);
+    if (!userId) return [];
+
+    // Get start and end of today in user's local timezone approximation
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_user_start", (q: any) =>
+        q.eq("userId", userId).gte("startTime", startOfDay).lte("startTime", endOfDay)
+      )
+      .filter((q: any) => q.eq(q.field("sourceType"), "gmail"))
+      .order("asc")
+      .collect();
+
+    return events.map((e: any) => ({
+      _id: e._id,
+      title: e.title,
+      startTime: e.startTime,
+      endTime: e.endTime,
+      allDay: e.allDay,
+      location: e.location,
+      status: e.status,
+      proposed: e.proposed ?? false,
+      ingestionConfidence: e.ingestionConfidence,
+      sourceId: e.sourceId,
+      rawSummary: e.rawSummary,
+      meta: e.meta,
+    }));
+  },
+});
+
+/**
+ * Create event from email intelligence
+ * Wrapper around createEvent with email-specific defaults
+ */
+export const createFromEmail = mutation({
+  args: {
+    title: v.string(),
+    startTime: v.number(),
+    endTime: v.optional(v.number()),
+    allDay: v.optional(v.boolean()),
+    location: v.optional(v.string()),
+    description: v.optional(v.string()),
+    sourceId: v.string(), // Gmail messageId
+    confidence: v.number(), // 0-1 extraction confidence
+    rawSummary: v.optional(v.string()),
+    meta: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getSafeUserId(ctx);
+
+    // Check for existing event with same sourceId to avoid duplicates
+    const existing = await ctx.db
+      .query("events")
+      .withIndex("by_user_source", (q: any) =>
+        q.eq("userId", userId).eq("sourceType", "gmail").eq("sourceId", args.sourceId)
+      )
+      .first();
+
+    if (existing) {
+      // Update existing event
+      await ctx.db.patch(existing._id, {
+        title: args.title,
+        startTime: args.startTime,
+        endTime: args.endTime,
+        allDay: args.allDay,
+        location: args.location,
+        description: args.description,
+        rawSummary: args.rawSummary,
+        meta: args.meta,
+        updatedAt: Date.now(),
+      });
+      return { eventId: existing._id, created: false };
+    }
+
+    // Determine proposed status based on confidence
+    // High confidence (>=0.8) from ICS = auto-confirm
+    // Lower confidence = propose for user review
+    const isHighConfidence = args.confidence >= 0.8;
+
+    const now = Date.now();
+    const eventId = await ctx.db.insert("events", {
+      userId,
+      title: args.title,
+      description: args.description,
+      startTime: args.startTime,
+      endTime: args.endTime,
+      allDay: args.allDay ?? false,
+      location: args.location,
+      status: isHighConfidence ? "confirmed" : "tentative",
+      sourceType: "gmail",
+      sourceId: args.sourceId,
+      ingestionConfidence: args.confidence >= 0.8 ? "high" : args.confidence >= 0.5 ? "med" : "low",
+      proposed: !isHighConfidence,
+      rawSummary: args.rawSummary,
+      meta: args.meta,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { eventId, created: true };
+  },
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Internal Queries for Cron Jobs / Workflows
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Get today's events for a specific user (internal use for morning digest)
+ * Returns events for the current UTC day
+ */
+export const getTodaysEventsForUser = internalQuery({
+  args: {
+    userId: v.id("users"),
+    timezoneOffsetMinutes: v.optional(v.number()), // User's timezone offset (defaults to 0/UTC)
+  },
+  handler: async (ctx, args) => {
+    const offsetMs = (args.timezoneOffsetMinutes ?? 0) * 60 * 1000;
+
+    // Calculate today's start and end in user's timezone
+    const now = Date.now();
+    const userLocalNow = new Date(now + offsetMs);
+    userLocalNow.setUTCHours(0, 0, 0, 0);
+    const todayStartUtc = userLocalNow.getTime() - offsetMs;
+    const todayEndUtc = todayStartUtc + 24 * 60 * 60 * 1000 - 1;
+
+    // Query events for this user in today's range
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_user_start", (q: any) =>
+        q.eq("userId", args.userId).gte("startTime", todayStartUtc).lte("startTime", todayEndUtc)
+      )
+      .order("asc")
+      .collect();
+
+    // Filter out cancelled events
+    return events.filter((e: any) => e.status !== "cancelled");
+  },
+});
+
+/**
+ * Get all users with events today (for batch morning digest sending)
+ *
+ * Note: This scans all users and their events. For production scale,
+ * consider adding a by_startTime index or using a scheduled approach.
+ */
+export const getUsersWithEventsToday = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    // Use UTC day boundaries
+    const todayStart = new Date(now);
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
+    const todayStartMs = todayStart.getTime();
+    const todayEndMs = todayEnd.getTime();
+
+    // Get all users first
+    const users = await ctx.db.query("users").collect();
+
+    const result: Array<{
+      userId: Id<"users">;
+      email: string | undefined;
+      name: string | undefined;
+      events: any[];
+    }> = [];
+
+    // For each user, check if they have events today
+    for (const user of users) {
+      if (!user.email) continue; // Skip users without email
+
+      // Query events for this user in today's range using the existing index
+      const userEvents = await ctx.db
+        .query("events")
+        .withIndex("by_user_start", (q: any) =>
+          q.eq("userId", user._id).gte("startTime", todayStartMs).lte("startTime", todayEndMs)
+        )
+        .collect();
+
+      // Filter out cancelled events
+      const activeEvents = userEvents.filter((e: any) => e.status !== "cancelled");
+
+      if (activeEvents.length > 0) {
+        result.push({
+          userId: user._id,
+          email: user.email,
+          name: user.name,
+          events: activeEvents.sort((a, b) => a.startTime - b.startTime),
+        });
+      }
+    }
+
+    return result;
+  },
+});

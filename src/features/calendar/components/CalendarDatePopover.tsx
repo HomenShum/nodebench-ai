@@ -11,7 +11,9 @@ import {
   Check,
   CheckSquare,
   StickyNote,
+  MessageCircle,
 } from "lucide-react";
+import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 
 type BriefEvent = {
   _id?: string;
@@ -77,6 +79,22 @@ export function CalendarDatePopover({
   className = "",
 }: CalendarDatePopoverProps) {
   const dateMs = date.getTime();
+  const { openWithContext } = useFastAgent();
+
+  // Handler to open Fast Agent with email event context
+  const handleAskAgent = React.useCallback((evt: BriefEvent) => {
+    const shortDate = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const timeStr = formatShortTime(evt.startTime, evt.allDay);
+    const prompt = evt.proposed
+      ? `I have a proposed email event "${evt.title}" on ${shortDate} at ${timeStr}. Can you help me understand this event and decide if I should accept it?${evt.rawSummary ? ` Here's the context: ${evt.rawSummary}` : ""}`
+      : `Tell me more about the event "${evt.title}" on ${shortDate} at ${timeStr}.${evt.location ? ` Location: ${evt.location}.` : ""}`;
+
+    openWithContext({
+      initialMessage: prompt,
+      contextTitle: `Calendar: ${evt.title}`,
+    });
+    onClose?.();
+  }, [date, openWithContext, onClose]);
   const isToday = new Date().toDateString() === date.toDateString();
   const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
   const shortDate = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -196,27 +214,44 @@ export function CalendarDatePopover({
                         {evt.sourceType === "gcal" && <CalIcon className="w-3.5 h-3.5 text-indigo-500" />}
                         {evt.rawSummary && <span className="truncate text-gray-400">{evt.rawSummary}</span>}
                       </div>
-                      {evt.proposed && evt._id && (
-                        <div className="flex items-center gap-2 pt-1">
+                      {/* Action buttons for email events */}
+                      {(evt.proposed || evt.sourceType === "gmail") && (
+                        <div className="flex items-center gap-2 pt-1 flex-wrap">
+                          {evt.proposed && evt._id && (
+                            <>
+                              <button
+                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onAcceptProposed?.(evt._id);
+                                }}
+                              >
+                                <Check className="w-3 h-3" />
+                                Accept
+                              </button>
+                              <button
+                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeclineProposed?.(evt._id);
+                                }}
+                              >
+                                <X className="w-3 h-3" />
+                                Decline
+                              </button>
+                            </>
+                          )}
+                          {/* Ask Agent button for email events */}
                           <button
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onAcceptProposed?.(evt._id);
+                              handleAskAgent(evt);
                             }}
+                            title="Ask AI agent about this event"
                           >
-                            <Check className="w-3 h-3" />
-                            Accept
-                          </button>
-                          <button
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeclineProposed?.(evt._id);
-                            }}
-                          >
-                            <X className="w-3 h-3" />
-                            Decline
+                            <MessageCircle className="w-3 h-3" />
+                            Ask Agent
                           </button>
                         </div>
                       )}

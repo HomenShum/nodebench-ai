@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useQuery, useAction } from 'convex/react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useQuery, useAction, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import {
   Sparkles,
@@ -9,7 +9,8 @@ import {
   AlertTriangle,
   Newspaper,
   Building2,
-  RefreshCw
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 
 interface DigestSection {
@@ -60,7 +61,7 @@ function extractEntity(text: string): string | undefined {
   return undefined;
 }
 
-export const MorningDigest: React.FC<MorningDigestProps> = ({ 
+export const MorningDigest: React.FC<MorningDigestProps> = ({
   userName = 'there',
   onItemClick,
   onRefresh
@@ -69,11 +70,28 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['markets', 'watchlist']));
   const [isLoading, setIsLoading] = useState(false);
   const [generatedSummary, setGeneratedSummary] = useState<string | null>(null);
+  const [isFromCache, setIsFromCache] = useState(false);
+
+  // Track if we've already attempted to generate
+  const hasAttemptedGeneration = useRef(false);
 
   // Fetch real digest data from Convex
   // Query is in separate file (morningDigestQueries) due to Convex Node.js restrictions
   const digestData = useQuery(api.domains.ai.morningDigestQueries.getDigestData);
+
+  // Check for cached summary first (avoids LLM call on every mount)
+  const cachedSummary = useQuery(api.domains.ai.morningDigestQueries.getCachedDigestSummary);
+
   const generateSummary = useAction(api.domains.ai.morningDigest.generateDigestSummary);
+  const cacheSummary = useMutation(api.domains.ai.morningDigestQueries.cacheDigestSummary);
+
+  // Use cached summary if available
+  useEffect(() => {
+    if (cachedSummary?.summary && !generatedSummary) {
+      setGeneratedSummary(cachedSummary.summary);
+      setIsFromCache(true);
+    }
+  }, [cachedSummary, generatedSummary]);
 
   // Transform feed items into digest sections
   const digestSections: DigestSection[] = useMemo(() => {
@@ -152,44 +170,83 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     return sections;
   }, [digestData]);
 
-  // Generate AI summary when digest data loads
+  // Generate AI summary only if not cached (avoids redundant LLM calls)
   useEffect(() => {
-    if (digestData && !generatedSummary && !isLoading) {
-      const marketMovers = digestData.marketMovers ?? [];
-      const watchlistRelevant = digestData.watchlistRelevant ?? [];
-      const riskAlerts = digestData.riskAlerts ?? [];
-      const trackedHashtags = digestData.trackedHashtags ?? [];
-      
-      setIsLoading(true);
-      generateSummary({
-        marketMovers: marketMovers.map(m => ({
-          title: m.title,
-          summary: m.summary,
-          tags: m.tags,
-        })),
-        watchlistRelevant: watchlistRelevant.map(m => ({
-          title: m.title,
-          summary: m.summary,
-          tags: m.tags,
-        })),
-        riskAlerts: riskAlerts.map(m => ({
-          title: m.title,
-          summary: m.summary,
-          tags: m.tags,
-        })),
-        trackedHashtags,
-        userName,
-      })
-        .then(result => {
-          setGeneratedSummary(result.summary);
-        })
-        .catch(err => {
-          console.error('Failed to generate summary:', err);
-          setGeneratedSummary('Check the feed for the latest updates on markets and your tracked topics.');
-        })
-        .finally(() => setIsLoading(false));
+    // Skip if:
+    // 1. No digest data yet
+    // 2. Already have a summary (cached or generated)
+    // 3. Already loading
+    // 4. Already attempted generation this session
+    // 5. Cache query still loading (undefined)
+    if (!digestData || generatedSummary || isLoading || hasAttemptedGeneration.current) {
+      return;
     }
-  }, [digestData, generatedSummary, isLoading, generateSummary, userName]);
+
+    // Wait for cache query to complete
+    if (cachedSummary === undefined) {
+      return;
+    }
+
+    // If cache returned a summary, don't regenerate
+    if (cachedSummary?.summary) {
+      return;
+    }
+
+    // Mark as attempted to prevent multiple calls
+    hasAttemptedGeneration.current = true;
+
+    const marketMovers = digestData.marketMovers ?? [];
+    const watchlistRelevant = digestData.watchlistRelevant ?? [];
+    const riskAlerts = digestData.riskAlerts ?? [];
+    const trackedHashtags = digestData.trackedHashtags ?? [];
+
+    // Create a hash of the input data for cache invalidation
+    const dataHash = JSON.stringify({
+      m: marketMovers.map(m => m.title).slice(0, 3),
+      w: watchlistRelevant.map(m => m.title).slice(0, 3),
+      r: riskAlerts.map(m => m.title).slice(0, 2),
+    });
+
+    setIsLoading(true);
+    setIsFromCache(false);
+
+    generateSummary({
+      marketMovers: marketMovers.map(m => ({
+        title: m.title,
+        summary: m.summary,
+        tags: m.tags,
+      })),
+      watchlistRelevant: watchlistRelevant.map(m => ({
+        title: m.title,
+        summary: m.summary,
+        tags: m.tags,
+      })),
+      riskAlerts: riskAlerts.map(m => ({
+        title: m.title,
+        summary: m.summary,
+        tags: m.tags,
+      })),
+      trackedHashtags,
+      userName,
+    })
+      .then(async (result) => {
+        setGeneratedSummary(result.summary);
+        // Cache the generated summary for future mounts
+        try {
+          await cacheSummary({
+            summary: result.summary,
+            dataHash,
+          });
+        } catch (cacheErr) {
+          console.warn('Failed to cache digest summary:', cacheErr);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to generate summary:', err);
+        setGeneratedSummary('Check the feed for the latest updates on markets and your tracked topics.');
+      })
+      .finally(() => setIsLoading(false));
+  }, [digestData, generatedSummary, isLoading, cachedSummary, generateSummary, cacheSummary, userName]);
 
   // Fallback summary if AI generation fails
   const fullSummary = generatedSummary || 
@@ -200,6 +257,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   const handleRefresh = async () => {
     setIsLoading(true);
     setGeneratedSummary(null); // Reset to trigger regeneration
+    setIsFromCache(false);
+    hasAttemptedGeneration.current = false; // Allow regeneration
     try {
       await onRefresh?.();
     } finally {
@@ -208,9 +267,16 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   };
 
   // Calculate last updated time
-  const lastUpdatedText = digestData?.lastUpdated 
-    ? `Updated ${Math.round((Date.now() - digestData.lastUpdated) / 60000)} min ago`
-    : 'Loading...';
+  const lastUpdatedText = useMemo(() => {
+    if (cachedSummary?.generatedAt) {
+      const mins = Math.round((Date.now() - cachedSummary.generatedAt) / 60000);
+      return `AI summary ${mins < 1 ? 'just now' : `${mins}m ago`}${isFromCache ? ' (cached)' : ''}`;
+    }
+    if (digestData?.lastUpdated) {
+      return `Updated ${Math.round((Date.now() - digestData.lastUpdated) / 60000)} min ago`;
+    }
+    return 'Loading...';
+  }, [digestData?.lastUpdated, cachedSummary?.generatedAt, isFromCache]);
 
   const digestStats = useMemo(() => {
     const marketCount = digestData?.marketMovers?.length ?? 0;

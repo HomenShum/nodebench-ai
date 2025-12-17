@@ -1,32 +1,29 @@
 // src/components/FastAgentPanel/FastAgentPanel.ThreadList.tsx
-// Thread list sidebar with time-based grouping and clean design
+// Thread list sidebar with time-based grouping, pagination, and clean design
 
-import React, { useState, useMemo } from 'react';
-import { MessageSquare, Pin, Trash2, Search, X, Download, Wrench, MoreHorizontal, Clock } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { MessageSquare, Pin, Trash2, Search, X, Download, Wrench, MoreHorizontal, Clock, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Thread } from './types';
+
+// Default page size for pagination
+const PAGE_SIZE = 10;
 
 interface FastAgentThreadListProps {
   activeThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   onDeleteThread: (threadId: string) => void;
   className?: string;
-  // Optional props that might be passed but not strictly required for the core list
-  threads?: Thread[]; // If passed from parent, otherwise we might need to fetch or use context
-  // Note: In the current FastAgentPanel implementation, threads are fetched in the parent and passed down?
-  // Let's check FastAgentPanel.tsx again. It passes: activeThreadId, onSelectThread, onDeleteThread, className.
-  // It DOES NOT pass 'threads' in the usage I wrote!
-  // Wait, FastAgentPanel.tsx has:
-  // <FastAgentThreadList
-  //   activeThreadId={activeThreadId}
-  //   onSelectThread={setActiveThreadId}
-  //   onDeleteThread={handleDeleteThread}
-  //   className="h-full"
-  // />
-  // It seems I missed passing 'threads' in FastAgentPanel.tsx!
-  // I need to fix FastAgentPanel.tsx to pass 'threads' OR fetch them here.
-  // Fetching here would duplicate logic. Passing them is better.
-  // I will update this component to accept 'threads' and then I will need to update FastAgentPanel.tsx to pass them.
+  /** Threads to display */
+  threads?: Thread[];
+  /** Whether more threads are available to load */
+  hasMore?: boolean;
+  /** Callback to load more threads */
+  onLoadMore?: () => void;
+  /** Whether we're currently loading more */
+  isLoadingMore?: boolean;
+  /** Initial page size (defaults to 10) */
+  pageSize?: number;
 }
 
 // Helper to group threads by date
@@ -70,25 +67,39 @@ function groupThreadsByDate(threads: Thread[]) {
 
 /**
  * FastAgentThreadList - Sidebar showing conversation threads grouped by time
+ * Now with pagination support for large thread lists
  */
 export function FastAgentThreadList({
   activeThreadId,
   onSelectThread,
   onDeleteThread,
   className,
-  // We need threads to be passed in. If not, we can't render anything.
-  // I will assume for now that I will fix the parent to pass them, or use a context if available.
-  // But wait, I can't easily change the parent's data fetching without re-reading it.
-  // Actually, I just wrote FastAgentPanel.tsx and I know I have 'displayThreads' there.
-  // I just forgot to pass it to FastAgentThreadList in the JSX.
-  // So I will add 'threads' to the props here, and then I MUST update FastAgentPanel.tsx.
   threads = [],
-}: FastAgentThreadListProps & { threads?: Thread[] }) {
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false,
+  pageSize = PAGE_SIZE,
+}: FastAgentThreadListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
+  // Local pagination state for client-side slicing when server pagination not available
+  const [displayCount, setDisplayCount] = useState(pageSize);
 
-  // Filter and group threads
-  const groupedThreads = useMemo(() => {
+  // Handle load more - either call parent handler or expand local display
+  const handleLoadMore = useCallback(() => {
+    if (onLoadMore) {
+      onLoadMore();
+    } else {
+      // Client-side pagination fallback
+      setDisplayCount(prev => prev + pageSize);
+    }
+  }, [onLoadMore, pageSize]);
+
+  // Calculate if there are more items to show locally
+  const hasMoreLocal = !onLoadMore && threads.length > displayCount;
+
+  // Filter, paginate, and group threads
+  const { groupedThreads, totalFiltered } = useMemo(() => {
     let filtered = threads;
 
     // Search filter
@@ -103,8 +114,15 @@ export function FastAgentThreadList({
     // Sort by date desc before grouping
     filtered.sort((a, b) => (b.updatedAt || b._creationTime) - (a.updatedAt || a._creationTime));
 
-    return groupThreadsByDate(filtered);
-  }, [threads, searchQuery]);
+    const totalFiltered = filtered.length;
+
+    // Apply client-side pagination if no server pagination
+    if (!onLoadMore) {
+      filtered = filtered.slice(0, displayCount);
+    }
+
+    return { groupedThreads: groupThreadsByDate(filtered), totalFiltered };
+  }, [threads, searchQuery, displayCount, onLoadMore]);
 
   const handleDelete = (threadId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -204,6 +222,50 @@ export function FastAgentThreadList({
           <div className="flex flex-col items-center justify-center h-32 text-[var(--text-muted)] text-xs">
             <MessageSquare className="w-6 h-6 mb-2 opacity-20" />
             <p>No conversations found</p>
+          </div>
+        )}
+
+        {/* Load More Button */}
+        {(hasMore || hasMoreLocal) && (
+          <div className="px-2 py-3">
+            <button
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors",
+                "bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-secondary)]",
+                "hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+                isLoadingMore && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  Load more
+                  {hasMoreLocal && (
+                    <span className="text-[var(--text-muted)]">
+                      ({totalFiltered - displayCount} remaining)
+                    </span>
+                  )}
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Thread count */}
+        {threads.length > 0 && (
+          <div className="px-2 py-2 text-center border-t border-[var(--border-color)]">
+            <p className="text-[10px] text-[var(--text-muted)]">
+              {onLoadMore
+                ? `Showing ${threads.length} threads`
+                : `Showing ${Math.min(displayCount, totalFiltered)} of ${totalFiltered} threads`}
+            </p>
           </div>
         )}
       </div>
