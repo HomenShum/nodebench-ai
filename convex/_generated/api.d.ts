@@ -348,6 +348,7 @@ import type * as tools_sec_secFilingTools from "../tools/sec/secFilingTools.js";
 import type * as tools_security_promptInjectionProtection from "../tools/security/promptInjectionProtection.js";
 import type * as tools_sendEmail from "../tools/sendEmail.js";
 import type * as tools_sendEmailMutations from "../tools/sendEmailMutations.js";
+import type * as tools_sendSms from "../tools/sendSms.js";
 import type * as tools_teachability_index from "../tools/teachability/index.js";
 import type * as tools_teachability_learnUserSkill from "../tools/teachability/learnUserSkill.js";
 import type * as tools_teachability_teachingAnalyzer from "../tools/teachability/teachingAnalyzer.js";
@@ -707,6 +708,7 @@ declare const fullApi: ApiFromModules<{
   "tools/security/promptInjectionProtection": typeof tools_security_promptInjectionProtection;
   "tools/sendEmail": typeof tools_sendEmail;
   "tools/sendEmailMutations": typeof tools_sendEmailMutations;
+  "tools/sendSms": typeof tools_sendSms;
   "tools/teachability/index": typeof tools_teachability_index;
   "tools/teachability/learnUserSkill": typeof tools_teachability_learnUserSkill;
   "tools/teachability/teachingAnalyzer": typeof tools_teachability_teachingAnalyzer;

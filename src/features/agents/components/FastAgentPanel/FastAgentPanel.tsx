@@ -2,7 +2,7 @@
 // Main container component for the new ChatGPT-like AI chat sidebar
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
+import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen } from 'lucide-react';
@@ -32,8 +32,8 @@ import { RichMediaSection } from './RichMediaSection';
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from './DocumentActionCard';
 import { extractMediaFromText, type ExtractedMedia } from './utils/mediaExtractor';
 import type { SpawnedAgent } from './types/agent';
-import type { AgentOpenOptions } from '@/features/agents/context/FastAgentContext';
-import { buildDossierContextPrefix, useFastAgentDossierMode } from '@/features/agents/context/FastAgentContext';
+import type { AgentOpenOptions, DossierContext } from '@/features/agents/context/FastAgentContext';
+import { buildDossierContextPrefix } from '@/features/agents/context/FastAgentContext';
 import { DossierModeIndicator } from '@/features/agents/components/DossierModeIndicator';
 
 import type {
@@ -55,6 +55,38 @@ interface FastAgentPanelProps {
   openOptions?: AgentOpenOptions | null;
   /** Called after openOptions has been applied (prevents duplicate processing). */
   onOptionsConsumed?: () => void;
+}
+
+function DossierFocusSubscription({
+  briefId,
+  dossierContextRef,
+  dossierPrefixRef,
+}: {
+  briefId: string;
+  dossierContextRef: React.MutableRefObject<DossierContext | null>;
+  dossierPrefixRef: React.MutableRefObject<string>;
+}) {
+  const focusState = useQuery(api.domains.dossier.focusState.getFocusState, { briefId });
+
+  useEffect(() => {
+    const base = dossierContextRef.current;
+    if (!base?.briefId) {
+      dossierPrefixRef.current = "";
+      return;
+    }
+
+    const merged: DossierContext = {
+      ...base,
+      currentAct: (focusState as any)?.currentAct ?? base.currentAct,
+      focusedDataIndex: (focusState as any)?.focusedDataIndex ?? base.focusedDataIndex,
+      focusedSeriesId: (focusState as any)?.focusedSeriesId ?? base.focusedSeriesId,
+      activeSectionId: (focusState as any)?.activeSectionId ?? base.activeSectionId,
+    };
+
+    dossierPrefixRef.current = buildDossierContextPrefix(merged);
+  }, [focusState, dossierContextRef, dossierPrefixRef]);
+
+  return null;
 }
 
 /**
@@ -83,6 +115,7 @@ export function FastAgentPanel({
 }: FastAgentPanelProps) {
   // ========== AUTH ==========
   const { isAuthenticated } = useConvexAuth();
+  const convex = useConvex();
 
   // ========== STATE ==========
   // Agent component uses string threadIds, not Id<"chatThreads">
@@ -101,6 +134,11 @@ export function FastAgentPanel({
   // Contextual-open handling (FastAgentContext.openWithContext)
   const lastHandledOpenRequestIdRef = useRef<string | null>(null);
   const [pendingAutoSend, setPendingAutoSend] = useState<null | { requestId: string; message: string }>(null);
+
+  // Dossier mode: persist dossier context after openOptions is consumed
+  const dossierContextRef = useRef<DossierContext | null>(null);
+  const dossierPrefixRef = useRef<string>("");
+  const [dossierBriefId, setDossierBriefId] = useState<string | null>(null);
 
   // Chat mode: 'agent' (non-streaming) or 'agent-streaming' (with streaming output)
   const [chatMode, setChatMode] = useState<'agent' | 'agent-streaming'>(() => {
@@ -318,11 +356,29 @@ export function FastAgentPanel({
     setPendingAutoSend({ requestId, message });
   }, [isOpen, openOptions, onOptionsConsumed]);
 
+  // Persist dossier context so it remains available after openOptions is consumed/cleared.
+  useEffect(() => {
+    if (!isOpen) {
+      dossierContextRef.current = null;
+      dossierPrefixRef.current = "";
+      setDossierBriefId(null);
+      return;
+    }
+
+    const next = openOptions?.dossierContext ?? null;
+    if (!next?.briefId) return;
+
+    dossierContextRef.current = next;
+    dossierPrefixRef.current = buildDossierContextPrefix(next);
+    setDossierBriefId(next.briefId);
+  }, [isOpen, openOptions?.dossierContext]);
+
   // ========== CONVEX QUERIES & MUTATIONS ==========
   // Agent mode: Using @convex-dev/agent component
-  const agentThreads = useQuery(
+  const agentThreadsPagination = usePaginatedQuery(
     api.domains.agents.agentChat.listUserThreads,
-    isAuthenticated ? {} : "skip"
+    isAuthenticated && chatMode === "agent" ? {} : "skip",
+    { initialNumItems: 20 }
   );
   const agentMessagesResult = useQuery(
     api.domains.agents.agentChat.getThreadMessages,
@@ -339,9 +395,10 @@ export function FastAgentPanel({
   const deleteAgentThread = useMutation(api.domains.agents.agentChat.deleteThread);
 
   // Agent Streaming mode: Using agent component's native streaming
-  const streamingThreads = useQuery(
+  const streamingThreadsPagination = usePaginatedQuery(
     api.domains.agents.fastAgentPanelStreaming.listThreads,
-    isAuthenticated && chatMode === 'agent-streaming' ? {} : "skip"
+    isAuthenticated && chatMode === "agent-streaming" ? {} : "skip",
+    { initialNumItems: 20 }
   );
 
   // Get the agent thread ID for streaming mode
@@ -478,7 +535,11 @@ export function FastAgentPanel({
   // Client does not trigger server workflows directly; coordinator handles routing via useCoordinator: true
 
   // Use the appropriate data based on mode
-  const threads = chatMode === 'agent' ? agentThreads : streamingThreads;
+  const threads = chatMode === 'agent' ? agentThreadsPagination.results : streamingThreadsPagination.results;
+  const threadsStatus = chatMode === 'agent' ? agentThreadsPagination.status : streamingThreadsPagination.status;
+  const loadMoreThreads = chatMode === 'agent' ? agentThreadsPagination.loadMore : streamingThreadsPagination.loadMore;
+  const hasMoreThreads = threadsStatus === "CanLoadMore";
+  const isLoadingMoreThreads = threadsStatus === "LoadingMore";
 
   // For agent mode, use the regular messages
   // For streaming mode, we use streamingMessages directly (UIMessage format)
@@ -494,9 +555,7 @@ export function FastAgentPanel({
   // Auto-select first thread if none selected
   useEffect(() => {
     if (!activeThreadId && threads && threads.length > 0) {
-      // Agent component threads have both _id and threadId
-      const firstThread = threads[0] as any;
-      setActiveThreadId(firstThread.threadId || firstThread._id);
+      setActiveThreadId(threads[0]!._id);
     }
   }, [threads, activeThreadId]);
 
@@ -553,14 +612,8 @@ export function FastAgentPanel({
 
       // If deleted thread was active, select another
       if (activeThreadId === threadId) {
-        const remainingThreads = threads?.filter((t: any) => {
-          const tId = chatMode === 'agent' ? t.threadId : t._id;
-          return tId !== threadId;
-        });
-        const nextId = chatMode === 'agent'
-          ? (remainingThreads?.[0] as any)?.threadId
-          : (remainingThreads?.[0] as any)?._id;
-        setActiveThreadId(nextId || null);
+        const remainingThreads = (threads ?? []).filter((t) => t._id !== threadId);
+        setActiveThreadId(remainingThreads[0]?._id ?? null);
       }
 
       toast.success('Conversation deleted');
@@ -587,10 +640,7 @@ export function FastAgentPanel({
         : activeThreadId;
 
       // Get the thread title
-      const currentThread = threads?.find((t: any) => {
-        const tId = chatMode === 'agent' ? t.threadId : t._id;
-        return tId === activeThreadId;
-      });
+      const currentThread = threads?.find((t) => t._id === activeThreadId);
       const threadTitle = currentThread?.title || "Chat Session";
 
       const result = await saveChatSessionToDossier({
@@ -638,9 +688,16 @@ export function FastAgentPanel({
           setActiveThreadId(threadId);
         }
 
-        // Get the agent thread ID
-        const streamingThread = streamingThreads?.find((t: any) => t._id === threadId);
-        const agentThreadId = streamingThread?.agentThreadId;
+        // Get the agent thread ID (may not be immediately available in the subscription after create)
+        let agentThreadId: string | undefined =
+          activeThreadId === threadId ? streamingThread?.agentThreadId : undefined;
+
+        if (!agentThreadId) {
+          const fetched = await convex.query(api.domains.agents.fastAgentPanelStreaming.getThreadByStreamId, {
+            threadId: threadId as Id<"chatThreadsStream">,
+          });
+          agentThreadId = (fetched as any)?.agentThreadId;
+        }
 
         if (!agentThreadId) {
           throw new Error("Agent thread ID not found");
@@ -682,9 +739,9 @@ export function FastAgentPanel({
     let messageContent = text;
 
     // Include dossier context if present (for act-aware agent interactions)
-    const dossierPrefix = buildDossierContextPrefix(openOptions?.dossierContext ?? null);
+    const dossierPrefix = dossierPrefixRef.current;
     if (dossierPrefix) {
-      messageContent = `${dossierPrefix}\n\n${messageContent}`;
+      messageContent = `${dossierPrefix}${messageContent}`;
     }
 
     // Include drag-and-drop context documents
@@ -802,7 +859,7 @@ export function FastAgentPanel({
     createStreamingThread,
     sendStreamingMessage,
     generateAndCreateDocument,
-    streamingThreads,
+    convex,
     streamingThread,
     autoNameThread,
   ]);
@@ -1068,70 +1125,82 @@ export function FastAgentPanel({
 
   if (!isOpen) return null;
 
+  const focusSubscription = dossierBriefId ? (
+    <DossierFocusSubscription
+      briefId={dossierBriefId}
+      dossierContextRef={dossierContextRef}
+      dossierPrefixRef={dossierPrefixRef}
+    />
+  ) : null;
+
   // Minimized mode - compact vertical strip
   if (isMinimized) {
     return (
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[1000] flex flex-col items-center gap-2 p-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-l-xl shadow-lg">
-        {/* Expand button */}
-        <button
-          type="button"
-          onClick={() => setIsMinimized(false)}
-          className="p-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
-          title="Expand panel"
-        >
-          <Maximize2 className="w-5 h-5 text-[var(--text-primary)]" />
-        </button>
-
-        {/* Status indicator */}
-        <div className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
-
-        {/* Recent threads icons */}
-        {threads?.slice(0, 3).map((thread) => (
+      <>
+        {focusSubscription}
+        <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[1000] flex flex-col items-center gap-2 p-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-l-xl shadow-lg">
+          {/* Expand button */}
           <button
-            key={thread._id}
+            type="button"
+            onClick={() => setIsMinimized(false)}
+            className="p-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
+            title="Expand panel"
+          >
+            <Maximize2 className="w-5 h-5 text-[var(--text-primary)]" />
+          </button>
+
+          {/* Status indicator */}
+          <div className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
+
+          {/* Recent threads icons */}
+          {threads?.slice(0, 3).map((thread) => (
+            <button
+              key={thread._id}
+              type="button"
+              onClick={() => {
+                setActiveThreadId(thread._id);
+                setIsMinimized(false);
+              }}
+              className={`p-2 rounded-lg transition-colors ${activeThreadId === thread._id
+                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
+                : 'hover:bg-[var(--bg-hover)] text-[var(--text-muted)]'
+                }`}
+              title={thread.title || 'Untitled Thread'}
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+          ))}
+
+          {/* New chat button */}
+          <button
             type="button"
             onClick={() => {
-              setActiveThreadId(thread._id);
+              setActiveThreadId(null);
               setIsMinimized(false);
             }}
-            className={`p-2 rounded-lg transition-colors ${activeThreadId === thread._id
-              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
-              : 'hover:bg-[var(--bg-hover)] text-[var(--text-muted)]'
-              }`}
-            title={thread.title || 'Untitled Thread'}
+            className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-colors"
+            title="New chat"
           >
-            <MessageSquare className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
           </button>
-        ))}
 
-        {/* New chat button */}
-        <button
-          type="button"
-          onClick={() => {
-            setActiveThreadId(null);
-            setIsMinimized(false);
-          }}
-          className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-colors"
-          title="New chat"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-
-        {/* Close button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-[var(--text-muted)] hover:text-red-600 transition-colors mt-2"
-          title="Close panel"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-[var(--text-muted)] hover:text-red-600 transition-colors mt-2"
+            title="Close panel"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      {focusSubscription}
       {/* Backdrop for mobile */}
       {isOpen && (
         <div
@@ -1332,10 +1401,13 @@ export function FastAgentPanel({
           {/* Left Sidebar (Thread List) - Only show on thread tab when sidebar is toggled */}
           <div className={`panel-sidebar ${showSidebar && activeTab === 'thread' ? 'visible' : ''} border-r border-[var(--border-color)] bg-[var(--bg-secondary)]`}>
             <FastAgentThreadList
-              threads={threads || []}
+              threads={threads}
               activeThreadId={activeThreadId}
               onSelectThread={setActiveThreadId}
               onDeleteThread={handleDeleteThread}
+              hasMore={hasMoreThreads}
+              onLoadMore={() => loadMoreThreads(10)}
+              isLoadingMore={isLoadingMoreThreads}
               className="h-full"
             />
           </div>
@@ -1499,7 +1571,7 @@ export function FastAgentPanel({
 
         {/* Export Menu */}
         {exportingThreadId && (() => {
-          const thread = threads?.find((t: any) => (chatMode === 'agent' ? t.threadId : t._id) === exportingThreadId);
+          const thread = threads?.find((t) => t._id === exportingThreadId);
           if (!thread) return null;
 
           // Convert to Thread type for ExportMenu
@@ -1507,15 +1579,15 @@ export function FastAgentPanel({
             _id: thread._id,
             userId: thread.userId,
             title: thread.title,
-            pinned: false,
-            createdAt: thread._creationTime,
-            updatedAt: thread._creationTime,
+            pinned: Boolean((thread as any).pinned),
+            createdAt: (thread as any).createdAt ?? thread._creationTime,
+            updatedAt: (thread as any).updatedAt ?? thread._creationTime,
             _creationTime: thread._creationTime,
-            messageCount: thread.messageCount,
-            lastMessage: thread.lastMessage,
-            lastMessageAt: thread.lastMessageAt,
-            toolsUsed: thread.toolsUsed,
-            modelsUsed: thread.modelsUsed,
+            messageCount: (thread as any).messageCount,
+            lastMessage: (thread as any).lastMessage,
+            lastMessageAt: (thread as any).lastMessageAt,
+            toolsUsed: (thread as any).toolsUsed,
+            modelsUsed: (thread as any).modelsUsed,
           };
 
           return (

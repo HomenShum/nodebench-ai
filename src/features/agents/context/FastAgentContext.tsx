@@ -18,6 +18,8 @@ export interface DossierContext {
   currentAct?: "actI" | "actII" | "actIII";
   /** Currently focused data point index */
   focusedDataIndex?: number;
+  /** Focused chart series ID (when available) */
+  focusedSeriesId?: string;
   /** Chart context for agent awareness */
   chartContext?: {
     seriesId: string;
@@ -193,6 +195,7 @@ export function useFastAgentDossierMode() {
     briefId: dossierContext?.briefId ?? null,
     currentAct: dossierContext?.currentAct ?? "actI",
     focusedDataIndex: dossierContext?.focusedDataIndex ?? null,
+    focusedSeriesId: dossierContext?.focusedSeriesId ?? null,
     chartContext: dossierContext?.chartContext ?? null,
     activeSectionId: dossierContext?.activeSectionId ?? null,
   };
@@ -218,6 +221,11 @@ export function buildDossierContextPrefix(dossierContext: DossierContext | null)
   if (dossierContext.chartContext) {
     const { seriesId, dataLabel, value, unit } = dossierContext.chartContext;
     parts.push(`Focused data point: ${dataLabel} = ${value}${unit ?? ""} (${seriesId})`);
+  }
+
+  if (typeof dossierContext.focusedDataIndex === "number") {
+    const series = dossierContext.focusedSeriesId ? ` (${dossierContext.focusedSeriesId})` : "";
+    parts.push(`Focused data index: ${dossierContext.focusedDataIndex}${series}`);
   }
 
   if (dossierContext.activeSectionId) {

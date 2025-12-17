@@ -7,6 +7,7 @@ import { query, mutation, internalMutation, internalQuery } from "../../_generat
 import { internal, components } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { paginationOptsValidator } from "convex/server";
 
 /**
  * Utility function to safely extract and validate user ID from authentication
@@ -43,32 +44,33 @@ async function getSafeUserId(ctx: any): Promise<Id<"users">> {
  * Returns threads from the Agent component's storage
  */
 export const listUserThreads = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
 
-    // Get all streaming threads for this user (which link to agent threads)
     const streamThreads = await ctx.db
       .query("chatThreadsStream")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user_updatedAt", (q) => q.eq("userId", userId))
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
 
     // Map to the format expected by the frontend
-    return streamThreads.map((thread) => ({
-      _id: thread.agentThreadId || thread._id, // Use agent thread ID if available
-      userId: thread.userId,
-      title: thread.title,
-      pinned: thread.pinned || false,
-      createdAt: thread.createdAt,
-      updatedAt: thread.updatedAt,
-      _creationTime: thread._creationTime,
-      messageCount: 0, // Will be populated by separate query if needed
-      lastMessage: undefined,
-      lastMessageAt: thread.updatedAt,
-      toolsUsed: [],
-      modelsUsed: thread.model ? [thread.model] : [],
-    }));
+    return {
+      ...streamThreads,
+      page: streamThreads.page.map((thread) => ({
+        _id: thread.agentThreadId || thread._id, // Use agent thread ID if available
+        userId: thread.userId,
+        title: thread.title,
+        pinned: thread.pinned || false,
+        createdAt: thread.createdAt,
+        updatedAt: thread.updatedAt,
+        _creationTime: thread._creationTime,
+        lastMessageAt: thread.updatedAt,
+        modelsUsed: thread.model ? [thread.model] : [],
+      })),
+    };
   },
 });
 
