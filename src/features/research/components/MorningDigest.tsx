@@ -10,7 +10,8 @@ import {
   Newspaper,
   Building2,
   RefreshCw,
-  Zap
+  Zap,
+  Target
 } from 'lucide-react';
 
 interface DigestSection {
@@ -167,6 +168,25 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       });
     }
 
+    // Personal Overlay section (Institutional Priorities)
+    const personalOverlay = (digestData as any).personalOverlay;
+    if (personalOverlay && Array.isArray(personalOverlay.features)) {
+      const passing = personalOverlay.features.filter((f: any) => f.status === 'passing');
+      if (passing.length > 0) {
+        sections.push({
+          id: 'personal',
+          title: 'Internal Priorities',
+          icon: <Target className="w-4 h-4" />,
+          sentiment: 'neutral',
+          items: passing.map((f: any) => ({
+            text: `${f.name}: ${f.resultMarkdown?.replace(/#+ /g, '').slice(0, 100)}...`,
+            relevance: 'high' as const,
+            linkedEntity: f.id
+          }))
+        });
+      }
+    }
+
     return sections;
   }, [digestData]);
 
@@ -287,6 +307,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       { id: 'markets', label: 'Markets', value: marketCount, sentiment: digestSections.find(s => s.id === 'markets')?.sentiment },
       { id: 'watchlist', label: 'Topics', value: topicCount, sentiment: digestSections.find(s => s.id === 'watchlist')?.sentiment },
       { id: 'alerts', label: 'Alerts', value: alertCount, sentiment: 'neutral' as const },
+      { id: 'personal', label: 'Priority', value: (digestSections.find(s => s.id === 'personal')?.items.length ?? 0), sentiment: 'neutral' as const },
     ].filter(stat => stat.value > 0);
   }, [digestData, digestSections]);
 

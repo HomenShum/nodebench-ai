@@ -13,7 +13,9 @@ import {
   FeedSection,
 } from "@/features/research/sections";
 import { ActAwareDashboard } from "@/features/research/components/ActAwareDashboard";
-import { useBriefData } from "@/features/research/hooks/useBriefData";
+import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
+import { PersonalPulse } from "@/features/research/components/PersonalPulse";
+import { IntelPulseMonitor } from "@/features/research/components/IntelPulseMonitor";
 import { useMemo } from "react";
 
 export interface ResearchHubProps {
@@ -41,15 +43,19 @@ export default function ResearchHub(props: ResearchHubProps) {
   const updateFocus = useMutation(api.domains.dossier.focusState.updateFocus);
   const [activeAct, setActiveAct] = useState<"actI" | "actII" | "actIII">("actI");
 
-  // Fetch all brief data at the landing level to feed the adaptive dashboard
+  // Fetch all brief data (Global + Personal)
   const {
     executiveBrief,
     sourceSummary,
     dashboardMetrics,
     evidence,
     deltas,
-    briefMemory
-  } = useBriefData();
+    briefMemory,
+    personalizedContext,
+    tasksToday,
+    recentDocs,
+    taskResults
+  } = usePersonalBrief();
 
   // Hoist agent plans for the adaptive HUD
   const agentPlans = useQuery(
@@ -195,6 +201,23 @@ export default function ResearchHub(props: ResearchHubProps) {
                 <DigestSection onItemClick={handleDigestItemClick} />
               </section>
 
+              {/* PERSONALIZED OVERLAY SECTION */}
+              <section className="animate-in fade-in duration-700 delay-75">
+                <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
+                  <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Personal Pulse</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest">Local_Context_Active</span>
+                  </div>
+                </div>
+                <PersonalPulse
+                  personalizedContext={personalizedContext}
+                  tasksToday={tasksToday || []}
+                  recentDocs={recentDocs || []}
+                  onDocumentSelect={props.onDocumentSelect}
+                />
+              </section>
+
               {/* 2. THE BRIEFING (ACT II) */}
               <section
                 ref={actIIRef}
@@ -268,6 +291,9 @@ export default function ResearchHub(props: ResearchHubProps) {
             </aside>
           </div>
         </main>
+
+        {/* LIVE INTEL FLOW MONITOR */}
+        <IntelPulseMonitor taskResults={taskResults || []} />
       </div>
     </EvidenceProvider>
   );

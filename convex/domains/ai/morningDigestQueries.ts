@@ -68,14 +68,14 @@ export const cacheDigestSummary = mutation({
     // Check if we already have a cache entry for today
     const existingQuery = userId
       ? ctx.db
-          .query("digestSummaryCache")
-          .withIndex("by_date_user", (q) =>
-            q.eq("dateString", today).eq("userId", userId as any)
-          )
+        .query("digestSummaryCache")
+        .withIndex("by_date_user", (q) =>
+          q.eq("dateString", today).eq("userId", userId as any)
+        )
       : ctx.db
-          .query("digestSummaryCache")
-          .withIndex("by_date", (q) => q.eq("dateString", today))
-          .filter((q) => q.eq(q.field("userId"), undefined));
+        .query("digestSummaryCache")
+        .withIndex("by_date", (q) => q.eq("dateString", today))
+        .filter((q) => q.eq(q.field("userId"), undefined));
 
     const existing = await existingQuery.first();
 
@@ -135,7 +135,7 @@ export const getDigestData = query({
     // Get user's tracked hashtags from preferences
     const userId = await getAuthUserId(ctx);
     let trackedHashtags: string[] = [];
-    
+
     if (userId) {
       const prefs = await ctx.db
         .query("userPreferences")
@@ -165,7 +165,7 @@ export const getDigestData = query({
       const allText = `${titleLower} ${tagsLower.join(' ')}`;
 
       // Check if item matches user's tracked topics
-      const matchesWatchlist = trackedHashtags.some(hashtag => 
+      const matchesWatchlist = trackedHashtags.some(hashtag =>
         allText.includes(hashtag.toLowerCase())
       );
 
@@ -182,11 +182,25 @@ export const getDigestData = query({
       }
     }
 
+    // Get today's personal overlay
+    let personalOverlay = null;
+    if (userId) {
+      const todayString = new Date().toISOString().split('T')[0];
+      personalOverlay = await ctx.db
+        .query("dailyBriefPersonalOverlays")
+        .withIndex("by_user_date", (q) =>
+          q.eq("userId", userId as any).eq("dateString", todayString)
+        )
+        .order("desc")
+        .first();
+    }
+
     return {
       trackedHashtags,
       marketMovers: marketMovers.slice(0, 5),
       watchlistRelevant: watchlistRelevant.slice(0, 5),
       riskAlerts: riskAlerts.slice(0, 3),
+      personalOverlay,
       lastUpdated: Date.now(),
     };
   },
