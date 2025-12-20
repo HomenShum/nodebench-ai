@@ -13,6 +13,7 @@ import {
   Zap,
   Target
 } from 'lucide-react';
+import { CrossLinkedText } from './CrossLinkedText';
 
 interface DigestSection {
   id: string;
@@ -402,7 +403,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   Executive Synthesis
                 </p>
                 <p className="text-xl font-serif font-medium text-gray-900 leading-relaxed italic">
-                  "{fullSummary}"
+                  "<CrossLinkedText text={fullSummary} onAskAI={(prompt) => onItemClick?.({ text: prompt, relevance: 'high' })} />"
                 </p>
               </div>
             </div>
@@ -446,7 +447,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       >
                         <div className="flex items-start gap-3">
                           <span className="mt-2 h-1.5 w-1.5 rounded-full bg-gray-200 group-hover:bg-blue-400 transition-colors" />
-                          <span className="text-sm font-medium text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors">{item.text}</span>
+                          <div className="text-sm font-medium text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors">
+                            <CrossLinkedText text={item.text} onAskAI={(prompt) => onItemClick?.({ text: prompt, relevance: 'high' })} />
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {item.linkedEntity && (

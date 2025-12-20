@@ -231,6 +231,7 @@ export interface Evidence {
 }
 
 export interface Signal {
+  id?: string;
   headline: string;
   synthesis?: string;
   summary?: string;
@@ -240,12 +241,14 @@ export interface Signal {
 }
 
 export interface Action {
+  id?: string;
   priority: 'high' | 'medium' | 'low';
   headline?: string;
   title?: string;
   description?: string;
   rationale?: string;
   deadline?: string;
+  linkedSignalIds?: string[];
 }
 
 export interface ActData {

@@ -164,12 +164,18 @@ function MetricTag({ label, value, color, className }: { label: string, value: s
 
 function StatusBox({ icon, label, value, suffix }: { icon: React.ReactNode, label: string, value: number, suffix: string }) {
     return (
-        <div className="flex flex-col items-center text-center">
-            <div className="p-2 bg-stone-100/50 rounded-lg text-stone-400 mb-3 border border-stone-200/20">
+        <div className="flex flex-col items-center text-center group">
+            <motion.div
+                key={value}
+                initial={{ scale: 1 }}
+                animate={{ scale: [1, 1.1, 1], backgroundColor: ['initial', 'rgba(16, 185, 129, 0.1)', 'initial'] }}
+                transition={{ duration: 0.5 }}
+                className="p-2 bg-stone-100/50 rounded-lg text-stone-400 mb-3 border border-stone-200/20"
+            >
                 {icon}
-            </div>
+            </motion.div>
             <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-1">{label}</div>
-            <div className="flex items-baseline gap-1.5">
+            <div className="flex items-baseline gap-1.5 overflow-hidden">
                 <NumberFlow value={value} className="text-3xl font-serif font-bold text-emerald-950" />
                 <span className="text-[10px] font-serif italic text-stone-400">{suffix}</span>
             </div>
