@@ -38,10 +38,10 @@ function detectSentimentLocal(text: string): 'bullish' | 'bearish' | 'neutral' {
   const lower = text.toLowerCase();
   const bullishWords = ['up', 'gain', 'surge', 'rise', 'growth', 'bullish', 'strong', 'positive', 'success', 'expand'];
   const bearishWords = ['down', 'fall', 'decline', 'drop', 'risk', 'concern', 'warning', 'bearish', 'weak', 'negative'];
-  
+
   const bullishScore = bullishWords.filter(w => lower.includes(w)).length;
   const bearishScore = bearishWords.filter(w => lower.includes(w)).length;
-  
+
   if (bullishScore > bearishScore) return 'bullish';
   if (bearishScore > bullishScore) return 'bearish';
   return 'neutral';
@@ -52,7 +52,7 @@ function extractEntity(text: string): string | undefined {
   // Look for common patterns like "AAPL", "NVDA", company names
   const tickerMatch = text.match(/\b([A-Z]{2,5})\b/);
   if (tickerMatch) return tickerMatch[1];
-  
+
   // Look for company names
   const companies = ['Apple', 'Google', 'Microsoft', 'NVIDIA', 'Amazon', 'Meta', 'Tesla', 'OpenAI', 'Anthropic'];
   for (const company of companies) {
@@ -98,7 +98,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     if (!digestData) return [];
 
     const sections: DigestSection[] = [];
-    
+
     // Safely access arrays with fallbacks
     const marketMovers = digestData.marketMovers ?? [];
     const watchlistRelevant = digestData.watchlistRelevant ?? [];
@@ -249,8 +249,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   }, [digestData, generatedSummary, isLoading, cachedSummary, generateSummary, cacheSummary, userName]);
 
   // Fallback summary if AI generation fails
-  const fullSummary = generatedSummary || 
-    (digestData 
+  const fullSummary = generatedSummary ||
+    (digestData
       ? `${(digestData.marketMovers ?? []).length} market updates and ${(digestData.watchlistRelevant ?? []).length} items matching your tracked topics. ${(digestData.riskAlerts ?? []).length > 0 ? `${(digestData.riskAlerts ?? []).length} risk alerts to monitor.` : ''}`
       : 'Loading your personalized morning briefing...');
 
@@ -321,124 +321,119 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gray-900 text-white flex items-center justify-center shadow-sm">
-            <Sparkles className="w-4 h-4" />
+    <div className="rounded-2xl border border-gray-100 bg-white/40 backdrop-blur-xl shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50/50">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-xl bg-gray-900 text-white flex items-center justify-center shadow-lg transform -rotate-1 transition-transform hover:rotate-0">
+            <Sparkles className="w-5 h-5" />
           </div>
           <div className="text-left">
-            <p className="text-[11px] font-semibold uppercase text-gray-500">Morning Digest</p>
-            <p className="text-sm font-semibold text-gray-900">Hi {userName}, here’s the overnight signal</p>
-            <p className="text-[11px] text-gray-500">{lastUpdatedText}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-0.5">Overnight Signal</p>
+            <p className="text-2xl font-serif font-bold text-gray-900 leading-tight">Hi {userName}, here’s the pulse.</p>
+            <p className="text-[11px] font-medium text-gray-400 mt-0.5">{lastUpdatedText}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {digestStats.length > 0 && (
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden md:flex items-center gap-2">
               {digestStats.map((stat) => (
                 <span
                   key={stat.id}
-                  className={`px-2 py-1 rounded-full text-[11px] font-medium ${
-                    stat.sentiment ? getSentimentColor(stat.sentiment) : 'bg-gray-50 border border-gray-200 text-gray-700'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${stat.sentiment ? getSentimentColor(stat.sentiment) : 'bg-gray-50/50 border border-gray-100 text-gray-500'
+                    }`}
                 >
                   {stat.label}: {stat.value}
                 </span>
               ))}
             </div>
           )}
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-            title="Refresh digest"
-            aria-label="Refresh digest"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-            title={isExpanded ? 'Collapse digest' : 'Expand digest'}
-            aria-label={isExpanded ? 'Collapse digest' : 'Expand digest'}
-          >
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-1.5 ml-2 pl-4 border-l border-gray-100">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100/50 transition-all active:scale-95"
+              title="Refresh digest"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100/50 transition-all active:scale-95"
+              title={isExpanded ? 'Collapse' : 'Expand'}
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </div>
 
       {isExpanded && (
-        <div className="px-4 pb-4 space-y-3">
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-            <div className="flex items-start gap-2">
-              <span
-                className={`mt-1 h-2 w-2 rounded-full ${
-                  primarySentiment === 'bullish'
-                    ? 'bg-green-500'
-                    : primarySentiment === 'bearish'
-                      ? 'bg-red-500'
-                      : 'bg-amber-500'
-                }`}
-              />
-              <p className="text-sm text-gray-800 leading-relaxed">{fullSummary}</p>
+        <div className="px-6 pb-6 space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="relative overflow-hidden rounded-none border-l-4 border-emerald-900 bg-[#f2f1ed] p-8 mt-4">
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+              <Zap className="w-24 h-24 text-stone-900" />
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="flex-1 relative z-10">
+                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-none transform rotate-45 ${primarySentiment === 'bullish' ? 'bg-emerald-700' : 'bg-stone-500'}`} />
+                  Executive Synthesis
+                </p>
+                <p className="text-xl font-serif font-medium text-gray-900 leading-relaxed italic">
+                  "{fullSummary}"
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
             {digestSections.length === 0 && !digestData ? (
-              <div className="text-center py-6 text-gray-400 text-sm">
-                <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />
-                Loading digest...
+              <div className="col-span-2 text-center py-10 text-gray-400 text-sm italic">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-3 opacity-30" />
+                Orchestrating intelligence...
               </div>
-            ) : digestSections.map((section) => (
-              <div key={section.id} className="rounded-lg border border-gray-100 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                <div className="flex items-center justify-between px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <div className={`h-9 w-9 rounded-md flex items-center justify-center ${getSentimentColor(section.sentiment)}`}>
-                      {section.icon}
+            ) : digestSections.map((section, sIdx) => (
+              <div key={section.id} className="rounded-none border border-stone-200 bg-[#faf9f6] hover:bg-white transition-all duration-500 group" style={{ animationDelay: `${sIdx * 0.1}s` }}>
+                <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
+                  <div className="flex items-center gap-4">
+                    <div className={`h-10 w-10 flex items-center justify-center text-emerald-900 transition-transform`}>
+                      {React.cloneElement(section.icon as React.ReactElement, { className: "w-5 h-5", strokeWidth: 2 })}
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-semibold text-gray-900">{section.title}</p>
-                      <p className="text-[11px] text-gray-500">{section.items.length} updates</p>
+                      <p className="text-base font-serif font-bold text-gray-900">{section.title}</p>
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{section.items.length} Nodes</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold capitalize ${getSentimentColor(section.sentiment)}`}>
-                      {section.sentiment}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => toggleSection(section.id)}
-                      className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                      aria-label={expandedSections.has(section.id) ? 'Collapse section' : 'Expand section'}
-                    >
-                      {expandedSections.has(section.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.id)}
+                    className="p-2 text-stone-400 hover:text-emerald-900 transition-all"
+                  >
+                    {expandedSections.has(section.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
                 </div>
 
                 {expandedSections.has(section.id) && (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-gray-50">
                     {section.items.slice(0, 4).map((item, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => onItemClick?.(item)}
-                        className="w-full text-left px-3 py-2.5 flex items-start justify-between gap-3 hover:bg-gray-50 transition-colors"
+                        className="w-full text-left px-4 py-3.5 flex items-start justify-between gap-4 hover:bg-white transition-colors group"
                       >
-                        <div className="flex items-start gap-2">
-                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-gray-300" />
-                          <span className="text-sm text-gray-800 leading-relaxed">{item.text}</span>
+                        <div className="flex items-start gap-3">
+                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-gray-200 group-hover:bg-blue-400 transition-colors" />
+                          <span className="text-sm font-medium text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors">{item.text}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {item.linkedEntity && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono text-gray-700 bg-gray-100 border border-gray-200">
-                              ${item.linkedEntity}
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold font-mono text-gray-500 bg-gray-50 border border-gray-100 uppercase tracking-tighter">
+                              {item.linkedEntity}
                             </span>
                           )}
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${getRelevanceIndicator(item.relevance)}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${getRelevanceIndicator(item.relevance)}`}>
                             {item.relevance === 'high' ? 'Priority' : item.relevance === 'medium' ? 'Watch' : 'FYI'}
                           </span>
                         </div>
@@ -450,22 +445,22 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Give me a quick brief for this morning", relevance: 'high', linkedEntity: 'morning brief' })}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-white transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3 text-xs font-bold text-gray-800 hover:bg-white hover:shadow-md transition-all active:translate-y-0.5"
             >
-              <Sparkles className="w-3.5 h-3.5 text-gray-700" />
-              Quick brief
+              <Sparkles className="w-4 h-4 text-gray-700" />
+              Strategic Brief
             </button>
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Prepare the full market report for me", relevance: 'medium', linkedEntity: 'market report' })}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl border border-gray-100 bg-white px-4 py-3 text-xs font-bold text-gray-800 hover:bg-gray-50/50 hover:shadow-md transition-all active:translate-y-0.5"
             >
-              <Newspaper className="w-3.5 h-3.5 text-gray-700" />
-              Full report
+              <Newspaper className="w-4 h-4 text-gray-700" />
+              Full Dossier
             </button>
           </div>
         </div>

@@ -23,7 +23,7 @@ interface DossierViewerProps {
   /**
    * Layout variant:
    * - classic: existing split/unified dossier layout
-   * - newspaper: Daily-Prophet/WSJ-inspired layout (used on WelcomeLanding only)
+   * - newspaper: Daily-Prophet/WSJ-inspired layout (used on ResearchHub only)
    */
   variant?: DossierViewerVariant;
 }
@@ -616,11 +616,10 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
               <button
                 type="button"
                 onClick={() => setViewMode('split')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${
-                  viewMode === 'split'
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'split'
                     ? 'bg-[var(--accent-primary)] text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                }`}
+                  }`}
                 title="Classic view"
                 aria-label="Switch to classic view"
               >
@@ -630,11 +629,10 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
               <button
                 type="button"
                 onClick={() => setViewMode('unified')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${
-                  viewMode === 'unified'
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'unified'
                     ? 'bg-[var(--accent-primary)] text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                }`}
+                  }`}
                 title="Edit mode"
                 aria-label="Switch to edit mode"
               >

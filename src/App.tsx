@@ -4,13 +4,15 @@ import { toast } from "sonner";
 import { api } from "../convex/_generated/api";
 import { MainLayout } from "./components/MainLayout";
 import { TutorialPage } from "@/features/onboarding/views/TutorialPage";
-import WelcomeLanding from "@/features/research/views/WelcomeLanding";
+import ResearchHub from "@/features/research/views/ResearchHub";
 import { useState, useEffect, useRef } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
 import { FastAgentProvider, useFastAgent } from "@/features/agents/context/FastAgentContext";
 import { SelectionProvider } from "@/features/agents/context/SelectionContext";
 import { FastAgentPanel } from "@/features/agents";
+import { FeedbackListener } from "@/shared/hooks/FeedbackListener";
+import { AgentGuidedOnboarding } from "@/features/onboarding/components/AgentGuidedOnboarding";
 
 /**
  * GlobalFastAgentPanel - Renders FastAgentPanel connected to FastAgentContext
@@ -49,7 +51,7 @@ function App() {
     initialHash.startsWith('#calendar') ||
     initialHash.startsWith('#documents') ||
     initialHash.startsWith('#roadmap');
-  const [showWelcomeLanding, setShowWelcomeLanding] = useState(!hashIndicatesWorkspace);
+  const [showResearchHub, setShowResearchHub] = useState(!hashIndicatesWorkspace);
   const [selectedDocumentId, setSelectedDocumentId] = useState<Id<"documents"> | null>(null);
 
   const user = useQuery(api.domains.auth.auth.loggedInUser);
@@ -57,12 +59,12 @@ function App() {
   const ensureSeedOnLogin = useMutation(api.domains.auth.onboarding.ensureSeedOnLogin);
   const didEnsureRef = useRef(false);
 
-  // Listen for hash changes to switch between WelcomeLanding and MainLayout
+  // Listen for hash changes to switch between ResearchHub and MainLayout
   useEffect(() => {
     const handleHashChange = () => {
       const h = window.location.hash.toLowerCase();
       if (h.startsWith('#agents') || h.startsWith('#calendar') || h.startsWith('#documents') || h.startsWith('#roadmap')) {
-        setShowWelcomeLanding(false);
+        setShowResearchHub(false);
         setShowTutorial(false);
       }
     };
@@ -71,31 +73,31 @@ function App() {
   }, []);
 
   // Note: We no longer auto-show tutorial for new users
-  // Users stay on WelcomeLanding and can access tutorial manually if needed
+  // Users stay on ResearchHub and can access tutorial manually if needed
 
   const handleGetStarted = () => {
     setShowTutorial(false);
-    setShowWelcomeLanding(false);
+    setShowResearchHub(false);
   };
 
   const handleDocumentSelect = (documentId: string) => {
     setSelectedDocumentId(documentId as Id<"documents">);
     setShowTutorial(false);
-    setShowWelcomeLanding(false);
+    setShowResearchHub(false);
   };
 
   const handleShowTutorial = () => {
     setShowTutorial(true);
-    setShowWelcomeLanding(false);
+    setShowResearchHub(false);
   };
 
-  const handleShowWelcomeLanding = () => {
-    setShowWelcomeLanding(true);
+  const handleShowResearchHub = () => {
+    setShowResearchHub(true);
     setShowTutorial(false);
   };
 
   const handleEnterWorkspace = () => {
-    setShowWelcomeLanding(false);
+    setShowResearchHub(false);
     setShowTutorial(false);
   };
 
@@ -108,9 +110,9 @@ function App() {
               {/* Use MainLayout for visual consistency - limited features for guests */}
               <MainLayout
                 selectedDocumentId={null}
-                onDocumentSelect={() => {}}
-                onShowWelcome={() => {}}
-                onShowWelcomeLanding={() => {}}
+                onDocumentSelect={() => { }}
+                onShowWelcome={() => { }}
+                onShowResearchHub={() => { }}
               />
               {/* Global Fast Agent Panel for guests */}
               <GlobalFastAgentPanel />
@@ -133,11 +135,13 @@ function App() {
                   selectedDocumentId={selectedDocumentId}
                   onDocumentSelect={setSelectedDocumentId}
                   onShowWelcome={handleShowTutorial}
-                  onShowWelcomeLanding={handleShowWelcomeLanding}
+                  onShowResearchHub={handleShowResearchHub}
                 />
               )}
               {/* Global Fast Agent Panel - controlled via context */}
               <GlobalFastAgentPanel />
+              {/* Global Feedback Listener for audio/visual cues */}
+              <FeedbackListener />
             </ContextPillsProvider>
           </SelectionProvider>
         </FastAgentProvider>

@@ -92,15 +92,18 @@ export const cacheDigestSummary = mutation({
     }
 
     // Create new cache entry
-    return await ctx.db.insert("digestSummaryCache", {
+    const insertDoc: Record<string, any> = {
       dateString: today,
-      userId: userId as any,
       summary: args.summary,
       dataHash: args.dataHash,
       generatedAt: now,
       expiresAt: now + CACHE_TTL_MS,
       hitCount: 0,
-    });
+    };
+    if (userId) {
+      insertDoc.userId = userId as any;
+    }
+    return await ctx.db.insert("digestSummaryCache", insertDoc as any);
   },
 });
 

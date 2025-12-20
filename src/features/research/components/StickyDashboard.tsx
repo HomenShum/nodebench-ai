@@ -3,11 +3,17 @@
 import React from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
-import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock, PieChart } from "lucide-react";
+import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock, PieChart, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import EnhancedLineChart, { type ChartDataPointContext } from "./EnhancedLineChart";
-import type { DashboardState } from "@/features/research/types";
+import type { DashboardState, MarketShareSegment } from "@/features/research/types";
 import { formatBriefMonthYear } from "@/lib/briefDate";
 import { useEvidence } from "../contexts/EvidenceContext";
+import { DeltaIndicator } from "./DeltaIndicator";
+
+export interface WorkflowStep {
+  name: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+}
 
 // Icon Mapping for capabilities
 const IconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -25,9 +31,27 @@ interface StickyDashboardProps {
   data: DashboardState;
   /** Callback for chart data point clicks (AI agent integration) */
   onDataPointClick?: (point: ChartDataPointContext) => void;
+  activeAct?: "actI" | "actII" | "actIII";
+  workflowSteps?: WorkflowStep[];
+  /** Temporal deltas for "What Changed" indicators */
+  deltas?: {
+    keyStats: Array<{ label: string; delta: number }>;
+    capabilities: Array<{ label: string; delta: number | null }>;
+    techReadiness?: {
+      existing: number | null;
+      emerging: number | null;
+      sciFi: number | null;
+    } | null;
+  } | null;
 }
 
-export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data, onDataPointClick }) => {
+export const StickyDashboard: React.FC<StickyDashboardProps> = ({
+  data,
+  onDataPointClick,
+  activeAct = "actI",
+  workflowSteps = [],
+  deltas
+}) => {
   // Evidence context for chart ↔ evidence linking
   const evidenceCtx = useEvidence();
 
@@ -59,7 +83,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data, onDataPo
 
   return (
     <div className="w-full font-mono text-slate-900 select-none">
-      <div className="sticky top-4 z-10 rounded-xl border border-slate-200 bg-white shadow-sm p-3 transition-all duration-500">
+      <div className="z-10 transition-all duration-500 shadow-none space-y-5">
 
         {/* --- ROW 1: HEADER & CHART --- */}
         <div className="relative mb-4">
@@ -101,9 +125,18 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data, onDataPo
               AI Capabilities
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {capabilities.map((cap) => (
-                <CapabilityBar key={cap.label} label={cap.label} score={cap.score} icon={cap.icon} />
-              ))}
+              {capabilities.map((cap, i) => {
+                const capDelta = deltas?.capabilities?.[i]?.delta;
+                return (
+                  <CapabilityBar
+                    key={cap.label}
+                    label={cap.label}
+                    score={cap.score}
+                    icon={cap.icon}
+                    delta={capDelta ?? null}
+                  />
+                );
+              })}
             </div>
           </div>
 
@@ -134,29 +167,68 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data, onDataPo
                 <span>Exist</span><span>Emerging</span><span>Sci-Fi</span>
               </div>
               <div className="flex justify-between gap-1 h-8">
-                <BucketColumn count={safeTech.existing} color="bg-slate-900" />
-                <BucketColumn count={safeTech.emerging} color="bg-indigo-500" />
-                <BucketColumn count={safeTech.sciFi} color="bg-slate-200" />
+                <BucketColumn count={safeTech.existing} color="bg-slate-900" delta={deltas?.techReadiness?.existing} />
+                <BucketColumn count={safeTech.emerging} color="bg-indigo-500" delta={deltas?.techReadiness?.emerging} />
+                <BucketColumn count={safeTech.sciFi} color="bg-slate-200" delta={deltas?.techReadiness?.sciFi} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* --- ROW 3: KEY STATS --- */}
-        <div className="flex justify-between items-center gap-2 border-t border-slate-100 pt-3 mb-3">
-          {keyStats.map((stat, i) => (
-            <div key={i} className="flex flex-col">
-              <span className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5">{stat.label}</span>
-              <div className="flex items-baseline gap-0.5">
-                <span className="text-xs font-bold text-slate-900">{stat.value}</span>
-                {stat.context && <span className="text-[8px] font-bold text-slate-400">{stat.context}</span>}
-              </div>
+        {/* --- ROW 1: HEADER & ACT INDICATOR --- */}
+        <div className="border-b border-emerald-900/10 pb-6">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-4xl font-serif font-medium text-emerald-950 tracking-tight">
+              Pulse
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-emerald-900/40 uppercase tracking-widest">
+                {formatBriefMonthYear(new Date().toISOString())}
+              </span>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             </div>
-          ))}
+          </div>
+
+          {/* Minimalist Act Stepper */}
+          <div className="flex items-center gap-3">
+            {[
+              { id: 'actI', label: 'Synthesis' },
+              { id: 'actII', label: 'Briefing' },
+              { id: 'actIII', label: 'Signals' }
+            ].map((act, i) => (
+              <React.Fragment key={act.id}>
+                {i > 0 && <div className="w-8 h-px bg-stone-200" />}
+                <div className={`flex items-center gap-2 transition-opacity duration-500 ${activeAct === act.id ? 'opacity-100' : 'opacity-30 grayscale'
+                  }`}>
+                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900`}>
+                    {act.label}
+                  </span>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+        {/* --- ROW 3: KEY STATS WITH DELTAS --- */}
+        <div className="flex justify-between items-center gap-2 border-t border-slate-100 pt-3 mb-3">
+          {keyStats.map((stat, i) => {
+            const statDelta = deltas?.keyStats?.[i]?.delta;
+            return (
+              <div key={i} className="flex flex-col">
+                <span className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5">{stat.label}</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xs font-bold text-slate-900">{stat.value}</span>
+                  {statDelta !== undefined && statDelta !== null && statDelta !== 0 && (
+                    <DeltaIndicator value={statDelta} size="sm" />
+                  )}
+                  {stat.context && <span className="text-[8px] font-bold text-slate-400">{stat.context}</span>}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* --- ROW 4: AGENT FOOTER --- */}
-        {agentCount && <AgentFooter agentCount={agentCount} />}
+        <AgentFooter workflowSteps={workflowSteps} />
       </div>
     </div>
   );
@@ -164,109 +236,140 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({ data, onDataPo
 
 // --- SUB-COMPONENTS ---
 
-interface CapabilityBarProps {
-  label: string;
-  score: number;
-  icon: string;
-}
-
-const CapabilityBar: React.FC<CapabilityBarProps> = ({ label, score, icon }) => {
-  const Icon = IconMap[icon.toLowerCase()] || Brain;
-  return (
-    <div className="relative h-6 w-full bg-slate-100/50 rounded overflow-hidden group">
-      {/* Background Fill Animation */}
+const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: number, icon: string, delta?: number | null }) => (
+  <div className="flex flex-col gap-1 mb-3 group">
+    <div className="flex justify-between items-end mb-1">
+      <div className="flex flex-col">
+        <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold group-hover:text-emerald-900 transition-colors leading-none">{label}</span>
+        {delta !== undefined && delta !== null && delta !== 0 && (
+          <div className="mt-0.5">
+            <DeltaIndicator value={delta} unit="pts" />
+          </div>
+        )}
+      </div>
+      <span className="text-xs font-mono font-bold text-gray-900">{score}%</span>
+    </div>
+    <div className="h-1.5 w-full bg-stone-200 overflow-hidden">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${score}%` }}
-        transition={{ duration: 1.2, ease: "circOut" }}
-        className="absolute left-0 top-0 h-full bg-gradient-to-r from-slate-900 to-slate-700 z-0"
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        className="h-full bg-emerald-900"
       />
-
-      {/* Content Layer */}
-      <div className="absolute inset-0 flex items-center justify-between px-2 z-10">
-        <div className="flex items-center gap-1.5">
-          <Icon size={10} className="text-white mix-blend-difference" />
-          <span className="text-[8px] font-bold tracking-wider uppercase text-white mix-blend-difference">{label}</span>
-        </div>
-      </div>
     </div>
-  );
-};
-
-interface BucketColumnProps {
-  count: number;
-  color: string;
-}
-
-const BucketColumn: React.FC<BucketColumnProps> = ({ count, color }) => (
-  <div className="flex flex-col-reverse gap-[1px] w-full items-center">
-    {[...Array(6)].map((_, i) => (
-      <div key={i} className={`w-full h-1 rounded-[1px] ${i < count ? color : "bg-slate-100"}`} />
-    ))}
   </div>
 );
 
-interface DonutChartProps {
-  data: Array<{ label: string; value: number; color: string }>;
-}
-
-const DonutChart: React.FC<DonutChartProps> = ({ data }) => {
-  const radius = 35;
-  const circumference = 2 * Math.PI * radius;
-  let accumulatedOffset = 0;
-
-  const colorMap: Record<string, string> = {
-    black: "text-slate-900",
-    accent: "text-indigo-500",
-    gray: "text-slate-200",
-  };
+const BucketColumn = ({ count, color, delta }: { count: number, color: string, delta?: number | null }) => {
+  // Map old colors to new theme
+  const themeColor = color.includes('indigo') || color.includes('slate-900') ? 'bg-emerald-900' : 'bg-stone-300';
 
   return (
-    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-      {data.map((segment, i) => {
-        const strokeDasharray = `${(segment.value / 100) * circumference} ${circumference}`;
-        const offset = accumulatedOffset;
-        accumulatedOffset -= (segment.value / 100) * circumference;
-        return (
-          <motion.circle
-            key={i}
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="transparent"
-            strokeWidth="12"
-            stroke="currentColor"
-            className={colorMap[segment.color]}
-            initial={{ strokeDasharray: `0 ${circumference}`, strokeDashoffset: 0 }}
-            animate={{ strokeDasharray, strokeDashoffset: offset }}
-            transition={{ duration: 1, delay: i * 0.1 }}
-          />
-        );
-      })}
-    </svg>
+    <div className="flex flex-col-reverse gap-[1px] w-full items-center group relative">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className={`w-full h-1 rounded-none ${i < count ? themeColor : "bg-stone-100"}`} />
+      ))}
+      {delta !== undefined && delta !== null && delta !== 0 && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+          <DeltaIndicator value={delta} unit="u" size="sm" label="Δ" />
+        </div>
+      )}
+    </div>
   );
 };
 
-interface AgentFooterProps {
-  agentCount: { count: number; label: string; speed: number };
-}
+const DonutChart = ({ data }: { data: MarketShareSegment[] }) => {
+  const topValue = data[0]?.value || 0;
+  const pathLength = topValue / 100;
 
-const AgentFooter: React.FC<AgentFooterProps> = ({ agentCount }) => (
-  <div className="bg-slate-50 rounded border border-slate-100 p-2 flex items-start gap-2">
-    <div className="w-1 h-full bg-indigo-500 rounded-full min-h-[20px]" />
-    <div>
-      <div className="text-[10px] leading-tight text-slate-700">
-        <span className="font-bold"><NumberFlow value={agentCount.count} /></span>
-        {" "}{agentCount.label} copies operating at
-        <span className="font-bold"> {agentCount.speed}x</span> human speed.
+  return (
+    <div className="relative w-full h-full flex-shrink-0">
+      <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
+        <circle cx="50" cy="50" r="40" stroke="#E5E5E2" strokeWidth="12" fill="none" />
+        <motion.circle
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength }}
+          transition={{ duration: 2, ease: "easeOut" }}
+          cx="50"
+          cy="50"
+          r="40"
+          stroke="#163628"
+          strokeWidth="12"
+          fill="none"
+          strokeDasharray="1 1"
+        />
+      </svg>
+    </div>
+  );
+};
+
+const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
+  const activeStep = workflowSteps.find(s => s.status === 'in_progress');
+  const completedCount = workflowSteps.filter(s => s.status === 'completed').length;
+  const totalCount = workflowSteps.length;
+
+  return (
+    <div className="mt-8 pt-6 border-t border-stone-200">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="px-1.5 py-1 bg-emerald-900 text-[#faf9f6] text-[9px] font-bold uppercase tracking-widest">
+            Agent Workflow
+          </div>
+          <div className="text-[10px] font-mono text-stone-500 uppercase tracking-wider">
+            {completedCount}/{totalCount} PROCESSED
+          </div>
+        </div>
+        {activeStep && (
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-3 h-3 text-emerald-700 animate-spin" />
+            <span className="text-[9px] font-black text-emerald-900 uppercase tracking-widest">Live</span>
+          </div>
+        )}
       </div>
-      {/* Little green blocks visualizing agents */}
-      <div className="flex gap-0.5 mt-1.5 flex-wrap">
-        {[...Array(8)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-emerald-500 rounded-[1px] opacity-80" />)}
-        {[...Array(4)].map((_, i) => <div key={i + 10} className="w-1.5 h-1.5 bg-slate-200 rounded-[1px]" />)}
+
+      <div className="space-y-3">
+        {workflowSteps.slice(0, 3).map((step, i) => (
+          <div key={i} className="flex items-center gap-3 group">
+            <div className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${step.status === 'completed' ? 'bg-emerald-900 border-emerald-900' :
+              step.status === 'in_progress' ? 'border-emerald-900 animate-pulse' :
+                'border-stone-200'
+              }`}>
+              {step.status === 'completed' && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}
+              {step.status === 'in_progress' && <div className="w-1.5 h-1.5 bg-emerald-900 rounded-full" />}
+            </div>
+            <span className={`text-[11px] font-serif transition-colors ${step.status === 'completed' ? 'text-stone-400 line-through' :
+              step.status === 'in_progress' ? 'text-emerald-900 font-bold' :
+                'text-stone-500'
+              }`}>
+              {step.name}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {activeStep && (
+        <div className="mt-4 p-3 bg-emerald-50/50 border border-emerald-900/10">
+          <p className="text-[10px] font-mono text-emerald-900/60 uppercase tracking-tighter mb-1">Current Task</p>
+          <p className="text-[12px] font-serif font-medium text-emerald-950 italic">
+            "{activeStep.name} in progress..."
+          </p>
+        </div>
+      )}
+
+      <div className="mt-4 flex gap-1">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className={`w-1.5 h-1.5 bg-emerald-900 rounded-none transition-opacity duration-1000`}
+            style={{
+              opacity: activeStep ? Math.random() * 0.8 + 0.2 : 0.05,
+              animationDelay: `${i * 0.1}s`
+            }}
+          />
+        ))}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default StickyDashboard;

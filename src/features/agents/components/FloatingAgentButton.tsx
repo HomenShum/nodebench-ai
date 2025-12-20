@@ -2,7 +2,7 @@
  * FloatingAgentButton - Universal FAB for triggering the Fast Agent
  * 
  * A floating action button that appears on pages without the sidebar
- * (like WelcomeLanding) to give users one-click access to the AI agent.
+ * (like ResearchHub) to give users one-click access to the AI agent.
  * 
  * Features:
  * - Animated slide-in from bottom
@@ -69,14 +69,14 @@ export const FloatingAgentButton: React.FC<FloatingAgentButtonProps> = ({
         {/* Subtle pulse effect */}
         <div className="absolute inset-0 bg-purple-500/30 rounded-full animate-ping" style={{ animationDuration: '2s' }} />
       </div>
-      
+
       {/* Label - hidden on mobile by default */}
       {showLabel && (
         <span className="font-medium text-sm hidden sm:inline">
           {label}
         </span>
       )}
-      
+
       {/* Keyboard shortcut hint */}
       <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono bg-white/10 rounded border border-white/20 text-white/60">
         ⌘K

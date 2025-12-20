@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback, startTransition } from "react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { toast } from "sonner";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { CleanSidebar } from "./CleanSidebar";
@@ -12,7 +14,9 @@ import { CalendarHomeHub } from "@/features/calendar/components/CalendarHomeHub"
 import { AgentsHub } from "@/features/agents/views/AgentsHub";
 
 import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
-import WelcomeLanding from "@/features/research/views/WelcomeLanding";
+import ResearchHub from "@/features/research/views/ResearchHub";
+import CinematicHome from "@/features/research/views/CinematicHome";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { Zap, Menu, X as CloseIcon } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
@@ -25,16 +29,18 @@ interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
   onDocumentSelect: (documentId: Id<"documents"> | null) => void;
   onShowWelcome?: () => void;
-  onShowWelcomeLanding?: () => void;
+  onShowResearchHub?: () => void;
 }
 
-export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowWelcomeLanding }: MainLayoutProps) {
+export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowResearchHub }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
   const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research'>('research');
   const [isGridMode, setIsGridMode] = useState(false);
   // Transition state for smooth view changes
   const [isTransitioning, setIsTransitioning] = useState(false);
+  // Research state: toggle between high-level gateway and deep hub
+  const [showResearchDossier, setShowResearchDossier] = useState(false);
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   // Multi-document selection for Fast Agent
@@ -159,6 +165,26 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   };
 
   const user = useQuery(api.domains.auth.auth.loggedInUser);
+
+  const { isAuthenticated } = useConvexAuth();
+  const { signIn } = useAuthActions();
+  const [isAnonSigningIn, setIsAnonSigningIn] = useState(false);
+
+  const showGuestWorkspaceCta =
+    !isAuthenticated && currentView !== "research" && currentView !== "public";
+
+  const handleAnonymousSignIn = () => {
+    if (isAnonSigningIn) return;
+    setIsAnonSigningIn(true);
+    void signIn("anonymous")
+      .catch((error) => {
+        console.error("Anonymous sign-in failed", error);
+        toast.error("Failed to sign in anonymously");
+      })
+      .finally(() => {
+        setIsAnonSigningIn(false);
+      });
+  };
 
   // Prefetch DocumentsHomeHub data - keep these subscribed even when viewing a document
   // so the data is ready when user navigates back (no loading flash)
@@ -536,7 +562,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             );
           }}
           onOpenSettings={openSettings}
-          onGoHome={() => setCurrentView('research')}
+          onGoHome={() => {
+            setCurrentView('research');
+            setShowResearchDossier(false);
+          }}
           selectedDocumentId={selectedDocumentId}
           onDocumentSelect={handleDocumentSelect}
           currentView={currentView}
@@ -635,18 +664,62 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             </div>
           </div>
 
+          {showGuestWorkspaceCta && (
+            <div className="px-4 sm:px-6 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-3">
+              <div className="text-sm text-amber-900">
+                You&apos;re in guest preview. Sign in anonymously to create and save workspace data.
+              </div>
+              <button
+                type="button"
+                onClick={handleAnonymousSignIn}
+                disabled={isAnonSigningIn}
+                className="ml-auto px-3 py-1.5 text-sm font-semibold rounded-md bg-amber-900 text-white hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isAnonSigningIn ? "Signing in..." : "Sign in anonymously"}
+              </button>
+            </div>
+          )}
+
           {/* Content Area - Resizable Split */}
           <div className={`flex-1 overflow-hidden transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`} data-main-content>
             {currentView === 'research' ? (
-              <WelcomeLanding
-                embedded
-                onDocumentSelect={(id) => handleDocumentSelect(id as Id<"documents">)}
-                onEnterWorkspace={() => setCurrentView('documents')}
-                activeSources={activeSources}
-                onToggleSource={(sourceId) => setActiveSources(prev =>
-                  prev.includes(sourceId) ? prev.filter(id => id !== sourceId) : [...prev, sourceId]
+              <AnimatePresence mode="wait">
+                {!showResearchDossier ? (
+                  <motion.div
+                    key="gateway"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, scale: 1.05 }}
+                    transition={{ duration: 0.6 }}
+                    className="h-full w-full"
+                  >
+                    <CinematicHome
+                      onEnterHub={() => setShowResearchDossier(true)}
+                      onEnterWorkspace={() => setCurrentView('documents')}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="hub"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.5 }}
+                    className="h-full w-full"
+                  >
+                    <ResearchHub
+                      embedded
+                      onGoHome={() => setShowResearchDossier(false)}
+                      onDocumentSelect={(id) => handleDocumentSelect(id as Id<"documents">)}
+                      onEnterWorkspace={() => setCurrentView('documents')}
+                      activeSources={activeSources}
+                      onToggleSource={(sourceId) => setActiveSources(prev =>
+                        prev.includes(sourceId) ? prev.filter(id => id !== sourceId) : [...prev, sourceId]
+                      )}
+                    />
+                  </motion.div>
                 )}
-              />
+              </AnimatePresence>
             ) : currentView === 'public' ? (
               <PublicDocuments onDocumentSelect={handleDocumentSelect} />
             ) : currentView === 'agents' ? (

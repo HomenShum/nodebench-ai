@@ -217,6 +217,8 @@ export function DocumentsHomeHub({
 }: DocumentsHomeHubProps) {
   const documents = useQuery(api.domains.documents.documents.getSidebarWithPreviews);
 
+  const loggedInUser = useQuery(api.domains.auth.auth.loggedInUser);
+
   // Ensure onboarding seed on first visit to DocumentsHomeHub
 
   const ensureSeedOnLogin = useMutation(api.domains.auth.onboarding.ensureSeedOnLogin);
@@ -225,6 +227,7 @@ export function DocumentsHomeHub({
 
   useEffect(() => {
     if (didEnsureOnHubRef.current) return;
+    if (!loggedInUser) return;
 
     let cancelled = false;
 
@@ -265,7 +268,7 @@ export function DocumentsHomeHub({
     return () => {
       cancelled = true;
     };
-  }, [ensureSeedOnLogin]);
+  }, [ensureSeedOnLogin, loggedInUser]);
   // Unified sidebar open/collapsed state (shared key with CalendarHomeHub)
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     try {
@@ -375,8 +378,6 @@ export function DocumentsHomeHub({
 
     return -new Date().getTimezoneOffset();
   }, [tzPrefs]);
-
-  const loggedInUser = useQuery(api.domains.auth.auth.loggedInUser);
 
   // Must be initialized before any callbacks that reference it (avoids TDZ errors)
 
@@ -1162,7 +1163,11 @@ export function DocumentsHomeHub({
     }),
   );
 
-  const userTimelines = useQuery(api.domains.agents.agentTimelines.listForUser, {});
+  const userTimelines =
+    useQuery(
+      api.domains.agents.agentTimelines.listForUser,
+      loggedInUser ? {} : "skip",
+    ) ?? [];
 
   // File uploads (react-dropzone + Convex storage)
 

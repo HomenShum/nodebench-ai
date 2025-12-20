@@ -1,9 +1,10 @@
 // import { useBlockNoteSyncSafe } from "../lib/useBlockNoteSyncSafe";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
+
 import {
   CalendarIcon,
   Sparkles,
@@ -29,14 +30,19 @@ import EventEditorPanel from "@/features/calendar/components/EventEditorPanel";
 
 // Custom hook for calendar document
 const useCalendarDocument = () => {
+  const { isAuthenticated } = useConvexAuth();
   const documents = useQuery(api.domains.documents.documents.getSidebar);
+  const loggedInUser = useQuery(api.domains.auth.auth.loggedInUser);
   const createWithSnapshot = useMutation(api.domains.documents.prosemirror.createDocumentWithInitialSnapshot);
 
   const [calendarDocId, setCalendarDocId] = useState<Id<"documents"> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const didAttemptCreateRef = useRef(false);
 
   useEffect(() => {
     const findOrCreateCalendar = async () => {
+      if (!isAuthenticated) return;
+      if (!loggedInUser) return;
       if (!documents || isCreating) return;
 
       const now = new Date();
@@ -60,6 +66,8 @@ const useCalendarDocument = () => {
       }
 
       if (!calendarDoc && !isCreating) {
+        if (didAttemptCreateRef.current) return;
+        didAttemptCreateRef.current = true;
         setIsCreating(true);
         try {
           const docId = await createCalendarDocument(createWithSnapshot);
@@ -83,7 +91,7 @@ const useCalendarDocument = () => {
 
 
     void findOrCreateCalendar();
-  }, [documents, createWithSnapshot, isCreating]);
+  }, [documents, createWithSnapshot, isCreating, loggedInUser, isAuthenticated]);
 
   return { calendarDocId, isCreating };
 };
@@ -129,10 +137,11 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
 
   // Auth + event data for Google Calendar-like view
   const loggedInUser = useQuery(api.domains.auth.auth.loggedInUser);
+  const needsCalendarDoc = !!loggedInUser;
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   // Ensure we use the same timestamp for both frontend week calculation and backend query
   const effectiveFocusedDateMs = useMemo(() => focusedDateMs ?? Date.now(), [focusedDateMs]);
-  
+
   // Use unified calendar agenda hook for consistent data across all calendar views
   const weekRange = useMemo(() => getWeekRangeUtc(effectiveFocusedDateMs, tzOffsetMinutes), [effectiveFocusedDateMs, tzOffsetMinutes]);
   const { events: agendaEvents, isLoading: _isLoadingAgenda } = useCalendarAgenda({
@@ -140,7 +149,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     endMs: weekRange.endMs,
     skip: !loggedInUser,
   });
-  
+
   const eventsThisWeek: WeekEvent[] = useMemo(() => {
     // Map CalendarEvent to WeekEvent format and deduplicate
     const map = new Map<string, WeekEvent>();
@@ -172,82 +181,11 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<Id<"events"> | null>(null);
   const [quickAddText, setQuickAddText] = useState("");
-
-  // Detect current theme
-
-  // Calendar UX settings
-  const [showWorkHoursOnly, setShowWorkHoursOnly] = useState(false);
-  const [workdayStartHour, setWorkdayStartHour] = useState(9);
-  const [workdayEndHour, setWorkdayEndHour] = useState(17);
-  const [density, setDensity] = useState<'comfortable' | 'cozy' | 'compact'>('cozy');
-  const [collapseEmpty, setCollapseEmpty] = useState(false);
-
-  // Persist user preferences across sessions
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = window.localStorage.getItem('calendar_prefs');
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (typeof parsed.showWorkHoursOnly === 'boolean') setShowWorkHoursOnly(parsed.showWorkHoursOnly);
-      if (typeof parsed.workdayStartHour === 'number') setWorkdayStartHour(parsed.workdayStartHour);
-      if (typeof parsed.workdayEndHour === 'number') setWorkdayEndHour(parsed.workdayEndHour);
-      if (parsed.density === 'comfortable' || parsed.density === 'cozy' || parsed.density === 'compact') setDensity(parsed.density);
-      if (typeof parsed.collapseEmpty === 'boolean') setCollapseEmpty(parsed.collapseEmpty);
-    } catch {
-      // ignore malformed localStorage value
-    }
-  }, []);
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const prefs = { showWorkHoursOnly, workdayStartHour, workdayEndHour, density, collapseEmpty };
-      window.localStorage.setItem('calendar_prefs', JSON.stringify(prefs));
-    } catch {
-      // ignore storage failures (private mode / quota)
-    }
-  }, [showWorkHoursOnly, workdayStartHour, workdayEndHour, density, collapseEmpty]);
-
-  // Note: Keyboard shortcuts are handled in the shared Editor component.
-
-  // Handle AI actions
-  const handleAIAction = async (action: string) => {
-    if (!calendarDocId) return;
-
-    setIsGenerating(true);
-    setIsAiMenuOpen(false);
-
-    const prompts = {
-      organize: `Organize today's calendar entries (${new Date().toLocaleDateString()}) by priority and deadlines. Group similar tasks and suggest an optimal order.`,
-      timeblock: `Create detailed time blocks for today (${new Date().toLocaleDateString()}) based on the tasks. Include buffer time and breaks.`,
-      tasklist: `Generate a prioritized task list from the calendar entries for today (${new Date().toLocaleDateString()}). Include time estimates.`,
-      weekly: `Create a weekly review summary highlighting completed tasks, pending items, and priorities for next week.`,
-      braindump: `Convert the notes and brain dump section into actionable tasks and organize them by project or category.`
-    };
-
-    try {
-      const basePrompt = prompts[action as keyof typeof prompts] || prompts.organize;
-      // Emit global quick prompt with documentId to reuse AIChatPanel flow with proper context
-      try {
-        window.dispatchEvent(
-          new CustomEvent('ai:quickPrompt', { detail: { prompt: basePrompt, documentId: calendarDocId || undefined } })
-        );
-      } catch (e) {
-        console.warn('Failed to dispatch ai:quickPrompt from CalendarView', e);
-      }
-
-      if (toast) {
-        toast.success('Sent to AI chat');
-      }
-    } catch (error) {
-      console.error('AI action failed:', error);
-      if (toast) {
-        toast.error('Failed to send prompt to AI chat');
-      }
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  const showWorkHoursOnly = false;
+  const workdayStartHour = 9;
+  const workdayEndHour = 17;
+  const density: 'comfortable' | 'cozy' | 'compact' = 'cozy';
+  const collapseEmpty = false;
 
   // ======= Google Calendar-like Week View helpers =======
   const startOfWeek = (d: Date) => {
@@ -283,6 +221,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
       toast.success("Event created");
 
 
+
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to create");
     }
@@ -306,6 +245,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
       toast.error(e?.message ?? "Failed to delete");
     }
   };
+
 
 
   // Quick Add handler (creates a task due on the anchor date at 5pm local)
@@ -882,8 +822,6 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                   const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
                   let y = e.clientY - rect.top;
                   if (y < 0) y = 0;
-                  const colHeight = hourHeightLocal * (showWorkHoursOnly ? (visibleEndHour - visibleStartHour) : 24);
-                  if (y > colHeight) y = colHeight;
                   const idx = Math.floor(y / slotHeight);
                   if (!collapseEmpty) setHoverSlot({ dayIdx, slotIdx: idx });
                   if (dragState && dragState.isActive && dragState.dayIdx === dayIdx) {
@@ -1230,7 +1168,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
       <div className="flex-1 min-w-0 space-y-6">
         <div>
         {/* Loading State */}
-        {(isCreating || !calendarDocId) && (
+        {needsCalendarDoc && (isCreating || !calendarDocId) && (
           <div className="flex items-center justify-center py-12">
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
@@ -1245,7 +1183,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
         )}
 
         {/* Main Calendar View */}
-        {calendarDocId && !isCreating && (
+        {(!needsCalendarDoc || (calendarDocId && !isCreating)) && (
           <div className="relative">
             {/* Header */}
             <PageHeroHeader

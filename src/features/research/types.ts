@@ -219,3 +219,62 @@ export interface StorySection {
   };
   dashboard_state: DashboardState;
 }
+
+// ------------------------------------------------------------------
+// BRIEFING & SIGNAL TYPES
+// ------------------------------------------------------------------
+
+export interface Evidence {
+  url?: string;
+  source: string;
+  title?: string;
+}
+
+export interface Signal {
+  headline: string;
+  synthesis?: string;
+  summary?: string;
+  evidence?: Evidence[];
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  impact?: 'high' | 'medium' | 'low';
+}
+
+export interface Action {
+  priority: 'high' | 'medium' | 'low';
+  headline?: string;
+  title?: string;
+  description?: string;
+  rationale?: string;
+  deadline?: string;
+}
+
+export interface ActData {
+  headline?: string;
+  synthesis?: string;
+  summary?: string;
+  stats?: Record<string, string | number>;
+  topSources?: Array<string | { name: string }>;
+  signals?: Signal[];
+  actions?: Action[];
+}
+
+export interface ExecutiveBriefRecord {
+  status: 'valid' | 'invalid';
+  brief?: DailyBriefPayload;
+  evidence?: Evidence[];
+}
+
+export interface DailyBriefPayload {
+  date: string;
+  actI?: ActData;
+  actII?: ActData;
+  actIII?: ActData;
+}
+
+export interface SourceSummary {
+  totalItems: number;
+  breakdown: Array<{
+    source: string;
+    count: number;
+  }>;
+}

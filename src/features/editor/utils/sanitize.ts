@@ -58,8 +58,8 @@ export const sanitizeProseMirrorContent = (content: any): any => {
       // Extract text content from taskItem
       const textContent = content.content
         ? content.content
-            .map((node: any) => sanitizeProseMirrorContent(node))
-            .filter((node: any) => node !== null)
+          .map((node: any) => sanitizeProseMirrorContent(node))
+          .filter((node: any) => node !== null)
         : [];
 
       return {
@@ -91,12 +91,26 @@ export const sanitizeProseMirrorContent = (content: any): any => {
       const blockContainerTypes = ['doc', 'blockGroup', 'blockContainer'];
       if (blockContainerTypes.includes(content.type)) {
         sanitized = sanitized.map((child: any) => {
-          if (child && typeof child === 'object' && child.type === 'text' && typeof child.text === 'string') {
+          if (!child || typeof child !== 'object') return child;
+
+          if (child.type === 'text' && typeof child.text === 'string') {
             return {
-              type: 'paragraph',
-              content: [child],
+              type: 'blockContainer',
+              content: [
+                { type: 'paragraph', attrs: { textAlignment: 'left' }, content: [child] }
+              ]
             };
           }
+
+          // If it's a structural node but not wrapped in blockContainer, wrap it
+          const needsWrapper = ['paragraph', 'heading', 'blockquote', 'codeBlock', 'bulletList', 'orderedList', 'checkListItem'].includes(child.type);
+          if (needsWrapper) {
+            return {
+              type: 'blockContainer',
+              content: [child]
+            };
+          }
+
           return child;
         });
       }

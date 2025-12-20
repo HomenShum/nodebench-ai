@@ -6,6 +6,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["Inter var", ...fontFamily.sans],
+        serif: ["Georgia", "serif"],
       },
       borderRadius: {
         DEFAULT: "8px",

@@ -23,9 +23,15 @@ export interface DashboardSectionProps {
   className?: string;
   onDataPointClick?: (point: ChartDataPointContext) => void;
   historyDays?: number;
+  activeAct?: "actI" | "actII" | "actIII";
 }
 
-function DashboardSectionInner({ className = "", onDataPointClick, historyDays = 7 }: DashboardSectionProps) {
+function DashboardSectionInner({
+  className = "",
+  onDataPointClick,
+  historyDays = 7,
+  activeAct = "actI"
+}: DashboardSectionProps) {
   const [selectedDate, setSelectedDate] = useBriefDateSelection();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -45,6 +51,18 @@ function DashboardSectionInner({ className = "", onDataPointClick, historyDays =
   );
 
   const refreshMetrics = useAction(api.domains.research.dashboardQueries.refreshDashboardMetrics);
+
+  // Deep wiring: Real-time agent plans
+  const agentPlans = useQuery(
+    api.domains.agents.agentPlanning.listPlans,
+    { limit: 3 }
+  );
+
+  const workflowSteps = useMemo(() => {
+    if (!agentPlans || agentPlans.length === 0) return [];
+    const latestPlan = agentPlans[0];
+    return latestPlan.steps || [];
+  }, [agentPlans]);
 
   const snapshot = selectedDate ? dateSnapshot : latestSnapshot;
 
@@ -188,7 +206,12 @@ function DashboardSectionInner({ className = "", onDataPointClick, historyDays =
         </button>
       </div>
 
-      <StickyDashboard data={snapshot.dashboardMetrics} onDataPointClick={onDataPointClick} />
+      <StickyDashboard
+        data={snapshot.dashboardMetrics}
+        onDataPointClick={onDataPointClick}
+        activeAct={activeAct}
+        workflowSteps={workflowSteps}
+      />
 
       {availableDates.length > 1 && (
         <div className="mt-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
@@ -201,11 +224,10 @@ function DashboardSectionInner({ className = "", onDataPointClick, historyDays =
                 key={date}
                 type="button"
                 onClick={() => setSelectedDate(date === selectedDate ? null : date)}
-                className={`px-2 py-1 text-[10px] rounded transition-colors ${
-                  date === displayDate
+                className={`px-2 py-1 text-[10px] rounded transition-colors ${date === displayDate
                     ? "bg-indigo-600 text-white font-medium"
                     : "bg-white hover:bg-slate-100 text-slate-600 border border-slate-200"
-                }`}
+                  }`}
                 title={`View data from ${date}`}
               >
                 {new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}

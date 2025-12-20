@@ -99,6 +99,51 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
     return memory?.context?.sourceSummary ?? null;
   }, [latestBriefMemory]);
 
+  // Temporal deltas (today vs. yesterday)
+  const deltas = useMemo(() => {
+    if (!dashboardMetrics || !dashboardHistory || dashboardHistory.length < 2) {
+      return null;
+    }
+
+    const today = dashboardMetrics;
+    const yesterday = (dashboardHistory[1] as any)?.dashboardMetrics;
+
+    if (!yesterday) return null;
+
+    // Calculate deltas for key metrics
+    const calcDelta = (todayVal: number | undefined, yesterdayVal: number | undefined) => {
+      if (todayVal === undefined || yesterdayVal === undefined) return null;
+      return todayVal - yesterdayVal;
+    };
+
+    return {
+      // Key stats deltas
+      keyStats: today.keyStats?.map((stat: any, i: number) => {
+        const yesterdayStat = yesterday.keyStats?.[i];
+        const todayValue = parseFloat(stat.value?.replace(/[^0-9.-]/g, '')) || 0;
+        const yesterdayValue = parseFloat(yesterdayStat?.value?.replace(/[^0-9.-]/g, '')) || 0;
+        return {
+          label: stat.label,
+          delta: todayValue - yesterdayValue
+        };
+      }) ?? [],
+      // Tech readiness deltas
+      techReadiness: {
+        existing: calcDelta(today.techReadiness?.existing, yesterday.techReadiness?.existing),
+        emerging: calcDelta(today.techReadiness?.emerging, yesterday.techReadiness?.emerging),
+        sciFi: calcDelta(today.techReadiness?.sciFi, yesterday.techReadiness?.sciFi),
+      },
+      // Capabilities deltas
+      capabilities: today.capabilities?.map((cap: any, i: number) => {
+        const yesterdayCap = yesterday.capabilities?.[i];
+        return {
+          label: cap.label,
+          delta: calcDelta(cap.score, yesterdayCap?.score)
+        };
+      }) ?? []
+    };
+  }, [dashboardMetrics, dashboardHistory]);
+
   return {
     // Data
     briefMemory: latestBriefMemory,
@@ -106,6 +151,7 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
     evidence,
     dashboardMetrics,
     sourceSummary,
+    deltas,
     taskResults: latestBriefTaskResults,
 
     // Dates

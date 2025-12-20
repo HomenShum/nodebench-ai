@@ -30,7 +30,6 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
       }
 
       if (Array.isArray(node)) {
-        // Flatten arrays (from taskList conversion) and filter nulls
         return node
           .map((child: unknown) => sanitize(child))
           .flat()
@@ -40,99 +39,126 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
       if (typeof node === "object") {
         const pmNode = node as PMLikeNode;
         const nodeType = typeof pmNode.type === "string" ? pmNode.type : undefined;
-        if (nodeType) {
-          // Convert mention inline content to styled text
-          if (nodeType === "mention") {
-            const label = pmNode.attrs?.label || pmNode.attrs?.id || "";
-            return {
-              type: "text",
-              text: `@${label}`,
-              marks: [
-                { type: "textColor", attrs: { stringValue: "#8400ff" } },
-                { type: "backgroundColor", attrs: { stringValue: "#8400ff33" } },
-              ],
-            };
-          }
 
-          // Convert hashtag inline content to styled text
-          if (nodeType === "hashtag") {
-            const name = pmNode.attrs?.name || pmNode.attrs?.hashtag || pmNode.attrs?.label || "";
-            return {
-              type: "text",
-              text: `#${name}`,
-              marks: [
-                { type: "textColor", attrs: { stringValue: "#0ea5e9" } },
-                { type: "backgroundColor", attrs: { stringValue: "#0ea5e933" } },
-              ],
-            };
-          }
+        // Convert mention inline content to styled text
+        if (nodeType === "mention") {
+          const label = pmNode.attrs?.label || pmNode.attrs?.id || "";
+          return {
+            type: "text",
+            text: `@${label}`,
+            marks: [
+              { type: "textColor", attrs: { stringValue: "#8400ff" } },
+              { type: "backgroundColor", attrs: { stringValue: "#8400ff33" } },
+            ],
+          };
+        }
 
-          // Convert TipTap taskList - return sanitized children (taskItems become checkListItems)
-          if (nodeType === "taskList") {
-            if (Array.isArray(pmNode.content)) {
-              return pmNode.content
-                .map((child: unknown) => sanitize(child))
-                .flat()
-                .filter((child: unknown) => child !== null);
-            }
-            return null;
-          }
+        // Convert hashtag inline content to styled text
+        if (nodeType === "hashtag") {
+          const name = pmNode.attrs?.name || pmNode.attrs?.hashtag || pmNode.attrs?.label || "";
+          return {
+            type: "text",
+            text: `#${name}`,
+            marks: [
+              { type: "textColor", attrs: { stringValue: "#0ea5e9" } },
+              { type: "backgroundColor", attrs: { stringValue: "#0ea5e933" } },
+            ],
+          };
+        }
 
-          // Convert TipTap taskItem to BlockNote checkListItem
-          if (nodeType === "taskItem") {
-            const checked = pmNode.attrs?.checked ?? false;
-            const sanitizedContent = Array.isArray(pmNode.content)
-              ? pmNode.content
-                  .map((child: unknown) => sanitize(child))
-                  .flat()
-                  .filter((child: unknown) => child !== null)
-              : [];
-
-            return {
-              type: "checkListItem",
-              attrs: {
-                checked: checked,
-              },
-              content: sanitizedContent.length > 0 ? sanitizedContent : undefined,
-            };
-          }
-
-          // Remove unsupported block node types
-          const unsupportedTypes = ["horizontalRule"];
-          if (unsupportedTypes.includes(nodeType)) {
-            return null;
-          }
-
+        // Convert TipTap taskList - return sanitized children (taskItems become checkListItems)
+        if (nodeType === "taskList") {
           if (Array.isArray(pmNode.content)) {
-            let sanitizedContent = pmNode.content
+            return pmNode.content
               .map((child: unknown) => sanitize(child))
               .flat()
               .filter((child: unknown) => child !== null);
+          }
+          return null;
+        }
 
-            // For doc/blockGroup/blockContainer nodes, wrap any bare text nodes in paragraphs
-            // BlockNote expects bnBlock children, not raw text nodes
-            const blockContainerTypes = ["doc", "blockGroup", "blockContainer"];
-            if (blockContainerTypes.includes(nodeType)) {
-              sanitizedContent = sanitizedContent.map((child) => {
-                if (child && typeof child === "object") {
-                  const childNode = child as PMLikeNode;
-                  // If it's a text node at the block level, wrap it in a paragraph
-                  if (childNode.type === "text" && typeof childNode.text === "string") {
-                    return {
-                      type: "paragraph",
-                      content: [child],
-                    } as PMLikeNode;
-                  }
-                }
-                return child;
-              }) as ({} | undefined)[];
-            }
+        // Convert TipTap taskItem to BlockNote checkListItem
+        if (nodeType === "taskItem") {
+          const checked = pmNode.attrs?.checked ?? false;
+          const sanitizedContent = Array.isArray(pmNode.content)
+            ? pmNode.content
+              .map((child: unknown) => sanitize(child))
+              .flat()
+              .filter((child: unknown) => child !== null)
+            : [];
 
+          return {
+            type: "blockContainer",
+            content: [
+              {
+                type: "checkListItem",
+                attrs: { checked },
+                content: sanitizedContent.length > 0 ? sanitizedContent : undefined,
+              }
+            ]
+          };
+        }
+
+        // Convert standard TipTap paragraph/heading to BlockNote blocks if they are top-level
+        const standardBlocks = ["paragraph", "heading", "blockquote", "codeBlock", "bulletList", "orderedList"];
+        if (nodeType && standardBlocks.includes(nodeType)) {
+          // If this is inside a doc/blockGroup, it MUST be wrapped in blockContainer
+          // However, we handle that in the parent's content mapping below.
+          // For now, just ensure the attributes are safe.
+          const attrs = { ...pmNode.attrs };
+          if (nodeType === "paragraph" || nodeType === "heading") {
+            attrs.textAlignment = attrs.textAlignment || "left";
+          }
+
+          if (Array.isArray(pmNode.content)) {
             return {
               ...pmNode,
-              content: sanitizedContent.length > 0 ? sanitizedContent : undefined,
+              attrs,
+              content: pmNode.content.map(c => sanitize(c)).flat().filter(c => c !== null)
             };
           }
+          return { ...pmNode, attrs };
+        }
+
+        if (Array.isArray(pmNode.content)) {
+          let sanitizedContent = pmNode.content
+            .map((child: unknown) => sanitize(child))
+            .flat()
+            .filter((child: unknown) => child !== null);
+
+          // For doc/blockGroup/blockContainer nodes, ensure children are valid blocks
+          const structureTypes = ["doc", "blockGroup", "blockContainer"];
+          if (nodeType && structureTypes.includes(nodeType)) {
+            sanitizedContent = sanitizedContent.map((child: any) => {
+              if (!child || typeof child !== "object") return child;
+
+              // If it's a bare text node, wrap in blockContainer -> paragraph
+              if (child.type === "text") {
+                return {
+                  type: "blockContainer",
+                  content: [
+                    { type: "paragraph", attrs: { textAlignment: "left" }, content: [child] }
+                  ]
+                };
+              }
+
+              // If it's a paragraph/heading BUT not inside blockContainer, wrap it
+              const needsWrapper = ["paragraph", "heading", "blockquote", "codeBlock", "bulletList", "orderedList", "checkListItem"].includes(child.type);
+              if (needsWrapper) {
+                return {
+                  type: "blockContainer",
+                  content: [child]
+                };
+              }
+
+              return child;
+            });
+          }
+
+          return {
+            ...pmNode,
+            content: sanitizedContent.length > 0 ? sanitizedContent : undefined,
+          };
         }
       }
 
@@ -275,41 +301,47 @@ export const createDocumentWithInitialSnapshot = mutation({
       let i2 = 0;
       while (i2 < blocksInput.length) {
         const b = blocksInput[i2] ?? {};
+        let blockNode: PMNode | null = null;
+
         if (b.type === "bulletListItem") {
           const run: any[] = [];
           while (i2 < blocksInput.length && blocksInput[i2]?.type === "bulletListItem") {
             run.push(blocksInput[i2]); i2++;
           }
-          topLevel.push({ type: "bulletList", content: run.map(convertBulletItem) });
-          continue;
-        }
-        if (b.type === "checkListItem") {
+          blockNode = { type: "bulletList", content: run.map(convertBulletItem) };
+        } else if (b.type === "checkListItem") {
           const run: any[] = [];
           while (i2 < blocksInput.length && blocksInput[i2]?.type === "checkListItem") {
             run.push(blocksInput[i2]); i2++;
           }
-          topLevel.push({ type: "taskList", content: run.map(convertTaskItem) });
-          continue;
+          blockNode = { type: "taskList", content: run.map(convertTaskItem) };
+        } else {
+          switch (b.type) {
+            case "heading":
+              blockNode = { type: "heading", attrs: { textAlignment: "left", level: b.level || 1 }, content: [pmText(String(b.text ?? ""))] };
+              break;
+            case "quote":
+              blockNode = { type: "blockquote", attrs: { textAlignment: "left" }, content: [pmText(String(b.text ?? ""))] };
+              break;
+            case "codeBlock":
+              blockNode = { type: "codeBlock", attrs: { language: b.lang || "text" }, content: b.text ? [pmText(String(b.text))] : [] };
+              break;
+            case "horizontalRule":
+              blockNode = { type: "horizontalRule", attrs: {} };
+              break;
+            case "paragraph":
+            default:
+              blockNode = pmParagraph(String(b.text ?? ""));
+          }
+          i2++;
         }
-        switch (b.type) {
-          case "heading":
-            topLevel.push({ type: "heading", attrs: { textAlignment: "left", level: b.level || 1 }, content: [pmText(String(b.text ?? ""))] });
-            break;
-          case "quote":
-            // Use the standard TipTap/ProseMirror node name "blockquote"
-            topLevel.push({ type: "blockquote", attrs: { textAlignment: "left" }, content: [pmText(String(b.text ?? ""))] });
-            break;
-          case "codeBlock":
-            topLevel.push({ type: "codeBlock", attrs: { language: b.lang || "text" }, content: b.text ? [pmText(String(b.text))] : [] });
-            break;
-          case "horizontalRule":
-            topLevel.push({ type: "horizontalRule", attrs: {} });
-            break;
-          case "paragraph":
-          default:
-            topLevel.push(pmParagraph(String(b.text ?? "")));
+
+        if (blockNode) {
+          topLevel.push({
+            type: "blockContainer",
+            content: [blockNode]
+          });
         }
-        i2++;
       }
       contentObject = { type: "doc", content: topLevel } as object;
     }

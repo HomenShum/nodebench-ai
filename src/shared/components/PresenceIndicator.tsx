@@ -60,12 +60,59 @@ function PresenceCore({ documentId, userId, intervalMs }: PresenceIndicatorProps
     return null;
   }
 
+  // Generate avatar colors based on userId hash
+  const getAvatarColor = (id: string): string => {
+    const colors = [
+      "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-pink-500",
+      "bg-amber-500", "bg-cyan-500", "bg-rose-500", "bg-indigo-500",
+    ];
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
+
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-600">
-        {validPresenceState.length === 1 ? "1 person" : `${validPresenceState.length} people`} editing
+      {/* Overlapping Avatar Bubbles */}
+      <div className="flex -space-x-2">
+        {validPresenceState.slice(0, 5).map((user: any, index: number) => {
+          const isCurrentUser = user.userId === userId;
+          const initial = (user.name || user.userId || "?").charAt(0).toUpperCase();
+          const avatarColor = getAvatarColor(user.userId || "");
+
+          return (
+            <div
+              key={user.userId || index}
+              className={`relative w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 border-white shadow-sm ${avatarColor} ${isCurrentUser ? "ring-2 ring-blue-400 ring-offset-1" : ""}`}
+              title={isCurrentUser ? "You" : (user.name || `User ${user.userId?.slice(-4)}`)}
+              style={{ zIndex: validPresenceState.length - index }}
+            >
+              {user.image ? (
+                <img src={user.image} alt="" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                initial
+              )}
+              {isCurrentUser && (
+                <span className="absolute -bottom-1 -right-1 bg-blue-500 text-[8px] text-white px-1 rounded-sm font-bold shadow">
+                  YOU
+                </span>
+              )}
+            </div>
+          );
+        })}
+        {validPresenceState.length > 5 && (
+          <div
+            className="w-7 h-7 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-medium border-2 border-white shadow-sm"
+            title={`+${validPresenceState.length - 5} more`}
+          >
+            +{validPresenceState.length - 5}
+          </div>
+        )}
+      </div>
+
+      {/* Label */}
+      <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">
+        {validPresenceState.length === 1 ? "just you" : `${validPresenceState.length} editing`}
       </span>
-      <FacePile presenceState={validPresenceState} />
     </div>
   );
 }

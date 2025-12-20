@@ -70,19 +70,23 @@ interface KPITileProps {
 
 function KPITile({ icon, label, value, sublabel, color }: KPITileProps) {
   const colorClasses = {
-    blue: "bg-blue-50 text-blue-700 border-blue-200",
-    green: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    amber: "bg-amber-50 text-amber-700 border-amber-200",
-    red: "bg-red-50 text-red-700 border-red-200",
+    blue: "text-blue-600 bg-blue-50/50 border-blue-100",
+    green: "text-emerald-600 bg-emerald-50/50 border-emerald-100",
+    amber: "text-amber-600 bg-amber-50/50 border-amber-100",
+    red: "text-red-600 bg-red-50/50 border-red-100",
   };
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${colorClasses[color]}`}>
-      <div className="flex-shrink-0">{icon}</div>
+    <div className={`flex items-center gap-5 px-6 py-5 rounded-2xl border backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:translate-y-[-2px] group ${colorClasses[color]}`}>
+      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white shadow-xl shadow-gray-200/20 group-hover:scale-110 transition-transform flex items-center justify-center">
+        <div className="[&>svg]:w-6 [&>svg]:h-6">
+          {icon}
+        </div>
+      </div>
       <div className="min-w-0">
-        <div className="text-xs font-medium uppercase tracking-wide opacity-70">{label}</div>
-        <div className="text-lg font-semibold leading-tight">{value}</div>
-        {sublabel && <div className="text-xs opacity-60 truncate">{sublabel}</div>}
+        <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 font-outfit">{label}</div>
+        <div className="text-2xl font-serif font-bold leading-none tracking-tight text-gray-900">{value}</div>
+        {sublabel && <div className="text-[11px] font-bold opacity-30 truncate mt-1.5 font-mono">{sublabel}</div>}
       </div>
     </div>
   );
@@ -103,11 +107,10 @@ function FilterChip({ label, isSelected, onClick }: FilterChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-        isSelected
-          ? "bg-slate-900 text-white"
-          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-      }`}
+      className={`px-4 py-2 text-[10px] font-bold rounded-xl transition-all tracking-[0.1em] uppercase ${isSelected
+        ? "bg-gray-900 text-white shadow-xl shadow-gray-400/20 translate-y-[-1px]"
+        : "bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-50 border border-gray-100"
+        }`}
     >
       {label}
     </button>
@@ -173,54 +176,54 @@ export function ExecutiveBriefHeader({
   const confidenceColor = quality?.confidence?.level === "high"
     ? "green" as const
     : quality?.confidence?.level === "low"
-    ? "red" as const
-    : "amber" as const;
+      ? "red" as const
+      : "amber" as const;
   const confidenceSublabel = quality?.confidence?.hasDisagreement
     ? "Sources disagree"
     : quality?.confidence?.level === "high"
-    ? "Sources agree"
-    : undefined;
+      ? "Sources agree"
+      : undefined;
 
   return (
-    <header className={`bg-white border border-slate-200 rounded-xl shadow-sm ${className ?? ""}`}>
+    <header className={`bg-white/80 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-sm overflow-hidden ${className ?? ""}`}>
       {/* Top row: Headline + Date */}
-      <div className="px-6 py-4 border-b border-slate-100">
+      <div className="px-8 py-6 border-b border-gray-50/50 bg-gradient-to-r from-gray-50/30 to-transparent">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-3xl font-serif font-bold text-gray-900 tracking-tight italic">
               {effectiveHeadline}
             </h1>
-            <p className="mt-1 text-sm text-slate-600 leading-relaxed">
+            <p className="mt-2 text-base text-gray-500 font-medium leading-relaxed max-w-2xl">
               {effectiveThesis}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-slate-500 flex-shrink-0">
-            <Calendar className="w-4 h-4" />
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100/50 rounded-full text-[11px] font-bold text-gray-400 uppercase tracking-widest flex-shrink-0">
+            <Calendar className="w-3 h-3" />
             <span>{effectiveDate}</span>
           </div>
         </div>
       </div>
 
       {/* KPI Tiles Row */}
-      <div className="px-6 py-3 border-b border-slate-100">
-        <div className="flex items-center gap-4">
+      <div className="px-8 py-6 border-b border-gray-50/50">
+        <div className="flex items-center gap-5">
           <KPITile
-            icon={<Database className="w-4 h-4" />}
-            label="Coverage"
+            icon={<Database className="w-5 h-5" />}
+            label="Digital Coverage"
             value={coverageValue}
             sublabel={coverageSublabel}
             color="blue"
           />
           <KPITile
-            icon={<Clock className="w-4 h-4" />}
-            label="Freshness"
+            icon={<Clock className="w-5 h-5" />}
+            label="Signal Freshness"
             value={freshnessValue}
             sublabel={freshnessSublabel}
             color="green"
           />
           <KPITile
-            icon={<Shield className="w-4 h-4" />}
-            label="Confidence"
+            icon={<Shield className="w-5 h-5" />}
+            label="Asset Confidence"
             value={confidenceValue}
             sublabel={confidenceSublabel}
             color={confidenceColor}
@@ -229,11 +232,11 @@ export function ExecutiveBriefHeader({
       </div>
 
       {/* Filters Row */}
-      <div className="px-6 py-2 flex items-center gap-6 overflow-x-auto">
+      <div className="px-8 py-3 flex items-center gap-8 overflow-x-auto bg-gray-50/20">
         {/* Time Window */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <div className="flex gap-1">
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Horizon</span>
+          <div className="flex gap-1.5">
             {timeWindows.map((tw) => (
               <FilterChip
                 key={tw.value}
@@ -247,9 +250,9 @@ export function ExecutiveBriefHeader({
 
         {/* Topic Tags */}
         {effectiveTopics.length > 0 && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Tag className="w-3.5 h-3.5 text-slate-400" />
-            <div className="flex gap-1 flex-wrap">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Focus</span>
+            <div className="flex gap-1.5 flex-wrap">
               {effectiveTopics.slice(0, 6).map((tag) => (
                 <FilterChip
                   key={tag}
@@ -261,27 +264,9 @@ export function ExecutiveBriefHeader({
             </div>
           </div>
         )}
-
-        {/* Source Types */}
-        {effectiveSources.length > 0 && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Database className="w-3.5 h-3.5 text-slate-400" />
-            <div className="flex gap-1">
-              {effectiveSources.slice(0, 4).map((source) => (
-                <FilterChip
-                  key={source}
-                  label={source}
-                  isSelected={selectedSources.includes(source)}
-                  onClick={() => handleSourceClick?.(source)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );
 }
-
 export default ExecutiveBriefHeader;
 

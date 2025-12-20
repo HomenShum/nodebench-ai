@@ -22,6 +22,26 @@ A comprehensive AI-powered document management and research platform with multi-
 - 🧭 **Persona Day Starter** - Right-rail presets (banking/product/research/sales/general) that launch Fast/Arbitrage Agent briefs
 - 📑 **Deal & Move Rail** - Overnight moves, deal list, and watchlist flyouts with dates, sources, FDA/patent/paper context
 - 📧 **Email Intelligence Pipeline** - Gmail parsing, entity extraction, dossier + PRD composer workflows with scheduled sweeps and scrollytelling dossier UI
+
+---
+
+## Directory Structure & Feature Mapping
+
+NodeBench AI is organized into modular features. Below is a map of core features to their primary implementation paths.
+
+### 📂 Core Features
+
+| Feature | Frontend (UI/Views) | Backend (Convex) | Description |
+|---------|---------------------|-------------------|-------------|
+| **Documents Hub** | `src/features/documents` | `convex/domains/documents` | Document management, folders, and grid/list views. |
+| **Unified Editor** | `src/features/editor` | `convex/domains/documents` | AI-powered rich text editor (BlockNote/TipTap). |
+| **Agents Hub** | `src/features/agents` | `convex/domains/agents` | Specialized AI agents management and conversation. |
+| **Fast Agent Panel** | `@/agents/components/FastAgentPanel` | `convex/domains/agents` | Real-time streaming chat with rich media previews. |
+| **Calendar Hub** | `src/features/calendar` | `convex/domains/calendar` | Unified view for tasks, events, and daily notes. |
+| **Roadmap Hub** | `@/timelineRoadmap/` | `convex/domains/analytics` | Strategic analytics, OKR tracking, and activity heatmaps. |
+| **Research Hub** | `src/features/research` | `convex/domains/research` | Scrollytelling dossiers and automated source ingestion. |
+| **Search Engine** | `src/features/search` | `convex/domains/search` | Global semantic search and result caching. |
+
 ---
 
 ## Arbitrage Agent Integration

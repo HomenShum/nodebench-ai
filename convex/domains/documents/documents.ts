@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 import { api, internal, components } from "../../_generated/api";
 import { extractMediaFromMessages } from "../../lib/dossierHelpers";
 
@@ -827,6 +827,35 @@ export const getById = query({
     if (!document) return null;
     if (!document.isPublic && document.createdBy !== userId) return null;
     return document;
+  },
+});
+
+/**
+ * Get the ancestor chain (parent documents) for breadcrumb navigation.
+ * Returns an array of ancestors from root to immediate parent.
+ */
+export const getAncestors = query({
+  args: { documentId: v.id("documents") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const ancestors: Array<{ _id: Id<"documents">; title: string }> = [];
+
+    let currentDoc: Doc<"documents"> | null = await ctx.db.get(args.documentId);
+    if (!currentDoc) return ancestors;
+
+    // Walk up the parent chain
+    while (currentDoc?.parentId) {
+      const parent: Doc<"documents"> | null = await ctx.db.get(currentDoc.parentId);
+      if (!parent) break;
+
+      // Check access
+      if (!parent.isPublic && parent.createdBy !== userId) break;
+
+      ancestors.unshift({ _id: parent._id, title: parent.title || "Untitled" });
+      currentDoc = parent;
+    }
+
+    return ancestors;
   },
 });
 

@@ -46,28 +46,28 @@ export interface FocusSyncContextValue {
 }
 
 const defaultFocusState: FocusState = {
-	  currentAct: "actI",
-	  focusedDataIndex: null,
-	  hoveredSpanId: null,
-	  activeSectionId: null,
-	  focusedSeriesId: null,
-	  focusSource: null,
+  currentAct: "actI",
+  focusedDataIndex: null,
+  hoveredSpanId: null,
+  activeSectionId: null,
+  focusedSeriesId: null,
+  focusSource: null,
 };
 
 // Fallback context for components rendered outside of a FocusSyncProvider.
-// This prevents runtime errors (e.g. on the WelcomeLanding scrolly view)
+// This prevents runtime errors (e.g. on the ResearchHub scrolly view)
 // while still exposing that focus sync is inactive via isConnected = false.
-const noop = () => {};
+const noop = () => { };
 
 const fallbackContext: FocusSyncContextValue = {
-	  focusState: defaultFocusState,
-	  isConnected: false,
-	  briefId: null,
-	  onChartHover: noop,
-	  onTextHover: noop,
-	  onActChange: noop,
-	  onSectionChange: noop,
-	  clearFocus: noop,
+  focusState: defaultFocusState,
+  isConnected: false,
+  briefId: null,
+  onChartHover: noop,
+  onTextHover: noop,
+  onActChange: noop,
+  onSectionChange: noop,
+  clearFocus: noop,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -88,7 +88,7 @@ interface FocusSyncProviderProps {
 export function FocusSyncProvider({ children, briefId }: FocusSyncProviderProps) {
   // Subscribe to focus state from Convex
   const convexFocusState = useQuery(api.domains.dossier.focusState.getFocusState, { briefId });
-  
+
   // Mutations for updating focus
   const updateFocusMutation = useMutation(api.domains.dossier.focusState.updateFocus);
   const clearFocusMutation = useMutation(api.domains.dossier.focusState.clearFocus);
@@ -177,10 +177,10 @@ export function FocusSyncProvider({ children, briefId }: FocusSyncProviderProps)
 
 export function useFocusSync(): FocusSyncContextValue {
   const context = useContext(FocusSyncContext);
-	  if (!context) {
-	    return fallbackContext;
-	  }
-	  return context;
+  if (!context) {
+    return fallbackContext;
+  }
+  return context;
 }
 
 /**

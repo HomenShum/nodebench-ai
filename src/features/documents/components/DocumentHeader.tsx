@@ -3,6 +3,7 @@ import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Doc } from "../../../../convex/_generated/dataModel";
 import { PresenceIndicator } from "@/shared/components/PresenceIndicator";
+import { DocumentBreadcrumbs } from "./DocumentBreadcrumbs";
 import {
   MoreHorizontal,
   Star,
@@ -230,6 +231,9 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
   return (
     <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
+        {/* Breadcrumb Navigation */}
+        <DocumentBreadcrumbs documentId={document._id} />
+
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-3">
           {/* Back Button and Public/Private Status */}
           <div className="flex items-center gap-2">
@@ -250,8 +254,8 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                 <span className="text-sm font-medium text-[var(--text-secondary)]">Public</span>
                 <span
                   className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${(document as any).allowPublicEdit
-                      ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/5'
-                      : 'border-[var(--border-color)] text-[var(--text-muted)] bg-[var(--bg-secondary)]'
+                    ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/5'
+                    : 'border-[var(--border-color)] text-[var(--text-muted)] bg-[var(--bg-secondary)]'
                     }`}
                   title={(document as any).allowPublicEdit ? 'Anyone with the link can edit' : 'Public view-only'}
                 >
@@ -517,8 +521,8 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               onClick={() => void handleGenerateTags()}
               disabled={isGenerating || !canGenerateTags}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-colors ${isGenerating || !canGenerateTags
-                  ? 'bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed'
-                  : 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary)]/20'
+                ? 'bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed'
+                : 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary)]/20'
                 }`}
               title={canGenerateTags ? 'Generate tags with AI' : 'Only the document owner can generate tags'}
             >

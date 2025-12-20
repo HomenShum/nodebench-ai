@@ -36,6 +36,7 @@ import { useAIKeyboard } from "../hooks/useAIKeyboard";
 import { useMentionMenu } from "../hooks/useMentionMenu";
 import { useHashtagMenu } from "../hooks/useHashtagMenu";
 import { useSlashMenuItems } from "../hooks/useSlashMenuItems";
+import { useFeedback } from "@/shared/hooks/useFeedback";
 
 // Re-export types for backwards compatibility
 export type { EditorMode, UnifiedEditorProps };
@@ -195,7 +196,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     serverMarkedRef.current = true;
     try {
       await setAgentsPrefs({ prefs: { [`doc.hasContent.${String(documentId)}`]: '1' } as any });
-    } catch {}
+    } catch { }
   }, [setAgentsPrefs, documentId]);
   // ProseMirror latest version preflight (to avoid creating when snapshots exist)
   const latestVersion = useQuery((api as any).prosemirror.latestVersion as any, { id: String(documentId) } as any) as number | null;
@@ -302,7 +303,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             editor.replaceBlocks(existing, newBlocks);
             seededDocCache.set(docKey, seed);
             // Mark document as having content
-            try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {} ; void markHasContent();
+            try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch { }; void markHasContent();
           }
         } catch (e) {
           console.warn('[UnifiedEditor] failed to seed from markdown', e);
@@ -341,7 +342,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         editor.replaceBlocks(existing, newBlocks);
         restoreCache.set(docKey, { seed, signal: explicitRestore ? restoreSignal : 0 });
         seededDocCache.set(docKey, seed);
-        try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {} ; void markHasContent();
+        try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch { }; void markHasContent();
       } catch (e) {
         console.warn('[UnifiedEditor] restore failed', e);
       }
@@ -455,6 +456,10 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       if (!actions.length) return;
       void applyActions(actions, detail);
       setPendingProposal(null);
+      // Trigger success feedback sound
+      try {
+        window.dispatchEvent(new CustomEvent('nodebench:feedback:success'));
+      } catch { /* noop */ }
     };
     window.addEventListener('nodebench:aiProposal', onProposal);
     window.addEventListener('nodebench:applyActions', onApply);
@@ -480,283 +485,283 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   // Bridge component that exposes PM context + accepts PM operations
   const PmBridge: React.FC<{ documentId: string | Id<"documents"> | undefined }>
     = ({ documentId }) => {
-    const { editor } = useCurrentEditor();
+      const { editor } = useCurrentEditor();
 
-    useEffect(() => {
-      if (!editor) return;
-      const buildContext = () => {
-        try {
-          const json = editor.state.doc.toJSON();
-          const { from, to } = editor.state.selection;
-          const nodes: any[] = [];
-          editor.state.doc.descendants((node: any, pos: number) => {
-            const entry: any = { type: node.type.name, from: pos, to: pos + node.nodeSize };
-            if (node.attrs && Object.keys(node.attrs).length) entry.attrs = node.attrs;
-            if (node.isText && typeof node.text === 'string') entry.text = node.text;
-            nodes.push(entry);
-          });
-          return { doc: json, selection: { from, to }, nodes };
-        } catch (e) {
-          console.warn('[PM Bridge] buildContext failed', e);
-          return null;
-        }
-      };
-
-      const onRequest = (evt: Event) => {
-        const e = evt as CustomEvent<{ requestId: string }>;
-        const ctx = buildContext();
-        try {
-          window.dispatchEvent(new CustomEvent('nodebench:ai:pmContext', {
-            detail: { requestId: e.detail?.requestId, documentId, context: ctx },
-          }));
-        } catch (err) {
-          console.warn('[PM Bridge] failed to dispatch pmContext', err);
-        }
-      };
-
-      const onApply = (evt: Event) => {
-        // Extended type for Deep Agent edit support with result callback
-        interface ApplyOperationsDetail {
-          operations?: any[];
-          documentId?: string;
-          documentVersion?: number; // Version at time of edit creation (OCC)
-          editId?: string; // Deep Agent edit ID for tracking
-          anchorOccurrenceStrategy?: "nearest" | "next" | "prev";
-          onResult?: (success: boolean, error?: string) => void; // Callback for result reporting
-        }
-        const e = evt as CustomEvent<ApplyOperationsDetail>;
-        const ops: any[] = Array.isArray(e.detail?.operations) ? e.detail?.operations : [];
-        const anchorOccurrenceStrategy = e.detail?.anchorOccurrenceStrategy;
-        const onResult = e.detail?.onResult;
-        const editId = e.detail?.editId;
-        const editDocVersion = e.detail?.documentVersion;
-
-        if (!ops.length) {
-          onResult?.(false, "No operations provided");
-          return;
-        }
-
-        // Optimistic Locking Validation: Check if document version has changed
-        // The edit was created at a specific version - if the document has changed since,
-        // the edit may be stale and could cause conflicts
-        if (typeof editDocVersion === 'number' && typeof safeLatestVersion === 'number') {
-          if (editDocVersion < safeLatestVersion) {
-            const versionDiff = safeLatestVersion - editDocVersion;
-            console.warn(`[PM Bridge] Version mismatch detected: edit version ${editDocVersion}, current version ${safeLatestVersion} (${versionDiff} versions behind)`);
-
-            // Allow small version differences (user may have made minor edits)
-            // but reject if too far behind (document has changed significantly)
-            const MAX_VERSION_DRIFT = 10; // Allow up to 10 versions of drift
-            if (versionDiff > MAX_VERSION_DRIFT) {
-              const errMsg = `Edit is stale: document has changed significantly (${versionDiff} versions behind). Please retry the edit.`;
-              console.error(`[PM Bridge] Rejecting stale edit ${editId}:`, errMsg);
-              onResult?.(false, errMsg);
-              return;
-            } else {
-              console.log(`[PM Bridge] Allowing edit with minor version drift (${versionDiff} versions)`);
-            }
-          }
-        }
-
-        // Track operation results for Deep Agent feedback
-        const operationErrors: string[] = [];
-
-        try {
-          editor.chain().focus();
-
-          // Build a text index to map plain-text offsets to PM positions
-          const segments: { text: string; plainStart: number; plainEnd: number; pmStart: number; pmEnd: number }[] = [];
-          let plainCursor = 0;
-          const doc = editor.state.doc;
-          doc.descendants((node, pos) => {
-            if (node.isText && typeof node.text === 'string') {
-              const text = node.text;
-              const pmStart = pos;
-              const pmEnd = pos + node.nodeSize; // for text, nodeSize === text.length
-              const plainStart = plainCursor;
-              const plainEnd = plainStart + text.length;
-              segments.push({ text, plainStart, plainEnd, pmStart, pmEnd });
-              plainCursor = plainEnd;
-            }
-          });
-          const fullPlain = segments.map(s => s.text).join('');
-          const plainToPm = (offset: number): number | null => {
-            if (offset < 0) return null;
-            for (const s of segments) {
-              if (offset >= s.plainStart && offset <= s.plainEnd) {
-                const delta = offset - s.plainStart;
-                return s.pmStart + delta;
-              }
-            }
-            return null;
-          };
-
-          const pmToPlain = (pos: number): number | null => {
-            for (const s of segments) {
-              const len = s.plainEnd - s.plainStart;
-              if (pos >= s.pmStart && pos <= s.pmStart + len) {
-                const delta = pos - s.pmStart;
-                return s.plainStart + delta;
-              }
-            }
-            return null;
-          };
-
-
-          for (const op of ops) {
-            if (!op || typeof op !== 'object') continue;
-
-            if (op.type === 'replace' && typeof op.from === 'number' && typeof op.to === 'number') {
-              const content = op.content ?? [];
-              editor.chain().deleteRange({ from: op.from, to: op.to }).insertContentAt(op.from, content).run();
-
-            } else if (op.type === 'insert' && typeof op.at === 'number') {
-              const content = op.content ?? [];
-              editor.chain().insertContentAt(op.at, content).run();
-
-            } else if (op.type === 'delete' && typeof op.from === 'number' && typeof op.to === 'number') {
-              editor.chain().deleteRange({ from: op.from, to: op.to }).run();
-
-            } else if (op.type === 'setAttrs' && typeof op.pos === 'number' && op.attrs && typeof op.attrs === 'object') {
-              // Best-effort node attribute update at a position
-              editor.commands.command(({ tr, state }) => {
-                try {
-                  const $pos = state.doc.resolve(op.pos);
-                  const node = $pos.nodeAfter || $pos.parent?.maybeChild($pos.index());
-                  if (!node) return false;
-                  const type = node.type;
-                  tr.setNodeMarkup(op.pos, type, { ...(node.attrs || {}), ...(op.attrs || {}) });
-                  return true;
-                } catch {
-                  return false;
-                }
-              });
-
-            } else if (op.type === 'anchoredReplace' && typeof op.anchor === 'string') {
-              // Support both old format (delete/insert) and new format (search/replace)
-              const anchor: string = op.anchor;
-              const toDelete: string = typeof op.delete === 'string' ? op.delete : (typeof op.search === 'string' ? op.search : '');
-              const toInsert: string = typeof op.insert === 'string' ? op.insert : (typeof op.replace === 'string' ? op.replace : '');
-
-              // Find all occurrences of the anchor in the flattened plain text
-              const occ: number[] = [];
-              if (anchor.length > 0) {
-                let i = 0;
-                while (i <= fullPlain.length) {
-                  const j = fullPlain.indexOf(anchor, i);
-                  if (j === -1) break;
-                  occ.push(j);
-                  i = j + Math.max(1, anchor.length);
-                }
-              }
-
-              if (occ.length === 0) {
-                const errMsg = `Anchor not found: "${anchor.slice(0, 50)}${anchor.length > 50 ? '...' : ''}"`;
-                console.warn('[PM Bridge] anchoredReplace: anchor not found', { anchor });
-                operationErrors.push(errMsg);
-                continue;
-              }
-
-              // Prefer the occurrence closest to the current selection; allow next/prev cycling
-              const selPm = editor.state.selection?.from ?? 0;
-              const selPlain = pmToPlain(selPm) ?? 0;
-              let nearestValue = occ[0];
-              let nearestIdx = 0;
-              let bestDist = Math.abs(nearestValue - selPlain);
-              for (let k = 0; k < occ.length; k++) {
-                const val = occ[k];
-                const d = Math.abs(val - selPlain);
-                if (d < bestDist) { bestDist = d; nearestValue = val; nearestIdx = k; }
-              }
-              let chosenIdx = nearestIdx;
-              if (anchorOccurrenceStrategy === 'next' && occ.length > 1) {
-                chosenIdx = (nearestIdx + 1) % occ.length;
-              } else if (anchorOccurrenceStrategy === 'prev' && occ.length > 1) {
-                chosenIdx = (nearestIdx - 1 + occ.length) % occ.length;
-              }
-              const bestIdx = occ[chosenIdx];
-
-              const fromPlain = bestIdx + anchor.length;
-              const toPlain = fromPlain + toDelete.length;
-              const pmFrom = plainToPm(fromPlain);
-              const pmTo = plainToPm(toPlain);
-              if (typeof pmFrom === 'number' && typeof pmTo === 'number') {
-                const chain = editor.chain().deleteRange({ from: pmFrom, to: pmTo });
-                if (toInsert) chain.insertContentAt(pmFrom, toInsert);
-                chain.run();
-              } else {
-                const errMsg = `Failed to map offsets for anchor: "${anchor.slice(0, 30)}..."`;
-                console.warn('[PM Bridge] anchoredReplace: failed to map plain offsets', { fromPlain, toPlain, anchor });
-                operationErrors.push(errMsg);
-              }
-
-            } else if (op.type === 'replaceDocument' && typeof op.content === 'string') {
-              editor.commands.clearContent(true);
-              if (op.content) editor.chain().insertContent(op.content).run();
-            }
-          }
-
-          // Report success/failure to Deep Agent via callback
-          if (onResult) {
-            if (operationErrors.length > 0) {
-              onResult(false, operationErrors.join("; "));
-            } else {
-              onResult(true);
-            }
-          }
-        } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : String(err);
-          console.warn('[PM Bridge] apply operations failed', err);
-          // Report failure to Deep Agent
-          onResult?.(false, `Operation failed: ${errorMsg}`);
-        }
-      };
-
-      window.addEventListener('nodebench:ai:requestPmContext', onRequest as EventListener);
-      window.addEventListener('nodebench:ai:applyPmOperations', onApply as EventListener);
-      return () => {
-        window.removeEventListener('nodebench:ai:requestPmContext', onRequest as EventListener);
-        window.removeEventListener('nodebench:ai:applyPmOperations', onApply as EventListener);
-      };
-    }, [editor, documentId, safeLatestVersion]);
-
-    // Broadcast editor focus/selection with a lightweight preview for Chat auto-selection and chips
-    useEffect(() => {
-      const editor: any = (sync as any)?.editor;
-      if (!editor) return;
-      const emit = () => {
-        try {
-          // Prefer current block text; fallback to small slice of doc
-          let preview = '';
+      useEffect(() => {
+        if (!editor) return;
+        const buildContext = () => {
           try {
-            const blk = getCurrentOrLastBlock();
-            if (blk) preview = (getBlockText(blk) || '').slice(0, 200);
-          } catch {}
-          if (!preview) {
-            try {
-              const texts: string[] = [];
-              editor.state.doc.descendants((n: any) => { if (n.isText && typeof n.text === 'string') texts.push(n.text); });
-              preview = texts.join(' ').slice(0, 200);
-            } catch {}
+            const json = editor.state.doc.toJSON();
+            const { from, to } = editor.state.selection;
+            const nodes: any[] = [];
+            editor.state.doc.descendants((node: any, pos: number) => {
+              const entry: any = { type: node.type.name, from: pos, to: pos + node.nodeSize };
+              if (node.attrs && Object.keys(node.attrs).length) entry.attrs = node.attrs;
+              if (node.isText && typeof node.text === 'string') entry.text = node.text;
+              nodes.push(entry);
+            });
+            return { doc: json, selection: { from, to }, nodes };
+          } catch (e) {
+            console.warn('[PM Bridge] buildContext failed', e);
+            return null;
           }
-          window.dispatchEvent(new CustomEvent('nodebench:editor:focused', { detail: { documentId, preview } }));
-          // Persist a local flag indicating this doc has content, to avoid reseeding on next mount
-          if ((preview || '').trim().length > 0) {
-            try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {} ; void markHasContent();
-          }
-        } catch {}
-      };
-      try { emit(); } catch {}
-      try { editor.on('selectionUpdate', emit); } catch {}
-      try { editor.on('update', emit); } catch {}
-      return () => {
-        try { editor.off?.('selectionUpdate', emit); } catch {}
-        try { editor.off?.('update', emit); } catch {}
-      };
-    }, [sync.editor, documentId, getCurrentOrLastBlock, getBlockText]);
+        };
 
-    return null;
-  };
+        const onRequest = (evt: Event) => {
+          const e = evt as CustomEvent<{ requestId: string }>;
+          const ctx = buildContext();
+          try {
+            window.dispatchEvent(new CustomEvent('nodebench:ai:pmContext', {
+              detail: { requestId: e.detail?.requestId, documentId, context: ctx },
+            }));
+          } catch (err) {
+            console.warn('[PM Bridge] failed to dispatch pmContext', err);
+          }
+        };
+
+        const onApply = (evt: Event) => {
+          // Extended type for Deep Agent edit support with result callback
+          interface ApplyOperationsDetail {
+            operations?: any[];
+            documentId?: string;
+            documentVersion?: number; // Version at time of edit creation (OCC)
+            editId?: string; // Deep Agent edit ID for tracking
+            anchorOccurrenceStrategy?: "nearest" | "next" | "prev";
+            onResult?: (success: boolean, error?: string) => void; // Callback for result reporting
+          }
+          const e = evt as CustomEvent<ApplyOperationsDetail>;
+          const ops: any[] = Array.isArray(e.detail?.operations) ? e.detail?.operations : [];
+          const anchorOccurrenceStrategy = e.detail?.anchorOccurrenceStrategy;
+          const onResult = e.detail?.onResult;
+          const editId = e.detail?.editId;
+          const editDocVersion = e.detail?.documentVersion;
+
+          if (!ops.length) {
+            onResult?.(false, "No operations provided");
+            return;
+          }
+
+          // Optimistic Locking Validation: Check if document version has changed
+          // The edit was created at a specific version - if the document has changed since,
+          // the edit may be stale and could cause conflicts
+          if (typeof editDocVersion === 'number' && typeof safeLatestVersion === 'number') {
+            if (editDocVersion < safeLatestVersion) {
+              const versionDiff = safeLatestVersion - editDocVersion;
+              console.warn(`[PM Bridge] Version mismatch detected: edit version ${editDocVersion}, current version ${safeLatestVersion} (${versionDiff} versions behind)`);
+
+              // Allow small version differences (user may have made minor edits)
+              // but reject if too far behind (document has changed significantly)
+              const MAX_VERSION_DRIFT = 10; // Allow up to 10 versions of drift
+              if (versionDiff > MAX_VERSION_DRIFT) {
+                const errMsg = `Edit is stale: document has changed significantly (${versionDiff} versions behind). Please retry the edit.`;
+                console.error(`[PM Bridge] Rejecting stale edit ${editId}:`, errMsg);
+                onResult?.(false, errMsg);
+                return;
+              } else {
+                console.log(`[PM Bridge] Allowing edit with minor version drift (${versionDiff} versions)`);
+              }
+            }
+          }
+
+          // Track operation results for Deep Agent feedback
+          const operationErrors: string[] = [];
+
+          try {
+            editor.chain().focus();
+
+            // Build a text index to map plain-text offsets to PM positions
+            const segments: { text: string; plainStart: number; plainEnd: number; pmStart: number; pmEnd: number }[] = [];
+            let plainCursor = 0;
+            const doc = editor.state.doc;
+            doc.descendants((node, pos) => {
+              if (node.isText && typeof node.text === 'string') {
+                const text = node.text;
+                const pmStart = pos;
+                const pmEnd = pos + node.nodeSize; // for text, nodeSize === text.length
+                const plainStart = plainCursor;
+                const plainEnd = plainStart + text.length;
+                segments.push({ text, plainStart, plainEnd, pmStart, pmEnd });
+                plainCursor = plainEnd;
+              }
+            });
+            const fullPlain = segments.map(s => s.text).join('');
+            const plainToPm = (offset: number): number | null => {
+              if (offset < 0) return null;
+              for (const s of segments) {
+                if (offset >= s.plainStart && offset <= s.plainEnd) {
+                  const delta = offset - s.plainStart;
+                  return s.pmStart + delta;
+                }
+              }
+              return null;
+            };
+
+            const pmToPlain = (pos: number): number | null => {
+              for (const s of segments) {
+                const len = s.plainEnd - s.plainStart;
+                if (pos >= s.pmStart && pos <= s.pmStart + len) {
+                  const delta = pos - s.pmStart;
+                  return s.plainStart + delta;
+                }
+              }
+              return null;
+            };
+
+
+            for (const op of ops) {
+              if (!op || typeof op !== 'object') continue;
+
+              if (op.type === 'replace' && typeof op.from === 'number' && typeof op.to === 'number') {
+                const content = op.content ?? [];
+                editor.chain().deleteRange({ from: op.from, to: op.to }).insertContentAt(op.from, content).run();
+
+              } else if (op.type === 'insert' && typeof op.at === 'number') {
+                const content = op.content ?? [];
+                editor.chain().insertContentAt(op.at, content).run();
+
+              } else if (op.type === 'delete' && typeof op.from === 'number' && typeof op.to === 'number') {
+                editor.chain().deleteRange({ from: op.from, to: op.to }).run();
+
+              } else if (op.type === 'setAttrs' && typeof op.pos === 'number' && op.attrs && typeof op.attrs === 'object') {
+                // Best-effort node attribute update at a position
+                editor.commands.command(({ tr, state }) => {
+                  try {
+                    const $pos = state.doc.resolve(op.pos);
+                    const node = $pos.nodeAfter || $pos.parent?.maybeChild($pos.index());
+                    if (!node) return false;
+                    const type = node.type;
+                    tr.setNodeMarkup(op.pos, type, { ...(node.attrs || {}), ...(op.attrs || {}) });
+                    return true;
+                  } catch {
+                    return false;
+                  }
+                });
+
+              } else if (op.type === 'anchoredReplace' && typeof op.anchor === 'string') {
+                // Support both old format (delete/insert) and new format (search/replace)
+                const anchor: string = op.anchor;
+                const toDelete: string = typeof op.delete === 'string' ? op.delete : (typeof op.search === 'string' ? op.search : '');
+                const toInsert: string = typeof op.insert === 'string' ? op.insert : (typeof op.replace === 'string' ? op.replace : '');
+
+                // Find all occurrences of the anchor in the flattened plain text
+                const occ: number[] = [];
+                if (anchor.length > 0) {
+                  let i = 0;
+                  while (i <= fullPlain.length) {
+                    const j = fullPlain.indexOf(anchor, i);
+                    if (j === -1) break;
+                    occ.push(j);
+                    i = j + Math.max(1, anchor.length);
+                  }
+                }
+
+                if (occ.length === 0) {
+                  const errMsg = `Anchor not found: "${anchor.slice(0, 50)}${anchor.length > 50 ? '...' : ''}"`;
+                  console.warn('[PM Bridge] anchoredReplace: anchor not found', { anchor });
+                  operationErrors.push(errMsg);
+                  continue;
+                }
+
+                // Prefer the occurrence closest to the current selection; allow next/prev cycling
+                const selPm = editor.state.selection?.from ?? 0;
+                const selPlain = pmToPlain(selPm) ?? 0;
+                let nearestValue = occ[0];
+                let nearestIdx = 0;
+                let bestDist = Math.abs(nearestValue - selPlain);
+                for (let k = 0; k < occ.length; k++) {
+                  const val = occ[k];
+                  const d = Math.abs(val - selPlain);
+                  if (d < bestDist) { bestDist = d; nearestValue = val; nearestIdx = k; }
+                }
+                let chosenIdx = nearestIdx;
+                if (anchorOccurrenceStrategy === 'next' && occ.length > 1) {
+                  chosenIdx = (nearestIdx + 1) % occ.length;
+                } else if (anchorOccurrenceStrategy === 'prev' && occ.length > 1) {
+                  chosenIdx = (nearestIdx - 1 + occ.length) % occ.length;
+                }
+                const bestIdx = occ[chosenIdx];
+
+                const fromPlain = bestIdx + anchor.length;
+                const toPlain = fromPlain + toDelete.length;
+                const pmFrom = plainToPm(fromPlain);
+                const pmTo = plainToPm(toPlain);
+                if (typeof pmFrom === 'number' && typeof pmTo === 'number') {
+                  const chain = editor.chain().deleteRange({ from: pmFrom, to: pmTo });
+                  if (toInsert) chain.insertContentAt(pmFrom, toInsert);
+                  chain.run();
+                } else {
+                  const errMsg = `Failed to map offsets for anchor: "${anchor.slice(0, 30)}..."`;
+                  console.warn('[PM Bridge] anchoredReplace: failed to map plain offsets', { fromPlain, toPlain, anchor });
+                  operationErrors.push(errMsg);
+                }
+
+              } else if (op.type === 'replaceDocument' && typeof op.content === 'string') {
+                editor.commands.clearContent(true);
+                if (op.content) editor.chain().insertContent(op.content).run();
+              }
+            }
+
+            // Report success/failure to Deep Agent via callback
+            if (onResult) {
+              if (operationErrors.length > 0) {
+                onResult(false, operationErrors.join("; "));
+              } else {
+                onResult(true);
+              }
+            }
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.warn('[PM Bridge] apply operations failed', err);
+            // Report failure to Deep Agent
+            onResult?.(false, `Operation failed: ${errorMsg}`);
+          }
+        };
+
+        window.addEventListener('nodebench:ai:requestPmContext', onRequest as EventListener);
+        window.addEventListener('nodebench:ai:applyPmOperations', onApply as EventListener);
+        return () => {
+          window.removeEventListener('nodebench:ai:requestPmContext', onRequest as EventListener);
+          window.removeEventListener('nodebench:ai:applyPmOperations', onApply as EventListener);
+        };
+      }, [editor, documentId, safeLatestVersion]);
+
+      // Broadcast editor focus/selection with a lightweight preview for Chat auto-selection and chips
+      useEffect(() => {
+        const editor: any = (sync as any)?.editor;
+        if (!editor) return;
+        const emit = () => {
+          try {
+            // Prefer current block text; fallback to small slice of doc
+            let preview = '';
+            try {
+              const blk = getCurrentOrLastBlock();
+              if (blk) preview = (getBlockText(blk) || '').slice(0, 200);
+            } catch { }
+            if (!preview) {
+              try {
+                const texts: string[] = [];
+                editor.state.doc.descendants((n: any) => { if (n.isText && typeof n.text === 'string') texts.push(n.text); });
+                preview = texts.join(' ').slice(0, 200);
+              } catch { }
+            }
+            window.dispatchEvent(new CustomEvent('nodebench:editor:focused', { detail: { documentId, preview } }));
+            // Persist a local flag indicating this doc has content, to avoid reseeding on next mount
+            if ((preview || '').trim().length > 0) {
+              try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch { }; void markHasContent();
+            }
+          } catch { }
+        };
+        try { emit(); } catch { }
+        try { editor.on('selectionUpdate', emit); } catch { }
+        try { editor.on('update', emit); } catch { }
+        return () => {
+          try { editor.off?.('selectionUpdate', emit); } catch { }
+          try { editor.off?.('update', emit); } catch { }
+        };
+      }, [sync.editor, documentId, getCurrentOrLastBlock, getBlockText]);
+
+      return null;
+    };
 
   // Expose exporter to parent
   useEffect(() => {
@@ -833,7 +838,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   }, [editorContainerRef]);
 
   const computeProposalTargets = useCallback(() => {
-    const targets: Array<{ blockId: string; nodeId?: string; ops: { type: 'eq'|'add'|'del'; line: string }[]; action: any }> = [];
+    const targets: Array<{ blockId: string; nodeId?: string; ops: { type: 'eq' | 'add' | 'del'; line: string }[]; action: any }> = [];
     try {
       if (!pendingProposal) return targets;
       const actions = (pendingProposal.actions || []).filter((a: any) => typeof (a as any)?.markdown === 'string');
@@ -852,7 +857,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         const { ops } = computeStructuredOps(current, proposed);
         targets.push({ blockId: blk.id, nodeId: action.nodeId, ops, action });
       }
-    } catch {}
+    } catch { }
     return targets;
   }, [pendingProposal, sync.editor, getBlockText]);
 
@@ -939,158 +944,157 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   return (
     <ProposalProvider>
       <div
-      ref={editorContainerRef}
-      className={`max-w-none relative ${isCompact ? "prose prose-sm" : "prose prose-lg"} ${
-        isGridMode && !isFullscreen ? "minimal-grid-mode" : ""
-      }`}
-      data-editor-id={documentId}
-    >
+        ref={editorContainerRef}
+        className={`max-w-none relative ${isCompact ? "prose prose-sm" : "prose prose-lg"} ${isGridMode && !isFullscreen ? "minimal-grid-mode" : ""
+          }`}
+        data-editor-id={documentId}
+      >
 
-	      {aiChatActive && <ShadowTiptap />}
+        {/* {aiChatActive && <ShadowTiptap />} */}
 
-      {pendingProposal && (
-        <div className="absolute top-2 right-2 z-10 bg-[var(--bg-secondary)]/95 backdrop-blur border border-[var(--border-color)] rounded-md shadow p-2 flex items-center gap-2">
-          <span className="text-xs text-[var(--text-secondary)] truncate max-w-[260px]" title={pendingProposal.message}>
-            {pendingProposal.message}
-          </span>
-          <button
-            className="px-2 py-0.5 text-xs rounded bg-[var(--accent-primary)] text-white hover:opacity-90"
-            onClick={() => {
-              try {
-                window.dispatchEvent(new CustomEvent('nodebench:applyActions', { detail: { actions: pendingProposal.actions, anchorBlockId: pendingProposal.anchorBlockId } }));
-              } catch { /* ignore */ }
-            }}
-          >
-            Apply
-          </button>
-          <button
-            className="px-2 py-0.5 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
-            onClick={() => setPendingProposal(null)}
-          >
-            Dismiss
-          </button>
-        </div>
-
-      )}
-      {editable && enableProposalUI && pendingProposal && Array.isArray(proposalTargets) && (proposalTargets as any[]).length > 0 && (
-        <ProposalBar targets={proposalTargets as any} onDismiss={() => setPendingProposal(null)} />
-      )}
-      {editable && pendingProposal && (
-        <ProposalInlineDecorations
-          pendingProposal={pendingProposal}
-          setPendingProposal={setPendingProposal}
-          computeProposalTargets={computeProposalTargets}
-          findBlockByNodeId={findBlockByNodeId}
-          syncEditor={sync.editor}
-          editorContainerRef={editorContainerRef}
-          getBlockEl={getBlockEl}
-        />
-      )}
-
-      {/* AI Streaming Indicator */}
-      {isAIStreaming && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            maxWidth: '400px',
-            zIndex: 1000,
-          }}
-        >
-          <InlineAgentProgress
-            messages={streamingMessages}
-            isStreaming={isAIStreaming}
-            threadId={inlineAgentThreadId}
-            onViewInPanel={() => {
-              if (inlineAgentThreadId) {
-                console.log('[UnifiedEditor] Dispatching navigate:fastAgentThread event for:', inlineAgentThreadId);
-                window.dispatchEvent(
-                  new CustomEvent('navigate:fastAgentThread', {
-                    detail: { threadId: inlineAgentThreadId },
-                  })
-                );
-              }
-            }}
-          />
-        </div>
-      )}
-
-      {/* Deep Agent Progress Indicator */}
-      {isAgentEditing && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            left: '20px',
-            zIndex: 1000,
-          }}
-        >
-          <DeepAgentProgress
-            pendingEdits={pendingEdits}
-            isProcessing={isDeepAgentProcessing}
-            currentEdit={currentEdit}
-            editsByThread={editsByThread}
-            onRetryEdit={retryEdit}
-            onCancelThread={cancelThreadEdits}
-            onCancelAll={cancelAllEdits}
-            minimized={deepAgentMinimized}
-            onToggleMinimized={() => setDeepAgentMinimized(!deepAgentMinimized)}
-          />
-        </div>
-      )}
-
-          {/* Editor container with pending edit highlights */}
-          <div style={{ position: 'relative' }}>
-            {/* Pending Edit Highlights Overlay */}
-            <PendingEditHighlights
-              editor={sync.editor}
-              pendingEdits={pendingEdits}
-              currentEdit={currentEdit}
-              containerRef={editorContainerRef}
-            />
-
-            <BlockNoteView
-              editor={sync.editor}
-              theme={document?.documentElement?.classList?.contains?.("dark") ? "dark" : "light"}
-              slashMenu={false}
-              editable={editable as any}
-              data-block-id-attribute="data-block-id"
+        {pendingProposal && (
+          <div className="absolute top-2 right-2 z-10 bg-[var(--bg-secondary)]/95 backdrop-blur border border-[var(--border-color)] rounded-md shadow p-2 flex items-center gap-2">
+            <span className="text-xs text-[var(--text-secondary)] truncate max-w-[260px]" title={pendingProposal.message}>
+              {pendingProposal.message}
+            </span>
+            <button
+              className="px-2 py-0.5 text-xs rounded bg-[var(--accent-primary)] text-white hover:opacity-90"
+              onClick={() => {
+                try {
+                  window.dispatchEvent(new CustomEvent('nodebench:applyActions', { detail: { actions: pendingProposal.actions, anchorBlockId: pendingProposal.anchorBlockId } }));
+                } catch { /* ignore */ }
+              }}
             >
-              {/* Custom slash menu with Fast Agent integration */}
-              {!disableSlashMenu && (
-                <SuggestionMenuController
-                  triggerCharacter={"/"}
-                  getItems={async (query) =>
-                    filterSuggestionItems(
-                      sync.editor ? getCustomSlashMenuItems(sync.editor) : [],
-                      query
-                    )
-                  }
-                />
-              )}
-
-              {/* Adds a mentions menu which opens with the "@" key */}
-              <SuggestionMenuController
-                triggerCharacter={"@"}
-                getItems={async (query) =>
-                  filterSuggestionItems(await getMentionMenuItems(query), query)
-                }
-              />
-
-              {/* Adds a hashtags menu which opens with the "#" key */}
-              <SuggestionMenuController
-                triggerCharacter={"#"}
-                getItems={async (query) =>
-                  filterSuggestionItems(await getHashtagMenuItems(query), query)
-                }
-              />
-            </BlockNoteView>
+              Apply
+            </button>
+            <button
+              className="px-2 py-0.5 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+              onClick={() => setPendingProposal(null)}
+            >
+              Dismiss
+            </button>
           </div>
 
+        )}
+        {editable && enableProposalUI && pendingProposal && Array.isArray(proposalTargets) && (proposalTargets as any[]).length > 0 && (
+          <ProposalBar targets={proposalTargets as any} onDismiss={() => setPendingProposal(null)} />
+        )}
+        {editable && pendingProposal && (
+          <ProposalInlineDecorations
+            pendingProposal={pendingProposal}
+            setPendingProposal={setPendingProposal}
+            computeProposalTargets={computeProposalTargets}
+            findBlockByNodeId={findBlockByNodeId}
+            syncEditor={sync.editor}
+            editorContainerRef={editorContainerRef}
+            getBlockEl={getBlockEl}
+          />
+        )}
 
+        {/* AI Streaming Indicator */}
+        {isAIStreaming && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '20px',
+              maxWidth: '400px',
+              zIndex: 1000,
+            }}
+          >
+            <InlineAgentProgress
+              messages={streamingMessages}
+              isStreaming={isAIStreaming}
+              threadId={inlineAgentThreadId}
+              onViewInPanel={() => {
+                if (inlineAgentThreadId) {
+                  console.log('[UnifiedEditor] Dispatching navigate:fastAgentThread event for:', inlineAgentThreadId);
+                  window.dispatchEvent(
+                    new CustomEvent('navigate:fastAgentThread', {
+                      detail: { threadId: inlineAgentThreadId },
+                    })
+                  );
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* Deep Agent Progress Indicator */}
+        {isAgentEditing && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              left: '20px',
+              zIndex: 1000,
+            }}
+          >
+            <DeepAgentProgress
+              pendingEdits={pendingEdits}
+              isProcessing={isDeepAgentProcessing}
+              currentEdit={currentEdit}
+              editsByThread={editsByThread}
+              onRetryEdit={retryEdit}
+              onCancelThread={cancelThreadEdits}
+              onCancelAll={cancelAllEdits}
+              minimized={deepAgentMinimized}
+              onToggleMinimized={() => setDeepAgentMinimized(!deepAgentMinimized)}
+            />
+          </div>
+        )}
+
+        {/* Editor container with pending edit highlights */}
+        <div style={{ position: 'relative' }}>
+          {/* Pending Edit Highlights Overlay */}
+          <PendingEditHighlights
+            editor={sync.editor}
+            pendingEdits={pendingEdits}
+            currentEdit={currentEdit}
+            containerRef={editorContainerRef}
+          />
+
+          <BlockNoteView
+            editor={sync.editor}
+            theme={document?.documentElement?.classList?.contains?.("dark") ? "dark" : "light"}
+            slashMenu={false}
+            editable={editable as any}
+            data-block-id-attribute="data-block-id"
+          >
+            {/* Custom slash menu with Fast Agent integration */}
+            {!disableSlashMenu && (
+              <SuggestionMenuController
+                triggerCharacter={"/"}
+                getItems={async (query) =>
+                  filterSuggestionItems(
+                    sync.editor ? getCustomSlashMenuItems(sync.editor) : [],
+                    query
+                  )
+                }
+              />
+            )}
+
+            {/* Adds a mentions menu which opens with the "@" key */}
+            <SuggestionMenuController
+              triggerCharacter={"@"}
+              getItems={async (query) =>
+                filterSuggestionItems(await getMentionMenuItems(query), query)
+              }
+            />
+
+            {/* Adds a hashtags menu which opens with the "#" key */}
+            <SuggestionMenuController
+              triggerCharacter={"#"}
+              getItems={async (query) =>
+                filterSuggestionItems(await getHashtagMenuItems(query), query)
+              }
+            />
+          </BlockNoteView>
         </div>
-      </ProposalProvider>
-    );
-  }
+
+
+      </div>
+    </ProposalProvider>
+  );
+}
 
