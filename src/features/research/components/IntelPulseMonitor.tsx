@@ -13,7 +13,11 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
     const activeResults = [...taskResults].reverse().slice(0, 5);
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 h-10 bg-white/80 backdrop-blur-md border-t border-stone-200 z-[60] flex items-center px-12 overflow-hidden pointer-events-none">
+        <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="fixed bottom-0 left-0 right-0 h-10 bg-white/80 backdrop-blur-md border-t border-stone-200 z-[60] flex items-center px-12 overflow-hidden pointer-events-none group/monitor"
+        >
             <div className="flex items-center gap-4 shrink-0 pr-8 border-r border-stone-200 mr-8">
                 <Activity className="w-3 h-3 text-emerald-600" />
                 <span className="text-[9px] font-black text-stone-900 uppercase tracking-[0.3em]">Live Intelligence Flow</span>
@@ -45,10 +49,10 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
                 <span>Nodes: 142</span>
                 <span>Sec: E2EE</span>
                 <div className="flex items-center gap-2">
-                    <Server className="w-3 h-3" />
-                    <span>VAULT_01</span>
+                    <Server className="w-3 h-3 text-stone-300" />
+                    <span className="group-hover/monitor:text-emerald-900 transition-colors">VAULT_01</span>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }

@@ -16,13 +16,20 @@ import type { DailyBriefPayload, ExecutiveBriefRecord } from '../types';
 interface UseBriefDataOptions {
   /** Number of historical days to fetch */
   historyDays?: number;
+  /** Specific date to fetch (YYYY-MM-DD) */
+  dateString?: string;
 }
 
 export function useBriefData(options: UseBriefDataOptions = {}) {
-  const { historyDays = 7 } = options;
+  const { historyDays = 7, dateString } = options;
 
-  // Fetch latest brief memory
-  const latestBriefMemory = useQuery(api.domains.research.dailyBriefMemoryQueries.getLatestMemory);
+  // Fetch target brief memory (either by date or latest)
+  const latestBriefMemory = useQuery(
+    dateString
+      ? api.domains.research.dailyBriefMemoryQueries.getMemoryByDateString
+      : api.domains.research.dailyBriefMemoryQueries.getLatestMemory,
+    dateString ? { dateString } : {}
+  );
 
   // Fetch task results for the latest memory
   const latestBriefTaskResults = useQuery(

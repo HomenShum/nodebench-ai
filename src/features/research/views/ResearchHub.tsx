@@ -42,6 +42,7 @@ export default function ResearchHub(props: ResearchHubProps) {
   const { openWithContext } = useFastAgent();
   const updateFocus = useMutation(api.domains.dossier.focusState.updateFocus);
   const [activeAct, setActiveAct] = useState<"actI" | "actII" | "actIII">("actI");
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
 
   // Fetch all brief data (Global + Personal)
   const {
@@ -54,8 +55,11 @@ export default function ResearchHub(props: ResearchHubProps) {
     personalizedContext,
     tasksToday,
     recentDocs,
-    taskResults
-  } = usePersonalBrief();
+    taskResults,
+    availableDates,
+    briefingDateString,
+    isLoading
+  } = usePersonalBrief({ dateString: selectedDate });
 
   // Hoist agent plans for the adaptive HUD
   const agentPlans = useQuery(
@@ -169,13 +173,42 @@ export default function ResearchHub(props: ResearchHubProps) {
             )}
 
             <div className="flex items-center gap-8">
+              {/* Historical Date Selector */}
+              <div className="flex items-center gap-2 p-1 bg-stone-100/50 border border-stone-200">
+                {availableDates && availableDates.length > 0 ? (
+                  <>
+                    {availableDates.slice(0, 3).map((date: string) => (
+                      <button
+                        key={date}
+                        onClick={() => setSelectedDate(date)}
+                        className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
+                          ? "bg-emerald-950 text-white shadow-lg"
+                          : "text-stone-400 hover:text-stone-900"
+                          }`}
+                      >
+                        {new Date(date + "T00:00:00").toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </button>
+                    ))}
+                    <div className="w-[1px] h-3 bg-stone-300 mx-1" />
+                    <button
+                      onClick={() => setSelectedDate(undefined)}
+                      className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-emerald-950 text-white" : "text-stone-400"}`}
+                    >
+                      Latest
+                    </button>
+                  </>
+                ) : (
+                  <span className="px-3 py-1 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Live Live Live</span>
+                )}
+              </div>
+
               <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em]">
                 <div className="w-2 h-2 rounded-full bg-emerald-700 animate-pulse" />
                 <span>Encrypted Intelligence Stream</span>
               </div>
               <div className="hidden sm:block w-[1px] h-6 bg-stone-200" />
               <div className="text-sm font-semibold text-stone-600 font-mono tracking-widest">
-                <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>
+                <span>{briefingDateString?.replace(/-/g, '.').toUpperCase()}</span>
               </div>
             </div>
           </header>
@@ -195,8 +228,13 @@ export default function ResearchHub(props: ResearchHubProps) {
                 className="animate-in fade-in duration-700"
               >
                 <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                  <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Executive Synthesis</h3>
-                  <div className="w-2 h-2 rounded-full bg-emerald-900 animate-pulse" />
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Executive Synthesis</h3>
+                    {selectedDate && (
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[9px] font-black uppercase tracking-widest border border-amber-900/10">Archive View</span>
+                    )}
+                  </div>
+                  <div className={`w-2 h-2 rounded-full ${selectedDate ? 'bg-amber-500' : 'bg-emerald-900'} animate-pulse`} />
                 </div>
                 <DigestSection onItemClick={handleDigestItemClick} />
               </section>

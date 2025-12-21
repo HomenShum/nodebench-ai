@@ -4,8 +4,14 @@ import { api } from '../../../../convex/_generated/api';
 import { useBriefData } from './useBriefData';
 import type { DailyBriefPayload } from '../types';
 
-export function usePersonalBrief() {
-    const globalData = useBriefData();
+interface UsePersonalBriefOptions {
+    historyDays?: number;
+    dateString?: string;
+}
+
+export function usePersonalBrief(options: UsePersonalBriefOptions = {}) {
+    const { historyDays, dateString } = options;
+    const globalData = useBriefData({ historyDays, dateString });
     const { briefingDateString, briefMemory } = globalData;
 
     // 1. Fetch Personal Overlay
