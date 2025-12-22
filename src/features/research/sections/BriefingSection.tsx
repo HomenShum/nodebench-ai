@@ -98,6 +98,80 @@ function BriefingSectionInner({
   const actII = executiveBrief.actII;
   const actIII = executiveBrief.actIII;
 
+  const briefingStats = useMemo(() => {
+    const signalCount = actII?.signals?.length ?? 0;
+    const actionCount = actIII?.actions?.length ?? 0;
+    const sourceCount = sourceSummary?.totalItems ?? actI?.totalItems ?? 0;
+    const confidence = executiveBrief.meta?.confidence ?? null;
+    return [
+      { label: 'Signals', value: signalCount, hint: 'Act II' },
+      { label: 'Actions', value: actionCount, hint: 'Act III' },
+      { label: 'Sources', value: sourceCount, hint: 'coverage' },
+      { label: 'Confidence', value: confidence !== null ? `${confidence}%` : 'N/A', hint: 'model' },
+    ];
+  }, [actI?.totalItems, actII?.signals?.length, actIII?.actions?.length, executiveBrief.meta?.confidence, sourceSummary?.totalItems]);
+
+  const topSources = useMemo(() => {
+    if (sourceSummary?.bySource) {
+      return Object.entries(sourceSummary.bySource)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => (b.count as number) - (a.count as number))
+        .slice(0, 5);
+    }
+    if (Array.isArray(actI?.topSources)) {
+      return actI.topSources.slice(0, 5).map((source: any) => ({
+        name: source.name || source,
+        count: source.count ?? null,
+      }));
+    }
+    return [];
+  }, [actI?.topSources, sourceSummary?.bySource]);
+
+  const signalLedger = useMemo(() => {
+    const actions = actIII?.actions ?? [];
+    return (actII?.signals ?? []).slice(0, 6).map((signal: any, index: number) => {
+      const evidenceCount = Array.isArray(signal.evidence) ? signal.evidence.length : 0;
+      const linkedActions = actions.filter((action: any) => (action.linkedSignalIds ?? []).includes(signal.id)).length;
+      return {
+        id: signal.id || `signal-${index}`,
+        headline: signal.headline,
+        evidenceCount,
+        linkedActions,
+      };
+    });
+  }, [actII?.signals, actIII?.actions]);
+
+  const actionMix = useMemo(() => {
+    const actions = actIII?.actions ?? [];
+    const counts = { high: 0, medium: 0, low: 0, other: 0 };
+    actions.forEach((action: any) => {
+      if (action.priority === 'high') counts.high += 1;
+      else if (action.priority === 'medium') counts.medium += 1;
+      else if (action.priority === 'low') counts.low += 1;
+      else counts.other += 1;
+    });
+    return counts;
+  }, [actIII?.actions]);
+
+  const agentLaunchpad = [
+    {
+      label: 'Deep agent: act I synthesis',
+      prompt: 'Summarize Act I into a 5-bullet executive synthesis.',
+    },
+    {
+      label: 'Deep agent: signal ranking',
+      prompt: 'Rank Act II signals by impact and explain why.',
+    },
+    {
+      label: 'Deep agent: action playbook',
+      prompt: 'Turn Act III actions into a step-by-step playbook.',
+    },
+    {
+      label: 'Deep agent: diligence checklist',
+      prompt: 'Build a diligence checklist based on today\'s signals.',
+    },
+  ];
+
   return (
     <div className={className}>
       {/* Sample Data Banner */}
@@ -138,6 +212,157 @@ function BriefingSectionInner({
               {sourceSummary.totalItems} Intelligence Nodes
             </span>
           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-10">
+        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Briefing Snapshot</p>
+            <p className="text-base font-serif font-bold text-gray-900">Act coverage</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {briefingStats.map((stat) => (
+              <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
+                <div className="text-2xl font-serif font-semibold text-gray-900">{stat.value}</div>
+                <div className="text-[10px] text-stone-400">{stat.hint}</div>
+              </div>
+            ))}
+          </div>
+          {executiveBrief.meta?.headline && (
+            <div className="text-xs text-stone-500">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Headline</span>
+              <div className="mt-1 text-sm text-stone-700">{executiveBrief.meta.headline}</div>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Primary Sources</p>
+            <p className="text-base font-serif font-bold text-gray-900">Signal ledger</p>
+          </div>
+          <div className="space-y-3">
+            {topSources.length > 0 ? (
+              topSources.map((source) => (
+                <div key={source.name} className="flex items-center justify-between text-xs text-stone-600 border-b border-stone-100 pb-2">
+                  <span className="font-medium">{source.name}</span>
+                  <span className="text-stone-400">{source.count ?? '-'}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-stone-400">No sources available yet.</div>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Act Focus</p>
+            <p className="text-base font-serif font-bold text-gray-900">Narrative spine</p>
+          </div>
+          <div className="space-y-3 text-xs text-stone-600">
+            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Act I</div>
+              <div className="mt-1 text-sm text-stone-700">{actI?.headline || actI?.title || 'Setup'}</div>
+            </div>
+            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Act II</div>
+              <div className="mt-1 text-sm text-stone-700">{actII?.title || 'Signals'}</div>
+            </div>
+            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Act III</div>
+              <div className="mt-1 text-sm text-stone-700">{actIII?.title || 'Actions'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-12">
+        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4 xl:col-span-2">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Ledger</p>
+              <p className="text-base font-serif font-bold text-gray-900">Act II inventory</p>
+            </div>
+            {onAskAI && (
+              <button
+                type="button"
+                onClick={() => onAskAI('Summarize the signal ledger and surface outliers.')}
+                className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+              >
+                Ask agent
+              </button>
+            )}
+          </div>
+          <div className="space-y-2">
+            {signalLedger.length > 0 ? (
+              signalLedger.map((signal, index) => (
+                <div key={signal.id} className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-widest text-stone-400">Signal {index + 1}</div>
+                    <div className="text-sm font-semibold text-stone-800">{signal.headline}</div>
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] text-stone-500 uppercase tracking-widest">
+                    <span>Evidence {signal.evidenceCount}</span>
+                    <span>Actions {signal.linkedActions}</span>
+                    {onAskAI && (
+                      <button
+                        type="button"
+                        onClick={() => onAskAI(`Deep dive on signal: ${signal.headline}`)}
+                        className="px-2 py-0.5 border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                      >
+                        Analyze
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-stone-400">No signals available yet.</div>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Deep Agent Launchpad</p>
+            <p className="text-base font-serif font-bold text-gray-900">Runbook shortcuts</p>
+          </div>
+          <div className="space-y-2">
+            {agentLaunchpad.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => onAskAI?.(item.prompt)}
+                className="w-full text-left rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 text-xs font-semibold text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Action mix</div>
+            <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
+              <div className="flex items-center justify-between">
+                <span>High</span>
+                <span className="font-semibold">{actionMix.high}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Medium</span>
+                <span className="font-semibold">{actionMix.medium}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Low</span>
+                <span className="font-semibold">{actionMix.low}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Other</span>
+                <span className="font-semibold">{actionMix.other}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

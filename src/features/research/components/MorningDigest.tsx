@@ -423,6 +423,100 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   const primarySentiment = digestStats.find((stat) => stat.sentiment)?.sentiment || 'neutral';
 
+  const digestTotals = useMemo(() => {
+    const marketCount = digestData?.marketMovers?.length ?? 0;
+    const topicCount = digestData?.watchlistRelevant?.length ?? 0;
+    const alertCount = digestData?.riskAlerts?.length ?? 0;
+    const priorityCount = digestSections.find((section) => section.id === 'personal')?.items.length ?? 0;
+    const trackedCount = digestData?.trackedHashtags?.length ?? 0;
+    const sourceCount = citationLibrary.order.length;
+    const entityCount = Object.keys(entityLibrary.entities || {}).length;
+    return {
+      marketCount,
+      topicCount,
+      alertCount,
+      priorityCount,
+      trackedCount,
+      sourceCount,
+      entityCount,
+      totalSignals: marketCount + topicCount + alertCount,
+    };
+  }, [citationLibrary.order.length, digestData, digestSections, entityLibrary.entities]);
+
+  const topEntities = useMemo(() => {
+    return Object.values(entityLibrary.entities || {})
+      .map((entity) => entity.name)
+      .slice(0, 6);
+  }, [entityLibrary.entities]);
+
+  const signalHighlights = useMemo(() => {
+    const highlights: Array<{ label: string; text: string; linkedEntity?: string }> = [];
+    (digestData?.marketMovers ?? []).slice(0, 2).forEach((item) => {
+      highlights.push({ label: 'Market', text: item.title, linkedEntity: extractEntity(item.title) });
+    });
+    (digestData?.watchlistRelevant ?? []).slice(0, 2).forEach((item) => {
+      highlights.push({ label: 'Topic', text: item.title, linkedEntity: extractEntity(item.title) });
+    });
+    (digestData?.riskAlerts ?? []).slice(0, 1).forEach((item) => {
+      highlights.push({ label: 'Risk', text: item.title, linkedEntity: extractEntity(item.title) });
+    });
+    return highlights;
+  }, [digestData]);
+
+  const digestSectionRows = useMemo(() => {
+    return digestSections.map((section) => {
+      const counts = { high: 0, medium: 0, low: 0 };
+      section.items.forEach((item) => {
+        if (item.relevance === 'high') counts.high += 1;
+        else if (item.relevance === 'medium') counts.medium += 1;
+        else counts.low += 1;
+      });
+      return {
+        id: section.id,
+        title: section.title,
+        sentiment: section.sentiment,
+        total: section.items.length,
+        ...counts,
+      };
+    });
+  }, [digestSections]);
+
+  const topSources = useMemo(() => {
+    const counts = new Map<string, number>();
+    const addSource = (source?: string) => {
+      const key = source || 'Unknown';
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    };
+    (digestData?.marketMovers ?? []).forEach((item) => addSource(item.source));
+    (digestData?.watchlistRelevant ?? []).forEach((item) => addSource(item.source));
+    (digestData?.riskAlerts ?? []).forEach((item) => addSource(item.source));
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [digestData]);
+
+  const maxSourceCount = topSources[0]?.count ?? 1;
+
+  const agentLaunchpad = [
+    {
+      label: 'Deep agent: summarize the pulse',
+      prompt: `Summarize today's pulse and list the top 3 actions.`,
+    },
+    {
+      label: 'Deep agent: map risk exposure',
+      prompt: `Scan the alerts and highlight the top 3 risk exposures to monitor.`,
+    },
+    {
+      label: 'Deep agent: dossier build',
+      prompt: `Build a concise dossier on the top signals and why they matter.`,
+    },
+    {
+      label: 'Deep agent: topic watchlist',
+      prompt: `Create a watchlist update from today's topics and market movers.`,
+    },
+  ];
+
   const toggleSection = (id: string) => {
     setExpandedSections(prev => {
       const next = new Set(prev);
@@ -450,6 +544,15 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       default: return 'bg-gray-50 text-gray-700 border border-gray-100';
     }
   };
+
+  const densityStats = [
+    { label: 'Signals', value: digestTotals.totalSignals, hint: 'market + topics + alerts' },
+    { label: 'Sources', value: digestTotals.sourceCount, hint: 'linked citations' },
+    { label: 'Entities', value: digestTotals.entityCount, hint: 'detected names' },
+    { label: 'Topics', value: digestTotals.trackedCount, hint: 'tracked hashtags' },
+    { label: 'Alerts', value: digestTotals.alertCount, hint: 'risk flags' },
+    { label: 'Priority', value: digestTotals.priorityCount, hint: 'internal focus' },
+  ];
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white/40 backdrop-blur-xl shadow-sm overflow-hidden">
@@ -520,6 +623,183 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     onEntityClick={(entity) => onItemClick?.({ text: `Deep dive on ${entity.name}`, relevance: 'high', linkedEntity: entity.name })}
                   />"
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Briefing Snapshot</p>
+                <p className="text-base font-serif font-bold text-gray-900">Coverage density</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {densityStats.map((stat) => (
+                  <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                    <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
+                    <div className="text-2xl font-serif font-semibold text-gray-900">{stat.value}</div>
+                    <div className="text-[10px] text-stone-400">{stat.hint}</div>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Topic focus</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(digestData?.trackedHashtags ?? []).length > 0 ? (
+                    digestData?.trackedHashtags?.slice(0, 6).map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 text-[10px] font-bold uppercase tracking-tight border border-stone-200 bg-white text-stone-600"
+                      >
+                        {tag}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[10px] text-stone-400">No topics tracked yet.</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Entities detected</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {topEntities.length > 0 ? (
+                    topEntities.map((entity) => (
+                      <span
+                        key={entity}
+                        className="px-2 py-1 text-[10px] font-semibold border border-stone-200 bg-[#faf9f6] text-stone-600"
+                      >
+                        {entity}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[10px] text-stone-400">No entities detected.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Highlights</p>
+                <p className="text-base font-serif font-bold text-gray-900">What moved overnight</p>
+              </div>
+              <div className="space-y-3">
+                {signalHighlights.length > 0 ? (
+                  signalHighlights.map((item, idx) => (
+                    <button
+                      key={`${item.label}-${idx}`}
+                      type="button"
+                      onClick={() => onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity })}
+                      className="w-full text-left rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 hover:bg-white transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-900">{item.label}</span>
+                        {item.linkedEntity && (
+                          <span className="text-[10px] font-mono text-stone-400 uppercase tracking-tight">
+                            {item.linkedEntity}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-700 mt-2">{item.text}</div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="text-xs text-stone-400">No highlights available yet.</div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Source Mix</p>
+                <p className="text-base font-serif font-bold text-gray-900">Where the signals came from</p>
+              </div>
+              <div className="space-y-3">
+                {topSources.length > 0 ? (
+                  topSources.map((source) => (
+                    <div key={source.name} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                      <div className="flex items-center justify-between text-xs font-semibold text-stone-600">
+                        <span>{source.name}</span>
+                        <span>{source.count}</span>
+                      </div>
+                      <div className="mt-2 h-1.5 w-full rounded-full bg-white">
+                        <div
+                          className="h-full rounded-full bg-emerald-900"
+                          style={{ width: `${Math.max(8, (source.count / maxSourceCount) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-stone-400">No sources tracked yet.</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4 xl:col-span-2">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Ledger</p>
+                  <p className="text-base font-serif font-bold text-gray-900">Section density</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onItemClick?.({ text: 'Summarize the signal ledger and surface anomalies.', relevance: 'high' })}
+                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                >
+                  Ask agent
+                </button>
+              </div>
+              <div className="space-y-2">
+                {digestSectionRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold text-gray-800">{row.title}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{row.total} nodes</div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${getSentimentColor(row.sentiment)}`}>
+                        {row.sentiment}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-purple-50 text-purple-700 border border-purple-100">
+                        High {row.high}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
+                        Med {row.medium}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-gray-50 text-gray-700 border border-gray-100">
+                        Low {row.low}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Deep Agent Launchpad</p>
+                <p className="text-base font-serif font-bold text-gray-900">Runbook shortcuts</p>
+              </div>
+              <div className="space-y-2">
+                {agentLaunchpad.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => onItemClick?.({ text: item.prompt, relevance: 'high' })}
+                    className="w-full text-left rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 text-xs font-semibold text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 text-xs text-stone-500">
+                Agent-ready prompts are routed to the deep agent stack for synthesis, verification, and follow-up execution.
               </div>
             </div>
           </div>

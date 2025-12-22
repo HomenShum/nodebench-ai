@@ -177,6 +177,7 @@ import type * as domains_integrations_gmail from "../domains/integrations/gmail.
 import type * as domains_integrations_gmail_types from "../domains/integrations/gmail/types.js";
 import type * as domains_integrations_index from "../domains/integrations/index.js";
 import type * as domains_integrations_integrations from "../domains/integrations/integrations.js";
+import type * as domains_integrations_ntfy from "../domains/integrations/ntfy.js";
 import type * as domains_integrations_polar from "../domains/integrations/polar.js";
 import type * as domains_integrations_resend from "../domains/integrations/resend.js";
 import type * as domains_integrations_sms from "../domains/integrations/sms.js";
@@ -350,6 +351,7 @@ import type * as tools_sec_secFilingTools from "../tools/sec/secFilingTools.js";
 import type * as tools_security_promptInjectionProtection from "../tools/security/promptInjectionProtection.js";
 import type * as tools_sendEmail from "../tools/sendEmail.js";
 import type * as tools_sendEmailMutations from "../tools/sendEmailMutations.js";
+import type * as tools_sendNotification from "../tools/sendNotification.js";
 import type * as tools_sendSms from "../tools/sendSms.js";
 import type * as tools_teachability_index from "../tools/teachability/index.js";
 import type * as tools_teachability_learnUserSkill from "../tools/teachability/learnUserSkill.js";
@@ -539,6 +541,7 @@ declare const fullApi: ApiFromModules<{
   "domains/integrations/gmail/types": typeof domains_integrations_gmail_types;
   "domains/integrations/index": typeof domains_integrations_index;
   "domains/integrations/integrations": typeof domains_integrations_integrations;
+  "domains/integrations/ntfy": typeof domains_integrations_ntfy;
   "domains/integrations/polar": typeof domains_integrations_polar;
   "domains/integrations/resend": typeof domains_integrations_resend;
   "domains/integrations/sms": typeof domains_integrations_sms;
@@ -712,6 +715,7 @@ declare const fullApi: ApiFromModules<{
   "tools/security/promptInjectionProtection": typeof tools_security_promptInjectionProtection;
   "tools/sendEmail": typeof tools_sendEmail;
   "tools/sendEmailMutations": typeof tools_sendEmailMutations;
+  "tools/sendNotification": typeof tools_sendNotification;
   "tools/sendSms": typeof tools_sendSms;
   "tools/teachability/index": typeof tools_teachability_index;
   "tools/teachability/learnUserSkill": typeof tools_teachability_learnUserSkill;

@@ -1,0 +1,2043 @@
+{
+  "ai-2027": {
+    "title": "AI 2027",
+    "url": "https://ai-2027.com/",
+    "metaDesc": "A research-backed AI scenario forecast.\n",
+    "structure": {
+      "headings": [
+        {
+          "tag": "h1",
+          "text": "AI 2027"
+        },
+        {
+          "tag": "h2",
+          "text": "Daniel Kokotajlo, Scott Alexander, Thomas Larsen, Eli Lifland, Romeo Dean"
+        },
+        {
+          "tag": "h2",
+          "text": "Mid 2025: Stumbling Agents"
+        },
+        {
+          "tag": "h2",
+          "text": "Late 2025: The World’s Most Expensive AI"
+        },
+        {
+          "tag": "h2",
+          "text": "Early 2026: Coding Automation"
+        },
+        {
+          "tag": "h2",
+          "text": "Mid 2026: China Wakes Up"
+        },
+        {
+          "tag": "h2",
+          "text": "Late 2026: AI Takes Some Jobs"
+        },
+        {
+          "tag": "h2",
+          "text": "KEY METRICS 2026"
+        },
+        {
+          "tag": "h2",
+          "text": "January 2027: Agent-2 Never Finishes Learning"
+        },
+        {
+          "tag": "h2",
+          "text": "February 2027: China Steals Agent-2"
+        },
+        {
+          "tag": "h2",
+          "text": "March 2027: Algorithmic Breakthroughs"
+        },
+        {
+          "tag": "h2",
+          "text": "April 2027: Alignment for Agent-3"
+        },
+        {
+          "tag": "h2",
+          "text": "May 2027: National Security"
+        },
+        {
+          "tag": "h2",
+          "text": "June 2027: Self-improving AI"
+        },
+        {
+          "tag": "h2",
+          "text": "July 2027: The Cheap Remote Worker"
+        },
+        {
+          "tag": "h2",
+          "text": "August 2027: The Geopolitics of Superintelligence"
+        },
+        {
+          "tag": "h2",
+          "text": "September 2027: Agent-4, the Superhuman AI Researcher"
+        },
+        {
+          "tag": "h2",
+          "text": "October 2027: Government Oversight"
+        },
+        {
+          "tag": "h2",
+          "text": "Choose Your Ending"
+        }
+      ],
+      "landmarks": [
+        {
+          "tag": "nav",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "flex flex-col [grid-area:header]"
+        },
+        {
+          "tag": "nav",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "z-1 flex flex-wrap"
+        },
+        {
+          "tag": "nav",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "section-nav sticky left-2"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "main-content undefined"
+        },
+        {
+          "tag": "footer",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "[grid-area:cFooter] md:[grid-area:cFooter/cFooter/cFooter/graphFooter] lg:[grid-area:cFooter]"
+        },
+        {
+          "tag": "footer",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "hidden lg:block lg:[grid-area:graphFooter]"
+        }
+      ],
+      "buttonTexts": [
+        "What is this?",
+        "How did we write it?",
+        "Why is it valuable?",
+        "Who are we?",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Slowdown",
+        "Race"
+      ],
+      "linkTexts": [
+        "AI 2027",
+        "Summary",
+        "Research",
+        "Compute Forecast",
+        "Timelines Forecast",
+        "Takeoff Forecast",
+        "AI Goals Forecast",
+        "Security Forecast",
+        "About",
+        " PDF ",
+        " Watch",
+        "Mid 2025",
+        "Late 2025",
+        "2026",
+        "Mid 2026",
+        "Late 2026",
+        "Jan 2027",
+        "Feb",
+        "Mar",
+        "April",
+        "May",
+        "June",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "1",
+        "2",
+        "somewhat longer",
+        "here",
+        "3",
+        "OpenAI",
+        "Google DeepMind",
+        "Anthropic",
+        "has said",
+        "4",
+        "5",
+        "planning to give out thousands in prizes",
+        "here",
+        "6",
+        "tabletop exercises",
+        "7",
+        "before, in August 2021",
+        "Daniel Kokotajlo",
+        "TIME100",
+        "NYT piece",
+        "AI predictions",
+        "held up well",
+        "Eli Lifland",
+        "AI Digest",
+        "AI robustness research",
+        "RAND Forecasting Initiative",
+        "Thomas Larsen",
+        "Center for AI Policy",
+        "Machine Intelligence Research Institute",
+        "Romeo Dean",
+        "AI Policy Fellow",
+        "Scott Alexander, blogger extraordinaire",
+        "About page",
+        "PDF",
+        "Watch",
+        "8",
+        "Operator",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "artificial general intelligence",
+        "FLOP",
+        "14",
+        "they’ll be able to train",
+        "15",
+        "16",
+        "17",
+        "18",
+        "substantial help",
+        "superhuman",
+        "19",
+        "20",
+        "21",
+        "a model specification",
+        "22",
+        "23",
+        "24",
+        "OpenAI",
+        "25",
+        "AI goals forecasting supplement",
+        "26",
+        "instrumental",
+        "few rigged demos",
+        "Gemini telling a user to die",
+        "Bing Sydney being Bing Sydney",
+        "27",
+        "makes up about half of current AI progress",
+        "takeoff supplement",
+        "open-weights",
+        "28",
+        "29",
+        "30",
+        "31",
+        "RAND’s SL2",
+        "32",
+        "weights",
+        "SL3",
+        "33",
+        "SL4&5",
+        "feel the AGI",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "cluster",
+        "40",
+        "OpenBrain has improved security",
+        "SL3",
+        "spies",
+        "41",
+        "timelines forecast",
+        "takeoff forecast",
+        "synthetic data",
+        "42",
+        "43",
+        "intelligence explosion",
+        "44",
+        "45",
+        "“survive” and “replicate” autonomously",
+        "46",
+        "for",
+        "years",
+        "47",
+        "48",
+        "49",
+        "99",
+        "50",
+        "51",
+        "52",
+        "FP16",
+        "Hao et al.",
+        "reading its chain of thought",
+        "particular responses",
+        "train the English chains of thought to look nice",
+        "minor successes",
+        "IDA",
+        "Ord, 2025",
+        "AlphaGo",
+        "Best of N",
+        "proximal policy optimization",
+        "Early",
+        "versions",
+        "53",
+        "54",
+        "55",
+        "timelines forecast",
+        "METR’s report",
+        "timelines forecast",
+        "timelines forecast",
+        "updates",
+        "The researchers don’t have the ability to directly set the goals of any of their AIs.",
+        "just check",
+        "p-hacking",
+        "Leike & Sutskever (2023)",
+        "deliberative alignment",
+        "weak-to-strong generalization",
+        "control techniques",
+        "red-teaming",
+        "scalable oversight",
+        "honesty probes",
+        "Early versions",
+        "reward hacking",
+        "sandbagging",
+        "58",
+        "related work from 2025",
+        "control measures",
+        "probes",
+        "59",
+        "60",
+        "61",
+        "62",
+        "63",
+        "previously agreed",
+        "64",
+        "country of geniuses in a datacenter",
+        "65",
+        "unique advantages",
+        "66",
+        "67",
+        "68",
+        "B2B SAAS",
+        "69",
+        "70",
+        "Defense Production Act",
+        "71",
+        "72",
+        "73",
+        "TSMC",
+        "74",
+        "75",
+        "76",
+        "77",
+        "timelines supplement",
+        "takeoff supplement",
+        "78",
+        "takeoff supplement",
+        "79",
+        "80",
+        "81",
+        "AI Goals Supplement",
+        "82",
+        "83",
+        "introspective ability",
+        "self-locating",
+        "self-knowledge",
+        "introspect",
+        "intrinsic power-seeking",
+        "new empirical evidence has appeared",
+        "learn a reward-model-pleasing strategy",
+        "alignment-faking experiment.",
+        "comment thread by one of the main authors",
+        "84",
+        "85",
+        "86",
+        "sandbags",
+        "87",
+        "POSER",
+        "88",
+        "defection probes",
+        "89",
+        "90",
+        "91",
+        "92",
+        "93",
+        "94",
+        "95",
+        "96",
+        "97",
+        "98",
+        "this op-ed.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Slowdown",
+        "Race",
+        "",
+        "AI Futures\nProject",
+        "Design by  Lightcone Infrastructure",
+        "",
+        "Home",
+        "About",
+        "Summary",
+        "Compute Forecast",
+        "Timelines Forecast",
+        "Takeoff Forecast",
+        "AI Goals Forecast",
+        "Security Forecast",
+        "Design by\nLightcone Infrastructure",
+        ""
+      ],
+      "linkHrefs": [
+        "/",
+        "/summary",
+        "/research",
+        "/research/compute-forecast",
+        "/research/timelines-forecast",
+        "/research/takeoff-forecast",
+        "/research/ai-goals-forecast",
+        "/research/security-forecast",
+        "/about",
+        "/ai-2027.pdf",
+        "https://www.youtube.com/watch?v=5KVDDfAkRgc",
+        "#narrative-2025-08-31",
+        "#narrative-2025-12-31",
+        "#narrative-2026-04-30",
+        "#narrative-2026-08-31",
+        "#narrative-2026-12-31",
+        "#narrative-2027-01-31",
+        "#narrative-2027-02-28",
+        "#narrative-2027-03-31",
+        "#narrative-2027-04-30",
+        "#narrative-2027-05-31",
+        "#narrative-2027-06-30",
+        "#narrative-2027-07-31",
+        "#narrative-2027-08-31",
+        "#narrative-2027-09-30",
+        "#narrative-2027-10-15",
+        "/footnotes#footnote-1",
+        "/footnotes#footnote-2",
+        "https://www.listendata.com/2023/08/right-skewed-histogram.html",
+        "https://x.com/eli_lifland/status/1992004724841906392?s=20",
+        "/footnotes#footnote-3",
+        "https://www.bloomberg.com/features/2025-sam-altman-interview",
+        "https://www.bigtechnology.com/p/google-deepmind-ceo-demis-hassabis",
+        "https://www.wsj.com/livecoverage/stock-market-today-dow-sp500-nasdaq-live-01-21-2025/card/anthropic-ceo-says-ai-could-surpass-human-intelligence-by-2027-9tka9tjLKLalkXX8IgKA",
+        "https://webcf.waybackmachine.org/web/20250106014723/https://blog.samaltman.com/reflections",
+        "/footnotes#footnote-4",
+        "/footnotes#footnote-5",
+        "https://ai-2027.com/about?tab=bets-and-bounties#tab-box-bets-and-bounties",
+        "https://ai-2027.com/research",
+        "/footnotes#footnote-6",
+        "https://ai-2027.com/about?tab=tabletop-exercise#tab-box-tabletop-exercise",
+        "/footnotes#footnote-7",
+        "https://www.lesswrong.com/posts/6Xgy6CAf2jqHhynHL/what-2026-looks-like",
+        "https://x.com/DKokotajlo",
+        "https://time.com/7012881/daniel-kokotajlo/",
+        "https://www.nytimes.com/2024/06/04/technology/openai-culture-whistleblowers.html",
+        "https://www.lesswrong.com/posts/6Xgy6CAf2jqHhynHL/what-2026-looks-like",
+        "https://www.lesswrong.com/posts/u9Kr97di29CkMvjaj/evaluating-what-2026-looks-like-so-far",
+        "https://www.linkedin.com/in/eli-lifland/",
+        "https://theaidigest.org/",
+        "https://scholar.google.com/citations?user=Q33DXbEAAAAJ&hl=en",
+        "https://www.rand.org/global-and-emerging-risks/forecasting-initiative.html",
+        "https://www.linkedin.com/in/thomas-larsen/",
+        "https://www.centeraipolicy.org/",
+        "https://intelligence.org/",
+        "https://www.linkedin.com/in/romeo-dean-789313200/",
+        "https://www.iaps.ai/romeo-dean",
+        "https://en.wikipedia.org/wiki/Slate_Star_Codex",
+        "https://ai-2027.com/about",
+        "/ai-2027.pdf",
+        "https://www.youtube.com/watch?v=5KVDDfAkRgc",
+        "/footnotes#footnote-8",
+        "https://openai.com/index/introducing-operator/",
+        "/footnotes#footnote-9",
+        "/footnotes#footnote-10",
+        "/footnotes#footnote-11",
+        "/footnotes#footnote-12",
+        "/footnotes#footnote-13",
+        "https://en.wikipedia.org/wiki/Artificial_general_intelligence",
+        "https://en.wikipedia.org/wiki/Floating_point_operations_per_second",
+        "/footnotes#footnote-14",
+        "https://ai-2027.com/supplements/compute-forecast",
+        "/footnotes#footnote-15",
+        "/footnotes#footnote-16",
+        "/footnotes#footnote-17",
+        "/footnotes#footnote-18",
+        "https://x.com/lucafrighetti/status/1894550297449828434",
+        "https://arxiv.org/pdf/2212.11281",
+        "/footnotes#footnote-19",
+        "/footnotes#footnote-20",
+        "/footnotes#footnote-21",
+        "https://model-spec.openai.com/2025-02-12.html",
+        "/footnotes#footnote-22",
+        "/footnotes#footnote-23",
+        "/footnotes#footnote-24",
+        "https://openai.com/index/how-should-ai-systems-behave/",
+        "/footnotes#footnote-25",
+        "https://ai-2027.com/supplements/ai-goals-forecast",
+        "/footnotes#footnote-26",
+        "https://en.wikipedia.org/wiki/Instrumental_and_intrinsic_value",
+        "https://www.apolloresearch.ai/research/scheming-reasoning-evaluations",
+        "https://thehill.com/policy/technology/4998868-google-ai-gemini-response/",
+        "https://www.lesswrong.com/posts/jtoPawEhLNXNxvgTT/bing-chat-is-blatantly-aggressively-misaligned",
+        "/footnotes#footnote-27",
+        "https://www.lesswrong.com/posts/ATSyAdBnxxDDAwhgu/recent-and-forecasted-rates-of-software-and-hardware",
+        "https://ai-2027.com/supplements/takeoff-forecast",
+        "https://opensource.org/ai/open-weights",
+        "/footnotes#footnote-28",
+        "/footnotes#footnote-29",
+        "/footnotes#footnote-30",
+        "/footnotes#footnote-31",
+        "https://www.rand.org/pubs/research_briefs/RBA2849-1.html#:~:text=What%20Are%20the%20Security%20Needs%20of%20Different%20AI%20Systems%3F",
+        "/footnotes#footnote-32",
+        "https://tedai-sanfrancisco.ted.com/glossary/weights/",
+        "https://www.rand.org/pubs/research_briefs/RBA2849-1.html#:~:text=What%20Are%20the%20Security%20Needs%20of%20Different%20AI%20Systems%3F",
+        "/footnotes#footnote-33",
+        "https://www.rand.org/pubs/research_briefs/RBA2849-1.html#:~:text=What%20Are%20the%20Security%20Needs%20of%20Different%20AI%20Systems%3F",
+        "https://futurism.com/openai-employees-say-firms-chief-scientist-has-been-making-strange-spiritual-claims",
+        "/footnotes#footnote-35",
+        "/footnotes#footnote-36",
+        "/footnotes#footnote-37",
+        "/footnotes#footnote-38",
+        "/footnotes#footnote-39",
+        "https://en.wikipedia.org/wiki/Computer_cluster",
+        "/footnotes#footnote-40",
+        "https://ai-2027.com/supplements/security-forecast",
+        "https://www.rand.org/pubs/research_briefs/RBA2849-1.html#:~:text=What%20Are%20the%20Security%20Needs%20of%20Different%20AI%20Systems%3F",
+        "https://www.economist.com/china/2024/12/26/how-china-turns-members-of-its-diaspora-into-spies",
+        "/footnotes#footnote-41",
+        "https://ai-2027.com/supplements/timelines-forecast",
+        "https://ai-2027.com/supplements/takeoff-forecast",
+        "https://en.wikipedia.org/wiki/Synthetic_data",
+        "/footnotes#footnote-42",
+        "/footnotes#footnote-43",
+        "https://en.wikipedia.org/wiki/Technological_singularity#Intelligence_explosion",
+        "/footnotes#footnote-44",
+        "/footnotes#footnote-45",
+        "https://evals.alignment.org/Evaluating_LMAs_Realistic_Tasks.pdf",
+        "/footnotes#footnote-46",
+        "https://situational-awareness.ai/lock-down-the-labs/",
+        "https://www.bbc.com/news/world-asia-china-64206950",
+        "/footnotes#footnote-47",
+        "/footnotes#footnote-48",
+        "/footnotes#footnote-49",
+        "/footnotes#footnote-99",
+        "/footnotes#footnote-50",
+        "/footnotes#footnote-51",
+        "/footnotes#footnote-52",
+        "https://en.wikipedia.org/wiki/Half-precision_floating-point_format",
+        "https://arxiv.org/pdf/2412.06769",
+        "https://openai.com/index/chain-of-thought-monitoring/",
+        "https://arxiv.org/abs/2210.11416",
+        "https://openai.com/index/chain-of-thought-monitoring/",
+        "https://arxiv.org/abs/1810.08575",
+        "https://ai-alignment.com/iterated-distillation-and-amplification-157debfd1616",
+        "https://www.tobyord.com/writing/inference-scaling-reshapes-ai-governance",
+        "https://en.wikipedia.org/wiki/AlphaGo",
+        "https://arxiv.org/abs/2401.01879",
+        "https://arxiv.org/abs/1707.06347",
+        "https://arxiv.org/pdf/2210.11610",
+        "https://github.com/deepseek-ai/DeepSeek-R1",
+        "/footnotes#footnote-53",
+        "/footnotes#footnote-54",
+        "/footnotes#footnote-55",
+        "https://ai-2027.com/research/timelines-forecast",
+        "https://arxiv.org/pdf/2503.14499",
+        "https://ai-2027.com/research/timelines-forecast",
+        "https://ai-2027.com/research/timelines-forecast",
+        "https://ai-2027.com/research/timelines-forecast#2025-may-7-update",
+        "https://ai-2027.com/supplements/ai-goals-forecast",
+        "https://www.lesswrong.com/posts/cxuzALcmucCndYv4a/daniel-kokotajlo-s-shortform?commentId=YYhq2PADebnt35MY2",
+        "https://en.wikipedia.org/wiki/Data_dredging",
+        "https://cdn.openai.com/papers/weak-to-strong-generalization.pdf#page=47.37",
+        "https://openai.com/index/deliberative-alignment/",
+        "https://arxiv.org/pdf/2312.09390",
+        "https://arxiv.org/pdf/2312.06942",
+        "https://www.evals.anthropic.com/",
+        "https://arxiv.org/pdf/2211.03540",
+        "https://arxiv.org/pdf/2212.03827",
+        "https://www.anthropic.com/research/alignment-faking",
+        "https://en.wikipedia.org/wiki/Reward_hacking",
+        "https://arxiv.org/abs/2406.07358",
+        "/footnotes#footnote-58",
+        "https://www.anthropic.com/research/tracing-thoughts-language-model",
+        "https://arxiv.org/pdf/2312.06942",
+        "https://www.anthropic.com/research/probes-catch-sleeper-agents",
+        "/footnotes#footnote-59",
+        "/footnotes#footnote-60",
+        "/footnotes#footnote-61",
+        "/footnotes#footnote-62",
+        "/footnotes#footnote-63",
+        "https://fedscoop.com/openai-anthropic-enter-ai-agreements-with-us-ai-safety-institute/",
+        "/footnotes#footnote-64",
+        "https://darioamodei.com/machines-of-loving-grace#basic-assumptions-and-framework",
+        "/footnotes#footnote-65",
+        "https://www.dwarkeshpatel.com/p/ai-firm",
+        "/footnotes#footnote-66",
+        "/footnotes#footnote-67",
+        "/footnotes#footnote-68",
+        "https://encharge.io/what-is-b2b-saas/",
+        "/footnotes#footnote-69",
+        "/footnotes#footnote-70",
+        "https://en.wikipedia.org/wiki/Defense_Production_Act_of_1950",
+        "/footnotes#footnote-71",
+        "/footnotes#footnote-72",
+        "/footnotes#footnote-73",
+        "https://en.wikipedia.org/wiki/TSMC",
+        "/footnotes#footnote-74",
+        "/footnotes#footnote-75",
+        "/footnotes#footnote-76",
+        "/footnotes#footnote-77",
+        "https://ai-2027.com/supplements/timelines-forecast",
+        "https://ai-2027.com/research/takeoff-forecast",
+        "/footnotes#footnote-78",
+        "https://ai-2027.com/research/takeoff-forecast",
+        "/footnotes#footnote-79",
+        "/footnotes#footnote-80",
+        "/footnotes#footnote-81",
+        "https://ai-2027.com/research/ai-goals-forecast",
+        "/footnotes#footnote-82",
+        "/footnotes#footnote-83",
+        "https://www.lesswrong.com/posts/QEBFZtP64DdhjE3Sz/self-awareness-taxonomy-and-eval-suite-proposal#Introspection",
+        "https://www.lesswrong.com/posts/QEBFZtP64DdhjE3Sz/self-awareness-taxonomy-and-eval-suite-proposal#Self_Location",
+        "https://www.lesswrong.com/posts/QEBFZtP64DdhjE3Sz/self-awareness-taxonomy-and-eval-suite-proposal#Self_Knowledge",
+        "https://x.com/OwainEvans_UK/status/1881767725430976642",
+        "https://turntrout.com/dangers-of-intrinsic-power-seeking",
+        "https://openai.com/index/chain-of-thought-monitoring/",
+        "https://transformer-circuits.pub/2025/attribution-graphs/biology.html#dives-misaligned",
+        "https://www.anthropic.com/research/alignment-faking",
+        "https://www.lesswrong.com/posts/cxuzALcmucCndYv4a/daniel-kokotajlo-s-shortform?commentId=8mXnG75QMRkPAFAcH",
+        "/footnotes#footnote-84",
+        "/footnotes#footnote-85",
+        "/footnotes#footnote-86",
+        "https://arxiv.org/pdf/2406.07358",
+        "/footnotes#footnote-87",
+        "https://arxiv.org/abs/2405.05466",
+        "/footnotes#footnote-88",
+        "https://www.anthropic.com/research/probes-catch-sleeper-agents",
+        "/footnotes#footnote-89",
+        "/footnotes#footnote-90",
+        "/footnotes#footnote-91",
+        "/footnotes#footnote-92",
+        "/footnotes#footnote-93",
+        "/footnotes#footnote-94",
+        "/footnotes#footnote-95",
+        "/footnotes#footnote-96",
+        "/footnotes#footnote-97",
+        "/footnotes#footnote-98",
+        "https://time.com/7086285/ai-transparency-measures/",
+        "https://open.spotify.com/show/0pVfkdbpQWM9sKlhzpbQq6",
+        "https://podcasts.apple.com/podcast/id1806225838",
+        "https://feeds.buzzsprout.com/2466760.rss",
+        "https://open.spotify.com/show/0pVfkdbpQWM9sKlhzpbQq6",
+        "https://podcasts.apple.com/podcast/id1806225838",
+        "https://feeds.buzzsprout.com/2466760.rss",
+        "/slowdown",
+        "/race",
+        "https://ai-futures.org/",
+        "https://ai-futures.org/",
+        "https://lightconeinfrastructure.com",
+        "https://lightconeinfrastructure.com",
+        "/",
+        "/about",
+        "/summary",
+        "/research/compute-forecast",
+        "/research/timelines-forecast",
+        "/research/takeoff-forecast",
+        "/research/ai-goals-forecast",
+        "/research/security-forecast",
+        "https://lightconeinfrastructure.com",
+        "https://lightconeinfrastructure.com"
+      ],
+      "imgAlt": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Hacking icon",
+        "Hacking icon",
+        "Coding icon",
+        "Politics icon",
+        "Politics icon",
+        "Bioweapons icon",
+        "Bioweapons icon",
+        "Robotics icon",
+        "Robotics icon",
+        "Forecasting icon",
+        "Forecasting icon",
+        "AI Futures Project",
+        "Lightcone Infrastructure",
+        "Lightcone Infrastructure"
+      ],
+      "counts": {
+        "headings": 19,
+        "landmarks": 6,
+        "buttons": 12,
+        "links": 261,
+        "images": 20,
+        "roles": 12,
+        "aria": 28
+      }
+    },
+    "accessibility": {
+      "roots": [
+        {
+          "role": "RootWebArea",
+          "name": "AI 2027",
+          "children": [
+            {
+              "role": "none",
+              "name": "",
+              "children": [
+                {
+                  "role": "none",
+                  "name": "",
+                  "childCount": 4
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "roleCounts": {
+        "RootWebArea": 1,
+        "none": 209,
+        "navigation": 2,
+        "generic": 325,
+        "heading": 19,
+        "link": 167,
+        "contentinfo": 2,
+        "StaticText": 661,
+        "image": 40,
+        "button": 9,
+        "combobox": 1,
+        "separator": 1,
+        "paragraph": 125,
+        "alert": 1,
+        "group": 13,
+        "SvgRoot": 5,
+        "InlineTextBox": 1203,
+        "MenuListPopup": 1,
+        "Iframe": 1,
+        "superscript": 84,
+        "MathMLMath": 3,
+        "emphasis": 18,
+        "DisclosureTriangle": 13,
+        "graphics-symbol": 4,
+        "option": 10,
+        "LineBreak": 5,
+        "MathMLRow": 6,
+        "MathMLNumber": 7,
+        "MathMLOperator": 1,
+        "MathMLSup": 3
+      }
+    },
+    "screenshot": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp-competitor-analysis\\ai-2027.png"
+  },
+  "fiercebiotech": {
+    "title": "Fierce Biotech News & Reports",
+    "url": "https://www.fiercebiotech.com/",
+    "metaDesc": "Biopharma is a fast-growing world where big ideas come along daily. Our subscribers rely on Fierce Biotech as their must-read source for the latest news, analysis and data in the world of biotech and pharma R&D.",
+    "structure": {
+      "headings": [
+        {
+          "tag": "h3",
+          "text": "Ipsen fails to land pivotal rare disease trial"
+        },
+        {
+          "tag": "h3",
+          "text": "Fierce Biotech's 2025 must-reads"
+        },
+        {
+          "tag": "h3",
+          "text": "BD’s Bilal Muhsin on what good AI can still do for healthcare"
+        },
+        {
+          "tag": "h3",
+          "text": "Fierce Biotech Fundraising Tracker: Syneron, Atavistik & more"
+        },
+        {
+          "tag": "h3",
+          "text": "VC Aditum launches new biotech for foray with Fosun"
+        },
+        {
+          "tag": "h3",
+          "text": "Following Medtronic, J&J nets liquid embolic nod in brain bleeds"
+        },
+        {
+          "tag": "h3",
+          "text": "2 pharmas turn Scrooge, returning biotechs' unwanted gifts"
+        },
+        {
+          "tag": "h3",
+          "text": "Cybin alters state to become Helus Pharma for Nasdaq trip "
+        },
+        {
+          "tag": "h3",
+          "text": "Altimmune eyes phase 3 MASH trial as weight loss deepens"
+        },
+        {
+          "tag": "h3",
+          "text": "Pfizer RNA leader runs to Replicate—Chutes & Ladders"
+        },
+        {
+          "tag": "h2",
+          "text": "NOW PLAYING"
+        }
+      ],
+      "landmarks": [
+        {
+          "tag": "aside",
+          "role": "complementary",
+          "label": "",
+          "id": "",
+          "className": "container section clearfix"
+        },
+        {
+          "tag": "main",
+          "role": "main",
+          "label": "",
+          "id": "content",
+          "className": "main-content"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "section"
+        },
+        {
+          "tag": "header",
+          "role": "banner",
+          "label": "",
+          "id": "",
+          "className": "header--large d-none d-xl-block"
+        },
+        {
+          "tag": "header",
+          "role": "banner",
+          "label": "",
+          "id": "",
+          "className": "mobile-nav container-fluid d-xl-none"
+        },
+        {
+          "tag": "footer",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": ""
+        }
+      ],
+      "buttonTexts": [
+        "\n      \n    ",
+        "\n    \n  ",
+        "\n    \n  ",
+        "\n      \n    "
+      ],
+      "linkTexts": [
+        "Fierce Pharma",
+        "Fierce Biotech",
+        "Fierce Healthcare",
+        "Fierce Life Sciences Events",
+        "Advertise",
+        "About Us",
+        "\n          ",
+        "\n          ",
+        "\n      \n\n    ",
+        "\n       ",
+        "Biotech",
+        "Cell & Gene Therapy",
+        "Clinical Data",
+        "Venture Capital",
+        "Deals",
+        "Research",
+        "Medtech",
+        "Devices",
+        "Diagnostics",
+        "AI and Machine Learning",
+        "CRO",
+        "Special Reports",
+        "Biologics",
+        "Clinical Development",
+        "Ophthalmology",
+        "Cell & Gene Therapy",
+        "Fierce 50",
+        "Special Report",
+        "Awards Gala",
+        "Awards",
+        "CRO Awards",
+        "Innovation Awards",
+        "Resources",
+        "Fierce Events",
+        "Industry Events",
+        "Webinars",
+        "Podcasts",
+        "Whitepapers",
+        "Survey",
+        "Subscribe",
+        "\n       ",
+        "Subscribe",
+        "Biotech",
+        "Cell & Gene Therapy",
+        "Clinical Data",
+        "Venture Capital",
+        "Deals",
+        "Research",
+        "Medtech",
+        "Devices",
+        "Diagnostics",
+        "AI and Machine Learning",
+        "CRO",
+        "Special Reports",
+        "Biologics",
+        "Clinical Development",
+        "Ophthalmology",
+        "Cell & Gene Therapy",
+        "Fierce 50",
+        "Special Report",
+        "Awards Gala",
+        "Awards",
+        "CRO Awards",
+        "Innovation Awards",
+        "Resources",
+        "Fierce Events",
+        "Industry Events",
+        "Webinars",
+        "Podcasts",
+        "Whitepapers",
+        "Survey",
+        "Subscribe",
+        "Fierce Pharma",
+        "Fierce Biotech",
+        "Fierce Healthcare",
+        "Fierce Life Sciences Events",
+        "Advertise",
+        "About Us",
+        "\n          ",
+        "\n          ",
+        "\n      \n\n    ",
+        "\n              \n                \n\n                \n                  \n                \n              \n            ",
+        "BIOTECH",
+        "Ipsen fails to land pivotal rare disease trial",
+        "Gabrielle Masson",
+        "\n          \n            \n\n            \n                              \n                          \n          \n        ",
+        "Fierce Biotech's 2025 must-reads",
+        "\n          \n            \n\n            \n                              \n                          \n          \n        ",
+        "BD’s Bilal Muhsin on what good AI can still do for healthcare",
+        "\n          \n            \n\n            \n                              \n                          \n          \n        ",
+        "Fierce Biotech Fundraising Tracker: Syneron, Atavistik & more",
+        "\n          \n            \n\n            \n                              \n                          \n          \n        ",
+        "VC Aditum launches new biotech for foray with Fosun",
+        "\n          \n            \n\n            \n                              \n                          \n          \n        ",
+        "Following Medtronic, J&J nets liquid embolic nod in brain bleeds",
+        "2 pharmas turn Scrooge, returning biotechs' unwanted gifts",
+        "Cybin alters state to become Helus Pharma for Nasdaq trip ",
+        "Altimmune eyes phase 3 MASH trial as weight loss deepens",
+        "Pfizer RNA leader runs to Replicate—Chutes & Ladders",
+        "See more stories ",
+        "\n       ",
+        "\n          ",
+        "\n          ",
+        "\n      \n\n    ",
+        "The Team",
+        "Advertise",
+        "Marketing Kit",
+        "Let's Talk",
+        "Newsletters",
+        "Resources",
+        "RSS Feeds",
+        "Fierce Pharma",
+        "Fierce Biotech",
+        "Fierce Healthcare",
+        "Life Sciences Events",
+        "\n            \n\n          ",
+        "Terms of use",
+        "Privacy Policy",
+        "Privacy Settings"
+      ],
+      "linkHrefs": [
+        "https://www.fiercepharma.com/",
+        "https://www.fiercebiotech.com/",
+        "https://www.fiercehealthcare.com/",
+        "https://www.fiercelifesciences.com/",
+        "https://healthcarelifesciences.questex.com/biotech/",
+        "/fiercebiotechcom/about-us",
+        "https://www.linkedin.com/showcase/fierce-biotech/",
+        "https://www.facebook.com/fiercebiotech/",
+        "https://twitter.com/fiercebiotech",
+        "/",
+        "/biotech",
+        "/keyword/cell-gene-therapy",
+        "/clinical-data",
+        "/venture-capital",
+        "/deals",
+        "/research",
+        "/medtech",
+        "/devices",
+        "/diagnostics",
+        "/ai-and-machine-learning",
+        "/cro",
+        "/special-reports",
+        "/activation-center/biologics",
+        "/keyword/clinical-development",
+        "/keyword/ophthalmology",
+        "/keyword/cell-gene-therapy",
+        "https://www.fiercepharma.com/collection/fierce-50-2025",
+        "https://www.fiercepharma.com/collection/fierce-50-2025",
+        "https://fierce50.fiercelifesciences.com/",
+        "https://www.fiercecroawards.com/",
+        "https://www.fiercebiotech.com/book/fierce-cro-awards",
+        "https://fiercelifesciencesinnovationawards.fiercelifesciences.com/",
+        "/resources",
+        "/resource/products/questex%20event",
+        "/resource/products/industry%20event",
+        "/resource/products/webinar",
+        "/podcasts",
+        "/resource/products/whitepaper",
+        "/resource/products/survey",
+        "https://www.fiercebiotech.com/fiercebiotechcom/fb-newsletters",
+        "/",
+        "https://www.fiercebiotech.com/fiercebiotechcom/fb-newsletters",
+        "/biotech",
+        "/keyword/cell-gene-therapy",
+        "/clinical-data",
+        "/venture-capital",
+        "/deals",
+        "/research",
+        "/medtech",
+        "/devices",
+        "/diagnostics",
+        "/ai-and-machine-learning",
+        "/cro",
+        "/special-reports",
+        "/activation-center/biologics",
+        "/keyword/clinical-development",
+        "/keyword/ophthalmology",
+        "/keyword/cell-gene-therapy",
+        "https://www.fiercepharma.com/collection/fierce-50-2025",
+        "https://www.fiercepharma.com/collection/fierce-50-2025",
+        "https://fierce50.fiercelifesciences.com/",
+        "https://www.fiercecroawards.com/",
+        "https://www.fiercebiotech.com/book/fierce-cro-awards",
+        "https://fiercelifesciencesinnovationawards.fiercelifesciences.com/",
+        "/resources",
+        "/resource/products/questex%20event",
+        "/resource/products/industry%20event",
+        "/resource/products/webinar",
+        "/podcasts",
+        "/resource/products/whitepaper",
+        "/resource/products/survey",
+        "https://www.fiercebiotech.com/fiercebiotechcom/fb-newsletters",
+        "https://www.fiercepharma.com/",
+        "https://www.fiercebiotech.com/",
+        "https://www.fiercehealthcare.com/",
+        "https://www.fiercelifesciences.com/",
+        "https://healthcarelifesciences.questex.com/biotech/",
+        "/fiercebiotechcom/about-us",
+        "https://www.linkedin.com/showcase/fierce-biotech/",
+        "https://www.facebook.com/fiercebiotech/",
+        "https://twitter.com/fiercebiotech",
+        "/biotech/ipsens-hopes-next-gen-rare-disease-drug-dashed-pivotal-ph-2-fail",
+        "/biotech",
+        "/biotech/ipsens-hopes-next-gen-rare-disease-drug-dashed-pivotal-ph-2-fail",
+        "/person/gabrielle-masson-0",
+        "/biotech/fierce-biotechs-top-editors-picks-2025",
+        "/biotech/fierce-biotechs-top-editors-picks-2025",
+        "/medtech/looking-ahead-bds-bilal-muhsin-what-good-ai-can-still-do-healthcare",
+        "/medtech/looking-ahead-bds-bilal-muhsin-what-good-ai-can-still-do-healthcare",
+        "/biotech/fierce-biotech-fundraising-tracker-25",
+        "/biotech/fierce-biotech-fundraising-tracker-25",
+        "/biotech/vc-aditum-bio-launches-new-biotech-foray-fosun-pharma",
+        "/biotech/vc-aditum-bio-launches-new-biotech-foray-fosun-pharma",
+        "/medtech/following-medtronic-jj-nets-liquid-embolic-nod-subdural-hematoma",
+        "/medtech/following-medtronic-jj-nets-liquid-embolic-nod-subdural-hematoma",
+        "/biotech/merck-turns-down-option-evaxions-gonorrhea-vaccine-prompting-danish-biotech-seek-other",
+        "//www.fiercepharma.com/marketing/cybin-alters-state-become-helus-nasdaq-trip",
+        "/biotech/altimmune-eyes-phase-3-mash-trial-weight-loss-deepens",
+        "/biotech/chutes-ladders-pfizer-rna-leader-runs-replicate",
+        "/fierce-biotech-homepage",
+        "/",
+        "https://www.linkedin.com/showcase/fierce-biotech/",
+        "https://www.facebook.com/fiercebiotech/",
+        "https://twitter.com/fiercebiotech",
+        "/fiercebiotechcom/about-us",
+        "https://healthcarelifesciences.questex.com/biotech/",
+        "https://healthcarelifesciences.questex.com/marketing-kit/",
+        "https://healthcarelifesciences.questex.com/lets-talk/",
+        "https://www.fiercebiotech.com/fiercebiotechcom/fb-newsletters",
+        "/resources",
+        "/fiercebiotechcom/rss-feeds",
+        "https://www.fiercepharma.com/",
+        "https://www.fiercebiotech.com/",
+        "https://www.fiercehealthcare.com/",
+        "https://www.fiercelifesciences.com/",
+        "https://questex.com/",
+        "https://questex.com/terms-and-conditions/",
+        "https://questex.com/privacy-policy/",
+        "#"
+      ],
+      "imgAlt": [
+        "Home",
+        "Home",
+        "Hamburger Menu",
+        "Hamburger Menu",
+        "saker falcon",
+        "Orange star symbol glowing amid black star symbols on black background",
+        "BD Bilal Muhsin",
+        "Fierce Fundraising Tracker image 2025",
+        "Space shuttle takes off on background of blue sky",
+        "brain neurostimulation",
+        "Home",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "counts": {
+        "headings": 11,
+        "landmarks": 6,
+        "buttons": 4,
+        "links": 119,
+        "images": 22,
+        "roles": 14,
+        "aria": 22
+      }
+    },
+    "accessibility": {
+      "roots": [
+        {
+          "role": "RootWebArea",
+          "name": "Fierce Biotech News & Reports",
+          "children": [
+            {
+              "role": "none",
+              "name": "",
+              "children": [
+                {
+                  "role": "none",
+                  "name": "",
+                  "childCount": 2
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "roleCounts": {
+        "RootWebArea": 1,
+        "none": 138,
+        "generic": 127,
+        "complementary": 1,
+        "main": 1,
+        "sectionfooter": 1,
+        "banner": 1,
+        "image": 15,
+        "link": 40,
+        "list": 5,
+        "Iframe": 1,
+        "StaticText": 47,
+        "heading": 11,
+        "listitem": 15,
+        "button": 1,
+        "InlineTextBox": 63,
+        "figure": 6
+      }
+    },
+    "screenshot": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp-competitor-analysis\\fiercebiotech.png"
+  },
+  "nodebench-landing": {
+    "title": "Chef",
+    "url": "https://nodebench-ai.vercel.app/",
+    "metaDesc": "",
+    "structure": {
+      "headings": [
+        {
+          "tag": "h1",
+          "text": "Home"
+        },
+        {
+          "tag": "h3",
+          "text": "The Research Hub"
+        },
+        {
+          "tag": "h3",
+          "text": "Strategic Workspace"
+        }
+      ],
+      "landmarks": [
+        {
+          "tag": "main",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "h-screen"
+        }
+      ],
+      "buttonTexts": [
+        "Home\nResearch & Live Dossiers",
+        "My Workspace",
+        "Saved Dossiers",
+        "Continue with Google",
+        "",
+        "Fast Agent"
+      ],
+      "linkTexts": [],
+      "linkHrefs": [],
+      "imgAlt": [],
+      "counts": {
+        "headings": 3,
+        "landmarks": 1,
+        "buttons": 6,
+        "links": 0,
+        "images": 0,
+        "roles": 0,
+        "aria": 16
+      }
+    },
+    "accessibility": {
+      "roots": [
+        {
+          "role": "RootWebArea",
+          "name": "Chef",
+          "children": [
+            {
+              "role": "none",
+              "name": "",
+              "children": [
+                {
+                  "role": "none",
+                  "name": "",
+                  "childCount": 3
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "roleCounts": {
+        "RootWebArea": 1,
+        "none": 74,
+        "generic": 80,
+        "main": 1,
+        "StaticText": 59,
+        "button": 5,
+        "heading": 3,
+        "InlineTextBox": 73,
+        "image": 4,
+        "paragraph": 2
+      }
+    },
+    "screenshot": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp-competitor-analysis\\nodebench-landing.png"
+  },
+  "nodebench-research-hub": {
+    "title": "Chef",
+    "url": "https://nodebench-ai.vercel.app/",
+    "metaDesc": "",
+    "structure": {
+      "headings": [
+        {
+          "tag": "h1",
+          "text": "Home"
+        },
+        {
+          "tag": "h3",
+          "text": "The Research Hub"
+        },
+        {
+          "tag": "h3",
+          "text": "Strategic Workspace"
+        }
+      ],
+      "landmarks": [
+        {
+          "tag": "main",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "h-screen"
+        }
+      ],
+      "buttonTexts": [
+        "Home\nResearch & Live Dossiers",
+        "My Workspace",
+        "Saved Dossiers",
+        "Continue with Google",
+        "",
+        "Fast Agent"
+      ],
+      "linkTexts": [],
+      "linkHrefs": [],
+      "imgAlt": [],
+      "counts": {
+        "headings": 3,
+        "landmarks": 1,
+        "buttons": 6,
+        "links": 0,
+        "images": 0,
+        "roles": 0,
+        "aria": 16
+      }
+    },
+    "accessibility": {
+      "roots": [
+        {
+          "role": "RootWebArea",
+          "name": "Chef",
+          "children": [
+            {
+              "role": "none",
+              "name": "",
+              "children": [
+                {
+                  "role": "none",
+                  "name": "",
+                  "childCount": 3
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "roleCounts": {
+        "RootWebArea": 1,
+        "none": 74,
+        "generic": 80,
+        "main": 1,
+        "StaticText": 59,
+        "button": 5,
+        "heading": 3,
+        "InlineTextBox": 73,
+        "image": 4,
+        "paragraph": 2
+      }
+    },
+    "screenshot": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp-competitor-analysis\\nodebench-research-hub.png",
+    "action": {
+      "clickText": "Home Research & Live Dossiers",
+      "success": true
+    }
+  },
+  "nodebench-archive": {
+    "title": "Chef",
+    "url": "https://nodebench-ai.vercel.app/",
+    "metaDesc": "",
+    "structure": {
+      "headings": [
+        {
+          "tag": "h1",
+          "text": "Home"
+        },
+        {
+          "tag": "h3",
+          "text": "EXECUTIVE SYNTHESIS"
+        },
+        {
+          "tag": "h3",
+          "text": "Sources\n(3)"
+        },
+        {
+          "tag": "h3",
+          "text": "PERSONAL PULSE"
+        },
+        {
+          "tag": "h3",
+          "text": "INSTITUTIONAL BRIEFING"
+        },
+        {
+          "tag": "h2",
+          "text": "Today's Briefing"
+        },
+        {
+          "tag": "h3",
+          "text": "AI Infrastructure Momentum Continues"
+        },
+        {
+          "tag": "h3",
+          "text": "LIVE SIGNAL STREAM"
+        },
+        {
+          "tag": "h3",
+          "text": "zai-org/Open-AutoGLM"
+        },
+        {
+          "tag": "h3",
+          "text": "mistralai/mistral-vibe"
+        },
+        {
+          "tag": "h3",
+          "text": "HKUDS/Paper2Slides"
+        },
+        {
+          "tag": "h3",
+          "text": "byJoey/ech-wk"
+        },
+        {
+          "tag": "h3",
+          "text": "apple/ml-sharp"
+        },
+        {
+          "tag": "h3",
+          "text": "PastKing/tgbot-verify"
+        },
+        {
+          "tag": "h3",
+          "text": "cporter202/API-mega-list"
+        },
+        {
+          "tag": "h3",
+          "text": "eooce/Gla-deploy"
+        },
+        {
+          "tag": "h3",
+          "text": "productdevbook/port-killer"
+        },
+        {
+          "tag": "h3",
+          "text": "Cloudflare outage on December 5, 2025"
+        },
+        {
+          "tag": "h3",
+          "text": "TanShilongMario/PromptFill"
+        },
+        {
+          "tag": "h3",
+          "text": "tobi/qmd"
+        },
+        {
+          "tag": "h3",
+          "text": "2025Emma/vibe-coding-cn"
+        },
+        {
+          "tag": "h3",
+          "text": "gaearon/rscexplorer"
+        },
+        {
+          "tag": "h3",
+          "text": "Lulzx/tinypdf"
+        },
+        {
+          "tag": "h3",
+          "text": "actionstatelabs/android-action-kernel"
+        },
+        {
+          "tag": "h3",
+          "text": "Gemini 3 Pro: the frontier of vision AI"
+        },
+        {
+          "tag": "h3",
+          "text": "cporter202/scraping-apis-for-devs"
+        },
+        {
+          "tag": "h3",
+          "text": "typsusan-zzz/canvas-drawing-editor"
+        },
+        {
+          "tag": "h3",
+          "text": "journey-ad/gemini-watermark-remover"
+        },
+        {
+          "tag": "h3",
+          "text": "zai-org/GLM-TTS"
+        },
+        {
+          "tag": "h3",
+          "text": "lwj2015/lightron"
+        },
+        {
+          "tag": "h3",
+          "text": "KalyanKS-NLP/LLM-Interview-Questions-and-Answers-Hub"
+        },
+        {
+          "tag": "h3",
+          "text": "agentskills/agentskills"
+        },
+        {
+          "tag": "h3",
+          "text": "INSTITUTIONAL DEAL FLOW"
+        },
+        {
+          "tag": "h3",
+          "text": "CAPABILITY VS. RELIABILITY INDEX (%)"
+        },
+        {
+          "tag": "h2",
+          "text": "Pulse"
+        }
+      ],
+      "landmarks": [
+        {
+          "tag": "main",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "h-screen"
+        },
+        {
+          "tag": "main",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "flex-1 overflow-y-auto custom-scrollbar"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "mt-12 pt-8 border-t-2"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "aside",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "w-[450px] shrink-0 sticky"
+        }
+      ],
+      "buttonTexts": [
+        "Home\nResearch & Live Dossiers",
+        "My Workspace",
+        "Saved Dossiers",
+        "Continue with Google",
+        "",
+        "Fast Agent",
+        "",
+        "Today's Intelligence Brief\nDec 20",
+        "Weekly Outlook\nDec 28",
+        "",
+        "",
+        "",
+        "",
+        "zai-org/Open-AutoGLM\nPRIORITY",
+        "mistralai/mistral-vibe\nPRIORITY",
+        "HKUDS/Paper2Slides\nHKUDS\nPRIORITY",
+        "byJoey/ech-wk\nPRIORITY",
+        "",
+        "Start tracking topics to see personalized news here. Try \"#ai\" or \"#openai\".\nWATCH",
+        "ai",
+        "openai",
+        "Strategic Brief",
+        "Full Dossier",
+        "Generate Now",
+        "ACT I\nThe Setup",
+        "ACT II\nThe Signal",
+        "ACT III\nThe Move",
+        "AI",
+        "AI",
+        "📰 All",
+        "🤖 AI & ML",
+        "🚀 Startups",
+        "📦 Products",
+        "💻 Open Source",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Atlas Robotics\n\n$18M\n• series a\n• 2d ago\nHot\n\nAutonomous warehouse picking with vision-language control loops. Early pilots show 27% throughput gains.\n\nAustin, TX\nrobotics\nLead: Khosla Ventures\n3 paid pilots (Fortune 500 retail)",
+        "Helix BioSystems\n\n$3.2M\n• seed\n• 5d ago\nWatch\n\nLab-on-a-chip diagnostics for rapid sepsis detection. Early results show 15-minute turnaround with 92% sensitivity.\n\nBoston, MA\nhealthcare\nLead: Atlas Ventures\nClinical pilot in 2 hospitals"
+      ],
+      "linkTexts": [
+        "github.com",
+        "github.com",
+        "github.com",
+        "Measuring AI Ability to Complete Long Tasks: Opus 4.5 has 50% horizon of 4h49M",
+        "Universal Reasoning Model",
+        "TimeLens: Rethinking Video Temporal Grounding with Multimodal LLMs"
+      ],
+      "linkHrefs": [
+        "https://github.com/zai-org/Open-AutoGLM",
+        "https://github.com/mistralai/mistral-vibe",
+        "https://github.com/HKUDS/Paper2Slides",
+        "https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/",
+        "https://arxiv.org/abs/2512.14693v1",
+        "https://arxiv.org/abs/2512.14698v1"
+      ],
+      "imgAlt": [],
+      "counts": {
+        "headings": 35,
+        "landmarks": 9,
+        "buttons": 60,
+        "links": 6,
+        "images": 0,
+        "roles": 1,
+        "aria": 160
+      }
+    },
+    "accessibility": {
+      "roots": [
+        {
+          "role": "RootWebArea",
+          "name": "Chef",
+          "children": [
+            {
+              "role": "none",
+              "name": "",
+              "children": [
+                {
+                  "role": "none",
+                  "name": "",
+                  "childCount": 3
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "roleCounts": {
+        "RootWebArea": 1,
+        "none": 869,
+        "generic": 117,
+        "main": 2,
+        "StaticText": 631,
+        "button": 59,
+        "heading": 38,
+        "complementary": 1,
+        "InlineTextBox": 735,
+        "image": 6,
+        "paragraph": 53,
+        "combobox": 3,
+        "textbox": 1,
+        "MenuListPopup": 3,
+        "list": 1,
+        "link": 6,
+        "option": 9,
+        "listitem": 3
+      }
+    },
+    "screenshot": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp-competitor-analysis\\nodebench-archive.png",
+    "action": {
+      "clickText": "ENTER ARCHIVE",
+      "success": true
+    }
+  },
+  "nodebench-act-i": {
+    "title": "Chef",
+    "url": "https://nodebench-ai.vercel.app/",
+    "metaDesc": "",
+    "structure": {
+      "headings": [
+        {
+          "tag": "h1",
+          "text": "Home"
+        },
+        {
+          "tag": "h3",
+          "text": "EXECUTIVE SYNTHESIS"
+        },
+        {
+          "tag": "h3",
+          "text": "Sources\n(3)"
+        },
+        {
+          "tag": "h3",
+          "text": "PERSONAL PULSE"
+        },
+        {
+          "tag": "h3",
+          "text": "INSTITUTIONAL BRIEFING"
+        },
+        {
+          "tag": "h2",
+          "text": "Today's Briefing"
+        },
+        {
+          "tag": "h3",
+          "text": "AI Infrastructure Momentum Continues"
+        },
+        {
+          "tag": "h3",
+          "text": "LIVE SIGNAL STREAM"
+        },
+        {
+          "tag": "h3",
+          "text": "zai-org/Open-AutoGLM"
+        },
+        {
+          "tag": "h3",
+          "text": "mistralai/mistral-vibe"
+        },
+        {
+          "tag": "h3",
+          "text": "HKUDS/Paper2Slides"
+        },
+        {
+          "tag": "h3",
+          "text": "byJoey/ech-wk"
+        },
+        {
+          "tag": "h3",
+          "text": "apple/ml-sharp"
+        },
+        {
+          "tag": "h3",
+          "text": "PastKing/tgbot-verify"
+        },
+        {
+          "tag": "h3",
+          "text": "cporter202/API-mega-list"
+        },
+        {
+          "tag": "h3",
+          "text": "eooce/Gla-deploy"
+        },
+        {
+          "tag": "h3",
+          "text": "productdevbook/port-killer"
+        },
+        {
+          "tag": "h3",
+          "text": "Cloudflare outage on December 5, 2025"
+        },
+        {
+          "tag": "h3",
+          "text": "TanShilongMario/PromptFill"
+        },
+        {
+          "tag": "h3",
+          "text": "tobi/qmd"
+        },
+        {
+          "tag": "h3",
+          "text": "2025Emma/vibe-coding-cn"
+        },
+        {
+          "tag": "h3",
+          "text": "gaearon/rscexplorer"
+        },
+        {
+          "tag": "h3",
+          "text": "Lulzx/tinypdf"
+        },
+        {
+          "tag": "h3",
+          "text": "actionstatelabs/android-action-kernel"
+        },
+        {
+          "tag": "h3",
+          "text": "Gemini 3 Pro: the frontier of vision AI"
+        },
+        {
+          "tag": "h3",
+          "text": "cporter202/scraping-apis-for-devs"
+        },
+        {
+          "tag": "h3",
+          "text": "typsusan-zzz/canvas-drawing-editor"
+        },
+        {
+          "tag": "h3",
+          "text": "journey-ad/gemini-watermark-remover"
+        },
+        {
+          "tag": "h3",
+          "text": "zai-org/GLM-TTS"
+        },
+        {
+          "tag": "h3",
+          "text": "lwj2015/lightron"
+        },
+        {
+          "tag": "h3",
+          "text": "KalyanKS-NLP/LLM-Interview-Questions-and-Answers-Hub"
+        },
+        {
+          "tag": "h3",
+          "text": "agentskills/agentskills"
+        },
+        {
+          "tag": "h3",
+          "text": "INSTITUTIONAL DEAL FLOW"
+        },
+        {
+          "tag": "h3",
+          "text": "CAPABILITY VS. RELIABILITY INDEX (%)"
+        },
+        {
+          "tag": "h2",
+          "text": "Pulse"
+        }
+      ],
+      "landmarks": [
+        {
+          "tag": "main",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "h-screen"
+        },
+        {
+          "tag": "main",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "flex-1 overflow-y-auto custom-scrollbar"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "mt-12 pt-8 border-t-2"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "section",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "animate-in fade-in duration-700"
+        },
+        {
+          "tag": "aside",
+          "role": "",
+          "label": "",
+          "id": "",
+          "className": "w-[450px] shrink-0 sticky"
+        }
+      ],
+      "buttonTexts": [
+        "Home\nResearch & Live Dossiers",
+        "My Workspace",
+        "Saved Dossiers",
+        "Continue with Google",
+        "",
+        "Fast Agent",
+        "",
+        "Today's Intelligence Brief\nDec 20",
+        "Weekly Outlook\nDec 28",
+        "",
+        "",
+        "",
+        "",
+        "zai-org/Open-AutoGLM\nPRIORITY",
+        "mistralai/mistral-vibe\nPRIORITY",
+        "HKUDS/Paper2Slides\nHKUDS\nPRIORITY",
+        "byJoey/ech-wk\nPRIORITY",
+        "",
+        "Start tracking topics to see personalized news here. Try \"#ai\" or \"#openai\".\nWATCH",
+        "ai",
+        "openai",
+        "Strategic Brief",
+        "Full Dossier",
+        "Generate Now",
+        "ACT I\nThe Setup",
+        "ACT II\nThe Signal",
+        "ACT III\nThe Move",
+        "AI",
+        "AI",
+        "📰 All",
+        "🤖 AI & ML",
+        "🚀 Startups",
+        "📦 Products",
+        "💻 Open Source",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Atlas Robotics\n\n$18M\n• series a\n• 2d ago\nHot\n\nAutonomous warehouse picking with vision-language control loops. Early pilots show 27% throughput gains.\n\nAustin, TX\nrobotics\nLead: Khosla Ventures\n3 paid pilots (Fortune 500 retail)",
+        "Helix BioSystems\n\n$3.2M\n• seed\n• 5d ago\nWatch\n\nLab-on-a-chip diagnostics for rapid sepsis detection. Early results show 15-minute turnaround with 92% sensitivity.\n\nBoston, MA\nhealthcare\nLead: Atlas Ventures\nClinical pilot in 2 hospitals"
+      ],
+      "linkTexts": [
+        "github.com",
+        "github.com",
+        "github.com",
+        "Measuring AI Ability to Complete Long Tasks: Opus 4.5 has 50% horizon of 4h49M",
+        "Universal Reasoning Model",
+        "TimeLens: Rethinking Video Temporal Grounding with Multimodal LLMs"
+      ],
+      "linkHrefs": [
+        "https://github.com/zai-org/Open-AutoGLM",
+        "https://github.com/mistralai/mistral-vibe",
+        "https://github.com/HKUDS/Paper2Slides",
+        "https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/",
+        "https://arxiv.org/abs/2512.14693v1",
+        "https://arxiv.org/abs/2512.14698v1"
+      ],
+      "imgAlt": [],
+      "counts": {
+        "headings": 35,
+        "landmarks": 9,
+        "buttons": 60,
+        "links": 6,
+        "images": 0,
+        "roles": 1,
+        "aria": 160
+      }
+    },
+    "accessibility": {
+      "roots": [
+        {
+          "role": "RootWebArea",
+          "name": "Chef",
+          "children": [
+            {
+              "role": "none",
+              "name": "",
+              "children": [
+                {
+                  "role": "none",
+                  "name": "",
+                  "childCount": 3
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "roleCounts": {
+        "RootWebArea": 1,
+        "none": 869,
+        "generic": 117,
+        "main": 2,
+        "StaticText": 631,
+        "button": 59,
+        "heading": 38,
+        "complementary": 1,
+        "InlineTextBox": 735,
+        "image": 6,
+        "paragraph": 53,
+        "combobox": 3,
+        "textbox": 1,
+        "MenuListPopup": 3,
+        "list": 1,
+        "link": 6,
+        "option": 9,
+        "listitem": 3
+      }
+    },
+    "screenshot": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp-competitor-analysis\\nodebench-act-i.png",
+    "action": {
+      "clickText": "ACT I The Setup",
+      "success": true
+    }
+  }
+}
