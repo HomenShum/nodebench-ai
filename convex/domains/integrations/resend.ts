@@ -128,7 +128,7 @@ function generateDigestEmailHtml(digest: EmailDigest, userName?: string): string
   const itemsHtml = digest.items.slice(0, 8).map(item => {
     const typeIcon = item.type === "news" ? "📰"
       : item.type === "alert" ? "🚨"
-      : item.type === "insight" ? "💡"
+      : item.type === "analysis" ? "💡"
       : "📊";
     return `
       <tr>
@@ -252,7 +252,7 @@ export const sendDailyDigest = action({
     userName: v.optional(v.string()),
     userId: v.optional(v.id("users")),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ success: boolean; emailId?: string; error?: string }> => {
     const digest = args.digest as EmailDigest;
 
     // Generate HTML
@@ -267,7 +267,7 @@ export const sendDailyDigest = action({
     const subject = `📰 Your Daily Digest - ${dateFormatted} (${digest.items.length} items)`;
 
     // Use the existing sendEmail action
-    const result = await ctx.runAction(api.domains.integrations.resend.sendEmail, {
+    const result: { success: boolean; emailId?: string; error?: string } = await ctx.runAction(api.domains.integrations.resend.sendEmail, {
       to: args.to,
       subject,
       html,
