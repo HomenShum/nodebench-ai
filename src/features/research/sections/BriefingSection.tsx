@@ -6,16 +6,19 @@
  * - 3-Act scrollytelling layout
  * - Loading states with skeletons
  * - Act navigation
+ * - Fallback sample data with generation trigger
  */
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Clock, BarChart2, Zap, ExternalLink } from 'lucide-react';
+import { ChevronRight, Clock, BarChart2, Zap, ExternalLink, Sparkles, RefreshCw } from 'lucide-react';
+import { useMutation } from 'convex/react';
 import { useBriefData } from '../hooks/useBriefData';
 import { CrossLinkedText } from '../components/CrossLinkedText';
 import { BriefingSkeleton } from '@/components/skeletons';
 import { ErrorBoundary, BriefingErrorFallback } from '@/components/ErrorBoundary';
 import { formatBriefDate } from '@/lib/briefDate';
+import { api } from '../../../../convex/_generated/api';
 
 type ActiveAct = 'actI' | 'actII' | 'actIII';
 
@@ -38,14 +41,38 @@ function BriefingSectionInner({
     briefingDateString,
     sourceSummary,
     isLoading,
+    isUsingFallback,
+    briefMemory,
   } = useBriefData();
 
   const [activeAct, setActiveAct] = useState<ActiveAct>('actI');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleActChange = useCallback((act: ActiveAct) => {
     setActiveAct(act);
     onActChange?.(act);
   }, [onActChange]);
+
+  // Trigger brief generation manually
+  const handleGenerateBrief = useCallback(async () => {
+    if (!briefMemory?._id || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      // Call the public action to generate the brief
+      const response = await fetch('/api/generate-brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memoryId: briefMemory._id }),
+      });
+      if (!response.ok) {
+        console.warn('Brief generation failed:', await response.text());
+      }
+    } catch (err) {
+      console.warn('Brief generation error:', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [briefMemory?._id, isGenerating]);
 
   if (isLoading) {
     return (
@@ -73,6 +100,30 @@ function BriefingSectionInner({
 
   return (
     <div className={className}>
+      {/* Sample Data Banner */}
+      {isUsingFallback && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-amber-600" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">Sample Intelligence Brief</p>
+              <p className="text-xs text-amber-600">This is demo content. Real briefs are generated daily at 6:00 AM UTC.</p>
+            </div>
+          </div>
+          {briefMemory?._id && (
+            <button
+              type="button"
+              onClick={handleGenerateBrief}
+              disabled={isGenerating}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+              {isGenerating ? 'Generating...' : 'Generate Now'}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>

@@ -51,16 +51,28 @@ interface GenerationContext {
 
 function buildBriefPrompt(context: GenerationContext): string {
   const { briefDate, feedItems, snapshotSummary, previousErrors } = context;
-  
+
+  // Build citation registry from feed items
+  const citationRegistry = feedItems.slice(0, 20).map((item, i) => {
+    const citationId = `src-${i + 1}`;
+    return {
+      id: citationId,
+      title: item.title,
+      source: item.source || "Unknown",
+      url: item.url || "",
+    };
+  });
+
   const itemsContext = feedItems.slice(0, 20).map((item, i) => {
-    return `[${i + 1}] ${item.title}
+    const citationId = `src-${i + 1}`;
+    return `[CITATION_ID: ${citationId}] ${item.title}
    Source: ${item.source || "Unknown"} | Score: ${item.score || 0}
    URL: ${item.url || "N/A"}
    Published: ${item.publishedAt || "Unknown"}
    Summary: ${item.summary?.slice(0, 200) || "No summary"}`;
   }).join("\n\n");
 
-  const sourceBreakdown = snapshotSummary?.bySource 
+  const sourceBreakdown = snapshotSummary?.bySource
     ? Object.entries(snapshotSummary.bySource)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 6)
@@ -82,12 +94,51 @@ STRICT RULES:
 5. Each signal MUST have 1-5 evidence items with all required fields.
 6. Action linkedSignalIds MUST reference real signal IDs you created.
 
+═══════════════════════════════════════════════════════════════════════════
+CITATION TOKEN SYSTEM (CRITICAL - You MUST use these in synthesis fields)
+═══════════════════════════════════════════════════════════════════════════
+
+When referencing feed items in your synthesis text, use citation tokens:
+  {{cite:CITATION_ID}}
+
+Example synthesis with citations:
+  "Market sentiment remains constructive{{cite:src-1}}, with open-source AI tooling continuing to gain momentum{{cite:src-3}}. The release of new vision models{{cite:src-5}} signals broader industry investment in multimodal capabilities."
+
+AVAILABLE CITATIONS:
+${citationRegistry.map(c => `  - ${c.id}: "${c.title}" (${c.source})`).join("\n")}
+
+═══════════════════════════════════════════════════════════════════════════
+ENTITY TOKEN SYSTEM (Use for companies, people, products, technologies)
+═══════════════════════════════════════════════════════════════════════════
+
+When mentioning entities (companies, people, products, technologies), wrap them in entity tokens:
+  @@entity:entity-id|Display Name|type:TYPE@@
+
+Entity types: company, person, product, technology, topic, metric
+
+Example synthesis with entities:
+  "@@entity:openai|OpenAI|type:company@@ continues to lead in frontier models, while @@entity:mistral|Mistral AI|type:company@@ gains traction in the open-weight space. @@entity:sam-altman|Sam Altman|type:person@@ announced new pricing tiers."
+
+Generate entity IDs using kebab-case from the entity name (e.g., "OpenAI" → "openai", "Sam Altman" → "sam-altman").
+
+═══════════════════════════════════════════════════════════════════════════
+CHART REFERENCE SYNTAX (For interactive spans in scrollytelling)
+═══════════════════════════════════════════════════════════════════════════
+
+When referencing data points that could be visualized, use interactive span syntax:
+  [[descriptive label|dataIndex:N]]
+
+Example:
+  "The [[funding spike in Q3|dataIndex:2]] reflects renewed investor confidence, though the [[reliability gap|dataIndex:4]] remains a concern."
+
+═══════════════════════════════════════════════════════════════════════════
+
 TODAY'S FEED (${snapshotSummary?.totalItems || feedItems.length} items from ${sourceBreakdown}):
 
 ${itemsContext}
 ${errorFeedback}
 
-Generate a structured 3-Act brief following the exact JSON schema provided.`;
+Generate a structured 3-Act brief following the exact JSON schema provided. Remember to embed {{cite:id}}, @@entity:id|name|type:TYPE@@, and [[label|dataIndex:N]] tokens throughout your synthesis prose.`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -326,7 +377,15 @@ CRITICAL PROSE RULES:
 3. Do NOT include timestamps (like "12:30 PM" or "2024-12-14T...") in prose.
 4. Do NOT use feed-log phrases like "Trending on HackerNews", "X points", "Y comments", "starred".
 5. Do NOT include domain names like "github.com" in prose text.
-6. For actions with insufficient data, set status to "insufficient_data" and explain in content field.`
+6. For actions with insufficient data, set status to "insufficient_data" and explain in content field.
+
+INLINE TOKEN REQUIREMENTS (MANDATORY):
+7. ALWAYS embed {{cite:src-N}} tokens when referencing feed items in synthesis text.
+8. ALWAYS wrap company/person/product names in @@entity:id|Name|type:TYPE@@ tokens.
+9. Use [[label|dataIndex:N]] for data points that could be charted.
+
+Example synthesis:
+"@@entity:anthropic|Anthropic|type:company@@ released new safety research{{cite:src-2}}, while the [[capability gap|dataIndex:1]] continues to widen."`
           },
           { role: "user", content: finalPrompt }
         ],

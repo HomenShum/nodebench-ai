@@ -14,6 +14,10 @@ import {
   Target
 } from 'lucide-react';
 import { CrossLinkedText } from './CrossLinkedText';
+import { InteractiveSpanParser } from './InteractiveSpanParser';
+import { FootnotesSection } from './FootnotesSection';
+import type { CitationLibrary } from '../types/citationSchema';
+import type { EntityLibrary } from '../types/entitySchema';
 
 interface DigestSection {
   id: string;
@@ -95,17 +99,43 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     }
   }, [cachedSummary, generatedSummary]);
 
+  // Sample fallback data when no real data exists
+  const sampleDigestData = useMemo(() => ({
+    marketMovers: [
+      { title: 'NVDA surges 8% on AI infrastructure demand outlook', source: 'Bloomberg' },
+      { title: 'OpenAI valued at $300B in latest funding round', source: 'TechCrunch' },
+      { title: 'Anthropic announces Claude Opus 4.5 with 5-hour task horizons', source: 'The Verge' },
+    ],
+    watchlistRelevant: [
+      { title: 'Universal Reasoning Models achieve ARC-AGI breakthroughs', source: 'ArXiv' },
+      { title: 'TimeLens establishes new baseline for video temporal grounding', source: 'ArXiv' },
+      { title: 'Agent reliability benchmarks show significant improvements', source: 'METR' },
+    ],
+    riskAlerts: [
+      { title: 'EU AI Act enforcement begins Q1 2025 - compliance review recommended', source: 'Reuters' },
+    ],
+    trackedHashtags: ['#ai-agents', '#reasoning', '#multimodal'],
+  }), []);
+
+  // Track if using sample data
+  const isUsingSampleData = !digestData || (
+    !digestData.marketMovers?.length &&
+    !digestData.watchlistRelevant?.length &&
+    !digestData.riskAlerts?.length
+  );
+
   // Transform feed items into digest sections
   const digestSections: DigestSection[] = useMemo(() => {
-    if (!digestData) return [];
+    const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
+    if (!dataToUse) return [];
 
     const sections: DigestSection[] = [];
 
     // Safely access arrays with fallbacks
-    const marketMovers = digestData.marketMovers ?? [];
-    const watchlistRelevant = digestData.watchlistRelevant ?? [];
-    const riskAlerts = digestData.riskAlerts ?? [];
-    const trackedHashtags = digestData.trackedHashtags ?? [];
+    const marketMovers = dataToUse.marketMovers ?? [];
+    const watchlistRelevant = dataToUse.watchlistRelevant ?? [];
+    const riskAlerts = dataToUse.riskAlerts ?? [];
+    const trackedHashtags = dataToUse.trackedHashtags ?? [];
 
     // Market Movers section
     if (marketMovers.length > 0) {
@@ -170,7 +200,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     }
 
     // Personal Overlay section (Institutional Priorities)
-    const personalOverlay = (digestData as any).personalOverlay;
+    const personalOverlay = (dataToUse as any).personalOverlay;
     if (personalOverlay && Array.isArray(personalOverlay.features)) {
       const passing = personalOverlay.features.filter((f: any) => f.status === 'passing');
       if (passing.length > 0) {
@@ -189,7 +219,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     }
 
     return sections;
-  }, [digestData]);
+  }, [digestData, isUsingSampleData, sampleDigestData]);
 
   // Generate AI summary only if not cached (avoids redundant LLM calls)
   useEffect(() => {
@@ -274,6 +304,85 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     (digestData
       ? `${(digestData.marketMovers ?? []).length} market updates and ${(digestData.watchlistRelevant ?? []).length} items matching your tracked topics. ${(digestData.riskAlerts ?? []).length > 0 ? `${(digestData.riskAlerts ?? []).length} risk alerts to monitor.` : ''}`
       : 'Loading your personalized morning briefing...');
+
+  // Build citation library from digest data sources
+  const citationLibrary: CitationLibrary = useMemo(() => {
+    const citations: CitationLibrary['citations'] = {};
+    const order: string[] = [];
+    let citationNum = 1;
+
+    // Add citations from market movers
+    (digestData?.marketMovers ?? []).slice(0, 3).forEach((item, idx) => {
+      const id = `market-${idx + 1}`;
+      citations[id] = {
+        id,
+        number: citationNum++,
+        type: 'source',
+        label: item.source || 'Market Data',
+        fullText: item.title,
+        url: item.url,
+        author: item.source,
+        occurrences: [],
+      };
+      order.push(id);
+    });
+
+    // Add citations from watchlist items
+    (digestData?.watchlistRelevant ?? []).slice(0, 2).forEach((item, idx) => {
+      const id = `topic-${idx + 1}`;
+      citations[id] = {
+        id,
+        number: citationNum++,
+        type: 'source',
+        label: item.source || 'Topic Update',
+        fullText: item.title,
+        url: item.url,
+        author: item.source,
+        occurrences: [],
+      };
+      order.push(id);
+    });
+
+    return { citations, order, updatedAt: new Date().toISOString() };
+  }, [digestData]);
+
+  // Build entity library from detected entities in digest
+  const entityLibrary: EntityLibrary = useMemo(() => {
+    const entities: EntityLibrary['entities'] = {};
+    const nameIndex: EntityLibrary['nameIndex'] = {};
+
+    // Extract entities from market movers
+    (digestData?.marketMovers ?? []).forEach((item) => {
+      const entity = extractEntity(item.title);
+      if (entity && !entities[entity.toLowerCase()]) {
+        const id = entity.toLowerCase();
+        entities[id] = {
+          id,
+          name: entity,
+          type: 'company',
+          description: item.summary || item.title,
+        };
+        nameIndex[entity.toLowerCase()] = id;
+      }
+    });
+
+    // Add common tech entities
+    const commonEntities = [
+      { id: 'openai', name: 'OpenAI', type: 'company' as const },
+      { id: 'anthropic', name: 'Anthropic', type: 'company' as const },
+      { id: 'google', name: 'Google', type: 'company' as const },
+      { id: 'microsoft', name: 'Microsoft', type: 'company' as const },
+      { id: 'nvidia', name: 'NVIDIA', type: 'company' as const },
+    ];
+    commonEntities.forEach((e) => {
+      if (!entities[e.id]) {
+        entities[e.id] = { ...e, description: `${e.name} - Technology company` };
+        nameIndex[e.name.toLowerCase()] = e.id;
+      }
+    });
+
+    return { entities, nameIndex, updatedAt: new Date().toISOString() };
+  }, [digestData]);
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -402,20 +511,40 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <span className={`w-2 h-2 rounded-none transform rotate-45 ${primarySentiment === 'bullish' ? 'bg-emerald-700' : 'bg-stone-500'}`} />
                   Executive Synthesis
                 </p>
-                <p className="text-xl font-serif font-medium text-gray-900 leading-relaxed italic">
-                  "<CrossLinkedText text={fullSummary} onAskAI={(prompt) => onItemClick?.({ text: prompt, relevance: 'high' })} />"
-                </p>
+                <div className="text-xl font-serif font-medium text-gray-900 leading-relaxed italic">
+                  "<InteractiveSpanParser
+                    text={fullSummary}
+                    citations={citationLibrary}
+                    entities={entityLibrary}
+                    onCitationClick={(citation) => onItemClick?.({ text: `Tell me more about: ${citation.fullText}`, relevance: 'high' })}
+                    onEntityClick={(entity) => onItemClick?.({ text: `Deep dive on ${entity.name}`, relevance: 'high', linkedEntity: entity.name })}
+                  />"
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Sources Section - Phase 1 Citation Provenance */}
+          {citationLibrary.order.length > 0 && (
+            <FootnotesSection
+              library={citationLibrary}
+              title="Sources"
+              showBackLinks={false}
+            />
+          )}
+
+          {/* Sample Data Banner */}
+          {isUsingSampleData && digestSections.length > 0 && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <p className="text-xs text-amber-700">
+                <span className="font-medium">Sample Intelligence Feed</span> — Connect data sources or track hashtags to see real-time signals.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
-            {digestSections.length === 0 && !digestData ? (
-              <div className="col-span-2 text-center py-10 text-gray-400 text-sm italic">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-3 opacity-30" />
-                Orchestrating intelligence...
-              </div>
-            ) : digestSections.map((section, sIdx) => (
+            {digestSections.map((section, sIdx) => (
               <div key={section.id} className="rounded-none border border-stone-200 bg-[#faf9f6] hover:bg-white transition-all duration-500 group" style={{ animationDelay: `${sIdx * 0.1}s` }}>
                 <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
                   <div className="flex items-center gap-4">

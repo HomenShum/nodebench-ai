@@ -16,6 +16,8 @@ import { AgentsHub } from "@/features/agents/views/AgentsHub";
 import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
 import ResearchHub from "@/features/research/views/ResearchHub";
 import CinematicHome from "@/features/research/views/CinematicHome";
+import { PhaseAllShowcase } from "@/features/research/views/PhaseAllShowcase";
+import { FootnotesPage } from "@/features/research/views/FootnotesPage";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { Zap, Menu, X as CloseIcon } from "lucide-react";
@@ -35,7 +37,7 @@ interface MainLayoutProps {
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowResearchHub }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research'>('research');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes'>('research');
   const [isGridMode, setIsGridMode] = useState(false);
   // Transition state for smooth view changes
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -518,6 +520,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           setCurrentView('timeline');
         } else if (h.startsWith('#documents') || h.startsWith('#docs')) {
           setCurrentView('documents');
+        } else if (h.startsWith('#showcase') || h.startsWith('#demo')) {
+          setCurrentView('showcase');
+        } else if (h.startsWith('#footnotes') || h.startsWith('#sources')) {
+          setCurrentView('footnotes');
         }
       } catch {
         // ignore
@@ -731,6 +737,19 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               />
             ) : currentView === 'roadmap' ? (
               <TimelineRoadmapView />
+            ) : currentView === 'showcase' ? (
+              <PhaseAllShowcase onBack={() => setCurrentView('research')} />
+            ) : currentView === 'footnotes' ? (
+              <FootnotesPage
+                library={{
+                  citations: {},
+                  order: [],
+                  updatedAt: new Date().toISOString(),
+                }}
+                briefTitle="Today's Intelligence Brief"
+                briefDate={new Date().toLocaleDateString()}
+                onBack={() => setCurrentView('research')}
+              />
             ) : (
               <div className="h-full flex">
                 <div className="flex-1 overflow-hidden">

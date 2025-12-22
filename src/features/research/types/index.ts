@@ -45,3 +45,54 @@ export type {
 } from "./dailyBriefSchema";
 
 export { DailyBriefJSONSchema } from "./dailyBriefSchema";
+
+// Export Citation & Provenance schema
+export type {
+  CitationType,
+  Citation,
+  CitationOccurrence,
+  CitationLibrary,
+  ParsedCitation
+} from "./citationSchema";
+
+export {
+  CITATION_REGEX,
+  parseCitations,
+  createCitationLibrary,
+  addCitation,
+  getCitation,
+  getOrderedCitations
+} from "./citationSchema";
+
+// Export Entity schema
+export type {
+  EntityType,
+  Entity,
+  EntityLibrary,
+  ParsedEntity
+} from "./entitySchema";
+
+export {
+  ENTITY_REGEX,
+  parseEntities,
+  createEntityLibrary,
+  addEntity,
+  getEntity,
+  getEntityByName,
+  getAllEntities,
+  getEntitiesByType
+} from "./entitySchema";
+
+// Export Research Supplement types
+export type {
+  SupplementType,
+  SupplementSection,
+  ResearchSupplement
+} from "../components/ResearchSupplement";
+
+// Export Email Digest types
+export type {
+  DigestTopic,
+  DigestItem,
+  EmailDigest
+} from "../components/EmailDigestPreview";

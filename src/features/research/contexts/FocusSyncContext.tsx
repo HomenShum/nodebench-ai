@@ -207,3 +207,45 @@ export function useCurrentAct(): Act {
   return context?.focusState.currentAct ?? "actI";
 }
 
+/**
+ * Hook for charts to sync with text focus
+ *
+ * Returns:
+ * - focusedDataIndex: The currently focused data point index (from text hover)
+ * - focusedSeriesId: The currently focused series ID
+ * - onDataPointHover: Callback to emit when a chart data point is hovered
+ * - isDataPointFocused: Helper to check if a specific data point is focused
+ */
+export function useChartFocusSync() {
+  const context = useContext(FocusSyncContext);
+
+  const focusedDataIndex = context?.focusState.focusedDataIndex ?? null;
+  const focusedSeriesId = context?.focusState.focusedSeriesId ?? null;
+  const focusSource = context?.focusState.focusSource ?? null;
+
+  const onDataPointHover = useCallback(
+    (dataIndex: number | null, seriesId?: string) => {
+      context?.onChartHover(dataIndex, seriesId);
+    },
+    [context]
+  );
+
+  const isDataPointFocused = useCallback(
+    (dataIndex: number) => focusedDataIndex === dataIndex,
+    [focusedDataIndex]
+  );
+
+  // Check if focus came from text (so chart should highlight)
+  const isFocusFromText = focusSource === "text_hover";
+
+  return {
+    focusedDataIndex,
+    focusedSeriesId,
+    focusSource,
+    isFocusFromText,
+    onDataPointHover,
+    isDataPointFocused,
+    isConnected: context?.isConnected ?? false,
+  };
+}
+

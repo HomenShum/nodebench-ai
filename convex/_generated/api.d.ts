@@ -77,6 +77,7 @@ import type * as domains_agents_core_subagents_openbb_subagent_tools_economyTool
 import type * as domains_agents_core_subagents_openbb_subagent_tools_equityTools from "../domains/agents/core/subagents/openbb_subagent/tools/equityTools.js";
 import type * as domains_agents_core_subagents_openbb_subagent_tools_index from "../domains/agents/core/subagents/openbb_subagent/tools/index.js";
 import type * as domains_agents_core_subagents_openbb_subagent_tools_newsTools from "../domains/agents/core/subagents/openbb_subagent/tools/newsTools.js";
+import type * as domains_agents_core_subagents_research_subagent_multiSourceResearchAgent from "../domains/agents/core/subagents/research_subagent/multiSourceResearchAgent.js";
 import type * as domains_agents_core_subagents_sec_subagent_secAgent from "../domains/agents/core/subagents/sec_subagent/secAgent.js";
 import type * as domains_agents_core_subagents_sec_subagent_tools_index from "../domains/agents/core/subagents/sec_subagent/tools/index.js";
 import type * as domains_agents_core_subagents_sec_subagent_tools_secCompanySearch from "../domains/agents/core/subagents/sec_subagent/tools/secCompanySearch.js";
@@ -317,6 +318,7 @@ import type * as tools_integration_confirmCompanySelection from "../tools/integr
 import type * as tools_integration_confirmNewsSelection from "../tools/integration/confirmNewsSelection.js";
 import type * as tools_integration_confirmPersonSelection from "../tools/integration/confirmPersonSelection.js";
 import type * as tools_integration_dataAccessTools from "../tools/integration/dataAccessTools.js";
+import type * as tools_integration_digestTools from "../tools/integration/digestTools.js";
 import type * as tools_integration_humanInputTools from "../tools/integration/humanInputTools.js";
 import type * as tools_integration_newsletterTools from "../tools/integration/newsletterTools.js";
 import type * as tools_integration_orchestrationTools from "../tools/integration/orchestrationTools.js";
@@ -437,6 +439,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/core/subagents/openbb_subagent/tools/equityTools": typeof domains_agents_core_subagents_openbb_subagent_tools_equityTools;
   "domains/agents/core/subagents/openbb_subagent/tools/index": typeof domains_agents_core_subagents_openbb_subagent_tools_index;
   "domains/agents/core/subagents/openbb_subagent/tools/newsTools": typeof domains_agents_core_subagents_openbb_subagent_tools_newsTools;
+  "domains/agents/core/subagents/research_subagent/multiSourceResearchAgent": typeof domains_agents_core_subagents_research_subagent_multiSourceResearchAgent;
   "domains/agents/core/subagents/sec_subagent/secAgent": typeof domains_agents_core_subagents_sec_subagent_secAgent;
   "domains/agents/core/subagents/sec_subagent/tools/index": typeof domains_agents_core_subagents_sec_subagent_tools_index;
   "domains/agents/core/subagents/sec_subagent/tools/secCompanySearch": typeof domains_agents_core_subagents_sec_subagent_tools_secCompanySearch;
@@ -677,6 +680,7 @@ declare const fullApi: ApiFromModules<{
   "tools/integration/confirmNewsSelection": typeof tools_integration_confirmNewsSelection;
   "tools/integration/confirmPersonSelection": typeof tools_integration_confirmPersonSelection;
   "tools/integration/dataAccessTools": typeof tools_integration_dataAccessTools;
+  "tools/integration/digestTools": typeof tools_integration_digestTools;
   "tools/integration/humanInputTools": typeof tools_integration_humanInputTools;
   "tools/integration/newsletterTools": typeof tools_integration_newsletterTools;
   "tools/integration/orchestrationTools": typeof tools_integration_orchestrationTools;

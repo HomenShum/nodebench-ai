@@ -71,6 +71,57 @@ export const sanitizeProseMirrorContent = (content: any): any => {
       };
     }
 
+    // Convert TipTap listItem to BlockNote bulletListItem
+    // TipTap uses listItem inside bulletList/orderedList, BlockNote uses bulletListItem/numberedListItem
+    if (content.type === 'listItem') {
+      // Extract text content from listItem
+      const textContent = content.content
+        ? content.content
+          .map((node: any) => sanitizeProseMirrorContent(node))
+          .filter((node: any) => node !== null)
+        : [];
+
+      // listItem often contains a paragraph, extract its content for inline display
+      // If the content is a single paragraph, use its content directly
+      let finalContent = textContent;
+      if (textContent.length === 1 && textContent[0]?.type === 'paragraph' && textContent[0]?.content) {
+        finalContent = textContent[0].content;
+      }
+
+      return {
+        type: 'bulletListItem',
+        attrs: {},
+        content: finalContent,
+      };
+    }
+
+    // Convert bulletList to flattened bulletListItems
+    if (content.type === 'bulletList') {
+      if (content.content && Array.isArray(content.content)) {
+        return content.content
+          .map((node: any) => sanitizeProseMirrorContent(node))
+          .filter((node: any) => node !== null);
+      }
+      return null;
+    }
+
+    // Convert orderedList to flattened numberedListItems
+    if (content.type === 'orderedList') {
+      if (content.content && Array.isArray(content.content)) {
+        return content.content
+          .map((node: any) => {
+            const sanitized = sanitizeProseMirrorContent(node);
+            // Convert bulletListItem to numberedListItem for ordered lists
+            if (sanitized && sanitized.type === 'bulletListItem') {
+              return { ...sanitized, type: 'numberedListItem' };
+            }
+            return sanitized;
+          })
+          .filter((node: any) => node !== null);
+      }
+      return null;
+    }
+
     // Remove unsupported block types
     const unsupportedTypes = ['horizontalRule'];
     if (unsupportedTypes.includes(content.type)) {
@@ -103,7 +154,7 @@ export const sanitizeProseMirrorContent = (content: any): any => {
           }
 
           // If it's a structural node but not wrapped in blockContainer, wrap it
-          const needsWrapper = ['paragraph', 'heading', 'blockquote', 'codeBlock', 'bulletList', 'orderedList', 'checkListItem'].includes(child.type);
+          const needsWrapper = ['paragraph', 'heading', 'blockquote', 'codeBlock', 'bulletListItem', 'numberedListItem', 'checkListItem'].includes(child.type);
           if (needsWrapper) {
             return {
               type: 'blockContainer',

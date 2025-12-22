@@ -32,6 +32,14 @@ import {
 import { ArbitrageReportCard } from './ArbitrageReportCard';
 import { MemoryPill } from './MemoryPill';
 import { FusedSearchResults, type FusedResult, type SourceError, type SearchSource } from './FusedSearchResults';
+// Phase All: Citation & Entity parsing
+import { InteractiveSpanParser } from '@/features/research/components/InteractiveSpanParser';
+import {
+  CITATION_REGEX,
+  ENTITY_REGEX,
+  type CitationLibrary,
+  type EntityLibrary
+} from '@/features/research/types/index';
 
 interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
@@ -1149,6 +1157,12 @@ export function FastAgentUIMessageBubble({
     return cleaned;
   }, [visibleText]);
 
+  // Phase All: Detect if text contains citations or entities for enhanced parsing
+  const hasInteractiveTokens = useMemo(() => {
+    const text = cleanedText || visibleText || '';
+    return CITATION_REGEX.test(text) || ENTITY_REGEX.test(text);
+  }, [cleanedText, visibleText]);
+
   return (
     <div className={cn(
       "flex gap-3 mb-6 group",
@@ -1497,6 +1511,25 @@ export function FastAgentUIMessageBubble({
                   },
                   a({ href, children }) {
                     return <a href={href} className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">{children}</a>;
+                  },
+                  // Phase All: Enhanced paragraph rendering with citation/entity parsing
+                  p({ children }) {
+                    // Convert children to string for token detection
+                    const textContent = React.Children.toArray(children)
+                      .map(child => typeof child === 'string' ? child : '')
+                      .join('');
+
+                    // If text contains {{cite:...}} or @@entity:...@@ tokens, use InteractiveSpanParser
+                    if (CITATION_REGEX.test(textContent) || ENTITY_REGEX.test(textContent)) {
+                      return (
+                        <p className="mb-2">
+                          <InteractiveSpanParser text={textContent} />
+                        </p>
+                      );
+                    }
+
+                    // Default paragraph rendering
+                    return <p className="mb-2">{children}</p>;
                   },
                 }}
               >

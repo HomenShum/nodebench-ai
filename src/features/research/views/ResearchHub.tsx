@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { ArrowRight } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -16,7 +16,7 @@ import { ActAwareDashboard } from "@/features/research/components/ActAwareDashbo
 import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
 import { PersonalPulse } from "@/features/research/components/PersonalPulse";
 import { IntelPulseMonitor } from "@/features/research/components/IntelPulseMonitor";
-import { useMemo } from "react";
+import { TimelineStrip, type TimelineEvent } from "@/features/research/components/TimelineStrip";
 
 export interface ResearchHubProps {
   onDocumentSelect?: (documentId: string) => void;
@@ -72,6 +72,51 @@ export default function ResearchHub(props: ResearchHubProps) {
     const latestPlan = agentPlans[0];
     return latestPlan.steps || [];
   }, [agentPlans]);
+
+  // Timeline events derived from evidence and dashboard data
+  const timelineEvents: TimelineEvent[] = useMemo(() => {
+    const events: TimelineEvent[] = [];
+    const now = new Date();
+
+    // Past events from evidence
+    evidence?.forEach((e: any, idx: number) => {
+      if (e.date || e.timestamp) {
+        const dateStr = e.date || e.timestamp;
+        events.push({
+          id: `evidence-${idx}`,
+          date: typeof dateStr === 'string' ? dateStr : new Date(dateStr).toISOString(),
+          label: e.title || e.label || 'Evidence',
+          description: e.summary || e.text,
+          phase: 'past',
+        });
+      }
+    });
+
+    // Present: Today's briefing
+    if (briefingDateString) {
+      events.push({
+        id: 'today-briefing',
+        date: briefingDateString,
+        label: 'Today\'s Intelligence Brief',
+        description: executiveBrief?.summary || 'Current market synthesis',
+        phase: 'present',
+        isCurrent: true,
+      });
+    }
+
+    // Future projections from dashboard forecasts
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + 7);
+    events.push({
+      id: 'forecast-week',
+      date: futureDate.toISOString(),
+      label: 'Weekly Outlook',
+      description: 'Projected market movements and upcoming catalysts',
+      phase: 'future',
+    });
+
+    return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [evidence, briefingDateString, executiveBrief]);
 
   // Intersection Observer for Act tracking
   const actIRef = useRef<HTMLElement>(null);
@@ -216,6 +261,23 @@ export default function ResearchHub(props: ResearchHubProps) {
 
         {/* UNIFIED SCROLL CONTAINER */}
         <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#faf9f6]">
+          {/* TIMELINE STRIP - Past→Present→Future temporal context */}
+          <TimelineStrip
+            events={timelineEvents}
+            activeEventId={activeAct === 'actI' ? 'today-briefing' : undefined}
+            onEventClick={(event) => {
+              openWithContext({
+                contextTitle: `Timeline: ${event.label}`,
+                initialMessage: `Tell me more about: "${event.label}" (${event.date})${event.description ? `\n\nContext: ${event.description}` : ''}`,
+              });
+              // Also update the active act based on event phase
+              if (event.phase === 'past') setActiveAct('actI');
+              else if (event.phase === 'present') setActiveAct('actII');
+              else setActiveAct('actIII');
+            }}
+            className="mx-auto max-w-[1600px] px-16 pt-8"
+          />
+
           <div className="max-w-[1600px] mx-auto flex items-start">
 
             {/* LEFT: THE PAPER (Scrolls with the main container) */}

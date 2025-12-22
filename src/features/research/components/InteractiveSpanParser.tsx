@@ -3,6 +3,12 @@
 import React from "react";
 import SmartLink from "./SmartLink";
 import { InteractiveSpan } from "./InteractiveSpan";
+import FootnoteMarker from "./FootnoteMarker";
+import EntityLink from "./EntityLink";
+import type { Citation, CitationLibrary, CitationType } from "../types/citationSchema";
+import { CITATION_REGEX } from "../types/citationSchema";
+import type { Entity, EntityLibrary, EntityType } from "../types/entitySchema";
+import { ENTITY_REGEX } from "../types/entitySchema";
 
 type SmartLinkMeta = { summary: string; source?: string };
 
@@ -11,10 +17,18 @@ export interface InteractiveSpanParserProps {
   text: string;
   /** Optional smart link metadata for <SmartLink> tags */
   smartLinks?: Record<string, SmartLinkMeta>;
+  /** Optional citation library for {{cite:id}} tokens */
+  citations?: CitationLibrary;
+  /** Optional entity library for @@entity:id@@ tokens */
+  entities?: EntityLibrary;
   /** Prefix used to generate stable span IDs (e.g., section + paragraph) */
   spanPrefix?: string;
   /** Whether to show [index] indicator before the label when dataIndex is present */
   showIndicator?: boolean;
+  /** Callback when a citation is clicked */
+  onCitationClick?: (citation: Citation) => void;
+  /** Callback when an entity is clicked */
+  onEntityClick?: (entity: Entity) => void;
 }
 
 /**
@@ -58,20 +72,169 @@ export const parseSmartLinks = (
 };
 
 /**
+ * Parse entity tokens from text and return nodes with EntityLink components
+ */
+const parseEntitiesAndSmartLinks = (
+  text: string,
+  linksData?: Record<string, SmartLinkMeta>,
+  entities?: EntityLibrary,
+  onEntityClick?: (entity: Entity) => void,
+): React.ReactNode[] => {
+  if (!entities || Object.keys(entities.entities).length === 0) {
+    return parseSmartLinks(text, linksData);
+  }
+
+  const nodes: React.ReactNode[] = [];
+  const entityRegex = new RegExp(ENTITY_REGEX.source, "g");
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = entityRegex.exec(text)) !== null) {
+    const before = text.slice(lastIndex, match.index);
+    if (before) {
+      nodes.push(...parseSmartLinks(before, linksData));
+    }
+
+    const entityId = match[1];
+    const displayName = match[2];
+    const typeOverride = match[3] as EntityType | undefined;
+
+    const entity = entities.entities[entityId];
+    if (entity) {
+      const displayEntity = typeOverride ? { ...entity, type: typeOverride } : entity;
+      nodes.push(
+        <EntityLink
+          key={`entity-${entityId}-${match.index}`}
+          entity={displayEntity}
+          displayName={displayName}
+          onClick={onEntityClick}
+        />,
+      );
+    } else {
+      nodes.push(
+        <span
+          key={`entity-missing-${entityId}-${match.index}`}
+          className="text-orange-500 text-xs italic"
+          title={`Entity not found: ${entityId}`}
+        >
+          [{displayName || entityId}?]
+        </span>,
+      );
+    }
+
+    lastIndex = entityRegex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    const rest = text.slice(lastIndex);
+    if (rest) {
+      nodes.push(...parseSmartLinks(rest, linksData));
+    }
+  }
+
+  return nodes;
+};
+
+/**
+ * Parse citation tokens from text and return nodes with FootnoteMarker components
+ */
+const parseCitationsEntitiesAndSmartLinks = (
+  text: string,
+  linksData?: Record<string, SmartLinkMeta>,
+  citations?: CitationLibrary,
+  entities?: EntityLibrary,
+  onCitationClick?: (citation: Citation) => void,
+  onEntityClick?: (entity: Entity) => void,
+): React.ReactNode[] => {
+  // If no citations, delegate to entity parser
+  if (!citations || Object.keys(citations.citations).length === 0) {
+    return parseEntitiesAndSmartLinks(text, linksData, entities, onEntityClick);
+  }
+
+  const nodes: React.ReactNode[] = [];
+  const citationRegex = new RegExp(CITATION_REGEX.source, "g");
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = citationRegex.exec(text)) !== null) {
+    // Add text before the citation (parse for entities)
+    const before = text.slice(lastIndex, match.index);
+    if (before) {
+      nodes.push(...parseEntitiesAndSmartLinks(before, linksData, entities, onEntityClick));
+    }
+
+    const citationId = match[1];
+    const customLabel = match[2];
+    const typeOverride = match[3] as CitationType | undefined;
+
+    const citation = citations.citations[citationId];
+    if (citation) {
+      const displayCitation = typeOverride
+        ? { ...citation, type: typeOverride }
+        : citation;
+
+      nodes.push(
+        <FootnoteMarker
+          key={`cite-${citationId}-${match.index}`}
+          citation={displayCitation}
+          onClick={onCitationClick}
+        />,
+      );
+    } else {
+      nodes.push(
+        <span
+          key={`cite-missing-${citationId}-${match.index}`}
+          className="text-red-500 text-xs"
+          title={`Citation not found: ${citationId}`}
+        >
+          [?{customLabel || citationId}]
+        </span>,
+      );
+    }
+
+    lastIndex = citationRegex.lastIndex;
+  }
+
+  // Add remaining text (parse for entities)
+  if (lastIndex < text.length) {
+    const rest = text.slice(lastIndex);
+    if (rest) {
+      nodes.push(...parseEntitiesAndSmartLinks(rest, linksData, entities, onEntityClick));
+    }
+  }
+
+  return nodes;
+};
+
+/**
  * InteractiveSpanParser
  *
- * Parses `[[label|dataIndex:N]]` tokens inside narrative text and converts
- * them into InteractiveSpan components that are wired to chart data indices.
+ * Parses multiple token types in narrative text:
+ * - `[[label|dataIndex:N]]` - Interactive spans wired to chart data indices
+ * - `{{cite:id}}` - Citation footnote markers
+ * - `{{cite:id|label}}` - Citation with custom label
+ * - `{{cite:id|label|type:quote}}` - Citation with type override
+ * - `@@entity:id@@` - Entity links with type-specific styling
+ * - `@@entity:id|Display Name@@` - Entity with custom display name
+ * - `@@entity:id|Display Name|type:company@@` - Entity with type override
+ * - `<SmartLink id="x">Label</SmartLink>` - Contextual hover links
  *
  * Examples:
- *  - "The [[reliability gap|dataIndex:2]] remains dangerous."
+ *  - "The [[reliability gap|dataIndex:2]] remains dangerous{{cite:arxiv-001}}."
  *  - "[[Capability|dataIndex:0]] outruns [[Reliability|dataIndex:1]]."
+ *  - "AWS announced{{cite:aws-blog|source}} new pricing."
+ *  - "@@entity:openai@@ released a new model."
+ *  - "@@entity:sam-altman|Sam Altman|type:person@@ announced..."
  */
 export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   text,
   smartLinks,
+  citations,
+  entities,
   spanPrefix = "interactive-span",
   showIndicator = true,
+  onCitationClick,
+  onEntityClick,
 }) => {
   const nodes: React.ReactNode[] = [];
   // Match any [[...]] token. The inner payload is parsed for label and metadata.
@@ -83,7 +246,7 @@ export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   while ((match = tokenRegex.exec(text)) !== null) {
     const before = text.slice(lastIndex, match.index);
     if (before) {
-      nodes.push(...parseSmartLinks(before, smartLinks));
+      nodes.push(...parseCitationsEntitiesAndSmartLinks(before, smartLinks, citations, entities, onCitationClick, onEntityClick));
     }
 
     const rawContent = match[1].trim();
@@ -120,7 +283,7 @@ export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   if (lastIndex < text.length) {
     const rest = text.slice(lastIndex);
     if (rest) {
-      nodes.push(...parseSmartLinks(rest, smartLinks));
+      nodes.push(...parseCitationsEntitiesAndSmartLinks(rest, smartLinks, citations, entities, onCitationClick, onEntityClick));
     }
   }
 

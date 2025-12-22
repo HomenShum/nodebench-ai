@@ -99,6 +99,73 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
           };
         }
 
+        // Convert TipTap listItem to BlockNote bulletListItem
+        // TipTap uses listItem inside bulletList/orderedList, BlockNote uses bulletListItem/numberedListItem
+        if (nodeType === "listItem") {
+          let sanitizedContent = Array.isArray(pmNode.content)
+            ? pmNode.content
+              .map((child: unknown) => sanitize(child))
+              .flat()
+              .filter((child: unknown) => child !== null)
+            : [];
+
+          // listItem often contains a paragraph, extract its content for inline display
+          if (sanitizedContent.length === 1 &&
+              typeof sanitizedContent[0] === "object" &&
+              sanitizedContent[0] !== null &&
+              (sanitizedContent[0] as any).type === "paragraph" &&
+              Array.isArray((sanitizedContent[0] as any).content)) {
+            sanitizedContent = (sanitizedContent[0] as any).content;
+          }
+
+          return {
+            type: "bulletListItem",
+            attrs: {},
+            content: sanitizedContent.length > 0 ? sanitizedContent : undefined,
+          };
+        }
+
+        // Convert TipTap bulletList to flattened bulletListItems wrapped in blockContainers
+        if (nodeType === "bulletList") {
+          if (Array.isArray(pmNode.content)) {
+            return pmNode.content
+              .map((child: unknown) => {
+                const sanitized = sanitize(child);
+                if (sanitized && typeof sanitized === "object" && (sanitized as any).type === "bulletListItem") {
+                  return {
+                    type: "blockContainer",
+                    content: [sanitized]
+                  };
+                }
+                return sanitized;
+              })
+              .flat()
+              .filter((child: unknown) => child !== null);
+          }
+          return null;
+        }
+
+        // Convert TipTap orderedList to flattened numberedListItems wrapped in blockContainers
+        if (nodeType === "orderedList") {
+          if (Array.isArray(pmNode.content)) {
+            return pmNode.content
+              .map((child: unknown) => {
+                const sanitized = sanitize(child);
+                // Convert bulletListItem to numberedListItem for ordered lists
+                if (sanitized && typeof sanitized === "object" && (sanitized as any).type === "bulletListItem") {
+                  return {
+                    type: "blockContainer",
+                    content: [{ ...(sanitized as any), type: "numberedListItem" }]
+                  };
+                }
+                return sanitized;
+              })
+              .flat()
+              .filter((child: unknown) => child !== null);
+          }
+          return null;
+        }
+
         // Convert standard TipTap paragraph/heading to BlockNote blocks if they are top-level
         const standardBlocks = ["paragraph", "heading", "blockquote", "codeBlock", "bulletList", "orderedList"];
         if (nodeType && standardBlocks.includes(nodeType)) {
@@ -143,7 +210,7 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
               }
 
               // If it's a paragraph/heading BUT not inside blockContainer, wrap it
-              const needsWrapper = ["paragraph", "heading", "blockquote", "codeBlock", "bulletList", "orderedList", "checkListItem"].includes(child.type);
+              const needsWrapper = ["paragraph", "heading", "blockquote", "codeBlock", "bulletListItem", "numberedListItem", "checkListItem"].includes(child.type);
               if (needsWrapper) {
                 return {
                   type: "blockContainer",
