@@ -168,7 +168,7 @@ function StatusBox({ icon, label, value, suffix }: { icon: React.ReactNode, labe
             <motion.div
                 key={value}
                 initial={{ scale: 1 }}
-                animate={{ scale: [1, 1.1, 1], backgroundColor: ['initial', 'rgba(16, 185, 129, 0.1)', 'initial'] }}
+                animate={{ scale: [1, 1.1, 1], backgroundColor: ['rgba(0, 0, 0, 0)', 'rgba(16, 185, 129, 0.1)', 'rgba(0, 0, 0, 0)'] }}
                 transition={{ duration: 0.5 }}
                 className="p-2 bg-stone-100/50 rounded-lg text-stone-400 mb-3 border border-stone-200/20"
             >

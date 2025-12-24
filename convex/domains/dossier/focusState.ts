@@ -20,6 +20,7 @@ export const getFocusState = query({
   returns: v.union(
     v.null(),
     v.object({
+      _creationTime: v.number(),
       _id: v.id("dossierFocusState"),
       userId: v.id("users"),
       briefId: v.string(),
@@ -185,6 +186,7 @@ export const getFocusStateInternal = internalQuery({
   returns: v.union(
     v.null(),
     v.object({
+      _creationTime: v.number(),
       _id: v.id("dossierFocusState"),
       userId: v.id("users"),
       briefId: v.string(),

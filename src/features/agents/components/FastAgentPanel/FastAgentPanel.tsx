@@ -828,19 +828,19 @@ export function FastAgentPanel({
         setIsStreaming(false);
 
         // Auto-name the thread if it's new (fire and forget)
-        if (isNewThread && threadId) {
-          autoNameThread({
-            threadId: threadId as Id<"chatThreadsStream">,
-            firstMessage: text,
-          }).then((result) => {
-            if (!result.skipped) {
-              console.log('[FastAgentPanel] Thread auto-named:', result.title);
-            }
-          }).catch((err) => {
-            console.warn('[FastAgentPanel] Failed to auto-name thread:', err);
-          });
+          if (isNewThread && threadId && isAuthenticated) {
+            autoNameThread({
+              threadId: threadId as Id<"chatThreadsStream">,
+              firstMessage: text,
+            }).then((result) => {
+              if (!result.skipped) {
+                console.log('[FastAgentPanel] Thread auto-named:', result.title);
+              }
+            }).catch((err) => {
+              console.warn('[FastAgentPanel] Failed to auto-name thread:', err);
+            });
+          }
         }
-      }
     } catch (error) {
       console.error("Failed to send message:", error);
       toast.error("Failed to send message");
@@ -861,9 +861,10 @@ export function FastAgentPanel({
     sendStreamingMessage,
     generateAndCreateDocument,
     convex,
-    streamingThread,
-    autoNameThread,
-  ]);
+      streamingThread,
+      autoNameThread,
+      isAuthenticated,
+    ]);
 
   // Auto-send contextual open prompt once streaming mode is active.
   useEffect(() => {

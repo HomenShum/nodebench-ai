@@ -48,6 +48,18 @@ export const getLatestMemoryInternal = internalQuery({
   },
 });
 
+export const listMemoriesByDateStringInternal = internalQuery({
+  args: { dateString: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = Math.min(args.limit ?? 25, 100);
+    return await ctx.db
+      .query("dailyBriefMemories")
+      .withIndex("by_date_string", (q) => q.eq("dateString", args.dateString))
+      .order("desc")
+      .take(limit);
+  },
+});
+
 export const getPreviousSnapshotInternal = internalQuery({
   args: { dateString: v.string() }, // YYYY-MM-DD
   handler: async (ctx, args) => {
@@ -106,4 +118,3 @@ export const listTaskResultsByMemory = query({
       .take(100);
   },
 });
-

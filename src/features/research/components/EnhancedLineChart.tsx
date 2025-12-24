@@ -481,14 +481,18 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
 
   // Build smooth path
   const buildPath = (points: Array<{ x: number; y: number }>) => {
-    if (points.length < 2) return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+    const safePoints = points.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+    if (safePoints.length === 0) return "";
+    if (safePoints.length < 2) {
+      return safePoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+    }
 
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i - 1] ?? points[i];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[i + 2] ?? p2;
+    let d = `M ${safePoints[0].x} ${safePoints[0].y}`;
+    for (let i = 0; i < safePoints.length - 1; i++) {
+      const p0 = safePoints[i - 1] ?? safePoints[i];
+      const p1 = safePoints[i];
+      const p2 = safePoints[i + 1];
+      const p3 = safePoints[i + 2] ?? p2;
       const c1x = p1.x + (p2.x - p0.x) / 6;
       const c1y = p1.y + (p2.y - p0.y) / 6;
       const c2x = p2.x - (p3.x - p1.x) / 6;
@@ -625,7 +629,9 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
            {config.series.map((series) => {
              const color = getSeriesColor(series);
              const isGhost = series.type === "ghost";
-             const visibleEnd = Math.min(config.visibleEndIndex, series.data.length - 1);
+             const visibleEnd = Number.isFinite(config.visibleEndIndex)
+               ? Math.min(config.visibleEndIndex, series.data.length - 1)
+               : series.data.length - 1;
 
              const points = series.data.map((pt, i) => ({ i, ...getCoord(i, pt.value), point: pt }));
              const visiblePoints = points.filter((p) => p.i <= visibleEnd);
@@ -649,24 +655,28 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                projectionPoints.length >= 2
                  ? buildPath(projectionPoints.map((p) => ({ x: p.x, y: p.y })))
                  : "";
+             const hasHistoryPath = historyPath.trim().startsWith("M");
+             const hasProjectionPath = projectionPath.trim().startsWith("M");
 
              return (
                <g key={series.id}>
-                 <motion.path
-                   d={historyPath}
-                   fill="none"
-                   stroke={color}
-                   strokeWidth={isGhost ? 1.5 : 2.5}
-                   strokeLinecap="round"
-                   strokeLinejoin="round"
-                   strokeDasharray={isGhost ? "6 4" : "0"}
-                   opacity={isGhost ? 0.4 : 1}
-                   initial={{ pathLength: 0 }}
-                   animate={{ pathLength: 1, d: historyPath }}
-                   transition={{ duration: 1.0, ease: "easeOut" }}
-                 />
+                 {hasHistoryPath && (
+                   <motion.path
+                     d={historyPath}
+                     fill="none"
+                     stroke={color}
+                     strokeWidth={isGhost ? 1.5 : 2.5}
+                     strokeLinecap="round"
+                     strokeLinejoin="round"
+                     strokeDasharray={isGhost ? "6 4" : "0"}
+                     opacity={isGhost ? 0.4 : 1}
+                     initial={{ pathLength: 0, d: historyPath }}
+                     animate={{ pathLength: 1, d: historyPath }}
+                     transition={{ duration: 1.0, ease: "easeOut" }}
+                   />
+                 )}
 
-                 {!isGhost && projectionPath && (
+                 {!isGhost && hasProjectionPath && (
                      <motion.path
                        d={projectionPath}
                        fill="none"
@@ -676,7 +686,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                        strokeLinejoin="round"
                        strokeDasharray="6 4"
                        opacity={0.55}
-                       initial={{ pathLength: 0 }}
+                       initial={{ pathLength: 0, d: projectionPath }}
                        animate={{ pathLength: 1, d: projectionPath }}
                        transition={{ duration: 1.0, ease: "easeOut" }}
                      />

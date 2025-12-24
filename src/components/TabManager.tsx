@@ -1,11 +1,22 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, Suspense, lazy } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { DocumentGrid, type GridTab } from "@/features/documents/components/DocumentGrid";
 import { DocumentView } from "@/features/documents/views/DocumentView";
-import { CalendarHomeHub } from "@/features/calendar/components/CalendarHomeHub";
 import { X } from "lucide-react";
+
+const CalendarHomeHub = lazy(() =>
+  import("@/features/calendar/components/CalendarHomeHub").then((mod) => ({
+    default: mod.CalendarHomeHub,
+  })),
+);
+
+const viewFallback = (
+  <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
+    Loading view...
+  </div>
+);
 
 interface TabManagerProps {
   selectedDocumentId: Id<"documents"> | null;
@@ -65,6 +76,10 @@ export function TabManager({
     },
     [documents, setIsGridMode]
   );
+
+  const toggleGridMode = useCallback(() => {
+    setIsGridMode((prev) => !prev);
+  }, [setIsGridMode]);
 
   // Ensure the selected doc becomes a tab in grid mode
   useEffect(() => {
@@ -268,10 +283,12 @@ export function TabManager({
             <div className="text-[var(--text-secondary)] text-sm">Timeline view is not available.</div>
           </div>
         ) : (
-          <CalendarHomeHub
-            onDocumentSelect={(docId) => onDocumentSelect(docId)}
-            onGridModeToggle={toggleGridMode}
-          />
+          <Suspense fallback={viewFallback}>
+            <CalendarHomeHub
+              onDocumentSelect={(docId) => onDocumentSelect(docId)}
+              onGridModeToggle={toggleGridMode}
+            />
+          </Suspense>
         )}
       </div>
     );

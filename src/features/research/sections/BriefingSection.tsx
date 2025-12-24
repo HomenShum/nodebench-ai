@@ -31,6 +31,53 @@ interface BriefingSectionProps {
   className?: string;
 }
 
+const resolveSourceName = (source: unknown): string | null => {
+  if (source === null || source === undefined) return null;
+  if (typeof source === 'string' || typeof source === 'number') return String(source);
+  if (typeof source === 'object') {
+    const candidate = (source as any).name ?? (source as any).source ?? (source as any).label ?? (source as any).id;
+    if (typeof candidate === 'string' || typeof candidate === 'number') return String(candidate);
+  }
+  return null;
+};
+
+const resolveMetricValue = (value: unknown, fallback: string | number = 'N/A'): string | number => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'object') {
+    const count = (value as any).count;
+    if (typeof count === 'number' && Number.isFinite(count)) return count;
+    const label = resolveSourceName(value);
+    if (label) return label;
+  }
+  return fallback;
+};
+
+const normalizeSourceEntry = (entry: unknown): { name: string; count: string | number | null } | null => {
+  const name = resolveSourceName(entry);
+  if (!name) return null;
+  const rawCount =
+    entry && typeof entry === 'object'
+      ? ((entry as any).count ?? (entry as any).value)
+      : null;
+  const count = rawCount !== null && rawCount !== undefined
+    ? resolveMetricValue(rawCount, '-')
+    : null;
+  return { name, count };
+};
+
+const normalizeTag = (tag: unknown): string | null => {
+  if (tag === null || tag === undefined) return null;
+  if (typeof tag === 'string' || typeof tag === 'number') return String(tag);
+  if (typeof tag === 'object') {
+    const candidate = (tag as any).tag ?? (tag as any).label ?? (tag as any).name;
+    if (typeof candidate === 'string' || typeof candidate === 'number') return String(candidate);
+  }
+  return null;
+};
+
 function BriefingSectionInner({
   onActChange,
   onAskAI,
@@ -84,25 +131,26 @@ function BriefingSectionInner({
     const sourceCount = sourceSummary?.totalItems ?? actI?.totalItems ?? 0;
     const confidence = executiveBrief?.meta?.confidence ?? null;
     return [
-      { label: 'Signals', value: signalCount, hint: 'Act II' },
-      { label: 'Actions', value: actionCount, hint: 'Act III' },
-      { label: 'Sources', value: sourceCount, hint: 'coverage' },
+      { label: 'Signals', value: resolveMetricValue(signalCount), hint: 'Act II' },
+      { label: 'Actions', value: resolveMetricValue(actionCount), hint: 'Act III' },
+      { label: 'Sources', value: resolveMetricValue(sourceCount), hint: 'coverage' },
       { label: 'Confidence', value: confidence !== null ? `${confidence}%` : 'N/A', hint: 'model' },
     ];
   }, [actI?.totalItems, actII?.signals?.length, actIII?.actions?.length, executiveBrief?.meta?.confidence, sourceSummary?.totalItems]);
 
-  const topSources = useMemo(() => {
+  const topSources = useMemo<{ name: string; count: string | number | null }[]>(() => {
     if (sourceSummary?.bySource) {
       return Object.entries(sourceSummary.bySource)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => (b.count as number) - (a.count as number))
+        .map(([name, count]) => normalizeSourceEntry({ name, count }))
+        .filter((entry): entry is { name: string; count: string | number | null } => Boolean(entry))
+        .sort((a, b) => (Number(b?.count ?? 0) - Number(a?.count ?? 0)))
         .slice(0, 5);
     }
     if (Array.isArray(actI?.topSources)) {
-      return actI.topSources.slice(0, 5).map((source: any) => ({
-        name: source.name || source,
-        count: source.count ?? null,
-      }));
+      return actI.topSources
+        .map((source: any) => normalizeSourceEntry(source))
+        .filter((entry): entry is { name: string; count: string | number | null } => Boolean(entry))
+        .slice(0, 5);
     }
     return [];
   }, [actI?.topSources, sourceSummary?.bySource]);
@@ -184,10 +232,15 @@ function BriefingSectionInner({
   }, [coverageStats.totalItems, coverageStats.sourcesCount, executiveBrief?.meta?.confidence, executiveBrief?.quality?.confidence?.score, freshnessStats.medianAgeHours, freshnessStats.newestAge]);
 
   const trendTags = useMemo(() => {
-    const tags = executiveBrief?.dashboard?.trendingTags ?? [];
-    if (tags.length > 0) return tags.slice(0, 8);
+    const tags = Array.isArray(executiveBrief?.dashboard?.trendingTags)
+      ? executiveBrief?.dashboard?.trendingTags
+      : [];
+    const normalized = tags.map(normalizeTag).filter(Boolean) as string[];
+    if (normalized.length > 0) {
+      return Array.from(new Set(normalized)).slice(0, 8);
+    }
     const fallback = (actII?.signals ?? [])
-      .map((signal: any) => signal.label)
+      .map((signal: any) => normalizeTag(signal.label))
       .filter(Boolean) as string[];
     return Array.from(new Set(fallback)).slice(0, 8);
   }, [actII?.signals, executiveBrief?.dashboard?.trendingTags]);
@@ -310,8 +363,8 @@ function BriefingSectionInner({
           </div>
           <div className="space-y-3">
             {topSources.length > 0 ? (
-              topSources.map((source) => (
-                <div key={source.name} className="flex items-center justify-between text-xs text-stone-600 border-b border-stone-100 pb-2">
+              topSources.map((source, idx) => (
+                <div key={`${source.name}-${idx}`} className="flex items-center justify-between text-xs text-stone-600 border-b border-stone-100 pb-2">
                   <span className="font-medium">{source.name}</span>
                   <span className="text-stone-400">{source.count ?? '-'}</span>
                 </div>
@@ -653,6 +706,13 @@ function BriefingSectionInner({
 
 // Act I: Setup / Coverage
 function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) => void }) {
+  const actTopSources = Array.isArray(data.topSources)
+    ? data.topSources
+        .map((source: any) => normalizeSourceEntry(source))
+        .filter((entry): entry is { name: string; count: string | number | null } => Boolean(entry))
+        .slice(0, 5)
+    : [];
+
   return (
     <div className="p-10 border-y border-stone-200 bg-transparent transition-all duration-500 group">
       <div className="flex items-center gap-4 mb-8">
@@ -676,18 +736,18 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
       )}
 
       {/* Top Sources */}
-      {data.topSources && data.topSources.length > 0 && (
+      {actTopSources.length > 0 && (
         <div className="pt-2">
           <div className="flex items-center justify-between mb-6">
             <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Primary Signal Sources</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            {data.topSources.slice(0, 5).map((source: any, idx: number) => (
+            {actTopSources.map((source, idx: number) => (
               <span
-                key={idx}
+                key={`${source.name}-${idx}`}
                 className="px-0 py-1 text-[13px] font-medium text-stone-600 border-b border-stone-300 hover:border-emerald-900 hover:text-emerald-900 transition-all cursor-default"
               >
-                {source.name || source}
+                {source.name}
               </span>
             ))}
           </div>

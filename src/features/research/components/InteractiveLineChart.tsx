@@ -88,19 +88,20 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
   };
 
   const buildSmoothPath = (pts: Array<{ x: number; y: number }>) => {
-    if (pts.length === 0) return "";
-    if (pts.length < 3) {
-      return pts
+    const safePts = pts.filter((pt) => Number.isFinite(pt.x) && Number.isFinite(pt.y));
+    if (safePts.length === 0) return "";
+    if (safePts.length < 3) {
+      return safePts
         .map((pt, i) => `${i === 0 ? "M" : "L"} ${pt.x} ${pt.y}`)
         .join(" ");
     }
 
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[i - 1] ?? pts[i];
-      const p1 = pts[i];
-      const p2 = pts[i + 1];
-      const p3 = pts[i + 2] ?? p2;
+    let d = `M ${safePts[0].x} ${safePts[0].y}`;
+    for (let i = 0; i < safePts.length - 1; i++) {
+      const p0 = safePts[i - 1] ?? safePts[i];
+      const p1 = safePts[i];
+      const p2 = safePts[i + 1];
+      const p3 = safePts[i + 2] ?? p2;
 
       const c1x = p1.x + (p2.x - p0.x) / 6;
       const c1y = p1.y + (p2.y - p0.y) / 6;
@@ -113,7 +114,9 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
   };
 
   const renderSeries = (series: ChartSeries) => {
-    const visibleEnd = Math.min(config.visibleEndIndex, series.data.length - 1);
+    const visibleEnd = Number.isFinite(config.visibleEndIndex)
+      ? Math.min(config.visibleEndIndex, series.data.length - 1)
+      : series.data.length - 1;
 
     const buildPath = (endIndex: number) => {
       const slice = series.data.slice(0, Math.max(endIndex + 1, 2));
@@ -123,6 +126,8 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
 
     const fullPath = buildPath(series.data.length - 1);
     const visiblePath = buildPath(Math.max(visibleEnd, 0));
+    const hasFullPath = fullPath.trim().startsWith("M");
+    const hasVisiblePath = visiblePath.trim().startsWith("M");
     const isGhost = series.type === "ghost";
     const { className, stroke, fill } = colorStyle(series);
     const dash = isGhost ? "6 6" : "0";
@@ -130,32 +135,36 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
     return (
       <g key={series.id}>
         {/* Ghost baseline - shows "path traveled" (previous state) at low opacity */}
-        <motion.path
-          d={fullPath}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={isGhost ? 1.5 : 0}
-          strokeDasharray={dash}
-          className={className}
-          initial={{ opacity: 0, pathLength: 0 }}
-          animate={{ opacity: isGhost ? 0.25 : 0, pathLength: 1 }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-        />
+        {hasFullPath && (
+          <motion.path
+            d={fullPath}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={isGhost ? 1.5 : 0}
+            strokeDasharray={dash}
+            className={className}
+            initial={{ opacity: 0, pathLength: 0, d: fullPath }}
+            animate={{ opacity: isGhost ? 0.25 : 0, pathLength: 1, d: fullPath }}
+            transition={{ duration: 1, ease: "easeInOut" }}
+          />
+        )}
 
         {/* Visible / confirmed segment - current state */}
-        <motion.path
-          d={visiblePath}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={isGhost ? 2 : 2.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeDasharray={dash}
-          className={className}
-          initial={{ opacity: 0, pathLength: 0 }}
-          animate={{ opacity: 1, pathLength: 1 }}
-          transition={{ duration: 1.2, ease: "easeInOut" }}
-        />
+        {hasVisiblePath && (
+          <motion.path
+            d={visiblePath}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={isGhost ? 2 : 2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={dash}
+            className={className}
+            initial={{ opacity: 0, pathLength: 0, d: visiblePath }}
+            animate={{ opacity: 1, pathLength: 1, d: visiblePath }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+          />
+        )}
 
         {/* Points */}
         {series.data.map((point, i) => {

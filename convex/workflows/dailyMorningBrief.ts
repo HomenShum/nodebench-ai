@@ -25,6 +25,7 @@ export const runDailyMorningBrief = internalAction({
 
     const errors: string[] = [];
     let ntfySent = false;
+    let ntfySkipped = false;
 
     try {
       // ========================================================================
@@ -133,38 +134,66 @@ export const runDailyMorningBrief = internalAction({
           {},
         );
 
+        const memoriesForDate: any[] = await ctx.runQuery(
+          internal.domains.research.dailyBriefMemoryQueries.listMemoriesByDateStringInternal,
+          { dateString: storeResult.dateString, limit: 15 },
+        );
+        const memoryForDate = memoriesForDate[0] ?? null;
         const latestMemory: any = await ctx.runQuery(
           internal.domains.research.dailyBriefMemoryQueries.getLatestMemoryInternal,
           {},
         );
+        const digestMemory = memoryForDate ?? latestMemory;
+        const digestContext = (digestMemory?.context ?? {}) as any;
+        const alreadySent = memoriesForDate.some(
+          (memory) => memory?.context?.ntfyDigestDate === storeResult.dateString,
+        );
 
-        const briefRecord = (latestMemory?.context as any)?.executiveBriefRecord;
-        const executiveBrief =
-          briefRecord?.brief ||
-          (latestMemory?.context as any)?.executiveBrief ||
-          (latestMemory?.context as any)?.generatedBrief ||
-          null;
+        if (alreadySent) {
+          ntfySkipped = true;
+          console.log("[dailyMorningBrief] ntfy digest already sent; skipping");
+        } else {
+          const briefRecord = (digestContext as any)?.executiveBriefRecord;
+          const executiveBrief =
+            briefRecord?.brief ||
+            digestContext.executiveBrief ||
+            digestContext.generatedBrief ||
+            null;
 
-        const digestPayload = buildNtfyDigestPayload({
-          dateString: storeResult.dateString,
-          sourceSummary,
-          dashboardMetrics,
-          feedItems,
-          executiveBrief,
-          briefRecordStatus: briefRecord?.status,
-          evidence: briefRecord?.evidence,
-        });
+          const digestPayload = buildNtfyDigestPayload({
+            dateString: storeResult.dateString,
+            sourceSummary,
+            dashboardMetrics,
+            feedItems,
+            executiveBrief,
+            briefRecordStatus: briefRecord?.status,
+            evidence: briefRecord?.evidence,
+          });
 
-        await ctx.runAction(api.domains.integrations.ntfy.sendNotification, {
-          title: digestPayload.title,
-          body: digestPayload.body,
-          priority: 3,
-          tags: ["newspaper", "bar_chart", "briefcase"],
-          eventType: "morning_digest",
-        });
+          await ctx.runAction(api.domains.integrations.ntfy.sendNotification, {
+            title: digestPayload.title,
+            body: digestPayload.body,
+            priority: 3,
+            tags: ["newspaper", "bar_chart", "briefcase"],
+            eventType: "morning_digest",
+          });
 
-        ntfySent = true;
-        console.log("[dailyMorningBrief] ntfy digest sent");
+          ntfySent = true;
+          console.log("[dailyMorningBrief] ntfy digest sent");
+
+          if (digestMemory?._id) {
+            await ctx.runMutation(
+              internal.domains.research.dailyBriefMemoryMutations.updateMemoryContext,
+              {
+                memoryId: digestMemory._id,
+                contextPatch: {
+                  ntfyDigestDate: storeResult.dateString,
+                  ntfyDigestSentAt: Date.now(),
+                },
+              },
+            );
+          }
+        }
       } catch (ntfyErr: any) {
         console.warn("[dailyMorningBrief] ntfy digest failed:", ntfyErr?.message);
         errors.push(`ntfy digest: ${ntfyErr?.message}`);
@@ -275,6 +304,7 @@ export const runDailyMorningBrief = internalAction({
         totalTimeMs: totalTime,
         totalItems: sourceSummary.totalItems,
         ntfySent,
+        ntfySkipped,
         emailsSent,
         errors: errors.length > 0 ? errors : "none",
         snapshotId: storeResult.snapshotId,
@@ -288,6 +318,7 @@ export const runDailyMorningBrief = internalAction({
         sourceSummary,
         dashboardMetrics,
         ntfySent,
+        ntfySkipped,
         emailsSent,
         errors: errors.length > 0 ? errors : undefined,
         snapshotId: storeResult.snapshotId,

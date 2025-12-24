@@ -837,9 +837,11 @@ export const autoNameThread = action({
     threadId: v.id("chatThreadsStream"),
     firstMessage: v.string(),
   },
-  handler: async (ctx, args): Promise<{ title: string; skipped: boolean }> => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    handler: async (ctx, args): Promise<{ title: string; skipped: boolean }> => {
+      const userId = await getAuthUserId(ctx);
+      if (!userId) {
+        return { title: "New Chat", skipped: true };
+      }
 
     const thread: { userId: string; title?: string } | null = await ctx.runQuery(internal.domains.agents.fastAgentPanelStreaming.getThreadById, {
       threadId: args.threadId,

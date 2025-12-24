@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, startTransition } from "react";
+import { useState, useEffect, useRef, useCallback, startTransition, Suspense, lazy } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { toast } from "sonner";
@@ -7,17 +7,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
 import { FastAgentPanel } from "@features/agents/components/FastAgentPanel";
-import { PublicDocuments } from "@/features/documents/views/PublicDocuments";
 import { TabManager } from "./TabManager";
-import { DocumentsHomeHub } from "@/features/documents/components/DocumentsHomeHub";
-import { CalendarHomeHub } from "@/features/calendar/components/CalendarHomeHub";
-import { AgentsHub } from "@/features/agents/views/AgentsHub";
-
-import { TimelineRoadmapView } from "@/components/timelineRoadmap/TimelineRoadmapView";
-import ResearchHub from "@/features/research/views/ResearchHub";
-import CinematicHome from "@/features/research/views/CinematicHome";
-import { PhaseAllShowcase } from "@/features/research/views/PhaseAllShowcase";
-import { FootnotesPage } from "@/features/research/views/FootnotesPage";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { Zap, Menu, X as CloseIcon } from "lucide-react";
@@ -26,6 +16,46 @@ import { SettingsModal } from "./SettingsModal";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
+
+const PublicDocuments = lazy(() =>
+  import("@/features/documents/views/PublicDocuments").then((mod) => ({
+    default: mod.PublicDocuments,
+  })),
+);
+const DocumentsHomeHub = lazy(() =>
+  import("@/features/documents/components/DocumentsHomeHub").then((mod) => ({
+    default: mod.DocumentsHomeHub,
+  })),
+);
+const CalendarHomeHub = lazy(() =>
+  import("@/features/calendar/components/CalendarHomeHub").then((mod) => ({
+    default: mod.CalendarHomeHub,
+  })),
+);
+const AgentsHub = lazy(() =>
+  import("@/features/agents/views/AgentsHub").then((mod) => ({
+    default: mod.AgentsHub,
+  })),
+);
+const TimelineRoadmapView = lazy(() =>
+  import("@/components/timelineRoadmap/TimelineRoadmapView").then((mod) => ({
+    default: mod.TimelineRoadmapView,
+  })),
+);
+const ResearchHub = lazy(() => import("@/features/research/views/ResearchHub"));
+const CinematicHome = lazy(() => import("@/features/research/views/CinematicHome"));
+const PhaseAllShowcase = lazy(() =>
+  import("@/features/research/views/PhaseAllShowcase").then((mod) => ({
+    default: mod.PhaseAllShowcase,
+  })),
+);
+const FootnotesPage = lazy(() => import("@/features/research/views/FootnotesPage"));
+
+const viewFallback = (
+  <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
+    Loading view...
+  </div>
+);
 
 interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
@@ -688,92 +718,94 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
           {/* Content Area - Resizable Split */}
           <div className={`flex-1 overflow-hidden transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`} data-main-content>
-            {currentView === 'research' ? (
-              <AnimatePresence mode="wait">
-                {!showResearchDossier ? (
-                  <motion.div
-                    key="gateway"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, scale: 1.05 }}
-                    transition={{ duration: 0.6 }}
-                    className="h-full w-full"
-                  >
-                    <CinematicHome
-                      onEnterHub={() => setShowResearchDossier(true)}
-                      onEnterWorkspace={() => setCurrentView('documents')}
-                    />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="hub"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.5 }}
-                    className="h-full w-full"
-                  >
-                    <ResearchHub
-                      embedded
-                      onGoHome={() => setShowResearchDossier(false)}
-                      onDocumentSelect={(id) => handleDocumentSelect(id as Id<"documents">)}
-                      onEnterWorkspace={() => setCurrentView('documents')}
-                      activeSources={activeSources}
-                      onToggleSource={(sourceId) => setActiveSources(prev =>
-                        prev.includes(sourceId) ? prev.filter(id => id !== sourceId) : [...prev, sourceId]
-                      )}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            ) : currentView === 'public' ? (
-              <PublicDocuments onDocumentSelect={handleDocumentSelect} />
-            ) : currentView === 'agents' ? (
-              <AgentsHub />
-            ) : currentView === 'calendar' ? (
-              <CalendarHomeHub
-                onDocumentSelect={handleDocumentSelect}
-                onGridModeToggle={() => setIsGridMode((v) => !v)}
-              />
-            ) : currentView === 'roadmap' ? (
-              <TimelineRoadmapView />
-            ) : currentView === 'showcase' ? (
-              <PhaseAllShowcase onBack={() => setCurrentView('research')} />
-            ) : currentView === 'footnotes' ? (
-              <FootnotesPage
-                library={{
-                  citations: {},
-                  order: [],
-                  updatedAt: new Date().toISOString(),
-                }}
-                briefTitle="Today's Intelligence Brief"
-                briefDate={new Date().toLocaleDateString()}
-                onBack={() => setCurrentView('research')}
-              />
-            ) : (
-              <div className="h-full flex">
-                <div className="flex-1 overflow-hidden">
-                  {(isGridMode || !!selectedDocumentId) ? (
-                    <TabManager
-                      selectedDocumentId={selectedDocumentId}
-                      onDocumentSelect={handleDocumentSelect}
-                      isGridMode={isGridMode}
-                      setIsGridMode={setIsGridMode}
-                      currentView={currentView}
-                    />
+            <Suspense fallback={viewFallback}>
+              {currentView === 'research' ? (
+                <AnimatePresence mode="wait">
+                  {!showResearchDossier ? (
+                    <motion.div
+                      key="gateway"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0, scale: 1.05 }}
+                      transition={{ duration: 0.6 }}
+                      className="h-full w-full"
+                    >
+                      <CinematicHome
+                        onEnterHub={() => setShowResearchDossier(true)}
+                        onEnterWorkspace={() => setCurrentView('documents')}
+                      />
+                    </motion.div>
                   ) : (
-                    <DocumentsHomeHub
-                      onDocumentSelect={(id) => handleDocumentSelect(id)}
-                      onGridModeToggle={() => setIsGridMode((v) => !v)}
-                      selectedTaskId={selectedTaskId}
-                      selectedTaskSource={selectedTaskSource}
-                      onSelectTask={handleSelectTask}
-                      onClearTaskSelection={clearTaskSelection}
-                    />
+                    <motion.div
+                      key="hub"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.5 }}
+                      className="h-full w-full"
+                    >
+                      <ResearchHub
+                        embedded
+                        onGoHome={() => setShowResearchDossier(false)}
+                        onDocumentSelect={(id) => handleDocumentSelect(id as Id<"documents">)}
+                        onEnterWorkspace={() => setCurrentView('documents')}
+                        activeSources={activeSources}
+                        onToggleSource={(sourceId) => setActiveSources(prev =>
+                          prev.includes(sourceId) ? prev.filter(id => id !== sourceId) : [...prev, sourceId]
+                        )}
+                      />
+                    </motion.div>
                   )}
+                </AnimatePresence>
+              ) : currentView === 'public' ? (
+                <PublicDocuments onDocumentSelect={handleDocumentSelect} />
+              ) : currentView === 'agents' ? (
+                <AgentsHub />
+              ) : currentView === 'calendar' ? (
+                <CalendarHomeHub
+                  onDocumentSelect={handleDocumentSelect}
+                  onGridModeToggle={() => setIsGridMode((v) => !v)}
+                />
+              ) : currentView === 'roadmap' ? (
+                <TimelineRoadmapView />
+              ) : currentView === 'showcase' ? (
+                <PhaseAllShowcase onBack={() => setCurrentView('research')} />
+              ) : currentView === 'footnotes' ? (
+                <FootnotesPage
+                  library={{
+                    citations: {},
+                    order: [],
+                    updatedAt: new Date().toISOString(),
+                  }}
+                  briefTitle="Today's Intelligence Brief"
+                  briefDate={new Date().toLocaleDateString()}
+                  onBack={() => setCurrentView('research')}
+                />
+              ) : (
+                <div className="h-full flex">
+                  <div className="flex-1 overflow-hidden">
+                    {(isGridMode || !!selectedDocumentId) ? (
+                      <TabManager
+                        selectedDocumentId={selectedDocumentId}
+                        onDocumentSelect={handleDocumentSelect}
+                        isGridMode={isGridMode}
+                        setIsGridMode={setIsGridMode}
+                        currentView={currentView}
+                      />
+                    ) : (
+                      <DocumentsHomeHub
+                        onDocumentSelect={(id) => handleDocumentSelect(id)}
+                        onGridModeToggle={() => setIsGridMode((v) => !v)}
+                        selectedTaskId={selectedTaskId}
+                        selectedTaskSource={selectedTaskSource}
+                        onSelectTask={handleSelectTask}
+                        onClearTaskSelection={clearTaskSelection}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </Suspense>
           </div>
 
 
