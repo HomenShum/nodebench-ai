@@ -7,6 +7,22 @@
 import { v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
 
+function stripReservedKeys(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripReservedKeys);
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    const next: Record<string, unknown> = {};
+    for (const [key, val] of entries) {
+      if (key.startsWith("$")) continue;
+      next[key] = stripReservedKeys(val);
+    }
+    return next;
+  }
+  return value;
+}
+
 export const createMemory = internalMutation({
   args: {
     snapshotId: v.id("dailyBriefSnapshots"),
@@ -134,7 +150,7 @@ export const setExecutiveBrief = internalMutation({
     if (!memory) throw new Error("Memory not found");
 
     const now = Date.now();
-    const context = (memory.context ?? {}) as any;
+    const context = stripReservedKeys(memory.context ?? {}) as any;
 
     await ctx.db.patch(memory._id, {
       context: {
@@ -159,12 +175,13 @@ export const updateMemoryContext = internalMutation({
     if (!memory) throw new Error("Memory not found");
 
     const now = Date.now();
-    const context = (memory.context ?? {}) as any;
+    const context = stripReservedKeys(memory.context ?? {}) as any;
+    const patch = stripReservedKeys(args.contextPatch ?? {}) as any;
 
     await ctx.db.patch(memory._id, {
       context: {
         ...context,
-        ...args.contextPatch,
+        ...patch,
       },
       updatedAt: now,
     });

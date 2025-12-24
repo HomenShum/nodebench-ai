@@ -112,6 +112,22 @@ function safeIso(dateString: string, fallbackHour = 12): string {
   return `${day}T${String(fallbackHour).padStart(2, "0")}:00:00.000Z`;
 }
 
+function stripReservedKeys(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripReservedKeys);
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    const next: Record<string, unknown> = {};
+    for (const [key, val] of entries) {
+      if (key.startsWith("$")) continue;
+      next[key] = stripReservedKeys(val);
+    }
+    return next;
+  }
+  return value;
+}
+
 function toEvidence(item: FeedItem, idx: number, dateString: string): Evidence {
   const source = (item.source ?? "Other") as string;
   const title = (item.title ?? `Evidence ${idx + 1}`).slice(0, 240);
@@ -444,7 +460,8 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
 
     const existing = (memory.context as any)?.executiveBrief as DailyBriefPayload | undefined;
     if (!args.forceRefresh && existing?.meta?.date === memory.dateString) {
-      return { ok: true, cached: true, brief: existing };
+      const sanitizedExisting = stripReservedKeys(existing) as DailyBriefPayload;
+      return { ok: true, cached: true, brief: sanitizedExisting };
     }
 
     const dayStart = `${memory.dateString}T00:00:00.000Z`;
@@ -657,12 +674,28 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
       errors: status === "valid" ? [] : (validation?.errors ?? ["Missing evidence/provenance"]),
     };
 
+    const sanitizedBrief = stripReservedKeys(parsed) as DailyBriefPayload;
+    const sanitizedRecord = stripReservedKeys(record) as ExecutiveBriefRecord;
+    const sanitizedValidation = stripReservedKeys(validation) as typeof validation;
+
     await ctx.runMutation(
       internal.domains.research.dailyBriefMemoryMutations.setExecutiveBrief,
-      { memoryId: memory._id, payload: parsed, generatedAt, validation, record },
+      {
+        memoryId: memory._id,
+        payload: sanitizedBrief,
+        generatedAt,
+        validation: sanitizedValidation,
+        record: sanitizedRecord,
+      },
     );
 
-    return { ok: true, cached: false, brief: parsed, validation, record };
+    return {
+      ok: true,
+      cached: false,
+      brief: sanitizedBrief,
+      validation: sanitizedValidation,
+      record: sanitizedRecord,
+    };
   },
 });
 
