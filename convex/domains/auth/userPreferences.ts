@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "../../_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -879,6 +879,21 @@ export const getSmsPreferences = query({
       smsMorningDigest: prefs.smsMorningDigest ?? false,
       smsReminderMinutes: prefs.smsReminderMinutes ?? 15,
     };
+  },
+});
+
+/**
+ * Internal query to fetch user preferences by userId (for integrations).
+ */
+export const getByUserId = internalQuery({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, { userId }) => {
+    return await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
   },
 });
 

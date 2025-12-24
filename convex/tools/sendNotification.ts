@@ -17,7 +17,6 @@ import { api } from "../_generated/api";
  * Free alternative to SMS with same logging and tracking
  */
 export const sendNotification = createTool({
-  name: "sendNotification",
   description: `Send a push notification to a user via ntfy.sh.
 
 This is a free alternative to SMS that sends notifications to the user's phone or desktop.
@@ -31,7 +30,7 @@ Use this for:
 
 The notification will be delivered instantly to all devices subscribed to the user's topic.`,
 
-  parameters: z.object({
+  args: z.object({
     topic: z
       .string()
       .optional()
@@ -106,4 +105,3 @@ To receive notifications, users should:
     }
   },
 });
-

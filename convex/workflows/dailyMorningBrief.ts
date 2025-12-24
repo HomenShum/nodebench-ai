@@ -24,6 +24,7 @@ export const runDailyMorningBrief = internalAction({
     console.log("[dailyMorningBrief] dYO. Starting daily morning brief workflow...");
 
     const errors: string[] = [];
+    let ntfySent = false;
 
     try {
       // ========================================================================
@@ -122,9 +123,57 @@ export const runDailyMorningBrief = internalAction({
       }
 
       // ========================================================================
-      // STEP 5c: Send morning digest emails and SMS with meeting reminders
+      // STEP 5c: Send global ntfy morning digest (dense, verified)
       // ========================================================================
-      console.log("[dailyMorningBrief] 📧 Step 5c: Sending meeting reminder emails and SMS...");
+      console.log("[dailyMorningBrief] Step 5c: Sending ntfy morning digest...");
+
+      try {
+        const feedItems = await ctx.runQuery(
+          internal.domains.research.dashboardQueries.getFeedItemsForMetrics,
+          {},
+        );
+
+        const latestMemory: any = await ctx.runQuery(
+          internal.domains.research.dailyBriefMemoryQueries.getLatestMemoryInternal,
+          {},
+        );
+
+        const briefRecord = (latestMemory?.context as any)?.executiveBriefRecord;
+        const executiveBrief =
+          briefRecord?.brief ||
+          (latestMemory?.context as any)?.executiveBrief ||
+          (latestMemory?.context as any)?.generatedBrief ||
+          null;
+
+        const digestPayload = buildNtfyDigestPayload({
+          dateString: storeResult.dateString,
+          sourceSummary,
+          dashboardMetrics,
+          feedItems,
+          executiveBrief,
+          briefRecordStatus: briefRecord?.status,
+          evidence: briefRecord?.evidence,
+        });
+
+        await ctx.runAction(api.domains.integrations.ntfy.sendNotification, {
+          title: digestPayload.title,
+          body: digestPayload.body,
+          priority: 3,
+          tags: ["newspaper", "bar_chart", "briefcase"],
+          eventType: "morning_digest",
+        });
+
+        ntfySent = true;
+        console.log("[dailyMorningBrief] ntfy digest sent");
+      } catch (ntfyErr: any) {
+        console.warn("[dailyMorningBrief] ntfy digest failed:", ntfyErr?.message);
+        errors.push(`ntfy digest: ${ntfyErr?.message}`);
+      }
+
+      // ========================================================================
+      // STEP 5d: Send morning digest emails and SMS with meeting reminders
+      // ========================================================================
+      console.log("[dailyMorningBrief] Step 5d: Sending meeting reminder emails and SMS...");
 
       let emailsSent = 0;
       let smsSent = 0;
@@ -167,7 +216,7 @@ export const runDailyMorningBrief = internalAction({
                 dateString,
                 meetings,
                 topInsight: sourceSummary.totalItems > 0
-                  ? `Today we're tracking ${sourceSummary.totalItems} items across ${Object.keys(sourceSummary.sources || {}).length} sources.`
+                  ? `Today we're tracking ${sourceSummary.totalItems} items across ${Object.keys(sourceSummary.bySource || {}).length} sources.`
                   : undefined,
               });
 
@@ -225,6 +274,7 @@ export const runDailyMorningBrief = internalAction({
       console.log("[dailyMorningBrief] dYZ% Daily morning brief complete!", {
         totalTimeMs: totalTime,
         totalItems: sourceSummary.totalItems,
+        ntfySent,
         emailsSent,
         errors: errors.length > 0 ? errors : "none",
         snapshotId: storeResult.snapshotId,
@@ -237,6 +287,7 @@ export const runDailyMorningBrief = internalAction({
         totalTimeMs: totalTime,
         sourceSummary,
         dashboardMetrics,
+        ntfySent,
         emailsSent,
         errors: errors.length > 0 ? errors : undefined,
         snapshotId: storeResult.snapshotId,
@@ -255,3 +306,229 @@ export const runDailyMorningBrief = internalAction({
     }
   },
 });
+
+type FeedItemLite = {
+  title: string;
+  summary?: string;
+  source?: string;
+  tags?: string[];
+  category?: string;
+  score?: number;
+  publishedAt?: string;
+  type?: string;
+};
+
+function sanitizeText(input: string): string {
+  return input.replace(/[^\x00-\x7F]/g, "");
+}
+
+function normalizeText(input?: string): string {
+  return sanitizeText(input ?? "").replace(/\s+/g, " ").trim();
+}
+
+function clipText(input: string, maxLen: number): string {
+  const cleaned = normalizeText(input);
+  if (cleaned.length <= maxLen) return cleaned;
+  return `${cleaned.slice(0, Math.max(0, maxLen - 3))}...`;
+}
+
+function formatTopList(entries: Array<[string, number]>, limit: number): string {
+  const top = entries
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([name, count]) => `${name} ${count}`);
+  return top.join(", ");
+}
+
+function getTopTags(feedItems: FeedItemLite[], fallback: string[] = []): string[] {
+  if (fallback.length > 0) return fallback.slice(0, 6);
+  const counts = new Map<string, number>();
+  feedItems.forEach((item) => {
+    (item.tags ?? []).forEach((tag) => {
+      const normalized = normalizeText(tag.replace(/^#/, "").toLowerCase());
+      if (!normalized) return;
+      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+    });
+  });
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([tag]) => `#${tag}`);
+}
+
+function buildSignalLines(executiveBrief: any): string[] {
+  const signals = executiveBrief?.actII?.signals ?? [];
+  return signals.slice(0, 3).map((signal: any) => {
+    const evidenceCount = Array.isArray(signal.evidence) ? signal.evidence.length : 0;
+    const source = signal.evidence?.[0]?.source ?? "n/a";
+    const label = signal.label ? `${signal.label}: ` : "";
+    return `${label}${clipText(signal.headline ?? "Signal update", 120)} (source ${source}, evidence ${evidenceCount})`;
+  });
+}
+
+function buildActionLines(executiveBrief: any): string[] {
+  const actions = executiveBrief?.actIII?.actions ?? [];
+  return actions.slice(0, 3).map((action: any) => {
+    const label = action.label || action.title || action.headline || "Action";
+    const priority = action.priority || action.status;
+    const deliverable = action.deliverable ? `deliverable ${action.deliverable}` : "";
+    const suffix = [priority && `priority ${priority}`, deliverable].filter(Boolean).join(", ");
+    return `${clipText(label, 120)}${suffix ? ` (${suffix})` : ""}`;
+  });
+}
+
+function buildPersonaHighlights(feedItems: FeedItemLite[]): string[] {
+  const configs = [
+    {
+      label: "VCs",
+      keywords: ["funding", "raise", "series", "seed", "round", "valuation", "investment", "acquisition"],
+      categories: ["startups", "finance"],
+      types: ["news", "product"],
+    },
+    {
+      label: "JPM Banking",
+      keywords: ["ipo", "m&a", "merger", "acquisition", "sec", "fda", "clinical", "regulatory"],
+      categories: ["finance", "research"],
+      types: ["news"],
+    },
+    {
+      label: "Mercury Banking",
+      keywords: ["yc", "ycombinator", "batch", "seed", "startup"],
+      categories: ["startups"],
+      types: ["news", "product"],
+    },
+    {
+      label: "Investment Bankers",
+      keywords: ["m&a", "acquisition", "deal", "ipo", "valuation", "buyout"],
+      categories: ["finance"],
+      types: ["news"],
+    },
+    {
+      label: "Tech Leaders",
+      keywords: ["benchmark", "model", "agent", "architecture", "paper", "arxiv", "release"],
+      categories: ["ai_ml", "research"],
+      types: ["news"],
+    },
+    {
+      label: "Startup Founders",
+      keywords: ["launch", "product", "users", "growth", "pricing", "market"],
+      categories: ["products", "startups"],
+      types: ["product", "news"],
+    },
+    {
+      label: "Developers",
+      keywords: ["github", "repo", "release", "package", "library", "sdk", "cve", "vulnerability"],
+      categories: ["opensource"],
+      types: ["repo", "news"],
+    },
+    {
+      label: "Biotech",
+      keywords: ["biotech", "clinical", "fda", "trial", "pharma", "medrxiv", "biorxiv"],
+      categories: ["research"],
+      types: ["news"],
+    },
+    {
+      label: "Fintech",
+      keywords: ["fintech", "payments", "bank", "regulation", "cfpb", "occ", "fed"],
+      categories: ["finance"],
+      types: ["news"],
+    },
+    {
+      label: "Industry Analysts",
+      keywords: ["market", "industry", "report", "trend", "survey"],
+      categories: ["finance", "research"],
+      types: ["news"],
+    },
+  ];
+
+  const normalized = feedItems.map((item) => ({
+    ...item,
+    text: normalizeText(`${item.title} ${item.summary ?? ""} ${(item.tags ?? []).join(" ")}`).toLowerCase(),
+  }));
+
+  return configs.map((config) => {
+    const matches = normalized.filter((item) => {
+      const keywordHit = config.keywords.some((keyword) => item.text.includes(keyword));
+      const categoryHit = item.category ? config.categories.includes(item.category) : false;
+      const typeHit = item.type ? config.types.includes(item.type) : false;
+      return keywordHit || categoryHit || typeHit;
+    });
+    const top = matches
+      .slice()
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
+    if (!top) {
+      return `${config.label}: No direct signal in last 24h.`;
+    }
+    return `${config.label}: ${clipText(top.title, 110)} (${top.source ?? top.category ?? "source"}, ${matches.length} hits)`;
+  });
+}
+
+function buildNtfyDigestPayload(args: {
+  dateString?: string;
+  sourceSummary?: any;
+  dashboardMetrics?: any;
+  feedItems?: FeedItemLite[];
+  executiveBrief?: any;
+  briefRecordStatus?: string;
+  evidence?: Array<{ source?: string }>;
+}): { title: string; body: string } {
+  const dateLabel = args.dateString ?? new Date().toISOString().slice(0, 10);
+  const feedItems = args.feedItems ?? [];
+  const sourceSummary = args.sourceSummary ?? {};
+
+  const totalItems = args.executiveBrief?.actI?.totalItems ?? sourceSummary.totalItems ?? feedItems.length;
+  const sourcesCount = args.executiveBrief?.actI?.sourcesCount ?? Object.keys(sourceSummary.bySource ?? {}).length;
+  const topSources = formatTopList(Object.entries(sourceSummary.bySource ?? {}) as Array<[string, number]>, 4) || "n/a";
+  const topTags = getTopTags(feedItems, sourceSummary.topTrending ?? []);
+
+  const evidenceList =
+    args.evidence ??
+    args.executiveBrief?.actII?.signals?.flatMap((signal: any) => signal.evidence ?? []) ??
+    [];
+  const evidenceCount = evidenceList.length;
+  const confidence =
+    args.executiveBrief?.quality?.confidence?.score ??
+    args.executiveBrief?.meta?.confidence ??
+    null;
+  const status = args.briefRecordStatus === "valid" ? "verified" : "pending";
+
+  const keyStats = args.dashboardMetrics?.keyStats ?? [];
+  const pulseLine = keyStats.length
+    ? keyStats.slice(0, 3).map((stat: any) => `${stat.label} ${stat.value}`).join(" | ")
+    : "n/a";
+
+  const executiveSummary = args.executiveBrief?.meta?.summary || args.executiveBrief?.actI?.synthesis || "";
+  const signalLines = buildSignalLines(args.executiveBrief);
+  const actionLines = buildActionLines(args.executiveBrief);
+  const personaLines = buildPersonaHighlights(feedItems);
+
+  const lines: string[] = [];
+  lines.push(`NodeBench Morning Digest | ${dateLabel}`);
+  lines.push(`Coverage: ${totalItems} items | Sources: ${sourcesCount} | Evidence: ${evidenceCount} | Confidence: ${confidence ?? "N/A"} | Status: ${status}`);
+  lines.push(`Top sources: ${topSources}`);
+  if (topTags.length > 0) {
+    lines.push(`Top tags: ${topTags.join(", ")}`);
+  }
+  lines.push(`Pulse: ${pulseLine}`);
+  if (executiveSummary) {
+    lines.push(`Executive synthesis: ${clipText(executiveSummary, 280)}`);
+  }
+  if (signalLines.length > 0) {
+    lines.push("Top signals:");
+    signalLines.forEach((line) => lines.push(`- ${line}`));
+  }
+  if (actionLines.length > 0) {
+    lines.push("Top actions:");
+    actionLines.forEach((line) => lines.push(`- ${line}`));
+  }
+  lines.push("Persona coverage:");
+  personaLines.forEach((line) => lines.push(`- ${line}`));
+  lines.push("Open: https://nodebench-ai.vercel.app/");
+
+  return {
+    title: `NodeBench Morning Digest ${dateLabel}`,
+    body: sanitizeText(lines.join("\n")),
+  };
+}
+

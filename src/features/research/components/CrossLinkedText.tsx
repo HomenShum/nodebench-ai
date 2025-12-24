@@ -54,16 +54,24 @@ export function CrossLinkedText({ text, onAskAI, className = "" }: CrossLinkedTe
                 if (matchedEntityKey) {
                     const type = ENTITIES[matchedEntityKey];
                     return (
-                        <button
+                        <span
                             key={i}
+                            role="button"
+                            tabIndex={0}
                             onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onAskAI?.(`Provide a strategic deep-dive on: ${matchedEntityKey}`);
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key !== "Enter" && e.key !== " ") return;
                                 e.preventDefault();
                                 e.stopPropagation();
                                 onAskAI?.(`Provide a strategic deep-dive on: ${matchedEntityKey}`);
                             }}
                             className={`
                 inline-flex items-center px-1.5 py-0.5 rounded-none border-b border-dashed 
-                transition-all duration-300 font-bold tracking-tight
+                transition-all duration-300 font-bold tracking-tight cursor-pointer
                 ${type === 'company' ? 'text-emerald-900 border-emerald-900/30 hover:bg-emerald-50' :
                                     type === 'person' ? 'text-indigo-900 border-indigo-900/30 hover:bg-indigo-50' :
                                         type === 'topic' ? 'text-stone-900 border-stone-900/30 hover:bg-stone-50' :
@@ -71,7 +79,7 @@ export function CrossLinkedText({ text, onAskAI, className = "" }: CrossLinkedTe
               `}
                         >
                             {part}
-                        </button>
+                        </span>
                     );
                 }
 

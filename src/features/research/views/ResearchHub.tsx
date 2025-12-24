@@ -61,6 +61,12 @@ export default function ResearchHub(props: ResearchHubProps) {
     isLoading
   } = usePersonalBrief({ dateString: selectedDate });
 
+  const briefId = (briefMemory as any)?._id || "morning_brief_latest";
+  const dossierContextBase = useMemo(() => ({
+    briefId,
+    currentAct: activeAct,
+  }), [briefId, activeAct]);
+
   // Hoist agent plans for the adaptive HUD
   const agentPlans = useQuery(
     api.domains.agents.agentPlanning.listPlans,
@@ -160,37 +166,64 @@ export default function ResearchHub(props: ResearchHubProps) {
     openWithContext({
       contextTitle: item.title,
       initialMessage: `Analyze this feed item and summarize key takeaways.\n\n${item.title}${item.subtitle ? `\n\n${item.subtitle}` : ""}`,
+      dossierContext: {
+        ...dossierContextBase,
+        activeSectionId: "signal_stream",
+      },
     });
-  }, [openWithContext]);
+  }, [openWithContext, dossierContextBase]);
 
   const handleFeedOpenWithAgent = useCallback((item: FeedItem) => {
     openWithContext({
       contextTitle: item.title,
       contextWebUrls: item.url ? [item.url] : undefined,
       initialMessage: `Deep dive on: ${item.title}\n\nWhat happened, why it matters, and what to watch next?`,
+      dossierContext: {
+        ...dossierContextBase,
+        activeSectionId: "signal_stream",
+      },
     });
-  }, [openWithContext]);
+  }, [openWithContext, dossierContextBase]);
 
   const handleDigestItemClick = useCallback((item: { text: string; relevance?: string; linkedEntity?: string }) => {
     openWithContext({
       contextTitle: item.linkedEntity ? `Digest: ${item.linkedEntity}` : "Morning Digest",
       initialMessage: `Expand on this digest item:\n\n${item.text}`,
+      dossierContext: {
+        ...dossierContextBase,
+        currentAct: "actI",
+        activeSectionId: "executive_synthesis",
+      },
     });
-  }, [openWithContext]);
+  }, [openWithContext, dossierContextBase]);
 
   const handleAskAI = useCallback((prompt: string) => {
     openWithContext({
       contextTitle: "Executive Brief",
       initialMessage: prompt,
+      dossierContext: {
+        ...dossierContextBase,
+        activeSectionId: "institutional_briefing",
+      },
     });
-  }, [openWithContext]);
+  }, [openWithContext, dossierContextBase]);
 
   const handleDashboardPointClick = useCallback((point: { seriesId: string; dataIndex: number; dataLabel: string; value: number; unit?: string }) => {
     openWithContext({
       contextTitle: "Pulse Overview",
       initialMessage: `Analyze this chart point:\n- Series: ${point.seriesId}\n- Point: ${point.dataLabel}\n- Value: ${point.value}${point.unit ?? ""}\n\nWhat changed, what it implies, and the next actions to consider.`,
+      dossierContext: {
+        ...dossierContextBase,
+        focusedDataIndex: point.dataIndex,
+        chartContext: {
+          seriesId: point.seriesId,
+          dataLabel: point.dataLabel,
+          value: point.value,
+          unit: point.unit,
+        },
+      },
     });
-  }, [openWithContext]);
+  }, [openWithContext, dossierContextBase]);
 
   return (
     <EvidenceProvider>
@@ -261,14 +294,20 @@ export default function ResearchHub(props: ResearchHubProps) {
 
         {/* UNIFIED SCROLL CONTAINER */}
         <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#faf9f6]">
-          {/* TIMELINE STRIP - Past→Present→Future temporal context */}
+          {/* TIMELINE STRIP - Past + Present + Future temporal context */}
           <TimelineStrip
             events={timelineEvents}
             activeEventId={activeAct === 'actI' ? 'today-briefing' : undefined}
             onEventClick={(event) => {
+              const currentAct = event.phase === 'past' ? 'actI' : event.phase === 'present' ? 'actII' : 'actIII';
               openWithContext({
                 contextTitle: `Timeline: ${event.label}`,
                 initialMessage: `Tell me more about: "${event.label}" (${event.date})${event.description ? `\n\nContext: ${event.description}` : ''}`,
+                dossierContext: {
+                  ...dossierContextBase,
+                  currentAct,
+                  activeSectionId: "timeline_strip",
+                },
               });
               // Also update the active act based on event phase
               if (event.phase === 'past') setActiveAct('actI');

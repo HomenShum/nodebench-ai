@@ -14,6 +14,7 @@
     "lint": "tsc -p convex -noEmit --pretty false && tsc -p . -noEmit --pretty false && convex dev --once && vite build",
     "lint:eslint": "eslint .",
     "lint:eslint:fix": "eslint . --fix",
+    "postinstall": "node scripts/patch-crons-exports.mjs",
     "test": "vitest",
     "test:run": "vitest run",
     "eval": "tsx scripts/runEvaluation.ts",

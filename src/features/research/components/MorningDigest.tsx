@@ -409,9 +409,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   }, [digestData?.lastUpdated, cachedSummary?.generatedAt, isFromCache]);
 
   const digestStats = useMemo(() => {
-    const marketCount = digestData?.marketMovers?.length ?? 0;
-    const topicCount = digestData?.watchlistRelevant?.length ?? 0;
-    const alertCount = digestData?.riskAlerts?.length ?? 0;
+    const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
+    const marketCount = dataToUse?.marketMovers?.length ?? 0;
+    const topicCount = dataToUse?.watchlistRelevant?.length ?? 0;
+    const alertCount = dataToUse?.riskAlerts?.length ?? 0;
 
     return [
       { id: 'markets', label: 'Markets', value: marketCount, sentiment: digestSections.find(s => s.id === 'markets')?.sentiment },
@@ -419,16 +420,17 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       { id: 'alerts', label: 'Alerts', value: alertCount, sentiment: 'neutral' as const },
       { id: 'personal', label: 'Priority', value: (digestSections.find(s => s.id === 'personal')?.items.length ?? 0), sentiment: 'neutral' as const },
     ].filter(stat => stat.value > 0);
-  }, [digestData, digestSections]);
+  }, [digestData, digestSections, isUsingSampleData, sampleDigestData]);
 
   const primarySentiment = digestStats.find((stat) => stat.sentiment)?.sentiment || 'neutral';
 
   const digestTotals = useMemo(() => {
-    const marketCount = digestData?.marketMovers?.length ?? 0;
-    const topicCount = digestData?.watchlistRelevant?.length ?? 0;
-    const alertCount = digestData?.riskAlerts?.length ?? 0;
+    const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
+    const marketCount = dataToUse?.marketMovers?.length ?? 0;
+    const topicCount = dataToUse?.watchlistRelevant?.length ?? 0;
+    const alertCount = dataToUse?.riskAlerts?.length ?? 0;
     const priorityCount = digestSections.find((section) => section.id === 'personal')?.items.length ?? 0;
-    const trackedCount = digestData?.trackedHashtags?.length ?? 0;
+    const trackedCount = dataToUse?.trackedHashtags?.length ?? 0;
     const sourceCount = citationLibrary.order.length;
     const entityCount = Object.keys(entityLibrary.entities || {}).length;
     return {
@@ -441,7 +443,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       entityCount,
       totalSignals: marketCount + topicCount + alertCount,
     };
-  }, [citationLibrary.order.length, digestData, digestSections, entityLibrary.entities]);
+  }, [citationLibrary.order.length, digestData, digestSections, entityLibrary.entities, isUsingSampleData, sampleDigestData]);
 
   const topEntities = useMemo(() => {
     return Object.values(entityLibrary.entities || {})
@@ -451,17 +453,18 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   const signalHighlights = useMemo(() => {
     const highlights: Array<{ label: string; text: string; linkedEntity?: string }> = [];
-    (digestData?.marketMovers ?? []).slice(0, 2).forEach((item) => {
+    const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
+    (dataToUse?.marketMovers ?? []).slice(0, 2).forEach((item) => {
       highlights.push({ label: 'Market', text: item.title, linkedEntity: extractEntity(item.title) });
     });
-    (digestData?.watchlistRelevant ?? []).slice(0, 2).forEach((item) => {
+    (dataToUse?.watchlistRelevant ?? []).slice(0, 2).forEach((item) => {
       highlights.push({ label: 'Topic', text: item.title, linkedEntity: extractEntity(item.title) });
     });
-    (digestData?.riskAlerts ?? []).slice(0, 1).forEach((item) => {
+    (dataToUse?.riskAlerts ?? []).slice(0, 1).forEach((item) => {
       highlights.push({ label: 'Risk', text: item.title, linkedEntity: extractEntity(item.title) });
     });
     return highlights;
-  }, [digestData]);
+  }, [digestData, isUsingSampleData, sampleDigestData]);
 
   const digestSectionRows = useMemo(() => {
     return digestSections.map((section) => {
@@ -483,20 +486,86 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   const topSources = useMemo(() => {
     const counts = new Map<string, number>();
+    const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
     const addSource = (source?: string) => {
       const key = source || 'Unknown';
       counts.set(key, (counts.get(key) ?? 0) + 1);
     };
-    (digestData?.marketMovers ?? []).forEach((item) => addSource(item.source));
-    (digestData?.watchlistRelevant ?? []).forEach((item) => addSource(item.source));
-    (digestData?.riskAlerts ?? []).forEach((item) => addSource(item.source));
+    (dataToUse?.marketMovers ?? []).forEach((item) => addSource(item.source));
+    (dataToUse?.watchlistRelevant ?? []).forEach((item) => addSource(item.source));
+    (dataToUse?.riskAlerts ?? []).forEach((item) => addSource(item.source));
     return Array.from(counts.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
-  }, [digestData]);
+  }, [digestData, isUsingSampleData, sampleDigestData]);
 
   const maxSourceCount = topSources[0]?.count ?? 1;
+
+  const digestItems = useMemo(() => {
+    const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
+    return [
+      ...(dataToUse?.marketMovers ?? []),
+      ...(dataToUse?.watchlistRelevant ?? []),
+      ...(dataToUse?.riskAlerts ?? []),
+    ];
+  }, [digestData, isUsingSampleData, sampleDigestData]);
+
+  const signalMix = useMemo(() => {
+    const mixTotal = digestTotals.totalSignals + digestTotals.priorityCount || 1;
+    const mix = [
+      { label: 'Markets', count: digestTotals.marketCount, tone: 'bg-emerald-900' },
+      { label: 'Topics', count: digestTotals.topicCount, tone: 'bg-blue-600' },
+      { label: 'Alerts', count: digestTotals.alertCount, tone: 'bg-amber-500' },
+      { label: 'Priority', count: digestTotals.priorityCount, tone: 'bg-stone-500' },
+    ];
+    return mix
+      .filter((entry) => entry.count > 0)
+      .map((entry) => ({
+        ...entry,
+        pct: Math.round((entry.count / mixTotal) * 100),
+      }));
+  }, [digestTotals]);
+
+  const tagRadar = useMemo(() => {
+    const counts = new Map<string, number>();
+    digestItems.forEach((item: any) => {
+      (item.tags ?? []).forEach((tag: string) => {
+        const normalized = tag.replace(/^#/, '').trim().toLowerCase();
+        if (!normalized) return;
+        counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+      });
+    });
+    return Array.from(counts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }, [digestItems]);
+
+  const freshnessStats = useMemo(() => {
+    const timestamps = digestItems
+      .map((item: any) => Date.parse(item.publishedAt))
+      .filter((value) => Number.isFinite(value));
+    if (timestamps.length === 0) {
+      return { newest: null as number | null, oldest: null as number | null, windowHours: null as number | null, avgScore: null as number | null };
+    }
+    const newest = Math.max(...timestamps);
+    const oldest = Math.min(...timestamps);
+    const windowHours = Math.max(1, Math.round((newest - oldest) / 3600000));
+    const totalScore = digestItems.reduce((sum: number, item: any) => sum + (item.score ?? 0), 0);
+    const avgScore = digestItems.length ? Math.round(totalScore / digestItems.length) : null;
+    return { newest, oldest, windowHours, avgScore };
+  }, [digestItems]);
+
+  const sourceConcentration = useMemo(() => {
+    const total = topSources.reduce((sum, source) => sum + source.count, 0);
+    if (!total || !topSources[0]) return null;
+    return Math.round((topSources[0].count / total) * 100);
+  }, [topSources]);
+
+  const latestAgeHours = freshnessStats.newest
+    ? Math.max(1, Math.round((Date.now() - freshnessStats.newest) / 3600000))
+    : null;
 
   const agentLaunchpad = [
     {
@@ -563,7 +632,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           </div>
           <div className="text-left">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-0.5">Overnight Signal</p>
-            <p className="text-2xl font-serif font-bold text-gray-900 leading-tight">Hi {userName}, here’s the pulse.</p>
+            <p className="text-2xl font-serif font-bold text-gray-900 leading-tight">Hi {userName}, here's the pulse.</p>
             <p className="text-[11px] font-medium text-gray-400 mt-0.5">{lastUpdatedText}</p>
           </div>
         </div>
@@ -738,6 +807,129 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Mix</p>
+                  <p className="text-base font-serif font-bold text-gray-900">Distribution by channel</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onItemClick?.({ text: 'Analyze the signal mix and recommend watchlist adjustments.', relevance: 'high' })}
+                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                >
+                  Ask agent
+                </button>
+              </div>
+              <div className="space-y-3">
+                {signalMix.length > 0 ? (
+                  signalMix.map((entry) => (
+                    <div key={entry.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                      <div className="flex items-center justify-between text-xs font-semibold text-stone-600">
+                        <span>{entry.label}</span>
+                        <span>{entry.count} ({entry.pct}%)</span>
+                      </div>
+                      <div className="mt-2 h-1.5 w-full rounded-full bg-white">
+                        <div
+                          className={`h-full rounded-full ${entry.tone}`}
+                          style={{ width: `${Math.max(8, entry.pct)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-stone-400">No signals tracked yet.</div>
+                )}
+              </div>
+              <div className="text-[10px] text-stone-400 uppercase tracking-widest">
+                Total {digestTotals.totalSignals + digestTotals.priorityCount} nodes
+              </div>
+            </div>
+
+            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Tag Radar</p>
+                  <p className="text-base font-serif font-bold text-gray-900">What is clustering</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onItemClick?.({ text: 'Summarize the top tags and highlight emerging topics.', relevance: 'high' })}
+                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                >
+                  Ask agent
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {tagRadar.length > 0 ? (
+                  tagRadar.map((tag) => (
+                    <button
+                      key={tag.tag}
+                      type="button"
+                      onClick={() => onItemClick?.({ text: `Track #${tag.tag} and summarize the latest movement.`, relevance: 'medium', linkedEntity: tag.tag })}
+                      className="px-3 py-1 text-[10px] font-bold uppercase tracking-tight border border-stone-200 bg-white text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                    >
+                      #{tag.tag} <span className="text-stone-400">({tag.count})</span>
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-[10px] text-stone-400">No tags detected yet.</span>
+                )}
+              </div>
+              <div className="text-[10px] text-stone-400 uppercase tracking-widest">
+                {digestItems.length} signals scanned
+              </div>
+            </div>
+
+            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Freshness & Heat</p>
+                  <p className="text-base font-serif font-bold text-gray-900">Recency metrics</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onItemClick?.({ text: 'Assess freshness and heat across today\'s signals.', relevance: 'high' })}
+                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                >
+                  Ask agent
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Latest</div>
+                  <div className="text-xl font-serif font-semibold text-gray-900">
+                    {latestAgeHours !== null ? `${latestAgeHours}h` : 'N/A'}
+                  </div>
+                  <div className="text-[10px] text-stone-400">age of newest item</div>
+                </div>
+                <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Window</div>
+                  <div className="text-xl font-serif font-semibold text-gray-900">
+                    {freshnessStats.windowHours !== null ? `${freshnessStats.windowHours}h` : 'N/A'}
+                  </div>
+                  <div className="text-[10px] text-stone-400">coverage span</div>
+                </div>
+                <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Avg Heat</div>
+                  <div className="text-xl font-serif font-semibold text-gray-900">
+                    {freshnessStats.avgScore !== null ? freshnessStats.avgScore : 'N/A'}
+                  </div>
+                  <div className="text-[10px] text-stone-400">score index</div>
+                </div>
+                <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Top Source</div>
+                  <div className="text-xl font-serif font-semibold text-gray-900">
+                    {sourceConcentration !== null ? `${sourceConcentration}%` : 'N/A'}
+                  </div>
+                  <div className="text-[10px] text-stone-400">share of coverage</div>
+                </div>
+              </div>
+              <div className="text-[10px] text-stone-400 uppercase tracking-widest">{lastUpdatedText}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
             <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4 xl:col-span-2">
               <div className="flex items-center justify-between gap-2">
                 <div>
@@ -818,7 +1010,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
               <Sparkles className="w-4 h-4 text-amber-600" />
               <p className="text-xs text-amber-700">
-                <span className="font-medium">Sample Intelligence Feed</span> — Connect data sources or track hashtags to see real-time signals.
+                <span className="font-medium">Sample Intelligence Feed</span> - Connect data sources or track hashtags to see real-time signals.
               </p>
             </div>
           )}

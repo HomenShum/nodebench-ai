@@ -74,42 +74,22 @@ function BriefingSectionInner({
     }
   }, [briefMemory?._id, isGenerating]);
 
-  if (isLoading) {
-    return (
-      <div className={className}>
-        <BriefingSkeleton />
-      </div>
-    );
-  }
-
-  if (!executiveBrief) {
-    return (
-      <div className={`${className} p-8 text-center text-gray-500 border border-gray-200 rounded-xl bg-white`}>
-        <Clock className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-        <p className="text-sm font-medium">No briefing available yet</p>
-        <p className="text-xs text-gray-400 mt-1">
-          The morning brief will be generated at 6:00 AM UTC
-        </p>
-      </div>
-    );
-  }
-
-  const actI = executiveBrief.actI;
-  const actII = executiveBrief.actII;
-  const actIII = executiveBrief.actIII;
+  const actI = executiveBrief?.actI;
+  const actII = executiveBrief?.actII;
+  const actIII = executiveBrief?.actIII;
 
   const briefingStats = useMemo(() => {
     const signalCount = actII?.signals?.length ?? 0;
     const actionCount = actIII?.actions?.length ?? 0;
     const sourceCount = sourceSummary?.totalItems ?? actI?.totalItems ?? 0;
-    const confidence = executiveBrief.meta?.confidence ?? null;
+    const confidence = executiveBrief?.meta?.confidence ?? null;
     return [
       { label: 'Signals', value: signalCount, hint: 'Act II' },
       { label: 'Actions', value: actionCount, hint: 'Act III' },
       { label: 'Sources', value: sourceCount, hint: 'coverage' },
       { label: 'Confidence', value: confidence !== null ? `${confidence}%` : 'N/A', hint: 'model' },
     ];
-  }, [actI?.totalItems, actII?.signals?.length, actIII?.actions?.length, executiveBrief.meta?.confidence, sourceSummary?.totalItems]);
+  }, [actI?.totalItems, actII?.signals?.length, actIII?.actions?.length, executiveBrief?.meta?.confidence, sourceSummary?.totalItems]);
 
   const topSources = useMemo(() => {
     if (sourceSummary?.bySource) {
@@ -135,6 +115,8 @@ function BriefingSectionInner({
       return {
         id: signal.id || `signal-${index}`,
         headline: signal.headline,
+        label: signal.label,
+        deltaSummary: signal.deltaSummary,
         evidenceCount,
         linkedActions,
       };
@@ -152,6 +134,69 @@ function BriefingSectionInner({
     });
     return counts;
   }, [actIII?.actions]);
+
+  const coverageStats = useMemo(() => {
+    const qualityCoverage = executiveBrief?.quality?.coverage;
+    const totalItems = qualityCoverage?.itemsScanned ?? actI?.totalItems ?? sourceSummary?.totalItems ?? 0;
+    const sourcesCount = qualityCoverage?.sourcesCount ?? actI?.sourcesCount ?? topSources.length ?? 0;
+    const topicsCoveredPercent = qualityCoverage?.topicsCoveredPercent ?? null;
+    const perSource = sourcesCount ? Math.round((totalItems / sourcesCount) * 10) / 10 : null;
+    return { totalItems, sourcesCount, topicsCoveredPercent, perSource };
+  }, [actI?.sourcesCount, actI?.totalItems, executiveBrief?.quality?.coverage, sourceSummary?.totalItems, topSources.length]);
+
+  const freshnessStats = useMemo(() => {
+    const qualityFreshness = executiveBrief?.quality?.freshness;
+    const newestAt = qualityFreshness?.newestAt ?? actI?.latestItemAt ?? null;
+    const oldestAt = qualityFreshness?.oldestAt ?? null;
+    const newestAge = newestAt ? Math.max(1, Math.round((Date.now() - Date.parse(newestAt)) / 3600000)) : null;
+    const windowLabel = qualityFreshness?.windowLabel ?? (
+      newestAt && oldestAt
+        ? `${Math.max(1, Math.round((Date.parse(newestAt) - Date.parse(oldestAt)) / 3600000))}h`
+        : null
+    );
+    const medianAgeHours = qualityFreshness?.medianAgeHours ?? null;
+    return { newestAge, windowLabel, medianAgeHours };
+  }, [actI?.latestItemAt, executiveBrief?.quality?.freshness]);
+
+  const evidenceStats = useMemo(() => {
+    const signals = actII?.signals ?? [];
+    const actions = actIII?.actions ?? [];
+    const evidenceCount = signals.reduce((sum: number, signal: any) => sum + (signal.evidence?.length ?? 0), 0);
+    const evidencePerSignal = signals.length ? Math.round((evidenceCount / signals.length) * 10) / 10 : 0;
+    const actionsPerSignal = signals.length ? Math.round((actions.length / signals.length) * 10) / 10 : 0;
+    return { evidenceCount, evidencePerSignal, actionsPerSignal };
+  }, [actII?.signals, actIII?.actions]);
+
+  const qualityStats = useMemo(() => {
+    const confidenceScore = executiveBrief?.quality?.confidence?.score ?? executiveBrief?.meta?.confidence ?? null;
+    const freshnessValue = freshnessStats.medianAgeHours !== null
+      ? `${freshnessStats.medianAgeHours}h`
+      : freshnessStats.newestAge !== null
+        ? `${freshnessStats.newestAge}h`
+        : 'N/A';
+    const freshnessHint = freshnessStats.medianAgeHours !== null ? 'median age' : 'latest item';
+    return [
+      { label: 'Items', value: coverageStats.totalItems, hint: 'scanned' },
+      { label: 'Sources', value: coverageStats.sourcesCount, hint: 'unique' },
+      { label: 'Freshness', value: freshnessValue, hint: freshnessHint },
+      { label: 'Confidence', value: confidenceScore !== null ? `${confidenceScore}%` : 'N/A', hint: 'evidence' },
+    ];
+  }, [coverageStats.totalItems, coverageStats.sourcesCount, executiveBrief?.meta?.confidence, executiveBrief?.quality?.confidence?.score, freshnessStats.medianAgeHours, freshnessStats.newestAge]);
+
+  const trendTags = useMemo(() => {
+    const tags = executiveBrief?.dashboard?.trendingTags ?? [];
+    if (tags.length > 0) return tags.slice(0, 8);
+    const fallback = (actII?.signals ?? [])
+      .map((signal: any) => signal.label)
+      .filter(Boolean) as string[];
+    return Array.from(new Set(fallback)).slice(0, 8);
+  }, [actII?.signals, executiveBrief?.dashboard?.trendingTags]);
+
+  const provenanceLog = useMemo(() => {
+    return executiveBrief?.provenance?.retrievalLog?.slice(0, 4) ?? [];
+  }, [executiveBrief?.provenance]);
+
+  const generationMeta = executiveBrief?.provenance?.generation ?? null;
 
   const agentLaunchpad = [
     {
@@ -171,6 +216,26 @@ function BriefingSectionInner({
       prompt: 'Build a diligence checklist based on today\'s signals.',
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className={className}>
+        <BriefingSkeleton />
+      </div>
+    );
+  }
+
+  if (!executiveBrief || !actI || !actII || !actIII) {
+    return (
+      <div className={`${className} p-8 text-center text-gray-500 border border-gray-200 rounded-xl bg-white`}>
+        <Clock className="w-8 h-8 mx-auto mb-3 text-gray-300" />
+        <p className="text-sm font-medium">No briefing available yet</p>
+        <p className="text-xs text-gray-400 mt-1">
+          The morning brief will be generated at 6:00 AM UTC
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
@@ -279,6 +344,156 @@ function BriefingSectionInner({
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-12">
+        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Quality Metrics</p>
+              <p className="text-base font-serif font-bold text-gray-900">Coverage integrity</p>
+            </div>
+            {onAskAI && (
+              <button
+                type="button"
+                onClick={() => onAskAI('Assess briefing quality, coverage gaps, and confidence drivers.')}
+                className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+              >
+                Ask agent
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {qualityStats.map((stat) => (
+              <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
+                <div className="text-2xl font-serif font-semibold text-gray-900">{stat.value}</div>
+                <div className="text-[10px] text-stone-400">{stat.hint}</div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs text-stone-600">
+            <div className="flex items-center justify-between">
+              <span>Coverage/source</span>
+              <span className="font-semibold">{coverageStats.perSource ?? 'N/A'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Evidence/signal</span>
+              <span className="font-semibold">{evidenceStats.evidencePerSignal}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Actions/signal</span>
+              <span className="font-semibold">{evidenceStats.actionsPerSignal}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Topics covered</span>
+              <span className="font-semibold">{coverageStats.topicsCoveredPercent !== null ? `${coverageStats.topicsCoveredPercent}%` : 'N/A'}</span>
+            </div>
+          </div>
+          <div className="text-[10px] text-stone-400 uppercase tracking-widest">
+            Window {freshnessStats.windowLabel ?? 'N/A'}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Trend Tags</p>
+              <p className="text-base font-serif font-bold text-gray-900">Active focus</p>
+            </div>
+            {onAskAI && (
+              <button
+                type="button"
+                onClick={() => onAskAI('Summarize trend tags and highlight emerging themes.')}
+                className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+              >
+                Ask agent
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {trendTags.length > 0 ? (
+              trendTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => onAskAI?.(`Track "${tag}" and surface the latest signals and actions.`)}
+                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-tight border border-stone-200 bg-[#faf9f6] text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                >
+                  {tag}
+                </button>
+              ))
+            ) : (
+              <span className="text-[10px] text-stone-400">No tags available yet.</span>
+            )}
+          </div>
+          {actI?.filteredOutNote && (
+            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3 text-xs text-stone-600">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Filtered</div>
+              <div className="mt-1">{actI.filteredOutNote}</div>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Provenance Log</p>
+              <p className="text-base font-serif font-bold text-gray-900">Retrieval transparency</p>
+            </div>
+            {onAskAI && (
+              <button
+                type="button"
+                onClick={() => onAskAI('Audit provenance sources and highlight any retrieval gaps.')}
+                className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+              >
+                Ask agent
+              </button>
+            )}
+          </div>
+          <div className="space-y-3">
+            {provenanceLog.length > 0 ? (
+              provenanceLog.map((entry: any, idx: number) => (
+                <div key={`${entry.connector}-${idx}`} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3 space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                    {entry.connector || 'Source'} - {entry.resultCount ?? 0} hits
+                  </div>
+                  <div className="text-xs text-stone-700">{entry.query}</div>
+                  {entry.retrievedAt && (
+                    <div className="text-[10px] text-stone-400">Retrieved {new Date(entry.retrievedAt).toLocaleTimeString()}</div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-stone-400">No provenance log attached.</div>
+            )}
+          </div>
+          {generationMeta && (
+            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Generation</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
+                <div className="flex items-center justify-between">
+                  <span>Model</span>
+                  <span className="font-semibold">{generationMeta.model ?? 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Status</span>
+                  <span className="font-semibold">{generationMeta.validationStatus ?? 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Retries</span>
+                  <span className="font-semibold">{generationMeta.retryCount ?? 0}</span>
+                </div>
+                {generationMeta.tokenUsage && (
+                  <div className="flex items-center justify-between">
+                    <span>Tokens</span>
+                    <span className="font-semibold">{generationMeta.tokenUsage.total}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-12">
         <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4 xl:col-span-2">
           <div className="flex items-center justify-between gap-2">
@@ -301,8 +516,18 @@ function BriefingSectionInner({
               signalLedger.map((signal, index) => (
                 <div key={signal.id} className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-widest text-stone-400">Signal {index + 1}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-xs font-bold uppercase tracking-widest text-stone-400">Signal {index + 1}</div>
+                      {signal.label && (
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-900 border border-emerald-900/20 px-2 py-0.5">
+                          {signal.label}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-sm font-semibold text-stone-800">{signal.headline}</div>
+                    {signal.deltaSummary && (
+                      <div className="text-[11px] text-stone-500 mt-1">{signal.deltaSummary}</div>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 text-[10px] text-stone-500 uppercase tracking-widest">
                     <span>Evidence {signal.evidenceCount}</span>
@@ -489,8 +714,19 @@ function ActIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string)
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-6">
                   <span className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.2em] border border-emerald-900/20 px-3 py-1">Signal {idx + 1}</span>
+                  {signal.label && (
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500 border border-stone-200 px-3 py-1">
+                      {signal.label}
+                    </span>
+                  )}
                 </div>
                 <h4 className="text-3xl font-serif font-medium text-emerald-950 mb-6 tracking-tight group-hover:text-emerald-800 transition-colors uppercase italic">{signal.headline}</h4>
+                {signal.deltaSummary && (
+                  <div className="mb-4 text-sm text-stone-500">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Delta</span>
+                    <span className="ml-2">{signal.deltaSummary}</span>
+                  </div>
+                )}
                 <div className="text-xl text-stone-600 leading-relaxed font-serif">
                   <CrossLinkedText text={signal.synthesis || signal.summary} onAskAI={onAskAI} />
                 </div>
@@ -558,7 +794,7 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
                     }`}>
                     {action.priority || 'Standard'} Priority
                   </span>
-                  {action.deadline && <span className="text-[10px] font-medium text-gray-300">• {action.deadline}</span>}
+                  {action.deadline && <span className="text-[10px] font-medium text-gray-300">- {action.deadline}</span>}
                 </div>
                 <h4 className="text-3xl font-serif font-bold text-gray-900 mb-4 tracking-tight italic leading-tight">
                   <CrossLinkedText text={action.title || action.headline} onAskAI={onAskAI} />
@@ -566,6 +802,37 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
                 <div className="text-base text-gray-600 font-medium leading-relaxed mb-6">
                   <CrossLinkedText text={action.description || action.rationale} onAskAI={onAskAI} />
                 </div>
+                {(action.status || action.deliverable || action.expectedOutcome || action.risks) && (
+                  <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-4 text-xs text-stone-600 space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Action Specs</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {action.status && (
+                        <div className="flex items-center justify-between">
+                          <span>Status</span>
+                          <span className="font-semibold">{action.status}</span>
+                        </div>
+                      )}
+                      {action.deliverable && (
+                        <div className="flex items-center justify-between">
+                          <span>Deliverable</span>
+                          <span className="font-semibold">{action.deliverable}</span>
+                        </div>
+                      )}
+                      {action.expectedOutcome && (
+                        <div className="flex items-center justify-between">
+                          <span>Outcome</span>
+                          <span className="font-semibold">{action.expectedOutcome}</span>
+                        </div>
+                      )}
+                      {action.risks && (
+                        <div className="flex items-center justify-between">
+                          <span>Risks</span>
+                          <span className="font-semibold">{action.risks}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Attribution UI */}
                 {(action.linkedSignalIds && action.linkedSignalIds.length > 0) && (
