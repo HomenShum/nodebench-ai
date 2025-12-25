@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { X, ExternalLink, Calendar, Tag, Sparkles, MessageSquare, Copy } from "lucide-react";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import type { FeedItem } from "@/features/research/components/FeedCard";
@@ -12,6 +12,24 @@ interface FeedReaderModalProps {
 export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose }) => {
   const { openWithContext } = useFastAgent();
   const readerState = useReaderContent(item?.url, item?.title);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!item) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!modalRef.current || !target) return;
+      if (!modalRef.current.contains(target)) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown, true);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, [item, onClose]);
 
   if (!item) return null;
 
@@ -41,7 +59,10 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 pointer-events-none">
 
-      <div className="relative w-full max-w-4xl h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10 pointer-events-auto">
+      <div
+        ref={modalRef}
+        className="relative w-full max-w-4xl h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10 pointer-events-auto"
+      >
         <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between bg-white z-10">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-md">
