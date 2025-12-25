@@ -25,9 +25,17 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose 
       }
     };
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
     window.addEventListener("pointerdown", handlePointerDown, true);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("pointerdown", handlePointerDown, true);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [item, onClose]);
 
@@ -80,6 +88,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose 
                 View Original <ExternalLink className="w-3 h-3" />
               </a>
             )}
+            <span className="text-[10px] text-gray-400 uppercase tracking-widest hidden lg:inline">Click anywhere to dismiss (Esc)</span>
           </div>
 
           <div className="flex items-center gap-2">
