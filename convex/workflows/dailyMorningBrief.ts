@@ -675,9 +675,11 @@ function buildNtfyDigestPayload(args: {
   // Build the 3-Act narrative
   const lines: string[] = [];
 
-  // === HEADER ===
-  lines.push(`**Morning Dossier** ${dateLabel}`);
-  lines.push("");
+    // === HEADER ===
+    lines.push(`**Morning Dossier** ${dateLabel}`);
+    lines.push(`Summary: ${clipText(narrativeThesis, 160)}`);
+    lines.push(`[Open Full Dashboard](https://nodebench-ai.vercel.app/)`);
+    lines.push("");
 
   // === ACT I: THE SETUP (Narrative thesis, not metadata) ===
   lines.push("**ACT I: The Setup**");
@@ -838,4 +840,3 @@ function buildPersonaActions(feedItems: FeedItemLite[]): string[] {
 
   return actions;
 }
-
