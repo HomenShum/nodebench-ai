@@ -2,9 +2,11 @@
 // Run with: node test-ntfy.js
 
 async function testNtfy() {
-  const NTFY_URL = "https://ntfy.sh/nodebench";
+  const NTFY_URL = "https://ntfy.sh";
+  const TOPIC = "nodebench";
   
   const payload = {
+    topic: TOPIC,
     message: "🎉 NodeBench ntfy integration test!",
     title: "Test Notification",
     priority: 3,
@@ -39,4 +41,6 @@ async function testNtfy() {
 }
 
 testNtfy();
+
+
 

@@ -43,6 +43,7 @@ export const getFeedItemsForMetrics = internalQuery({
       tags: item.tags,
       score: item.score,
       publishedAt: item.publishedAt,
+      url: item.url,
     }));
   },
 });

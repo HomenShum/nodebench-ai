@@ -25,6 +25,7 @@ import {
   Phone,
 } from "lucide-react";
 import { ApiUsageDisplay } from "./ApiUsageDisplay";
+import { NotificationActivityPanel } from "./NotificationActivityPanel";
 
 // SMS Usage Stats Component
 function SmsUsageStats() {
@@ -1381,9 +1382,9 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
                 </div>
 
-                {/* SMS Notifications */}
+                {/* Notifications */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900">SMS Notifications</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
 
                   <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
                     <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
@@ -1391,21 +1392,21 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         <Phone className="h-4 w-4 text-white" />
                       </div>
                       <div>
-                        <div className="text-sm font-semibold">Twilio SMS</div>
+                        <div className="text-sm font-semibold">ntfy Push</div>
                         <div className="text-xs text-gray-500">
-                          Receive meeting reminders via text message
+                          Receive meeting reminders via ntfy topics
                         </div>
                       </div>
                     </div>
 
                     {/* Phone Number Input */}
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-gray-700">Phone Number (E.164 format)</label>
+                      <label className="text-xs font-medium text-gray-700">Notification Topic (ntfy)</label>
                       <div className="flex gap-2">
                         <input
-                          type="tel"
+                          type="text"
                           className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="+14083335386"
+                          placeholder="nodebench-yourname"
                           value={smsPhoneInput}
                           onChange={(e) => setSmsPhoneInput(e.target.value)}
                         />
@@ -1429,15 +1430,15 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </button>
                       </div>
                       <p className="text-xs text-gray-500">
-                        Enter your phone number in E.164 format (e.g., +14083335386)
+                        Use your ntfy topic (e.g., nodebench-yourname)
                       </p>
                     </div>
 
                     {/* Master Toggle */}
                     <div className="flex items-center justify-between py-2 border-t border-gray-100">
                       <div>
-                        <div className="text-sm font-medium">Enable SMS Notifications</div>
-                        <div className="text-xs text-gray-500">Master toggle for all SMS notifications</div>
+                        <div className="text-sm font-medium">Enable Notifications</div>
+                        <div className="text-xs text-gray-500">Master toggle for all notifications</div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -1448,7 +1449,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             setSavingSmsPrefs(true);
                             try {
                               await updateSmsPreferences({ smsNotificationsEnabled: e.target.checked });
-                              toast.success(e.target.checked ? "SMS notifications enabled" : "SMS notifications disabled");
+                              toast.success(e.target.checked ? "Notifications enabled" : "Notifications disabled");
                             } catch (err: any) {
                               toast.error(err?.message ?? "Failed to update");
                             } finally {
@@ -1558,15 +1559,15 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         {smsPreferences?.phoneNumber && smsPreferences?.smsNotificationsEnabled ? (
                           <>
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span className="text-green-700">SMS notifications active for {smsPreferences.phoneNumber}</span>
+                            <span className="text-green-700">Notifications active for topic {smsPreferences.phoneNumber}</span>
                           </>
                         ) : (
                           <>
                             <Phone className="h-4 w-4 text-gray-400" />
                             <span className="text-gray-500">
                               {!smsPreferences?.phoneNumber
-                                ? "Add a phone number to enable SMS notifications"
-                                : "Enable SMS notifications above"}
+                                ? "Add a topic to enable notifications"
+                                : "Enable notifications above"}
                             </span>
                           </>
                         )}
@@ -1575,6 +1576,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                     {/* SMS Usage Stats */}
                     <SmsUsageStats />
+                    <NotificationActivityPanel
+                      mode="user"
+                      variant="settings"
+                      title="Notification Activity"
+                      subtitle="Personal delivery log"
+                      limit={6}
+                    />
                   </div>
                 </div>
 

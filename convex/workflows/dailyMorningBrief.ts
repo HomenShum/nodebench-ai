@@ -347,6 +347,7 @@ type FeedItemLite = {
   score?: number;
   publishedAt?: string;
   type?: string;
+  url?: string;
 };
 
 function sanitizeText(input: string): string {
@@ -390,11 +391,19 @@ function getTopTags(feedItems: FeedItemLite[], fallback: string[] = []): string[
 
 function buildSignalLines(executiveBrief: any): string[] {
   const signals = executiveBrief?.actII?.signals ?? [];
-  return signals.slice(0, 3).map((signal: any) => {
-    const evidenceCount = Array.isArray(signal.evidence) ? signal.evidence.length : 0;
+  // Dedupe by headline to avoid repetition
+  const seen = new Set<string>();
+  const uniqueSignals = signals.filter((signal: any) => {
+    const headline = (signal.headline ?? "").toLowerCase().trim();
+    if (seen.has(headline)) return false;
+    seen.add(headline);
+    return true;
+  });
+  return uniqueSignals.slice(0, 3).map((signal: any) => {
+    const url = signal.evidence?.[0]?.url ?? "";
     const source = signal.evidence?.[0]?.source ?? "n/a";
-    const label = signal.label ? `${signal.label}: ` : "";
-    return `${label}${clipText(signal.headline ?? "Signal update", 120)} (source ${source}, evidence ${evidenceCount})`;
+    const headline = clipText(signal.headline ?? "Signal update", 100);
+    return url ? `${headline} (${source})\n   ${url}` : `${headline} (${source})`;
   });
 }
 
@@ -409,77 +418,65 @@ function buildActionLines(executiveBrief: any): string[] {
   });
 }
 
+type NormalizedFeedItem = FeedItemLite & { text: string };
+
 function buildPersonaHighlights(feedItems: FeedItemLite[]): string[] {
+  // Dedupe feed items by URL first
+  const urlMap = new Map<string, FeedItemLite>();
+  for (const item of feedItems) {
+    const url = (item.url ?? "").trim();
+    const existing = url ? urlMap.get(url) : undefined;
+    if (!existing || (item.score ?? 0) > (existing.score ?? 0)) {
+      urlMap.set(url || `no-url-${urlMap.size}`, item);
+    }
+  }
+  const dedupedItems = Array.from(urlMap.values());
+
   const configs = [
     {
       label: "VCs",
-      keywords: ["funding", "raise", "series", "seed", "round", "valuation", "investment", "acquisition"],
+      keywords: ["funding", "raise", "series", "seed", "round", "valuation", "investment", "acquisition", "nvidia", "billion"],
       categories: ["startups", "finance"],
-      types: ["news", "product"],
-    },
-    {
-      label: "JPM Banking",
-      keywords: ["ipo", "m&a", "merger", "acquisition", "sec", "fda", "clinical", "regulatory"],
-      categories: ["finance", "research"],
-      types: ["news"],
-    },
-    {
-      label: "Mercury Banking",
-      keywords: ["yc", "ycombinator", "batch", "seed", "startup"],
-      categories: ["startups"],
-      types: ["news", "product"],
-    },
-    {
-      label: "Investment Bankers",
-      keywords: ["m&a", "acquisition", "deal", "ipo", "valuation", "buyout"],
-      categories: ["finance"],
-      types: ["news"],
+      types: ["news", "product", "signal"],
     },
     {
       label: "Tech Leaders",
-      keywords: ["benchmark", "model", "agent", "architecture", "paper", "arxiv", "release"],
+      keywords: ["benchmark", "model", "agent", "architecture", "paper", "arxiv", "release", "ai", "llm", "gpu"],
       categories: ["ai_ml", "research"],
-      types: ["news"],
-    },
-    {
-      label: "Startup Founders",
-      keywords: ["launch", "product", "users", "growth", "pricing", "market"],
-      categories: ["products", "startups"],
-      types: ["product", "news"],
+      types: ["news", "signal"],
     },
     {
       label: "Developers",
-      keywords: ["github", "repo", "release", "package", "library", "sdk", "cve", "vulnerability"],
+      keywords: ["github", "repo", "release", "package", "library", "sdk", "cve", "vulnerability", "open source"],
       categories: ["opensource"],
       types: ["repo", "news"],
     },
     {
-      label: "Biotech",
-      keywords: ["biotech", "clinical", "fda", "trial", "pharma", "medrxiv", "biorxiv"],
-      categories: ["research"],
-      types: ["news"],
+      label: "Startup Founders",
+      keywords: ["launch", "product", "users", "growth", "pricing", "market", "yc", "ycombinator"],
+      categories: ["products", "startups"],
+      types: ["product", "news", "signal"],
     },
     {
-      label: "Fintech",
-      keywords: ["fintech", "payments", "bank", "regulation", "cfpb", "occ", "fed"],
-      categories: ["finance"],
-      types: ["news"],
-    },
-    {
-      label: "Industry Analysts",
-      keywords: ["market", "industry", "report", "trend", "survey"],
-      categories: ["finance", "research"],
+      label: "Research",
+      keywords: ["paper", "arxiv", "study", "research", "analysis", "findings"],
+      categories: ["research", "ai_ml"],
       types: ["news"],
     },
   ];
 
-  const normalized = feedItems.map((item) => ({
+  const normalized: NormalizedFeedItem[] = dedupedItems.map((item) => ({
     ...item,
     text: normalizeText(`${item.title} ${item.summary ?? ""} ${(item.tags ?? []).join(" ")}`).toLowerCase(),
   }));
 
+  // Track used URLs to avoid showing same story for multiple personas
+  const usedUrls = new Set<string>();
+
   return configs.map((config) => {
     const matches = normalized.filter((item) => {
+      const url = (item.url ?? "").trim();
+      if (url && usedUrls.has(url)) return false;
       const keywordHit = config.keywords.some((keyword) => item.text.includes(keyword));
       const categoryHit = item.category ? config.categories.includes(item.category) : false;
       const typeHit = item.type ? config.types.includes(item.type) : false;
@@ -491,8 +488,167 @@ function buildPersonaHighlights(feedItems: FeedItemLite[]): string[] {
     if (!top) {
       return `${config.label}: No direct signal in last 24h.`;
     }
-    return `${config.label}: ${clipText(top.title, 110)} (${top.source ?? top.category ?? "source"}, ${matches.length} hits)`;
+    const url = (top.url ?? "").trim();
+    if (url) usedUrls.add(url);
+    return `${config.label}: ${clipText(top.title, 90)} (${top.source ?? "source"})`;
   });
+}
+
+type TopStory = {
+  title: string;
+  url: string;
+  source: string;
+  score: number;
+  summary?: string;
+  category?: string;
+};
+
+function getTopStories(feedItems: FeedItemLite[], limit: number = 5): TopStory[] {
+  // Dedupe by URL, keep highest scored
+  const urlMap = new Map<string, FeedItemLite>();
+  for (const item of feedItems) {
+    const url = (item.url ?? "").trim();
+    if (!url) continue;
+    const existing = urlMap.get(url);
+    if (!existing || (item.score ?? 0) > (existing.score ?? 0)) {
+      urlMap.set(url, item);
+    }
+  }
+  return Array.from(urlMap.values())
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, limit)
+    .map((item) => ({
+      title: item.title,
+      url: item.url ?? "",
+      source: item.source ?? "Unknown",
+      score: item.score ?? 0,
+      summary: item.summary,
+      category: item.category,
+    }));
+}
+
+function extractShortName(url: string): string {
+  try {
+    const u = new URL(url);
+    const path = u.pathname.split("/").filter(Boolean);
+    if (u.hostname.includes("github.com") && path.length >= 2) {
+      return `${path[0]}/${path[1]}`;
+    }
+    if (u.hostname.includes("arxiv.org")) {
+      return path[path.length - 1] || "paper";
+    }
+    return u.hostname.replace(/^www\./, "").split(".")[0];
+  } catch {
+    return "link";
+  }
+}
+
+function generateNarrativeThesis(topStories: TopStory[], feedItems: FeedItemLite[]): string {
+  if (topStories.length === 0) return "Light signal day. Check back tomorrow for fresh intelligence.";
+
+  // Analyze all text for themes
+  const allText = feedItems
+    .slice(0, 25)
+    .map((i) => `${i.title} ${i.summary ?? ""}`.toLowerCase())
+    .join(" ");
+
+  // Detect dominant themes with weights
+  const themeSignals: Array<{ theme: string; weight: number; verb: string }> = [];
+
+  if (allText.includes("acqui") || allText.includes("billion") || allText.includes("buy") || allText.includes("merger")) {
+    const count = (allText.match(/acqui|billion|buy|merger/g) || []).length;
+    themeSignals.push({ theme: "M&A", weight: count * 3, verb: "consolidates" });
+  }
+  if (allText.includes("nvidia") || allText.includes("gpu") || allText.includes("chip")) {
+    const count = (allText.match(/nvidia|gpu|chip/g) || []).length;
+    themeSignals.push({ theme: "Hardware/Chips", weight: count * 2, verb: "dominates" });
+  }
+  if (allText.includes("biotech") || allText.includes("clinical") || allText.includes("pharma")) {
+    const count = (allText.match(/biotech|clinical|pharma/g) || []).length;
+    themeSignals.push({ theme: "BioTech", weight: count * 2, verb: "advances" });
+  }
+  if (allText.includes("open source") || allText.includes("github")) {
+    const count = (allText.match(/open.?source|github/g) || []).length;
+    themeSignals.push({ theme: "Open Source", weight: count, verb: "gains momentum" });
+  }
+  if (allText.includes("ai") || allText.includes("llm") || allText.includes("model")) {
+    const count = (allText.match(/\bai\b|llm|model/g) || []).length;
+    themeSignals.push({ theme: "AI/ML", weight: count, verb: "evolves" });
+  }
+  if (allText.includes("security") || allText.includes("vulnerability") || allText.includes("cve")) {
+    const count = (allText.match(/security|vulnerability|cve/g) || []).length;
+    themeSignals.push({ theme: "Security", weight: count * 2, verb: "alerts" });
+  }
+  if (allText.includes("startup") || allText.includes("funding") || allText.includes("seed") || allText.includes("series")) {
+    const count = (allText.match(/startup|funding|seed|series/g) || []).length;
+    themeSignals.push({ theme: "Startups", weight: count, verb: "raises" });
+  }
+
+  // Sort by weight
+  themeSignals.sort((a, b) => b.weight - a.weight);
+  const topThemes = themeSignals.slice(0, 2);
+
+  // Build thesis based on lead story + themes
+  const lead = topStories[0];
+  const leadLower = lead.title.toLowerCase();
+
+  let thesis = "";
+
+  // Smart lead based on content type
+  if (leadLower.includes("nvidia") && (leadLower.includes("buy") || leadLower.includes("acqui"))) {
+    thesis = `Capital moves big: ${clipText(lead.title, 55)}.`;
+  } else if (leadLower.includes("billion")) {
+    thesis = `Major deal alert: ${clipText(lead.title, 55)}.`;
+  } else if (lead.source === "GitHub") {
+    const repoName = extractShortName(lead.url);
+    thesis = `Developer spotlight on **${repoName}** as it trends across the community.`;
+  } else if (lead.source === "ArXiv") {
+    thesis = `Research focus: ${clipText(lead.title, 50)}.`;
+  } else if (lead.source === "YCombinator" || lead.source === "HackerNews") {
+    thesis = `Community attention: ${clipText(lead.title, 50)}.`;
+  } else {
+    thesis = `Lead signal: ${clipText(lead.title, 50)}.`;
+  }
+
+  // Add theme context
+  if (topThemes.length >= 2) {
+    thesis += ` Today's cycle: **${topThemes[0].theme}** ${topThemes[0].verb}, **${topThemes[1].theme}** ${topThemes[1].verb}.`;
+  } else if (topThemes.length === 1) {
+    thesis += ` Primary theme: **${topThemes[0].theme}** ${topThemes[0].verb}.`;
+  }
+
+  return thesis;
+}
+
+function formatTrendIndicator(stat: any): string {
+  const value = stat.value ?? "";
+  const trend = stat.trend;
+  const label = stat.label ?? "";
+  const labelLower = label.toLowerCase();
+
+  // Determine if metric should be inverted (lower = better)
+  const invertedMetrics = ["fail", "latency", "error", "bug"];
+  const isInverted = invertedMetrics.some((m) => labelLower.includes(m));
+
+  // Get indicator and context
+  let indicator = "";
+  let context = "";
+
+  if (labelLower.includes("fail") && value.includes("0")) {
+    indicator = "✔";
+    context = "Stable";
+  } else if (trend === "up") {
+    indicator = isInverted ? "▲" : "▲";
+    context = isInverted ? "Watch" : "Rising";
+  } else if (trend === "down") {
+    indicator = isInverted ? "▼" : "▼";
+    context = isInverted ? "Improving" : "Falling";
+  } else {
+    indicator = "─";
+    context = "Flat";
+  }
+
+  return `${label} ${value} ${indicator}`;
 }
 
 function buildNtfyDigestPayload(args: {
@@ -506,60 +662,180 @@ function buildNtfyDigestPayload(args: {
 }): { title: string; body: string } {
   const dateLabel = args.dateString ?? new Date().toISOString().slice(0, 10);
   const feedItems = args.feedItems ?? [];
-  const sourceSummary = args.sourceSummary ?? {};
-
-  const totalItems = args.executiveBrief?.actI?.totalItems ?? sourceSummary.totalItems ?? feedItems.length;
-  const sourcesCount = args.executiveBrief?.actI?.sourcesCount ?? Object.keys(sourceSummary.bySource ?? {}).length;
-  const topSources = formatTopList(Object.entries(sourceSummary.bySource ?? {}) as Array<[string, number]>, 4) || "n/a";
-  const topTags = getTopTags(feedItems, sourceSummary.topTrending ?? []);
-
-  const evidenceList =
-    args.evidence ??
-    args.executiveBrief?.actII?.signals?.flatMap((signal: any) => signal.evidence ?? []) ??
-    [];
-  const evidenceCount = evidenceList.length;
-  const confidence =
-    args.executiveBrief?.quality?.confidence?.score ??
-    args.executiveBrief?.meta?.confidence ??
-    null;
-  const status = args.briefRecordStatus === "valid" ? "verified" : "pending";
 
   const keyStats = args.dashboardMetrics?.keyStats ?? [];
-  const pulseLine = keyStats.length
-    ? keyStats.slice(0, 3).map((stat: any) => `${stat.label} ${stat.value}`).join(" | ")
-    : "n/a";
+  const topStories = getTopStories(feedItems, 5);
 
-  const executiveSummary = args.executiveBrief?.meta?.summary || args.executiveBrief?.actI?.synthesis || "";
-  const signalLines = buildSignalLines(args.executiveBrief);
-  const actionLines = buildActionLines(args.executiveBrief);
-  const personaLines = buildPersonaHighlights(feedItems);
+  // Generate narrative thesis from actual content (not metadata)
+  const llmSynthesis = args.executiveBrief?.actII?.synthesis;
+  const isBoilerplate = !llmSynthesis || llmSynthesis.includes("feed clusters around");
+  const narrativeThesis = generateNarrativeThesis(topStories, feedItems);
+  const synthesis = isBoilerplate ? narrativeThesis : llmSynthesis;
 
+  // Build the 3-Act narrative
   const lines: string[] = [];
-  lines.push(`NodeBench Morning Digest | ${dateLabel}`);
-  lines.push(`Coverage: ${totalItems} items | Sources: ${sourcesCount} | Evidence: ${evidenceCount} | Confidence: ${confidence ?? "N/A"} | Status: ${status}`);
-  lines.push(`Top sources: ${topSources}`);
-  if (topTags.length > 0) {
-    lines.push(`Top tags: ${topTags.join(", ")}`);
+
+  // === HEADER ===
+  lines.push(`**Morning Dossier** ${dateLabel}`);
+  lines.push("");
+
+  // === ACT I: THE SETUP (Narrative thesis, not metadata) ===
+  lines.push("**ACT I: The Setup**");
+  // Lead with the thesis - what this day MEANS, not how many items
+  lines.push(clipText(narrativeThesis, 200));
+  // Compact pulse with trend indicators
+  if (keyStats.length > 0) {
+    const pulseFormatted = keyStats
+      .slice(0, 3)
+      .map(formatTrendIndicator)
+      .join(" | ");
+    lines.push(`_Pulse: ${pulseFormatted}_`);
   }
-  lines.push(`Pulse: ${pulseLine}`);
-  if (executiveSummary) {
-    lines.push(`Executive synthesis: ${clipText(executiveSummary, 280)}`);
+
+  // === ACT II: THE SIGNAL ===
+  lines.push("");
+  lines.push("**ACT II: The Signal**");
+
+  // Top signals with markdown links and summaries
+  const signals = args.executiveBrief?.actII?.signals ?? [];
+  const seenHeadlines = new Set<string>();
+  const uniqueSignals = signals.filter((s: any) => {
+    const h = (s.headline ?? "").toLowerCase().trim();
+    if (seenHeadlines.has(h)) return false;
+    seenHeadlines.add(h);
+    return true;
+  }).slice(0, 3);
+
+  if (uniqueSignals.length > 0) {
+    uniqueSignals.forEach((signal: any, idx: number) => {
+      const url = signal.evidence?.[0]?.url ?? "";
+      const headline = clipText(signal.headline ?? "Signal", 65);
+      const signalSynthesis = signal.synthesis && !signal.synthesis.includes("Article from")
+        ? clipText(signal.synthesis, 70)
+        : "";
+
+      if (url) {
+        lines.push(`${idx + 1}. [${headline}](${url})`);
+        if (signalSynthesis) {
+          lines.push(`   _${signalSynthesis}_`);
+        }
+      } else {
+        lines.push(`${idx + 1}. ${headline}`);
+      }
+    });
+  } else if (topStories.length > 0) {
+    // Fallback to top stories if no signals
+    topStories.slice(0, 3).forEach((story, idx) => {
+      const shortSummary = story.summary && !story.summary.includes("Trending on")
+        ? clipText(story.summary, 55)
+        : "";
+      lines.push(`${idx + 1}. [${clipText(story.title, 65)}](${story.url})`);
+      if (shortSummary) {
+        lines.push(`   _${shortSummary}_`);
+      }
+    });
   }
-  if (signalLines.length > 0) {
-    lines.push("Top signals:");
-    signalLines.forEach((line) => lines.push(`- ${line}`));
-  }
-  if (actionLines.length > 0) {
-    lines.push("Top actions:");
-    actionLines.forEach((line) => lines.push(`- ${line}`));
-  }
-  lines.push("Persona coverage:");
-  personaLines.forEach((line) => lines.push(`- ${line}`));
-  lines.push("Open: https://nodebench-ai.vercel.app/");
+
+  // === ACT III: THE MOVE ===
+  lines.push("");
+  lines.push("**ACT III: The Move**");
+
+  // Action-oriented persona recommendations
+  const personaActions = buildPersonaActions(feedItems);
+  personaActions.forEach((action) => lines.push(`• ${action}`));
+
+  // === FOOTER ===
+  lines.push("");
+  lines.push("---");
+  lines.push("[Open Full Dashboard](https://nodebench-ai.vercel.app/)");
 
   return {
-    title: `NodeBench Morning Digest ${dateLabel}`,
+    title: `Morning Dossier ${dateLabel}`,
     body: sanitizeText(lines.join("\n")),
   };
+}
+
+function buildPersonaActions(feedItems: FeedItemLite[]): string[] {
+  // Dedupe feed items by URL first
+  const urlMap = new Map<string, FeedItemLite>();
+  for (const item of feedItems) {
+    const url = (item.url ?? "").trim();
+    const existing = url ? urlMap.get(url) : undefined;
+    if (!existing || (item.score ?? 0) > (existing.score ?? 0)) {
+      urlMap.set(url || `no-url-${urlMap.size}`, item);
+    }
+  }
+  const dedupedItems = Array.from(urlMap.values());
+
+  const configs = [
+    {
+      label: "Investors",
+      keywords: ["funding", "raise", "series", "acquisition", "nvidia", "billion", "ipo", "valuation", "deal"],
+      action: (item: FeedItemLite) => {
+        const shortName = extractShortName(item.url ?? "");
+        // Avoid name:name echo - use summary or a smart fallback
+        const context = item.summary && !item.summary.includes("Trending")
+          ? clipText(item.summary, 45)
+          : clipText(item.title, 45);
+        // Don't repeat shortName if it's already in context
+        if (context.toLowerCase().includes(shortName.toLowerCase())) {
+          return `Track: ${context}`;
+        }
+        return `Track **${shortName}**: ${context}`;
+      },
+    },
+    {
+      label: "Engineers",
+      keywords: ["github", "repo", "release", "library", "sdk", "runtime", "benchmark", "tool"],
+      action: (item: FeedItemLite) => {
+        const shortName = extractShortName(item.url ?? "");
+        // Provide actionable context
+        const desc = item.summary && !item.summary.includes("Trending")
+          ? clipText(item.summary, 40)
+          : null;
+        if (desc) {
+          return `Evaluate **${shortName}** - ${desc}`;
+        }
+        return `Evaluate **${shortName}** for your stack`;
+      },
+    },
+    {
+      label: "Researchers",
+      keywords: ["paper", "arxiv", "study", "model", "architecture", "benchmark", "research"],
+      action: (item: FeedItemLite) => {
+        return `Review: ${clipText(item.title, 55)}`;
+      },
+    },
+  ];
+
+  const normalized = dedupedItems.map((item) => ({
+    ...item,
+    text: normalizeText(`${item.title} ${item.summary ?? ""} ${(item.tags ?? []).join(" ")}`).toLowerCase(),
+  }));
+
+  const usedUrls = new Set<string>();
+  const actions: string[] = [];
+
+  for (const config of configs) {
+    const matches = normalized.filter((item) => {
+      const url = (item.url ?? "").trim();
+      if (url && usedUrls.has(url)) return false;
+      return config.keywords.some((kw) => item.text.includes(kw));
+    });
+
+    const top = matches.sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
+    if (top) {
+      const url = (top.url ?? "").trim();
+      if (url) usedUrls.add(url);
+      actions.push(`${config.label}: ${config.action(top)}`);
+    }
+  }
+
+  // Always include a default action
+  if (actions.length === 0) {
+    actions.push("Review the dashboard for today's highlights");
+  }
+
+  return actions;
 }
 

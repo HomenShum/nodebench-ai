@@ -2,6 +2,7 @@ import React from "react";
 import { X, ExternalLink, Calendar, Tag, Sparkles, MessageSquare, Copy } from "lucide-react";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import type { FeedItem } from "@/features/research/components/FeedCard";
+import { useReaderContent } from "@/features/research/hooks/useReaderContent";
 
 interface FeedReaderModalProps {
   item: FeedItem | null;
@@ -10,8 +11,18 @@ interface FeedReaderModalProps {
 
 export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose }) => {
   const { openWithContext } = useFastAgent();
+  const readerState = useReaderContent(item?.url, item?.title);
 
   if (!item) return null;
+
+  const readerData = readerState.status === "ready" ? readerState.data : null;
+  const readerExcerpt = readerData?.excerpt || item.subtitle || "No preview available for this item.";
+  const readerContent = readerData?.content || readerExcerpt;
+  const sourceMatrix = readerData?.sourceMatrix ?? [];
+  const sourceMatrixItems = sourceMatrix.slice(0, 6);
+  const showLoading = readerState.status === "loading";
+  const showError = readerState.status === "error";
+  const errorMessage = readerState.status === "error" ? readerState.error : null;
 
   const handleAskAgent = () => {
     openWithContext({
@@ -29,7 +40,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/15 transition-opacity" onClick={onClose} />
 
       <div className="relative w-full max-w-4xl h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10">
         <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between bg-white z-10">
@@ -91,26 +102,73 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose 
 
             <div className="prose prose-lg prose-gray max-w-none font-serif leading-relaxed text-gray-800">
               <p className="text-xl leading-relaxed text-gray-600 font-sans mb-8 border-l-4 border-blue-500 pl-6 italic">
-                {item.subtitle}
+                {readerExcerpt}
               </p>
-              <p>
-                {(item as any).content ||
-                  "Full content fetching is in progress. The agent is currently parsing the source URL to extract the complete text, tables, and data points. In the meantime, this summary captures the core intelligence signals relevant to your feed."}
-              </p>
-              <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-              </p>
-              <h3>Key Takeaways</h3>
-              <ul>
-                <li>Impact on AI Infrastructure markets is significant.</li>
-                <li>Competitor analysis suggests a shift in strategy.</li>
-                <li>Regulatory concerns are highlighted in the report.</li>
-              </ul>
+
+              {showLoading && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-center">
+                  <p className="text-sm text-gray-400">Loading full article content...</p>
+                </div>
+              )}
+
+              {showError && (
+                <div className="p-4 bg-red-50 rounded-lg border border-red-200 text-center">
+                  <p className="text-sm text-red-600">{errorMessage}</p>
+                </div>
+              )}
+
+              {readerState.status === "ready" && (
+                <div className="space-y-5">
+                  <p>{readerContent}</p>
+                  {readerData?.isTruncated && item.url && (
+                    <div className="text-xs text-gray-500">
+                      Full text trimmed for size.{" "}
+                      <button
+                        onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')}
+                        className="text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Open original
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {readerState.status === "ready" && (
+                <div className="mt-10 pt-6 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">Source Matrix</span>
+                    <span className="text-[10px] text-gray-400">{sourceMatrix.length} sources</span>
+                  </div>
+                  {sourceMatrixItems.length > 0 ? (
+                    <div className="space-y-3">
+                      {sourceMatrixItems.map((source, idx) => (
+                        <a
+                          key={`${source.url}-${idx}`}
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 hover:border-blue-200 hover:bg-white transition-colors"
+                        >
+                          <div className="text-sm font-semibold text-gray-900">{source.title}</div>
+                          <div className="text-[11px] text-gray-500 mt-1">{source.domain || 'Source'}</div>
+                          {source.snippet && (
+                            <div className="text-xs text-gray-500 mt-2 line-clamp-2">{source.snippet}</div>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-400">No additional sources available.</div>
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-100 bg-gray-50/80 backdrop-blur-md px-8 py-4">
+        <div className="border-t border-gray-100 bg-gray-50/80 px-8 py-4">
           <div className="max-w-2xl mx-auto flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
               <Sparkles className="w-4 h-4 text-white" />

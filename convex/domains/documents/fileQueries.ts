@@ -147,3 +147,57 @@ export const saveFileAnalysisError = internalMutation({
     });
   },
 });
+
+// Fetch latest URL analysis for a user (reader cache)
+export const getUrlAnalysisForUser = internalQuery({
+  args: {
+    url: v.string(),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("urlAnalyses")
+      .withIndex("by_url", (q) => q.eq("url", args.url))
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .order("desc")
+      .first();
+  },
+});
+
+// Upsert URL analysis for a user (reader cache)
+export const upsertUrlAnalysisForUser = internalMutation({
+  args: {
+    url: v.string(),
+    userId: v.string(),
+    analysis: v.string(),
+    structuredData: v.optional(v.any()),
+    contentType: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("urlAnalyses")
+      .withIndex("by_url", (q) => q.eq("url", args.url))
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .first();
+
+    const analyzedAt = Date.now();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        analysis: args.analysis,
+        structuredData: args.structuredData,
+        analyzedAt,
+        contentType: args.contentType ?? existing.contentType,
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("urlAnalyses", {
+      userId: args.userId,
+      url: args.url,
+      analysis: args.analysis,
+      structuredData: args.structuredData,
+      analyzedAt,
+      contentType: args.contentType,
+    });
+  },
+});

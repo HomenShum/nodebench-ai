@@ -17,6 +17,8 @@ import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
 import { PersonalPulse } from "@/features/research/components/PersonalPulse";
 import { IntelPulseMonitor } from "@/features/research/components/IntelPulseMonitor";
 import { TimelineStrip, type TimelineEvent } from "@/features/research/components/TimelineStrip";
+import { NotificationActivityPanel } from "@/components/NotificationActivityPanel";
+import { FeedReaderModal } from "@/features/research/components/FeedReaderModal";
 
 export interface ResearchHubProps {
   onDocumentSelect?: (documentId: string) => void;
@@ -43,6 +45,7 @@ export default function ResearchHub(props: ResearchHubProps) {
   const updateFocus = useMutation(api.domains.dossier.focusState.updateFocus);
   const [activeAct, setActiveAct] = useState<"actI" | "actII" | "actIII">("actI");
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+  const [readerItem, setReaderItem] = useState<FeedItem | null>(null);
 
   // Fetch all brief data (Global + Personal)
   const {
@@ -159,7 +162,7 @@ export default function ResearchHub(props: ResearchHubProps) {
 
   const handleFeedItemClick = useCallback((item: FeedItem) => {
     if (item.url) {
-      window.open(item.url, "_blank", "noopener,noreferrer");
+      setReaderItem(item);
       return;
     }
 
@@ -426,6 +429,13 @@ export default function ResearchHub(props: ResearchHubProps) {
                   // Fallback while loading
                   <DashboardSection activeAct={activeAct} />
                 )}
+                <NotificationActivityPanel
+                  mode="topic"
+                  variant="hub"
+                  title="Morning Digest Log"
+                  subtitle="Global ntfy channel: nodebench"
+                  limit={5}
+                />
               </div>
             </aside>
           </div>
@@ -433,6 +443,8 @@ export default function ResearchHub(props: ResearchHubProps) {
 
         {/* LIVE INTEL FLOW MONITOR */}
         <IntelPulseMonitor taskResults={taskResults || []} />
+
+        <FeedReaderModal item={readerItem} onClose={() => setReaderItem(null)} />
       </div>
     </EvidenceProvider>
   );

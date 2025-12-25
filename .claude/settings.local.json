@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "mcp__ide__getDiagnostics",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx convex deploy:*)",
+      "Bash(npx convex dev:*)",
+      "Bash(npx convex run:*)"
     ],
     "deny": [],
     "ask": []

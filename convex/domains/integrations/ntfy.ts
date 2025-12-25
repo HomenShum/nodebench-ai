@@ -71,22 +71,28 @@ async function sendNtfyNotification(args: {
   priority?: 1 | 2 | 3 | 4 | 5;
   tags?: string[];
   click?: string;
+  markdown?: boolean;
+  attach?: string; // URL to attach (image)
   actions?: Array<{
     action: string;
     label: string;
     url: string;
   }>;
 }): Promise<NtfyResponse> {
-  const url = `${NTFY_BASE_URL}/${args.topic}`;
+  const baseUrl = NTFY_BASE_URL.replace(/\/$/, "");
+  const url = baseUrl;
 
   const payload: any = {
+    topic: args.topic,
     message: args.message,
+    markdown: args.markdown ?? true, // Enable markdown by default for rich formatting
   };
 
   if (args.title) payload.title = args.title;
   if (args.priority) payload.priority = args.priority;
   if (args.tags) payload.tags = args.tags;
   if (args.click) payload.click = args.click;
+  if (args.attach) payload.attach = args.attach;
   if (args.actions) payload.actions = args.actions;
 
   const response = await fetch(url, {
@@ -557,3 +563,57 @@ export const getNotificationStats = query({
   },
 });
 
+// ------------------------------------------------------------------
+// Query: Get notification logs for the default topic
+// ------------------------------------------------------------------
+export const getTopicNotificationLogs = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 20;
+    const logs = await ctx.db
+      .query("smsLogs")
+      .filter((q) => q.eq(q.field("to"), NTFY_DEFAULT_TOPIC))
+      .order("desc")
+      .take(limit);
+
+    return logs;
+  },
+});
+
+// ------------------------------------------------------------------
+// Query: Get notification stats for the default topic
+// ------------------------------------------------------------------
+export const getTopicNotificationStats = query({
+  args: {},
+  returns: v.object({
+    totalSent: v.number(),
+    totalCost: v.number(),
+    last24Hours: v.number(),
+    last7Days: v.number(),
+  }),
+  handler: async (ctx) => {
+    const allLogs = await ctx.db
+      .query("smsLogs")
+      .filter((q) => q.eq(q.field("to"), NTFY_DEFAULT_TOPIC))
+      .collect();
+
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+
+    const totalSent = allLogs.length;
+    const totalCost = allLogs.reduce((sum, log) => sum + (log.estimatedCostCents || 0), 0);
+    const last24Hours = allLogs.filter((log) => log.createdAt >= oneDayAgo).length;
+    const last7Days = allLogs.filter((log) => log.createdAt >= sevenDaysAgo).length;
+
+    return {
+      totalSent,
+      totalCost,
+      last24Hours,
+      last7Days,
+    };
+  },
+});

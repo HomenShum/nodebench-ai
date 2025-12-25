@@ -10,10 +10,11 @@
  * - Bottom: AI Analyst prompt block with quick actions
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X, Sparkles, ExternalLink, Bookmark, Share2, Clock, Globe } from 'lucide-react';
 import type { FeedItem } from './FeedCard';
 import { useFastAgent } from '@/features/agents/context/FastAgentContext';
+import { useReaderContent } from '@/features/research/hooks/useReaderContent';
 
 interface FeedReaderPanelProps {
   /** The feed item to display */
@@ -25,6 +26,7 @@ interface FeedReaderPanelProps {
 export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose }) => {
   const { openWithContext } = useFastAgent();
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const readerState = useReaderContent(item.url, item.title);
 
   // Get source domain from URL
   const sourceDomain = item.url ? new URL(item.url).hostname.replace('www.', '') : null;
@@ -79,6 +81,15 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
   };
 
   const badge = getTypeBadge();
+  const readerData = readerState.status === "ready" ? readerState.data : null;
+  const readerExcerpt = readerData?.excerpt || item.subtitle || 'No preview available for this item.';
+  const readerContent = readerData?.content || readerExcerpt;
+  const sourceMatrix = readerData?.sourceMatrix ?? [];
+  const showLoading = readerState.status === "loading";
+  const showError = readerState.status === "error";
+  const errorMessage = readerState.status === "error" ? readerState.error : null;
+
+  const sourceMatrixItems = useMemo(() => sourceMatrix.slice(0, 6), [sourceMatrix]);
 
   return (
     <>
@@ -195,24 +206,80 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             {/* Content / Summary */}
             <div className="prose prose-sm prose-gray max-w-none">
               <p className="text-gray-600 leading-relaxed text-base">
-                {item.subtitle || 'No preview available for this item.'}
+                {readerExcerpt}
               </p>
-              
-              {/* Placeholder for full content */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-center">
-                <p className="text-sm text-gray-400">
-                  Full article content will be loaded from the source.
-                </p>
-                {item.url && (
-                  <button
-                    onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')}
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Read full article →
-                  </button>
+
+              {showLoading && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-center">
+                  <p className="text-sm text-gray-400">Loading full article content...</p>
+                </div>
+              )}
+
+              {showError && (
+                <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-200 text-center">
+                  <p className="text-sm text-red-600">{errorMessage}</p>
+                </div>
+              )}
+
+              {readerState.status === "ready" && (
+                <div className="mt-6 space-y-4 text-gray-700">
+                  <p className="text-base leading-relaxed">
+                    {readerContent}
+                  </p>
+                  {readerData?.isTruncated && item.url && (
+                    <div className="text-xs text-gray-500">
+                      Full text trimmed for size.{" "}
+                      <button
+                        onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')}
+                        className="text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Open original
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Source Matrix */}
+            {readerState.status === "ready" && (
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">
+                    Source Matrix
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    {sourceMatrix.length} sources
+                  </span>
+                </div>
+                {sourceMatrixItems.length > 0 ? (
+                  <div className="space-y-3">
+                    {sourceMatrixItems.map((source, idx) => (
+                      <a
+                        key={`${source.url}-${idx}`}
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 hover:border-blue-200 hover:bg-white transition-colors"
+                      >
+                        <div className="text-sm font-semibold text-gray-900">{source.title}</div>
+                        <div className="text-[11px] text-gray-500 mt-1">
+                          {source.domain || 'Source'}
+                        </div>
+                        {source.snippet && (
+                          <div className="text-xs text-gray-500 mt-2 line-clamp-2">
+                            {source.snippet}
+                          </div>
+                        )}
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-400">No additional sources available.</div>
                 )}
               </div>
-            </div>
+            )}
+
           </article>
 
           {/* AI Analyst Block */}

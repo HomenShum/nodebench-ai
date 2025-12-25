@@ -211,8 +211,19 @@ function buildDeterministicBrief(args: {
       ? args.sourceSummary.totalItems
       : args.feedItems.length;
 
-  const signalsSource = [...args.feedItems]
-    .filter((i) => i && typeof i.title === "string")
+  // Dedupe by URL first, keeping highest-scored item for each URL
+  const urlMap = new Map<string, FeedItem>();
+  for (const item of args.feedItems) {
+    if (!item || typeof item.title !== "string") continue;
+    const url = (item.url ?? "").trim();
+    const existing = url ? urlMap.get(url) : undefined;
+    if (!existing || (item.score ?? 0) > (existing.score ?? 0)) {
+      urlMap.set(url || `no-url-${urlMap.size}`, item);
+    }
+  }
+  const dedupedItems = Array.from(urlMap.values());
+
+  const signalsSource = dedupedItems
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 3);
 

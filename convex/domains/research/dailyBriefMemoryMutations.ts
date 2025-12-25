@@ -151,14 +151,17 @@ export const setExecutiveBrief = internalMutation({
 
     const now = Date.now();
     const context = stripReservedKeys(memory.context ?? {}) as any;
+    const sanitizedPayload = stripReservedKeys(args.payload);
+    const sanitizedValidation = args.validation ? stripReservedKeys(args.validation) : undefined;
+    const sanitizedRecord = args.record ? stripReservedKeys(args.record) : undefined;
 
     await ctx.db.patch(memory._id, {
       context: {
         ...context,
-        executiveBrief: args.payload,
+        executiveBrief: sanitizedPayload,
         executiveBriefGeneratedAt: args.generatedAt,
-        executiveBriefValidation: args.validation,
-        ...(args.record ? { executiveBriefRecord: args.record } : {}),
+        executiveBriefValidation: sanitizedValidation,
+        ...(sanitizedRecord ? { executiveBriefRecord: sanitizedRecord } : {}),
       },
       updatedAt: now,
     });

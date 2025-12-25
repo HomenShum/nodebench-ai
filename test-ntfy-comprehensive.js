@@ -5,12 +5,12 @@ const NTFY_URL = "https://ntfy.sh";
 const TOPIC = "nodebench";
 
 async function sendNotification(payload) {
-  const response = await fetch(`${NTFY_URL}/${TOPIC}`, {
+  const response = await fetch(NTFY_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ topic: TOPIC, ...payload }),
   });
 
   if (!response.ok) {
@@ -172,4 +172,3 @@ async function runAllTests() {
 }
 
 runAllTests();
-

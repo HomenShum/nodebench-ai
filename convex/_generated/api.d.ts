@@ -210,6 +210,7 @@ import type * as domains_research_dashboardQueries from "../domains/research/das
 import type * as domains_research_executiveBrief from "../domains/research/executiveBrief.js";
 import type * as domains_research_publicDossier from "../domains/research/publicDossier.js";
 import type * as domains_research_publicDossierQueries from "../domains/research/publicDossierQueries.js";
+import type * as domains_research_readerContent from "../domains/research/readerContent.js";
 import type * as domains_search_fusion_actions from "../domains/search/fusion/actions.js";
 import type * as domains_search_fusion_adapters_arxivAdapter from "../domains/search/fusion/adapters/arxivAdapter.js";
 import type * as domains_search_fusion_adapters_documentAdapter from "../domains/search/fusion/adapters/documentAdapter.js";
@@ -574,6 +575,7 @@ declare const fullApi: ApiFromModules<{
   "domains/research/executiveBrief": typeof domains_research_executiveBrief;
   "domains/research/publicDossier": typeof domains_research_publicDossier;
   "domains/research/publicDossierQueries": typeof domains_research_publicDossierQueries;
+  "domains/research/readerContent": typeof domains_research_readerContent;
   "domains/search/fusion/actions": typeof domains_search_fusion_actions;
   "domains/search/fusion/adapters/arxivAdapter": typeof domains_search_fusion_adapters_arxivAdapter;
   "domains/search/fusion/adapters/documentAdapter": typeof domains_search_fusion_adapters_documentAdapter;
