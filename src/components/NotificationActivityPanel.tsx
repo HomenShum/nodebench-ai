@@ -31,7 +31,20 @@ function normalizeText(value?: string): string {
 
 function clipText(value: string, maxLen: number): string {
   if (value.length <= maxLen) return value;
-  return `${value.slice(0, Math.max(0, maxLen - 3))}...`;
+  const slice = value.slice(0, maxLen);
+  const sentenceEnd = Math.max(
+    slice.lastIndexOf("."),
+    slice.lastIndexOf("!"),
+    slice.lastIndexOf("?"),
+  );
+  if (sentenceEnd > Math.floor(maxLen * 0.6)) {
+    return slice.slice(0, sentenceEnd + 1).trim();
+  }
+  const lastSpace = slice.lastIndexOf(" ");
+  if (lastSpace > Math.floor(maxLen * 0.6)) {
+    return slice.slice(0, lastSpace).trim();
+  }
+  return slice.trim();
 }
 
 function extractBodyContent(body?: string): string {
@@ -125,9 +138,9 @@ export function NotificationActivityPanel({
           statLabel: "text-[9px] text-stone-500 uppercase tracking-wider",
           logList: "space-y-2",
           logItem: "border border-stone-200/60 bg-white/90 px-3 py-2",
-          logTitle: "text-[11px] font-semibold text-stone-900 line-clamp-2",
+          logTitle: "text-[11px] font-semibold text-stone-900",
           logMeta: "text-[9px] text-stone-500 uppercase tracking-wider",
-          logBody: "text-[10px] text-stone-500 line-clamp-2",
+          logBody: "text-[10px] text-stone-500",
           emptyText: "text-[10px] text-stone-400",
         }
       : {

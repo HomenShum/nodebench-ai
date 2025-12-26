@@ -73,6 +73,7 @@ async function sendNtfyNotification(args: {
   click?: string;
   markdown?: boolean;
   attach?: string; // URL to attach (image)
+  filename?: string;
   actions?: Array<{
     action: string;
     label: string;
@@ -93,6 +94,7 @@ async function sendNtfyNotification(args: {
   if (args.tags) payload.tags = args.tags;
   if (args.click) payload.click = args.click;
   if (args.attach) payload.attach = args.attach;
+  if (args.filename) payload.filename = args.filename;
   if (args.actions) payload.actions = args.actions;
 
   const response = await fetch(url, {
@@ -157,6 +159,15 @@ export const sendNotification = action({
     title: v.optional(v.string()),
     priority: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4), v.literal(5))),
     tags: v.optional(v.array(v.string())),
+    click: v.optional(v.string()),
+    markdown: v.optional(v.boolean()),
+    attach: v.optional(v.string()),
+    filename: v.optional(v.string()),
+    actions: v.optional(v.array(v.object({
+      action: v.string(),
+      label: v.string(),
+      url: v.string(),
+    }))),
     userId: v.optional(v.id("users")),
     eventType: v.optional(v.string()),
     eventId: v.optional(v.id("events")),
@@ -171,6 +182,11 @@ export const sendNotification = action({
       title: args.title,
       priority: args.priority,
       tags: args.tags,
+      click: args.click,
+      markdown: args.markdown,
+      attach: args.attach,
+      filename: args.filename,
+      actions: args.actions,
     });
 
     await ctx.runMutation(internal.domains.integrations.ntfy.logNotification, {

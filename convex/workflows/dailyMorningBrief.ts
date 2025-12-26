@@ -132,7 +132,7 @@ export const runDailyMorningBrief = internalAction({
         const feedItems = await ctx.runQuery(
           internal.domains.research.dashboardQueries.getFeedItemsForMetrics,
           {},
-        );
+        ) as FeedItemLite[];
 
         const memoriesForDate: any[] = await ctx.runQuery(
           internal.domains.research.dailyBriefMemoryQueries.listMemoriesByDateStringInternal,
@@ -160,21 +160,125 @@ export const runDailyMorningBrief = internalAction({
             digestContext.generatedBrief ||
             null;
 
+          const signalUrls = Array.isArray(executiveBrief?.actII?.signals)
+            ? executiveBrief.actII.signals
+                .map((signal: any) => signal?.evidence?.[0]?.url)
+                .filter((url: string) => typeof url === "string" && url.trim())
+            : [];
+          const topStoryUrls = getTopStories(feedItems, 12)
+            .map((story) => story.url)
+            .filter((url) => url && url.trim());
+          const coverageUrls: string[] = Array.from(
+            new Set(
+              feedItems
+                .map((item: FeedItemLite) => (item.url ?? "").trim())
+                .filter((url: string) => url),
+            ),
+          );
+          const coverageLimit = Math.min(coverageUrls.length, 60);
+          const coverageTargetUrls: string[] = coverageUrls.slice(0, coverageLimit);
+          const targetUrls: string[] = Array.from(
+            new Set([...signalUrls, ...topStoryUrls, ...coverageTargetUrls]),
+          );
+
+          try {
+            await ensureStoryTasks(ctx, digestMemory, feedItems, targetUrls, {
+              maxSummaries: coverageLimit || 16,
+              maxIntel: 5,
+            });
+          } catch (err: any) {
+            console.warn("[dailyMorningBrief] ensure story tasks failed:", err?.message || err);
+          }
+
+          const coverageData = digestMemory?._id
+            ? await collectCoverageSummaries(ctx, digestMemory, feedItems, coverageTargetUrls, {
+                maxItems: coverageLimit || 16,
+                concurrency: 4,
+              })
+            : { items: [], summaryByUrl: {} };
+          const storySummaries = coverageData.summaryByUrl;
+          const storyIntel = digestMemory?._id
+            ? await collectStoryIntel(ctx, digestMemory, feedItems, targetUrls, 5)
+            : {};
+          const coverageRollup = coverageData.items.length > 0
+            ? await ctx.runAction(
+                (internal as any).domains.research.dailyBriefWorker.summarizeCoverageRollup,
+                { items: coverageData.items, maxSources: 6 },
+              )
+            : null;
+          const entityGraph = digestMemory?._id
+            ? await collectGraphExtraction(ctx, digestMemory)
+            : null;
+
+          if (entityGraph && storeResult.snapshotId) {
+            try {
+              await ctx.runMutation(
+                internal.domains.research.dashboardMutations.patchDashboardEntityGraph,
+                {
+                  snapshotId: storeResult.snapshotId,
+                  entityGraph,
+                },
+              );
+            } catch (err: any) {
+              console.warn("[dailyMorningBrief] entity graph patch failed:", err?.message || err);
+            }
+          }
+
+          if (entityGraph && digestMemory?._id) {
+            await ctx.runMutation(
+              internal.domains.research.dailyBriefMemoryMutations.updateMemoryContext,
+              {
+                memoryId: digestMemory._id,
+                contextPatch: {
+                  entityGraph,
+                },
+              },
+            );
+          }
+          if (digestMemory?._id && (coverageData.items.length > 0 || coverageRollup)) {
+            await ctx.runMutation(
+              internal.domains.research.dailyBriefMemoryMutations.updateMemoryContext,
+              {
+                memoryId: digestMemory._id,
+                contextPatch: {
+                  coverageSummaries: coverageData.items,
+                  coverageRollup,
+                },
+              },
+            );
+          }
+
           const digestPayload = buildNtfyDigestPayload({
             dateString: storeResult.dateString,
             sourceSummary,
             dashboardMetrics,
+            previousDashboardMetrics: digestContext.previousDashboardMetrics ?? null,
             feedItems,
             executiveBrief,
+            storySummaries,
+            storyIntel,
+            coverageSummaries: coverageData.items,
+            coverageRollup,
+            entityGraph,
             briefRecordStatus: briefRecord?.status,
             evidence: briefRecord?.evidence,
           });
+
+          const chartAttachment = await buildNtfyChartAttachment(
+            ctx,
+            dashboardMetrics,
+            digestMemory,
+            storeResult.dateString,
+          );
 
           await ctx.runAction(api.domains.integrations.ntfy.sendNotification, {
             title: digestPayload.title,
             body: digestPayload.body,
             priority: 3,
             tags: ["newspaper", "bar_chart", "briefcase"],
+            click: DASHBOARD_URL,
+            attach: chartAttachment?.url,
+            filename: chartAttachment ? `dashboard-${storeResult.dateString}.svg` : undefined,
             eventType: "morning_digest",
           });
 
@@ -189,6 +293,8 @@ export const runDailyMorningBrief = internalAction({
                 contextPatch: {
                   ntfyDigestDate: storeResult.dateString,
                   ntfyDigestSentAt: Date.now(),
+                  ntfyChartStorageId: chartAttachment?.storageId ?? digestContext.ntfyChartStorageId,
+                  ntfyChartDate: chartAttachment ? storeResult.dateString : digestContext.ntfyChartDate,
                 },
               },
             );
@@ -350,18 +456,116 @@ type FeedItemLite = {
   url?: string;
 };
 
+type StoryIntel = {
+  summary?: string | null;
+  hard_numbers?: string | null;
+  direct_quote?: string | null;
+  conflict?: string | null;
+  pivot?: string | null;
+  lesson?: string | null;
+};
+
+type GraphNode = {
+  id: string;
+  label: string;
+  type?: string;
+  importance?: number;
+};
+
+type GraphEdge = {
+  source: string;
+  target: string;
+  relationship?: string;
+  context?: string;
+};
+
+type EntityGraph = {
+  focusNodeId?: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+};
+
+const STORY_SUMMARY_VERSION = 2;
+
+type CoverageSummaryItem = {
+  title: string;
+  summary: string;
+  url?: string;
+  source?: string;
+  category?: string;
+};
+
+type CoverageRollup = {
+  overallSummary?: string;
+  sourceSummaries?: Array<{ source: string; summary: string; count?: number }>;
+  themes?: string[];
+};
+
+const DASHBOARD_URL = "https://nodebench-ai.vercel.app/";
+
 function sanitizeText(input: string): string {
-  return input.replace(/[^\x00-\x7F]/g, "");
+  return input
+    .replace(/\u2026/g, ".")
+    .replace(/\.{3,}/g, ".")
+    .replace(/[^\x00-\x7F]/g, "");
 }
 
 function normalizeText(input?: string): string {
   return sanitizeText(input ?? "").replace(/\s+/g, " ").trim();
 }
 
+function stripMarkdown(input: string): string {
+  return input
+    .replace(/`+/g, "")
+    .replace(/\[(.*?)\]\((.*?)\)/g, "$1")
+    .replace(/[*_~]/g, "")
+    .replace(/^[#>\-\s]+/gm, "")
+    .trim();
+}
+
+function sanitizeUrlForMarkdown(url: string): string {
+  const trimmed = normalizeText(url);
+  if (!trimmed) return "";
+  try {
+    return encodeURI(trimmed)
+      .replace(/\(/g, "%28")
+      .replace(/\)/g, "%29")
+      .replace(/\[/g, "%5B")
+      .replace(/\]/g, "%5D");
+  } catch {
+    return trimmed
+      .replace(/\(/g, "%28")
+      .replace(/\)/g, "%29")
+      .replace(/\[/g, "%5B")
+      .replace(/\]/g, "%5D");
+  }
+}
+
+function formatMarkdownLink(label: string, url?: string, fallbackUrl?: string): string {
+  const safeUrl = url ? sanitizeUrlForMarkdown(url) : "";
+  if (safeUrl) return `[${label}](${safeUrl})`;
+  const fallback = fallbackUrl ? sanitizeUrlForMarkdown(fallbackUrl) : "";
+  if (fallback) return `[${label}](${fallback})`;
+  return label;
+}
+
 function clipText(input: string, maxLen: number): string {
   const cleaned = normalizeText(input);
   if (cleaned.length <= maxLen) return cleaned;
-  return `${cleaned.slice(0, Math.max(0, maxLen - 3))}...`;
+  const slice = cleaned.slice(0, maxLen);
+  const sentenceEnd = Math.max(
+    slice.lastIndexOf("."),
+    slice.lastIndexOf("!"),
+    slice.lastIndexOf("?"),
+  );
+  if (sentenceEnd > Math.floor(maxLen * 0.6)) {
+    return slice.slice(0, sentenceEnd + 1).trim().replace(/[\[*(_]+$/g, "").trim();
+  }
+  const lastSpace = slice.lastIndexOf(" ");
+  if (lastSpace > Math.floor(maxLen * 0.6)) {
+    return slice.slice(0, lastSpace).trim().replace(/[\[*(_]+$/g, "").trim();
+  }
+  return slice.trim().replace(/[\[*(_]+$/g, "").trim();
 }
 
 function formatTopList(entries: Array<[string, number]>, limit: number): string {
@@ -371,6 +575,277 @@ function formatTopList(entries: Array<[string, number]>, limit: number): string 
     .slice(0, limit)
     .map(([name, count]) => `${name} ${count}`);
   return top.join(", ");
+}
+
+function sourceLinkForName(source: string): string | null {
+  const normalized = normalizeText(source).toLowerCase();
+  if (normalized.includes("arxiv")) return "https://arxiv.org";
+  if (normalized.includes("github")) return "https://github.com/trending";
+  if (normalized.includes("ycombinator") || normalized.includes("hackernews")) {
+    return "https://news.ycombinator.com";
+  }
+  if (normalized.includes("dev.to")) return "https://dev.to";
+  if (normalized.includes("reddit")) return "https://www.reddit.com/r/MachineLearning";
+  if (normalized.includes("techcrunch")) return "https://techcrunch.com";
+  if (normalized.includes("producthunt")) return "https://www.producthunt.com";
+  return null;
+}
+
+function formatTopSourcesWithLinks(entries: Array<[string, number]>, limit: number): string {
+  return entries
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([name, count]) => {
+      const link = sourceLinkForName(name);
+      const safeLink = link ? sanitizeUrlForMarkdown(link) : "";
+      return safeLink ? `[${name} ${count}](${safeLink})` : `${name} ${count}`;
+    })
+    .join(" | ");
+}
+
+function lineHasLink(line: string): boolean {
+  return /\[[^\]]+\]\([^)]+\)/.test(line);
+}
+
+function extractWhyItMatters(summary: string): string {
+  const cleaned = normalizeText(stripMarkdown(summary));
+  if (!cleaned) return "";
+  const match = cleaned.match(/why it matters:\s*(.*)/i);
+  if (match && match[1]) return match[1].trim();
+  return cleaned.replace(/what happened:\s*/i, "").trim();
+}
+
+function parseNumericValue(value: string): number | null {
+  const cleaned = normalizeText(value);
+  const match = cleaned.match(/-?\d+(\.\d+)?/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isFinite(num) ? num : null;
+}
+
+function parseUnit(value: string): string {
+  const cleaned = normalizeText(value);
+  if (cleaned.includes("%")) return "%";
+  if (cleaned.includes("pts")) return "pts";
+  if (cleaned.includes("s")) return "s";
+  return "";
+}
+
+type DeltaEntry = { label: string; delta: number; unit: string };
+
+function collectDeltaEntries(current: any, previous: any): DeltaEntry[] {
+  if (!current || !previous) return [];
+  const deltas: DeltaEntry[] = [];
+
+  const currentKeyStats = Array.isArray(current.keyStats) ? current.keyStats : [];
+  const previousKeyStats = Array.isArray(previous.keyStats) ? previous.keyStats : [];
+  const prevKeyMap = new Map(previousKeyStats.map((stat: any) => [stat.label, stat]));
+
+  currentKeyStats.forEach((stat: any) => {
+    const prev = prevKeyMap.get(stat.label);
+    const curValue = parseNumericValue(stat.value ?? "");
+    const prevValue = prev ? parseNumericValue(prev.value ?? "") : null;
+    if (curValue == null || prevValue == null) return;
+    const delta = curValue - prevValue;
+    if (!delta) return;
+    deltas.push({ label: stat.label, delta, unit: parseUnit(stat.value ?? "") });
+  });
+
+  const curTech = current.techReadiness;
+  const prevTech = previous.techReadiness;
+  if (curTech && prevTech) {
+    (["existing", "emerging", "sciFi"] as const).forEach((key) => {
+      if (typeof curTech[key] !== "number" || typeof prevTech[key] !== "number") return;
+      const delta = curTech[key] - prevTech[key];
+      if (!delta) return;
+      const label = key === "sciFi" ? "SciFi" : key.charAt(0).toUpperCase() + key.slice(1);
+      deltas.push({ label, delta, unit: "pts" });
+    });
+  }
+
+  const curCaps = Array.isArray(current.capabilities) ? current.capabilities : [];
+  const prevCaps = Array.isArray(previous.capabilities) ? previous.capabilities : [];
+  const prevCapsMap = new Map(prevCaps.map((cap: any) => [cap.label, cap]));
+  curCaps.forEach((cap: any) => {
+    const prev = prevCapsMap.get(cap.label);
+    if (!prev || typeof cap.score !== "number" || typeof prev.score !== "number") return;
+    const delta = cap.score - prev.score;
+    if (Math.abs(delta) < 0.01) return;
+    deltas.push({ label: cap.label, delta, unit: "" });
+  });
+
+  return deltas;
+}
+
+function formatDeltaValue(entry: DeltaEntry): string {
+  const abs = Math.abs(entry.delta);
+  const formatted =
+    abs >= 10 ? abs.toFixed(0) : abs >= 1 ? abs.toFixed(1) : abs.toFixed(2);
+  const sign = entry.delta >= 0 ? "+" : "-";
+  const unitSuffix = entry.unit ? ` ${entry.unit}` : "";
+  return `${entry.label} ${sign}${formatted}${unitSuffix}`;
+}
+
+function buildDeltaSummary(current: any, previous: any, limit: number = 3): string {
+  const entries = collectDeltaEntries(current, previous)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, limit);
+  if (entries.length === 0) return "";
+  return entries.map(formatDeltaValue).join("; ");
+}
+
+function buildTrendLineSvg(config: any): string {
+  const width = 640;
+  const height = 300;
+  const paddingX = 48;
+  const paddingY = 42;
+  const series = Array.isArray(config?.series) ? config.series[0] : null;
+  const values = Array.isArray(series?.data)
+    ? series.data.map((d: any) => Number(d?.value)).filter((v: number) => Number.isFinite(v))
+    : [];
+  const title = normalizeText(config?.title || "Signal Reliability Index");
+
+  if (values.length < 2) {
+    return [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`,
+      `<rect width="100%" height="100%" fill="#f8fafc"/>`,
+      `<text x="${paddingX}" y="${paddingY}" font-size="14" font-family="Arial, sans-serif" fill="#0f172a">${title}</text>`,
+      `<text x="${paddingX}" y="${paddingY + 28}" font-size="12" font-family="Arial, sans-serif" fill="#64748b">No trend data yet</text>`,
+      `</svg>`,
+    ].join("");
+  }
+
+  const minVal = typeof config?.gridScale?.min === "number"
+    ? config.gridScale.min
+    : Math.min(...values);
+  const maxVal = typeof config?.gridScale?.max === "number"
+    ? config.gridScale.max
+    : Math.max(...values);
+  const range = Math.max(maxVal - minVal, 1);
+  const usableWidth = width - paddingX * 2;
+  const usableHeight = height - paddingY * 2;
+  const xStep = values.length > 1 ? usableWidth / (values.length - 1) : usableWidth;
+
+  const points = values.map((value: number, idx: number) => {
+    const x = paddingX + idx * xStep;
+    const y = height - paddingY - ((value - minVal) / range) * usableHeight;
+    return { x, y, value };
+  });
+
+  const path = points
+    .map((pt, idx) => `${idx === 0 ? "M" : "L"} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`)
+    .join(" ");
+
+  const gridLines = 4;
+  const grid = Array.from({ length: gridLines + 1 }).map((_, idx) => {
+    const y = paddingY + (usableHeight / gridLines) * idx;
+    return `<line x1="${paddingX}" y1="${y.toFixed(1)}" x2="${width - paddingX}" y2="${y.toFixed(1)}" stroke="#e2e8f0" stroke-width="1" />`;
+  });
+
+  const xLabels = Array.isArray(config?.xAxisLabels) ? config.xAxisLabels : [];
+  const leftLabel = xLabels[0] ? normalizeText(String(xLabels[0])) : "";
+  const rightLabel = xLabels[xLabels.length - 1] ? normalizeText(String(xLabels[xLabels.length - 1])) : "";
+  const lastPoint = points[points.length - 1];
+
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`,
+    `<rect width="100%" height="100%" fill="#f8fafc"/>`,
+    ...grid,
+    `<path d="${path}" fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`,
+    ...points.map((pt) => `<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="3" fill="#4f46e5" />`),
+    `<text x="${paddingX}" y="${paddingY - 18}" font-size="14" font-family="Arial, sans-serif" fill="#0f172a">${title}</text>`,
+    leftLabel
+      ? `<text x="${paddingX}" y="${height - paddingY + 18}" font-size="11" font-family="Arial, sans-serif" fill="#64748b">${leftLabel}</text>`
+      : "",
+    rightLabel
+      ? `<text x="${width - paddingX}" y="${height - paddingY + 18}" font-size="11" font-family="Arial, sans-serif" fill="#64748b" text-anchor="end">${rightLabel}</text>`
+      : "",
+    lastPoint
+      ? `<text x="${lastPoint.x + 8}" y="${Math.max(lastPoint.y - 8, paddingY)}" font-size="11" font-family="Arial, sans-serif" fill="#1e293b">${lastPoint.value.toFixed(1)}</text>`
+      : "",
+    `</svg>`,
+  ].filter(Boolean).join("");
+}
+
+async function buildNtfyChartAttachment(
+  ctx: any,
+  dashboardMetrics: any,
+  memory: any,
+  dateString: string,
+): Promise<{ url: string; storageId: string } | null> {
+  const trendLine = dashboardMetrics?.charts?.trendLine;
+  if (!trendLine) return null;
+
+  const existingStorageId = memory?.context?.ntfyChartStorageId;
+  const existingDate = memory?.context?.ntfyChartDate;
+  if (existingStorageId && existingDate === dateString) {
+    const url = await ctx.storage.getUrl(existingStorageId);
+    if (url) return { url, storageId: existingStorageId };
+  }
+
+  const svg = buildTrendLineSvg(trendLine);
+  const blob = new Blob([svg], { type: "image/svg+xml" });
+  const storageId = await ctx.storage.store(blob);
+  const url = await ctx.storage.getUrl(storageId);
+  if (!url) return null;
+
+  return { url, storageId };
+}
+
+function formatIntelLines(args: {
+  index: number;
+  title: string;
+  url?: string;
+  intel?: StoryIntel;
+  fallbackSummary?: string;
+  summaryLen: number;
+  detailLen: number;
+  quoteLen: number;
+}): string[] {
+  const lines: string[] = [];
+  const titleText = clipText(args.title, 70);
+  const url = (args.url ?? "").trim();
+  const titleLine = url
+    ? formatMarkdownLink(titleText, url)
+    : formatMarkdownLink(titleText, DASHBOARD_URL);
+  lines.push(`${args.index}. ${titleLine}`);
+
+  const summary = args.intel?.summary || args.intel?.lesson || args.fallbackSummary;
+  if (summary) {
+    const summaryLine = clipText(summary, args.summaryLen);
+    lines.push(
+      `   ${summaryLine} ${url ? formatMarkdownLink("Source", url) : formatMarkdownLink("Dashboard", DASHBOARD_URL)}`,
+    );
+  }
+
+  const detailParts: string[] = [];
+  if (args.intel?.hard_numbers) {
+    detailParts.push(`Impact: ${clipText(args.intel.hard_numbers, args.detailLen)}`);
+  }
+  if (args.intel?.direct_quote) {
+    detailParts.push(`Quote: "${clipText(args.intel.direct_quote, args.quoteLen)}"`);
+  }
+
+  if (detailParts.length === 0) {
+    const conflict = args.intel?.conflict;
+    const pivot = args.intel?.pivot;
+    if (conflict || pivot) {
+      const intelLine = [
+        conflict ? clipText(conflict, args.detailLen) : "",
+        pivot ? `-> ${clipText(pivot, args.detailLen)}` : "",
+      ]
+        .join(" ")
+        .trim();
+      if (intelLine) detailParts.push(`Intel: ${intelLine}`);
+    }
+  }
+
+  if (detailParts.length > 0) {
+    lines.push(`   ${detailParts.join(" | ")}`);
+  }
+
+  return lines;
 }
 
 function getTopTags(feedItems: FeedItemLite[], fallback: string[] = []): string[] {
@@ -420,7 +895,11 @@ function buildActionLines(executiveBrief: any): string[] {
 
 type NormalizedFeedItem = FeedItemLite & { text: string };
 
-function buildPersonaHighlights(feedItems: FeedItemLite[]): string[] {
+function buildPersonaImplications(
+  feedItems: FeedItemLite[],
+  storySummaries: Record<string, string>,
+  storyIntel: Record<string, StoryIntel>,
+): string[] {
   // Dedupe feed items by URL first
   const urlMap = new Map<string, FeedItemLite>();
   for (const item of feedItems) {
@@ -436,32 +915,51 @@ function buildPersonaHighlights(feedItems: FeedItemLite[]): string[] {
     {
       label: "VCs",
       keywords: ["funding", "raise", "series", "seed", "round", "valuation", "investment", "acquisition", "nvidia", "billion"],
-      categories: ["startups", "finance"],
+      categories: ["startups", "finance", "business"],
       types: ["news", "product", "signal"],
+      actionHint: "Re-rank diligence focus and pipeline thesis",
+    },
+    {
+      label: "Bankers",
+      keywords: ["ipo", "acquisition", "merger", "deal", "valuation", "earnings", "restructuring", "credit", "debt", "regulatory", "sec", "fda", "cfpb"],
+      categories: ["finance", "business"],
+      types: ["news", "signal"],
+      actionHint: "Update comps and advisory posture",
+    },
+    {
+      label: "Founders",
+      keywords: ["launch", "product", "growth", "pricing", "users", "market", "go-to-market", "gtm", "startup", "yc", "ycombinator"],
+      categories: ["products", "startups"],
+      types: ["product", "news", "signal"],
+      actionHint: "Recalibrate roadmap and GTM emphasis",
     },
     {
       label: "Tech Leaders",
-      keywords: ["benchmark", "model", "agent", "architecture", "paper", "arxiv", "release", "ai", "llm", "gpu"],
-      categories: ["ai_ml", "research"],
-      types: ["news", "signal"],
+      keywords: ["benchmark", "model", "agent", "architecture", "infrastructure", "latency", "performance", "gpu", "platform", "scale", "reliability"],
+      categories: ["ai_ml", "research", "opensource"],
+      types: ["repo", "news", "signal"],
+      actionHint: "Pilot stack changes and performance guardrails",
     },
     {
-      label: "Developers",
-      keywords: ["github", "repo", "release", "package", "library", "sdk", "cve", "vulnerability", "open source"],
-      categories: ["opensource"],
-      types: ["repo", "news"],
-    },
-    {
-      label: "Startup Founders",
-      keywords: ["launch", "product", "users", "growth", "pricing", "market", "yc", "ycombinator"],
-      categories: ["products", "startups"],
-      types: ["product", "news", "signal"],
-    },
-    {
-      label: "Research",
-      keywords: ["paper", "arxiv", "study", "research", "analysis", "findings"],
+      label: "Academics",
+      keywords: ["paper", "arxiv", "study", "dataset", "experiment", "method", "benchmark", "preprint"],
       categories: ["research", "ai_ml"],
-      types: ["news"],
+      types: ["news", "signal"],
+      actionHint: "Flag for replication or follow-on study",
+    },
+    {
+      label: "Executives",
+      keywords: ["strategy", "restructuring", "layoff", "partnership", "enterprise", "customers", "revenue", "margin", "risk"],
+      categories: ["business", "finance", "enterprise"],
+      types: ["news", "signal"],
+      actionHint: "Set decision memo and stakeholder briefing",
+    },
+    {
+      label: "Partners",
+      keywords: ["partnership", "integration", "alliance", "ecosystem", "platform", "channel", "distribution"],
+      categories: ["business", "products"],
+      types: ["news", "signal"],
+      actionHint: "Assess channel implications and co-sell fits",
     },
   ];
 
@@ -472,6 +970,29 @@ function buildPersonaHighlights(feedItems: FeedItemLite[]): string[] {
 
   // Track used URLs to avoid showing same story for multiple personas
   const usedUrls = new Set<string>();
+
+  const buildInsight = (item: FeedItemLite, config: typeof configs[number]): string => {
+    const url = (item.url ?? "").trim();
+    const intel = url ? storyIntel[url] : null;
+    const summary = intel?.summary || (url ? storySummaries[url] : "") || item.summary || "";
+    const thesisCore = clipText(
+      intel?.lesson || intel?.pivot || extractWhyItMatters(summary) || "",
+      150,
+    );
+    const thesis = thesisCore
+      ? `Thesis shift: ${thesisCore}`
+      : "Thesis shift: Monitor this signal for downstream impact.";
+    const moveSeed = clipText(
+      intel?.hard_numbers || intel?.conflict || intel?.pivot || "",
+      110,
+    );
+    const move = config.actionHint
+      ? `${config.actionHint}${moveSeed ? ` (${moveSeed})` : ""}`
+      : moveSeed
+        ? `Next move: ${moveSeed}`
+        : "Next move: Validate with primary sources and adjust near-term priorities.";
+    return `${thesis}. ${move}`;
+  };
 
   return configs.map((config) => {
     const matches = normalized.filter((item) => {
@@ -486,12 +1007,142 @@ function buildPersonaHighlights(feedItems: FeedItemLite[]): string[] {
       .slice()
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
     if (!top) {
-      return `${config.label}: No direct signal in last 24h.`;
+      return `What this means for ${config.label}: No direct signal in last 24h. ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`;
     }
     const url = (top.url ?? "").trim();
     if (url) usedUrls.add(url);
-    return `${config.label}: ${clipText(top.title, 90)} (${top.source ?? "source"})`;
+    const insight = buildInsight(top, config);
+    const sourceLink = url
+      ? formatMarkdownLink("Source", url)
+      : formatMarkdownLink("Dashboard", DASHBOARD_URL);
+    return `What this means for ${config.label}: ${insight}. ${sourceLink}`;
   });
+}
+
+function buildMetricsComparables(
+  feedItems: FeedItemLite[],
+  sourceSummary: any,
+  topSourcesLine: string,
+  topCategoriesLine: string,
+): string[] {
+  const urlMap = new Map<string, FeedItemLite>();
+  for (const item of feedItems) {
+    const url = (item.url ?? "").trim();
+    const existing = url ? urlMap.get(url) : undefined;
+    if (!existing || (item.score ?? 0) > (existing.score ?? 0)) {
+      urlMap.set(url || `no-url-${urlMap.size}`, item);
+    }
+  }
+  const deduped = Array.from(urlMap.values());
+  const totalItems = sourceSummary?.totalItems ?? deduped.length;
+  const sourceCount = Object.keys(sourceSummary?.bySource ?? {}).length;
+  const scored = deduped.filter((item) => typeof item.score === "number");
+  const avgScore = scored.length > 0
+    ? (scored.reduce((sum, item) => sum + (item.score ?? 0), 0) / scored.length)
+    : 0;
+
+  const normalized = deduped.map((item) => ({
+    ...item,
+    text: normalizeText(`${item.title} ${item.summary ?? ""} ${(item.tags ?? []).join(" ")}`).toLowerCase(),
+  }));
+
+  const dealCount = normalized.filter((item) =>
+    /funding|raise|series|seed|round|valuation|acqui|merger|ipo|deal|billion/.test(item.text),
+  ).length;
+  const paperCount = normalized.filter((item) =>
+    (item.source ?? "").toLowerCase().includes("arxiv")
+      || item.category === "research"
+      || /paper|study|preprint/.test(item.text),
+  ).length;
+  const repoCount = normalized.filter((item) =>
+    (item.source ?? "").toLowerCase().includes("github")
+      || item.type === "repo"
+      || item.category === "opensource",
+  ).length;
+
+  const lines: string[] = [];
+  const avgScoreLabel = avgScore ? avgScore.toFixed(1) : "n/a";
+  lines.push(`Coverage: ${totalItems} items | Sources: ${sourceCount || "n/a"} | Avg signal score: ${avgScoreLabel}`);
+  lines.push(`Deal flow: ${dealCount} | Research papers: ${paperCount} | OSS repos: ${repoCount}`);
+  if (topSourcesLine) lines.push(`Top sources: ${topSourcesLine}`);
+  if (topCategoriesLine) lines.push(`Sector leaders: ${topCategoriesLine}`);
+  return lines;
+}
+
+function buildNetworkEffectsLines(entityGraph: EntityGraph | null, limit: number = 4): string[] {
+  if (!entityGraph || !Array.isArray(entityGraph.edges) || entityGraph.edges.length === 0) {
+    return [];
+  }
+  const labelMap = new Map(
+    (entityGraph.nodes ?? []).map((node) => [node.id, node.label || node.id]),
+  );
+  return entityGraph.edges.slice(0, limit).map((edge) => {
+    const source = clipText(labelMap.get(edge.source) || edge.source, 28);
+    const target = clipText(labelMap.get(edge.target) || edge.target, 28);
+    const rel = clipText(edge.relationship || "Relates", 30);
+    const context = edge.context ? clipText(edge.context, 90) : "";
+    return `${source} -> ${target} (${rel}${context ? `: ${context}` : ""})`;
+  });
+}
+
+function scoreLeadStory(item: FeedItemLite): number {
+  let score = item.score ?? 0;
+  const text = normalizeText(`${item.title ?? ""} ${item.summary ?? ""}`).toLowerCase();
+  const source = normalizeText(item.source ?? "").toLowerCase();
+  const category = normalizeText(item.category ?? "").toLowerCase();
+
+  if (/acqui|merger|buyout|ipo|earnings|restructur|layoff|regret|antitrust|regulatory|sec|fda|clinical|trial|approval/.test(text)) {
+    score += 18;
+  }
+  if (/billion|million|\\$\\d/.test(text)) {
+    score += 10;
+  }
+  if (/breakthrough|first|reversal|cure|record|new model|novel/.test(text)) {
+    score += 8;
+  }
+  if (/security|vulnerability|breach|cve|exploit/.test(text)) {
+    score += 6;
+  }
+  if (/paper|study|preprint|arxiv|research/.test(text)) {
+    score += 5;
+  }
+  if (category.includes("finance") || category.includes("business") || category.includes("enterprise") || category.includes("biotech")) {
+    score += 8;
+  }
+  if (source.includes("github")) {
+    score -= 10;
+  }
+  if (source.includes("arxiv")) {
+    score += 3;
+  }
+  if (source.includes("ycombinator") || source.includes("hackernews")) {
+    score += 2;
+  }
+
+  return score;
+}
+
+function getRankedLeadStories(feedItems: FeedItemLite[], limit: number = 5): TopStory[] {
+  const urlMap = new Map<string, FeedItemLite>();
+  for (const item of feedItems) {
+    const url = (item.url ?? "").trim();
+    if (!url) continue;
+    const existing = urlMap.get(url);
+    if (!existing || scoreLeadStory(item) > scoreLeadStory(existing)) {
+      urlMap.set(url, item);
+    }
+  }
+  return Array.from(urlMap.values())
+    .sort((a, b) => scoreLeadStory(b) - scoreLeadStory(a))
+    .slice(0, limit)
+    .map((item) => ({
+      title: item.title,
+      url: item.url ?? "",
+      source: item.source ?? "Unknown",
+      score: scoreLeadStory(item),
+      summary: item.summary,
+      category: item.category,
+    }));
 }
 
 type TopStory = {
@@ -525,6 +1176,569 @@ function getTopStories(feedItems: FeedItemLite[], limit: number = 5): TopStory[]
       summary: item.summary,
       category: item.category,
     }));
+}
+
+function extractStorySummary(markdown: string, maxLen: number = 240): string {
+  const cleaned = normalizeText(stripMarkdown(markdown));
+  if (!cleaned) return "";
+  return clipText(cleaned, maxLen);
+}
+
+function hashString(input: string): string {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash << 5) - hash + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+function buildTaskId(prefix: string, url: string, existingIds: Set<string>): string {
+  const base = `${prefix}-${hashString(url)}`;
+  if (!existingIds.has(base)) return base;
+  let counter = 1;
+  let candidate = `${base}-${counter}`;
+  while (existingIds.has(candidate)) {
+    counter += 1;
+    candidate = `${base}-${counter}`;
+  }
+  return candidate;
+}
+
+function buildStorySummaryFeature(item: FeedItemLite, id: string, now: number) {
+  return {
+    id,
+    type: "story_summary",
+    name: `Summarize top signal: ${item.title}`,
+    status: "pending",
+    priority: 1,
+    testCriteria: "Summary is 3-4 sentences. Sentence 1 starts with What happened:, sentence 2 with Why it matters:, sentence 3 with Key number:. Sentence 4 uses Key quote: if present, otherwise Key detail:.",
+    sourceRefs: { feedItem: item, summaryVersion: STORY_SUMMARY_VERSION },
+    updatedAt: now,
+  };
+}
+
+function buildStoryIntelFeature(item: FeedItemLite, id: string, now: number) {
+  return {
+    id,
+    type: "story_intel",
+    name: `Extract intelligence from: ${item.title}`,
+    status: "pending",
+    priority: 1,
+    testCriteria: "Return JSON with: summary, hard_numbers, direct_quote, conflict, pivot, lesson. Leave missing fields as null.",
+    sourceRefs: { feedItem: item },
+    updatedAt: now,
+  };
+}
+
+async function ensureStoryTasks(
+  ctx: any,
+  memory: any,
+  feedItems: FeedItemLite[],
+  targetUrls: string[],
+  options: { maxSummaries?: number; maxIntel?: number } = {},
+) {
+  if (!memory?._id || targetUrls.length === 0) return;
+
+  const features: any[] = Array.isArray(memory.features) ? memory.features : [];
+  const summaryTasks = features.filter((feature) => feature?.type === "story_summary");
+  const intelTasks = features.filter((feature) => feature?.type === "story_intel");
+
+  const summaryTaskUrls = new Set(
+    summaryTasks
+      .filter((task) => (task?.sourceRefs?.summaryVersion ?? 1) === STORY_SUMMARY_VERSION)
+      .map((task) => (task?.sourceRefs?.feedItem?.url ?? "").trim())
+      .filter(Boolean),
+  );
+  const intelTaskUrls = new Set(
+    intelTasks
+      .map((task) => (task?.sourceRefs?.feedItem?.url ?? "").trim())
+      .filter(Boolean),
+  );
+
+  const itemsByUrl = new Map<string, FeedItemLite>();
+  feedItems.forEach((item) => {
+    const url = (item.url ?? "").trim();
+    if (!url) return;
+    const existing = itemsByUrl.get(url);
+    if (!existing || (item.score ?? 0) > (existing.score ?? 0)) {
+      itemsByUrl.set(url, item);
+    }
+  });
+
+  const existingIds = new Set(
+    features.map((feature) => feature?.id).filter((id): id is string => typeof id === "string"),
+  );
+  const now = Date.now();
+
+  const summaryFeatures: any[] = [];
+  const intelFeatures: any[] = [];
+
+  targetUrls.slice(0, options.maxSummaries ?? targetUrls.length).forEach((url) => {
+    const trimmed = url.trim();
+    if (!trimmed || summaryTaskUrls.has(trimmed)) return;
+    const item = itemsByUrl.get(trimmed);
+    if (!item) return;
+    const id = buildTaskId("Sx", trimmed, existingIds);
+    existingIds.add(id);
+    summaryFeatures.push(buildStorySummaryFeature(item, id, now));
+  });
+
+  targetUrls.slice(0, options.maxIntel ?? 0).forEach((url) => {
+    const trimmed = url.trim();
+    if (!trimmed || intelTaskUrls.has(trimmed)) return;
+    const item = itemsByUrl.get(trimmed);
+    if (!item || item.type === "repo") return;
+    const id = buildTaskId("Ix", trimmed, existingIds);
+    existingIds.add(id);
+    intelFeatures.push(buildStoryIntelFeature(item, id, now));
+  });
+
+  const newFeatures = [...summaryFeatures, ...intelFeatures];
+  if (newFeatures.length === 0) return;
+
+  await ctx.runMutation(
+    internal.domains.research.dailyBriefMemoryMutations.appendFeatures,
+    {
+      memoryId: memory._id,
+      features: newFeatures,
+    },
+  );
+}
+
+function extractJsonPayload(raw: string): any | null {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return null;
+  const unfenced = trimmed.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();
+  try {
+    return JSON.parse(unfenced);
+  } catch {
+    const start = unfenced.indexOf("{");
+    const end = unfenced.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      const slice = unfenced.slice(start, end + 1);
+      try {
+        return JSON.parse(slice);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+function normalizeStoryIntel(raw: any): StoryIntel | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as any;
+  const summary = typeof value.summary === "string" ? value.summary : null;
+  const hardNumbers =
+    typeof value.hard_numbers === "string"
+      ? value.hard_numbers
+      : typeof value.hardNumbers === "string"
+        ? value.hardNumbers
+        : typeof value.number === "string"
+          ? value.number
+          : null;
+  const directQuote =
+    typeof value.direct_quote === "string"
+      ? value.direct_quote
+      : typeof value.directQuote === "string"
+        ? value.directQuote
+        : typeof value.quote === "string"
+          ? value.quote
+          : null;
+  const conflict = typeof value.conflict === "string" ? value.conflict : null;
+  const pivot = typeof value.pivot === "string" ? value.pivot : null;
+  const lesson = typeof value.lesson === "string" ? value.lesson : null;
+
+  if (!summary && !hardNumbers && !directQuote && !conflict && !pivot && !lesson) {
+    return null;
+  }
+
+  return {
+    summary,
+    hard_numbers: hardNumbers,
+    direct_quote: directQuote,
+    conflict,
+    pivot,
+    lesson,
+  };
+}
+
+function normalizeEntityGraph(raw: any): EntityGraph | null {
+  if (!raw || typeof raw !== "object") return null;
+  const nodes: GraphNode[] = Array.isArray(raw.nodes)
+    ? raw.nodes
+        .filter((node: any) => node && node.id && node.label)
+        .map((node: any) => ({
+          id: String(node.id),
+          label: String(node.label),
+          type: typeof node.type === "string" ? node.type : undefined,
+          importance:
+            typeof node.importance === "number" && Number.isFinite(node.importance)
+              ? node.importance
+              : undefined,
+        }))
+    : [];
+  const edges: GraphEdge[] = Array.isArray(raw.edges)
+    ? raw.edges
+        .filter((edge: any) => edge && edge.source && edge.target)
+        .map((edge: any) => ({
+          source: String(edge.source),
+          target: String(edge.target),
+          relationship:
+            typeof edge.relationship === "string" ? edge.relationship : undefined,
+          context: typeof edge.context === "string" ? edge.context : undefined,
+        }))
+    : [];
+  if (nodes.length === 0) return null;
+  const focusNodeId =
+    typeof raw.focusNodeId === "string" ? raw.focusNodeId : nodes[0]?.id;
+  return { focusNodeId, nodes, edges };
+}
+
+async function runTasksWithConcurrency(
+  ctx: any,
+  memoryId: string,
+  tasks: any[],
+  concurrency: number,
+) {
+  if (tasks.length === 0) return;
+  let cursor = 0;
+  const runNext = async () => {
+    while (cursor < tasks.length) {
+      const task = tasks[cursor];
+      cursor += 1;
+      if (!task?.id) continue;
+      try {
+        await ctx.runAction(
+          internal.domains.research.dailyBriefWorker.runNextTaskInternal,
+          { memoryId, taskId: task.id },
+        );
+      } catch (err: any) {
+        console.warn("[dailyMorningBrief] task batch failed:", err?.message || err);
+      }
+    }
+  };
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, tasks.length) },
+    () => runNext(),
+  );
+  await Promise.all(workers);
+}
+
+async function collectStorySummaries(
+  ctx: any,
+  memory: any,
+  feedItems: FeedItemLite[],
+  targetUrls: string[] = [],
+  maxItems: number = 3,
+): Promise<Record<string, string>> {
+  if (!memory?._id) return {};
+
+  const features: any[] = Array.isArray(memory.features) ? memory.features : [];
+  const storyTasks = features.filter(
+    (feature) =>
+      feature?.type === "story_summary" &&
+      (feature?.sourceRefs?.summaryVersion ?? 1) === STORY_SUMMARY_VERSION &&
+      typeof feature?.sourceRefs?.feedItem?.url === "string",
+  );
+  if (storyTasks.length === 0) return {};
+
+  const tasksByUrl = new Map<string, any>();
+  storyTasks.forEach((task) => {
+    const url = (task?.sourceRefs?.feedItem?.url ?? "").trim();
+    if (url && !tasksByUrl.has(url)) tasksByUrl.set(url, task);
+  });
+
+  let taskResults: any[] = await ctx.runQuery(
+    api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+    { memoryId: memory._id },
+  );
+  const resultsByTaskId = new Map<string, string>();
+  taskResults.forEach((result) => {
+    if (result?.taskId && typeof result?.resultMarkdown === "string") {
+      resultsByTaskId.set(result.taskId, result.resultMarkdown);
+    }
+  });
+
+  const storyUrls = (targetUrls.length > 0
+    ? targetUrls
+    : getTopStories(feedItems, maxItems).map((story) => story.url)
+  )
+    .filter((url) => typeof url === "string" && url.trim())
+    .slice(0, maxItems);
+
+  const tasksToRun = storyUrls
+    .map((url) => tasksByUrl.get(url))
+    .filter((task) => task && !resultsByTaskId.has(task.id))
+    .slice(0, maxItems);
+
+  for (const task of tasksToRun) {
+    try {
+      await ctx.runAction(
+        internal.domains.research.dailyBriefWorker.runNextTaskInternal,
+        { memoryId: memory._id, taskId: task.id },
+      );
+    } catch (err: any) {
+      console.warn("[dailyMorningBrief] story summary task failed:", err?.message || err);
+    }
+  }
+
+  if (tasksToRun.length > 0) {
+    taskResults = await ctx.runQuery(
+      api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+      { memoryId: memory._id },
+    );
+  }
+
+  const summaryByUrl: Record<string, string> = {};
+  const taskUrlById = new Map<string, string>();
+  storyTasks.forEach((task) => {
+    const url = (task?.sourceRefs?.feedItem?.url ?? "").trim();
+    if (url) taskUrlById.set(task.id, url);
+  });
+
+  taskResults.forEach((result) => {
+    const url = result?.taskId ? taskUrlById.get(result.taskId) : undefined;
+    if (!url || typeof result?.resultMarkdown !== "string") return;
+    const summary = extractStorySummary(result.resultMarkdown, 240);
+    if (summary && !summaryByUrl[url]) {
+      summaryByUrl[url] = summary;
+    }
+  });
+
+  return summaryByUrl;
+}
+
+async function collectCoverageSummaries(
+  ctx: any,
+  memory: any,
+  feedItems: FeedItemLite[],
+  targetUrls: string[] = [],
+  options: { maxItems?: number; concurrency?: number } = {},
+): Promise<{ items: CoverageSummaryItem[]; summaryByUrl: Record<string, string> }> {
+  if (!memory?._id) return { items: [], summaryByUrl: {} };
+
+  const features: any[] = Array.isArray(memory.features) ? memory.features : [];
+  const storyTasks = features.filter(
+    (feature) =>
+      feature?.type === "story_summary" &&
+      (feature?.sourceRefs?.summaryVersion ?? 1) === STORY_SUMMARY_VERSION &&
+      typeof feature?.sourceRefs?.feedItem?.url === "string",
+  );
+  if (storyTasks.length === 0) return { items: [], summaryByUrl: {} };
+
+  const tasksByUrl = new Map<string, any>();
+  storyTasks.forEach((task) => {
+    const url = (task?.sourceRefs?.feedItem?.url ?? "").trim();
+    if (url && !tasksByUrl.has(url)) tasksByUrl.set(url, task);
+  });
+
+  const itemsByUrl = new Map<string, FeedItemLite>();
+  feedItems.forEach((item) => {
+    const url = (item.url ?? "").trim();
+    if (!url) return;
+    const existing = itemsByUrl.get(url);
+    if (!existing || (item.score ?? 0) > (existing.score ?? 0)) {
+      itemsByUrl.set(url, item);
+    }
+  });
+
+  const allUrls = (targetUrls.length > 0 ? targetUrls : Array.from(itemsByUrl.keys()))
+    .filter((url) => typeof url === "string" && url.trim());
+  const maxItems = Math.min(allUrls.length, options.maxItems ?? allUrls.length);
+  const storyUrls = allUrls.slice(0, maxItems);
+
+  let taskResults: any[] = await ctx.runQuery(
+    api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+    { memoryId: memory._id },
+  );
+  const resultsByTaskId = new Map<string, string>();
+  taskResults.forEach((result) => {
+    if (result?.taskId && typeof result?.resultMarkdown === "string") {
+      resultsByTaskId.set(result.taskId, result.resultMarkdown);
+    }
+  });
+
+  const tasksToRun = storyUrls
+    .map((url) => tasksByUrl.get(url))
+    .filter((task) => task && !resultsByTaskId.has(task.id));
+
+  if (tasksToRun.length > 0) {
+    await runTasksWithConcurrency(
+      ctx,
+      memory._id,
+      tasksToRun,
+      Math.max(1, options.concurrency ?? 4),
+    );
+    taskResults = await ctx.runQuery(
+      api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+      { memoryId: memory._id },
+    );
+  }
+
+  const summaryByUrl: Record<string, string> = {};
+  const taskUrlById = new Map<string, string>();
+  storyTasks.forEach((task) => {
+    const url = (task?.sourceRefs?.feedItem?.url ?? "").trim();
+    if (url) taskUrlById.set(task.id, url);
+  });
+
+  taskResults.forEach((result) => {
+    const url = result?.taskId ? taskUrlById.get(result.taskId) : undefined;
+    if (!url || typeof result?.resultMarkdown !== "string") return;
+    const summary = extractStorySummary(result.resultMarkdown, 240);
+    if (summary && !summaryByUrl[url]) {
+      summaryByUrl[url] = summary;
+    }
+  });
+
+  const items = storyUrls.reduce<CoverageSummaryItem[]>((acc, url) => {
+    const item = itemsByUrl.get(url);
+    if (!item) return acc;
+    const fallbackSummary = item.summary ? extractStorySummary(item.summary, 200) : "";
+    const summary = summaryByUrl[url] || fallbackSummary;
+    if (!summary) return acc;
+    acc.push({
+      title: item.title,
+      summary,
+      url,
+      source: item.source,
+      category: item.category,
+    });
+    return acc;
+  }, []);
+
+  return { items, summaryByUrl };
+}
+
+async function collectStoryIntel(
+  ctx: any,
+  memory: any,
+  feedItems: FeedItemLite[],
+  targetUrls: string[] = [],
+  maxItems: number = 5,
+): Promise<Record<string, StoryIntel>> {
+  if (!memory?._id) return {};
+
+  const features: any[] = Array.isArray(memory.features) ? memory.features : [];
+  const intelTasks = features.filter(
+    (feature) =>
+      feature?.type === "story_intel" &&
+      typeof feature?.sourceRefs?.feedItem?.url === "string",
+  );
+  if (intelTasks.length === 0) return {};
+
+  const tasksByUrl = new Map<string, any>();
+  intelTasks.forEach((task) => {
+    const url = (task?.sourceRefs?.feedItem?.url ?? "").trim();
+    if (url && !tasksByUrl.has(url)) tasksByUrl.set(url, task);
+  });
+
+  let taskResults: any[] = await ctx.runQuery(
+    api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+    { memoryId: memory._id },
+  );
+  const resultsByTaskId = new Map<string, string>();
+  taskResults.forEach((result) => {
+    if (result?.taskId && typeof result?.resultMarkdown === "string") {
+      resultsByTaskId.set(result.taskId, result.resultMarkdown);
+    }
+  });
+
+  const storyUrls = (targetUrls.length > 0
+    ? targetUrls
+    : getTopStories(feedItems, maxItems).map((story) => story.url)
+  )
+    .filter((url) => typeof url === "string" && url.trim())
+    .slice(0, maxItems);
+
+  const tasksToRun = storyUrls
+    .map((url) => tasksByUrl.get(url))
+    .filter((task) => task && !resultsByTaskId.has(task.id))
+    .slice(0, maxItems);
+
+  for (const task of tasksToRun) {
+    try {
+      await ctx.runAction(
+        internal.domains.research.dailyBriefWorker.runNextTaskInternal,
+        { memoryId: memory._id, taskId: task.id },
+      );
+    } catch (err: any) {
+      console.warn("[dailyMorningBrief] story intel task failed:", err?.message || err);
+    }
+  }
+
+  if (tasksToRun.length > 0) {
+    taskResults = await ctx.runQuery(
+      api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+      { memoryId: memory._id },
+    );
+  }
+
+  const intelByUrl: Record<string, StoryIntel> = {};
+  const taskUrlById = new Map<string, string>();
+  intelTasks.forEach((task) => {
+    const url = (task?.sourceRefs?.feedItem?.url ?? "").trim();
+    if (url) taskUrlById.set(task.id, url);
+  });
+
+  taskResults.forEach((result) => {
+    const url = result?.taskId ? taskUrlById.get(result.taskId) : undefined;
+    if (!url || typeof result?.resultMarkdown !== "string") return;
+    const parsed = extractJsonPayload(result.resultMarkdown);
+    const parsedIntel = normalizeStoryIntel(parsed);
+    const fallbackSummary = extractStorySummary(result.resultMarkdown, 200);
+    const resolvedIntel =
+      parsedIntel || (fallbackSummary ? { summary: fallbackSummary } : null);
+    if (resolvedIntel && !intelByUrl[url]) {
+      intelByUrl[url] = resolvedIntel;
+    }
+  });
+
+  return intelByUrl;
+}
+
+async function collectGraphExtraction(
+  ctx: any,
+  memory: any,
+): Promise<EntityGraph | null> {
+  if (!memory?._id) return null;
+
+  const features: any[] = Array.isArray(memory.features) ? memory.features : [];
+  const graphTask = features.find((feature) => feature?.type === "graph_extraction");
+  if (!graphTask) return null;
+
+  let taskResults: any[] = await ctx.runQuery(
+    api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+    { memoryId: memory._id },
+  );
+
+  let result = taskResults.find((item) => item?.taskId === graphTask.id);
+
+  if (!result) {
+    try {
+      await ctx.runAction(
+        internal.domains.research.dailyBriefWorker.runNextTaskInternal,
+        { memoryId: memory._id, taskId: graphTask.id },
+      );
+    } catch (err: any) {
+      console.warn("[dailyMorningBrief] graph extraction task failed:", err?.message || err);
+      return null;
+    }
+
+    taskResults = await ctx.runQuery(
+      api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
+      { memoryId: memory._id },
+    );
+    result = taskResults.find((item) => item?.taskId === graphTask.id);
+  }
+
+  if (!result || typeof result?.resultMarkdown !== "string") return null;
+  const parsed = extractJsonPayload(result.resultMarkdown);
+  return normalizeEntityGraph(parsed);
 }
 
 function extractShortName(url: string): string {
@@ -599,6 +1813,10 @@ function generateNarrativeThesis(topStories: TopStory[], feedItems: FeedItemLite
     thesis = `Capital moves big: ${clipText(lead.title, 55)}.`;
   } else if (leadLower.includes("billion")) {
     thesis = `Major deal alert: ${clipText(lead.title, 55)}.`;
+  } else if (leadLower.includes("layoff") || leadLower.includes("restructur") || leadLower.includes("regret")) {
+    thesis = `Enterprise reset: ${clipText(lead.title, 55)}.`;
+  } else if (leadLower.includes("clinical") || leadLower.includes("trial") || leadLower.includes("alzheimer") || leadLower.includes("cancer")) {
+    thesis = `Science signal: ${clipText(lead.title, 55)}.`;
   } else if (lead.source === "GitHub") {
     const repoName = extractShortName(lead.url);
     thesis = `Developer spotlight on **${repoName}** as it trends across the community.`;
@@ -626,134 +1844,390 @@ function formatTrendIndicator(stat: any): string {
   const label = stat.label ?? "";
   const labelLower = label.toLowerCase();
 
-  // Determine if metric should be inverted (lower = better)
   const invertedMetrics = ["fail", "latency", "error", "bug"];
   const isInverted = invertedMetrics.some((m) => labelLower.includes(m));
 
-  // Get indicator and context
-  let indicator = "";
-  let context = "";
-
-  if (labelLower.includes("fail") && value.includes("0")) {
-    indicator = "✔";
+  let context = "Flat";
+  if (labelLower.includes("fail") && String(value).includes("0")) {
     context = "Stable";
   } else if (trend === "up") {
-    indicator = isInverted ? "▲" : "▲";
     context = isInverted ? "Watch" : "Rising";
   } else if (trend === "down") {
-    indicator = isInverted ? "▼" : "▼";
     context = isInverted ? "Improving" : "Falling";
-  } else {
-    indicator = "─";
-    context = "Flat";
   }
 
-  return `${label} ${value} ${indicator}`;
+  return `${label} ${value} (${context})`;
 }
 
 function buildNtfyDigestPayload(args: {
   dateString?: string;
   sourceSummary?: any;
   dashboardMetrics?: any;
+  previousDashboardMetrics?: any;
   feedItems?: FeedItemLite[];
   executiveBrief?: any;
+  storySummaries?: Record<string, string>;
+  storyIntel?: Record<string, StoryIntel>;
+  coverageSummaries?: CoverageSummaryItem[];
+  coverageRollup?: CoverageRollup | null;
+  entityGraph?: EntityGraph | null;
   briefRecordStatus?: string;
   evidence?: Array<{ source?: string }>;
 }): { title: string; body: string } {
   const dateLabel = args.dateString ?? new Date().toISOString().slice(0, 10);
   const feedItems = args.feedItems ?? [];
+  const storySummaries = args.storySummaries ?? {};
+  const storyIntel = args.storyIntel ?? {};
+  const coverageSummaries = Array.isArray(args.coverageSummaries) ? args.coverageSummaries : [];
+  const coverageRollup = args.coverageRollup ?? null;
+  const entityGraph = args.entityGraph ?? null;
 
   const keyStats = args.dashboardMetrics?.keyStats ?? [];
-  const topStories = getTopStories(feedItems, 5);
+  const topStories = getTopStories(feedItems, 14);
+  const leadCandidates = getRankedLeadStories(feedItems, 10);
+  const leadWithSummaries = leadCandidates.filter(
+    (story) => story.url && (storySummaries[story.url] || storyIntel[story.url]),
+  );
+  const leadStory = leadWithSummaries[0] ?? leadCandidates[0] ?? topStories[0];
+  const storiesWithSummaries = topStories.filter(
+    (story) => story.url && storySummaries[story.url],
+  );
+  const leadIntel = leadStory?.url ? storyIntel[leadStory.url] : null;
+  const leadSummary =
+    leadIntel?.summary ||
+    (leadStory?.url ? storySummaries[leadStory.url] : "");
+  const bySource = args.sourceSummary?.bySource ?? {};
+  const byCategory = args.sourceSummary?.byCategory ?? {};
+  const topSourcesLine = formatTopSourcesWithLinks(Object.entries(bySource), 4);
+  const topCategoriesLine = formatTopList(Object.entries(byCategory), 4);
+  const trendingTags = getTopTags(feedItems, args.sourceSummary?.topTrending ?? []);
+  const leadLink = leadStory?.url || DASHBOARD_URL;
+  const editorTake =
+    leadIntel?.lesson ||
+    (leadSummary ? extractWhyItMatters(leadSummary) : "");
+  const deltaSummary = buildDeltaSummary(
+    args.dashboardMetrics,
+    args.previousDashboardMetrics,
+    3,
+  );
 
   // Generate narrative thesis from actual content (not metadata)
   const llmSynthesis = args.executiveBrief?.actII?.synthesis;
   const isBoilerplate = !llmSynthesis || llmSynthesis.includes("feed clusters around");
-  const narrativeThesis = generateNarrativeThesis(topStories, feedItems);
+  const narrativeThesis = generateNarrativeThesis(
+    leadCandidates.length ? leadCandidates : topStories,
+    feedItems,
+  );
   const synthesis = isBoilerplate ? narrativeThesis : llmSynthesis;
 
   // Build the 3-Act narrative
-  const lines: string[] = [];
+  const buildDigestLines = (options: {
+    signalLimit: number;
+    quickHitLimit: number;
+    synthesisLen: number;
+    leadSummaryLen: number;
+    narrativeLen: number;
+    signalSummaryLen: number;
+    quickHitSummaryLen: number;
+    editorTakeLen: number;
+    signalDetailLen: number;
+    signalQuoteLen: number;
+  }): string[] => {
+    const lines: string[] = [];
+    const leadLinkLabel = leadStory?.url ? "Source" : "Dashboard";
 
     // === HEADER ===
     lines.push(`**Morning Dossier** ${dateLabel}`);
-    lines.push(`Summary: ${clipText(narrativeThesis, 160)}`);
-    lines.push(`[Open Full Dashboard](https://nodebench-ai.vercel.app/)`);
+    lines.push(`Summary: ${clipText(synthesis, options.synthesisLen)} ${formatMarkdownLink(leadLinkLabel, leadLink)}`);
+    if (leadStory?.url) {
+      lines.push(`Lead: ${formatMarkdownLink(clipText(leadStory.title, 85), leadStory.url)}`);
+      const leadSummaryLine = leadSummary
+        ? clipText(leadSummary, options.leadSummaryLen)
+        : leadStory.summary
+          ? clipText(leadStory.summary, options.leadSummaryLen)
+          : "";
+      if (leadSummaryLine) lines.push(`Lead context: ${leadSummaryLine} ${formatMarkdownLink("Source", leadStory.url)}`);
+      if (editorTake) {
+        lines.push(`Editor's Take: ${clipText(editorTake, options.editorTakeLen)} ${formatMarkdownLink("Source", leadStory.url)}`);
+      }
+    }
+    lines.push(formatMarkdownLink("Open Full Dashboard", DASHBOARD_URL));
     lines.push("");
 
-  // === ACT I: THE SETUP (Narrative thesis, not metadata) ===
-  lines.push("**ACT I: The Setup**");
-  // Lead with the thesis - what this day MEANS, not how many items
-  lines.push(clipText(narrativeThesis, 200));
-  // Compact pulse with trend indicators
-  if (keyStats.length > 0) {
-    const pulseFormatted = keyStats
-      .slice(0, 3)
-      .map(formatTrendIndicator)
-      .join(" | ");
-    lines.push(`_Pulse: ${pulseFormatted}_`);
-  }
+    // === ACT I: THE SETUP (Narrative thesis, not metadata) ===
+    lines.push("**ACT I: The Setup**");
+    lines.push(`${clipText(narrativeThesis, options.narrativeLen)} ${formatMarkdownLink(leadLinkLabel, leadLink)}`);
+    if (topSourcesLine) {
+      const sourcesLine = `Sources: ${topSourcesLine}`;
+      lines.push(
+        lineHasLink(sourcesLine)
+          ? sourcesLine
+          : `${sourcesLine} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`,
+      );
+    }
+    if (topCategoriesLine) {
+      lines.push(`Sector mix: ${topCategoriesLine} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
+    }
+    if (trendingTags.length > 0) {
+      lines.push(`Trending: ${trendingTags.join(" ")} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
+    }
+    if (keyStats.length > 0) {
+      const pulseFormatted = keyStats
+        .slice(0, 3)
+        .map(formatTrendIndicator)
+        .join(" | ");
+      lines.push(`**Pulse:** ${pulseFormatted} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
+    }
 
-  // === ACT II: THE SIGNAL ===
-  lines.push("");
-  lines.push("**ACT II: The Signal**");
+    lines.push("");
+    lines.push("**Numbers that matter**");
+    if (deltaSummary) {
+      lines.push(`Largest deltas: ${deltaSummary} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
+    } else {
+      lines.push(`Largest deltas: baseline building ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
+    }
+    if (topSourcesLine) {
+      const sourcesLine = `Top sources: ${topSourcesLine}`;
+      lines.push(
+        lineHasLink(sourcesLine)
+          ? sourcesLine
+          : `${sourcesLine} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`,
+      );
+    }
+    const fastestRisers = getTopStories(feedItems, 3).filter((story) => story.url);
+    if (fastestRisers.length > 0) {
+      const riserLine = fastestRisers
+        .map((story) => formatMarkdownLink(clipText(story.title, 40), story.url))
+        .join(", ");
+      lines.push(`Fastest risers: ${riserLine}`);
+    }
 
-  // Top signals with markdown links and summaries
-  const signals = args.executiveBrief?.actII?.signals ?? [];
-  const seenHeadlines = new Set<string>();
-  const uniqueSignals = signals.filter((s: any) => {
-    const h = (s.headline ?? "").toLowerCase().trim();
-    if (seenHeadlines.has(h)) return false;
-    seenHeadlines.add(h);
-    return true;
-  }).slice(0, 3);
+    if (coverageRollup?.overallSummary || coverageSummaries.length > 0) {
+      lines.push("");
+      lines.push("**Coverage Rollup**");
+      const rollupLine = coverageRollup?.overallSummary
+        ? clipText(coverageRollup.overallSummary, options.narrativeLen)
+        : `Coverage includes ${coverageSummaries.length} summarized items.`;
+      lines.push(`${rollupLine} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
+      const sourceSummaries = Array.isArray(coverageRollup?.sourceSummaries)
+        ? coverageRollup.sourceSummaries
+        : [];
+      sourceSummaries.slice(0, 4).forEach((entry) => {
+        const count = typeof entry.count === "number" ? ` (${entry.count})` : "";
+        lines.push(`- ${entry.source}${count}: ${clipText(entry.summary, 120)}`);
+      });
+      if (coverageSummaries.length > 0) {
+        lines.push(`Full coverage: ${coverageSummaries.length} summaries ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
+      }
+    }
 
-  if (uniqueSignals.length > 0) {
-    uniqueSignals.forEach((signal: any, idx: number) => {
-      const url = signal.evidence?.[0]?.url ?? "";
+    // === ACT II: THE SIGNAL ===
+    lines.push("");
+    lines.push("**ACT II: The Signal**");
+
+    const signals = args.executiveBrief?.actII?.signals ?? [];
+    const seenHeadlines = new Set<string>();
+    const usedUrls = new Set<string>();
+    if (leadStory?.url) usedUrls.add(leadStory.url);
+
+    const uniqueSignals = signals.filter((s: any) => {
+      const h = (s.headline ?? "").toLowerCase().trim();
+      if (seenHeadlines.has(h)) return false;
+      seenHeadlines.add(h);
+      return true;
+    });
+
+    const signalItems: Array<{
+      title: string;
+      url: string;
+      summary?: string;
+      intel?: StoryIntel;
+    }> = [];
+    uniqueSignals.forEach((signal: any) => {
+      if (signalItems.length >= options.signalLimit) return;
+      const url = (signal.evidence?.[0]?.url ?? "").trim();
+      if (!url || usedUrls.has(url)) return;
+      const summary = storySummaries[url];
+      const intel = storyIntel[url];
+      if (!summary && !intel) return;
       const headline = clipText(signal.headline ?? "Signal", 65);
-      const signalSynthesis = signal.synthesis && !signal.synthesis.includes("Article from")
-        ? clipText(signal.synthesis, 70)
-        : "";
+      signalItems.push({ title: headline, url, summary, intel });
+      usedUrls.add(url);
+    });
 
-      if (url) {
-        lines.push(`${idx + 1}. [${headline}](${url})`);
-        if (signalSynthesis) {
-          lines.push(`   _${signalSynthesis}_`);
+    if (signalItems.length < options.signalLimit) {
+      const fallbackStories = storiesWithSummaries
+        .filter((story) => story.url && !usedUrls.has(story.url))
+        .slice(0, options.signalLimit - signalItems.length);
+      fallbackStories.forEach((story) => {
+        const intel = storyIntel[story.url];
+        signalItems.push({
+          title: clipText(story.title, 65),
+          url: story.url,
+          summary: storySummaries[story.url],
+          intel,
+        });
+        usedUrls.add(story.url);
+      });
+    }
+
+    if (signalItems.length > 0) {
+      signalItems.forEach((signal, idx) => {
+        const intelLines = formatIntelLines({
+          index: idx + 1,
+          title: signal.title,
+          url: signal.url,
+          intel: signal.intel,
+          fallbackSummary: signal.summary,
+          summaryLen: options.signalSummaryLen,
+          detailLen: options.signalDetailLen,
+          quoteLen: options.signalQuoteLen,
+        });
+        lines.push(...intelLines);
+      });
+    } else if (topStories.length > 0) {
+      const fallback = topStories
+        .filter((story) => story.url && storySummaries[story.url])
+        .slice(0, options.signalLimit);
+      fallback.forEach((story, idx) => {
+        const intel = storyIntel[story.url];
+        const intelLines = formatIntelLines({
+          index: idx + 1,
+          title: clipText(story.title, 65),
+          url: story.url,
+          intel,
+          fallbackSummary: storySummaries[story.url],
+          summaryLen: options.signalSummaryLen,
+          detailLen: options.signalDetailLen,
+          quoteLen: options.signalQuoteLen,
+        });
+        lines.push(...intelLines);
+        usedUrls.add(story.url);
+      });
+    }
+
+    const quickHits = storiesWithSummaries
+      .filter((story) => story.url && !usedUrls.has(story.url))
+      .slice(0, options.quickHitLimit);
+    if (quickHits.length > 0) {
+      lines.push("");
+      lines.push("**Quick Hits**");
+      quickHits.forEach((story) => {
+        const intel = storyIntel[story.url];
+        const summary = storySummaries[story.url] || intel?.summary || intel?.lesson || "";
+        const summaryLine = summary ? ` - ${clipText(summary, options.quickHitSummaryLen)}` : "";
+        lines.push(`- ${formatMarkdownLink(clipText(story.title, 70), story.url)}${summaryLine}`);
+      });
+    }
+
+    const metricsComparables = buildMetricsComparables(
+      feedItems,
+      args.sourceSummary,
+      topSourcesLine,
+      topCategoriesLine,
+    );
+    if (metricsComparables.length > 0) {
+      lines.push("");
+      lines.push("**Metrics & Comparables**");
+      metricsComparables.forEach((line, idx) => {
+        if (lineHasLink(line) || idx !== 0) {
+          lines.push(line);
+        } else {
+          lines.push(`${line} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
         }
-      } else {
-        lines.push(`${idx + 1}. ${headline}`);
-      }
-    });
-  } else if (topStories.length > 0) {
-    // Fallback to top stories if no signals
-    topStories.slice(0, 3).forEach((story, idx) => {
-      const shortSummary = story.summary && !story.summary.includes("Trending on")
-        ? clipText(story.summary, 55)
-        : "";
-      lines.push(`${idx + 1}. [${clipText(story.title, 65)}](${story.url})`);
-      if (shortSummary) {
-        lines.push(`   _${shortSummary}_`);
-      }
-    });
+      });
+    }
+
+    const personaImplications = buildPersonaImplications(
+      feedItems,
+      storySummaries,
+      storyIntel,
+    );
+    if (personaImplications.length > 0) {
+      lines.push("");
+      lines.push("**What this means for...**");
+      personaImplications.forEach((line) => lines.push(`- ${line}`));
+    }
+
+    const networkEffects = buildNetworkEffectsLines(entityGraph, 4);
+    if (networkEffects.length > 0) {
+      lines.push("");
+      lines.push("**Network Effects**");
+      networkEffects.forEach((line) => {
+        lines.push(`- ${line} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
+      });
+    }
+
+    // === ACT III: THE MOVE ===
+    lines.push("");
+    lines.push("**ACT III: The Move**");
+
+    const personaActions = buildPersonaActions(feedItems);
+    personaActions.forEach((action) => lines.push(`- ${action}`));
+
+    // === FOOTER ===
+    lines.push("");
+    lines.push("---");
+    lines.push(formatMarkdownLink("Open Full Dashboard", DASHBOARD_URL));
+
+    return lines;
+  };
+
+  const maxBodyLength = 3800;
+  let lines = buildDigestLines({
+    signalLimit: 8,
+    quickHitLimit: 8,
+    synthesisLen: 170,
+    leadSummaryLen: 190,
+    narrativeLen: 200,
+    signalSummaryLen: 120,
+    quickHitSummaryLen: 110,
+    editorTakeLen: 140,
+    signalDetailLen: 120,
+    signalQuoteLen: 90,
+  });
+
+  let body = sanitizeText(lines.join("\n"));
+  if (body.length > maxBodyLength) {
+    lines = buildDigestLines({
+      signalLimit: 7,
+      quickHitLimit: 7,
+      synthesisLen: 140,
+    leadSummaryLen: 160,
+    narrativeLen: 170,
+    signalSummaryLen: 90,
+    quickHitSummaryLen: 90,
+    editorTakeLen: 110,
+    signalDetailLen: 100,
+    signalQuoteLen: 70,
+  });
+    body = sanitizeText(lines.join("\n"));
+  }
+  if (body.length > maxBodyLength) {
+    lines = buildDigestLines({
+      signalLimit: 6,
+      quickHitLimit: 6,
+      synthesisLen: 120,
+    leadSummaryLen: 130,
+    narrativeLen: 140,
+    signalSummaryLen: 70,
+    quickHitSummaryLen: 70,
+    editorTakeLen: 90,
+    signalDetailLen: 90,
+    signalQuoteLen: 60,
+  });
+    body = sanitizeText(lines.join("\n"));
+  }
+  if (body.length > maxBodyLength) {
+    const suffix = `\n\n${formatMarkdownLink("Open Full Dashboard", DASHBOARD_URL)}`;
+    const limit = Math.max(0, maxBodyLength - suffix.length);
+    body = `${body.slice(0, limit).trim()}\n${suffix}`;
   }
 
-  // === ACT III: THE MOVE ===
-  lines.push("");
-  lines.push("**ACT III: The Move**");
-
-  // Action-oriented persona recommendations
-  const personaActions = buildPersonaActions(feedItems);
-  personaActions.forEach((action) => lines.push(`• ${action}`));
-
-  // === FOOTER ===
-  lines.push("");
-  lines.push("---");
-  lines.push("[Open Full Dashboard](https://nodebench-ai.vercel.app/)");
-
+  const titleSuffix = leadStory?.title ? ` | ${clipText(leadStory.title, 55)}` : "";
   return {
-    title: `Morning Dossier ${dateLabel}`,
-    body: sanitizeText(lines.join("\n")),
+    title: `Morning Dossier ${dateLabel}${titleSuffix}`,
+    body,
   };
 }
 
@@ -775,15 +2249,21 @@ function buildPersonaActions(feedItems: FeedItemLite[]): string[] {
       keywords: ["funding", "raise", "series", "acquisition", "nvidia", "billion", "ipo", "valuation", "deal"],
       action: (item: FeedItemLite) => {
         const shortName = extractShortName(item.url ?? "");
+        const url = (item.url ?? "").trim();
+        const linkedName = url ? formatMarkdownLink(shortName, url) : shortName;
         // Avoid name:name echo - use summary or a smart fallback
         const context = item.summary && !item.summary.includes("Trending")
           ? clipText(item.summary, 45)
           : clipText(item.title, 45);
         // Don't repeat shortName if it's already in context
         if (context.toLowerCase().includes(shortName.toLowerCase())) {
-          return `Track: ${context}`;
+          return url
+            ? `Track: ${context} ${formatMarkdownLink("Source", url)}`
+            : `Track: ${context} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`;
         }
-        return `Track **${shortName}**: ${context}`;
+        return url
+          ? `Track ${linkedName}: ${context}`
+          : `Track ${linkedName}: ${context} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`;
       },
     },
     {
@@ -791,21 +2271,31 @@ function buildPersonaActions(feedItems: FeedItemLite[]): string[] {
       keywords: ["github", "repo", "release", "library", "sdk", "runtime", "benchmark", "tool"],
       action: (item: FeedItemLite) => {
         const shortName = extractShortName(item.url ?? "");
+        const url = (item.url ?? "").trim();
+        const linkedName = url ? formatMarkdownLink(shortName, url) : shortName;
         // Provide actionable context
         const desc = item.summary && !item.summary.includes("Trending")
           ? clipText(item.summary, 40)
           : null;
         if (desc) {
-          return `Evaluate **${shortName}** - ${desc}`;
+          return url
+            ? `Evaluate ${linkedName} - ${desc}`
+            : `Evaluate ${linkedName} - ${desc} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`;
         }
-        return `Evaluate **${shortName}** for your stack`;
+        return url
+          ? `Evaluate ${linkedName} for your stack`
+          : `Evaluate ${linkedName} for your stack ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`;
       },
     },
     {
       label: "Researchers",
       keywords: ["paper", "arxiv", "study", "model", "architecture", "benchmark", "research"],
       action: (item: FeedItemLite) => {
-        return `Review: ${clipText(item.title, 55)}`;
+        const url = (item.url ?? "").trim();
+        const title = clipText(item.title, 55);
+        return url
+          ? `Review: ${formatMarkdownLink(title, url)}`
+          : `Review: ${title} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`;
       },
     },
   ];
@@ -835,7 +2325,7 @@ function buildPersonaActions(feedItems: FeedItemLite[]): string[] {
 
   // Always include a default action
   if (actions.length === 0) {
-    actions.push("Review the dashboard for today's highlights");
+    actions.push(`Review the dashboard for today's highlights ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
   }
 
   return actions;
