@@ -41,3 +41,28 @@ export const storeDashboardMetrics = internalMutation({
     return { snapshotId, dateString, version };
   },
 });
+
+export const patchDashboardEntityGraph = internalMutation({
+  args: {
+    snapshotId: v.id("dailyBriefSnapshots"),
+    entityGraph: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const snapshot = await ctx.db.get(args.snapshotId);
+    if (!snapshot) throw new Error("Snapshot not found");
+
+    const currentMetrics =
+      snapshot.dashboardMetrics && typeof snapshot.dashboardMetrics === "object"
+        ? snapshot.dashboardMetrics
+        : {};
+
+    await ctx.db.patch(snapshot._id, {
+      dashboardMetrics: {
+        ...currentMetrics,
+        entityGraph: args.entityGraph,
+      },
+    });
+
+    return { ok: true };
+  },
+});

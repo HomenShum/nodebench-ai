@@ -1,0 +1,2 @@
+export { QuickCaptureWidget } from './QuickCaptureWidget';
+

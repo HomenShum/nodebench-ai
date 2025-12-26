@@ -5,7 +5,8 @@
       "Bash(npx tsc:*)",
       "Bash(npx convex deploy:*)",
       "Bash(npx convex dev:*)",
-      "Bash(npx convex run:*)"
+      "Bash(npx convex run:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

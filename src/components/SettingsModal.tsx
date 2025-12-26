@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { useAuthActions } from "@convex-dev/auth/react";
 import {
   X,
   Settings as SettingsIcon,
@@ -23,9 +24,11 @@ import {
   Slack,
   Webhook,
   Phone,
+  LogOut,
 } from "lucide-react";
 import { ApiUsageDisplay } from "./ApiUsageDisplay";
 import { NotificationActivityPanel } from "./NotificationActivityPanel";
+import { ThemeCustomizer } from "./ThemeCustomizer";
 
 // SMS Usage Stats Component
 function SmsUsageStats() {
@@ -130,6 +133,9 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const [keyInputs, setKeyInputs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<Record<string, "save" | "delete" | null>>({});
   const [billingBusy, setBillingBusy] = useState(false);
+
+  // Auth actions for sign out
+  const { signOut } = useAuthActions();
 
   // Keep the active tab in sync with caller preference when opening
   useEffect(() => {
@@ -663,6 +669,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
               </div>
             ) : active === "preferences" ? (
               <div className="space-y-6">
+                {/* Theme Customization */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900">Theme & Appearance</h3>
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <ThemeCustomizer />
+                  </div>
+                </div>
+
                 {/* Display & Organization */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-900">Display & Organization</h3>
@@ -1019,7 +1033,44 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 {/* Account Actions */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-900">Account Actions</h3>
-                  
+
+                  {/* Current Session - Log Out */}
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-sm font-semibold">Current Session</div>
+                      {sessions && sessions.find(s => s.isCurrent) && (
+                        <div className="text-xs text-gray-500">
+                          Active since {new Date(sessions.find(s => s.isCurrent)!._creationTime).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-100">
+                      <div className="flex items-center gap-2 text-xs text-blue-900">
+                        <Shield className="h-3.5 w-3.5" />
+                        <span className="font-medium">This Device</span>
+                      </div>
+                      <div className="text-xs text-blue-700 mt-1">
+                        You are currently signed in on this browser
+                      </div>
+                    </div>
+                    <button
+                      className="w-full px-3 py-2 rounded border border-gray-200 hover:bg-gray-100 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      onClick={() => {
+                        void signOut();
+                        toast.success("Signed out successfully");
+                        onClose();
+                      }}
+                      disabled={user === null}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Log Out of This Device</span>
+                    </button>
+                    <div className="text-xs text-gray-500 mt-2 text-center">
+                      To manage other sessions, go to <strong>Account & Security</strong>
+                    </div>
+                  </div>
+
+                  {/* Data Management */}
                   <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <div className="text-sm font-semibold mb-3">Data Management</div>
                     <div className="space-y-3">
@@ -1037,7 +1088,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           Download a copy of your data in JSON format
                         </div>
                       </button>
-                      
+
                       <button
                         className="w-full text-left px-3 py-2 rounded border border-red-500/20 hover:bg-red-500/10 text-sm transition-colors"
                         onClick={() => {
@@ -1791,9 +1842,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 {/* Active Sessions */}
                 <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm font-semibold flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Active Sessions
+                    <div>
+                      <div className="text-sm font-semibold flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Active Sessions Across All Devices
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        View and manage all devices where you're currently signed in
+                      </div>
                     </div>
                     <button
                       className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 text-xs disabled:opacity-50"
@@ -1811,7 +1867,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       disabled={user === null || signingOutOthers || !((sessions ?? []).some((s) => !s.isCurrent))}
                       title={user === null ? "Sign in" : undefined}
                     >
-                      {signingOutOthers ? "Signing out…" : "Sign out other sessions"}
+                      {signingOutOthers ? "Signing out…" : "Sign out other devices"}
                     </button>
                   </div>
                   {sessions === undefined ? (
@@ -1823,25 +1879,41 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       {sessions
                         .slice()
                         .sort((a, b) => b._creationTime - a._creationTime)
-                        .map((s) => {
+                        .map((s, index) => {
                           const created = new Date(s._creationTime).toLocaleString();
                           const expires = new Date(s.expirationTime).toLocaleString();
+                          const deviceLabel = s.isCurrent
+                            ? "This Device (Current Browser)"
+                            : `Device ${sessions.filter(sess => !sess.isCurrent).indexOf(s) + 1}`;
                           return (
-                            <div key={s._id} className="flex items-center justify-between p-3 rounded border border-gray-200 bg-gray-50">
-                              <div className="text-xs">
+                            <div key={s._id} className={`flex items-center justify-between p-3 rounded border ${
+                              s.isCurrent
+                                ? "border-blue-200 bg-blue-50"
+                                : "border-gray-200 bg-gray-50"
+                            }`}>
+                              <div className="text-xs flex-1">
                                 <div className="flex items-center gap-2">
-                                  <User className="h-3.5 w-3.5" />
-                                  <span className="font-medium">{s.isCurrent ? "This device" : "Session"}</span>
+                                  <Shield className={`h-3.5 w-3.5 ${s.isCurrent ? "text-blue-600" : "text-gray-500"}`} />
+                                  <span className={`font-medium ${s.isCurrent ? "text-blue-900" : "text-gray-900"}`}>
+                                    {deviceLabel}
+                                  </span>
                                   {s.isCurrent && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700">Current</span>
+                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700">
+                                      <CheckCircle className="h-2.5 w-2.5" />
+                                      Active Now
+                                    </span>
                                   )}
                                 </div>
-                                <div className="mt-1 text-[11px] text-gray-500">Started: {created}</div>
-                                <div className="text-[11px] text-gray-500">Expires: {expires}</div>
+                                <div className={`mt-1 text-[11px] ${s.isCurrent ? "text-blue-700" : "text-gray-500"}`}>
+                                  Signed in: {created}
+                                </div>
+                                <div className={`text-[11px] ${s.isCurrent ? "text-blue-600" : "text-gray-500"}`}>
+                                  Expires: {expires}
+                                </div>
                               </div>
                               {!s.isCurrent && (
                                 <button
-                                  className="px-2 py-1 text-xs rounded border border-gray-200 hover:bg-gray-100 text-red-600 disabled:opacity-50"
+                                  className="px-2 py-1 text-xs rounded border border-red-200 hover:bg-red-50 text-red-600 disabled:opacity-50 flex items-center gap-1"
                                   onClick={() => {
                                     if (user === null) {
                                       toast.error("Please sign in");
@@ -1855,6 +1927,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                                   }}
                                   disabled={user === null || signingOutSessionId === s._id}
                                 >
+                                  <LogOut className="h-3 w-3" />
                                   {signingOutSessionId === s._id ? "Signing out…" : "Sign out"}
                                 </button>
                               )}

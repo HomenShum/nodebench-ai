@@ -67,10 +67,10 @@ export const updateFocus = mutation({
       v.literal("panel_action"),
     )),
   },
-  returns: v.id("dossierFocusState"),
+  returns: v.union(v.id("dossierFocusState"), v.null()),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) return null;
 
     const existing = await ctx.db
       .query("dossierFocusState")

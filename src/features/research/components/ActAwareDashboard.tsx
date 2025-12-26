@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StickyDashboard, type WorkflowStep } from './StickyDashboard';
-import type { DashboardState, DailyBriefPayload, SourceSummary, Signal, Evidence } from '@/features/research/types';
+import type { DashboardState, DailyBriefPayload, SourceSummary, Signal, Evidence, EntityGraph } from '@/features/research/types';
 import { ChartDataPointContext } from './EnhancedLineChart';
 import { Activity, Share2, Zap } from 'lucide-react';
 import { EvidencePanel } from './EvidencePanel';
+import { EntityRadar } from './EntityRadar';
 
 interface ActAwareDashboardProps {
   activeAct: 'actI' | 'actII' | 'actIII';
@@ -23,7 +24,13 @@ interface ActAwareDashboardProps {
 // ------------------------------------------------------------------
 // ACT II: THE NETWORK (Context View)
 // ------------------------------------------------------------------
-function ActIIChangeView({ brief }: { brief: DailyBriefPayload | null }) {
+function ActIIChangeView({
+  brief,
+  graph
+}: {
+  brief: DailyBriefPayload | null;
+  graph?: EntityGraph | null;
+}) {
   // Extract key "Change" drivers from Act II signals
   const drivers = brief?.actII?.signals?.slice(0, 4) || [];
 
@@ -40,6 +47,8 @@ function ActIIChangeView({ brief }: { brief: DailyBriefPayload | null }) {
           </span>
         </div>
       </div>
+
+      <EntityRadar graph={graph ?? null} />
 
       <div className="space-y-4">
         {drivers.length === 0 ? (
@@ -59,19 +68,6 @@ function ActIIChangeView({ brief }: { brief: DailyBriefPayload | null }) {
             </div>
           ))
         )}
-      </div>
-
-      {/* Decorative "Graph" Connector Visuals */}
-      <div className="pt-8 opacity-20">
-        <div className="flex justify-between items-end h-16 border-b border-emerald-900">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="w-px bg-emerald-900" style={{ height: `${Math.random() * 100}%` }} />
-          ))}
-        </div>
-        <div className="text-[9px] font-mono text-emerald-900 mt-2 flex justify-between">
-          <span>RELATIONSHIP_STRENGTH</span>
-          <span>HIGH</span>
-        </div>
       </div>
     </div>
   );
@@ -172,7 +168,7 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
               onDataPointClick={onDataPointClick}
             />
             {actEvidence.length > 0 && (
-              <EvidencePanel evidence={actEvidence} title="Sources for Today" />
+              <EvidencePanel evidence={actEvidence} title="Sources for Today" maxVisible={actEvidence.length} />
             )}
           </motion.div>
         )}
@@ -187,9 +183,9 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
             transition={{ duration: 0.4, ease: "circOut" }}
             className="w-full"
           >
-            <ActIIChangeView brief={executiveBrief} />
+            <ActIIChangeView brief={executiveBrief} graph={dashboardData.entityGraph ?? null} />
             {actEvidence.length > 0 && (
-              <EvidencePanel evidence={actEvidence} title="Brief Sources" />
+              <EvidencePanel evidence={actEvidence} title="Brief Sources" maxVisible={actEvidence.length} />
             )}
           </motion.div>
         )}

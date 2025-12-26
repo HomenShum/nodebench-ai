@@ -190,3 +190,39 @@ export const updateMemoryContext = internalMutation({
     });
   },
 });
+
+export const appendFeatures = internalMutation({
+  args: {
+    memoryId: v.id("dailyBriefMemories"),
+    features: v.array(v.any()),
+  },
+  handler: async (ctx, args) => {
+    const memory = await ctx.db.get(args.memoryId);
+    if (!memory) throw new Error("Memory not found");
+
+    const existing = Array.isArray(memory.features) ? (memory.features as any[]) : [];
+    const existingIds = new Set(
+      existing.map((feature) => feature?.id).filter((id) => typeof id === "string"),
+    );
+
+    let added = 0;
+    const next = [...existing];
+    for (const rawFeature of args.features ?? []) {
+      const feature = stripReservedKeys(rawFeature) as any;
+      const id = typeof feature?.id === "string" ? feature.id : null;
+      if (!id || existingIds.has(id)) continue;
+      existingIds.add(id);
+      next.push(feature);
+      added += 1;
+    }
+
+    if (added > 0) {
+      await ctx.db.patch(memory._id, {
+        features: next,
+        updatedAt: Date.now(),
+      });
+    }
+
+    return { added };
+  },
+});

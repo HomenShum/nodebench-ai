@@ -87,6 +87,8 @@ function BriefingSectionInner({
     executiveBrief,
     briefingDateString,
     sourceSummary,
+    coverageSummaries,
+    coverageRollup,
     isLoading,
     isUsingFallback,
     briefMemory,
@@ -94,6 +96,7 @@ function BriefingSectionInner({
 
   const [activeAct, setActiveAct] = useState<ActiveAct>('actI');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCoverageExpanded, setIsCoverageExpanded] = useState(false);
 
   const handleActChange = useCallback((act: ActiveAct) => {
     setActiveAct(act);
@@ -120,6 +123,30 @@ function BriefingSectionInner({
       setIsGenerating(false);
     }
   }, [briefMemory?._id, isGenerating]);
+
+  const coverageItems = useMemo(() => {
+    if (!Array.isArray(coverageSummaries)) return [];
+    return coverageSummaries
+      .map((item: any) => ({
+        title: typeof item?.title === 'string' ? item.title : 'Untitled',
+        summary: typeof item?.summary === 'string' ? item.summary : '',
+        url: typeof item?.url === 'string' ? item.url : undefined,
+        source: typeof item?.source === 'string' ? item.source : undefined,
+        category: typeof item?.category === 'string' ? item.category : undefined,
+      }))
+      .filter((item) => item.summary);
+  }, [coverageSummaries]);
+
+  const coverageSourceSummaries = useMemo(() => {
+    if (!coverageRollup || !Array.isArray((coverageRollup as any).sourceSummaries)) return [];
+    return (coverageRollup as any).sourceSummaries
+      .map((entry: any) => ({
+        source: typeof entry?.source === 'string' ? entry.source : 'Unknown',
+        summary: typeof entry?.summary === 'string' ? entry.summary : '',
+        count: typeof entry?.count === 'number' ? entry.count : null,
+      }))
+      .filter((entry: any) => entry.summary);
+  }, [coverageRollup]);
 
   const actI = executiveBrief?.actI;
   const actII = executiveBrief?.actII;
@@ -643,6 +670,75 @@ function BriefingSectionInner({
           </div>
         </div>
       </div>
+
+      {(coverageItems.length > 0 || coverageRollup?.overallSummary) && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-12">
+          <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Coverage Rollup</p>
+              <p className="text-base font-serif font-bold text-gray-900">Map-reduced synthesis</p>
+            </div>
+            <div className="text-sm text-stone-700 leading-relaxed">
+              {coverageRollup?.overallSummary
+                ? coverageRollup.overallSummary
+                : `Coverage spans ${coverageItems.length} summarized items across the feed.`}
+            </div>
+            {coverageSourceSummaries.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">By source</p>
+                {coverageSourceSummaries.slice(0, 6).map((entry, idx) => (
+                  <div key={`${entry.source}-${idx}`} className="text-xs text-stone-600">
+                    <span className="font-semibold text-stone-700">{entry.source}</span>
+                    {entry.count !== null && <span className="text-stone-400"> ({entry.count})</span>}
+                    <span className="text-stone-500"> — {entry.summary}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4 xl:col-span-2">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Full Coverage</p>
+                <p className="text-base font-serif font-bold text-gray-900">All article summaries</p>
+              </div>
+              {coverageItems.length > 12 && (
+                <button
+                  type="button"
+                  onClick={() => setIsCoverageExpanded((prev) => !prev)}
+                  className="text-[10px] font-bold uppercase tracking-widest text-stone-500 border border-stone-200 px-3 py-1 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                >
+                  {isCoverageExpanded ? 'Show fewer' : `Show all ${coverageItems.length}`}
+                </button>
+              )}
+            </div>
+            <div className="space-y-3 max-h-[480px] overflow-y-auto pr-2">
+              {(isCoverageExpanded ? coverageItems : coverageItems.slice(0, 12)).map((item, idx) => (
+                <div key={`${item.title}-${idx}`} className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3">
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                    <span>{item.source ?? 'Source'}</span>
+                    {item.category && <span className="text-stone-300">• {item.category}</span>}
+                  </div>
+                  {item.url ? (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-semibold text-stone-800 hover:text-emerald-900 transition-colors"
+                    >
+                      {item.title}
+                    </a>
+                  ) : (
+                    <div className="text-sm font-semibold text-stone-800">{item.title}</div>
+                  )}
+                  <div className="text-xs text-stone-600 mt-1">{item.summary}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Act Navigation */}
       <div className="flex items-center gap-4 mb-12 overflow-x-auto pb-6 scrollbar-hide">

@@ -9,9 +9,17 @@ import {
     Cpu,
     Terminal,
     ArrowRight,
-    Sparkles
+    Sparkles,
+    FileText,
+    CheckCircle2,
+    Bell,
+    TrendingUp,
+    Plus,
+    Clock
 } from 'lucide-react';
 import NumberFlow from '@number-flow/react';
+import { useQuery } from 'convex/react';
+import { api } from '../../../../convex/_generated/api';
 
 interface CinematicHomeProps {
     onEnterHub: () => void;
@@ -20,17 +28,11 @@ interface CinematicHomeProps {
 
 export default function CinematicHome({ onEnterHub, onEnterWorkspace }: CinematicHomeProps) {
     const [isHovered, setIsHovered] = useState(false);
-    const [systemEntropy, setSystemEntropy] = useState(14.2);
-    const [narrativeVelocity, setNarrativeVelocity] = useState(142);
 
-    // Mock "live" updates for atmosphere
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setSystemEntropy(prev => +(prev + (Math.random() * 0.4 - 0.2)).toFixed(1));
-            setNarrativeVelocity(prev => Math.floor(prev + (Math.random() * 10 - 5)));
-        }, 3000);
-        return () => clearInterval(interval);
-    }, []);
+    // Fetch user activity stats
+    const userStats = useQuery(api.domains.auth.userStats.getUserActivitySummary);
+    const greeting = useQuery(api.domains.auth.userStats.getGreetingMessage);
+    const insights = useQuery(api.domains.auth.userStats.getProductivityInsights);
 
     return (
         <div className="min-h-full bg-[#faf9f6] flex flex-col items-center justify-center p-8 relative overflow-hidden">
@@ -40,6 +42,86 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace }: Cinemati
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 rounded-full blur-[120px]" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-100/30 rounded-full blur-[120px]" />
             </div>
+
+            {/* Welcome Banner */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="absolute top-8 left-8 right-8 flex justify-between items-start z-10"
+            >
+                <div className="flex items-center gap-3">
+                    <span className="text-3xl">{greeting?.emoji || "👋"}</span>
+                    <div>
+                        <h1 className="text-2xl font-serif font-bold text-emerald-950">
+                            {greeting?.greeting || "Welcome"}{userStats?.userName ? `, ${userStats.userName}` : ""}
+                        </h1>
+                        <div className="flex items-center gap-2 text-sm text-stone-500 mt-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            {userStats?.lastActivityTime ? (
+                                <span>Last active {new Date(userStats.lastActivityTime).toLocaleDateString()}</span>
+                            ) : (
+                                <span>Start your journey today</span>
+                            )}
+                            {userStats && userStats.streakDays > 0 && (
+                                <>
+                                    <span className="mx-2">•</span>
+                                    <span className="flex items-center gap-1">
+                                        <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                                        {userStats.streakDays} day streak
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div className="flex gap-2">
+                    <QuickActionButton
+                        icon={<Plus className="w-4 h-4" />}
+                        label="New Document"
+                        onClick={onEnterWorkspace}
+                    />
+                    <QuickActionButton
+                        icon={<Bell className="w-4 h-4" />}
+                        label="Briefings"
+                        onClick={onEnterHub}
+                        badge={userStats?.unreadBriefings}
+                    />
+                </div>
+            </motion.div>
+
+            {/* Productivity Insights Banner */}
+            {insights && insights.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="absolute top-24 right-8 max-w-sm space-y-2 z-10"
+                >
+                    {insights.slice(0, 3).map((insight, idx) => (
+                        <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3 + idx * 0.1 }}
+                            className={`
+                                p-3 rounded-lg border backdrop-blur-md text-sm flex items-start gap-2
+                                ${insight.priority === 'high'
+                                    ? 'bg-red-50/80 border-red-200 text-red-900'
+                                    : insight.priority === 'medium'
+                                    ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+                                    : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                                }
+                            `}
+                        >
+                            <span className="text-lg">{insight.icon}</span>
+                            <span className="flex-1">{insight.message}</span>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            )}
 
             {/* 1. THE NEURAL ORB (Centerpiece) */}
             <div className="relative mb-16 group cursor-pointer" onClick={onEnterHub}>
@@ -84,25 +166,35 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace }: Cinemati
                 <MetricTag label="TEMPORAL_DRIFT" value="+0.04" color="text-indigo-600" className="bottom-8 -left-16" />
             </div>
 
-            {/* 2. SYSTEM STATUS HORIZON */}
-            <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+            {/* 2. PERSONALIZED STATS HORIZON */}
+            <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-4 gap-6 mb-20">
                 <StatusBox
-                    icon={<Terminal className="w-4 h-4" />}
-                    label="Narrative Velocity"
-                    value={narrativeVelocity}
-                    suffix="nodes/min"
+                    icon={<FileText className="w-4 h-4" />}
+                    label="Documents This Week"
+                    value={userStats?.documentsThisWeek || 0}
+                    suffix="created"
+                    color="text-blue-600"
+                />
+                <StatusBox
+                    icon={<CheckCircle2 className="w-4 h-4" />}
+                    label="Tasks Completed"
+                    value={userStats?.completedTasksThisWeek || 0}
+                    suffix="this week"
+                    color="text-green-600"
                 />
                 <StatusBox
                     icon={<Activity className="w-4 h-4" />}
-                    label="Entropy Level"
-                    value={systemEntropy}
-                    suffix="%"
+                    label="Active Tasks"
+                    value={userStats?.activeTasks || 0}
+                    suffix="pending"
+                    color="text-orange-600"
                 />
                 <StatusBox
                     icon={<Globe className="w-4 h-4" />}
-                    label="Knowledge Depth"
-                    value={4.2}
-                    suffix="M points"
+                    label="Total Knowledge"
+                    value={userStats?.totalDocuments || 0}
+                    suffix="documents"
+                    color="text-purple-600"
                 />
             </div>
 
@@ -162,24 +254,59 @@ function MetricTag({ label, value, color, className }: { label: string, value: s
     );
 }
 
-function StatusBox({ icon, label, value, suffix }: { icon: React.ReactNode, label: string, value: number, suffix: string }) {
+function StatusBox({ icon, label, value, suffix, color = "text-emerald-950" }: {
+    icon: React.ReactNode,
+    label: string,
+    value: number,
+    suffix: string,
+    color?: string
+}) {
     return (
         <div className="flex flex-col items-center text-center group">
             <motion.div
                 key={value}
                 initial={{ scale: 1 }}
-                animate={{ scale: [1, 1.1, 1], backgroundColor: ['rgba(0, 0, 0, 0)', 'rgba(16, 185, 129, 0.1)', 'rgba(0, 0, 0, 0)'] }}
+                animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 0.5 }}
-                className="p-2 bg-stone-100/50 rounded-lg text-stone-400 mb-3 border border-stone-200/20"
+                className={`p-2 bg-stone-100/50 rounded-lg mb-3 border border-stone-200/20 ${color}`}
             >
                 {icon}
             </motion.div>
             <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-1">{label}</div>
             <div className="flex items-baseline gap-1.5 overflow-hidden">
-                <NumberFlow value={value} className="text-3xl font-serif font-bold text-emerald-950" />
+                <NumberFlow value={value} className={`text-3xl font-serif font-bold ${color}`} />
                 <span className="text-[10px] font-serif italic text-stone-400">{suffix}</span>
             </div>
         </div>
+    );
+}
+
+function QuickActionButton({
+    icon,
+    label,
+    onClick,
+    badge
+}: {
+    icon: React.ReactNode,
+    label: string,
+    onClick: () => void,
+    badge?: number
+}) {
+    return (
+        <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onClick}
+            className="relative flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-md border border-stone-200 rounded-lg hover:bg-white hover:shadow-md transition-all text-sm font-medium text-stone-700 hover:text-emerald-950"
+        >
+            {icon}
+            <span>{label}</span>
+            {badge !== undefined && badge > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                    {badge > 9 ? '9+' : badge}
+                </span>
+            )}
+        </motion.button>
     );
 }
 

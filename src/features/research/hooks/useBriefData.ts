@@ -242,7 +242,7 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
     const memory = latestBriefMemory as any;
     const record = memory?.context?.executiveBriefRecord as ExecutiveBriefRecord | undefined;
 
-    if (record?.status === 'valid' && Array.isArray(record.evidence)) {
+    if (Array.isArray(record?.evidence) && record.evidence.length > 0) {
       return record.evidence;
     }
 
@@ -263,6 +263,16 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
   const sourceSummary = useMemo(() => {
     const memory = latestBriefMemory as any;
     return memory?.context?.sourceSummary ?? null;
+  }, [latestBriefMemory]);
+
+  const coverageSummaries = useMemo(() => {
+    const memory = latestBriefMemory as any;
+    return memory?.context?.coverageSummaries ?? null;
+  }, [latestBriefMemory]);
+
+  const coverageRollup = useMemo(() => {
+    const memory = latestBriefMemory as any;
+    return memory?.context?.coverageRollup ?? null;
   }, [latestBriefMemory]);
 
   // Temporal deltas (today vs. yesterday)
@@ -317,6 +327,8 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
     evidence,
     dashboardMetrics,
     sourceSummary,
+    coverageSummaries,
+    coverageRollup,
     deltas,
     taskResults: latestBriefTaskResults,
 

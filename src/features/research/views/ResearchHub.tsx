@@ -323,7 +323,7 @@ export default function ResearchHub(props: ResearchHubProps) {
           <div className="max-w-[1600px] mx-auto flex items-start">
 
             {/* LEFT: THE PAPER (Scrolls with the main container) */}
-            <div className="flex-1 pl-16 pr-12 py-24 space-y-48 pb-64">
+            <div className="flex-1 pl-16 pr-12 py-16 space-y-28 pb-32">
 
               {/* 1. EXECUTIVE SYNTHESIS (ACT I) */}
               <section

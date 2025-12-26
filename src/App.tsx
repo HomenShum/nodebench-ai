@@ -13,6 +13,8 @@ import { SelectionProvider } from "@/features/agents/context/SelectionContext";
 import { FastAgentPanel } from "@/features/agents";
 import { FeedbackListener } from "@/shared/hooks/FeedbackListener";
 import { AgentGuidedOnboarding } from "@/features/onboarding/components/AgentGuidedOnboarding";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { SkipLinks } from "./components/SkipLinks";
 
 /**
  * GlobalFastAgentPanel - Renders FastAgentPanel connected to FastAgentContext
@@ -102,51 +104,54 @@ function App() {
   };
 
   return (
-    <main className="h-screen">
-      <Unauthenticated>
-        <FastAgentProvider>
-          <SelectionProvider>
-            <ContextPillsProvider>
-              {/* Use MainLayout for visual consistency - limited features for guests */}
-              <MainLayout
-                selectedDocumentId={null}
-                onDocumentSelect={() => { }}
-                onShowWelcome={() => { }}
-                onShowResearchHub={() => { }}
-              />
-              {/* Global Fast Agent Panel for guests */}
-              <GlobalFastAgentPanel />
-            </ContextPillsProvider>
-          </SelectionProvider>
-        </FastAgentProvider>
-      </Unauthenticated>
-      <Authenticated>
-        <FastAgentProvider>
-          <SelectionProvider>
-            <ContextPillsProvider>
-              {showTutorial ? (
-                <TutorialPage
-                  onGetStarted={handleGetStarted}
-                  onDocumentSelect={handleDocumentSelect}
-                />
-              ) : (
-                /* Always use MainLayout - it handles research/workspace views internally */
+    <ThemeProvider>
+      <SkipLinks />
+      <main id="main-content" className="h-screen">
+        <Unauthenticated>
+          <FastAgentProvider>
+            <SelectionProvider>
+              <ContextPillsProvider>
+                {/* Use MainLayout for visual consistency - limited features for guests */}
                 <MainLayout
-                  selectedDocumentId={selectedDocumentId}
-                  onDocumentSelect={setSelectedDocumentId}
-                  onShowWelcome={handleShowTutorial}
-                  onShowResearchHub={handleShowResearchHub}
+                  selectedDocumentId={null}
+                  onDocumentSelect={() => { }}
+                  onShowWelcome={() => { }}
+                  onShowResearchHub={() => { }}
                 />
-              )}
-              {/* Global Fast Agent Panel - controlled via context */}
-              <GlobalFastAgentPanel />
-              {/* Global Feedback Listener for audio/visual cues */}
-              <FeedbackListener />
-            </ContextPillsProvider>
-          </SelectionProvider>
-        </FastAgentProvider>
-      </Authenticated>
-    </main>
+                {/* Global Fast Agent Panel for guests */}
+                <GlobalFastAgentPanel />
+              </ContextPillsProvider>
+            </SelectionProvider>
+          </FastAgentProvider>
+        </Unauthenticated>
+        <Authenticated>
+          <FastAgentProvider>
+            <SelectionProvider>
+              <ContextPillsProvider>
+                {showTutorial ? (
+                  <TutorialPage
+                    onGetStarted={handleGetStarted}
+                    onDocumentSelect={handleDocumentSelect}
+                  />
+                ) : (
+                  /* Always use MainLayout - it handles research/workspace views internally */
+                  <MainLayout
+                    selectedDocumentId={selectedDocumentId}
+                    onDocumentSelect={setSelectedDocumentId}
+                    onShowWelcome={handleShowTutorial}
+                    onShowResearchHub={handleShowResearchHub}
+                  />
+                )}
+                {/* Global Fast Agent Panel - controlled via context */}
+                <GlobalFastAgentPanel />
+                {/* Global Feedback Listener for audio/visual cues */}
+                <FeedbackListener />
+              </ContextPillsProvider>
+            </SelectionProvider>
+          </FastAgentProvider>
+        </Authenticated>
+      </main>
+    </ThemeProvider>
   );
 }
 

@@ -16,7 +16,7 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
         <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="fixed bottom-0 left-0 right-0 h-10 bg-white/80 backdrop-blur-md border-t border-stone-200 z-[60] flex items-center px-12 overflow-hidden pointer-events-none group/monitor"
+            className="fixed bottom-0 left-0 right-0 h-10 bg-white/80 backdrop-blur-md border-t border-stone-200 z-[30] flex items-center px-12 overflow-hidden pointer-events-none group/monitor"
         >
             <div className="flex items-center gap-4 shrink-0 pr-8 border-r border-stone-200 mr-8">
                 <Activity className="w-3 h-3 text-emerald-600" />

@@ -85,6 +85,26 @@ export interface MarketShareSegment {
   icon?: string; // emoji or icon name
 }
 
+export interface GraphNode {
+  id: string;
+  label: string;
+  type?: "company" | "person" | "concept" | "product";
+  importance?: number;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  relationship?: string;
+  context?: string;
+}
+
+export interface EntityGraph {
+  focusNodeId?: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 /**
  * Skill toggle for AI 2027-style capability grid
  * Displays as a progress bar with icon and label (matching AI 2027 visual style)
@@ -153,6 +173,8 @@ export interface DashboardState {
     label: string;
     speed: number;
   };
+  // Optional GraphRAG-style entity relationship map
+  entityGraph?: EntityGraph;
 }
 
 // Agent-facing contract to ensure incoming dashboard updates match the UI slots

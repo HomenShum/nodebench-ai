@@ -749,11 +749,105 @@ const userPreferences = defineTable({
   smsMeetingReminder: v.optional(v.boolean()),   // Notify before meeting starts
   smsMorningDigest: v.optional(v.boolean()),     // Include in morning digest SMS
   smsReminderMinutes: v.optional(v.number()),    // Minutes before meeting to send reminder (default: 15)
+  // Theme customization preferences
+  themeMode: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))),
+  themeAccentColor: v.optional(v.string()),      // Hex color or preset name (e.g., "blue", "#3B82F6")
+  themeDensity: v.optional(v.union(v.literal("comfortable"), v.literal("compact"), v.literal("spacious"))),
+  themeFontFamily: v.optional(v.string()),       // Font family name (e.g., "Inter", "System")
+  themeBackgroundPattern: v.optional(v.string()), // Background pattern name (e.g., "none", "dots", "grid")
+  themeReducedMotion: v.optional(v.boolean()),   // Reduce animations for accessibility
   // Future: more UI preferences can be added here
   createdAt: v.number(),
   updatedAt: v.number(),
 })
   .index("by_user", ["userId"]);
+
+/* ------------------------------------------------------------------ */
+/* QUICK CAPTURES - Instant capture of thoughts, voice memos, screenshots */
+/* ------------------------------------------------------------------ */
+const quickCaptures = defineTable({
+  userId: v.id("users"),
+  type: v.union(
+    v.literal("note"),
+    v.literal("task"),
+    v.literal("voice"),
+    v.literal("screenshot")
+  ),
+  content: v.string(),
+  title: v.optional(v.string()),
+  audioUrl: v.optional(v.string()),      // For voice memos (storage URL)
+  audioStorageId: v.optional(v.id("_storage")), // For voice memos (storage ID)
+  screenshotUrl: v.optional(v.string()), // For screenshots (storage URL)
+  screenshotStorageId: v.optional(v.id("_storage")), // For screenshots (storage ID)
+  annotations: v.optional(v.any()),      // Screenshot annotations
+  transcription: v.optional(v.string()), // Voice memo transcription
+  processed: v.boolean(),                // Has AI processed it?
+  linkedDocumentId: v.optional(v.id("documents")),
+  tags: v.optional(v.array(v.string())),
+  metadata: v.optional(v.any()),
+  createdAt: v.number(),
+  updatedAt: v.optional(v.number()),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_type", ["userId", "type"])
+  .index("by_user_created", ["userId", "createdAt"])
+  .index("by_processed", ["userId", "processed"]);
+
+/* ------------------------------------------------------------------ */
+/* USER BEHAVIOR EVENTS - Track user actions for pattern recognition  */
+/* ------------------------------------------------------------------ */
+const userBehaviorEvents = defineTable({
+  userId: v.id("users"),
+  eventType: v.union(
+    v.literal("document_created"),
+    v.literal("document_viewed"),
+    v.literal("document_edited"),
+    v.literal("task_completed"),
+    v.literal("task_created"),
+    v.literal("agent_interaction"),
+    v.literal("search_performed"),
+    v.literal("calendar_event_ended"),
+    v.literal("quick_capture")
+  ),
+  entityId: v.optional(v.string()),
+  metadata: v.optional(v.any()),
+  timestamp: v.number(),
+  timeOfDay: v.string(),         // "morning" | "afternoon" | "evening" | "night"
+  dayOfWeek: v.string(),         // "monday" | "tuesday" | etc.
+})
+  .index("by_user_time", ["userId", "timestamp"])
+  .index("by_user_type", ["userId", "eventType"])
+  .index("by_entity", ["entityId"]);
+
+/* ------------------------------------------------------------------ */
+/* RECOMMENDATIONS - AI-powered suggestions for users                  */
+/* ------------------------------------------------------------------ */
+const recommendations = defineTable({
+  userId: v.id("users"),
+  type: v.union(
+    v.literal("pattern"),          // "You usually create notes after meetings"
+    v.literal("idle_content"),     // "Document X hasn't been updated"
+    v.literal("collaboration"),    // "3 people viewed this doc"
+    v.literal("external_trigger"), // "New article about [topic]"
+    v.literal("smart_suggestion")  // AI-generated recommendation
+  ),
+  priority: v.union(
+    v.literal("high"),
+    v.literal("medium"),
+    v.literal("low")
+  ),
+  message: v.string(),
+  actionLabel: v.string(),
+  actionType: v.optional(v.string()),  // "open_document" | "create_note" | etc.
+  actionData: v.optional(v.any()),
+  icon: v.optional(v.string()),
+  dismissed: v.boolean(),
+  clicked: v.optional(v.boolean()),
+  createdAt: v.number(),
+  expiresAt: v.number(),
+})
+  .index("by_user_active", ["userId", "dismissed", "expiresAt"])
+  .index("by_user_created", ["userId", "createdAt"]);
 
 /* ------------------------------------------------------------------ */
 /* USER TEACHINGS - Long-term teachability memory (facts/prefs/skills) */
@@ -1381,6 +1475,9 @@ export default defineSchema({
   folders,
   documentFolders,
   userPreferences,
+  quickCaptures,
+  userBehaviorEvents,
+  recommendations,
   userTeachings,
   events,
   userEvents,
@@ -3127,6 +3224,21 @@ export default defineSchema({
         count: v.number(),
         label: v.string(),
         speed: v.number(),
+      })),
+      entityGraph: v.optional(v.object({
+        focusNodeId: v.optional(v.string()),
+        nodes: v.array(v.object({
+          id: v.string(),
+          label: v.string(),
+          type: v.optional(v.string()),
+          importance: v.optional(v.number()),
+        })),
+        edges: v.array(v.object({
+          source: v.string(),
+          target: v.string(),
+          relationship: v.optional(v.string()),
+          context: v.optional(v.string()),
+        })),
       })),
     }),
 

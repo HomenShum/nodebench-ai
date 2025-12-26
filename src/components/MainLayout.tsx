@@ -16,6 +16,9 @@ import { SettingsModal } from "./SettingsModal";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
+import { CommandPalette } from "./CommandPalette";
+import { useCommandPalette } from "../hooks/useCommandPalette";
+import { QuickCaptureWidget } from "./QuickCapture";
 
 const PublicDocuments = lazy(() =>
   import("@/features/documents/views/PublicDocuments").then((mod) => ({
@@ -105,6 +108,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   // Fast Agent thread navigation (for inline agent "View in Panel" link)
   const [fastAgentThreadId, setFastAgentThreadId] = useState<string | null>(null);
   // Removed MCP panel persistence and shortcut (no AIChatPanel)
+
+  // Command Palette state with global Cmd/Ctrl+K shortcut
+  const commandPalette = useCommandPalette();
 
   // Sync Fast Agent panel state with global context
   const { registerExternalState, options: fastAgentOpenOptions, clearOptions: clearFastAgentOptions } = useFastAgent();
@@ -865,6 +871,27 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         />
       )}
 
+      {/* Command Palette - Global Cmd/Ctrl+K */}
+      <CommandPalette
+        isOpen={commandPalette.isOpen}
+        onClose={commandPalette.close}
+        onNavigate={(view) => {
+          setCurrentView(view as typeof currentView);
+        }}
+        onCreateDocument={() => {
+          // Navigate to documents and trigger new document creation
+          setCurrentView('documents');
+          onDocumentSelect(null);
+          // Dispatch event to create new document
+          window.dispatchEvent(new CustomEvent('document:create'));
+        }}
+        onCreateTask={() => {
+          // Navigate to calendar/tasks view
+          setCurrentView('calendar');
+        }}
+        onOpenSettings={() => openSettings('usage')}
+      />
+
       {/* Mention Mini Editor Popover */}
       <MiniEditorPopover
         isOpen={!!mentionPopover}
@@ -881,6 +908,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         anchorEl={hashtagPopover?.anchorEl || null}
         onClose={() => setHashtagPopover(null)}
       />
+
+      {/* Quick Capture Widget - Floating FAB */}
+      {isAuthenticated && <QuickCaptureWidget />}
     </div>
   );
 }

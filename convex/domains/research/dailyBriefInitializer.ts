@@ -97,6 +97,35 @@ export const initializeForSnapshot = internalAction({
       .filter((i) => i.type !== "repo")
       .slice(0, 10);
 
+    // Create story summary tasks for top signals (mix of non-repo + repo).
+    const dedupedByScore: FeedItem[] = [];
+    const seenStoryUrls = new Set<string>();
+    feedItems
+      .filter((item) => item.url)
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .forEach((item) => {
+        const url = (item.url ?? "").trim();
+        if (!url || seenStoryUrls.has(url)) return;
+        seenStoryUrls.add(url);
+        dedupedByScore.push(item);
+      });
+
+    const nonRepoStories = dedupedByScore
+      .filter((item) => item.type !== "repo")
+      .slice(0, 10);
+    const repoStories = dedupedByScore
+      .filter((item) => item.type === "repo")
+      .slice(0, 6);
+    const deepStoryItems = nonRepoStories.slice(0, 5);
+
+    const storyItemsMap = new Map<string, FeedItem>();
+    [...nonRepoStories, ...repoStories].forEach((item) => {
+      const url = (item.url ?? "").trim();
+      if (!url || storyItemsMap.has(url)) return;
+      storyItemsMap.set(url, item);
+    });
+    const storyItems = Array.from(storyItemsMap.values()).slice(0, 16);
+
     const prevSnapshot: any = await ctx.runQuery(
       internal.domains.research.dailyBriefMemoryQueries.getPreviousSnapshotInternal,
       { dateString: snapshot.dateString },
@@ -132,6 +161,48 @@ export const initializeForSnapshot = internalAction({
         ),
       );
     });
+
+    storyItems.forEach((item, idx) => {
+      features.push(
+        toFeature(
+          `S${idx + 1}`,
+          "story_summary",
+          `Summarize top signal: ${item.title}`,
+          "Summary includes what happened, why it matters, and a key implication. 2-3 sentences.",
+          { feedItem: item },
+          1,
+          now,
+        ),
+      );
+    });
+
+    deepStoryItems.forEach((item, idx) => {
+      features.push(
+        toFeature(
+          `I${idx + 1}`,
+          "story_intel",
+          `Extract intelligence from: ${item.title}`,
+          "Return JSON with: summary, hard_numbers, direct_quote, conflict, pivot, lesson. Leave missing fields as null.",
+          { feedItem: item },
+          1,
+          now,
+        ),
+      );
+    });
+
+    if (deepStoryItems.length > 0) {
+      features.push(
+        toFeature(
+          "G1",
+          "graph_extraction",
+          "Extract entity relationships for top signals",
+          "Return JSON: { focusNodeId, nodes, edges }. Nodes include id, label, type, importance. Edges include source, target, relationship, context.",
+          { items: deepStoryItems.slice(0, 3) },
+          2,
+          now,
+        ),
+      );
+    }
 
     // Add anomaly tasks based on metric deltas vs previous day
     if (prevSnapshot?.dashboardMetrics && snapshot.dashboardMetrics) {
