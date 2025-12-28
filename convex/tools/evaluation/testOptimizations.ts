@@ -5,7 +5,10 @@
  * Tests actual outputs and performance improvements
  */
 
-import { parallelDelegation, agentCache, streamingDelegation, predictivePrefetch } from "../../lib";
+import * as parallelDelegation from "../../lib/parallelDelegation";
+import * as agentCache from "../../lib/agentCache";
+import * as streamingDelegation from "../../lib/streamingDelegation";
+import * as predictivePrefetch from "../../lib/predictivePrefetch";
 
 // Mock Agent for testing
 class MockAgent {
