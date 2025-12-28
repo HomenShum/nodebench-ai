@@ -777,52 +777,115 @@ export const getThreadByStreamId = query({
 });
 
 /**
+ * Check anonymous user's remaining free messages for today
+ * Returns usage info for anonymous users to display in UI
+ */
+export const getAnonymousUsage = query({
+  args: {
+    sessionId: v.string(),
+  },
+  returns: v.object({
+    used: v.number(),
+    limit: v.number(),
+    remaining: v.number(),
+    canSendMessage: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const ANONYMOUS_DAILY_LIMIT = 5;
+    const today = new Date().toISOString().split("T")[0];
+
+    const existingUsage = await ctx.db
+      .query("anonymousUsageDaily")
+      .withIndex("by_session_date", (q: any) =>
+        q.eq("sessionId", args.sessionId).eq("date", today)
+      )
+      .first();
+
+    const used = existingUsage?.requests ?? 0;
+    const remaining = Math.max(0, ANONYMOUS_DAILY_LIMIT - used);
+
+    return {
+      used,
+      limit: ANONYMOUS_DAILY_LIMIT,
+      remaining,
+      canSendMessage: remaining > 0,
+    };
+  },
+});
+
+/**
  * Create a new streaming thread (also creates agent thread for memory management)
+ * Supports both authenticated and anonymous users (5 free messages/day for anonymous)
  */
 export const createThread = action({
   args: {
     title: v.optional(v.string()),
     model: v.optional(v.string()),
+    anonymousSessionId: v.optional(v.string()), // For anonymous users
   },
   handler: async (ctx, args): Promise<Id<"chatThreadsStream">> => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const isAnonymous = !userId;
+
+    // For anonymous users, require a session ID
+    if (isAnonymous && !args.anonymousSessionId) {
+      throw new Error("Anonymous users must provide a session ID");
+    }
 
     // Normalize model at API boundary (7 approved models only)
-    const modelName = normalizeModelInput(args.model);
+    // Anonymous users get restricted to cheapest models
+    let modelName = normalizeModelInput(args.model);
+    if (isAnonymous) {
+      // Force anonymous users to use cheapest model
+      modelName = "claude-haiku-4.5";
+    }
+
     const chatAgent = createChatAgent(modelName);
     const title = (args.title ?? "").trim() || "Research Thread";
 
-    // Create agent thread for automatic memory management
-    const { threadId: agentThreadId } = await chatAgent.createThread(ctx, { userId, title });
+    // For authenticated users, create agent thread with userId
+    // For anonymous users, we create a lightweight thread without full memory
+    let agentThreadId: string;
 
-    // Update agent thread summary
-    await ctx.runMutation(components.agent.threads.updateThread, {
-      threadId: agentThreadId,
-      patch: {
-        summary: title,
-      },
-    });
+    if (userId) {
+      // Authenticated: Full agent thread with memory management
+      const result = await chatAgent.createThread(ctx, { userId, title });
+      agentThreadId = result.threadId;
+
+      // Update agent thread summary
+      await ctx.runMutation(components.agent.threads.updateThread, {
+        threadId: agentThreadId,
+        patch: {
+          summary: title,
+        },
+      });
+    } else {
+      // Anonymous: Generate a simple thread ID (no persistent memory)
+      agentThreadId = `anon_${args.anonymousSessionId}_${Date.now()}`;
+    }
 
     // Create streaming thread linked to agent thread
     const now = Date.now();
     const threadId = await ctx.runMutation(internal.domains.agents.fastAgentPanelStreaming.createThreadInternal, {
-      userId,
+      userId: userId ?? undefined,
+      anonymousSessionId: isAnonymous ? args.anonymousSessionId : undefined,
       title,
       model: modelName,
       agentThreadId,
       now,
     });
 
-    // Optionally create a timeline root for this agent thread
-    try {
-      await ctx.runMutation(api.domains.agents.agentTimelines.createForDocument as any, {
-        documentId: undefined as any,
-        name: title,
-        baseStartMs: now,
-      });
-    } catch (timelineErr) {
-      console.warn("[createThread] Failed to create timeline for agent thread", timelineErr);
+    // Optionally create a timeline root for this agent thread (authenticated only)
+    if (userId) {
+      try {
+        await ctx.runMutation(api.domains.agents.agentTimelines.createForDocument as any, {
+          documentId: undefined as any,
+          name: title,
+          baseStartMs: now,
+        });
+      } catch (timelineErr) {
+        console.warn("[createThread] Failed to create timeline for agent thread", timelineErr);
+      }
     }
 
     return threadId;
@@ -831,10 +894,12 @@ export const createThread = action({
 
 /**
  * Internal mutation to create streaming thread
+ * Supports both authenticated and anonymous users
  */
 export const createThreadInternal = internalMutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    anonymousSessionId: v.optional(v.string()),
     title: v.string(),
     model: v.optional(v.string()),
     agentThreadId: v.string(),
@@ -843,6 +908,7 @@ export const createThreadInternal = internalMutation({
   handler: async (ctx, args) => {
     const threadId = await ctx.db.insert("chatThreadsStream", {
       userId: args.userId,
+      anonymousSessionId: args.anonymousSessionId,
       title: args.title,
       model: args.model,
       agentThreadId: args.agentThreadId,
@@ -1277,12 +1343,57 @@ export const initiateAsyncStreaming = mutation({
     model: v.optional(v.string()),
     useCoordinator: v.optional(v.boolean()), // Default true to honor planner + coordinator routing
     arbitrageEnabled: v.optional(v.boolean()), // UI override for arbitrage mode
+    anonymousSessionId: v.optional(v.string()), // For anonymous users
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-
+    const isAnonymous = !userId;
     const requestId = crypto.randomUUID().substring(0, 8);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ANONYMOUS USER RATE LIMITING (5 free messages per day)
+    // ═══════════════════════════════════════════════════════════════════════
+    if (isAnonymous) {
+      if (!args.anonymousSessionId) {
+        throw new Error("Anonymous users must provide a session ID");
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+      const existingUsage = await ctx.db
+        .query("anonymousUsageDaily")
+        .withIndex("by_session_date", (q: any) =>
+          q.eq("sessionId", args.anonymousSessionId).eq("date", today)
+        )
+        .first();
+
+      const currentRequests = existingUsage?.requests ?? 0;
+      const ANONYMOUS_DAILY_LIMIT = 5;
+
+      if (currentRequests >= ANONYMOUS_DAILY_LIMIT) {
+        throw new Error(`Daily limit reached (${ANONYMOUS_DAILY_LIMIT} free messages/day). Sign in for unlimited access!`);
+      }
+
+      // Update or create usage record
+      const now = Date.now();
+      if (existingUsage) {
+        await ctx.db.patch(existingUsage._id, {
+          requests: existingUsage.requests + 1,
+          updatedAt: now,
+        });
+      } else {
+        await ctx.db.insert("anonymousUsageDaily", {
+          sessionId: args.anonymousSessionId,
+          date: today,
+          requests: 1,
+          totalTokens: 0,
+          totalCost: 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      console.log(`[initiateAsyncStreaming:${requestId}] 👤 Anonymous user, requests today: ${currentRequests + 1}/${ANONYMOUS_DAILY_LIMIT}`);
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // PROMPT INJECTION PROTECTION - Validate and sanitize user prompt
@@ -1300,104 +1411,127 @@ export const initiateAsyncStreaming = mutation({
     if (!streamingThread || !streamingThread.agentThreadId) {
       throw new Error("Thread not found or not linked to agent");
     }
-    if (streamingThread.userId !== userId) {
-      throw new Error("Unauthorized");
+
+    // Authorization check: authenticated users must own the thread, anonymous must match session
+    if (userId) {
+      if (streamingThread.userId !== userId) {
+        throw new Error("Unauthorized");
+      }
+    } else {
+      // Anonymous user - verify session matches
+      if (streamingThread.anonymousSessionId !== args.anonymousSessionId) {
+        throw new Error("Unauthorized - session mismatch");
+      }
     }
 
     // Normalize model at API boundary (7 approved models only)
-    const modelName = normalizeModelInput(args.model);
+    // Anonymous users are forced to use cheapest model
+    let modelName = normalizeModelInput(args.model);
+    if (isAnonymous) {
+      modelName = "claude-haiku-4.5";
+    }
     const chatAgent = createChatAgent(modelName);
 
-    // Ensure initializer has seeded plan and progress log
-    try {
-      const existingPlan = await ctx.runQuery(api.domains.agents.agentInitializer.getPlanByThread, {
-        agentThreadId: streamingThread.agentThreadId,
-      });
-      if (!existingPlan) {
-        console.log(`[initiateAsyncStreaming:${requestId}] 🔧 No plan found, running initializer`);
-        await ctx.runMutation(api.domains.agents.agentInitializer.initializeThread, {
-          threadId: args.threadId,
-          prompt: sanitizedPrompt,
-          model: modelName,
+    // For authenticated users only: Ensure initializer has seeded plan and progress log
+    if (userId) {
+      try {
+        const existingPlan = await ctx.runQuery(api.domains.agents.agentInitializer.getPlanByThread, {
+          agentThreadId: streamingThread.agentThreadId,
         });
+        if (!existingPlan) {
+          console.log(`[initiateAsyncStreaming:${requestId}] 🔧 No plan found, running initializer`);
+          await ctx.runMutation(api.domains.agents.agentInitializer.initializeThread, {
+            threadId: args.threadId,
+            prompt: sanitizedPrompt,
+            model: modelName,
+          });
+        }
+      } catch (initErr) {
+        console.warn(`[initiateAsyncStreaming:${requestId}] Initializer failed:`, initErr);
       }
-    } catch (initErr) {
-      console.warn(`[initiateAsyncStreaming:${requestId}] Initializer failed:`, initErr);
     }
 
     console.log(`[initiateAsyncStreaming:${requestId}] 💾 Saving user message, agentThreadId:`, streamingThread.agentThreadId);
     console.log(`[initiateAsyncStreaming:${requestId}] 📝 Prompt:`, sanitizedPrompt);
 
-    // Save the user message first (enables optimistic updates)
-    // NOTE: Using sanitizedPrompt for security
-    const { messageId } = await chatAgent.saveMessage(ctx, {
-      threadId: streamingThread.agentThreadId,
-      prompt: sanitizedPrompt,
-      skipEmbeddings: true, // Skip embeddings in mutation, generate lazily when streaming
-    });
+    let messageId: string;
 
-    // Log episodic memory entry for the new prompt
-    try {
-      await ctx.runMutation(api.domains.agents.agentMemory.logEpisodic, {
-        runId: streamingThread.agentThreadId,
-        tags: ["user_prompt"],
-        data: { prompt: sanitizedPrompt, messageId },
+    if (userId) {
+      // Authenticated user: Use full agent message saving with memory
+      const result = await chatAgent.saveMessage(ctx, {
+        threadId: streamingThread.agentThreadId,
+        prompt: sanitizedPrompt,
+        skipEmbeddings: true, // Skip embeddings in mutation, generate lazily when streaming
       });
-    } catch (memErr) {
-      console.warn(`[initiateAsyncStreaming:${requestId}] Failed to log episodic memory`, memErr);
+      messageId = result.messageId;
+
+      // Log episodic memory entry for the new prompt
+      try {
+        await ctx.runMutation(api.domains.agents.agentMemory.logEpisodic, {
+          runId: streamingThread.agentThreadId,
+          tags: ["user_prompt"],
+          data: { prompt: sanitizedPrompt, messageId },
+        });
+      } catch (memErr) {
+        console.warn(`[initiateAsyncStreaming:${requestId}] Failed to log episodic memory`, memErr);
+      }
+    } else {
+      // Anonymous user: Generate a simple message ID (no persistent memory)
+      messageId = `anon_msg_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
     }
 
     console.log(`[initiateAsyncStreaming:${requestId}] ✅ User message saved, messageId:`, messageId);
 
-    // POST-SAVE idempotency check: If an older identical message exists, delete this one and use the older one
-    // This handles race conditions where two calls arrive simultaneously
-    const IDEMPOTENCY_WINDOW_MS = 4000;
-    const normalizedPrompt = sanitizedPrompt.trim();
-    try {
-      const recentResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-        threadId: streamingThread.agentThreadId,
-        order: "desc",
-        paginationOpts: { cursor: null, numItems: 10 },
-      });
-      const now = Date.now();
-      const recentPage: any[] = (recentResult as any)?.page ?? (recentResult as any) ?? [];
+    // POST-SAVE idempotency check (authenticated users only)
+    if (userId) {
+      const IDEMPOTENCY_WINDOW_MS = 4000;
+      const normalizedPrompt = sanitizedPrompt.trim();
+      try {
+        const recentResult = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+          threadId: streamingThread.agentThreadId,
+          order: "desc",
+          paginationOpts: { cursor: null, numItems: 10 },
+        });
+        const now = Date.now();
+        const recentPage: any[] = (recentResult as any)?.page ?? (recentResult as any) ?? [];
 
-      // Find all messages with identical text within the window
-      const duplicates = recentPage.filter((m: any) => {
-        const text = typeof m.text === "string" ? m.text.trim() : "";
-        const created = typeof m._creationTime === "number" ? m._creationTime : 0;
-        const msgId = String(m.messageId ?? m.id ?? m._id ?? "");
-        return text === normalizedPrompt &&
-          now - created < IDEMPOTENCY_WINDOW_MS &&
-          msgId !== messageId; // Exclude the message we just created
-      });
-
-      if (duplicates.length > 0) {
-        // Found older duplicate(s) - delete the one we just created and use the oldest existing one
-        const oldest = duplicates.reduce((prev, curr) => {
-          const prevTime = prev._creationTime ?? 0;
-          const currTime = curr._creationTime ?? 0;
-          return currTime < prevTime ? curr : prev;
+        // Find all messages with identical text within the window
+        const duplicates = recentPage.filter((m: any) => {
+          const text = typeof m.text === "string" ? m.text.trim() : "";
+          const created = typeof m._creationTime === "number" ? m._creationTime : 0;
+          const msgId = String(m.messageId ?? m.id ?? m._id ?? "");
+          return text === normalizedPrompt &&
+            now - created < IDEMPOTENCY_WINDOW_MS &&
+            msgId !== messageId; // Exclude the message we just created
         });
 
-        const oldestId = String(oldest.messageId ?? oldest.id ?? oldest._id ?? "");
-        console.log(`[initiateAsyncStreaming:${requestId}] 🛑 POST-SAVE Idempotency: Found ${duplicates.length} older duplicate(s), deleting newly created message ${messageId} and using oldest: ${oldestId}`);
-
-        // Delete the message we just created
-        try {
-          await ctx.runMutation(components.agent.messages.deleteByIds, {
-            messageIds: [messageId],
+        if (duplicates.length > 0) {
+          // Found older duplicate(s) - delete the one we just created and use the oldest existing one
+          const oldest = duplicates.reduce((prev, curr) => {
+            const prevTime = prev._creationTime ?? 0;
+            const currTime = curr._creationTime ?? 0;
+            return currTime < prevTime ? curr : prev;
           });
-          console.log(`[initiateAsyncStreaming:${requestId}] ✅ Deleted duplicate message ${messageId}`);
-        } catch (deleteErr) {
-          console.warn(`[initiateAsyncStreaming:${requestId}] Failed to delete duplicate:`, deleteErr);
-        }
 
-        // Return the oldest existing message ID (don't schedule a new stream)
-        return { messageId: oldestId };
+          const oldestId = String(oldest.messageId ?? oldest.id ?? oldest._id ?? "");
+          console.log(`[initiateAsyncStreaming:${requestId}] 🛑 POST-SAVE Idempotency: Found ${duplicates.length} older duplicate(s), deleting newly created message ${messageId} and using oldest: ${oldestId}`);
+
+          // Delete the message we just created
+          try {
+            await ctx.runMutation(components.agent.messages.deleteByIds, {
+              messageIds: [messageId],
+            });
+            console.log(`[initiateAsyncStreaming:${requestId}] ✅ Deleted duplicate message ${messageId}`);
+          } catch (deleteErr) {
+            console.warn(`[initiateAsyncStreaming:${requestId}] Failed to delete duplicate:`, deleteErr);
+          }
+
+          // Return the oldest existing message ID (don't schedule a new stream)
+          return { messageId: oldestId };
+        }
+      } catch (dedupeErr) {
+        console.warn(`[initiateAsyncStreaming:${requestId}] POST-SAVE idempotency check failed, proceeding normally:`, dedupeErr);
       }
-    } catch (dedupeErr) {
-      console.warn(`[initiateAsyncStreaming:${requestId}] POST-SAVE idempotency check failed, proceeding normally:`, dedupeErr);
     }
 
     console.log(`[initiateAsyncStreaming:${requestId}] 🔍 No duplicates found, proceeding with stream scheduling`);
@@ -1409,6 +1543,8 @@ export const initiateAsyncStreaming = mutation({
       model: modelName,
       useCoordinator: args.useCoordinator ?? true, // Default to planner+coordinator routing
       arbitrageEnabled: args.arbitrageEnabled ?? false,
+      isAnonymous,
+      anonymousSessionId: isAnonymous ? args.anonymousSessionId : undefined,
     });
 
     console.log(`[initiateAsyncStreaming:${requestId}] ⏰ Stream scheduled for messageId:`, messageId);
@@ -1439,6 +1575,7 @@ export const requestStreamCancel = mutation({
  * Internal action to stream text asynchronously
  *
  * ORCHESTRATION MODE: Uses Coordinator Agent for intelligent delegation
+ * Supports both authenticated and anonymous users
  */
 export const streamAsync = internalAction({
   args: {
@@ -1447,34 +1584,44 @@ export const streamAsync = internalAction({
     model: v.string(),
     useCoordinator: v.optional(v.boolean()), // Enable/disable coordinator mode (default: true)
     arbitrageEnabled: v.optional(v.boolean()), // UI override for arbitrage mode
+    isAnonymous: v.optional(v.boolean()), // Whether this is an anonymous user
+    anonymousSessionId: v.optional(v.string()), // Session ID for anonymous users
   },
   handler: async (ctx, args) => {
     const executionId = crypto.randomUUID().substring(0, 8);
     let lastAttemptStart = Date.now();
+    const isAnonymous = args.isAnonymous ?? false;
 
     // Normalize model at API boundary (7 approved models only)
-    const requestedModel = normalizeModelInput(args.model);
+    // Anonymous users are forced to use cheapest model
+    let requestedModel = normalizeModelInput(args.model);
+    if (isAnonymous) {
+      requestedModel = "claude-haiku-4.5";
+    }
     let activeModel = requestedModel;
 
-    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId, 'model:', requestedModel);
+    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId, 'model:', requestedModel, 'anonymous:', isAnonymous);
 
-    // Get userId for coordinator agent from thread
-    const thread = await ctx.runQuery(components.agent.threads.getThread, {
-      threadId: args.threadId
-    });
-    console.log(`[streamAsync:${executionId}] Thread retrieved:`, { threadId: args.threadId, hasUserId: !!thread?.userId });
+    // Get userId for coordinator agent from thread (authenticated users only)
+    let userId: Id<"users"> | undefined;
+    if (!isAnonymous) {
+      const thread = await ctx.runQuery(components.agent.threads.getThread, {
+        threadId: args.threadId
+      });
+      console.log(`[streamAsync:${executionId}] Thread retrieved:`, { threadId: args.threadId, hasUserId: !!thread?.userId });
+      userId = thread?.userId as Id<"users"> | undefined;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // RATE LIMITING CHECK
+    // RATE LIMITING CHECK (authenticated users only - anonymous already checked in mutation)
     // ═══════════════════════════════════════════════════════════════════════
-    const userId = thread?.userId;
     if (userId) {
       try {
         const rateLimitCheck = await ctx.runQuery(api.domains.billing.rateLimiting.checkRequestAllowed, {
           model: activeModel,
           estimatedInputTokens: 2000, // Estimate for pre-check
           estimatedOutputTokens: 1000,
-          userId: userId as Id<"users">, // Pass userId explicitly since auth context isn't available in actions
+          userId: userId, // Pass userId explicitly since auth context isn't available in actions
         });
 
         if (!rateLimitCheck.allowed) {

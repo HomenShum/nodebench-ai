@@ -6,13 +6,14 @@ import { useUIMessages, useSmoothText } from '@convex-dev/agent/react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Bot, User, Loader2, ChevronDown, ChevronRight, Wrench, AlertCircle } from 'lucide-react';
+import { Bot, User, Loader2, ChevronDown, ChevronRight, Wrench, AlertCircle, LogIn, MessageSquare } from 'lucide-react';
 import type { ToolUIPart } from 'ai';
 import { extractMediaFromText, removeMediaMarkersFromText } from '@features/agents/components/FastAgentPanel/utils/mediaExtractor';
 import { toast } from 'sonner';
 import { RichMediaSection } from '@features/agents/components/FastAgentPanel/RichMediaSection';
 import { StepTimeline, toolPartsToTimelineSteps } from '@features/agents/components/FastAgentPanel/StepTimeline';
 import { HumanRequestList } from '@features/agents/components/FastAgentPanel/HumanRequestCard';
+import { useAnonymousSession } from '@features/agents/hooks/useAnonymousSession';
 
 interface MiniNoteAgentChatProps {
   user: any | null | undefined;
@@ -46,6 +47,10 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
   const [optimisticUserMessage, setOptimisticUserMessage] = useState<string | null>(null);
   // Track if we're waiting for agent response (after send completes but before agent responds)
   const [waitingForAgent, setWaitingForAgent] = useState(false);
+
+  // Anonymous session support (5 free messages/day)
+  const anonymousSession = useAnonymousSession();
+
   // Cross-remount/Tab dedupe for auto-send
   const DEDUPE_TTL_MS = 4000;
   const canAutoSend = (text: string) => {
@@ -175,8 +180,21 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__miniNoteSendLock = true;
 
-    // If no user, trigger sign-in first
-    if (!user) {
+    // Check anonymous user rate limit
+    if (anonymousSession.isAnonymous && !anonymousSession.canSendMessage) {
+      toast.error(
+        <div className="flex flex-col gap-1">
+          <div className="font-medium">Daily limit reached</div>
+          <div className="text-xs">Sign in for unlimited access!</div>
+        </div>
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__miniNoteSendLock = false;
+      return;
+    }
+
+    // If no user and not anonymous, trigger sign-in first
+    if (!user && !anonymousSession.isAnonymous) {
       if (onSignInRequired) {
         try {
           await onSignInRequired();
@@ -203,7 +221,10 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
       if (!threadId) {
         console.log('[MiniNoteAgentChat] Creating new thread...');
         setCreating(true);
-        const newId = await createThread({ title: 'Mini Note Agent' });
+        const newId = await createThread({
+          title: 'Mini Note Agent',
+          anonymousSessionId: anonymousSession.sessionId ?? undefined,
+        });
         console.log('[MiniNoteAgentChat] Thread created:', newId);
         setThreadId(newId as Id<'chatThreadsStream'>);
         setCreating(false);
@@ -212,7 +233,8 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         await sendStreaming({
           threadId: newId as Id<'chatThreadsStream'>,
           prompt: msg,
-          useCoordinator: true  // Enable smart routing via coordinator
+          useCoordinator: true,  // Enable smart routing via coordinator
+          anonymousSessionId: anonymousSession.sessionId ?? undefined,
         });
         setSending(false);
         // Clear optimistic message once backend confirms
@@ -225,7 +247,8 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         await sendStreaming({
           threadId,
           prompt: msg,
-          useCoordinator: true  // Enable smart routing via coordinator
+          useCoordinator: true,  // Enable smart routing via coordinator
+          anonymousSessionId: anonymousSession.sessionId ?? undefined,
         });
         setSending(false);
         // Clear optimistic message once backend confirms
@@ -327,6 +350,43 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         <div ref={bottomRef} />
       </div>
 
+      {/* Anonymous User Banner */}
+      {anonymousSession.isAnonymous && !anonymousSession.isLoading && (
+        <div className={`mx-3 mt-2 px-3 py-2 rounded-lg border ${
+          anonymousSession.canSendMessage
+            ? 'bg-blue-500/10 border-blue-500/30'
+            : 'bg-amber-500/10 border-amber-500/30'
+        }`}>
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              {anonymousSession.canSendMessage ? (
+                <>
+                  <MessageSquare className="w-4 h-4 text-blue-400" />
+                  <span className="text-[var(--text-secondary)]">
+                    <span className="font-medium text-[var(--text-primary)]">{anonymousSession.remaining}</span>
+                    {' '}of {anonymousSession.limit} free messages remaining
+                  </span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 text-amber-400" />
+                  <span className="text-[var(--text-secondary)]">
+                    Daily limit reached. Sign in for unlimited access!
+                  </span>
+                </>
+              )}
+            </div>
+            <a
+              href="/sign-in"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity"
+            >
+              <LogIn className="w-3 h-3" />
+              Sign in
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Composer */}
       <div className="border-t border-[var(--border-color)] p-3 bg-[var(--bg-primary)]">
         <div className="flex items-start gap-2">
@@ -347,11 +407,11 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
           <button
             type="button"
             onClick={() => void send(input)}
-            disabled={creating || sending || waitingForAgent || !input.trim()}
+            disabled={creating || sending || waitingForAgent || !input.trim() || (anonymousSession.isAnonymous && !anonymousSession.canSendMessage)}
             className="h-10 px-3 py-2 mt-[2px] rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 transition-colors"
-            title={!user ? 'Click to sign in and send' : 'Send message'}
+            title={!user && !anonymousSession.isAnonymous ? 'Click to sign in and send' : 'Send message'}
           >
-            {sending ? 'Sending…' : waitingForAgent ? 'Processing…' : !user ? 'Send (sign in)' : 'Send'}
+            {sending ? 'Sending…' : waitingForAgent ? 'Processing…' : !user && !anonymousSession.isAnonymous ? 'Send (sign in)' : 'Send'}
           </button>
           {(sending || waitingForAgent) && (
             <button

@@ -555,7 +555,8 @@ const agentWriteEvents = defineTable({
 /* STREAMING CHAT - Persistent Text Streaming for FastAgentPanel     */
 /* ------------------------------------------------------------------ */
 const chatThreadsStream = defineTable({
-  userId: v.id("users"),
+  userId: v.optional(v.id("users")),    // Optional for anonymous users
+  anonymousSessionId: v.optional(v.string()), // Session ID for anonymous users
   title: v.string(),
   model: v.optional(v.string()),
   agentThreadId: v.optional(v.string()), // Links to agent component thread for memory management
@@ -570,11 +571,12 @@ const chatThreadsStream = defineTable({
   .index("by_user_pinned", ["userId", "pinned"])
   .index("by_updatedAt", ["updatedAt"])
   .index("by_user_updatedAt", ["userId", "updatedAt"])
-  .index("by_agentThreadId", ["agentThreadId"]);
+  .index("by_agentThreadId", ["agentThreadId"])
+  .index("by_anonymous_session", ["anonymousSessionId"]);
 
 const chatMessagesStream = defineTable({
   threadId: v.id("chatThreadsStream"),
-  userId: v.id("users"),
+  userId: v.optional(v.id("users")),    // Optional for anonymous users
   role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
   content: v.string(),
   streamId: v.optional(v.string()), // For persistent-text-streaming (legacy)
@@ -3633,6 +3635,23 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_date", ["userId", "date"])
+    .index("by_date", ["date"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ANONYMOUS USAGE - Daily limits for unauthenticated users (5/day)   */
+  /* ------------------------------------------------------------------ */
+  anonymousUsageDaily: defineTable({
+    sessionId: v.string(),            // Browser fingerprint/session ID
+    ipHash: v.optional(v.string()),   // Hashed IP for additional tracking
+    date: v.string(),                 // YYYY-MM-DD
+    requests: v.number(),             // Requests made today (max 5)
+    totalTokens: v.number(),          // Tokens used
+    totalCost: v.number(),            // Cost incurred
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_session_date", ["sessionId", "date"])
     .index("by_date", ["date"]),
 
   /* ------------------------------------------------------------------ */

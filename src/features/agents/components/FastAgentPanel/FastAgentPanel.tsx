@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen } from 'lucide-react';
+import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 
@@ -36,6 +36,7 @@ import type { AgentOpenOptions, DossierContext } from '@/features/agents/context
 import { buildDossierContextPrefix } from '@/features/agents/context/FastAgentContext';
 import { DossierModeIndicator } from '@/features/agents/components/DossierModeIndicator';
 import { DEFAULT_MODEL, type ApprovedModel } from '@shared/llm/approvedModels';
+import { useAnonymousSession } from '../../hooks/useAnonymousSession';
 
 import type {
   Message,
@@ -117,6 +118,9 @@ export function FastAgentPanel({
   // ========== AUTH ==========
   const { isAuthenticated } = useConvexAuth();
   const convex = useConvex();
+
+  // ========== ANONYMOUS SESSION (5 free messages/day for unauthenticated users) ==========
+  const anonymousSession = useAnonymousSession();
 
   // ========== STATE ==========
   // Agent component uses string threadIds, not Id<"chatThreads">
@@ -593,6 +597,8 @@ export function FastAgentPanel({
         const threadId = await createStreamingThread({
           title: "New Chat",
           model: selectedModel,
+          // Pass anonymous session ID for unauthenticated users
+          anonymousSessionId: anonymousSession.sessionId ?? undefined,
         });
         setActiveThreadId(threadId);
         toast.success("New chat created");
@@ -601,7 +607,7 @@ export function FastAgentPanel({
         toast.error('Failed to create new chat');
       }
     }
-  }, [chatMode, createStreamingThread, selectedModel]);
+  }, [chatMode, createStreamingThread, selectedModel, anonymousSession.sessionId]);
 
   const handleDeleteThread = useCallback(async (threadId: string) => {
     try {
@@ -667,6 +673,17 @@ export function FastAgentPanel({
     const text = (content ?? input).trim();
     if (!text || isStreaming) return;
 
+    // Check if anonymous user has exceeded their daily limit
+    if (anonymousSession.isAnonymous && !anonymousSession.canSendMessage) {
+      toast.error(
+        <div className="flex flex-col gap-1">
+          <div className="font-medium">Daily limit reached</div>
+          <div className="text-xs">Sign in for unlimited access!</div>
+        </div>
+      );
+      return;
+    }
+
     // Check if this is a document creation request
     const docCreationMatch = text.match(/^(?:make|create)\s+(?:new\s+)?document\s+(?:about|on|for)\s+(.+)$/i);
 
@@ -684,6 +701,7 @@ export function FastAgentPanel({
           const streamingThread = await createStreamingThread({
             title: `Create document about ${topic}`,
             model: selectedModel,
+            anonymousSessionId: anonymousSession.sessionId ?? undefined,
           });
           threadId = streamingThread;
           setActiveThreadId(threadId);
@@ -809,6 +827,7 @@ export function FastAgentPanel({
           threadId = await createStreamingThread({
             title: messageContent.substring(0, 50),
             model: selectedModel,
+            anonymousSessionId: anonymousSession.sessionId ?? undefined,
           });
           setActiveThreadId(threadId);
         }
@@ -822,6 +841,7 @@ export function FastAgentPanel({
           model: selectedModel,
           useCoordinator: true,  // Enable smart routing via coordinator
           arbitrageEnabled,
+          anonymousSessionId: anonymousSession.sessionId ?? undefined,
         });
 
         console.log('[FastAgentPanel] Streaming initiated');
@@ -861,10 +881,11 @@ export function FastAgentPanel({
     sendStreamingMessage,
     generateAndCreateDocument,
     convex,
-      streamingThread,
-      autoNameThread,
-      isAuthenticated,
-    ]);
+    streamingThread,
+    autoNameThread,
+    isAuthenticated,
+    anonymousSession,
+  ]);
 
   // Auto-send contextual open prompt once streaming mode is active.
   useEffect(() => {
@@ -1536,6 +1557,43 @@ export function FastAgentPanel({
                   )}
 
                   <div ref={messagesEndRef} />
+                </div>
+              </div>
+            )}
+
+            {/* Anonymous User Banner */}
+            {anonymousSession.isAnonymous && !anonymousSession.isLoading && (
+              <div className={`mx-4 mt-2 px-3 py-2 rounded-lg border ${
+                anonymousSession.canSendMessage
+                  ? 'bg-blue-500/10 border-blue-500/30'
+                  : 'bg-amber-500/10 border-amber-500/30'
+              }`}>
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    {anonymousSession.canSendMessage ? (
+                      <>
+                        <MessageSquare className="w-4 h-4 text-blue-400" />
+                        <span className="text-[var(--text-secondary)]">
+                          <span className="font-medium text-[var(--text-primary)]">{anonymousSession.remaining}</span>
+                          {' '}of {anonymousSession.limit} free messages remaining today
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-4 h-4 text-amber-400" />
+                        <span className="text-[var(--text-secondary)]">
+                          Daily limit reached. Sign in for unlimited access!
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <a
+                    href="/sign-in"
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity"
+                  >
+                    <LogIn className="w-3 h-3" />
+                    Sign in
+                  </a>
                 </div>
               </div>
             )}
