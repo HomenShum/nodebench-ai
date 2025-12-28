@@ -155,7 +155,7 @@ export const search = query({
       rows = await ctx.db.query("tags").order("desc").take(lim * 2);
     }
 
-    const allowedKinds = kinds && kinds.length > 0 ? new Set(kinds.map((k) => k.toLowerCase())) : null;
+    const allowedKinds = kinds && kinds.length > 0 ? new Set(kinds.map((k: any) => k.toLowerCase())) : null;
     const out: Array<{ _id: Id<"tags">; name: string; kind?: string; importance?: number }> = [];
     for (const tag of rows) {
       const kind = canonicalizeKind(tag.kind, tag.name) || tag.kind;
@@ -192,12 +192,12 @@ export const addTagsToDocument = mutation({
     // De-dup names within request
     const seen = new Set<string>();
     const pending = tags
-      .map((t) => ({
+      .map((t: any) => ({
         name: normalizeTagName(t.name),
         kind: canonicalizeKind(t.kind, t.name) || t.kind,
         importance: typeof t.importance === "number" ? Math.max(0, Math.min(1, t.importance)) : undefined,
       }))
-      .filter((t) => {
+      .filter((t: any) => {
         if (!t.name) return false;
         if (seen.has(t.name)) return false;
         seen.add(t.name);

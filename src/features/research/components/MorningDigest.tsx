@@ -36,6 +36,7 @@ interface DigestItem {
 interface MorningDigestProps {
   userName?: string;
   onItemClick?: (item: DigestItem) => void;
+  onEntityClick?: (entityName: string, entityType?: "company" | "person") => void;
   onRefresh?: () => void;
 }
 
@@ -55,21 +56,70 @@ function detectSentimentLocal(text: string): 'bullish' | 'bearish' | 'neutral' {
 
 // Extract potential ticker/entity from text
 function extractEntity(text: string): string | undefined {
-  // Look for common patterns like "AAPL", "NVDA", company names
-  const tickerMatch = text.match(/\b([A-Z]{2,5})\b/);
-  if (tickerMatch) return tickerMatch[1];
+  const cleaned = text.trim();
+  if (!cleaned) return undefined;
 
-  // Look for company names
-  const companies = ['Apple', 'Google', 'Microsoft', 'NVIDIA', 'Amazon', 'Meta', 'Tesla', 'OpenAI', 'Anthropic'];
-  for (const company of companies) {
-    if (text.includes(company)) return company;
+  const stop = new Set([
+    "The",
+    "A",
+    "An",
+    "All",
+    "New",
+    "Today",
+    "Breaking",
+    "Report",
+    "Study",
+    "Research",
+    "Analysis",
+  ]);
+
+  // Prefer known entities and audit-critical names
+  const knownEntities = [
+    "Clearspace",
+    "SoundCloud",
+    "Salesforce",
+    "Open-AutoGLM",
+    "OpenAI",
+    "Anthropic",
+    "Google",
+    "NVIDIA",
+    "Amazon",
+    "Meta",
+    "Tesla",
+    "Microsoft",
+    "Gemini",
+  ];
+  for (const entity of knownEntities) {
+    if (cleaned.toLowerCase().includes(entity.toLowerCase())) return entity;
   }
+
+  // Capture repo-style tokens like owner/repo (e.g., bellard/mquickjs)
+  const repoMatch = cleaned.match(/\b([a-z0-9_.-]+)\/([a-z0-9_.-]+)\b/i);
+  if (repoMatch?.[2] && /[a-z]/i.test(repoMatch[2])) return repoMatch[2];
+
+  // Look for common ticker patterns (ignore generic terms)
+  const tickerMatch = cleaned.match(/\b([A-Z]{2,5})\b/);
+  if (tickerMatch && !stop.has(tickerMatch[1])) return tickerMatch[1];
+
+  // Capture leading proper noun before parenthesis or dash
+  const prefixMatch = cleaned.match(/^([A-Z][A-Za-z0-9-]+)(?:\s+\(|\s+-|\s+is\b)/);
+  if (prefixMatch?.[1] && !stop.has(prefixMatch[1])) return prefixMatch[1];
+
+  // Capture camel-cased names (e.g., SoundCloud)
+  const camelMatch = cleaned.match(/\b([A-Z][a-z]+(?:[A-Z][a-z]+)+)\b/);
+  if (camelMatch?.[1]) return camelMatch[1];
+
+  // Capture hyphenated proper nouns (e.g., Open-AutoGLM)
+  const hyphenMatch = cleaned.match(/\b([A-Z][A-Za-z0-9]+-[A-Za-z0-9-]+)\b/);
+  if (hyphenMatch?.[1]) return hyphenMatch[1];
+
   return undefined;
 }
 
 export const MorningDigest: React.FC<MorningDigestProps> = ({
   userName = 'there',
   onItemClick,
+  onEntityClick,
   onRefresh
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -542,6 +592,12 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       .slice(0, 8);
   }, [digestItems]);
 
+  const trackedHashtags = digestData?.trackedHashtags ?? [];
+  const topicFocusTags = trackedHashtags.length > 0
+    ? trackedHashtags.slice(0, 6)
+    : tagRadar.slice(0, 6).map((tag) => `#${tag.tag}`);
+  const isTopicFocusTrending = trackedHashtags.length === 0 && topicFocusTags.length > 0;
+
   const freshnessStats = useMemo(() => {
     const timestamps = digestItems
       .map((item: any) => Date.parse(item.publishedAt))
@@ -556,6 +612,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     const avgScore = digestItems.length ? Math.round(totalScore / digestItems.length) : null;
     return { newest, oldest, windowHours, avgScore };
   }, [digestItems]);
+
+  const avgHeatValue = freshnessStats.avgScore !== null
+    ? Math.round(freshnessStats.avgScore)
+    : null;
 
   const sourceConcentration = useMemo(() => {
     const total = topSources.reduce((sum, source) => sum + source.count, 0);
@@ -681,7 +741,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="flex-1 relative z-10">
                 <p className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-none transform rotate-45 ${primarySentiment === 'bullish' ? 'bg-emerald-700' : 'bg-stone-500'}`} />
-                  Executive Synthesis
+                  Digest Overview
                 </p>
                 <div className="text-xl font-serif font-medium text-gray-900 leading-relaxed italic">
                   "<InteractiveSpanParser
@@ -714,8 +774,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div>
                 <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Topic focus</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {(digestData?.trackedHashtags ?? []).length > 0 ? (
-                    digestData?.trackedHashtags?.slice(0, 6).map((tag) => (
+                  {topicFocusTags.length > 0 ? (
+                    topicFocusTags.map((tag) => (
                       <span
                         key={tag}
                         className="px-2 py-1 text-[10px] font-bold uppercase tracking-tight border border-stone-200 bg-white text-stone-600"
@@ -727,18 +787,25 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <span className="text-[10px] text-stone-400">No topics tracked yet.</span>
                   )}
                 </div>
+                {isTopicFocusTrending && (
+                  <div className="mt-2 text-[9px] text-stone-400 uppercase tracking-widest">
+                    Trending tags (not tracked yet)
+                  </div>
+                )}
               </div>
               <div>
                 <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Entities detected</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {topEntities.length > 0 ? (
                     topEntities.map((entity) => (
-                      <span
+                      <button
                         key={entity}
-                        className="px-2 py-1 text-[10px] font-semibold border border-stone-200 bg-[#faf9f6] text-stone-600"
+                        type="button"
+                        onClick={() => onEntityClick?.(entity, "company")}
+                        className="px-2 py-1 text-[10px] font-semibold border border-stone-200 bg-[#faf9f6] text-stone-600 hover:border-emerald-900 hover:text-emerald-900 transition-colors"
                       >
                         {entity}
-                      </span>
+                      </button>
                     ))
                   ) : (
                     <span className="text-[10px] text-stone-400">No entities detected.</span>
@@ -755,22 +822,35 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="space-y-3">
                 {signalHighlights.length > 0 ? (
                   signalHighlights.map((item, idx) => (
-                    <button
+                    <div
                       key={`${item.label}-${idx}`}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity })}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" && event.key !== " ") return;
+                        event.preventDefault();
+                        onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity });
+                      }}
                       className="w-full text-left rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 hover:bg-white transition-colors"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-900">{item.label}</span>
                         {item.linkedEntity && (
-                          <span className="text-[10px] font-mono text-stone-400 uppercase tracking-tight">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onEntityClick?.(item.linkedEntity, "company");
+                            }}
+                            className="text-[10px] font-mono text-stone-400 uppercase tracking-tight hover:text-emerald-900 transition-colors"
+                          >
                             {item.linkedEntity}
-                          </span>
+                          </button>
                         )}
                       </div>
                       <div className="text-sm text-gray-700 mt-2">{item.text}</div>
-                    </button>
+                    </div>
                   ))
                 ) : (
                   <div className="text-xs text-stone-400">No highlights available yet.</div>
@@ -911,11 +991,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <div className="text-[10px] text-stone-400">coverage span</div>
                 </div>
                 <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Avg Heat</div>
+                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Avg Heat Score</div>
                   <div className="text-xl font-serif font-semibold text-gray-900">
-                    {freshnessStats.avgScore !== null ? freshnessStats.avgScore : 'N/A'}
+                    {avgHeatValue !== null ? `${avgHeatValue} pts` : 'N/A'}
                   </div>
-                  <div className="text-[10px] text-stone-400">score index</div>
+                  <div className="text-[10px] text-stone-400">avg engagement score</div>
                 </div>
                 <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
                   <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Top Source</div>
@@ -1040,10 +1120,16 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                 {expandedSections.has(section.id) && (
                   <div className="divide-y divide-gray-50">
                     {section.items.slice(0, 4).map((item, idx) => (
-                      <button
+                      <div
                         key={idx}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => onItemClick?.(item)}
+                        onKeyDown={(event) => {
+                          if (event.key !== "Enter" && event.key !== " ") return;
+                          event.preventDefault();
+                          onItemClick?.(item);
+                        }}
                         className="w-full text-left px-4 py-3.5 flex items-start justify-between gap-4 hover:bg-white transition-colors group"
                       >
                         <div className="flex items-start gap-3">
@@ -1054,15 +1140,22 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {item.linkedEntity && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold font-mono text-gray-500 bg-gray-50 border border-gray-100 uppercase tracking-tighter">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onEntityClick?.(item.linkedEntity, "company");
+                              }}
+                              className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold font-mono text-gray-500 bg-gray-50 border border-gray-100 uppercase tracking-tighter hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                            >
                               {item.linkedEntity}
-                            </span>
+                            </button>
                           )}
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${getRelevanceIndicator(item.relevance)}`}>
                             {item.relevance === 'high' ? 'Priority' : item.relevance === 'medium' ? 'Watch' : 'FYI'}
                           </span>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 )}

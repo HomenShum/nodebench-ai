@@ -30,17 +30,28 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
   const height = 260;
   const center = { x: width / 2, y: height / 2 };
   const radius = 90;
+  const secondaryRadius = 130;
 
   const focusId = graph.focusNodeId || graph.nodes[0]?.id;
   const centerNode = graph.nodes.find((node) => node.id === focusId) ?? graph.nodes[0];
   const otherNodes = graph.nodes.filter((node) => node.id !== centerNode.id);
+  const primaryNodes = otherNodes.filter((node) => (node.tier ?? 1) <= 1);
+  const secondaryNodes = otherNodes.filter((node) => (node.tier ?? 1) > 1);
 
-  const positionedNodes = otherNodes.map((node, idx) => {
-    const angle = (idx / Math.max(otherNodes.length, 1)) * 2 * Math.PI;
-    const x = center.x + radius * Math.cos(angle);
-    const y = center.y + radius * Math.sin(angle);
-    return { node, x, y };
-  });
+  const positionedNodes = [
+    ...primaryNodes.map((node, idx) => {
+      const angle = (idx / Math.max(primaryNodes.length, 1)) * 2 * Math.PI;
+      const x = center.x + radius * Math.cos(angle);
+      const y = center.y + radius * Math.sin(angle);
+      return { node, x, y, ring: "primary" as const };
+    }),
+    ...secondaryNodes.map((node, idx) => {
+      const angle = (idx / Math.max(secondaryNodes.length, 1)) * 2 * Math.PI;
+      const x = center.x + secondaryRadius * Math.cos(angle);
+      const y = center.y + secondaryRadius * Math.sin(angle);
+      return { node, x, y, ring: "secondary" as const };
+    }),
+  ];
 
   const edges = graph.edges ?? [];
 
@@ -59,12 +70,14 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
           viewBox={`0 0 ${width} ${height}`}
           preserveAspectRatio="xMidYMid meet"
         >
-          {positionedNodes.map(({ node, x, y }, idx) => {
+          {positionedNodes.map(({ node, x, y, ring }, idx) => {
             const edge = edges.find(
               (edge) =>
                 (edge.source === centerNode.id && edge.target === node.id) ||
                 (edge.target === centerNode.id && edge.source === node.id),
             );
+            const isSecondary = edge?.order === "secondary" || ring === "secondary";
+            const labelText = edge?.relationship ?? edge?.impact;
             return (
               <g key={`edge-${node.id}-${idx}`}>
                 <motion.line
@@ -72,22 +85,22 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
                   y1={center.y}
                   x2={x}
                   y2={y}
-                  stroke="#cbd5e1"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
+                  stroke={isSecondary ? "#e2e8f0" : "#cbd5e1"}
+                  strokeWidth={isSecondary ? "0.8" : "1"}
+                  strokeDasharray={isSecondary ? "2 4" : "4 4"}
                   initial={{ pathLength: 0 }}
                   animate={{ pathLength: 1 }}
                   transition={{ duration: 0.8 }}
                 />
-                {edge?.relationship && (
+                {labelText && (
                   <text
                     x={(center.x + x) / 2}
                     y={(center.y + y) / 2 - 4}
                     textAnchor="middle"
-                    fill="#64748b"
+                    fill={isSecondary ? "#94a3b8" : "#64748b"}
                     fontSize="9"
                   >
-                    {edge.relationship}
+                    {labelText}
                   </text>
                 )}
               </g>
@@ -95,10 +108,11 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
           })}
         </svg>
 
-        {positionedNodes.map(({ node, x, y }, idx) => {
+        {positionedNodes.map(({ node, x, y, ring }, idx) => {
           const Icon = getNodeIcon(node);
           const left = (x / width) * 100;
           const top = (y / height) * 100;
+          const isSecondary = ring === "secondary";
           return (
             <motion.div
               key={`node-${node.id}`}
@@ -108,8 +122,10 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.05 }}
             >
-              <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                <Icon className="w-4 h-4 text-emerald-900" />
+              <div className={`w-8 h-8 rounded-full bg-white border flex items-center justify-center shadow-sm ${
+                isSecondary ? "border-slate-200/60" : "border-slate-200"
+              }`}>
+                <Icon className={`w-4 h-4 ${isSecondary ? "text-slate-500" : "text-emerald-900"}`} />
               </div>
               <span className="text-[9px] text-stone-600 font-semibold text-center max-w-[80px]">
                 {node.label}

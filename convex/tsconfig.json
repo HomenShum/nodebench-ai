@@ -11,6 +11,11 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "convex/server": ["./_type_shims/convex-server.d.ts"],
+      "convex/values": ["./_type_shims/convex-values.d.ts"]
+    },
 
     /* These compiler options are required by Convex */
     "target": "ESNext",

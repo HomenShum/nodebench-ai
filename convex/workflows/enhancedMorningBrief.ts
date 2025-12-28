@@ -51,18 +51,14 @@ const DEFAULT_TOPICS = [
 // ACTION: Generate enhanced morning brief for a user
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const generateEnhancedBrief = internalAction({
+export const generateEnhancedBrief = (internalAction as any)({
   args: {
     userId: v.optional(v.string()),
     topics: v.optional(v.array(v.string())),
-    watchlistEntities: v.optional(v.array(v.object({
-      name: v.string(),
-      type: v.union(v.literal("company"), v.literal("person"), v.literal("topic")),
-      keywords: v.array(v.string()),
-    }))),
+    watchlistEntities: v.optional(v.any()),
     includeGlobalFeed: v.optional(v.boolean()),
   },
-  handler: async (ctx, args): Promise<any> => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     const startTime = Date.now();
     const topics = args.topics ?? DEFAULT_TOPICS;
     const watchlist = args.watchlistEntities ?? [];
@@ -214,13 +210,13 @@ export const generateEnhancedBrief = internalAction({
 // HELPER ACTION: Search for a single topic
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const searchForTopic = internalAction({
+export const searchForTopic = (internalAction as any)({
   args: {
     topic: v.string(),
     fromDate: v.string(),
     toDate: v.string(),
   },
-  handler: async (ctx, args): Promise<any> => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     const apiKey = process.env.LINKUP_API_KEY;
 
     if (!apiKey) {
@@ -355,11 +351,11 @@ function formatAsNewsletter(sections: BriefSection[], fromDate: string, toDate: 
 // PUBLIC ACTION: Trigger brief generation for current user
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const generateMyMorningBrief = action({
+export const generateMyMorningBrief = (action as any)({
   args: {
     customTopics: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, args): Promise<any> => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     // Get user's tracked topics from preferences if not provided
     // For now, use defaults or custom topics
 
@@ -376,12 +372,12 @@ export const generateMyMorningBrief = action({
 // SCHEDULED BRIEF: Durably scheduled per-user brief
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const scheduleBriefForUser = internalAction({
+export const scheduleBriefForUser = (internalAction as any)({
   args: {
     userId: v.id("users"),
     topics: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, args): Promise<void> => {
+  handler: async (ctx: any, args: any): Promise<void> => {
     // Use scheduler pattern for durable execution
     // This ensures the brief is generated even if there's a transient failure
 

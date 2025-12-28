@@ -220,7 +220,7 @@ export const analyzeSelectedFilesIntoDossier = action({
     }
 
     // Map docs → fileIds
-    const docs: any[] = await Promise.all(documentIds.map((id) => ctx.runQuery(api.domains.documents.documents.getById, { documentId: id, userId })));
+    const docs: any[] = await Promise.all(documentIds.map((id: any) => ctx.runQuery(api.domains.documents.documents.getById, { documentId: id, userId })));
 
     type Item = { documentId: Id<"documents">; fileId: Id<"files">; fileType?: string };
     const items: Item[] = docs

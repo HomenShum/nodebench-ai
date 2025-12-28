@@ -45,7 +45,7 @@ export const getDocumentsToIndex = internalQuery({
       });
 
     return {
-      documents: results.page.map(doc => ({
+      documents: results.page.map((doc: any) => ({
         _id: doc._id,
         title: doc.title,
         createdBy: doc.createdBy,

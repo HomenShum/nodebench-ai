@@ -608,6 +608,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             setCurrentView('research');
             setShowResearchDossier(false);
           }}
+          onEnterResearchHub={() => {
+            setCurrentView('research');
+            setShowResearchDossier(true);
+          }}
           selectedDocumentId={selectedDocumentId}
           onDocumentSelect={handleDocumentSelect}
           currentView={currentView}
@@ -783,8 +787,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     order: [],
                     updatedAt: new Date().toISOString(),
                   }}
-                  briefTitle="Today's Intelligence Brief"
-                  briefDate={new Date().toLocaleDateString()}
+                  briefTitle="Latest Intelligence Brief"
                   onBack={() => setCurrentView('research')}
                 />
               ) : (

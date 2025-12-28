@@ -79,19 +79,19 @@ export const generateDigestSummary = action({
   handler: async (ctx, args) => {
     // Build context for the AI
     const marketContext = args.marketMovers
-      .map(item => `- ${item.title}`)
-      .join('\n');
-    
-    const watchlistContext = args.watchlistRelevant
-      .map(item => `- ${item.title}`)
-      .join('\n');
-    
-    const riskContext = args.riskAlerts
-      .map(item => `- ${item.title}`)
+      .map((item: any) => `- ${item.title}`)
       .join('\n');
 
-    const trackedTopics = args.trackedHashtags.length > 0 
-      ? args.trackedHashtags.map(h => `#${h}`).join(', ')
+    const watchlistContext = args.watchlistRelevant
+      .map((item: any) => `- ${item.title}`)
+      .join('\n');
+
+    const riskContext = args.riskAlerts
+      .map((item: any) => `- ${item.title}`)
+      .join('\n');
+
+    const trackedTopics = args.trackedHashtags.length > 0
+      ? args.trackedHashtags.map((h: any) => `#${h}`).join(', ')
       : 'general tech and finance news';
 
     const prompt = `You are a concise financial analyst writing a morning briefing. Based on the following news items, write a 2-3 sentence summary that:

@@ -64,13 +64,13 @@ async function generatePlanForThread(ctx: any, prompt: string, model?: string): 
 /**
  * Initialize a thread with a persistent plan + progress log.
  */
-export const initializeThread = mutation({
+export const initializeThread = (mutation as any)({
   args: {
     threadId: v.id("chatThreadsStream"),
     prompt: v.string(),
     model: v.optional(v.string()),
   },
-  handler: async (ctx, args): Promise<{ planId: any; features: any[] }> => {
+  handler: async (ctx: any, args: any): Promise<{ planId: any; features: any[] }> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
@@ -87,7 +87,7 @@ export const initializeThread = mutation({
     // If plan already exists, return it
     const existing = await ctx.db
       .query("agentPlans")
-      .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", agentThreadId))
+      .withIndex("by_agent_thread", (q: any) => q.eq("agentThreadId", agentThreadId))
       .first();
     if (existing) {
       return { planId: existing._id, features: existing.features ?? [] };
@@ -124,15 +124,15 @@ export const initializeThread = mutation({
 /**
  * Fetch plan by agentThreadId (for boot-up ritual).
  */
-export const getPlanByThread = query({
+export const getPlanByThread = (query as any)({
   args: { agentThreadId: v.string() },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
     const plan = await ctx.db
       .query("agentPlans")
-      .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", args.agentThreadId))
+      .withIndex("by_agent_thread", (q: any) => q.eq("agentThreadId", args.agentThreadId))
       .first();
 
     if (!plan || plan.userId !== userId) return null;

@@ -32,7 +32,7 @@ export const validateToolsHaveEmbeddings = internalQuery({
             acc.set(t.category, (acc.get(t.category) || 0) + 1);
             return acc;
           }, new Map<string, number>())
-        )
+        ) as [string, number][]
       ),
     };
   },
@@ -113,7 +113,7 @@ export const getToolDetails = internalQuery({
   },
   handler: async (ctx, args) => {
     const results = await Promise.all(
-      args.toolNames.map(async (toolName) => {
+      args.toolNames.map(async (toolName: any) => {
         const tool = await ctx.db
           .query("toolRegistry")
           .withIndex("by_toolName", (q) => q.eq("toolName", toolName))

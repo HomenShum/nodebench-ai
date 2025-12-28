@@ -53,12 +53,12 @@ export const callMcpTool: any = action({
     try {
       // Helper to score preferred servers (lower is better)
       const PRIORITY = (args.prioritizedServers && args.prioritizedServers.length > 0)
-        ? args.prioritizedServers.map((p) => p.toLowerCase())
+        ? args.prioritizedServers.map((p: any) => p.toLowerCase())
         : ["context7", "convex"];
       const scoreServer = (name?: string) => {
         if (!name) return PRIORITY.length + 1;
         const lower = name.toLowerCase();
-        const idx = PRIORITY.findIndex((p) => lower.includes(p));
+        const idx = PRIORITY.findIndex((p: any) => lower.includes(p));
         return idx === -1 ? PRIORITY.length : idx;
       };
 

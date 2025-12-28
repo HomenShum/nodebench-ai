@@ -170,8 +170,8 @@ export const getTestCases = internalQuery({
     const testCaseMap = new Map(productionTestCases.map(tc => [tc.id, tc]));
 
     return args.caseIds
-      .filter(id => testCaseMap.has(id))
-      .map(id => {
+      .filter((id: any) => testCaseMap.has(id))
+      .map((id: any) => {
         const tc = testCaseMap.get(id)!;
         return {
           id: tc.id,

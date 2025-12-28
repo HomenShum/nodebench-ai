@@ -550,8 +550,8 @@ export const sendEvalReportEmail = internalAction({
     }
 
     // Build HTML email
-    const passedTests = args.results.filter(r => r.passed);
-    const failedTests = args.results.filter(r => !r.passed);
+    const passedTests = args.results.filter((r: any) => r.passed);
+    const failedTests = args.results.filter((r: any) => !r.passed);
     const passRatePercent = (args.summary.passRate * 100).toFixed(1);
     const avgLatencySec = (args.summary.avgLatencyMs / 1000).toFixed(2);
 
@@ -605,7 +605,7 @@ export const sendEvalReportEmail = internalAction({
 
   ${failedTests.length > 0 ? `
   <h2>❌ Failed Tests (${failedTests.length})</h2>
-  ${failedTests.map(t => `
+  ${failedTests.map((t: any) => `
     <div class="test-card failed">
       <div class="test-id">${t.testId}</div>
       <div class="tools">Tools called: ${t.toolsCalled.length > 0 ? t.toolsCalled.join(', ') : 'none'}</div>
@@ -618,7 +618,7 @@ export const sendEvalReportEmail = internalAction({
 
   ${passedTests.length > 0 ? `
   <h2>✅ Passed Tests (${passedTests.length})</h2>
-  ${passedTests.map(t => `
+  ${passedTests.map((t: any) => `
     <div class="test-card passed">
       <div class="test-id">${t.testId}</div>
       <div class="tools">Tools called: ${t.toolsCalled.length > 0 ? t.toolsCalled.join(', ') : 'none'}</div>

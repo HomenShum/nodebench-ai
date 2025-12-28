@@ -39,7 +39,15 @@ export const storeEntityContext = mutation({
       url: v.string(),
       snippet: v.optional(v.string()),
     })),
-    crmFields: v.optional(v.any()), // NEW: CRM fields
+    crmFields: v.optional(v.any()),
+    // Banker-grade enrichment fields
+    funding: v.optional(v.any()),
+    people: v.optional(v.any()),
+    productPipeline: v.optional(v.any()),
+    recentNewsItems: v.optional(v.any()),
+    contactPoints: v.optional(v.any()),
+    freshness: v.optional(v.any()),
+    personaHooks: v.optional(v.any()),
     spreadsheetId: v.optional(v.id("documents")),
     rowIndex: v.optional(v.number()),
     researchedBy: v.id("users"),
@@ -62,7 +70,15 @@ export const storeEntityContext = mutation({
         summary: args.summary,
         keyFacts: args.keyFacts,
         sources: args.sources,
-        crmFields: args.crmFields, // NEW
+        crmFields: args.crmFields,
+        // Banker-grade enrichment fields
+        funding: args.funding,
+        people: args.people,
+        productPipeline: args.productPipeline,
+        recentNewsItems: args.recentNewsItems,
+        contactPoints: args.contactPoints,
+        freshness: args.freshness,
+        personaHooks: args.personaHooks,
         spreadsheetId: args.spreadsheetId,
         rowIndex: args.rowIndex,
         researchedAt: now,
@@ -83,7 +99,15 @@ export const storeEntityContext = mutation({
         summary: args.summary,
         keyFacts: args.keyFacts,
         sources: args.sources,
-        crmFields: args.crmFields, // NEW
+        crmFields: args.crmFields,
+        // Banker-grade enrichment fields
+        funding: args.funding,
+        people: args.people,
+        productPipeline: args.productPipeline,
+        recentNewsItems: args.recentNewsItems,
+        contactPoints: args.contactPoints,
+        freshness: args.freshness,
+        personaHooks: args.personaHooks,
         spreadsheetId: args.spreadsheetId,
         rowIndex: args.rowIndex,
         researchedAt: now,
@@ -573,21 +597,21 @@ export const upgradeToDeepMemory = internalMutation({
     // Trim to limits
     const trimmedNarratives = args.narratives
       .slice(0, MEMORY_LIMITS.maxNarrativesPerEntity)
-      .map(n => ({ ...n, lastUpdated: now }));
-    
+      .map((n: any) => ({ ...n, lastUpdated: now }));
+
     const trimmedHeuristics = args.heuristics
       .slice(0, MEMORY_LIMITS.maxHeuristicsPerEntity);
-    
+
     // Re-evaluate quality with new data
     const daysSinceResearch = (Date.now() - entity.researchedAt) / (1000 * 60 * 60 * 24);
-    const activeFacts = (entity.structuredFacts || []).filter(f => !f.isOutdated);
-    
+    const activeFacts = (entity.structuredFacts || []).filter((f: any) => !f.isOutdated);
+
     const qualityResult = evaluateMemoryQuality({
       factCount: activeFacts.length,
       daysSinceResearch,
-      unresolvedConflictCount: (entity.conflicts || []).filter(c => c.status === "unresolved").length,
+      unresolvedConflictCount: (entity.conflicts || []).filter((c: any) => c.status === "unresolved").length,
       sourceCount: entity.sources.length,
-      factConfidences: activeFacts.map(f => f.isHighConfidence),
+      factConfidences: activeFacts.map((f: any) => f.isHighConfidence),
       narrativeCount: trimmedNarratives.length,
       heuristicCount: trimmedHeuristics.length,
     });

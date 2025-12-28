@@ -249,7 +249,7 @@ export const createHashtagDossier = mutation({
       });
 
       // Add each document as a paragraph with @mention
-      args.matchedDocuments.forEach((doc) => {
+      args.matchedDocuments.forEach((doc: any) => {
         const matchBadge =
           doc.matchType === "hybrid-validated"
             ? "✅"

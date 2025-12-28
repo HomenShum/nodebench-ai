@@ -509,7 +509,26 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
     label: formatValue(v, config.yAxisUnit),
   }));
 
-  const primarySeriesId = (config.series.find((s) => s.type === "solid") ?? config.series[0]).id;
+  const primarySeries = config.series.find((s) => s.type === "solid") ?? config.series[0];
+  const primarySeriesId = primarySeries.id;
+
+  const annotationPoints = (config.annotations ?? [])
+    .map((annotation) => {
+      const targetIndex = annotation.targetIndex ?? annotation.associatedDataIndex;
+      if (targetIndex === undefined || targetIndex === null) return null;
+      const point = primarySeries.data[targetIndex];
+      if (!point) return null;
+      const coord = getCoord(targetIndex, point.value);
+      const label = annotation.title.length > 26
+        ? `${annotation.title.slice(0, 26)}...`
+        : annotation.title;
+      return { annotation, coord, label };
+    })
+    .filter(Boolean) as Array<{
+      annotation: (typeof config.annotations)[number];
+      coord: { x: number; y: number };
+      label: string;
+    }>;
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -761,6 +780,44 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                </g>
              );
            })}
+
+          {annotationPoints.length > 0 && (
+            <g>
+              {annotationPoints.map(({ annotation, coord, label }, idx) => {
+                const color = annotation.sentiment === "negative"
+                  ? "#ef4444"
+                  : annotation.sentiment === "positive"
+                    ? "#10b981"
+                    : "#64748b";
+                const y = Math.max(CHART.paddingTop + 6, coord.y - 14);
+                return (
+                  <g key={annotation.id ?? `${coord.x}-${coord.y}-${idx}`}>
+                    <circle cx={coord.x} cy={coord.y} r={3} fill={color} />
+                    <rect
+                      x={coord.x + 6}
+                      y={y - 10}
+                      width={label.length * 5.4 + 12}
+                      height={16}
+                      rx={8}
+                      fill="#ffffff"
+                      stroke="#e2e8f0"
+                      strokeWidth={1}
+                    />
+                    <text
+                      x={coord.x + 12}
+                      y={y + 2}
+                      className="text-[8px] fill-slate-600 font-medium"
+                    >
+                      {label}
+                    </text>
+                    {annotation.description && (
+                      <title>{annotation.description}</title>
+                    )}
+                  </g>
+                );
+              })}
+            </g>
+          )}
 
           {/* Vertical crosshair on hover */}
           {activePoint && (

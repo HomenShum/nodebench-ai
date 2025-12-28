@@ -19,6 +19,7 @@ interface ActAwareDashboardProps {
     capabilities: Array<{ label: string; delta: number | null }>;
   } | null;
   onDataPointClick?: (point: ChartDataPointContext) => void;
+  onEvidenceClick?: (evidence: Evidence) => void;
 }
 
 // ------------------------------------------------------------------
@@ -136,7 +137,8 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
   evidence,
   workflowSteps,
   deltas,
-  onDataPointClick
+  onDataPointClick,
+  onEvidenceClick
 }) => {
   // Extract evidence relevant to the current act
   const actEvidence = React.useMemo(() => {
@@ -168,7 +170,7 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
               onDataPointClick={onDataPointClick}
             />
             {actEvidence.length > 0 && (
-              <EvidencePanel evidence={actEvidence} title="Sources for Today" maxVisible={actEvidence.length} />
+              <EvidencePanel evidence={actEvidence} title="Sources for Today" maxVisible={8} onEvidenceClick={onEvidenceClick} />
             )}
           </motion.div>
         )}
@@ -185,7 +187,7 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
           >
             <ActIIChangeView brief={executiveBrief} graph={dashboardData.entityGraph ?? null} />
             {actEvidence.length > 0 && (
-              <EvidencePanel evidence={actEvidence} title="Brief Sources" maxVisible={actEvidence.length} />
+              <EvidencePanel evidence={actEvidence} title="Brief Sources" maxVisible={actEvidence.length} onEvidenceClick={onEvidenceClick} />
             )}
           </motion.div>
         )}

@@ -345,7 +345,7 @@ export function FusedSearchResults({
         aria-label="Search results"
       >
         {displayedResults.map((result, idx) => (
-          <div key={result.id} role="listitem">
+          <div key={`${result.id}-${idx}`} role="listitem">
             <ResultCard
               result={result}
               citationNumber={showCitations ? idx + 1 : undefined}
@@ -377,4 +377,3 @@ export function FusedSearchResults({
     </div>
   );
 }
-

@@ -12,7 +12,6 @@ import {
     Sparkles,
     FileText,
     CheckCircle2,
-    Bell,
     TrendingUp,
     Plus,
     Clock
@@ -84,10 +83,11 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace }: Cinemati
                         onClick={onEnterWorkspace}
                     />
                     <QuickActionButton
-                        icon={<Bell className="w-4 h-4" />}
-                        label="Briefings"
+                        icon={<Sparkles className="w-4 h-4" />}
+                        label="Research Hub"
                         onClick={onEnterHub}
                         badge={userStats?.unreadBriefings}
+                        variant="primary"
                     />
                 </div>
             </motion.div>
@@ -205,7 +205,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace }: Cinemati
                 <DiscoveryCard
                     title="The Research Hub"
                     desc="Access the full editorial dossier. Deep-dive into Act-based narratives, market signals, and live telemetry."
-                    btnText="Enter Archive"
+                    btnText="Open Research Hub"
                     onClick={onEnterHub}
                     variant="dark"
                     icon={<Sparkles className="w-5 h-5" />}
@@ -285,19 +285,27 @@ function QuickActionButton({
     icon,
     label,
     onClick,
-    badge
+    badge,
+    variant = "default"
 }: {
     icon: React.ReactNode,
     label: string,
     onClick: () => void,
-    badge?: number
+    badge?: number,
+    variant?: "default" | "primary"
 }) {
+    const isPrimary = variant === "primary";
+
     return (
         <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClick}
-            className="relative flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-md border border-stone-200 rounded-lg hover:bg-white hover:shadow-md transition-all text-sm font-medium text-stone-700 hover:text-emerald-950"
+            className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
+                isPrimary
+                    ? "bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 hover:shadow-lg"
+                    : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
+            }`}
         >
             {icon}
             <span>{label}</span>

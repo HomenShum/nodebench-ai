@@ -129,7 +129,18 @@ import {
 // Patch-based editing tools
 import { editDocument } from "../../tools/editDocument";
 import { editSpreadsheet } from "../../tools/editSpreadsheet";
-import { getLlmModel, calculateRequestCost, getProviderForModel, isModelAllowedForTier, getModelWithFailover, validateContextWindow, type UserTier } from "../../../shared/llm/modelCatalog";
+import {
+  getLlmModel,
+  calculateRequestCost,
+  getProviderForModel,
+  isModelAllowedForTier,
+  getModelWithFailover,
+  validateContextWindow,
+  getEquivalentModel,
+  providerFallbackChain,
+  isProviderConfigured,
+  type UserTier
+} from "../../../shared/llm/modelCatalog";
 
 // Import from centralized model resolver (SINGLE SOURCE OF TRUTH)
 import {
@@ -140,6 +151,46 @@ import {
 } from "./mcp_tools/models";
 
 const streamCancellationControllers = new Map<string, AbortController>();
+
+const RATE_LIMIT_BACKOFF_MS = 1200;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isProviderRateLimitError(error: unknown): boolean {
+  if (!error) return false;
+  const err = error as any;
+  const message = String(err?.message ?? "");
+  const name = String(err?.name ?? "");
+  const status =
+    err?.status ??
+    err?.statusCode ??
+    err?.code ??
+    err?.cause?.status ??
+    err?.cause?.statusCode;
+  if (status === 429 || status === "429") return true;
+  if (/rate limit|too many requests|overloaded|quota|429/i.test(message)) return true;
+  if (/rate limit/i.test(name)) return true;
+  const causeMessage = String(err?.cause?.message ?? "");
+  if (/rate limit|too many requests|overloaded|quota|429/i.test(causeMessage)) return true;
+  return false;
+}
+
+function getFallbackModelForRateLimit(model: ApprovedModel): ApprovedModel | null {
+  const provider = getProviderForModel(model);
+  if (!provider) return null;
+  const fallbacks = providerFallbackChain[provider] ?? [];
+  for (const fallbackProvider of fallbacks) {
+    if (!isProviderConfigured(fallbackProvider)) continue;
+    const candidate = getEquivalentModel(model, fallbackProvider);
+    const normalized = normalizeModelInput(candidate);
+    if (normalized !== model) {
+      return normalized;
+    }
+  }
+  return null;
+}
 
 // Helper to get the appropriate language model based on model name
 // Uses centralized model resolver for 7 approved models only
@@ -635,7 +686,7 @@ export const listThreads = query({
 
     // Enrich each thread with message count, tools used, and models used
     const enrichedThreads = await Promise.all(
-      threadPage.page.map(async (thread) => {
+      threadPage.page.map(async (thread: any) => {
         try {
           const modelsUsed = thread.model ? [thread.model] : [];
 
@@ -1121,7 +1172,7 @@ export const getThreadMessagesWithStreaming = query({
     });
 
     // Debug: Log raw messages to see stored role
-    console.log('[getThreadMessagesWithStreaming] Raw messages:', rawMessages.page.map(m => ({
+    console.log('[getThreadMessagesWithStreaming] Raw messages:', rawMessages.page.map((m: any) => ({
       id: m._id,
       messageRole: m.message?.role,
       text: m.text?.slice(0, 50),
@@ -1137,7 +1188,7 @@ export const getThreadMessagesWithStreaming = query({
     });
 
     // Debug: Log the UIMessages to understand role detection
-    console.log('[getThreadMessagesWithStreaming] UIMessages:', paginated.page.map(m => ({
+    console.log('[getThreadMessagesWithStreaming] UIMessages:', paginated.page.map((m: any) => ({
       id: m.id,
       role: m.role,
       text: m.text?.slice(0, 50),
@@ -1399,12 +1450,13 @@ export const streamAsync = internalAction({
   },
   handler: async (ctx, args) => {
     const executionId = crypto.randomUUID().substring(0, 8);
-    const startTime = Date.now();
+    let lastAttemptStart = Date.now();
 
     // Normalize model at API boundary (7 approved models only)
-    const normalizedModel = normalizeModelInput(args.model);
+    const requestedModel = normalizeModelInput(args.model);
+    let activeModel = requestedModel;
 
-    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId, 'model:', normalizedModel);
+    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId, 'model:', requestedModel);
 
     // Get userId for coordinator agent from thread
     const thread = await ctx.runQuery(components.agent.threads.getThread, {
@@ -1419,7 +1471,7 @@ export const streamAsync = internalAction({
     if (userId) {
       try {
         const rateLimitCheck = await ctx.runQuery(api.domains.billing.rateLimiting.checkRequestAllowed, {
-          model: normalizedModel,
+          model: activeModel,
           estimatedInputTokens: 2000, // Estimate for pre-check
           estimatedOutputTokens: 1000,
           userId: userId as Id<"users">, // Pass userId explicitly since auth context isn't available in actions
@@ -1460,8 +1512,6 @@ export const streamAsync = internalAction({
     console.log(`[streamAsync:${executionId}] Arbitrage mode:`, arbitrageMode, '(UI override:', args.arbitrageEnabled, ')');
 
     // Choose agent based on mode
-    let agent;
-    let agentType: string;
     let responsePromptOverride: string | undefined;
     const contextWithUserId = {
       ...ctx,
@@ -1527,37 +1577,40 @@ export const streamAsync = internalAction({
       throw new Error("Stream cancelled");
     }
 
-    // Create the appropriate agent
-    // OPTION A: Always use CoordinatorAgent directly (no planner overhead)
-    // The Coordinator decides internally whether to use tools or answer directly
-    if (args.useCoordinator !== false) {
-      const { createCoordinatorAgent } = await import("./core/coordinatorAgent");
+    const createAgentForModel = async (model: ApprovedModel) => {
+      let agent;
+      let agentType: string;
+      if (args.useCoordinator !== false) {
+        const { createCoordinatorAgent } = await import("./core/coordinatorAgent");
 
-      // Create mutable ref for dynamic section tracking
-      // This allows setActiveSection to update the current section at runtime
-      // and artifact-producing tools to read it at invocation time
-      const sectionIdRef = { current: undefined as string | undefined };
+        // Create mutable ref for dynamic section tracking
+        // This allows setActiveSection to update the current section at runtime
+        // and artifact-producing tools to read it at invocation time
+        const sectionIdRef = { current: undefined as string | undefined };
 
-      // Build artifact deps if we have userId
-      // runId = threadId (agent thread), userId for artifact ownership
-      const artifactDeps = userIdTyped ? {
-        runId: args.threadId,
-        userId: userIdTyped,
-        sectionIdRef, // Mutable ref for per-section artifact linking
-      } : undefined;
+        // Build artifact deps if we have userId
+        // runId = threadId (agent thread), userId for artifact ownership
+        const artifactDeps = userIdTyped ? {
+          runId: args.threadId,
+          userId: userIdTyped,
+          sectionIdRef, // Mutable ref for per-section artifact linking
+        } : undefined;
 
-      // Always use CoordinatorAgent - it has GAM tools and decides internally when to use them
-      // Pass artifactDeps to wrap all tools for artifact extraction
-      // Pass arbitrageMode option for receipts-first research persona
-      agent = createCoordinatorAgent(normalizedModel, artifactDeps, { arbitrageMode });
-      agentType = arbitrageMode ? "arbitrage" : "coordinator";
+        // Always use CoordinatorAgent - it has GAM tools and decides internally when to use them
+        // Pass artifactDeps to wrap all tools for artifact extraction
+        // Pass arbitrageMode option for receipts-first research persona
+        agent = createCoordinatorAgent(model, artifactDeps, { arbitrageMode });
+        agentType = arbitrageMode ? "arbitrage" : "coordinator";
 
-      console.log(`[streamAsync:${executionId}] Using CoordinatorAgent directly - GAM memory tools available, artifacts=${!!artifactDeps}, sectionRef=enabled`);
-    } else {
-      console.log(`[streamAsync:${executionId}] Using SIMPLE AGENT (legacy mode)`);
-      agent = createSimpleChatAgent(normalizedModel);
-      agentType = "simple";
-    }
+        console.log(`[streamAsync:${executionId}] Using CoordinatorAgent directly - GAM memory tools available, artifacts=${!!artifactDeps}, sectionRef=enabled, model=${model}`);
+      } else {
+        console.log(`[streamAsync:${executionId}] Using SIMPLE AGENT (legacy mode)`);
+        agent = createSimpleChatAgent(model);
+        agentType = "simple";
+      }
+
+      return { agent, agentType };
+    };
 
     const controller = new AbortController();
     const cancelKey = customThread?._id ? String(customThread._id) : args.threadId;
@@ -1574,10 +1627,29 @@ export const streamAsync = internalAction({
       }, STREAM_TIMEOUT_MS);
     }
 
-    try {
-      console.log(`[streamAsync:${executionId}] 📡 Calling ${agentType} agent.streamText...`);
-      console.log(`[streamAsync:${executionId}] 🔑 Using promptMessageId:`, args.promptMessageId);
-      console.log(`[streamAsync:${executionId}] 🧵 ThreadId:`, args.threadId);
+    const recordFailureUsage = async (model: ApprovedModel, errorMessage: string) => {
+      if (!errorMessage) return;
+      try {
+        await ctx.runMutation(api.domains.billing.rateLimiting.recordLlmUsage, {
+          model,
+          inputTokens: 100, // Minimal estimate for failed request
+          outputTokens: 0,
+          success: false,
+          errorMessage: errorMessage.substring(0, 500),
+          latencyMs: Date.now() - lastAttemptStart,
+        });
+      } catch (usageErr) {
+        // Ignore usage tracking errors
+      }
+    };
+
+    const runStreamAttempt = async (model: ApprovedModel, attemptLabel: string) => {
+      lastAttemptStart = Date.now();
+      const { agent, agentType } = await createAgentForModel(model);
+
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) Calling ${agentType} agent.streamText...`);
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) Using promptMessageId:`, args.promptMessageId);
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) ThreadId:`, args.threadId);
 
       const result = await agent.streamText(
         contextWithUserId as any,
@@ -1602,35 +1674,35 @@ export const streamAsync = internalAction({
         }
       );
 
-      console.log(`[streamAsync:${executionId}] ✅ Stream started with agent defaults, saveStreamDeltas enabled`);
-      console.log(`[streamAsync:${executionId}] 📝 MessageId:`, result.messageId);
-      console.log(`[streamAsync:${executionId}] 🔍 Using promptMessageId:`, args.promptMessageId);
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) Stream started with agent defaults, saveStreamDeltas enabled`);
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) MessageId:`, result.messageId);
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) Using promptMessageId:`, args.promptMessageId);
 
       // Use consumeStream() to ensure all tool calls are executed and results are captured
       // This waits for the entire stream to complete, including tool execution
       // With saveStreamDeltas enabled, clients will see real-time updates via syncStreams
       await result.consumeStream();
 
-      console.log(`[streamAsync:${executionId}] 🏁 Stream completed successfully`);
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) Stream completed successfully`);
 
       // Get tool calls and results to verify they were captured
       const toolCalls = await result.toolCalls;
       const toolResults = await result.toolResults;
-      console.log(`[streamAsync:${executionId}] Tool calls: ${toolCalls?.length || 0}, Tool results: ${toolResults?.length || 0}`);
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) Tool calls: ${toolCalls?.length || 0}, Tool results: ${toolResults?.length || 0}`);
 
       // Check if we got a text response - if not, this is AI_NoOutputGeneratedError
       // This can happen when the agent executes tools but doesn't generate final text
       const finalText = await result.text;
       if (!finalText || finalText.trim().length === 0) {
-        console.warn(`[streamAsync:${executionId}] ⚠️ No text output generated after tool execution`);
-        console.warn(`[streamAsync:${executionId}] This usually means the agent hit step limit (stopWhen: stepCountIs(15)) without generating final response`);
-        console.warn(`[streamAsync:${executionId}] Consider increasing maxSteps if this happens frequently`);
+        console.warn(`[streamAsync:${executionId}] (${attemptLabel}) No text output generated after tool execution`);
+        console.warn(`[streamAsync:${executionId}] (${attemptLabel}) This usually means the agent hit step limit (stopWhen: stepCountIs(15)) without generating final response`);
+        console.warn(`[streamAsync:${executionId}] (${attemptLabel}) Consider increasing maxSteps if this happens frequently`);
         // Don't throw - the tool results are still saved and visible in the UI
         // The user can see the agent process and tool results even without final text
       } else {
-        console.log(`[streamAsync:${executionId}] ✅ Final text response generated successfully`);
-        console.log(`[streamAsync:${executionId}] 📊 Text length: ${finalText.length} chars`);
-        console.log(`[streamAsync:${executionId}] 🎯 Real-time deltas were streamed to clients via saveStreamDeltas`);
+        console.log(`[streamAsync:${executionId}] (${attemptLabel}) Final text response generated successfully`);
+        console.log(`[streamAsync:${executionId}] (${attemptLabel}) Text length: ${finalText.length} chars`);
+        console.log(`[streamAsync:${executionId}] (${attemptLabel}) Real-time deltas were streamed to clients via saveStreamDeltas`);
       }
 
       // Teachability analysis (async, non-blocking)
@@ -1653,58 +1725,101 @@ export const streamAsync = internalAction({
         }
       }
 
-      // ═══════════════════════════════════════════════════════════════════════
       // USAGE TRACKING - Record actual token usage
-      // ═══════════════════════════════════════════════════════════════════════
-      const latencyMs = Date.now() - startTime;
+      const latencyMs = Date.now() - lastAttemptStart;
       try {
         // Estimate tokens from response (actual usage comes from provider metadata if available)
         const estimatedInputTokens = Math.ceil((finalText?.length || 0) / 4) + 500; // rough estimate
         const estimatedOutputTokens = Math.ceil((finalText?.length || 0) / 4);
 
         await ctx.runMutation(api.domains.billing.rateLimiting.recordLlmUsage, {
-          model: normalizedModel,
+          model,
           inputTokens: estimatedInputTokens,
           outputTokens: estimatedOutputTokens,
           cachedTokens: 0,
           latencyMs,
           success: true,
         });
-        console.log(`[streamAsync:${executionId}] 📊 Usage recorded: ~${estimatedInputTokens + estimatedOutputTokens} tokens, ${latencyMs}ms`);
+        console.log(`[streamAsync:${executionId}] (${attemptLabel}) Usage recorded: ~${estimatedInputTokens + estimatedOutputTokens} tokens, ${latencyMs}ms`);
       } catch (usageError) {
-        console.warn(`[streamAsync:${executionId}] ⚠️ Failed to record usage (non-blocking):`, usageError);
+        console.warn(`[streamAsync:${executionId}] Failed to record usage (non-blocking):`, usageError);
       }
 
+      return finalText ?? "";
+    };
+
+    let fallbackAttempted = false;
+    let retryAttempted = false;
+
+    try {
+      await runStreamAttempt(activeModel, "primary");
     } catch (error) {
-      // Handle AI_NoOutputGeneratedError gracefully
-      const errorName = (error as any)?.name || '';
+      const errorName = (error as any)?.name || "";
       const errorMessage = (error as any)?.message || String(error);
 
-      if (errorName === 'AI_NoOutputGeneratedError') {
-        console.warn(`[streamAsync:${executionId}] ⚠️ AI_NoOutputGeneratedError: Agent completed tool execution but didn't generate final text`);
+      if (errorName === "AI_NoOutputGeneratedError") {
+        console.warn(`[streamAsync:${executionId}] AI_NoOutputGeneratedError: Agent completed tool execution but didn't generate final text`);
         console.warn(`[streamAsync:${executionId}] This should be RARE with stopWhen: stepCountIs(15). If you see this often, raise the step count.`);
         console.warn(`[streamAsync:${executionId}] Tool results are still saved and visible in the UI.`);
         // Don't re-throw - this is not a fatal error, tool results are visible
         return;
       }
 
-      // Record failed usage (except rate limit errors which weren't executed)
-      if (!errorMessage.includes("Rate limit")) {
-        try {
-          await ctx.runMutation(api.domains.billing.rateLimiting.recordLlmUsage, {
-            model: normalizedModel,
-            inputTokens: 100, // Minimal estimate for failed request
-            outputTokens: 0,
-            success: false,
-            errorMessage: errorMessage.substring(0, 500),
-            latencyMs: Date.now() - startTime,
-          });
-        } catch (usageErr) {
-          // Ignore usage tracking errors
+      if (isProviderRateLimitError(error) && !fallbackAttempted && !retryAttempted) {
+        const fallbackModel = getFallbackModelForRateLimit(activeModel);
+        if (fallbackModel) {
+          fallbackAttempted = true;
+          console.warn(`[streamAsync:${executionId}] Rate limit detected, falling back to ${fallbackModel}.`);
+          await wait(RATE_LIMIT_BACKOFF_MS);
+          activeModel = fallbackModel;
+          try {
+            await runStreamAttempt(activeModel, "fallback");
+            return;
+          } catch (fallbackError) {
+            const fallbackName = (fallbackError as any)?.name || "";
+            const fallbackMessage = (fallbackError as any)?.message || String(fallbackError);
+            if (fallbackName === "AI_NoOutputGeneratedError") {
+              console.warn(`[streamAsync:${executionId}] AI_NoOutputGeneratedError: Agent completed tool execution but didn't generate final text`);
+              console.warn(`[streamAsync:${executionId}] This should be RARE with stopWhen: stepCountIs(15). If you see this often, raise the step count.`);
+              console.warn(`[streamAsync:${executionId}] Tool results are still saved and visible in the UI.`);
+              return;
+            }
+            if (!isProviderRateLimitError(fallbackError)) {
+              await recordFailureUsage(activeModel, fallbackMessage);
+            }
+            console.error(`[streamAsync:${executionId}] Error:`, fallbackError);
+            throw fallbackError;
+          }
+        } else {
+          retryAttempted = true;
+          console.warn(`[streamAsync:${executionId}] Rate limit detected, backing off before retry.`);
+          await wait(RATE_LIMIT_BACKOFF_MS);
+          try {
+            await runStreamAttempt(activeModel, "retry");
+            return;
+          } catch (retryError) {
+            const retryName = (retryError as any)?.name || "";
+            const retryMessage = (retryError as any)?.message || String(retryError);
+            if (retryName === "AI_NoOutputGeneratedError") {
+              console.warn(`[streamAsync:${executionId}] AI_NoOutputGeneratedError: Agent completed tool execution but didn't generate final text`);
+              console.warn(`[streamAsync:${executionId}] This should be RARE with stopWhen: stepCountIs(15). If you see this often, raise the step count.`);
+              console.warn(`[streamAsync:${executionId}] Tool results are still saved and visible in the UI.`);
+              return;
+            }
+            if (!isProviderRateLimitError(retryError)) {
+              await recordFailureUsage(activeModel, retryMessage);
+            }
+            console.error(`[streamAsync:${executionId}] Error:`, retryError);
+            throw retryError;
+          }
         }
       }
 
-      console.error(`[streamAsync:${executionId}] ❌ Error:`, error);
+      if (!isProviderRateLimitError(error)) {
+        await recordFailureUsage(activeModel, errorMessage);
+      }
+
+      console.error(`[streamAsync:${executionId}] Error:`, error);
       throw error;
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
@@ -1812,7 +1927,7 @@ export const createDocumentFromAgentContent = mutation({
     console.log(`[createDocumentFromAgentContent] Creating document: "${args.title}"`);
 
     // Convert markdown/text content to ProseMirror blocks
-    const contentBlocks = args.content.split('\n\n').map(paragraph => {
+    const contentBlocks = args.content.split('\n\n').map((paragraph: string) => {
       const trimmed = paragraph.trim();
       if (!trimmed) return null;
 

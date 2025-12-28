@@ -94,7 +94,7 @@ export const internalGetFactsForVerification = internalQuery({
     if (args.factIds && args.factIds.length > 0) {
       // Get specific facts
       facts = await Promise.all(
-        args.factIds.map(factId =>
+        args.factIds.map((factId: any) =>
           ctx.db
             .query("facts")
             .withIndex("by_run_fact", (q) => q.eq("runId", args.runId).eq("factId", factId))
@@ -103,14 +103,14 @@ export const internalGetFactsForVerification = internalQuery({
       );
       return facts.filter(Boolean);
     }
-    
+
     if (args.sectionKeys && args.sectionKeys.length > 0) {
       // Get facts from specific sections
       const factLists = await Promise.all(
-        args.sectionKeys.map(sectionKey =>
+        args.sectionKeys.map((sectionKey: any) =>
           ctx.db
             .query("facts")
-            .withIndex("by_run_section", (q) => 
+            .withIndex("by_run_section", (q) =>
               q.eq("runId", args.runId).eq("sectionKey", sectionKey)
             )
             .collect()

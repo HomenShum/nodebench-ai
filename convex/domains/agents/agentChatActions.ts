@@ -43,12 +43,12 @@ async function getSafeUserId(ctx: ActionCtx): Promise<Id<"users">> {
 /**
  * Create a new thread with an initial message and get agent response
  */
-export const createThreadWithMessage: any = action({
+export const createThreadWithMessage: any = (action as any)({
   args: {
     message: v.string(),
     model: v.optional(v.string()),
   },
-  handler: async (ctx, args): Promise<{ success: boolean; threadId: string; messageId?: string }> => {
+  handler: async (ctx: any, args: any): Promise<{ success: boolean; threadId: string; messageId?: string }> => {
     const userId = await getSafeUserId(ctx);
 
     return await ctx.runAction(internal.domains.agents.agentChatActions.createThreadWithMessageInternal, {
@@ -62,13 +62,13 @@ export const createThreadWithMessage: any = action({
 /**
  * Internal version of createThreadWithMessage for testing and internal use
  */
-export const createThreadWithMessageInternal = internalAction({
+export const createThreadWithMessageInternal = (internalAction as any)({
   args: {
     message: v.string(),
     model: v.optional(v.string()),
     userId: v.id("users"),
   },
-  handler: async (ctx, args): Promise<{ success: boolean; threadId: string; messageId?: string }> => {
+  handler: async (ctx: any, args: any): Promise<{ success: boolean; threadId: string; messageId?: string }> => {
     const { userId, message, model } = args;
     const modelName = normalizeModelInput(model ?? DEFAULT_MODEL);
     const chatAgent = createChatAgent(modelName);
@@ -101,12 +101,12 @@ export const createThreadWithMessageInternal = internalAction({
 /**
  * Continue an existing thread with a new message
  */
-export const continueThread = action({
+export const continueThread = (action as any)({
   args: {
     threadId: v.string(),
     message: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     let agentThreadId = args.threadId;
 
     // Check if the threadId is a chatThreadsStream ID

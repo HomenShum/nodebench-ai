@@ -2,7 +2,7 @@
 // "Write Once, Read Many" - hourly ingest from free public sources
 // All users (Free & Pro) can read this shared feed
 
-import { action, query, internalMutation } from "./_generated/server";
+import { action, mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
@@ -235,6 +235,66 @@ export const saveItems = internalMutation({
     
     return { inserted: insertedCount, total: args.items.length };
   }
+});
+
+// ============================================================================
+// 2.5. ACTION: Seed audit-critical signals (dev/demo convenience)
+// Ensures the 10-persona deep-dive can be exercised even if a source is missing.
+// ============================================================================
+const AUDIT_SIGNAL_SEEDS = [
+  {
+    sourceId: "audit-soundcloud-vpn-ban",
+    type: "signal" as const,
+    category: "tech" as const,
+    title: "SoundCloud tightens VPN bans under new licensing pressure",
+    summary:
+      "SoundCloud is escalating VPN and geo-block enforcement to comply with regional licensing. " +
+      "Second-order impact: residential proxy demand spikes as datacenter IPs are blacklisted.",
+    url: "https://en.wikipedia.org/wiki/SoundCloud",
+    source: "Audit",
+    tags: ["VPN", "Geo-block", "Licensing", "Streaming"],
+    metrics: [
+      { label: "Policy", value: "VPN Ban", trend: "up" as const },
+      { label: "Impact", value: "Proxy Demand +" },
+    ],
+    score: 240,
+  },
+];
+
+export const seedAuditSignals = mutation({
+  args: {
+    force: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const now = new Date().toISOString();
+    let inserted = 0;
+    let updated = 0;
+
+    for (const seed of AUDIT_SIGNAL_SEEDS) {
+      const existing = await ctx.db
+        .query("feedItems")
+        .withIndex("by_source_id", (q) => q.eq("sourceId", seed.sourceId))
+        .first();
+      if (existing) {
+        if (args.force) {
+          await ctx.db.patch(existing._id, {
+            ...seed,
+            publishedAt: now,
+          });
+          updated += 1;
+        }
+        continue;
+      }
+      await ctx.db.insert("feedItems", {
+        ...seed,
+        publishedAt: now,
+        createdAt: Date.now(),
+      });
+      inserted += 1;
+    }
+
+    return { inserted, updated };
+  },
 });
 
 // ============================================================================

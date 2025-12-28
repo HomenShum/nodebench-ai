@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, History, Zap, Telescope, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -34,6 +34,10 @@ export interface TimelineStripProps {
   activeEventId?: string;
   /** Callback when an event is clicked */
   onEventClick?: (event: TimelineEvent) => void;
+  /** Optional external phase filter */
+  phaseFilter?: TemporalPhase | "all";
+  /** Callback when phase filter changes */
+  onPhaseChange?: (phase: TemporalPhase | "all") => void;
   /** Whether the strip is sticky */
   sticky?: boolean;
   /** Custom class name */
@@ -112,9 +116,26 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
   events,
   activeEventId,
   onEventClick,
+  phaseFilter,
+  onPhaseChange,
   sticky = false,
   className = "",
 }) => {
+  const [internalPhaseFilter, setInternalPhaseFilter] = useState<TemporalPhase | "all">("all");
+  const activePhaseFilter = phaseFilter ?? internalPhaseFilter;
+  const setPhaseFilter = (next: TemporalPhase | "all") => {
+    if (onPhaseChange) {
+      onPhaseChange(next);
+      return;
+    }
+    setInternalPhaseFilter(next);
+  };
+
+  const visibleEvents = useMemo(() => {
+    if (activePhaseFilter === "all") return events;
+    return events.filter((event) => event.phase === activePhaseFilter);
+  }, [events, activePhaseFilter]);
+
   // Group events by phase
   const groupedEvents = useMemo(() => {
     const groups: Record<TemporalPhase, TimelineEvent[]> = {
@@ -122,26 +143,26 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
       present: [],
       future: [],
     };
-    events.forEach((event) => {
+    visibleEvents.forEach((event) => {
       groups[event.phase].push(event);
     });
     return groups;
-  }, [events]);
+  }, [visibleEvents]);
 
   // Calculate progress based on active event position
   const progressInfo = useMemo(() => {
-    if (events.length === 0) return { percentage: 0, phasePercentages: { past: 0, present: 0, future: 0 } };
+    if (visibleEvents.length === 0) return { percentage: 0, phasePercentages: { past: 0, present: 0, future: 0 } };
 
     const activeIndex = activeEventId
-      ? events.findIndex(e => e.id === activeEventId)
-      : events.findIndex(e => e.phase === "present") || 0;
+      ? visibleEvents.findIndex(e => e.id === activeEventId)
+      : visibleEvents.findIndex(e => e.phase === "present") || 0;
 
-    const percentage = events.length > 1
-      ? ((activeIndex + 1) / events.length) * 100
+    const percentage = visibleEvents.length > 1
+      ? ((activeIndex + 1) / visibleEvents.length) * 100
       : 50;
 
     // Calculate phase segment widths
-    const total = events.length;
+    const total = visibleEvents.length;
     const phasePercentages = {
       past: (groupedEvents.past.length / total) * 100,
       present: (groupedEvents.present.length / total) * 100,
@@ -149,7 +170,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
     };
 
     return { percentage, phasePercentages };
-  }, [events, activeEventId, groupedEvents]);
+  }, [visibleEvents, activeEventId, groupedEvents]);
 
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -163,7 +184,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
     }
   };
 
-  if (events.length === 0) {
+  if (visibleEvents.length === 0) {
     return null;
   }
 
@@ -178,25 +199,48 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
       <div className="max-w-7xl mx-auto px-4 py-3">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Clock className="w-4 h-4 text-gray-400" />
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Temporal Context
             </span>
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider hidden sm:inline">
+              {activePhaseFilter === "all" ? "Showing all phases" : `Filtered: ${activePhaseFilter}`}
+            </span>
           </div>
           {/* Phase legend */}
-          <div className="flex items-center gap-4 text-[10px]">
+          <div className="flex items-center gap-2 text-[10px]">
             {(["past", "present", "future"] as TemporalPhase[]).map((phase) => {
               const Icon = getPhaseIcon(phase);
               const colors = getPhaseColors(phase, false);
+              const isActiveFilter = activePhaseFilter === phase;
               return (
-                <div key={phase} className="flex items-center gap-1">
+                <button
+                  key={phase}
+                  type="button"
+                  onClick={() => setPhaseFilter((prev) => (prev === phase ? "all" : phase))}
+                  aria-pressed={isActiveFilter}
+                  title={`Filter to ${phase} events`}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full border transition-colors ${
+                    isActiveFilter ? "border-gray-300 bg-gray-100" : "border-transparent hover:border-gray-200"
+                  }`}
+                >
                   <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
                   <Icon className={`w-3 h-3 ${colors.text}`} />
                   <span className={`capitalize ${colors.text}`}>{phase}</span>
-                </div>
+                </button>
               );
             })}
+            {activePhaseFilter !== "all" && (
+              <button
+                type="button"
+                onClick={() => setPhaseFilter("all")}
+                className="text-[10px] text-gray-400 hover:text-gray-600 uppercase tracking-wider"
+                title="Show all phases"
+              >
+                Reset
+              </button>
+            )}
           </div>
         </div>
 
@@ -358,4 +402,3 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
 };
 
 export default TimelineStrip;
-

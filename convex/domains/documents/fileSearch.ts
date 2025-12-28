@@ -49,7 +49,7 @@ async function uploadBufferToStore(args: {
   const ai = new GoogleGenAI({ apiKey });
 
   const payload = args.bytes instanceof Uint8Array ? args.bytes : new Uint8Array(args.bytes);
-  const blob = new Blob([payload], { type: args.mimeType });
+  const blob = new Blob([payload as any], { type: args.mimeType });
 
   // Upload directly to the file search store
   // @ts-ignore - GoogleGenAI SDK version mismatch workaround

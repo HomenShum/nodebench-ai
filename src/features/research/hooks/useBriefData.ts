@@ -242,15 +242,27 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
     const memory = latestBriefMemory as any;
     const record = memory?.context?.executiveBriefRecord as ExecutiveBriefRecord | undefined;
 
+    const dedupeEvidence = (items: any[]) => {
+      const seen = new Set<string>();
+      return items.filter((item) => {
+        const key = (item?.id || item?.url || item?.title || "").toLowerCase();
+        if (!key) return false;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    };
+
     if (Array.isArray(record?.evidence) && record.evidence.length > 0) {
-      return record.evidence;
+      return dedupeEvidence(record.evidence);
     }
 
     // Extract from signals
     if (!executiveBrief?.actII?.signals?.length) return [];
-    return executiveBrief.actII.signals.flatMap(signal =>
+    const rawEvidence = executiveBrief.actII.signals.flatMap(signal =>
       Array.isArray(signal.evidence) ? signal.evidence : []
     );
+    return dedupeEvidence(rawEvidence);
   }, [latestBriefMemory, executiveBrief]);
 
   // Dashboard metrics

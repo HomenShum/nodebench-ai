@@ -736,6 +736,8 @@ const userPreferences = defineTable({
   agentsPrefs: v.optional(v.record(v.string(), v.string())),
   // Tracked hashtags/topics for daily dossier/newsletter
   trackedHashtags: v.optional(v.array(v.string())),
+  // Tech stack profile for dependency impact mapping
+  techStack: v.optional(v.array(v.string())),
   // Calendar ingestion preferences
   gmailIngestEnabled: v.optional(v.boolean()),
   gcalSyncEnabled: v.optional(v.boolean()),
@@ -1422,6 +1424,212 @@ const feedItems = defineTable({
   .index("by_source_id", ["sourceId"]);    // Fast deduplication lookup
 
 /* ------------------------------------------------------------------ */
+/* REPO STATS CACHE - GitHub repo stats + velocity snapshots           */
+/* ------------------------------------------------------------------ */
+const repoStatsCache = defineTable({
+  repoFullName: v.string(),               // owner/name
+  repoUrl: v.string(),
+  description: v.optional(v.string()),
+  stars: v.number(),
+  forks: v.number(),
+  watchers: v.optional(v.number()),
+  openIssues: v.optional(v.number()),
+  createdAt: v.string(),
+  pushedAt: v.string(),
+  starHistory: v.array(v.object({
+    date: v.string(),                     // YYYY-MM-DD
+    stars: v.number(),                    // total or daily count
+    delta: v.optional(v.number()),        // optional daily delta
+  })),
+  commitHistory: v.array(v.object({
+    weekStart: v.string(),                // YYYY-MM-DD
+    commits: v.number(),
+  })),
+  languages: v.optional(v.array(v.object({
+    name: v.string(),
+    pct: v.number(),
+  }))),
+  fetchedAt: v.number(),
+})
+  .index("by_repo", ["repoFullName"])
+  .index("by_repo_url", ["repoUrl"]);
+
+/* ------------------------------------------------------------------ */
+/* PAPER DETAILS CACHE - ArXiv metadata + methodology extraction       */
+/* ------------------------------------------------------------------ */
+  const paperDetailsCache = defineTable({
+    paperId: v.string(),                    // arXiv ID
+    url: v.string(),
+    title: v.optional(v.string()),
+    abstract: v.optional(v.string()),
+    methodology: v.optional(v.string()),
+    keyFindings: v.array(v.string()),
+    authors: v.optional(v.array(v.string())),
+    citationCount: v.optional(v.number()),
+    doi: v.optional(v.string()),
+    pdfUrl: v.optional(v.string()),
+    publishedAt: v.optional(v.string()),
+    sourceUrls: v.optional(v.array(v.string())),
+    fetchedAt: v.number(),
+  })
+  .index("by_paper_id", ["paperId"])
+  .index("by_url", ["url"]);
+
+/* ------------------------------------------------------------------ */
+/* STACK IMPACT CACHE - CVE impact mapping vs user tech stack          */
+/* ------------------------------------------------------------------ */
+  const stackImpactCache = defineTable({
+    signalKey: v.string(),                  // hash of signal + stack
+    signalTitle: v.optional(v.string()),
+    signalUrl: v.optional(v.string()),
+    techStack: v.array(v.string()),
+    summary: v.string(),
+    riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    cveId: v.optional(v.string()),
+    cveUrl: v.optional(v.string()),
+    sourceUrls: v.optional(v.array(v.string())),
+    graph: v.object({
+      focusNodeId: v.optional(v.string()),
+      nodes: v.array(v.object({
+        id: v.string(),
+        label: v.string(),
+      type: v.optional(v.string()),
+      importance: v.optional(v.number()),
+      tier: v.optional(v.number()),       // 1 = direct, 2 = second-order
+    })),
+    edges: v.array(v.object({
+      source: v.string(),
+      target: v.string(),
+      relationship: v.optional(v.string()),
+      context: v.optional(v.string()),
+      impact: v.optional(v.string()),
+      order: v.optional(v.union(v.literal("primary"), v.literal("secondary"))),
+    })),
+  }),
+  fetchedAt: v.number(),
+})
+  .index("by_signal_key", ["signalKey"])
+  .index("by_signal_url", ["signalUrl"]);
+
+/* ------------------------------------------------------------------ */
+/* MODEL COMPARISON CACHE - Token cost + perf trade-offs               */
+/* ------------------------------------------------------------------ */
+const modelComparisonCache = defineTable({
+    modelKey: v.string(),
+    context: v.optional(v.string()),
+    summary: v.optional(v.string()),
+    recommendation: v.optional(v.string()),
+    rows: v.array(v.object({
+      model: v.string(),
+      inputCostPer1M: v.number(),
+      outputCostPer1M: v.number(),
+      contextWindow: v.number(),
+      reliabilityScore: v.optional(v.number()),
+      performance: v.optional(v.string()),
+      notes: v.optional(v.string()),
+    })),
+    sourceUrls: v.optional(v.array(v.string())),
+    fetchedAt: v.number(),
+  })
+    .index("by_model_key", ["modelKey"]);
+
+  /* ------------------------------------------------------------------ */
+  /* DEAL FLOW CACHE - AI-curated startup deal flow snapshots           */
+  /* ------------------------------------------------------------------ */
+  const dealFlowCache = defineTable({
+    dateString: v.string(),
+    focusSectors: v.optional(v.array(v.string())),
+    deals: v.array(v.object({
+      id: v.string(),
+      company: v.string(),
+      sector: v.string(),
+      stage: v.string(),
+      amount: v.string(),
+      date: v.string(),
+      location: v.string(),
+      foundingYear: v.optional(v.string()),
+      foundersBackground: v.optional(v.string()),
+      leads: v.array(v.string()),
+      coInvestors: v.optional(v.array(v.string())),
+      summary: v.string(),
+      traction: v.optional(v.string()),
+      sentiment: v.optional(v.union(v.literal("hot"), v.literal("watch"))),
+      spark: v.optional(v.array(v.number())),
+      people: v.array(v.object({
+        name: v.string(),
+        role: v.string(),
+        past: v.string(),
+      })),
+      timeline: v.array(v.object({
+        label: v.string(),
+        detail: v.string(),
+      })),
+      regulatory: v.optional(v.object({
+        fdaStatus: v.optional(v.string()),
+        patents: v.optional(v.array(v.string())),
+        papers: v.optional(v.array(v.string())),
+      })),
+      sources: v.optional(v.array(v.object({
+        name: v.string(),
+        url: v.string(),
+      }))),
+    })),
+    fetchedAt: v.number(),
+  })
+    .index("by_date", ["dateString"])
+    .index("by_fetched_at", ["fetchedAt"]);
+
+  /* ------------------------------------------------------------------ */
+  /* REPO SCOUT CACHE - open-source alternatives for signals            */
+  /* ------------------------------------------------------------------ */
+  const repoScoutCache = defineTable({
+    signalKey: v.string(),
+    signalTitle: v.string(),
+    signalSummary: v.optional(v.string()),
+    repos: v.array(v.object({
+      name: v.string(),
+      url: v.string(),
+      description: v.optional(v.string()),
+      stars: v.number(),
+      starVelocity: v.number(),
+      commitsPerWeek: v.number(),
+      lastPush: v.optional(v.string()),
+      languages: v.optional(v.array(v.object({
+        name: v.string(),
+        pct: v.number(),
+      }))),
+    })),
+    moatSummary: v.optional(v.string()),
+    moatRisks: v.optional(v.array(v.string())),
+    fetchedAt: v.number(),
+  })
+    .index("by_signal_key", ["signalKey"]);
+
+  /* ------------------------------------------------------------------ */
+  /* STRATEGY METRICS CACHE - pivot KPI extractions                     */
+  /* ------------------------------------------------------------------ */
+  const strategyMetricsCache = defineTable({
+    signalKey: v.string(),
+    signalTitle: v.string(),
+    signalSummary: v.optional(v.string()),
+    metrics: v.array(v.object({
+      label: v.string(),
+      value: v.string(),
+      unit: v.optional(v.string()),
+      context: v.optional(v.string()),
+      source: v.optional(v.string()),
+    })),
+    narrative: v.optional(v.string()),
+    risks: v.optional(v.array(v.string())),
+    sources: v.optional(v.array(v.object({
+      title: v.string(),
+      url: v.string(),
+    }))),
+    fetchedAt: v.number(),
+  })
+    .index("by_signal_key", ["signalKey"]);
+
+/* ------------------------------------------------------------------ */
 /* SEARCH EVALUATIONS - LLM-as-judge benchmark results                 */
 /* ------------------------------------------------------------------ */
 /**
@@ -1517,6 +1725,13 @@ export default defineSchema({
   agentImageResults,
   voiceSessions,
   feedItems,
+  repoStatsCache,
+  paperDetailsCache,
+  stackImpactCache,
+  modelComparisonCache,
+  dealFlowCache,
+  repoScoutCache,
+  strategyMetricsCache,
   searchEvaluations,
 
   /* ------------------------------------------------------------------ */
@@ -1972,6 +2187,31 @@ export default defineSchema({
         v.literal("incomplete")
       ),
     })),
+    // 
+    // BANKER-GRADE ENRICHMENT FIELDS (AUDIT_MOCKS aligned)
+    // 
+
+    /** Structured funding data */
+    funding: v.optional(v.any()),
+
+    /** People data (founders, executives, board) */
+    people: v.optional(v.any()),
+
+    /** Product pipeline data */
+    productPipeline: v.optional(v.any()),
+
+    /** Recent news items (structured) */
+    recentNewsItems: v.optional(v.any()),
+
+    /** Contact points for outreach */
+    contactPoints: v.optional(v.any()),
+
+    /** Freshness metadata */
+    freshness: v.optional(v.any()),
+
+    /** Persona hooks for 10-persona audit */
+    personaHooks: v.optional(v.any()),
+
     spreadsheetId: v.optional(v.id("documents")), // Optional link to source spreadsheet
     rowIndex: v.optional(v.number()),        // Optional row index in spreadsheet
     researchedAt: v.number(),                // Timestamp when researched
@@ -3232,12 +3472,15 @@ export default defineSchema({
           label: v.string(),
           type: v.optional(v.string()),
           importance: v.optional(v.number()),
+          tier: v.optional(v.number()),
         })),
         edges: v.array(v.object({
           source: v.string(),
           target: v.string(),
           relationship: v.optional(v.string()),
           context: v.optional(v.string()),
+          impact: v.optional(v.string()),
+          order: v.optional(v.union(v.literal("primary"), v.literal("secondary"))),
         })),
       })),
     }),

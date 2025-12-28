@@ -3,6 +3,7 @@
 import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import type { DashboardState, KeyStat, CapabilityEntry, MarketShareSegment } from "../../../src/features/research/types";
+import { createHash } from "crypto";
 
 /**
  * Calculate dashboard metrics from aggregated feed data
@@ -127,13 +128,15 @@ function calculateCapabilities(feedItems: any[]): CapabilityEntry[] {
     /outage|downtime|reliability|uptime/i.test(item.title)
   ).length;
   
-  // Normalize scores to 0-1 range
+  // Normalize scores to 0-100 range
   const total = feedItems.length || 1;
-  
+
+  const toPercent = (value: number) => Math.round(Math.max(0, Math.min(value, 1)) * 100);
+
   return [
-    { label: "Reasoning", score: Math.min((aiMlCount / total) * 2, 1), icon: "brain" },
-    { label: "Uptime", score: Math.max(1 - (uptimeCount / total) * 3, 0.5), icon: "activity" },
-    { label: "Safety", score: Math.max(1 - (securityCount / total) * 3, 0.6), icon: "lock" },
+    { label: "Reasoning", score: toPercent(Math.min((aiMlCount / total) * 2, 1)), icon: "brain" },
+    { label: "Uptime", score: toPercent(Math.max(1 - (uptimeCount / total) * 3, 0.5)), icon: "activity" },
+    { label: "Safety", score: toPercent(Math.max(1 - (securityCount / total) * 3, 0.6)), icon: "lock" },
   ];
 }
 
@@ -164,7 +167,7 @@ function calculateKeyStats(feedItems: any[]): KeyStat[] {
     {
       label: "Gap Width",
       value: `${gapWidth} pts`,
-      context: gapWidth > 35 ? "Critical Risk" : "Improving",
+      context: gapWidth > 35 ? "Capability gap - critical" : "Capability gap - improving",
       trend: gapWidth > 35 ? "down" : "up",
     },
     {
@@ -226,33 +229,125 @@ function calculateTechReadiness(feedItems: any[]): { existing: number; emerging:
   };
 }
 
-async function generateTrendLineData(ctx: any, feedItems: any[]): Promise<any> {
-  // Generate trend line data for the chart
-  // For now, use a simple moving average of AI activity
-  const quarters = ["Q1 '24", "Q2 '24", "Q3 '24", "Q4 '24", "Q1 '25", "Q2 '25"];
+function evidenceIdForUrl(url: string): string {
+  const canonical = (url || "").trim();
+  return `ev-${createHash("sha256").update(canonical).digest("hex").slice(0, 12)}`;
+}
 
-  // Simulate trend data based on current feed activity
-  const aiActivity = feedItems.filter(item => item.category === 'ai_ml').length;
-  const baseValue = 40 + (aiActivity * 2);
+function buildDateKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
 
-  const data = quarters.map((_, index) => ({
-    value: baseValue + (index * 5) + Math.random() * 10,
+function formatLabel(dateKey: string): string {
+  const date = new Date(`${dateKey}T00:00:00.000Z`);
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+async function generateTrendLineData(_ctx: any, feedItems: any[]): Promise<any> {
+  const windowDays = 7;
+  const today = new Date();
+  const start = new Date();
+  start.setDate(today.getDate() - (windowDays - 1));
+
+  const dayBuckets = new Map<string, any[]>();
+  for (let i = 0; i < windowDays; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    dayBuckets.set(buildDateKey(d), []);
+  }
+
+  feedItems.forEach((item) => {
+    if (!item.publishedAt) return;
+    const dateKey = buildDateKey(new Date(item.publishedAt));
+    if (dayBuckets.has(dateKey)) {
+      dayBuckets.get(dateKey)?.push(item);
+    }
+  });
+
+  const xAxisLabels = Array.from(dayBuckets.keys()).map(formatLabel);
+  const dailyStats = Array.from(dayBuckets.entries()).map(([dateKey, items]) => {
+    const total = items.length || 1;
+    const aiItems = items.filter((item) =>
+      item.category === "ai_ml" || /ai|model|llm|agent/i.test(item.title),
+    );
+    const outageItems = items.filter((item) => /outage|downtime|failure|cve/i.test(item.title));
+    const avgScore =
+      items.reduce((sum, item) => sum + (item.score ?? 0), 0) / total;
+    const aiScore =
+      aiItems.length > 0
+        ? aiItems.reduce((sum, item) => sum + (item.score ?? 0), 0) / aiItems.length
+        : avgScore;
+    const outageRatio = outageItems.length / total;
+    const evidenceIds = items
+      .map((item) => (item.url ? evidenceIdForUrl(item.url) : null))
+      .filter(Boolean) as string[];
+    return {
+      dateKey,
+      avgScore,
+      aiScore,
+      outageRatio,
+      evidenceIds: Array.from(new Set(evidenceIds)),
+      topItem: items.sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0],
+    };
+  });
+
+  const maxScore = Math.max(1, ...dailyStats.map((d) => d.avgScore));
+  const scale = (value: number) => Math.min(100, Math.round((value / maxScore) * 100));
+
+  const capabilitySeries = dailyStats.map((day) => ({
+    value: scale(day.aiScore),
+    linkedEvidenceIds: day.evidenceIds,
   }));
+  const reliabilitySeries = dailyStats.map((day) => ({
+    value: Math.max(10, Math.round(100 - day.outageRatio * 100)),
+    linkedEvidenceIds: day.evidenceIds,
+  }));
+
+  const annotations = dailyStats
+    .filter((day) => day.topItem?.title)
+    .slice(-3)
+    .map((day, idx) => ({
+      id: `ann-${idx}-${day.dateKey}`,
+      title: day.topItem.title,
+      description: day.topItem.summary ?? "Notable signal.",
+      targetIndex: dailyStats.findIndex((d) => d.dateKey === day.dateKey),
+      sentiment: /outage|cve|breach/i.test(day.topItem.title) ? "negative" : "neutral",
+    }));
+
+  const deltaValue = capabilitySeries.length > 1
+    ? capabilitySeries[capabilitySeries.length - 1].value - capabilitySeries[capabilitySeries.length - 2].value
+    : 0;
 
   return {
     title: "Capability vs. Reliability Index",
-    xAxisLabels: quarters,
+    xAxisLabels,
     series: [
+      {
+        id: "model-capability",
+        label: "Model Capability",
+        type: "ghost" as const,
+        color: "gray",
+        data: capabilitySeries,
+      },
       {
         id: "infra-reliability",
         label: "Infra Reliability",
         type: "solid" as const,
         color: "accent",
-        data,
+        data: reliabilitySeries,
       },
     ],
-    visibleEndIndex: quarters.length - 1,
+    visibleEndIndex: xAxisLabels.length - 1,
+    presentIndex: xAxisLabels.length - 1,
+    annotations,
     gridScale: { min: 0, max: 100 },
+    yAxisUnit: "pts",
+    timeWindow: "Last 7 days",
+    delta: {
+      value: deltaValue,
+      label: "vs prior day",
+      direction: deltaValue > 0 ? "up" : deltaValue < 0 ? "down" : "flat",
+    },
   };
 }
 

@@ -430,7 +430,7 @@ export const upsertRawArtifacts = internalMutation({
     // ══════════════════════════════════════════════════════════════════════
     // STEP 1: Pre-compute artifactIds and group by shard
     // ══════════════════════════════════════════════════════════════════════
-    const artifactsWithMeta = rawArtifacts.map(raw => {
+    const artifactsWithMeta = rawArtifacts.map((raw: any) => {
       const canonicalUrl = canonicalizeUrl(raw.url);
       const artifactId = generateArtifactIdSync(runId, canonicalUrl);
       const shardId = computeShardId(artifactId);
@@ -625,7 +625,7 @@ export const persistArtifactsWithRetry = internalAction({
         errorType: "OCC" as const,
         errorMessage: "Max retry attempts exceeded",
         artifactCount: rawArtifacts.length,
-        sampleUrls: rawArtifacts.slice(0, MAX_URLS_IN_SAMPLE).map(a => a.url),
+        sampleUrls: rawArtifacts.slice(0, MAX_URLS_IN_SAMPLE).map((a: any) => a.url),
       });
       
       // Mark job as failed
@@ -729,7 +729,7 @@ export const persistArtifactsWithRetry = internalAction({
         errorType,
         errorMessage: truncateErrorMessage(errorMessage),
         artifactCount: rawArtifacts.length,
-        sampleUrls: rawArtifacts.slice(0, MAX_URLS_IN_SAMPLE).map(a => a.url),
+        sampleUrls: rawArtifacts.slice(0, MAX_URLS_IN_SAMPLE).map((a: any) => a.url),
       });
       
       // Mark job as failed

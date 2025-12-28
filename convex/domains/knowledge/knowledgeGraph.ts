@@ -510,7 +510,7 @@ export const embedClaims = internalAction({
     // Load claims with explicit typing
     type ClaimDoc = { _id: Id<"graphClaims">; claimText: string } | null;
     const claimPromises: Promise<ClaimDoc>[] = args.claimIds.map(
-      (id) => ctx.runQuery(internal.domains.knowledge.knowledgeGraph.getClaimById, { claimId: id }) as Promise<ClaimDoc>
+      (id: any) => ctx.runQuery(internal.domains.knowledge.knowledgeGraph.getClaimById, { claimId: id }) as Promise<ClaimDoc>
     );
     const claims = await Promise.all(claimPromises);
 

@@ -35,6 +35,7 @@ interface CleanSidebarProps {
     tab?: 'profile' | 'account' | 'usage' | 'integrations' | 'billing' | 'reminders'
   ) => void;
   onGoHome?: () => void;
+  onEnterResearchHub?: () => void;
   selectedDocumentId?: Id<"documents"> | null;
   onDocumentSelect?: (docId: Id<"documents">) => void;
   /** Current view from MainLayout - used to highlight correct nav item */
@@ -50,6 +51,7 @@ export function CleanSidebar({
   onToggleSource: _onToggleSource,
   onOpenSettings,
   onGoHome,
+  onEnterResearchHub,
   selectedDocumentId,
   onDocumentSelect,
   currentView = 'documents',
@@ -91,7 +93,11 @@ export function CleanSidebar({
     if (page === 'research') {
       // Navigate to research/home view
       onViewChange?.('research');
-      onGoHome?.();
+      if (onEnterResearchHub) {
+        onEnterResearchHub();
+      } else {
+        onGoHome?.();
+      }
     } else if (page === 'workspace') {
       onViewChange?.('documents');
       onModeChange('workspace');

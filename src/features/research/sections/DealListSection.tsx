@@ -4,7 +4,10 @@
  * Currently uses a small demo set until deals are backed by a query.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useAction, useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+import { RefreshCw } from "lucide-react";
 import { DealFlyout, DealListPanel, type Deal } from "../components/DealListPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
@@ -75,8 +78,38 @@ const DEMO_DEALS: Deal[] = [
 function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
   const { openWithContext } = useFastAgent();
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [liveDeals, setLiveDeals] = useState<Deal[] | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cachedDeals = useQuery(api.domains.research.dealFlowQueries.getDealFlow, {});
+  const refresh = useAction(api.domains.research.dealFlow.refreshDealFlow);
 
-  const resolvedDeals = useMemo(() => deals ?? DEMO_DEALS, [deals]);
+  useEffect(() => {
+    if (deals?.length) return;
+    if (cachedDeals && cachedDeals.length > 0) return;
+    let mounted = true;
+    setIsRefreshing(true);
+    refresh({ focusSectors: ["healthcare", "life sciences", "commerce", "biotech"] })
+      .then((result) => {
+        if (mounted) setLiveDeals(result.deals ?? []);
+      })
+      .catch((err) => {
+        if (mounted) setError(err?.message ?? "Failed to refresh deal flow.");
+      })
+      .finally(() => {
+        if (mounted) setIsRefreshing(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [cachedDeals, deals, refresh]);
+
+  const resolvedDeals = useMemo(() => {
+    if (deals && deals.length > 0) return deals;
+    if (cachedDeals && cachedDeals.length > 0) return cachedDeals as Deal[];
+    if (liveDeals && liveDeals.length > 0) return liveDeals;
+    return DEMO_DEALS;
+  }, [cachedDeals, deals, liveDeals]);
 
   const handlePrep = (intent: "email" | "call" | "invite", deal: Deal) => {
     const intentLabel = intent === "email" ? "draft an email" : intent === "call" ? "prepare for a call" : "write an invite";
@@ -88,6 +121,32 @@ function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
 
   return (
     <div className={className}>
+      <div className="mb-3 flex items-center justify-between text-[11px] text-gray-500">
+        <div className="flex items-center gap-2">
+          <span className="uppercase tracking-widest font-semibold text-gray-400">Live Deal Flow</span>
+          {isRefreshing && <span className="text-emerald-600">Refreshing…</span>}
+          {!isRefreshing && cachedDeals?.length ? <span className="text-emerald-600">Synced</span> : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setIsRefreshing(true);
+            refresh({ forceRefresh: true, focusSectors: ["healthcare", "life sciences", "commerce", "biotech"] })
+              .then((result) => setLiveDeals(result.deals ?? []))
+              .catch((err) => setError(err?.message ?? "Failed to refresh deal flow."))
+              .finally(() => setIsRefreshing(false));
+          }}
+          className="flex items-center gap-1 text-gray-400 hover:text-gray-700"
+        >
+          <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
+      </div>
+      {error && (
+        <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+          {error}
+        </div>
+      )}
       <DealListPanel deals={resolvedDeals} onOpenDeal={setSelectedDeal} />
       <DealFlyout deal={selectedDeal} onClose={() => setSelectedDeal(null)} onPrep={handlePrep} />
     </div>
@@ -103,4 +162,3 @@ export function DealListSection(props: DealListSectionProps) {
 }
 
 export default DealListSection;
-

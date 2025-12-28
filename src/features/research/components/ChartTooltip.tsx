@@ -119,9 +119,9 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
                   </span>
                 </div>
                 <div className="space-y-1 max-h-24 overflow-y-auto">
-                  {data.linkedEvidence.slice(0, 3).map((ev) => (
+                  {data.linkedEvidence.slice(0, 3).map((ev, idx) => (
                     <button
-                      key={ev.id}
+                      key={`${ev.id}-${idx}`}
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();

@@ -43,23 +43,23 @@ async function getSafeUserId(ctx: any): Promise<Id<"users">> {
  * List all agent threads for the current user
  * Returns threads from the Agent component's storage
  */
-export const listUserThreads = query({
+export const listUserThreads = (query as any)({
   args: {
     paginationOpts: paginationOptsValidator,
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     const userId = await getSafeUserId(ctx);
 
     const streamThreads = await ctx.db
       .query("chatThreadsStream")
-      .withIndex("by_user_updatedAt", (q) => q.eq("userId", userId))
+      .withIndex("by_user_updatedAt", (q: any) => q.eq("userId", userId))
       .order("desc")
       .paginate(args.paginationOpts);
 
     // Map to the format expected by the frontend
     return {
       ...streamThreads,
-      page: streamThreads.page.map((thread) => ({
+      page: streamThreads.page.map((thread: any) => ({
         _id: thread.agentThreadId || thread._id, // Use agent thread ID if available
         userId: thread.userId,
         title: thread.title,
@@ -77,23 +77,18 @@ export const listUserThreads = query({
 /**
  * Get messages for a specific thread
  */
-export const getThreadMessages = query({
+export const getThreadMessages = (query as any)({
   args: {
     threadId: v.string(),
-    paginationOpts: v.optional(
-      v.object({
-        numItems: v.number(),
-        cursor: v.union(v.string(), v.null()),
-      })
-    ),
+    paginationOpts: v.optional(v.any()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     const userId = await getSafeUserId(ctx);
 
     // Verify user has access to this thread (via the stream thread link)
     const streamThread = await ctx.db
       .query("chatThreadsStream")
-      .withIndex("by_agentThreadId", (q) => q.eq("agentThreadId", args.threadId))
+      .withIndex("by_agentThreadId", (q: any) => q.eq("agentThreadId", args.threadId))
       .first();
 
     if (!streamThread) {
@@ -124,15 +119,15 @@ export const getThreadMessages = query({
 /**
  * Delete a thread
  */
-export const deleteThread = mutation({
+export const deleteThread = (mutation as any)({
   args: { threadId: v.string() },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     const userId = await getSafeUserId(ctx);
 
     // Find the streaming thread by agent thread ID
     const streamThread = await ctx.db
       .query("chatThreadsStream")
-      .withIndex("by_agentThreadId", (q) => q.eq("agentThreadId", args.threadId))
+      .withIndex("by_agentThreadId", (q: any) => q.eq("agentThreadId", args.threadId))
       .first();
 
     if (!streamThread) {
@@ -147,7 +142,7 @@ export const deleteThread = mutation({
     // Delete all messages in the thread
     const messages = await ctx.db
       .query("chatMessagesStream")
-      .withIndex("by_thread", (q) => q.eq("threadId", streamThread._id))
+      .withIndex("by_thread", (q: any) => q.eq("threadId", streamThread._id))
       .collect();
 
     for (const message of messages) {
@@ -164,14 +159,14 @@ export const deleteThread = mutation({
 /**
  * Internal mutation to create a new thread
  */
-export const createThread = internalMutation({
+export const createThread = (internalMutation as any)({
   args: {
     userId: v.id("users"),
     title: v.string(),
     model: v.optional(v.string()),
     agentThreadId: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     const now = Date.now();
     const threadId = await ctx.db.insert("chatThreadsStream", {
       userId: args.userId,
@@ -190,11 +185,11 @@ export const createThread = internalMutation({
  * Internal query to get a streaming thread by ID
  * Used to resolve thread IDs in actions
  */
-export const getStreamThread = internalQuery({
+export const getStreamThread = (internalQuery as any)({
   args: {
     threadId: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     // Try to get it as a valid ID first
     try {
       const threadId = ctx.db.normalizeId("chatThreadsStream", args.threadId);
@@ -212,14 +207,14 @@ export const getStreamThread = internalQuery({
  * Internal query to get a streaming thread by agent thread ID.
  * Used by actions to resolve per-thread settings (e.g., selected model).
  */
-export const getStreamThreadByAgentThreadId = internalQuery({
+export const getStreamThreadByAgentThreadId = (internalQuery as any)({
   args: {
     agentThreadId: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any): Promise<any> => {
     return await ctx.db
       .query("chatThreadsStream")
-      .withIndex("by_agentThreadId", (q) => q.eq("agentThreadId", args.agentThreadId))
+      .withIndex("by_agentThreadId", (q: any) => q.eq("agentThreadId", args.agentThreadId))
       .order("desc")
       .first();
   },

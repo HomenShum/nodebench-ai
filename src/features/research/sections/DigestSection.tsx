@@ -17,6 +17,8 @@ interface DigestSectionProps {
   userName?: string;
   /** Called when a digest item is clicked */
   onItemClick?: (item: { text: string; relevance?: string; linkedEntity?: string }) => void;
+  /** Called when an entity chip is clicked */
+  onEntityClick?: (entityName: string, entityType?: "company" | "person") => void;
   /** Called when refresh is requested */
   onRefresh?: () => void;
   /** Class name for container */
@@ -26,6 +28,7 @@ interface DigestSectionProps {
 function DigestSectionInner({
   userName = 'there',
   onItemClick,
+  onEntityClick,
   onRefresh,
   className = '',
 }: DigestSectionProps) {
@@ -34,6 +37,7 @@ function DigestSectionInner({
       <MorningDigest
         userName={userName}
         onItemClick={onItemClick}
+        onEntityClick={onEntityClick}
         onRefresh={onRefresh}
       />
     </div>

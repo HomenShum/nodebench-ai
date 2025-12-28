@@ -1,0 +1,83 @@
+﻿convex/actions/spreadsheetActions.ts(167,54): error TS7006: Parameter 'v' implicitly has an 'any' type.
+convex/actions/spreadsheetActions.ts(421,52): error TS7006: Parameter 'v' implicitly has an 'any' type.
+convex/domains/agents/fastAgentPanelStreaming.ts(689,34): error TS7006: Parameter 'thread' implicitly has an 'any' type.
+convex/domains/agents/fastAgentPanelStreaming.ts(1175,88): error TS7006: Parameter 'm' implicitly has an 'any' type.
+convex/domains/agents/fastAgentPanelStreaming.ts(1191,84): error TS7006: Parameter 'm' implicitly has an 'any' type.
+convex/domains/agents/fastAgentPanelStreaming.ts(1930,58): error TS7006: Parameter 'paragraph' implicitly has an 'any' type.
+convex/domains/ai/metadataAnalyzer.ts(223,60): error TS7006: Parameter 'id' implicitly has an 'any' type.
+convex/domains/ai/morningDigest.ts(82,12): error TS7006: Parameter 'item' implicitly has an 'any' type.
+convex/domains/ai/morningDigest.ts(86,12): error TS7006: Parameter 'item' implicitly has an 'any' type.
+convex/domains/ai/morningDigest.ts(90,12): error TS7006: Parameter 'item' implicitly has an 'any' type.
+convex/domains/ai/morningDigest.ts(94,34): error TS7006: Parameter 'h' implicitly has an 'any' type.
+convex/domains/ai/morningDigestQueries.ts(164,39): error TS7006: Parameter 't' implicitly has an 'any' type.
+convex/domains/documents/fileSearch.ts(52,26): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
+          Types of property '[Symbol.toStringTag]' are incompatible.
+            Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
+convex/domains/eval/evalMutations.ts(173,15): error TS7006: Parameter 'id' implicitly has an 'any' type.
+convex/domains/eval/evalMutations.ts(174,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+convex/domains/eval/runBatch.ts(553,45): error TS7006: Parameter 'r' implicitly has an 'any' type.
+convex/domains/eval/runBatch.ts(554,45): error TS7006: Parameter 'r' implicitly has an 'any' type.
+convex/domains/eval/runBatch.ts(608,21): error TS7006: Parameter 't' implicitly has an 'any' type.
+convex/domains/eval/runBatch.ts(621,21): error TS7006: Parameter 't' implicitly has an 'any' type.
+convex/domains/knowledge/entityContexts.ts(600,12): error TS7006: Parameter 'n' implicitly has an 'any' type.
+convex/domains/knowledge/entityContexts.ts(607,63): error TS7006: Parameter 'f' implicitly has an 'any' type.
+convex/domains/knowledge/entityContexts.ts(612,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+convex/domains/knowledge/entityContexts.ts(614,40): error TS7006: Parameter 'f' implicitly has an 'any' type.
+convex/domains/knowledge/knowledgeGraph.ts(513,8): error TS7006: Parameter 'id' implicitly has an 'any' type.
+convex/domains/knowledge/tags.ts(158,73): error TS7006: Parameter 'k' implicitly has an 'any' type.
+convex/domains/knowledge/tags.ts(195,13): error TS7006: Parameter 't' implicitly has an 'any' type.
+convex/domains/knowledge/tags.ts(200,16): error TS7006: Parameter 't' implicitly has an 'any' type.
+convex/domains/mcp/mcpClient.ts(56,40): error TS7006: Parameter 'p' implicitly has an 'any' type.
+convex/domains/mcp/mcpClient.ts(61,41): error TS7006: Parameter 'p' implicitly has an 'any' type.
+convex/domains/research/dailyBriefWorker.ts(409,16): error TS7006: Parameter 'item' implicitly has an 'any' type.
+convex/domains/research/dailyBriefWorker.ts(410,13): error TS7006: Parameter 'item' implicitly has an 'any' type.
+convex/domains/research/dailyBriefWorker.ts(428,20): error TS7006: Parameter 'item' implicitly has an 'any' type.
+convex/domains/research/dailyBriefWorker.ts(441,13): error TS7006: Parameter 'item' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(417,23): error TS7006: Parameter 'sector' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(517,19): error TS7006: Parameter 'term' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(536,19): error TS7006: Parameter 'term' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(545,22): error TS7006: Parameter 'sector' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(562,28): error TS7006: Parameter 'score' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(562,35): error TS7006: Parameter 'term' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(618,17): error TS7006: Parameter 'person' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(619,20): error TS7006: Parameter 'past' implicitly has an 'any' type.
+convex/domains/research/dealFlow.ts(647,38): error TS7006: Parameter 'term' implicitly has an 'any' type.
+convex/domains/research/repoStats.ts(151,9): error TS7034: Variable 'starHistory' implicitly has type 'any[]' in some locations where its type cannot be determined.
+convex/domains/research/repoStats.ts(194,41): error TS7005: Variable 'starHistory' implicitly has an 'any[]' type.
+convex/domains/search/hashtagDossiers.ts(252,38): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+convex/domains/search/ragEnhancedBatchIndex.ts(48,35): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+convex/domains/verification/facts.ts(97,26): error TS7006: Parameter 'factId' implicitly has an 'any' type.
+convex/domains/verification/facts.ts(110,30): error TS7006: Parameter 'sectionKey' implicitly has an 'any' type.
+convex/globalResearch/artifacts.ts(182,25): error TS7006: Parameter 'key' implicitly has an 'any' type.
+convex/lib/artifactPersistence.ts(433,48): error TS7006: Parameter 'raw' implicitly has an 'any' type.
+convex/lib/artifactPersistence.ts(628,67): error TS7006: Parameter 'a' implicitly has an 'any' type.
+convex/lib/artifactPersistence.ts(732,67): error TS7006: Parameter 'a' implicitly has an 'any' type.
+convex/tools/integration/peopleProfileSearch.ts(174,20): error TS7006: Parameter 'p' implicitly has an 'any' type.
+convex/tools/integration/peopleProfileSearch.ts(174,23): error TS7006: Parameter 'i' implicitly has an 'any' type.
+convex/tools/integration/peopleProfileSearch.ts(216,47): error TS7006: Parameter 'person' implicitly has an 'any' type.
+convex/tools/integration/peopleProfileSearch.ts(225,48): error TS7006: Parameter 'p' implicitly has an 'any' type.
+convex/tools/integration/peopleProfileSearch.ts(233,30): error TS7006: Parameter 'person' implicitly has an 'any' type.
+convex/tools/meta/hybridSearch.ts(201,41): error TS2339: Property 'vectorSearch' does not exist on type 'GenericActionCtx<DataModelFromSchemaDefinition<any>>'.
+convex/tools/meta/hybridSearch.ts(227,52): error TS7006: Parameter 't' implicitly has an 'any' type.
+convex/tools/meta/seedToolRegistryQueries.ts(30,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(entries: Iterable<readonly [PropertyKey, any]>): { [k: string]: any; }', gave the following error.
+    Argument of type 'unknown[]' is not assignable to parameter of type 'Iterable<readonly [PropertyKey, any]>'.
+      The types returned by '[Symbol.iterator]().next(...)' are incompatible between these types.
+        Type 'IteratorResult<unknown, undefined>' is not assignable to type 'IteratorResult<readonly [PropertyKey, any], any>'.
+          Type 'IteratorYieldResult<unknown>' is not assignable to type 'IteratorResult<readonly [PropertyKey, any], any>'.
+            Type 'IteratorYieldResult<unknown>' is not assignable to type 'IteratorYieldResult<readonly [PropertyKey, any]>'.
+              Type 'unknown' is not assignable to type 'readonly [PropertyKey, any]'.
+  Overload 2 of 2, '(entries: Iterable<readonly any[]>): any', gave the following error.
+    Argument of type 'unknown[]' is not assignable to parameter of type 'Iterable<readonly any[]>'.
+      The types returned by '[Symbol.iterator]().next(...)' are incompatible between these types.
+        Type 'IteratorResult<unknown, undefined>' is not assignable to type 'IteratorResult<readonly any[], any>'.
+          Type 'IteratorYieldResult<unknown>' is not assignable to type 'IteratorResult<readonly any[], any>'.
+            Type 'IteratorYieldResult<unknown>' is not assignable to type 'IteratorYieldResult<readonly any[]>'.
+              Type 'unknown' is not assignable to type 'readonly any[]'.
+convex/tools/meta/seedToolRegistryQueries.ts(116,33): error TS7006: Parameter 'toolName' implicitly has an 'any' type.
+convex/tools/meta/skillDiscovery.ts(159,41): error TS2339: Property 'vectorSearch' does not exist on type 'GenericActionCtx<DataModelFromSchemaDefinition<any>>'.
+convex/tools/meta/skillDiscovery.ts(185,53): error TS7006: Parameter 't' implicitly has an 'any' type.

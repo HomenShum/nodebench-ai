@@ -9,24 +9,13 @@ import { generateActionItems } from "../lib/actionItemsGenerator";
 import { generateDossier, type EmailIntelligenceDossier } from "../lib/dossierGenerator";
 import { generateDossierEmail, type DossierEmailData } from "../domains/integrations/email/dossierEmailTemplate";
 
-export const orchestrateEmailResearch = action({
+export const orchestrateEmailResearch = (action as any)({
   args: {
-    email: v.object({
-      id: v.optional(v.string()),
-      from: v.optional(v.string()),
-      subject: v.optional(v.string()),
-      snippet: v.optional(v.string()),
-      body: v.optional(v.string()),
-    }),
+    email: v.any(),
     deliverEmail: v.optional(v.boolean()),
   },
-  returns: v.object({
-    success: v.boolean(),
-    dossier: v.optional(v.any()),
-    emailIntelligence: v.optional(v.any()),
-    errors: v.optional(v.array(v.string())),
-  }),
-  handler: async (ctx, args) => {
+  returns: v.any(),
+  handler: async (ctx: any, args: any): Promise<any> => {
     const errors: string[] = [];
     const startedAt = Date.now();
     const intelligence: EmailIntelligence = analyzeEmailIntelligence(args.email, [

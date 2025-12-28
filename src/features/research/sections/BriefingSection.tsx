@@ -15,9 +15,10 @@ import { ChevronRight, Clock, BarChart2, Zap, ExternalLink, Sparkles, RefreshCw 
 import { useMutation } from 'convex/react';
 import { useBriefData } from '../hooks/useBriefData';
 import { CrossLinkedText } from '../components/CrossLinkedText';
+import SignalMomentumMini from '../components/SignalMomentumMini';
 import { BriefingSkeleton } from '@/components/skeletons';
 import { ErrorBoundary, BriefingErrorFallback } from '@/components/ErrorBoundary';
-import { formatBriefDate } from '@/lib/briefDate';
+import { formatBriefDate, isBriefDateToday } from '@/lib/briefDate';
 import { api } from '../../../../convex/_generated/api';
 
 type ActiveAct = 'actI' | 'actII' | 'actIII';
@@ -27,6 +28,16 @@ interface BriefingSectionProps {
   onActChange?: (act: ActiveAct) => void;
   /** Called when "Ask AI" is clicked for an item */
   onAskAI?: (prompt: string) => void;
+  /** Open a source in the internal reader */
+  onOpenReader?: (item: {
+    title?: string;
+    url?: string;
+    source?: string;
+    summary?: string;
+    publishedAt?: string;
+    category?: string;
+    relevance?: string;
+  }) => void;
   /** Class name for container */
   className?: string;
 }
@@ -81,6 +92,7 @@ const normalizeTag = (tag: unknown): string | null => {
 function BriefingSectionInner({
   onActChange,
   onAskAI,
+  onOpenReader,
   className = '',
 }: BriefingSectionProps) {
   const {
@@ -97,6 +109,8 @@ function BriefingSectionInner({
   const [activeAct, setActiveAct] = useState<ActiveAct>('actI');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCoverageExpanded, setIsCoverageExpanded] = useState(false);
+  const isBriefToday = isBriefDateToday(briefingDateString);
+  const briefingTitle = isBriefToday ? "Today's Briefing" : "Latest Briefing";
 
   const handleActChange = useCallback((act: ActiveAct) => {
     setActiveAct(act);
@@ -346,9 +360,11 @@ function BriefingSectionInner({
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-3xl font-serif font-bold text-gray-900 italic tracking-tight">Today's Briefing</h2>
+          <h2 className="text-3xl font-serif font-bold text-gray-900 italic tracking-tight">{briefingTitle}</h2>
           <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mt-1">
-            {briefingDateString ? formatBriefDate(briefingDateString) : 'Latest Synthesis'}
+            {briefingDateString
+              ? `${formatBriefDate(briefingDateString)}${isBriefToday ? "" : " (latest available)"}`
+              : "Latest Synthesis"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -721,14 +737,25 @@ function BriefingSectionInner({
                     {item.category && <span className="text-stone-300">• {item.category}</span>}
                   </div>
                   {item.url ? (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold text-stone-800 hover:text-emerald-900 transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onOpenReader) {
+                          onOpenReader({
+                            title: item.title,
+                            url: item.url,
+                            source: item.source,
+                            summary: item.summary,
+                            category: item.category,
+                          });
+                          return;
+                        }
+                        window.open(item.url, "_blank", "noopener,noreferrer");
+                      }}
+                      className="text-sm font-semibold text-stone-800 hover:text-emerald-900 transition-colors text-left"
                     >
                       {item.title}
-                    </a>
+                    </button>
                   ) : (
                     <div className="text-sm font-semibold text-stone-800">{item.title}</div>
                   )}
@@ -787,6 +814,7 @@ function BriefingSectionInner({
           <ActIIContent
             data={actII}
             onAskAI={onAskAI}
+            onOpenReader={onOpenReader}
           />
         )}
         {activeAct === 'actIII' && actIII && (
@@ -854,7 +882,22 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
 }
 
 // Act II: Signals
-function ActIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) => void }) {
+function ActIIContent({
+  data,
+  onAskAI,
+  onOpenReader,
+}: {
+  data: any;
+  onAskAI?: (prompt: string) => void;
+  onOpenReader?: (item: {
+    title?: string;
+    url?: string;
+    source?: string;
+    summary?: string;
+    publishedAt?: string;
+    relevance?: string;
+  }) => void;
+}) {
   const signals = data.signals || [];
 
   return (
@@ -886,6 +929,7 @@ function ActIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string)
                 <div className="text-xl text-stone-600 leading-relaxed font-serif">
                   <CrossLinkedText text={signal.synthesis || signal.summary} onAskAI={onAskAI} />
                 </div>
+                <SignalMomentumMini keyword={signal.label || signal.headline} />
               </div>
               {onAskAI && (
                 <button
@@ -902,18 +946,32 @@ function ActIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string)
               <div className="mt-10 flex flex-wrap gap-4 items-center pt-8 border-t border-stone-200/60">
                 <span className="text-[9px] font-black text-stone-400 uppercase tracking-[0.2em]">Citations</span>
                 {signal.evidence.slice(0, 4).map((ev: any, evIdx: number) => (
-                  <a
+                  <button
                     key={evIdx}
-                    href={ev.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    type="button"
+                    onClick={() => {
+                      if (onOpenReader) {
+                        onOpenReader({
+                          title: ev.title,
+                          url: ev.url,
+                          source: ev.source,
+                          summary: ev.relevance,
+                          publishedAt: ev.publishedAt,
+                          relevance: ev.relevance,
+                        });
+                        return;
+                      }
+                      if (ev.url) {
+                        window.open(ev.url, "_blank", "noopener,noreferrer");
+                      }
+                    }}
                     className="flex items-center gap-2 group/link"
                   >
                     <span className="w-5 h-5 flex items-center justify-center rounded-full bg-stone-200 text-[9px] font-bold text-stone-500 group-hover/link:bg-emerald-900 group-hover/link:text-white transition-colors">{evIdx + 1}</span>
                     <span className="text-[11px] font-medium text-stone-500 hover:text-emerald-900 border-b border-transparent hover:border-emerald-900 transition-all font-mono">
                       {ev.source || ev.title?.slice(0, 20) || `Node ${evIdx + 1}`}
                     </span>
-                  </a>
+                  </button>
                 ))}
               </div>
             )}
@@ -958,6 +1016,7 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
                 <div className="text-base text-gray-600 font-medium leading-relaxed mb-6">
                   <CrossLinkedText text={action.description || action.rationale} onAskAI={onAskAI} />
                 </div>
+                <SignalMomentumMini keyword={action.title || action.headline || "signal"} />
                 {(action.status || action.deliverable || action.expectedOutcome || action.risks) && (
                   <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-4 text-xs text-stone-600 space-y-2">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Action Specs</div>

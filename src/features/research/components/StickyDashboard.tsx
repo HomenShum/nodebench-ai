@@ -27,6 +27,55 @@ const IconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   safety: Lock,
 };
 
+const normalizeCapabilityScore = (score: number) => {
+  if (!Number.isFinite(score)) return 0;
+  const raw = score <= 1 ? score * 100 : score;
+  return Math.max(0, Math.min(100, Math.round(raw)));
+};
+
+const keyStatHints: Record<string, string> = {
+  "Gap Width": "Capability vs reliability delta",
+  "Reasoning": "Model reasoning score",
+  "Avg Heat": "Average engagement score",
+};
+
+const getKeyStatHint = (label: string) => {
+  if (!label) return null;
+  const direct = keyStatHints[label];
+  if (direct) return direct;
+  const labelLower = label.toLowerCase();
+  if (labelLower.includes("gap")) return "Capability vs reliability delta";
+  if (labelLower.includes("heat")) return "Average engagement score";
+  if (labelLower.includes("reason")) return "Model reasoning score";
+  return null;
+};
+
+const formatKeyStatValue = (label: string, value: unknown): string => {
+  if (value === null || value === undefined) return "-";
+  const labelLower = label.toLowerCase();
+  const applyNumericFormat = (num: number) => {
+    if (labelLower.includes("reason") || labelLower.includes("confidence") || labelLower.includes("score")) {
+      const pct = num <= 1 ? num * 100 : num;
+      return `${Math.round(pct)}%`;
+    }
+    if (labelLower.includes("gap")) return `${Math.round(num)} pts`;
+    if (labelLower.includes("heat")) return `${Math.round(num)} pts`;
+    if (num > 0 && num < 1) return `${Math.round(num * 100)}%`;
+    return `${Math.round(num)}`;
+  };
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return applyNumericFormat(value);
+  }
+
+  const raw = String(value).trim();
+  if (!raw) return "-";
+  const hasUnit = /[a-z%]/i.test(raw);
+  const numeric = Number(raw);
+  if (!Number.isFinite(numeric) || hasUnit) return raw;
+  return applyNumericFormat(numeric);
+};
+
 interface StickyDashboardProps {
   data: DashboardState;
   /** Callback for chart data point clicks (AI agent integration) */
@@ -212,15 +261,23 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         <div className="flex justify-between items-center gap-2 border-t border-slate-100 pt-3 mb-3">
           {keyStats.map((stat, i) => {
             const statDelta = deltas?.keyStats?.[i]?.delta;
+            const statHint = getKeyStatHint(stat.label);
+            const displayContext = stat.context ?? statHint;
+            const displayValue = formatKeyStatValue(stat.label, stat.value);
             return (
               <div key={i} className="flex flex-col">
-                <span className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5">{stat.label}</span>
+                <span
+                  className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5"
+                  title={statHint ?? undefined}
+                >
+                  {stat.label}
+                </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-xs font-bold text-slate-900">{stat.value}</span>
+                  <span className="text-xs font-bold text-slate-900">{displayValue}</span>
                   {statDelta !== undefined && statDelta !== null && statDelta !== 0 && (
                     <DeltaIndicator value={statDelta} size="sm" />
                   )}
-                  {stat.context && <span className="text-[8px] font-bold text-slate-400">{stat.context}</span>}
+                  {displayContext && <span className="text-[8px] font-bold text-slate-400">{displayContext}</span>}
                 </div>
               </div>
             );
@@ -247,12 +304,12 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
           </div>
         )}
       </div>
-      <span className="text-xs font-mono font-bold text-gray-900">{score}%</span>
+      <span className="text-xs font-mono font-bold text-gray-900">{normalizeCapabilityScore(score)}%</span>
     </div>
     <div className="h-1.5 w-full bg-stone-200 overflow-hidden">
       <motion.div
         initial={{ width: 0 }}
-        animate={{ width: `${score}%` }}
+        animate={{ width: `${normalizeCapabilityScore(score)}%` }}
         transition={{ duration: 1.5, ease: "easeOut" }}
         className="h-full bg-emerald-900"
       />
@@ -271,7 +328,7 @@ const BucketColumn = ({ count, color, delta }: { count: number, color: string, d
       ))}
       {delta !== undefined && delta !== null && delta !== 0 && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-          <DeltaIndicator value={delta} unit="u" size="sm" label="Δ" />
+          <DeltaIndicator value={delta} unit="u" size="sm" />
         </div>
       )}
     </div>
@@ -373,3 +430,4 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
 };
 
 export default StickyDashboard;
+

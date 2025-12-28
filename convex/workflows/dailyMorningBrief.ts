@@ -17,9 +17,9 @@ import { generateMorningDigestEmail, type MeetingReminder } from "../domains/int
  *
  * Runs daily at 6:00 AM UTC via cron job
  */
-export const runDailyMorningBrief = internalAction({
+export const runDailyMorningBrief = (internalAction as any)({
   args: {},
-  handler: async (ctx): Promise<any> => {
+  handler: async (ctx: any): Promise<any> => {
     const startTime = Date.now();
     console.log("[dailyMorningBrief] dYO. Starting daily morning brief workflow...");
 
@@ -210,6 +210,17 @@ export const runDailyMorningBrief = internalAction({
             ? await collectGraphExtraction(ctx, digestMemory)
             : null;
 
+          // Enrich top entities from the graph with banker-grade insights
+          let enrichedEntities: EnrichedEntity[] = [];
+          if (entityGraph) {
+            try {
+              enrichedEntities = await enrichTopEntitiesFromGraph(ctx, entityGraph, 3);
+              console.log(`[dailyMorningBrief] Enriched ${enrichedEntities.length} entities`);
+            } catch (err: any) {
+              console.warn("[dailyMorningBrief] entity enrichment failed:", err?.message || err);
+            }
+          }
+
           if (entityGraph && storeResult.snapshotId) {
             try {
               await ctx.runMutation(
@@ -243,6 +254,7 @@ export const runDailyMorningBrief = internalAction({
                 contextPatch: {
                   coverageSummaries: coverageData.items,
                   coverageRollup,
+                  enrichedEntities: enrichedEntities.length > 0 ? enrichedEntities : undefined,
                 },
               },
             );
@@ -260,6 +272,7 @@ export const runDailyMorningBrief = internalAction({
             coverageSummaries: coverageData.items,
             coverageRollup,
             entityGraph,
+            enrichedEntities, // Banker-grade entity insights
             briefRecordStatus: briefRecord?.status,
             evidence: briefRecord?.evidence,
           });
@@ -470,6 +483,7 @@ type GraphNode = {
   label: string;
   type?: string;
   importance?: number;
+  tier?: number;
 };
 
 type GraphEdge = {
@@ -477,6 +491,8 @@ type GraphEdge = {
   target: string;
   relationship?: string;
   context?: string;
+  impact?: string;
+  order?: "primary" | "secondary";
 };
 
 type EntityGraph = {
@@ -571,7 +587,7 @@ function clipText(input: string, maxLen: number): string {
 function formatTopList(entries: Array<[string, number]>, limit: number): string {
   const top = entries
     .filter(([, count]) => count > 0)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a: any, b: any) => b[1] - a[1])
     .slice(0, limit)
     .map(([name, count]) => `${name} ${count}`);
   return top.join(", ");
@@ -638,8 +654,8 @@ function collectDeltaEntries(current: any, previous: any): DeltaEntry[] {
   if (!current || !previous) return [];
   const deltas: DeltaEntry[] = [];
 
-  const currentKeyStats = Array.isArray(current.keyStats) ? current.keyStats : [];
-  const previousKeyStats = Array.isArray(previous.keyStats) ? previous.keyStats : [];
+  const currentKeyStats: any[] = Array.isArray(current?.keyStats) ? (current.keyStats as any[]) : [];
+  const previousKeyStats: any[] = Array.isArray(previous?.keyStats) ? (previous.keyStats as any[]) : [];
   const prevKeyMap = new Map(previousKeyStats.map((stat: any) => [stat.label, stat]));
 
   currentKeyStats.forEach((stat: any) => {
@@ -664,8 +680,8 @@ function collectDeltaEntries(current: any, previous: any): DeltaEntry[] {
     });
   }
 
-  const curCaps = Array.isArray(current.capabilities) ? current.capabilities : [];
-  const prevCaps = Array.isArray(previous.capabilities) ? previous.capabilities : [];
+  const curCaps: any[] = Array.isArray(current?.capabilities) ? (current.capabilities as any[]) : [];
+  const prevCaps: any[] = Array.isArray(previous?.capabilities) ? (previous.capabilities as any[]) : [];
   const prevCapsMap = new Map(prevCaps.map((cap: any) => [cap.label, cap]));
   curCaps.forEach((cap: any) => {
     const prev = prevCapsMap.get(cap.label);
@@ -734,11 +750,11 @@ function buildTrendLineSvg(config: any): string {
   });
 
   const path = points
-    .map((pt, idx) => `${idx === 0 ? "M" : "L"} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`)
+    .map((pt: any, idx: number) => `${idx === 0 ? "M" : "L"} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`)
     .join(" ");
 
   const gridLines = 4;
-  const grid = Array.from({ length: gridLines + 1 }).map((_, idx) => {
+  const grid = Array.from({ length: gridLines + 1 }).map((_: any, idx: number) => {
     const y = paddingY + (usableHeight / gridLines) * idx;
     return `<line x1="${paddingX}" y1="${y.toFixed(1)}" x2="${width - paddingX}" y2="${y.toFixed(1)}" stroke="#e2e8f0" stroke-width="1" />`;
   });
@@ -753,7 +769,7 @@ function buildTrendLineSvg(config: any): string {
     `<rect width="100%" height="100%" fill="#f8fafc"/>`,
     ...grid,
     `<path d="${path}" fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`,
-    ...points.map((pt) => `<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="3" fill="#4f46e5" />`),
+    ...points.map((pt: any) => `<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="3" fill="#4f46e5" />`),
     `<text x="${paddingX}" y="${paddingY - 18}" font-size="14" font-family="Arial, sans-serif" fill="#0f172a">${title}</text>`,
     leftLabel
       ? `<text x="${paddingX}" y="${height - paddingY + 18}" font-size="11" font-family="Arial, sans-serif" fill="#64748b">${leftLabel}</text>`
@@ -859,7 +875,7 @@ function getTopTags(feedItems: FeedItemLite[], fallback: string[] = []): string[
     });
   });
   return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
+    .sort((a: any, b: any) => b[1] - a[1])
     .slice(0, 6)
     .map(([tag]) => `#${tag}`);
 }
@@ -1378,6 +1394,10 @@ function normalizeEntityGraph(raw: any): EntityGraph | null {
             typeof node.importance === "number" && Number.isFinite(node.importance)
               ? node.importance
               : undefined,
+          tier:
+            typeof node.tier === "number" && Number.isFinite(node.tier)
+              ? node.tier
+              : undefined,
         }))
     : [];
   const edges: GraphEdge[] = Array.isArray(raw.edges)
@@ -1389,6 +1409,11 @@ function normalizeEntityGraph(raw: any): EntityGraph | null {
           relationship:
             typeof edge.relationship === "string" ? edge.relationship : undefined,
           context: typeof edge.context === "string" ? edge.context : undefined,
+          impact: typeof edge.impact === "string" ? edge.impact : undefined,
+          order:
+            edge.order === "primary" || edge.order === "secondary"
+              ? edge.order
+              : undefined,
         }))
     : [];
   if (nodes.length === 0) return null;
@@ -1741,6 +1766,177 @@ async function collectGraphExtraction(
   return normalizeEntityGraph(parsed);
 }
 
+
+// =============================================================================
+// ENTITY ENRICHMENT (Banker-Grade Deep Insights for Morning Brief)
+// =============================================================================
+
+/**
+ * Enrich top entities from the entity graph with banker-grade insights.
+ * This calls getEntityInsights for company/person nodes to get structured
+ * funding, people, product pipeline, and persona hooks data.
+ */
+type EnrichedEntity = {
+  name: string;
+  type: "company" | "person";
+  summary?: string;
+  funding?: {
+    stage?: string;
+    totalRaised?: { amount: number; currency: string; unit: string };
+    lastRound?: { roundType?: string; announcedDate?: string };
+  };
+  people?: {
+    founders?: Array<{ name: string; role?: string }>;
+    headcount?: string;
+  };
+  productPipeline?: {
+    platform?: string;
+    modalities?: string[];
+  };
+  freshness?: {
+    newsAgeDays?: number;
+    withinBankerWindow?: boolean;
+  };
+  personaReadiness?: {
+    ready: string[];
+    notReady: string[];
+  };
+};
+
+async function enrichTopEntitiesFromGraph(
+  ctx: any,
+  entityGraph: EntityGraph | null,
+  limit: number = 3,
+): Promise<EnrichedEntity[]> {
+  if (!entityGraph || !Array.isArray(entityGraph.nodes)) return [];
+
+  // Filter to company/person nodes with importance, sorted by importance
+  const candidateNodes = entityGraph.nodes
+    .filter((node) => {
+      const t = (node.type ?? "").toLowerCase();
+      return t.includes("company") || t.includes("org") || t.includes("person") || t.includes("startup");
+    })
+    .sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0))
+    .slice(0, limit);
+
+  if (candidateNodes.length === 0) return [];
+
+  const enriched: EnrichedEntity[] = [];
+
+  for (const node of candidateNodes) {
+    const entityType = (node.type ?? "").toLowerCase().includes("person") ? "person" : "company";
+    try {
+      const result: any = await ctx.runAction(
+        api.domains.knowledge.entityInsights.getEntityInsights,
+        {
+          entityName: node.label || node.id,
+          entityType,
+          forceRefresh: false, // Use cached if available
+        },
+      );
+
+      // Extract persona readiness from personaHooks
+      const personaHooks = result.personaHooks ?? {};
+      const ready: string[] = [];
+      const notReady: string[] = [];
+      for (const [persona, hooks] of Object.entries(personaHooks) as [string, any][]) {
+        const failCount = hooks?.failTriggers?.length || 0;
+        if (failCount === 0) {
+          ready.push(persona);
+        } else {
+          notReady.push(persona);
+        }
+      }
+
+      enriched.push({
+        name: result.entityName ?? node.label,
+        type: entityType as "company" | "person",
+        summary: result.summary ? clipText(result.summary, 150) : undefined,
+        funding: result.funding
+          ? {
+              stage: result.funding.stage,
+              totalRaised: result.funding.totalRaised,
+              lastRound: result.funding.lastRound
+                ? {
+                    roundType: result.funding.lastRound.roundType,
+                    announcedDate: result.funding.lastRound.announcedDate,
+                  }
+                : undefined,
+            }
+          : undefined,
+        people: result.people
+          ? {
+              founders: result.people.founders?.slice(0, 2),
+              headcount: result.people.headcount,
+            }
+          : undefined,
+        productPipeline: result.productPipeline
+          ? {
+              platform: result.productPipeline.platform,
+              modalities: result.productPipeline.modalities?.slice(0, 3),
+            }
+          : undefined,
+        freshness: result.freshness,
+        personaReadiness: { ready, notReady },
+      });
+    } catch (err: any) {
+      console.warn(
+        `[dailyMorningBrief] entity enrichment failed for "${node.label}":`,
+        err?.message || err,
+      );
+    }
+  }
+
+  return enriched;
+}
+
+/**
+ * Format enriched entities for the ntfy digest body.
+ */
+function formatEnrichedEntitiesForDigest(
+  enrichedEntities: EnrichedEntity[],
+  maxLen: number = 350,
+): string[] {
+  if (enrichedEntities.length === 0) return [];
+
+  const lines: string[] = ["**Entity Spotlight**"];
+
+  for (const entity of enrichedEntities) {
+    const parts: string[] = [];
+    parts.push(`**${entity.name}**`);
+
+    if (entity.funding?.stage) {
+      const fundingLine = entity.funding.totalRaised
+        ? `${entity.funding.stage} (${entity.funding.totalRaised.currency}${entity.funding.totalRaised.amount}${entity.funding.totalRaised.unit})`
+        : entity.funding.stage;
+      parts.push(fundingLine);
+    }
+
+    if (entity.productPipeline?.platform) {
+      parts.push(entity.productPipeline.platform);
+    }
+
+    if (entity.freshness?.withinBankerWindow) {
+      parts.push("✓ Fresh");
+    }
+
+    const readyCount = entity.personaReadiness?.ready?.length ?? 0;
+    if (readyCount > 0) {
+      parts.push(`${readyCount}/10 personas ready`);
+    }
+
+    const entityLine = `- ${parts.join(" | ")}`;
+    if (entityLine.length <= maxLen) {
+      lines.push(entityLine);
+      if (entity.summary) {
+        lines.push(`  ${clipText(entity.summary, 120)}`);
+      }
+    }
+  }
+
+  return lines;
+}
+
 function extractShortName(url: string): string {
   try {
     const u = new URL(url);
@@ -1871,6 +2067,7 @@ function buildNtfyDigestPayload(args: {
   coverageSummaries?: CoverageSummaryItem[];
   coverageRollup?: CoverageRollup | null;
   entityGraph?: EntityGraph | null;
+  enrichedEntities?: EnrichedEntity[];
   briefRecordStatus?: string;
   evidence?: Array<{ source?: string }>;
 }): { title: string; body: string } {
@@ -1881,6 +2078,7 @@ function buildNtfyDigestPayload(args: {
   const coverageSummaries = Array.isArray(args.coverageSummaries) ? args.coverageSummaries : [];
   const coverageRollup = args.coverageRollup ?? null;
   const entityGraph = args.entityGraph ?? null;
+  const enrichedEntities = args.enrichedEntities ?? [];
 
   const keyStats = args.dashboardMetrics?.keyStats ?? [];
   const topStories = getTopStories(feedItems, 14);
@@ -2156,6 +2354,13 @@ function buildNtfyDigestPayload(args: {
       networkEffects.forEach((line) => {
         lines.push(`- ${line} ${formatMarkdownLink("Dashboard", DASHBOARD_URL)}`);
       });
+    }
+
+    // Entity Spotlight (Banker-grade enriched entities)
+    const entitySpotlightLines = formatEnrichedEntitiesForDigest(enrichedEntities, 350);
+    if (entitySpotlightLines.length > 1) { // More than just header
+      lines.push("");
+      entitySpotlightLines.forEach((line) => lines.push(line));
     }
 
     // === ACT III: THE MOVE ===

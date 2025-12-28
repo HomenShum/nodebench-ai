@@ -30,6 +30,8 @@ export interface TrendLineConfig {
   presentIndex?: number;
   focusIndex?: number;
   gridScale?: { min: number; max: number };
+  /** Optional annotations pinned to specific data points */
+  annotations?: Annotation[];
   /** Y-axis unit label (e.g., "%", "pts", "items") */
   yAxisUnit?: string;
   /** Time window description (e.g., "last 7 days", "24h") */
@@ -90,6 +92,8 @@ export interface GraphNode {
   label: string;
   type?: "company" | "person" | "concept" | "product";
   importance?: number;
+  /** 1 = direct impact, 2 = second-order */
+  tier?: number;
 }
 
 export interface GraphEdge {
@@ -97,6 +101,8 @@ export interface GraphEdge {
   target: string;
   relationship?: string;
   context?: string;
+  impact?: string;
+  order?: "primary" | "secondary";
 }
 
 export interface EntityGraph {
@@ -247,9 +253,15 @@ export interface StorySection {
 // ------------------------------------------------------------------
 
 export interface Evidence {
+  id?: string;
   url?: string;
   source: string;
   title?: string;
+  publishedAt?: string;
+  relevance?: string;
+  score?: number;
+  favicon?: string;
+  summary?: string;
 }
 
 export interface Signal {

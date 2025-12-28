@@ -6,7 +6,8 @@
       "Bash(npx convex deploy:*)",
       "Bash(npx convex dev:*)",
       "Bash(npx convex run:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

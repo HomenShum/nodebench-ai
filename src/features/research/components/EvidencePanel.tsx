@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ExternalLink, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Evidence } from '../types';
+import { useEvidence } from '../contexts/EvidenceContext';
 
 interface EvidencePanelProps {
     /** Array of evidence items to display */
@@ -9,6 +10,8 @@ interface EvidencePanelProps {
     maxVisible?: number;
     /** Optional title override */
     title?: string;
+    /** Open evidence in the internal reader */
+    onEvidenceClick?: (evidence: Evidence) => void;
 }
 
 /**
@@ -19,9 +22,12 @@ interface EvidencePanelProps {
 export function EvidencePanel({
     evidence,
     maxVisible = 4,
-    title = "Cited Sources"
+    title = "Cited Sources",
+    onEvidenceClick
 }: EvidencePanelProps) {
     const [expanded, setExpanded] = useState(false);
+    const evidenceCtx = useEvidence();
+    const highlightedId = evidenceCtx.store.highlightedId;
 
     if (!evidence || evidence.length === 0) {
         return null;
@@ -29,6 +35,7 @@ export function EvidencePanel({
 
     const visible = expanded ? evidence : evidence.slice(0, maxVisible);
     const hasMore = evidence.length > maxVisible;
+    const shouldScroll = expanded && evidence.length > maxVisible;
 
     return (
         <div className="border-t border-stone-200/60 pt-5 mt-6">
@@ -47,6 +54,7 @@ export function EvidencePanel({
                 {hasMore && (
                     <button
                         onClick={() => setExpanded(!expanded)}
+                        aria-expanded={expanded}
                         className="flex items-center gap-1 text-[10px] text-emerald-700 hover:text-emerald-900 transition-colors"
                     >
                         {expanded ? (
@@ -56,7 +64,7 @@ export function EvidencePanel({
                             </>
                         ) : (
                             <>
-                                <span>+{evidence.length - maxVisible} more</span>
+                                <span>View all {evidence.length}</span>
                                 <ChevronDown className="w-3 h-3" />
                             </>
                         )}
@@ -65,50 +73,71 @@ export function EvidencePanel({
             </div>
 
             {/* Evidence List */}
-            <ul className="space-y-2.5">
-                {visible.map((ev, i) => (
-                    <li key={i} className="group flex items-start gap-2.5">
-                        {/* Index Badge */}
-                        <span className="text-[9px] font-mono text-stone-400 bg-stone-100 w-5 h-5 flex items-center justify-center rounded shrink-0">
-                            {i + 1}
-                        </span>
+            <div className={shouldScroll ? "max-h-[260px] overflow-y-auto pr-2" : ""}>
+                <ul className="space-y-2.5">
+                    {visible.map((ev, i) => {
+                        const isHighlighted = ev.id ? ev.id === highlightedId : false;
+                        const handleOpen = () => {
+                            if (onEvidenceClick) {
+                                onEvidenceClick(ev);
+                                return;
+                            }
+                            if (ev.url) {
+                                window.open(ev.url, "_blank", "noopener,noreferrer");
+                            }
+                        };
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                            {ev.url ? (
-                                <a
-                                    href={ev.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[11px] text-stone-600 hover:text-emerald-900 transition-colors flex items-start gap-1.5 group/link"
-                                >
-                                    <span className="truncate flex-1">
-                                        {ev.title || ev.source || ev.url}
-                                    </span>
-                                    <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity mt-0.5" />
-                                </a>
-                            ) : (
-                                <span className="text-[11px] text-stone-600 truncate block">
-                                    {ev.title || ev.source}
+                        return (
+                            <li
+                                key={`${ev.id ?? ev.url ?? ev.title ?? ev.source ?? "evidence"}-${i}`}
+                                data-evidence-id={ev.id}
+                                className={`group flex items-start gap-2.5 ${isHighlighted ? "bg-emerald-50/60 rounded-md px-2 py-1" : ""}`}
+                            >
+                                {/* Index Badge */}
+                                <span className="text-[9px] font-mono text-stone-400 bg-stone-100 w-5 h-5 flex items-center justify-center rounded shrink-0">
+                                    {i + 1}
                                 </span>
-                            )}
 
-                            {/* Source Badge */}
-                            {ev.source && ev.title && (
-                                <span className="text-[9px] text-stone-400 mt-0.5 block">
-                                    via {ev.source}
-                                </span>
-                            )}
-                        </div>
-                    </li>
-                ))}
-            </ul>
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <button
+                                        type="button"
+                                        onClick={handleOpen}
+                                        className="text-[11px] text-stone-600 hover:text-emerald-900 transition-colors flex items-start gap-1.5 group/link text-left w-full"
+                                    >
+                                        <span className="truncate flex-1">
+                                            {ev.title || ev.source || ev.url || "Source"}
+                                        </span>
+                                        {ev.url && (
+                                            <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity mt-0.5" />
+                                        )}
+                                    </button>
+
+                                    {/* Source Badge */}
+                                    {ev.source && ev.title && (
+                                        <span className="text-[9px] text-stone-400 mt-0.5 block">
+                                            via {ev.source}
+                                        </span>
+                                    )}
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
 
             {/* Collapsed indicator */}
             {!expanded && hasMore && (
                 <div className="mt-3 pt-2 border-t border-dashed border-stone-200/50 text-center">
                     <span className="text-[9px] text-stone-400 italic">
-                        {evidence.length - maxVisible} additional sources available
+                        {evidence.length - maxVisible} more sources available
+                    </span>
+                </div>
+            )}
+            {expanded && shouldScroll && (
+                <div className="mt-3 pt-2 border-t border-dashed border-stone-200/50 text-center">
+                    <span className="text-[9px] text-stone-400 italic">
+                        Scroll to view all sources
                     </span>
                 </div>
             )}

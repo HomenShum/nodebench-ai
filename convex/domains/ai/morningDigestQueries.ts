@@ -161,7 +161,7 @@ export const getDigestData = query({
 
     for (const item of feedItems) {
       const titleLower = item.title.toLowerCase();
-      const tagsLower = item.tags.map(t => t.toLowerCase());
+      const tagsLower = item.tags.map((t: any) => t.toLowerCase());
       const allText = `${titleLower} ${tagsLower.join(' ')}`;
 
       // Check if item matches user's tracked topics

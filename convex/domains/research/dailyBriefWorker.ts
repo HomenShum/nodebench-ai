@@ -157,6 +157,7 @@ function buildFallbackGraph(items: any[]) {
       label: title,
       type: "concept",
       importance: idx === 0 ? 1 : 0.6,
+      tier: 1,
     };
   });
 
@@ -174,6 +175,7 @@ function buildFallbackGraph(items: any[]) {
     target: node.id,
     relationship: "Relates",
     context: "Shared signal context",
+    order: "primary",
   }));
 
   return { focusNodeId, nodes, edges };
@@ -303,10 +305,12 @@ async function executeFeature(
     userPrompt =
       `Analyze the texts and extract an entity relationship map. ` +
       `Return JSON: { focusNodeId, nodes, edges }. ` +
-      `Nodes: { id, label, type, importance }. ` +
-      `Edges: { source, target, relationship, context }. ` +
-      `Use relationship verbs like Acquires, Partners, Competes, Launches. ` +
-      `Limit to 8 nodes and 10 edges.\n\n` +
+      `Nodes: { id, label, type, importance, tier }. ` +
+      `Edges: { source, target, relationship, context, order }. ` +
+      `tier: 1 for direct/primary nodes, 2 for second-order impact nodes. ` +
+      `order: "primary" for direct edges, "secondary" for second-order effects. ` +
+      `Use relationship verbs like Acquires, Partners, Competes, Launches, Impacts. ` +
+      `Limit to 10 nodes and 12 edges.\n\n` +
       contexts.join("\n\n---\n\n");
   } else if (feature.type === "metric_anomaly") {
     userPrompt =
@@ -402,8 +406,8 @@ export const summarizeCoverageRollup = internalAction({
   },
   handler: async (ctx, args) => {
     const items = args.items
-      .filter((item) => item && item.summary)
-      .map((item) => ({
+      .filter((item: any) => item && item.summary)
+      .map((item: any) => ({
         title: clipText(item.title, 120),
         summary: clipText(item.summary, 220),
         source: item.source ?? "Unknown",
@@ -421,7 +425,7 @@ export const summarizeCoverageRollup = internalAction({
 
     const maxSources = Math.max(1, Math.min(args.maxSources ?? 6, 10));
     const bySource = new Map<string, number>();
-    items.forEach((item) => {
+    items.forEach((item: any) => {
       const key = item.source?.trim() || "Unknown";
       bySource.set(key, (bySource.get(key) ?? 0) + 1);
     });
@@ -434,7 +438,7 @@ export const summarizeCoverageRollup = internalAction({
 
     const contextLines = items
       .slice(0, 60)
-      .map((item) => `- [${item.source}] ${item.title}: ${item.summary}`)
+      .map((item: any) => `- [${item.source}] ${item.title}: ${item.summary}`)
       .join("\n");
 
     const prompt =

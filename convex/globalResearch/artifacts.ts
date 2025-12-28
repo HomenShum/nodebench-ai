@@ -179,7 +179,7 @@ export const getByKeys = internalQuery({
   },
   handler: async (ctx, { artifactKeys }) => {
     const results = await Promise.all(
-      artifactKeys.map((key) =>
+      artifactKeys.map((key: any) =>
         ctx.db
           .query("globalArtifacts")
           .withIndex("by_artifactKey", (q) => q.eq("artifactKey", key))

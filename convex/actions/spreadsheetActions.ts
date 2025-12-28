@@ -164,7 +164,7 @@ export const bulkUpdateSpreadsheet = action({
 
         if (op.values !== undefined) {
           // Replace entire row
-          modifiedRows[op.rowIndex] = op.values.map((v) => String(v ?? ""));
+          modifiedRows[op.rowIndex] = op.values.map((v: any) => String(v ?? ""));
           if (!affectedRowIndices.includes(op.rowIndex)) {
             affectedRowIndices.push(op.rowIndex);
           }
@@ -418,7 +418,7 @@ export const testBulkUpdateSpreadsheet = internalAction({
           );
         }
 
-        modifiedRows[op.rowIndex] = op.values.map((v) => String(v ?? ""));
+        modifiedRows[op.rowIndex] = op.values.map((v: any) => String(v ?? ""));
         if (!affectedRowIndices.includes(op.rowIndex)) {
           affectedRowIndices.push(op.rowIndex);
         }

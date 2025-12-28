@@ -171,7 +171,7 @@ export const validatePersonMatches = internalAction({
 User Query: "${args.userQuery}"${contextSection}
 
 People to validate:
-${args.people.map((p, i) => `${i + 1}. ${p.name}${p.profession ? ` - ${p.profession}` : ''}${p.organization ? ` at ${p.organization}` : ''}${p.location ? ` (${p.location})` : ''}
+${args.people.map((p: any, i: any) => `${i + 1}. ${p.name}${p.profession ? ` - ${p.profession}` : ''}${p.organization ? ` at ${p.organization}` : ''}${p.location ? ` (${p.location})` : ''}
    Description: ${p.description}`).join('\n\n')}
 
 For each person, determine if it is a PASS or FAIL based on:
@@ -213,7 +213,7 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
       const validationResults = JSON.parse(result.text);
 
       // Merge validation results with person data
-      const validatedPeople = args.people.map(person => {
+      const validatedPeople = args.people.map((person: any) => {
         const validation = validationResults.find((v: any) => v.id === person.id);
         return {
           ...person,
@@ -222,7 +222,7 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
         };
       });
 
-      const passCount = validatedPeople.filter(p => p.validationResult === "PASS").length;
+      const passCount = validatedPeople.filter((p: any) => p.validationResult === "PASS").length;
       console.log(`[validatePersonMatches] Validation complete: ${passCount} PASS, ${validatedPeople.length - passCount} FAIL`);
 
       return validatedPeople;
@@ -230,7 +230,7 @@ IMPORTANT: Return ONLY the JSON array, no other text.`;
     } catch (error) {
       console.error("[validatePersonMatches] Error:", error);
       // If validation fails, mark all as FAIL
-      return args.people.map(person => ({
+      return args.people.map((person: any) => ({
         ...person,
         validationResult: "FAIL" as "PASS" | "FAIL",
         reasoning: "Validation error occurred",

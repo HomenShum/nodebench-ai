@@ -28,22 +28,14 @@ type ComposeReturn = {
   pdfArtifact?: string;
 };
 
-export const composePRDForPartnership = action({
+export const composePRDForPartnership = (action as any)({
   args: {
     emailIntelligence: v.any(),
     dossierData: v.optional(v.any()),
     deliverEmail: v.optional(v.boolean()),
   },
-  returns: v.object({
-    success: v.boolean(),
-    prdMarkdown: v.string(),
-    validation: v.any(),
-    citations: v.array(v.string()),
-    confidenceScore: v.number(),
-    documentId: v.optional(v.string()),
-    pdfArtifact: v.optional(v.string()),
-  }),
-  handler: async (ctx, args): Promise<ComposeReturn> => {
+  returns: v.any(),
+  handler: async (ctx: any, args: any): Promise<ComposeReturn> => {
     const startedAt = Date.now();
     const dossier = (args.dossierData || {}) as EmailIntelligenceDossier;
     const companyName = dossier.company?.name ?? args.emailIntelligence?.entities?.companies?.[0] ?? "Partner";

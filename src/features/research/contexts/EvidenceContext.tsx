@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
-import type { Evidence } from "../types/dailyBriefSchema";
+import type { Evidence } from "../types";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES

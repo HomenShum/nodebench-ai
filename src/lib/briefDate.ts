@@ -46,3 +46,16 @@ export function formatBriefMonthYear(input: string | number): string {
   }).format(d);
 }
 
+export function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function isBriefDateToday(dateString?: string | null): boolean {
+  if (!dateString) return false;
+  const normalized = dateString.trim().slice(0, 10);
+  return normalized === getTodayDateString();
+}

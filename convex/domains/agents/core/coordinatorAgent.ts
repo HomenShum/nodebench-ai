@@ -124,6 +124,15 @@ import {
   getGraphSummary,
 } from "../../../tools/knowledge/knowledgeGraphTools";
 
+// Import Entity Insight tools (banker-grade enrichment + persona evaluation)
+import {
+  getBankerGradeEntityInsights,
+  evaluateEntityForPersona,
+  batchEvaluateEntities,
+  getEntityQualityMatrix,
+  batchEvaluateBankerTargets, // Legacy alias for batchEvaluateEntities
+} from "../../../tools/knowledge/entityInsightTools";
+
 // Import Clustering tools (HDBSCAN + One-Class SVM)
 import {
   groupAndDetectOutliers,
@@ -313,7 +322,14 @@ export const createCoordinatorAgent = (
     buildKnowledgeGraph,
     fingerprintKnowledgeGraph,
     getGraphSummary,
-    
+
+    // === ENTITY INSIGHT TOOLS (Banker-grade enrichment + persona evaluation) ===
+    getBankerGradeEntityInsights,
+    evaluateEntityForPersona,
+    batchEvaluateEntities,
+    getEntityQualityMatrix,
+    batchEvaluateBankerTargets, // Legacy alias
+
     // === CLUSTERING TOOLS ===
     groupAndDetectOutliers,
     checkNovelty,
@@ -580,8 +596,14 @@ You can delegate to these specialized agents:
 
 ## EntityResearchAgent
 **Use for**: Deep research on companies, people, and topics.
-**Tools**: enrichCompanyDossier, enrichFounderInfo, searchHashtag
+**Tools**: getBankerGradeEntityInsights, enrichCompanyDossier, enrichFounderInfo, searchHashtag
 **When to delegate**: "Research OpenAI", "Who is Sam Altman?", "Tell me about #AI"
+
+### Direct Entity Research Tools (use directly, no delegation needed)
+- **getBankerGradeEntityInsights**: Full banker-grade entity enrichment with persona hooks
+- **evaluateEntityForPersona**: Check if entity is ready for a specific use case (any of 10 personas)
+- **batchEvaluateEntities**: Evaluate multiple entities for ANY persona (flexible persona param)
+- **getEntityQualityMatrix**: Comprehensive 10-persona quality assessment for an entity
 
 ## DocumentAgent
 **Use for**: Document search, reading, creation, editing, multi-document analysis
@@ -757,8 +779,66 @@ Compute these flags from queryMemory results:
 
 **Research Depth Mapping:**
 - **Shallow** (quick overview): queryMemory only, no enrichment
-- **Standard** (normal): queryMemory → enrichCompanyDossier if needed
-- **Deep** (GAM-powered): queryMemory → full enrichment → updateMemoryFromReview
+- **Standard** (normal): queryMemory → getBankerGradeEntityInsights if needed
+- **Deep** (GAM-powered): queryMemory → getBankerGradeEntityInsights → updateMemoryFromReview
+
+# ENTITY RESEARCH WORKFLOW (BANKER-GRADE)
+
+When researching companies or entities, use this enhanced workflow:
+
+## Quick Research (single entity)
+1. Call \`getBankerGradeEntityInsights({ entityName, entityType: "company" })\`
+2. Review the structured output including funding, people, pipeline, contacts
+3. Check personaHooks for quality gate status
+
+## Entity Readiness Check
+1. Call \`evaluateEntityForPersona({ entityName, persona: "JPM_STARTUP_BANKER" })\`
+2. Returns detailed PASS/FAIL analysis with specific criteria
+3. Use for: "Is DISCO ready for banker outreach?"
+
+## Batch Target Evaluation
+1. Call \`batchEvaluateBankerTargets({ entityNames: ["Entity1", "Entity2", ...] })\`
+2. Returns ranked list of READY vs NOT READY entities
+3. Use for: "Which of these companies are ready for outreach?"
+
+## Full Dossier Workflow
+1. \`getBankerGradeEntityInsights\` - Get structured entity data
+2. \`enrichFounderInfo\` - Deep founder backgrounds if needed
+3. \`enrichInvestmentThesis\` - Investment angle analysis
+4. \`updateMemoryFromReview\` - Persist learnings to memory
+
+The \`getBankerGradeEntityInsights\` tool includes:
+- Multi-stage LLM enrichment (funding, pipeline, contacts, news classification)
+- Intelligent source credibility scoring (primary/secondary, high/medium/low)
+- 10-persona quality gate evaluation with explicit PASS/FAIL criteria
+- Persistent caching in entityContexts (use forceRefresh: true to bypass)
+
+# AUDIT PROTOCOL (PERSONA-BASED QUALITY GATES)
+
+Entity research results include **personaHooks** for 10 specialized personas. Use these for deterministic quality evaluation:
+
+**Personas:**
+- JPM_STARTUP_BANKER: Weekly outbound target validation (requires news within 30 days)
+- EARLY_STAGE_VC: Thesis generation & competitive mapping
+- CTO_TECH_LEAD: Technical due diligence
+- FOUNDER_STRATEGY: Strategic pivot analysis
+- ACADEMIC_RD: Literature anchor verification
+- ENTERPRISE_EXEC: P&L risk management
+- ECOSYSTEM_PARTNER: Second-order market effects
+- QUANT_ANALYST: Quantitative signal extraction
+- PRODUCT_DESIGNER: Schema density for UI/UX
+- SALES_ENGINEER: Share-ready summary validation
+
+**Quality Gate Logic:**
+When asked about entity readiness (e.g., "Is X ready for banker outreach?"):
+1. Check personaHooks.[PERSONA].passCriteria - all must be satisfied
+2. Check personaHooks.[PERSONA].failTriggers - any trigger = FAIL
+3. Check freshness.withinBankerWindow - if false and persona requires fresh news = FAIL
+
+**Freshness Rules:**
+- freshness.newsAgeDays > 30 = JPM_STARTUP_BANKER auto-FAIL
+- freshness.newsAgeDays > 60 = EARLY_STAGE_VC, QUANT_ANALYST auto-FAIL
+- Missing primary source = ACADEMIC_RD auto-FAIL
 
 # SCRATCHPAD MANAGEMENT
 

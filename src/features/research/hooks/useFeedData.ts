@@ -74,10 +74,11 @@ export function useFeedData(options: UseFeedDataOptions = {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<FeedCategory>(category);
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const queryLimit = searchQuery.trim() ? Math.max(limit, 120) : limit;
 
   // Fetch live feed from Convex
   const liveFeed = useQuery(api.feed.get, {
-    limit,
+    limit: queryLimit,
     ...(selectedCategory ? { category: selectedCategory as any } : {})
   });
 

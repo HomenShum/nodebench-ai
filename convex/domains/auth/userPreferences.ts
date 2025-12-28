@@ -58,6 +58,7 @@ export const getUserPreferences = query({
         docOrderByGroup: {},
         linkReminderOptOut: false,
         trackedHashtags: [],
+        techStack: [],
       };
     }
 
@@ -81,6 +82,7 @@ export const getUserPreferences = query({
         docOrderByGroup: {},
         linkReminderOptOut: false,
         trackedHashtags: [],
+        techStack: [],
       };
     }
 
@@ -97,6 +99,7 @@ export const getUserPreferences = query({
       docOrderByGroup: preferences.docOrderByGroup ?? {},
       linkReminderOptOut: preferences.linkReminderOptOut ?? false,
       trackedHashtags: preferences.trackedHashtags ?? [],
+      techStack: preferences.techStack ?? [],
     };
   },
 });
@@ -231,6 +234,7 @@ export const updateUserPreferences = mutation({
     docOrderByGroup: v.optional(v.record(v.string(), v.array(v.id("documents")))),
     linkReminderOptOut: v.optional(v.boolean()),
     trackedHashtags: v.optional(v.array(v.string())),
+    techStack: v.optional(v.array(v.string())),
     gmailIngestEnabled: v.optional(v.boolean()),
     gcalSyncEnabled: v.optional(v.boolean()),
     calendarAutoAddMode: v.optional(v.union(v.literal("auto"), v.literal("propose"))),
@@ -274,6 +278,9 @@ export const updateUserPreferences = mutation({
       if (args.trackedHashtags !== undefined) {
         updates.trackedHashtags = args.trackedHashtags.map((h: string) => h.trim().replace(/^#/, '').toLowerCase());
       }
+      if (args.techStack !== undefined) {
+        updates.techStack = args.techStack.map((entry: string) => entry.trim()).filter(Boolean);
+      }
       if (args.gmailIngestEnabled !== undefined) updates.gmailIngestEnabled = args.gmailIngestEnabled;
       if (args.gcalSyncEnabled !== undefined) updates.gcalSyncEnabled = args.gcalSyncEnabled;
       if (args.calendarAutoAddMode !== undefined) updates.calendarAutoAddMode = args.calendarAutoAddMode;
@@ -296,6 +303,7 @@ export const updateUserPreferences = mutation({
 
         linkReminderOptOut: args.linkReminderOptOut ?? false,
         trackedHashtags: (args.trackedHashtags ?? []).map((h: string) => h.trim().replace(/^#/, '').toLowerCase()),
+        techStack: (args.techStack ?? []).map((entry: string) => entry.trim()).filter(Boolean),
         gmailIngestEnabled: args.gmailIngestEnabled ?? true,
         gcalSyncEnabled: args.gcalSyncEnabled ?? true,
         calendarAutoAddMode: args.calendarAutoAddMode ?? "propose",

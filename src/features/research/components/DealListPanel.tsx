@@ -10,6 +10,8 @@ export type Deal = {
   amount: string;
   date: string;
   location: string;
+  foundingYear?: string;
+  foundersBackground?: string;
   leads: string[];
   coInvestors?: string[];
   summary: string;
@@ -30,6 +32,10 @@ export type Deal = {
     patents?: string[];
     papers?: string[];
   };
+  sources?: Array<{
+    name: string;
+    url: string;
+  }>;
 };
 
 interface DealListPanelProps {
@@ -161,6 +167,15 @@ export function DealFlyout({
   onPrep: (intent: "email" | "call" | "invite", deal: Deal) => void;
 }) {
   if (!deal) return null;
+  const sortedSources = (deal.sources ?? []).slice().sort((a, b) => {
+    const score = (source: { name: string; url: string }) => {
+      const hay = `${source.name} ${source.url}`.toLowerCase();
+      if (hay.includes("pitchbook")) return 0;
+      if (hay.includes("crunchbase")) return 1;
+      return 2;
+    };
+    return score(a) - score(b);
+  });
 
   return (
     <div className="fixed inset-0 z-[130] flex items-start justify-end pointer-events-none">
@@ -187,6 +202,25 @@ export function DealFlyout({
 
         <div className="px-4 py-3 space-y-3">
           <div className="text-sm text-gray-800 leading-relaxed">{deal.summary}</div>
+
+          {(deal.foundingYear || deal.location || deal.foundersBackground) && (
+            <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-1">
+              <div className="text-[11px] font-semibold text-gray-500">Company profile</div>
+              <div className="grid grid-cols-2 gap-2 text-[12px] text-gray-700">
+                <div>
+                  <span className="font-semibold">Founded:</span> {deal.foundingYear || "n/a"}
+                </div>
+                <div>
+                  <span className="font-semibold">HQ:</span> {deal.location || "n/a"}
+                </div>
+              </div>
+              {deal.foundersBackground && (
+                <div className="text-[12px] text-gray-600">
+                  <span className="font-semibold text-gray-500">Founder background:</span> {deal.foundersBackground}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-1">
             <div className="text-[11px] font-semibold text-gray-500">Leads & Co-investors</div>
@@ -254,6 +288,28 @@ export function DealFlyout({
               </div>
             ) : null}
           </div>
+
+          {deal.sources?.length ? (
+            <div className="rounded-lg border border-gray-100 p-3 bg-white space-y-2">
+              <div className="flex items-center gap-2 text-[11px] font-semibold text-gray-500">
+                <FileText className="w-3.5 h-3.5" />
+                Data Room Links
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                {sortedSources.slice(0, 4).map((source) => (
+                  <a
+                    key={`${source.url}-${source.name}`}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-gray-600 hover:text-gray-900"
+                  >
+                    {source.name}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-3 gap-2">
             <button

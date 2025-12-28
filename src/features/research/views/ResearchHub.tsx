@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { ArrowRight } from "lucide-react";
+import { formatBriefDate, isBriefDateToday } from "@/lib/briefDate";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { EvidenceProvider } from "@/features/research/contexts/EvidenceContext";
+import { EvidenceProvider, useEvidence } from "@/features/research/contexts/EvidenceContext";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import type { FeedItem } from "@/features/research/components/FeedCard";
+import type { Evidence } from "@/features/research/types";
 import {
   BriefingSection,
   DashboardSection,
@@ -16,9 +18,10 @@ import { ActAwareDashboard } from "@/features/research/components/ActAwareDashbo
 import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
 import { PersonalPulse } from "@/features/research/components/PersonalPulse";
 import { IntelPulseMonitor } from "@/features/research/components/IntelPulseMonitor";
-import { TimelineStrip, type TimelineEvent } from "@/features/research/components/TimelineStrip";
+import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/features/research/components/TimelineStrip";
 import { NotificationActivityPanel } from "@/components/NotificationActivityPanel";
-import { FeedReaderModal } from "@/features/research/components/FeedReaderModal";
+import { FeedReaderModal, type ReaderItem } from "@/features/research/components/FeedReaderModal";
+import { EntityContextDrawer } from "@/features/research/components/EntityContextDrawer";
 
 export interface ResearchHubProps {
   onDocumentSelect?: (documentId: string) => void;
@@ -31,7 +34,7 @@ export interface ResearchHubProps {
   onGoHome?: () => void;
 }
 
-export default function ResearchHub(props: ResearchHubProps) {
+function ResearchHubContent(props: ResearchHubProps) {
   const {
     embedded = false,
     onDocumentSelect: _onDocumentSelect,
@@ -42,10 +45,15 @@ export default function ResearchHub(props: ResearchHubProps) {
   } = props;
 
   const { openWithContext } = useFastAgent();
+  const { registerEvidence } = useEvidence();
   const updateFocus = useMutation(api.domains.dossier.focusState.updateFocus);
+  const seedAuditSignals = useMutation(api.feed.seedAuditSignals);
   const [activeAct, setActiveAct] = useState<"actI" | "actII" | "actIII">("actI");
+  const [phaseFilter, setPhaseFilter] = useState<TemporalPhase | "all">("all");
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
-  const [readerItem, setReaderItem] = useState<FeedItem | null>(null);
+  const [readerItem, setReaderItem] = useState<ReaderItem | null>(null);
+  const [activeEntity, setActiveEntity] = useState<{ name: string; type: "company" | "person" } | null>(null);
+  const seededAuditRef = useRef(false);
 
   // Fetch all brief data (Global + Personal)
   const {
@@ -64,11 +72,99 @@ export default function ResearchHub(props: ResearchHubProps) {
     isLoading
   } = usePersonalBrief({ dateString: selectedDate });
 
+  const userPreferences = useQuery(api.domains.auth.userPreferences.getUserPreferences);
+  const trackedHashtags = userPreferences?.trackedHashtags ?? [];
+  const techStack = userPreferences?.techStack?.length
+    ? userPreferences.techStack
+    : ["AWS", "Vercel", "Postgres", "Cloudflare"];
+
+  const isBriefToday = isBriefDateToday(briefingDateString);
+  const briefLabel = isBriefToday ? "Today's Intelligence Brief" : "Latest Intelligence Brief";
+  const briefDateLabel = briefingDateString ? formatBriefDate(briefingDateString) : null;
+
   const briefId = (briefMemory as any)?._id || "morning_brief_latest";
   const dossierContextBase = useMemo(() => ({
     briefId,
     currentAct: activeAct,
   }), [briefId, activeAct]);
+
+  useEffect(() => {
+    if (evidence && evidence.length > 0) {
+      registerEvidence(evidence);
+    }
+  }, [evidence, registerEvidence]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (seededAuditRef.current) return;
+    seededAuditRef.current = true;
+    seedAuditSignals({})
+      .then((result) => {
+        if (result?.inserted) {
+          console.info(`[ResearchHub] Seeded ${result.inserted} audit signals.`);
+        }
+      })
+      .catch((err) => console.warn("[ResearchHub] Audit signal seed failed:", err?.message || err));
+  }, [seedAuditSignals]);
+
+  const phasedDashboardMetrics = useMemo(() => {
+    if (!dashboardMetrics) return null;
+    const trendLine = dashboardMetrics.charts?.trendLine;
+    if (!trendLine || !trendLine.series?.length) return dashboardMetrics;
+
+    const totalPoints = trendLine.xAxisLabels?.length ?? trendLine.series[0]?.data?.length ?? 0;
+    const basePresent = typeof trendLine.presentIndex === "number"
+      ? trendLine.presentIndex
+      : (trendLine.visibleEndIndex ?? totalPoints - 1);
+    const safePresent = Math.max(0, Math.min(basePresent, Math.max(0, totalPoints - 1)));
+
+    let visibleEnd = trendLine.visibleEndIndex ?? Math.max(0, totalPoints - 1);
+    let presentIndex = safePresent;
+    let timeWindow = trendLine.timeWindow;
+
+    if (phaseFilter === "past") {
+      visibleEnd = Math.max(0, safePresent - 1);
+      presentIndex = visibleEnd;
+      timeWindow = "Historical window";
+    } else if (phaseFilter === "future") {
+      presentIndex = Math.max(0, safePresent - 2);
+      timeWindow = "Projection window";
+    } else if (phaseFilter === "present") {
+      visibleEnd = safePresent;
+      presentIndex = safePresent;
+      timeWindow = "Current window";
+    }
+
+    const phaseScalar = phaseFilter === "past" ? 0.96 : phaseFilter === "future" ? 1.04 : 1;
+    const capabilities = (dashboardMetrics.capabilities ?? []).map((cap) => ({
+      ...cap,
+      score: Math.round(Math.min(100, cap.score * phaseScalar)),
+    }));
+    const keyStats = (dashboardMetrics.keyStats ?? []).map((stat) => ({
+      ...stat,
+      context:
+        phaseFilter === "future"
+          ? "Projection"
+          : phaseFilter === "past"
+            ? "Historical"
+            : stat.context,
+    }));
+
+    return {
+      ...dashboardMetrics,
+      keyStats,
+      capabilities,
+      charts: {
+        ...dashboardMetrics.charts,
+        trendLine: {
+          ...trendLine,
+          visibleEndIndex: Math.min(Math.max(visibleEnd, 0), Math.max(0, totalPoints - 1)),
+          presentIndex,
+          timeWindow,
+        },
+      },
+    };
+  }, [dashboardMetrics, phaseFilter]);
 
   // Hoist agent plans for the adaptive HUD
   const agentPlans = useQuery(
@@ -106,7 +202,7 @@ export default function ResearchHub(props: ResearchHubProps) {
       events.push({
         id: 'today-briefing',
         date: briefingDateString,
-        label: 'Today\'s Intelligence Brief',
+        label: briefLabel,
         description: executiveBrief?.summary || 'Current market synthesis',
         phase: 'present',
         isCurrent: true,
@@ -125,7 +221,42 @@ export default function ResearchHub(props: ResearchHubProps) {
     });
 
     return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [evidence, briefingDateString, executiveBrief]);
+  }, [evidence, briefingDateString, executiveBrief, briefLabel]);
+
+  const formatTimestamp = useCallback((value?: string) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }, []);
+
+  const buildReaderItem = useCallback((input: {
+    id?: string;
+    title?: string;
+    url?: string;
+    source?: string;
+    summary?: string;
+    relevance?: string;
+    publishedAt?: string;
+    tags?: string[];
+    subtitle?: string;
+    timestamp?: string;
+  }): ReaderItem => {
+    const title = input.title ?? input.url ?? "Source";
+    const subtitle = input.subtitle ?? input.summary ?? input.relevance ?? "";
+    const timestamp = input.timestamp ?? formatTimestamp(input.publishedAt);
+    const tags = input.tags ?? (input.source ? [input.source] : []);
+    return {
+      id: input.id ?? input.url ?? title,
+      title,
+      subtitle,
+      timestamp,
+      url: input.url,
+      source: input.source,
+      tags,
+      raw: input,
+    };
+  }, [formatTimestamp]);
 
   // Intersection Observer for Act tracking
   const actIRef = useRef<HTMLElement>(null);
@@ -175,6 +306,64 @@ export default function ResearchHub(props: ResearchHubProps) {
       },
     });
   }, [openWithContext, dossierContextBase]);
+
+  const handleOpenReader = useCallback((input: {
+    id?: string;
+    title?: string;
+    url?: string;
+    source?: string;
+    summary?: string;
+    relevance?: string;
+    publishedAt?: string;
+    tags?: string[];
+    subtitle?: string;
+    timestamp?: string;
+    category?: string;
+  }) => {
+    if (!input.url) return;
+    setReaderItem(buildReaderItem({
+      ...input,
+      tags: input.tags ?? (input.category ? [input.category] : undefined),
+    }));
+  }, [buildReaderItem]);
+
+  const handleEvidenceOpen = useCallback((ev: Evidence) => {
+    handleOpenReader({
+      id: ev.id,
+      title: ev.title ?? ev.source,
+      url: ev.url,
+      source: ev.source,
+      relevance: ev.relevance,
+      summary: ev.summary,
+      publishedAt: ev.publishedAt,
+      tags: ev.source ? [ev.source] : [],
+    });
+  }, [handleOpenReader]);
+
+  const handleCoverageOpen = useCallback((item: {
+    title?: string;
+    url?: string;
+    source?: string;
+    summary?: string;
+    category?: string;
+  }) => {
+    handleOpenReader({
+      title: item.title,
+      url: item.url,
+      source: item.source,
+      summary: item.summary,
+      category: item.category,
+    });
+  }, [handleOpenReader]);
+
+  const handleEntityOpen = useCallback((entityName: string, entityType?: "company" | "person") => {
+    if (!entityName) return;
+    setActiveEntity({ name: entityName, type: entityType ?? "company" });
+  }, []);
+
+  const handleEntityClose = useCallback(() => {
+    setActiveEntity(null);
+  }, []);
 
   const handleFeedOpenWithAgent = useCallback((item: FeedItem) => {
     openWithContext({
@@ -229,7 +418,6 @@ export default function ResearchHub(props: ResearchHubProps) {
   }, [openWithContext, dossierContextBase]);
 
   return (
-    <EvidenceProvider>
       <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-[#faf9f6] overflow-hidden`}>
         {!embedded && (
           <header className="h-20 bg-[#faf9f6]/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-stone-200 shadow-sm">
@@ -297,10 +485,31 @@ export default function ResearchHub(props: ResearchHubProps) {
 
         {/* UNIFIED SCROLL CONTAINER */}
         <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#faf9f6]">
+          {embedded && onGoHome && (
+            <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-200 pb-3">
+                <button
+                  type="button"
+                  onClick={onGoHome}
+                  className="flex items-center gap-2 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] hover:text-emerald-900 transition-colors"
+                >
+                  <ArrowRight className="w-3 h-3 rotate-180" />
+                  <span>Return to Pulse Overview</span>
+                </button>
+                {briefDateLabel && (
+                  <div className="text-[10px] font-mono text-stone-400 uppercase tracking-widest">
+                    {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {/* TIMELINE STRIP - Past + Present + Future temporal context */}
           <TimelineStrip
             events={timelineEvents}
             activeEventId={activeAct === 'actI' ? 'today-briefing' : undefined}
+            phaseFilter={phaseFilter}
+            onPhaseChange={setPhaseFilter}
             onEventClick={(event) => {
               const currentAct = event.phase === 'past' ? 'actI' : event.phase === 'present' ? 'actII' : 'actIII';
               openWithContext({
@@ -316,6 +525,7 @@ export default function ResearchHub(props: ResearchHubProps) {
               if (event.phase === 'past') setActiveAct('actI');
               else if (event.phase === 'present') setActiveAct('actII');
               else setActiveAct('actIII');
+              setPhaseFilter(event.phase);
             }}
             className="mx-auto max-w-[1600px] px-16 pt-8"
           />
@@ -340,7 +550,10 @@ export default function ResearchHub(props: ResearchHubProps) {
                   </div>
                   <div className={`w-2 h-2 rounded-full ${selectedDate ? 'bg-amber-500' : 'bg-emerald-900'} animate-pulse`} />
                 </div>
-                <DigestSection onItemClick={handleDigestItemClick} />
+                <DigestSection
+                  onItemClick={handleDigestItemClick}
+                  onEntityClick={handleEntityOpen}
+                />
               </section>
 
               {/* PERSONALIZED OVERLAY SECTION */}
@@ -377,6 +590,7 @@ export default function ResearchHub(props: ResearchHubProps) {
                     updateFocus({ briefId: (briefMemory as any)?._id || "morning_brief_latest", currentAct: act as any });
                   }}
                   onAskAI={handleAskAI}
+                  onOpenReader={handleOpenReader}
                 />
               </section>
 
@@ -414,16 +628,17 @@ export default function ResearchHub(props: ResearchHubProps) {
               <div className="absolute left-0 top-12 bottom-12 w-px bg-gradient-to-b from-stone-200/0 via-stone-200 to-stone-200/0" />
 
               <div className="space-y-12">
-                {dashboardMetrics ? (
+                {phasedDashboardMetrics ? (
                   <ActAwareDashboard
                     activeAct={activeAct}
-                    dashboardData={dashboardMetrics}
+                    dashboardData={phasedDashboardMetrics}
                     executiveBrief={executiveBrief}
                     sourceSummary={sourceSummary}
                     evidence={evidence || []}
                     workflowSteps={workflowSteps}
                     deltas={deltas}
                     onDataPointClick={handleDashboardPointClick}
+                    onEvidenceClick={handleEvidenceOpen}
                   />
                 ) : (
                   // Fallback while loading
@@ -444,8 +659,28 @@ export default function ResearchHub(props: ResearchHubProps) {
         {/* LIVE INTEL FLOW MONITOR */}
         <IntelPulseMonitor taskResults={taskResults || []} />
 
-        <FeedReaderModal item={readerItem} onClose={() => setReaderItem(null)} />
+        <FeedReaderModal
+          item={readerItem}
+          techStack={techStack}
+          onClose={() => setReaderItem(null)}
+        />
+        <EntityContextDrawer
+          isOpen={Boolean(activeEntity)}
+          entityName={activeEntity?.name ?? null}
+          entityType={activeEntity?.type}
+          trackedHashtags={trackedHashtags}
+          techStack={techStack}
+          onClose={handleEntityClose}
+          onOpenReader={handleOpenReader}
+        />
       </div>
+  );
+}
+
+export default function ResearchHub(props: ResearchHubProps) {
+  return (
+    <EvidenceProvider>
+      <ResearchHubContent {...props} />
     </EvidenceProvider>
   );
 }

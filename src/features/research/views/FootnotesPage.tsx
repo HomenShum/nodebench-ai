@@ -26,7 +26,7 @@ interface FootnotesPageProps {
  */
 export const FootnotesPage: React.FC<FootnotesPageProps> = ({
   library,
-  briefTitle = "Today's Intelligence Brief",
+  briefTitle = "Latest Intelligence Brief",
   briefDate,
   onBack,
 }) => {
@@ -138,4 +138,3 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
 };
 
 export default FootnotesPage;
-
