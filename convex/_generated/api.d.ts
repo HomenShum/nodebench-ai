@@ -337,6 +337,7 @@ import type * as tools_evaluation_evaluator from "../tools/evaluation/evaluator.
 import type * as tools_evaluation_helpers from "../tools/evaluation/helpers.js";
 import type * as tools_evaluation_quickTest from "../tools/evaluation/quickTest.js";
 import type * as tools_evaluation_testCases from "../tools/evaluation/testCases.js";
+import type * as tools_evaluation_testPersonas from "../tools/evaluation/testPersonas.js";
 import type * as tools_financial_enhancedFundingTools from "../tools/financial/enhancedFundingTools.js";
 import type * as tools_financial_fundingResearchTools from "../tools/financial/fundingResearchTools.js";
 import type * as tools_integration_confirmCompanySelection from "../tools/integration/confirmCompanySelection.js";
@@ -726,6 +727,7 @@ declare const fullApi: ApiFromModules<{
   "tools/evaluation/helpers": typeof tools_evaluation_helpers;
   "tools/evaluation/quickTest": typeof tools_evaluation_quickTest;
   "tools/evaluation/testCases": typeof tools_evaluation_testCases;
+  "tools/evaluation/testPersonas": typeof tools_evaluation_testPersonas;
   "tools/financial/enhancedFundingTools": typeof tools_financial_enhancedFundingTools;
   "tools/financial/fundingResearchTools": typeof tools_financial_fundingResearchTools;
   "tools/integration/confirmCompanySelection": typeof tools_integration_confirmCompanySelection;

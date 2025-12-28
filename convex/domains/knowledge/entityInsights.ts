@@ -145,6 +145,45 @@ type EnrichedSource = {
   credibility?: "high" | "medium-high" | "medium" | "low";
 };
 
+type PerformanceMetrics = {
+  failureRate?: number; // percentage
+  churn?: number; // percentage
+  latency?: number; // ms
+  uptime?: number; // percentage (e.g. 99.99)
+};
+
+type Financials = {
+  burnRate?: number; // monthly burn in USD
+  costToServe?: number; // cost per user/unit
+  unitEconomics?: string; // description or metric
+  revenue?: number; // annual revenue
+};
+
+type AcademicData = {
+  methodology?: string; // specific approach (e.g. "P7C3-class compounds")
+  citations?: number;
+  pValue?: number;
+  sampleSize?: number;
+};
+
+type EcosystemData = {
+  dependencies?: string[]; // upstream
+  downstreamImpact?: string[]; // who relies on this
+  secondOrderEffects?: string[]; // market ripples
+};
+
+type TechnicalSpecs = {
+  cveIds?: string[];
+  repoStats?: {
+    stars: number;
+    forks: number;
+    issues: number;
+    contributors: number;
+    starVelocity?: number; // stars per week
+  };
+  stackDependencies?: string[];
+};
+
 // Legacy flat payload (kept for backward compatibility)
 type EntityInsightPayload = {
   summary?: string | null;
@@ -167,7 +206,7 @@ type EntityInsightPayload = {
 };
 
 // Full banker-grade enriched entity
-type EnrichedEntityPayload = {
+export type EnrichedEntityPayload = {
   entityId?: string;
   entityType?: "private_company" | "public_company" | "oss_project" | "research_signal" | "model_platform" | "person";
   canonicalName?: string;
@@ -177,6 +216,12 @@ type EnrichedEntityPayload = {
   funding?: FundingData;
   people?: PeopleData;
   productPipeline?: ProductPipeline;
+  // Banker-Grade Additions
+  performanceMetrics?: PerformanceMetrics;
+  financials?: Financials;
+  academicData?: AcademicData;
+  ecosystem?: EcosystemData;
+  technicalSpecs?: TechnicalSpecs;
   recentNews?: { items: NewsItem[] };
   contactPoints?: ContactPoints;
   sources?: EnrichedSource[];
@@ -210,7 +255,7 @@ function calculateFreshness(recentNews: NewsItem[]): Freshness {
   };
 }
 
-function evaluateBankerPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateBankerPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
@@ -273,7 +318,7 @@ function evaluateBankerPersona(entity: EnrichedEntityPayload): PersonaResult {
   };
 }
 
-function evaluateVCPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateVCPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
@@ -317,24 +362,31 @@ function evaluateVCPersona(entity: EnrichedEntityPayload): PersonaResult {
   };
 }
 
-function evaluateCTOPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateCTOPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
   if (entity.productPipeline?.platform) {
     passCriteria.push("productPipeline.platform defined");
-  } else {
-    failTriggers.push("no platform/tech stack info");
   }
 
-  if (entity.productPipeline?.modalities && entity.productPipeline.modalities.length > 0) {
-    passCriteria.push("modalities/tech approach specified");
+  if (entity.technicalSpecs?.cveIds && entity.technicalSpecs.cveIds.length > 0) {
+    passCriteria.push(`technicalSpecs.cveIds found: ${entity.technicalSpecs.cveIds.join(", ")}`);
+  } else if (entity.entityType === "oss_project" || entity.entityType === "model_platform") {
+    // Only strict fail if it's technical
+    passCriteria.push("no CVEs listed (safe or missing)");
   }
 
-  if (entity.sources && entity.sources.length >= 2) {
-    passCriteria.push("multiple sources for verification");
+  if (entity.technicalSpecs?.repoStats) {
+    passCriteria.push("repoStats valid");
+  } else if (entity.entityType === "oss_project") {
+    failTriggers.push("missing repoStats for OSS project");
+  }
+
+  if (entity.ecosystem?.dependencies && entity.ecosystem.dependencies.length > 0) {
+    passCriteria.push("upstream dependencies mapped");
   } else {
-    failTriggers.push("insufficient sources for tech validation");
+    failTriggers.push("no technical dependency map");
   }
 
   return {
@@ -345,7 +397,7 @@ function evaluateCTOPersona(entity: EnrichedEntityPayload): PersonaResult {
   };
 }
 
-function evaluateFounderStrategyPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateFounderStrategyPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
@@ -353,14 +405,15 @@ function evaluateFounderStrategyPersona(entity: EnrichedEntityPayload): PersonaR
     passCriteria.push("bankerTakeaway strategic insight exists");
   }
 
-  if (entity.productPipeline?.differentiation && entity.productPipeline.differentiation.length > 0) {
-    passCriteria.push("differentiation points defined");
+  // Pivot/Strategy validation
+  if (entity.performanceMetrics?.churn !== undefined || entity.performanceMetrics?.failureRate !== undefined) {
+    passCriteria.push("pivot justification metrics (churn/failure) present");
   } else {
-    failTriggers.push("no differentiation/moat clarity");
+    failTriggers.push("no churn or failure metrics to justify strategy");
   }
 
-  if (entity.people?.founders && entity.people.founders.length > 0) {
-    passCriteria.push("founder team identified");
+  if (entity.productPipeline?.differentiation && entity.productPipeline.differentiation.length > 0) {
+    passCriteria.push("differentiation points defined");
   }
 
   return {
@@ -371,7 +424,7 @@ function evaluateFounderStrategyPersona(entity: EnrichedEntityPayload): PersonaR
   };
 }
 
-function evaluateAcademicRDPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateAcademicRDPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
@@ -382,8 +435,14 @@ function evaluateAcademicRDPersona(entity: EnrichedEntityPayload): PersonaResult
     failTriggers.push("no primary literature source");
   }
 
-  if (entity.productPipeline?.leadPrograms && entity.productPipeline.leadPrograms.length > 0) {
-    passCriteria.push("research programs defined");
+  if (entity.academicData?.methodology) {
+    passCriteria.push(`methodology defined: ${entity.academicData.methodology.substring(0, 20)}...`);
+  } else {
+    failTriggers.push("missing methodology (mechanism of action)");
+  }
+
+  if (entity.academicData?.citations !== undefined) {
+    passCriteria.push("citation impact available");
   }
 
   return {
@@ -394,24 +453,24 @@ function evaluateAcademicRDPersona(entity: EnrichedEntityPayload): PersonaResult
   };
 }
 
-function evaluateEnterpriseExecPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateEnterpriseExecPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
   if (entity.funding?.stage) {
     passCriteria.push("funding stage clarity for risk assessment");
-  } else {
-    failTriggers.push("funding stage unknown");
   }
 
-  if (entity.crmFields?.hqLocation) {
-    passCriteria.push("HQ location for jurisdictional assessment");
+  if (entity.financials?.costToServe !== undefined || entity.financials?.burnRate !== undefined) {
+    passCriteria.push("financial/cost impact metrics present");
+  } else {
+    failTriggers.push("broken unit economics / no cost impact data");
   }
 
-  if (entity.contactPoints?.primary) {
-    passCriteria.push("primary contact for procurement");
+  if (entity.performanceMetrics?.uptime !== undefined || entity.performanceMetrics?.latency !== undefined) {
+    passCriteria.push("reliability/SLA metrics present");
   } else {
-    failTriggers.push("no procurement contact");
+    failTriggers.push("no reliability/SLA verification");
   }
 
   return {
@@ -422,22 +481,18 @@ function evaluateEnterpriseExecPersona(entity: EnrichedEntityPayload): PersonaRe
   };
 }
 
-function evaluateEcosystemPartnerPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateEcosystemPartnerPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
-  if (entity.recentNews?.items && entity.recentNews.items.length > 0) {
-    passCriteria.push("recentNews for market signal");
+  if (entity.ecosystem?.downstreamImpact && entity.ecosystem.downstreamImpact.length > 0) {
+    passCriteria.push("downstream ecosystem impact mapped");
   } else {
-    failTriggers.push("no recent news for ecosystem mapping");
+    failTriggers.push("missing ecosystem impact map");
   }
 
-  if (entity.contactPoints?.outreachAngles && entity.contactPoints.outreachAngles.length > 0) {
-    passCriteria.push("outreach angles defined");
-  }
-
-  if (entity.sources && entity.sources.length >= 2) {
-    passCriteria.push("multiple sources for second-order effects");
+  if (entity.ecosystem?.secondOrderEffects && entity.ecosystem.secondOrderEffects.length > 0) {
+    passCriteria.push("second-order effects identified");
   }
 
   return {
@@ -448,21 +503,17 @@ function evaluateEcosystemPartnerPersona(entity: EnrichedEntityPayload): Persona
   };
 }
 
-function evaluateQuantAnalystPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateQuantAnalystPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
-  if (entity.funding?.lastRound?.amount) {
-    passCriteria.push("structured funding amount present");
+  if (entity.performanceMetrics?.latency !== undefined || entity.financials?.revenue !== undefined) {
+    passCriteria.push("quantitative time-series points available");
   } else {
-    failTriggers.push("no structured funding data");
+    failTriggers.push("no raw quantitative metrics for regression");
   }
 
-  if (entity.funding?.lastRound?.announcedDate) {
-    passCriteria.push("funding date for time-series");
-  }
-
-  if (entity.freshness?.newsAgeDays !== null && entity.freshness?.newsAgeDays !== undefined) {
+  if (entity.freshness?.newsAgeDays !== null) {
     passCriteria.push("freshness metrics calculable");
   }
 
@@ -474,7 +525,7 @@ function evaluateQuantAnalystPersona(entity: EnrichedEntityPayload): PersonaResu
   };
 }
 
-function evaluateProductDesignerPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateProductDesignerPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
@@ -499,7 +550,7 @@ function evaluateProductDesignerPersona(entity: EnrichedEntityPayload): PersonaR
   };
 }
 
-function evaluateSalesEngineerPersona(entity: EnrichedEntityPayload): PersonaResult {
+export function evaluateSalesEngineerPersona(entity: EnrichedEntityPayload): PersonaResult {
   const passCriteria: string[] = [];
   const failTriggers: string[] = [];
 
@@ -794,16 +845,16 @@ function classifySourceCredibility(
 ): { sourceType: "primary" | "secondary"; credibility: "high" | "medium-high" | "medium" | "low" } {
   const urlLower = url.toLowerCase();
   const entityTokens = entityName.toLowerCase().split(/\s+/).filter(t => t.length > 2);
-  
+
   // Check if URL contains entity name tokens (likely company's own site)
   const isEntitySite = entityTokens.some(token => urlLower.includes(token));
-  
+
   // Determine source type
   let sourceType: "primary" | "secondary" = "secondary";
   if (isEntitySite || PRIMARY_SOURCE_PATTERNS.some(p => p.test(url))) {
     sourceType = "primary";
   }
-  
+
   // Determine credibility
   let credibility: "high" | "medium-high" | "medium" | "low" = "medium";
   if (HIGH_CREDIBILITY_PATTERNS.some(p => p.test(url))) {
@@ -813,7 +864,7 @@ function classifySourceCredibility(
   } else if (isEntitySite) {
     credibility = "high"; // Company's own site is high credibility for company facts
   }
-  
+
   return { sourceType, credibility };
 }
 
@@ -940,8 +991,37 @@ Return JSON with this EXACT structure:
       "credentials": [{ "type": "credential type", "verifiedBy": "verification source" }]
     }
   ],
-  "board": ["Board member names with affiliation"] or null
+  "board": ["Board member names with affiliation"] or null,
+  "performanceMetrics": {
+    "failureRate": number (percentage 0-100) or null,
+    "churn": number (percentage 0-100) or null,
+    "latency": number (ms) or null,
+    "uptime": number (percentage e.g. 99.9) or null
+  } or null,
+  "financials": {
+    "burnRate": number (monthly USD) or null,
+    "costToServe": number (USD unit cost) or null,
+    "unitEconomics": "Description of LTV/CAC or margin" or null,
+    "revenue": number (annual USD) or null
+  } or null,
+  "academicData": {
+    "methodology": "Specific mechanism/approach description" or null,
+    "citations": number (approx count) or null,
+    "pValue": number or null,
+    "sampleSize": number or null
+  } or null,
+  "ecosystem": {
+    "dependencies": ["Upstream tech/vendors"] or [],
+    "downstreamImpact": ["Who is affected/relies on this"] or [],
+    "secondOrderEffects": ["Indirect market ripples"] or []
+  } or null,
+  "technicalSpecs": {
+    "cveIds": ["CVE-XXXX-YYYY"] or [],
+    "repoStats": { "stars": number, "forks": number, "issues": number, "contributors": number, "starVelocity": number } or null,
+    "stackDependencies": ["Core tech stack"] or []
+  } or null
 }
+
 
 IMPORTANT:
 - Only include data you can verify from the provided text
@@ -1287,51 +1367,51 @@ Use null for unknown fields. Be precise with amounts and dates.`;
     // Merge people data from banker enrichment
     const mergedFounders: PersonEntry[] = (bankerEnrichment?.founderDetails ?? []).length > 0
       ? bankerEnrichment!.founderDetails!.map(f => ({
-          name: f.name,
-          role: f.role ?? "Founder",
-          background: f.background,
-          credentials: f.credentials,
-        }))
+        name: f.name,
+        role: f.role ?? "Founder",
+        background: f.background,
+        credentials: f.credentials,
+      }))
       : founderFallback.map((name) => ({ name, role: "Founder" }));
 
     const mergedExecutives: PersonEntry[] = (bankerEnrichment?.executiveDetails ?? []).length > 0
       ? bankerEnrichment!.executiveDetails!.map(e => ({
-          name: e.name,
-          role: e.role,
-          backgroundHighlights: e.backgroundHighlights,
-          credentials: e.credentials,
-        }))
+        name: e.name,
+        role: e.role,
+        backgroundHighlights: e.backgroundHighlights,
+        credentials: e.credentials,
+      }))
       : normalizedKeyPeople.map((p) => ({ name: p.name, role: p.title }));
 
     // Merge product pipeline from banker enrichment
     const mergedProductPipeline: ProductPipeline = bankerEnrichment?.productPipeline
       ? {
-          platform: bankerEnrichment.productPipeline.platform ?? asString(parsed.industry),
-          modalities: bankerEnrichment.productPipeline.modalities ?? [],
-          leadAsset: bankerEnrichment.productPipeline.leadAsset,
-          leadPrograms: bankerEnrichment.productPipeline.leadPrograms ?? [],
-          differentiation: bankerEnrichment.productPipeline.differentiation ?? [],
-        }
+        platform: bankerEnrichment.productPipeline.platform ?? asString(parsed.industry),
+        modalities: bankerEnrichment.productPipeline.modalities ?? [],
+        leadAsset: bankerEnrichment.productPipeline.leadAsset,
+        leadPrograms: bankerEnrichment.productPipeline.leadPrograms ?? [],
+        differentiation: bankerEnrichment.productPipeline.differentiation ?? [],
+      }
       : {
-          platform: asString(parsed.industry),
-          modalities: [],
-          leadPrograms: [],
-          differentiation: [],
-        };
+        platform: asString(parsed.industry),
+        modalities: [],
+        leadPrograms: [],
+        differentiation: [],
+      };
 
     // Merge contact points from banker enrichment
     const mergedContactPoints: ContactPoints = bankerEnrichment?.contactPoints
       ? {
-          primary: bankerEnrichment.contactPoints.primary,
-          media: bankerEnrichment.contactPoints.media,
-          other: bankerEnrichment.contactPoints.other ?? [],
-          outreachAngles: bankerEnrichment.contactPoints.outreachAngles?.length
-            ? bankerEnrichment.contactPoints.outreachAngles
-            : recentNews.length > 0 ? ["Recent news signal"] : [],
-        }
+        primary: bankerEnrichment.contactPoints.primary,
+        media: bankerEnrichment.contactPoints.media,
+        other: bankerEnrichment.contactPoints.other ?? [],
+        outreachAngles: bankerEnrichment.contactPoints.outreachAngles?.length
+          ? bankerEnrichment.contactPoints.outreachAngles
+          : recentNews.length > 0 ? ["Recent news signal"] : [],
+      }
       : {
-          outreachAngles: recentNews.length > 0 ? ["Recent news signal"] : [],
-        };
+        outreachAngles: recentNews.length > 0 ? ["Recent news signal"] : [],
+      };
 
     const enrichedEntity: EnrichedEntityPayload = {
       entityId: args.entityName.toUpperCase().replace(/\s+/g, "_"),

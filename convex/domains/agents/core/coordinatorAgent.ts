@@ -153,6 +153,12 @@ import {
   getTopPreferencesTool,
 } from "../../../tools/teachability/userMemoryTools";
 
+// Import spreadsheet editing tools (patch-based immutable versioning)
+import {
+  editSpreadsheet,
+  getSpreadsheetSummary,
+} from "../../../tools/editSpreadsheet";
+
 // Artifact persistence wrapper
 import { wrapAllToolsWithArtifactPersistence } from "../../../lib/withArtifactPersistence";
 import type { Id } from "../../../_generated/dataModel";
@@ -354,6 +360,10 @@ export const createCoordinatorAgent = (
     initTaskTracker,
     updateTaskStatus,
     getTaskSummary,
+
+    // === SPREADSHEET TOOLS (Patch-based immutable versioning) ===
+    editSpreadsheet,
+    getSpreadsheetSummary,
   };
 
   // Wrap all tools for artifact extraction if deps provided
