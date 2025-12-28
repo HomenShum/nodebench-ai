@@ -1,39 +1,39 @@
 /**
  * Barrel export for convex/lib utilities
- * 
- * This file re-exports all utilities from the lib folder for easier imports.
+ *
+ * This file re-exports type definitions and pure utility functions only.
+ * Convex functions (mutations, actions, queries) must be imported directly
+ * from their source files.
  */
 
-// Agent optimization utilities
-export * as parallelDelegation from "./parallelDelegation";
-export * as agentCache from "./agentCache";
-export * as streamingDelegation from "./streamingDelegation";
-export * as predictivePrefetch from "./predictivePrefetch";
+// NOTE: Agent optimization utilities contain Convex functions and cannot be re-exported
+// Import directly from:
+// - "./parallelDelegation" (types only - delegateInParallel is a utility)
+// - "./agentCache"
+// - "./streamingDelegation"
+// - "./predictivePrefetch"
 
-// Artifact utilities
+// Artifact type utilities (types only)
 export * from "./artifactModels";
 export * from "./artifactValidators";
-export * from "./artifactQueries";
-export * from "./artifactPersistence";
-export * from "./withArtifactPersistence";
+// NOTE: artifactQueries, artifactPersistence, withArtifactPersistence contain Convex functions
 
-// Memory utilities
+// Memory utilities (pure functions only)
 export * from "./memoryLimits";
 export * from "./memoryQuality";
 
-// Document utilities
+// Document utilities (types and pure functions)
 export * from "./dossierHelpers";
-export * from "./dossierGenerator";
-export * from "./actionItemsGenerator";
+// NOTE: dossierGenerator, actionItemsGenerator may contain Convex functions
 
-// Conversion utilities
+// Conversion utilities (pure functions)
 export * from "./markdown";
 export * from "./markdownToTipTap";
 
-// Other utilities
+// Other utilities (pure functions only)
 export * from "./crypto";
 export * from "./entityResolution";
 export * from "./factValidation";
 export * from "./featureFlags";
-export * from "./mcpTransport";
+// NOTE: mcpTransport contains Convex actions
 

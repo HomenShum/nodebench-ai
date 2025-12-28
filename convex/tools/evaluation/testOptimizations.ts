@@ -55,18 +55,19 @@ async function testParallelDelegation() {
 
   const totalTime = Date.now() - startTime;
   const sequentialTime = results.reduce((sum, r) => sum + r.duration, 0);
-  const savings = ((sequentialTime - totalTime) / sequentialTime * 100).toFixed(1);
+  const savingsNum = (sequentialTime - totalTime) / sequentialTime * 100;
+  const savingsStr = savingsNum.toFixed(1);
 
   console.log('\n📊 RESULTS:');
   console.log(`✅ All agents completed: ${results.filter(r => r.success).length}/${results.length}`);
   console.log(`⏱️  Parallel time: ${totalTime}ms`);
   console.log(`⏱️  Sequential time: ${sequentialTime}ms`);
-  console.log(`💰 Time saved: ${savings}% (Target: 40-50%)`);
-  console.log(`✅ Performance gain: ${savings >= 40 ? 'ACHIEVED' : 'BELOW TARGET'}`);
+  console.log(`💰 Time saved: ${savingsStr}% (Target: 40-50%)`);
+  console.log(`✅ Performance gain: ${savingsNum >= 40 ? 'ACHIEVED' : 'BELOW TARGET'}`);
 
   return {
     success: results.every(r => r.success),
-    savings: parseFloat(savings),
+    savings: savingsNum,
     totalTime,
     sequentialTime,
   };

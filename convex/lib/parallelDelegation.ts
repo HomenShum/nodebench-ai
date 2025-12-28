@@ -204,8 +204,8 @@ export function mergeAgentResults<T = any>(
       mergedResult = successful
         .map(r => {
           const result = r.result;
-          if (typeof result === 'object' && result.text) {
-            return result.text;
+          if (result && typeof result === 'object' && 'text' in result) {
+            return (result as { text: string }).text;
           }
           return typeof result === 'string' ? result : JSON.stringify(result);
         })

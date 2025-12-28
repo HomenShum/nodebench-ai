@@ -1643,14 +1643,13 @@ export const streamAsync = internalAction({
       agentThreadId: args.threadId
     });
 
-    const userIdTyped = (thread?.userId ?? null) as Id<"users"> | null;
-    console.log(`[streamAsync:${executionId}] userId from thread:`, userIdTyped);
+    console.log(`[streamAsync:${executionId}] userId from thread:`, userId ?? null);
 
     // Determine arbitrage mode: UI override takes precedence, then user prefs
     let arbitrageMode = args.arbitrageEnabled ?? false;
-    if (!args.arbitrageEnabled && userIdTyped) {
+    if (!args.arbitrageEnabled && userId) {
       try {
-        const agentsPrefs = await ctx.runQuery(internal.agentsPrefs.getAgentsPrefsByUserId, { userId: userIdTyped });
+        const agentsPrefs = await ctx.runQuery(internal.agentsPrefs.getAgentsPrefsByUserId, { userId });
         arbitrageMode = agentsPrefs?.arbitrageMode === "true";
       } catch (err) {
         console.warn(`[streamAsync:${executionId}] Could not fetch agent prefs:`, err);
