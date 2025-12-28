@@ -17,7 +17,9 @@
       "Bash(ls:*)",
       "Bash(npx tsx:*)",
       "Bash(find:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(node test-ntfy-comprehensive.js:*)",
+      "Bash(node test-ntfy-entity-quality.js:*)"
     ],
     "deny": [],
     "ask": []

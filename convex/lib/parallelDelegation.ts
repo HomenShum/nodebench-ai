@@ -99,7 +99,7 @@ export async function delegateInParallel<T = any>(
         return {
           agentName: task.agentName,
           success: true,
-          result,
+          result: result as T,
           duration,
           metadata: task.metadata,
         };

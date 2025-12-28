@@ -1661,7 +1661,7 @@ export const streamAsync = internalAction({
     let responsePromptOverride: string | undefined;
     const contextWithUserId = {
       ...ctx,
-      evaluationUserId: userIdTyped,
+      evaluationUserId: userId,
     };
 
     // Inject plan + progress + scratchpad summary into prompt so the agent boots with memory
@@ -1736,9 +1736,9 @@ export const streamAsync = internalAction({
 
         // Build artifact deps if we have userId
         // runId = threadId (agent thread), userId for artifact ownership
-        const artifactDeps = userIdTyped ? {
+        const artifactDeps = userId ? {
           runId: args.threadId,
-          userId: userIdTyped,
+          userId: userId,
           sectionIdRef, // Mutable ref for per-section artifact linking
         } : undefined;
 
@@ -1852,7 +1852,7 @@ export const streamAsync = internalAction({
       }
 
       // Teachability analysis (async, non-blocking)
-      if (userIdTyped) {
+      if (userId) {
         try {
           const promptMessages = await ctx.runQuery(components.agent.messages.getMessagesByIds, {
             messageIds: [args.promptMessageId],
@@ -1860,7 +1860,7 @@ export const streamAsync = internalAction({
           const promptText = (promptMessages?.[0]?.text as string | undefined) ?? "";
           if (promptText) {
             await ctx.scheduler.runAfter(0, internal.tools.teachability.userMemoryTools.analyzeAndStoreTeachings, {
-              userId: userIdTyped,
+              userId: userId,
               userMessage: promptText,
               assistantResponse: finalText ?? "",
               threadId: args.threadId,
