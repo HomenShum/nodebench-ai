@@ -90,6 +90,11 @@ import {
   enrichPatentsAndResearch,
   enrichCompanyDossier
 } from "../../../tools/financial/enhancedFundingTools";
+import {
+  getTodaysFundingEvents,
+  searchFundingEvents,
+  detectFundingFromFeeds
+} from "../../../tools/financial/fundingDetectionTools";
 
 // Import HITL tools
 import { askHuman } from "../../../tools/integration/humanInputTools";
@@ -323,6 +328,11 @@ export const createCoordinatorAgent = (
     enrichInvestmentThesis,
     enrichPatentsAndResearch,
     enrichCompanyDossier,
+
+    // Funding detection tools (from internal pipeline)
+    getTodaysFundingEvents,
+    searchFundingEvents,
+    detectFundingFromFeeds,
     
     // === KNOWLEDGE GRAPH TOOLS ===
     buildKnowledgeGraph,

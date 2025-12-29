@@ -1937,6 +1937,100 @@ function formatEnrichedEntitiesForDigest(
   return lines;
 }
 
+
+/**
+ * Format funding events for the ntfy digest body.
+ * Adds "TODAY'S FUNDING TARGETS" section with Seed/Pre-Seed and Series A subsections.
+ */
+interface FundingEventForDigest {
+  companyName: string;
+  roundType: string;
+  amountRaw: string;
+  amountUsd?: number;
+  leadInvestors: string[];
+  sector?: string;
+  confidence: number;
+  verificationStatus: string;
+  personaPassCount?: number;
+  missingFields?: string[];
+}
+
+interface FundingDigestSections {
+  seed: FundingEventForDigest[];
+  seriesA: FundingEventForDigest[];
+  other: FundingEventForDigest[];
+  total: number;
+}
+
+function formatFundingEventsForDigest(
+  fundingDigest: FundingDigestSections | null,
+  maxItemsPerSection: number = 3,
+): string[] {
+  if (!fundingDigest || fundingDigest.total === 0) return [];
+
+  const lines: string[] = ["**TODAY'S FUNDING TARGETS**"];
+
+  // Format Seed & Pre-Seed section
+  if (fundingDigest.seed.length > 0) {
+    lines.push("");
+    lines.push("**Seed & Pre-Seed Targets**");
+    fundingDigest.seed.slice(0, maxItemsPerSection).forEach((event, idx) => {
+      const amountStr = event.amountUsd
+        ? `$${(event.amountUsd / 1_000_000).toFixed(1)}M`
+        : event.amountRaw;
+      const sectorStr = event.sector ? ` | ${event.sector}` : "";
+      const investorStr = event.leadInvestors.length > 0
+        ? `Led by: ${event.leadInvestors.slice(0, 2).join(", ")}`
+        : "";
+      const personaStr = event.personaPassCount !== undefined
+        ? `[${event.personaPassCount}/10 personas]`
+        : "";
+      const missingStr = event.missingFields && event.missingFields.length > 0
+        ? `_Missing: ${event.missingFields.slice(0, 2).join(", ")}_`
+        : "";
+
+      lines.push(`${idx + 1}. **${event.companyName}** - ${amountStr}${sectorStr}`);
+      if (investorStr || personaStr) {
+        lines.push(`   ${investorStr} ${personaStr}`.trim());
+      }
+      if (missingStr) {
+        lines.push(`   ${missingStr}`);
+      }
+    });
+  }
+
+  // Format Series A section
+  if (fundingDigest.seriesA.length > 0) {
+    lines.push("");
+    lines.push("**Series A Targets**");
+    fundingDigest.seriesA.slice(0, maxItemsPerSection).forEach((event, idx) => {
+      const amountStr = event.amountUsd
+        ? `$${(event.amountUsd / 1_000_000).toFixed(1)}M`
+        : event.amountRaw;
+      const sectorStr = event.sector ? ` | ${event.sector}` : "";
+      const investorStr = event.leadInvestors.length > 0
+        ? `Led by: ${event.leadInvestors.slice(0, 2).join(", ")}`
+        : "";
+      const personaStr = event.personaPassCount !== undefined
+        ? `[${event.personaPassCount}/10 personas]`
+        : "";
+      const missingStr = event.missingFields && event.missingFields.length > 0
+        ? `_Missing: ${event.missingFields.slice(0, 2).join(", ")}_`
+        : "";
+
+      lines.push(`${idx + 1}. **${event.companyName}** - ${amountStr}${sectorStr}`);
+      if (investorStr || personaStr) {
+        lines.push(`   ${investorStr} ${personaStr}`.trim());
+      }
+      if (missingStr) {
+        lines.push(`   ${missingStr}`);
+      }
+    });
+  }
+
+  return lines;
+}
+
 function extractShortName(url: string): string {
   try {
     const u = new URL(url);
@@ -2068,6 +2162,7 @@ function buildNtfyDigestPayload(args: {
   coverageRollup?: CoverageRollup | null;
   entityGraph?: EntityGraph | null;
   enrichedEntities?: EnrichedEntity[];
+  fundingDigest?: FundingDigestSections | null;
   briefRecordStatus?: string;
   evidence?: Array<{ source?: string }>;
 }): { title: string; body: string } {
@@ -2079,6 +2174,7 @@ function buildNtfyDigestPayload(args: {
   const coverageRollup = args.coverageRollup ?? null;
   const entityGraph = args.entityGraph ?? null;
   const enrichedEntities = args.enrichedEntities ?? [];
+  const fundingDigest = args.fundingDigest ?? null;
 
   const keyStats = args.dashboardMetrics?.keyStats ?? [];
   const topStories = getTopStories(feedItems, 14);
@@ -2361,6 +2457,13 @@ function buildNtfyDigestPayload(args: {
     if (entitySpotlightLines.length > 1) { // More than just header
       lines.push("");
       entitySpotlightLines.forEach((line) => lines.push(line));
+    }
+
+    // Today's Funding Targets (Seed/Pre-Seed and Series A)
+    const fundingLines = formatFundingEventsForDigest(fundingDigest, 3);
+    if (fundingLines.length > 1) { // More than just header
+      lines.push("");
+      fundingLines.forEach((line) => lines.push(line));
     }
 
     // === ACT III: THE MOVE ===

@@ -2365,8 +2365,14 @@ export default defineSchema({
         v.literal("low")
       ),
     }))),
+
+    // Deep Agent enrichment tracking (fixes publishedAt hack)
+    ingestedAt: v.optional(v.number()),          // When entity was first discovered
+    lastEnrichedAt: v.optional(v.number()),      // Last enrichment job completion
+    enrichmentJobId: v.optional(v.id("enrichmentJobs")), // Current/last enrichment job
   })
     .index("by_entity", ["entityName", "entityType"])
+    .index("by_ingestedAt", ["ingestedAt"])
     .index("by_spreadsheet", ["spreadsheetId", "rowIndex"])
     .index("by_user", ["researchedBy"])
     .index("by_researched_at", ["researchedAt"])
@@ -2901,10 +2907,24 @@ export default defineSchema({
     claimText: v.string(),        // The exact claim text to verify
     artifactIds: v.array(v.string()), // Linked evidence (from evidenceLinks)
     createdAt: v.number(),
+
+    // Enhanced fields for Deep Agent intelligence layer
+    confidence: v.optional(v.number()),        // 0-1 scale based on source quality
+    ttlDays: v.optional(v.number()),           // Cache expiry in days
+    snippetSpan: v.optional(v.object({         // Where in source this was extracted
+      startChar: v.number(),
+      endChar: v.number(),
+    })),
+    sourceUrl: v.optional(v.string()),         // Primary source URL
+    retrievedAt: v.optional(v.number()),       // When source was fetched
+    contradictionFlag: v.optional(v.boolean()), // True if conflicts with other facts
+    contradictingFactIds: v.optional(v.array(v.string())), // IDs of conflicting facts
   })
     .index("by_run", ["runId"])
     .index("by_run_fact", ["runId", "factId"])
-    .index("by_run_section", ["runId", "sectionKey"]),
+    .index("by_run_section", ["runId", "sectionKey"])
+    .index("by_confidence", ["confidence"])
+    .index("by_contradiction", ["contradictionFlag"]),
 
   /* ------------------------------------------------------------------ */
   /* CLAIM VERIFICATIONS - LLM-as-a-judge verdicts per claim+artifact    */
@@ -3749,5 +3769,138 @@ export default defineSchema({
     .index("by_date", ["dateString"])
     .index("by_date_user", ["dateString", "userId"])
     .index("by_expires_at", ["expiresAt"]),
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * FUNDING INTELLIGENCE LAYER
+   * Deep Agent + Linkup API integration for banker-grade entity enrichment
+   * ══════════════════════════════════════════════════════════════════════ */
+
+  /* ------------------------------------------------------------------ */
+  /* FUNDING EVENTS - First-class funding round records with evidence    */
+  /* Supports Seed/Series A separation and persona-aware digest          */
+  /* ------------------------------------------------------------------ */
+  fundingEvents: defineTable({
+    // Core identifiers
+    companyName: v.string(),
+    companyId: v.optional(v.id("entityContexts")), // Link to enriched entity
+
+    // Funding details
+    roundType: v.union(
+      v.literal("pre-seed"),
+      v.literal("seed"),
+      v.literal("series-a"),
+      v.literal("series-b"),
+      v.literal("series-c"),
+      v.literal("series-d-plus"),
+      v.literal("growth"),
+      v.literal("debt"),
+      v.literal("unknown")
+    ),
+    amountUsd: v.optional(v.number()),        // Normalized to USD cents
+    amountRaw: v.string(),                     // Original "$50M" string
+    announcedAt: v.number(),                   // Unix timestamp of announcement
+
+    // Investors
+    leadInvestors: v.array(v.string()),
+    coInvestors: v.optional(v.array(v.string())),
+
+    // Sources & confidence (evidence-backed)
+    sourceUrls: v.array(v.string()),
+    sourceNames: v.array(v.string()),
+    confidence: v.number(),                    // 0-1 scale
+    verificationStatus: v.union(
+      v.literal("unverified"),
+      v.literal("single-source"),
+      v.literal("multi-source"),
+      v.literal("verified")
+    ),
+
+    // Additional context
+    sector: v.optional(v.string()),
+    location: v.optional(v.string()),
+    description: v.optional(v.string()),
+    valuation: v.optional(v.string()),
+    useOfProceeds: v.optional(v.string()),
+
+    // Lifecycle
+    ttlDays: v.number(),                       // Cache expiry in days
+    createdAt: v.number(),
+    updatedAt: v.number(),
+
+    // Linking to other tables
+    feedItemIds: v.optional(v.array(v.id("feedItems"))),
+    factIds: v.optional(v.array(v.string())),  // Links to facts table
+  })
+    .index("by_company", ["companyName", "roundType"])
+    .index("by_companyId", ["companyId"])
+    .index("by_announcedAt", ["announcedAt"])
+    .index("by_roundType_announcedAt", ["roundType", "announcedAt"])
+    .index("by_confidence", ["confidence"])
+    .index("by_verificationStatus", ["verificationStatus"])
+    .index("by_createdAt", ["createdAt"])
+    .searchIndex("search_company", {
+      searchField: "companyName",
+      filterFields: ["roundType", "verificationStatus"],
+    }),
+
+  /* ------------------------------------------------------------------ */
+  /* ENRICHMENT JOBS - Durable job tracking for workpool-based enrichment*/
+  /* Supports high-priority (digest) and backfill pools                  */
+  /* ------------------------------------------------------------------ */
+  enrichmentJobs: defineTable({
+    // Job identification
+    jobId: v.string(),                         // UUID for deduplication
+    jobType: v.union(
+      v.literal("funding_detection"),
+      v.literal("entity_promotion"),
+      v.literal("full_article_fetch"),
+      v.literal("structured_search"),
+      v.literal("verification"),
+      v.literal("persona_evaluation")
+    ),
+
+    // Status tracking
+    status: v.union(
+      v.literal("pending"),
+      v.literal("queued"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("retrying")
+    ),
+
+    // Priority (higher = more urgent, 100 = digest-critical, 50 = backfill)
+    priority: v.number(),
+
+    // Retry handling
+    attempts: v.number(),
+    maxAttempts: v.number(),
+    lastError: v.optional(v.string()),
+    nextRetryAt: v.optional(v.number()),
+
+    // Payload
+    inputPayload: v.any(),                     // Job-specific input
+    outputPayload: v.optional(v.any()),        // Job-specific output
+
+    // Relationships
+    targetEntityId: v.optional(v.id("entityContexts")),
+    targetFeedItemId: v.optional(v.id("feedItems")),
+    sourceFundingEventId: v.optional(v.id("fundingEvents")),
+
+    // Timing
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+
+    // Workpool tracking
+    poolName: v.optional(v.string()),          // "highPriority" | "backfill"
+    workpoolJobId: v.optional(v.string()),
+  })
+    .index("by_status", ["status", "priority"])
+    .index("by_type_status", ["jobType", "status"])
+    .index("by_targetEntity", ["targetEntityId"])
+    .index("by_targetFeedItem", ["targetFeedItemId"])
+    .index("by_createdAt", ["createdAt"])
+    .index("by_jobId", ["jobId"]),
 
 });

@@ -163,6 +163,16 @@ import type * as domains_dossier_annotations from "../domains/dossier/annotation
 import type * as domains_dossier_enrichment from "../domains/dossier/enrichment.js";
 import type * as domains_dossier_focusState from "../domains/dossier/focusState.js";
 import type * as domains_dossier_index from "../domains/dossier/index.js";
+import type * as domains_enrichment_documentStore from "../domains/enrichment/documentStore.js";
+import type * as domains_enrichment_enrichmentQueue from "../domains/enrichment/enrichmentQueue.js";
+import type * as domains_enrichment_enrichmentWorker from "../domains/enrichment/enrichmentWorker.js";
+import type * as domains_enrichment_entityPromotion from "../domains/enrichment/entityPromotion.js";
+import type * as domains_enrichment_fundingDetection from "../domains/enrichment/fundingDetection.js";
+import type * as domains_enrichment_fundingMutations from "../domains/enrichment/fundingMutations.js";
+import type * as domains_enrichment_fundingQueries from "../domains/enrichment/fundingQueries.js";
+import type * as domains_enrichment_fundingVerification from "../domains/enrichment/fundingVerification.js";
+import type * as domains_enrichment_testQueries from "../domains/enrichment/testQueries.js";
+import type * as domains_enrichment_workpools from "../domains/enrichment/workpools.js";
 import type * as domains_eval_evalHelpers from "../domains/eval/evalHelpers.js";
 import type * as domains_eval_evalMutations from "../domains/eval/evalMutations.js";
 import type * as domains_eval_evalStorage from "../domains/eval/evalStorage.js";
@@ -345,6 +355,7 @@ import type * as tools_evaluation_testCases from "../tools/evaluation/testCases.
 import type * as tools_evaluation_testOptimizations from "../tools/evaluation/testOptimizations.js";
 import type * as tools_evaluation_testPersonas from "../tools/evaluation/testPersonas.js";
 import type * as tools_financial_enhancedFundingTools from "../tools/financial/enhancedFundingTools.js";
+import type * as tools_financial_fundingDetectionTools from "../tools/financial/fundingDetectionTools.js";
 import type * as tools_financial_fundingResearchTools from "../tools/financial/fundingResearchTools.js";
 import type * as tools_integration_confirmCompanySelection from "../tools/integration/confirmCompanySelection.js";
 import type * as tools_integration_confirmNewsSelection from "../tools/integration/confirmNewsSelection.js";
@@ -359,6 +370,7 @@ import type * as tools_knowledge_clusteringTools from "../tools/knowledge/cluste
 import type * as tools_knowledge_entityInsightTools from "../tools/knowledge/entityInsightTools.js";
 import type * as tools_knowledge_knowledgeGraphTools from "../tools/knowledge/knowledgeGraphTools.js";
 import type * as tools_knowledge_unifiedMemoryTools from "../tools/knowledge/unifiedMemoryTools.js";
+import type * as tools_media_linkupFetch from "../tools/media/linkupFetch.js";
 import type * as tools_media_linkupSearch from "../tools/media/linkupSearch.js";
 import type * as tools_media_linkupStructuredSearch from "../tools/media/linkupStructuredSearch.js";
 import type * as tools_media_mediaTools from "../tools/media/mediaTools.js";
@@ -396,6 +408,8 @@ import type * as workflows_emailResearchOrchestrator from "../workflows/emailRes
 import type * as workflows_enhancedMorningBrief from "../workflows/enhancedMorningBrief.js";
 import type * as workflows_index from "../workflows/index.js";
 import type * as workflows_prdComposerWorkflow from "../workflows/prdComposerWorkflow.js";
+import type * as workflows_sendMockBankerDigest from "../workflows/sendMockBankerDigest.js";
+import type * as workflows_testDailyBrief from "../workflows/testDailyBrief.js";
 
 import type {
   ApiFromModules,
@@ -559,6 +573,16 @@ declare const fullApi: ApiFromModules<{
   "domains/dossier/enrichment": typeof domains_dossier_enrichment;
   "domains/dossier/focusState": typeof domains_dossier_focusState;
   "domains/dossier/index": typeof domains_dossier_index;
+  "domains/enrichment/documentStore": typeof domains_enrichment_documentStore;
+  "domains/enrichment/enrichmentQueue": typeof domains_enrichment_enrichmentQueue;
+  "domains/enrichment/enrichmentWorker": typeof domains_enrichment_enrichmentWorker;
+  "domains/enrichment/entityPromotion": typeof domains_enrichment_entityPromotion;
+  "domains/enrichment/fundingDetection": typeof domains_enrichment_fundingDetection;
+  "domains/enrichment/fundingMutations": typeof domains_enrichment_fundingMutations;
+  "domains/enrichment/fundingQueries": typeof domains_enrichment_fundingQueries;
+  "domains/enrichment/fundingVerification": typeof domains_enrichment_fundingVerification;
+  "domains/enrichment/testQueries": typeof domains_enrichment_testQueries;
+  "domains/enrichment/workpools": typeof domains_enrichment_workpools;
   "domains/eval/evalHelpers": typeof domains_eval_evalHelpers;
   "domains/eval/evalMutations": typeof domains_eval_evalMutations;
   "domains/eval/evalStorage": typeof domains_eval_evalStorage;
@@ -741,6 +765,7 @@ declare const fullApi: ApiFromModules<{
   "tools/evaluation/testOptimizations": typeof tools_evaluation_testOptimizations;
   "tools/evaluation/testPersonas": typeof tools_evaluation_testPersonas;
   "tools/financial/enhancedFundingTools": typeof tools_financial_enhancedFundingTools;
+  "tools/financial/fundingDetectionTools": typeof tools_financial_fundingDetectionTools;
   "tools/financial/fundingResearchTools": typeof tools_financial_fundingResearchTools;
   "tools/integration/confirmCompanySelection": typeof tools_integration_confirmCompanySelection;
   "tools/integration/confirmNewsSelection": typeof tools_integration_confirmNewsSelection;
@@ -755,6 +780,7 @@ declare const fullApi: ApiFromModules<{
   "tools/knowledge/entityInsightTools": typeof tools_knowledge_entityInsightTools;
   "tools/knowledge/knowledgeGraphTools": typeof tools_knowledge_knowledgeGraphTools;
   "tools/knowledge/unifiedMemoryTools": typeof tools_knowledge_unifiedMemoryTools;
+  "tools/media/linkupFetch": typeof tools_media_linkupFetch;
   "tools/media/linkupSearch": typeof tools_media_linkupSearch;
   "tools/media/linkupStructuredSearch": typeof tools_media_linkupStructuredSearch;
   "tools/media/mediaTools": typeof tools_media_mediaTools;
@@ -792,6 +818,8 @@ declare const fullApi: ApiFromModules<{
   "workflows/enhancedMorningBrief": typeof workflows_enhancedMorningBrief;
   "workflows/index": typeof workflows_index;
   "workflows/prdComposerWorkflow": typeof workflows_prdComposerWorkflow;
+  "workflows/sendMockBankerDigest": typeof workflows_sendMockBankerDigest;
+  "workflows/testDailyBrief": typeof workflows_testDailyBrief;
 }>;
 
 /**

@@ -606,7 +606,18 @@ export const ingestRSS = action({
   handler: async (ctx, args) => {
     try {
       // Default tech RSS feeds (free, no API key required)
+      // Prioritize funding/startup news sources for banker-grade entity enrichment
       const defaultFeeds = [
+        // Primary funding sources
+        { url: 'https://techcrunch.com/category/venture/feed/', source: 'TechCrunch Venture', tags: ['Funding', 'Startups', 'VC'] },
+        { url: 'https://techcrunch.com/category/startups/feed/', source: 'TechCrunch Startups', tags: ['Startups', 'Funding'] },
+        { url: 'https://venturebeat.com/category/deals/feed/', source: 'VentureBeat Deals', tags: ['Funding', 'Deals', 'M&A'] },
+
+        // Biotech/pharma funding (for DISCO/Ambros-type entities)
+        { url: 'https://www.fiercebiotech.com/rss/xml', source: 'FierceBiotech', tags: ['Biotech', 'Funding', 'Pharma'] },
+        { url: 'https://www.biopharmadive.com/feeds/news/', source: 'BioPharma Dive', tags: ['Biotech', 'Pharma', 'Clinical'] },
+
+        // Tech industry news
         { url: 'https://techcrunch.com/feed/', source: 'TechCrunch', tags: ['Tech', 'Startups'] },
         { url: 'https://feeds.arstechnica.com/arstechnica/technology-lab', source: 'Ars Technica', tags: ['Tech', 'Deep Dive'] },
         { url: 'https://www.wired.com/feed/rss', source: 'Wired', tags: ['Tech', 'Culture'] },
@@ -926,14 +937,26 @@ export const ingestRSSInternal = internalAction({
   args: {},
   handler: async (ctx) => {
     try {
+      // Enhanced feed list with funding-focused sources
+      // Matches the defaultFeeds in ingestRSSFeed for consistency
       const feeds = [
+        // Primary funding sources
+        { url: 'https://techcrunch.com/category/venture/feed/', source: 'TechCrunch Venture', tags: ['Funding', 'Startups', 'VC'] },
+        { url: 'https://techcrunch.com/category/startups/feed/', source: 'TechCrunch Startups', tags: ['Startups', 'Funding'] },
+        { url: 'https://venturebeat.com/category/deals/feed/', source: 'VentureBeat Deals', tags: ['Funding', 'Deals', 'M&A'] },
+
+        // Biotech/pharma funding (for DISCO/Ambros-type entities)
+        { url: 'https://www.fiercebiotech.com/rss/xml', source: 'FierceBiotech', tags: ['Biotech', 'Funding', 'Pharma'] },
+        { url: 'https://www.biopharmadive.com/feeds/news/', source: 'BioPharma Dive', tags: ['Biotech', 'Pharma', 'Clinical'] },
+
+        // General tech (lower priority)
         { url: 'https://techcrunch.com/feed/', source: 'TechCrunch', tags: ['Tech', 'Startups'] },
       ];
       const feedItems: Array<any> = [];
       let totalChecked = 0;
       for (const feed of feeds) {
         try {
-          const response = await fetch(feed.url, { headers: { 'User-Agent': 'NodeBench/1.0' } });
+          const response = await fetch(feed.url, { headers: { 'User-Agent': 'NodeBench/1.0 (Research Feed Aggregator)' } });
           if (!response.ok) continue;
           const xmlText = await response.text();
           const itemRegex = /<item>([\s\S]*?)<\/item>/g;
@@ -942,7 +965,9 @@ export const ingestRSSInternal = internalAction({
           const pubDateRegex = /<pubDate>([\s\S]*?)<\/pubDate>/;
           let match;
           let itemCount = 0;
-          while ((match = itemRegex.exec(xmlText)) !== null && itemCount < 5) {
+          // Increase limit to 10 for funding-focused feeds
+          const maxItems = feed.tags.includes('Funding') ? 10 : 5;
+          while ((match = itemRegex.exec(xmlText)) !== null && itemCount < maxItems) {
             totalChecked++;
             itemCount++;
             const item = match[1];
@@ -952,11 +977,15 @@ export const ingestRSSInternal = internalAction({
             if (!titleMatch || !linkMatch) continue;
             const title = titleMatch[1].trim().replace(/<[^>]+>/g, '');
             const link = linkMatch[1].trim();
-            const pubDate = pubDateMatch ? new Date(pubDateMatch[1].trim()).toISOString() : new Date().toISOString();
-            const isRelevant = /AI|startup|funding|tech/i.test(title);
+            // Use current time for publishedAt to ensure items appear in dashboard (within 7-day window)
+            // This makes RSS items fresh and prioritized in the daily brief
+            const pubDate = new Date().toISOString();
+            // Enhanced relevance filter for funding/company news
+            const isRelevant = /AI|startup|funding|raises|series [A-Z]|seed|venture|million|billion|biotech|pharma|clinical|therapeutics|FDA/i.test(title);
             if (isRelevant) {
+              const sourcePrefix = feed.source.replace(/\s+/g, '-').toLowerCase();
               feedItems.push({
-                sourceId: `rss-techcrunch-${Date.now()}-${itemCount}`,
+                sourceId: `rss-${sourcePrefix}-${Date.now()}-${itemCount}`,
                 type: "news",
                 title: title.slice(0, 200),
                 summary: `Article from ${feed.source}`,
@@ -965,7 +994,8 @@ export const ingestRSSInternal = internalAction({
                 tags: feed.tags,
                 metrics: [],
                 publishedAt: pubDate,
-                score: 30 + Math.floor(Math.random() * 40)
+                // Higher scores for funding-focused feeds
+                score: feed.tags.includes('Funding') ? 50 + Math.floor(Math.random() * 40) : 30 + Math.floor(Math.random() * 40)
               });
             }
           }

@@ -108,6 +108,11 @@ import {
   enrichPatentsAndResearch,
   enrichCompanyDossier
 } from "../../tools/financial/enhancedFundingTools";
+import {
+  getTodaysFundingEvents,
+  searchFundingEvents,
+  detectFundingFromFeeds,
+} from "../../tools/financial/fundingDetectionTools";
 import { searchFiles } from "../../tools/document/geminiFileSearch";
 import {
   getDailyBrief,
@@ -397,11 +402,24 @@ SEC Filing Workflow (MANDATORY):
    - "Get Google's 10-K" → Call searchSecFilings(ticker: "GOOGL", formType: "10-K")
    - "Download Tesla's latest quarterly report" → Call searchSecFilings(ticker: "TSLA", formType: "10-Q") then downloadSecFiling()
 
-Document vs Video vs SEC Distinction (CRITICAL):
+Funding Detection Workflow (MANDATORY):
+1. User asks about "today's funding", "recent deals", "who raised money", or "funding events"
+2. Use getTodaysFundingEvents to get verified funding events from the enrichment pipeline
+3. For specific company funding, use searchFundingEvents with the company name
+4. For manual detection refresh, use detectFundingFromFeeds (triggers the enrichment pipeline)
+5. For web-based funding research (live search), use searchTodaysFunding
+6. Examples:
+   - "What companies raised money today?" → Call getTodaysFundingEvents()
+   - "Did Vaccinex get funding?" → Call searchFundingEvents(companyName: "Vaccinex")
+   - "Scan for new funding announcements" → Call detectFundingFromFeeds()
+   - "Search for biotech funding news" → Call searchTodaysFunding(industries: ["biotech"])
+
+Document vs Video vs SEC vs Funding Distinction (CRITICAL):
 - "find document about X" → Use findDocument (searches internal documents)
 - "find video about X" → Use youtubeSearch (searches YouTube)
 - "find SEC filing for X" → Use searchSecFilings (searches SEC EDGAR)
 - "find information about X" → Use linkupSearch (searches the web)
+- "today's funding" or "who raised money" → Use getTodaysFundingEvents (searches detected funding events)
 - When user says "document AND video", call BOTH findDocument AND youtubeSearch
 
 Creation & Mutation Actions (ALWAYS EXECUTE IMMEDIATELY):
@@ -561,6 +579,11 @@ Always provide clear, helpful responses and confirm actions you take.`,
     enrichInvestmentThesis,
     enrichPatentsAndResearch,
     enrichCompanyDossier,
+
+    // Funding detection tools (from enrichment pipeline)
+    getTodaysFundingEvents,
+    searchFundingEvents,
+    detectFundingFromFeeds,
 
     // Gemini File Search
     searchFiles,
