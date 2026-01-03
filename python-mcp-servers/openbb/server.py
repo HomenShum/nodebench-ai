@@ -66,15 +66,19 @@ async def global_exception_handler(_request, exc):
 
 
 if __name__ == "__main__":
-    # Keep startup logs ASCII-only for Windows compatibility.
-    print(f"Starting OpenBB MCP Server on {settings.openbb_host}:{settings.openbb_port}")
-    print(f"API Documentation: http://{settings.openbb_host}:{settings.openbb_port}/docs")
-    print(f"Health Check: http://{settings.openbb_host}:{settings.openbb_port}/health")
+    import os
+    # Railway injects PORT at runtime - read it directly, not from cached settings
+    port = int(os.environ.get("PORT", settings.openbb_port))
+    host = settings.openbb_host
+    
+    print(f"Starting OpenBB MCP Server on {host}:{port}")
+    print(f"API Documentation: http://{host}:{port}/docs")
+    print(f"Health Check: http://{host}:{port}/health")
 
     uvicorn.run(
         "server:app",
-        host=settings.openbb_host,
-        port=settings.openbb_port,
+        host=host,
+        port=port,
         reload=settings.environment == "development",
         log_level=settings.log_level.lower(),
     )
