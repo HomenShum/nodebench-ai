@@ -9,7 +9,7 @@ import { planningTools } from "./tools/planningTools.js";
 import { memoryTools } from "./tools/memoryTools.js";
 
 const allTools = [...planningTools, ...memoryTools];
-const HOST = process.env.MCP_HTTP_HOST || "127.0.0.1";
+const HOST = process.env.MCP_HTTP_HOST || "0.0.0.0";
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4001;
 const TOKEN = process.env.MCP_HTTP_TOKEN;
 
@@ -21,8 +21,23 @@ type JsonRpcRequest = {
 };
 
 function respond(res: http.ServerResponse, status: number, payload: any) {
-  res.writeHead(status, { "Content-Type": "application/json" });
+  res.writeHead(status, {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+  });
   res.end(JSON.stringify(payload));
+}
+
+function getSuppliedToken(req: http.IncomingMessage): string | undefined {
+  const headerToken = req.headers["x-mcp-token"] as string | undefined;
+  if (headerToken) return headerToken;
+
+  const auth = req.headers["authorization"];
+  if (!auth) return undefined;
+  const authValue = Array.isArray(auth) ? auth[0] : auth;
+  if (!authValue) return undefined;
+  if (!authValue.toLowerCase().startsWith("bearer ")) return undefined;
+  return authValue.slice("bearer ".length);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -30,7 +45,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Accept, x-mcp-token",
+      "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization, x-mcp-token, x-mcp-secret",
     });
     res.end();
     return;
@@ -49,37 +64,69 @@ const server = http.createServer(async (req, res) => {
       const parsed: JsonRpcRequest = JSON.parse(body || "{}");
       const { id = null, method, params } = parsed;
 
-      if (parsed.jsonrpc !== "2.0" || method !== "tools/call") {
+      if (parsed.jsonrpc !== "2.0" || typeof method !== "string") {
         respond(res, 400, { jsonrpc: "2.0", id, error: { code: -32600, message: "Invalid Request" } });
         return;
       }
 
       if (TOKEN) {
-        const supplied = req.headers["x-mcp-token"] as string | undefined;
+        const supplied = getSuppliedToken(req);
         if (!supplied || supplied !== TOKEN) {
           respond(res, 401, { jsonrpc: "2.0", id, error: { code: -32001, message: "Unauthorized" } });
           return;
         }
       }
 
-      const toolName = params?.name;
-      const args = params?.arguments ?? {};
-      const tool = allTools.find((t) => t.name === toolName);
-      if (!tool) {
-        respond(res, 404, { jsonrpc: "2.0", id, error: { code: -32601, message: `Method not found: ${toolName}` } });
+      if (method === "initialize") {
+        respond(res, 200, {
+          jsonrpc: "2.0",
+          id,
+          result: {
+            protocolVersion: "2025-03-26",
+            capabilities: { tools: {}, resources: {} },
+          },
+        });
         return;
       }
 
-      try {
-        const result = await tool.handler(args);
-        respond(res, 200, { jsonrpc: "2.0", id, result });
-      } catch (err: any) {
-        respond(res, 500, {
+      if (method === "tools/list") {
+        respond(res, 200, {
           jsonrpc: "2.0",
           id,
-          error: { code: -32000, message: err?.message || "Internal error" },
+          result: {
+            tools: allTools.map((t) => ({
+              name: t.name,
+              description: t.description,
+              inputSchema: (t as any).inputSchema,
+            })),
+          },
         });
+        return;
       }
+
+      if (method === "tools/call") {
+        const toolName = params?.name;
+        const args = params?.arguments ?? {};
+        const tool = allTools.find((t) => t.name === toolName);
+        if (!tool) {
+          respond(res, 404, { jsonrpc: "2.0", id, error: { code: -32601, message: `Method not found: ${toolName}` } });
+          return;
+        }
+
+        try {
+          const result = await tool.handler(args);
+          respond(res, 200, { jsonrpc: "2.0", id, result });
+        } catch (err: any) {
+          respond(res, 500, {
+            jsonrpc: "2.0",
+            id,
+            error: { code: -32000, message: err?.message || "Internal error" },
+          });
+        }
+        return;
+      }
+
+      respond(res, 404, { jsonrpc: "2.0", id, error: { code: -32601, message: `Method not found: ${method}` } });
     } catch {
       respond(res, 400, { jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } });
     }

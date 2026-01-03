@@ -49,6 +49,25 @@ function createSampleBrief(dateString: string): DailyBriefPayload {
       synthesis: 'The feed clusters around a handful of high-signal stories. The signals below are selected for breadth of impact and evidence strength, not just raw engagement.',
       signals: [
         {
+          id: 'sig-disco-seed',
+          headline: 'DISCO Pharmaceuticals Closes €36M Seed Round',
+          label: 'Life Sciences',
+          deltaSummary: 'New high-growth target',
+          // Standard Brief properties
+          synthesis: 'Cologne-based oncology platform raising €36M Seed. Fits "Middle Market" growth criteria (BioTech/AI). Leads: Ackermans & van Haaren, NRW.Bank. JPM Contact: Mark Manfredi.',
+          evidence: [
+            {
+              id: 'ev-disco-press',
+              source: 'TechCrunch',
+              title: 'DISCO Pharmaceuticals emerges with €36M to map the surfaceome',
+              url: 'https://discopharma.de',
+              publishedAt: new Date().toISOString(),
+              relevance: 'Seed deal announcement',
+              score: 95,
+            },
+          ],
+        },
+        {
           id: 'sig-agent-reliability',
           headline: 'Agent Reliability Benchmarks Show 4+ Hour Task Horizons',
           synthesis: 'New benchmarks from METR demonstrate that frontier models like Claude Opus 4.5 can now maintain coherent task execution for nearly 5 hours, a significant leap from previous 30-minute horizons. This has profound implications for autonomous agent deployment in production environments.',

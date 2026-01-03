@@ -17,9 +17,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Copy shared utilities from parent directory
-COPY ../shared /app/shared
-
 # Expose port
 EXPOSE 8001
 

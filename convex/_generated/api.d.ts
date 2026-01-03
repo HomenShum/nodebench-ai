@@ -109,6 +109,8 @@ import type * as domains_agents_mcp_tools_models_migration from "../domains/agen
 import type * as domains_agents_mcp_tools_models_modelResolver from "../domains/agents/mcp_tools/models/modelResolver.js";
 import type * as domains_agents_mcp_tools_tracking_index from "../domains/agents/mcp_tools/tracking/index.js";
 import type * as domains_agents_mcp_tools_tracking_taskTrackerTool from "../domains/agents/mcp_tools/tracking/taskTrackerTool.js";
+import type * as domains_agents_parallelTaskOrchestrator from "../domains/agents/parallelTaskOrchestrator.js";
+import type * as domains_agents_parallelTaskTree from "../domains/agents/parallelTaskTree.js";
 import type * as domains_agents_researchJobs from "../domains/agents/researchJobs.js";
 import type * as domains_agents_types from "../domains/agents/types.js";
 import type * as domains_ai_ai from "../domains/ai/ai.js";
@@ -519,6 +521,8 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/mcp_tools/models/modelResolver": typeof domains_agents_mcp_tools_models_modelResolver;
   "domains/agents/mcp_tools/tracking/index": typeof domains_agents_mcp_tools_tracking_index;
   "domains/agents/mcp_tools/tracking/taskTrackerTool": typeof domains_agents_mcp_tools_tracking_taskTrackerTool;
+  "domains/agents/parallelTaskOrchestrator": typeof domains_agents_parallelTaskOrchestrator;
+  "domains/agents/parallelTaskTree": typeof domains_agents_parallelTaskTree;
   "domains/agents/researchJobs": typeof domains_agents_researchJobs;
   "domains/agents/types": typeof domains_agents_types;
   "domains/ai/ai": typeof domains_ai_ai;

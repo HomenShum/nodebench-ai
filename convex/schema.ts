@@ -1737,6 +1737,200 @@ export default defineSchema({
   searchEvaluations,
 
   /* ------------------------------------------------------------------ */
+  /* PARALLEL TASK TREE - Deep Agent 2.0 Decision Tree Execution        */
+  /* Implements A -> B1, B2, B3 -> verify -> cross-check -> merge       */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Root task tree for a given agent thread/run.
+   * One tree per user query, tracks overall status and final merged result.
+   */
+  parallelTaskTrees: defineTable({
+    userId: v.id("users"),
+    agentThreadId: v.string(),           // Links to agent conversation
+    rootTaskId: v.optional(v.string()),  // ID of root task node
+    query: v.string(),                   // Original user query
+    status: v.union(
+      v.literal("decomposing"),          // Breaking into subtasks
+      v.literal("executing"),            // Running parallel branches
+      v.literal("verifying"),            // Verification phase
+      v.literal("cross_checking"),       // Cross-checking results
+      v.literal("merging"),              // Merging surviving paths
+      v.literal("completed"),            // Done
+      v.literal("failed"),               // Terminal failure
+    ),
+    phase: v.optional(v.string()),       // Current phase description
+    phaseProgress: v.optional(v.number()), // 0-100 progress within phase
+
+    // Execution stats
+    totalBranches: v.optional(v.number()),
+    activeBranches: v.optional(v.number()),
+    completedBranches: v.optional(v.number()),
+    prunedBranches: v.optional(v.number()),
+
+    // Final result
+    mergedResult: v.optional(v.string()),
+    confidence: v.optional(v.number()),   // 0-1 final confidence
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    completedAt: v.optional(v.number()),
+
+    // Performance metrics
+    elapsedMs: v.optional(v.number()),
+    tokenUsage: v.optional(v.object({
+      input: v.number(),
+      output: v.number(),
+    })),
+  })
+    .index("by_user", ["userId"])
+    .index("by_agent_thread", ["agentThreadId"])
+    .index("by_status", ["status"])
+    .index("by_user_createdAt", ["userId", "createdAt"]),
+
+  /**
+   * Individual task nodes in the parallel execution tree.
+   * Forms a DAG with parent-child relationships.
+   */
+  parallelTaskNodes: defineTable({
+    treeId: v.id("parallelTaskTrees"),
+    taskId: v.string(),                  // Stable unique ID (uuid)
+    parentTaskId: v.optional(v.string()), // Null for root
+
+    // Task info
+    title: v.string(),
+    description: v.optional(v.string()),
+    taskType: v.union(
+      v.literal("root"),                 // Root decomposition task
+      v.literal("branch"),               // Parallel exploration branch
+      v.literal("verification"),         // Verifier task
+      v.literal("critique"),             // Critique/cross-check task
+      v.literal("merge"),                // Merge surviving paths
+      v.literal("refinement"),           // Post-merge refinement
+    ),
+
+    // Execution state
+    status: v.union(
+      v.literal("pending"),              // Waiting to execute
+      v.literal("running"),              // Currently executing
+      v.literal("awaiting_children"),    // Waiting for child tasks
+      v.literal("verifying"),            // In verification
+      v.literal("completed"),            // Done successfully
+      v.literal("pruned"),               // Pruned (didn't survive verification)
+      v.literal("failed"),               // Execution error
+      v.literal("backtracked"),          // Rolled back due to downstream failure
+    ),
+
+    // Parallel execution metadata
+    branchIndex: v.optional(v.number()), // Position in parallel set (0, 1, 2...)
+    siblingCount: v.optional(v.number()), // Total siblings in parallel set
+    depth: v.number(),                   // Tree depth (0 = root)
+
+    // Agent assignment
+    agentName: v.optional(v.string()),   // Which agent handles this
+    subagentThreadId: v.optional(v.string()), // Thread for subagent
+
+    // Result
+    result: v.optional(v.string()),      // Task output
+    resultSummary: v.optional(v.string()), // Brief summary for UI
+    confidence: v.optional(v.number()),  // 0-1 confidence
+
+    // Verification
+    verificationScore: v.optional(v.number()), // 0-1 from verifier
+    verificationNotes: v.optional(v.string()), // Verifier feedback
+    critiques: v.optional(v.array(v.object({
+      source: v.string(),                // Which sibling critiqued
+      verdict: v.union(v.literal("agree"), v.literal("disagree"), v.literal("partial")),
+      reason: v.string(),
+    }))),
+    survivedVerification: v.optional(v.boolean()), // Did it pass?
+
+    // Timing
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+
+    // Token usage
+    inputTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+
+    // Error handling
+    errorMessage: v.optional(v.string()),
+    retryCount: v.optional(v.number()),
+    canBacktrack: v.optional(v.boolean()), // Can we backtrack from here?
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tree", ["treeId"])
+    .index("by_tree_status", ["treeId", "status"])
+    .index("by_tree_parent", ["treeId", "parentTaskId"])
+    .index("by_tree_depth", ["treeId", "depth"])
+    .index("by_taskId", ["taskId"]),
+
+  /**
+   * Real-time streaming events for task nodes.
+   * Enables live UI updates during execution.
+   */
+  parallelTaskEvents: defineTable({
+    treeId: v.id("parallelTaskTrees"),
+    taskId: v.string(),
+    seq: v.number(),                     // Monotonic within task
+
+    eventType: v.union(
+      v.literal("started"),              // Task began
+      v.literal("progress"),             // Progress update
+      v.literal("thinking"),             // Reasoning step
+      v.literal("tool_call"),            // Tool invocation
+      v.literal("result_partial"),       // Partial result
+      v.literal("result_final"),         // Final result
+      v.literal("verification_started"), // Verification began
+      v.literal("verification_result"),  // Verification outcome
+      v.literal("critique_received"),    // Critique from sibling
+      v.literal("pruned"),               // Task was pruned
+      v.literal("completed"),            // Task completed
+      v.literal("failed"),               // Task failed
+      v.literal("backtracked"),          // Task rolled back
+    ),
+
+    message: v.optional(v.string()),
+    data: v.optional(v.any()),           // Event-specific payload
+
+    createdAt: v.number(),
+  })
+    .index("by_tree", ["treeId", "createdAt"])
+    .index("by_task", ["taskId", "seq"])
+    .index("by_tree_task", ["treeId", "taskId", "seq"]),
+
+  /**
+   * Cross-check matrix tracking which branches have critiqued each other.
+   * Used to ensure thorough cross-validation.
+   */
+  parallelTaskCrossChecks: defineTable({
+    treeId: v.id("parallelTaskTrees"),
+    sourceTaskId: v.string(),            // Task doing the critique
+    targetTaskId: v.string(),            // Task being critiqued
+
+    verdict: v.union(
+      v.literal("agree"),                // Full agreement
+      v.literal("disagree"),             // Contradiction found
+      v.literal("partial"),              // Partial agreement
+      v.literal("abstain"),              // Cannot evaluate
+    ),
+
+    agreementPoints: v.optional(v.array(v.string())),
+    disagreementPoints: v.optional(v.array(v.string())),
+    confidence: v.number(),              // 0-1 confidence in verdict
+    reasoning: v.optional(v.string()),
+
+    createdAt: v.number(),
+  })
+    .index("by_tree", ["treeId"])
+    .index("by_source", ["sourceTaskId"])
+    .index("by_target", ["targetTaskId"])
+    .index("by_tree_source_target", ["treeId", "sourceTaskId", "targetTaskId"]),
+
+  /* ------------------------------------------------------------------ */
   /* DOSSIER DOMAIN - Bidirectional focus sync for agent↔chart views    */
   /* ------------------------------------------------------------------ */
   dossierFocusState,

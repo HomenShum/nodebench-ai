@@ -5,10 +5,9 @@
  * in external storage instead of the context window. This is Pillar 3 of Deep Agents architecture.
  */
 
-import fetch from "node-fetch";
-
 const CONVEX_BASE_URL = process.env.CONVEX_BASE_URL;
 const CONVEX_ADMIN_KEY = process.env.CONVEX_ADMIN_KEY;
+const MCP_SECRET = process.env.MCP_SECRET;
 
 type MemoryEntry = {
   id: string;
@@ -17,17 +16,28 @@ type MemoryEntry = {
   metadata?: Record<string, any>;
 };
 
-async function callConvex(path: string, body: any) {
-  if (!CONVEX_BASE_URL || !CONVEX_ADMIN_KEY) {
-    throw new Error("Missing CONVEX_BASE_URL or CONVEX_ADMIN_KEY for MCP storage");
+async function callConvex(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: any) {
+  if (!CONVEX_BASE_URL) {
+    throw new Error("Missing CONVEX_BASE_URL for MCP storage");
   }
-  const res = await fetch(`${CONVEX_BASE_URL}/api/${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${CONVEX_ADMIN_KEY}`,
-    },
-    body: JSON.stringify(body),
+  if (!MCP_SECRET) {
+    throw new Error("Missing MCP_SECRET for MCP storage");
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-mcp-secret": MCP_SECRET,
+  };
+
+  // Optional: allow admin key auth as well (not required for mcp-3 endpoints)
+  if (CONVEX_ADMIN_KEY) {
+    headers["Authorization"] = `Bearer ${CONVEX_ADMIN_KEY}`;
+  }
+
+  const res = await fetch(`${CONVEX_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`, {
+    method,
+    headers,
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -84,11 +94,15 @@ export const memoryTools = [
         },
       };
 
-      await callConvex("mcpMemory/write", { entry: memoryEntry });
+      const res = await callConvex("POST", "/api/mcpMemory", {
+        key: memoryEntry.key,
+        content: memoryEntry.content,
+        metadata: memoryEntry.metadata,
+      });
 
       return {
         success: true,
-        memoryId,
+        memoryId: res?.entry?.id ?? memoryId,
         key,
         message: `Stored ${content.length} characters under key '${key}'`,
       };
@@ -110,7 +124,8 @@ export const memoryTools = [
     handler: async (args: any) => {
       const { key } = args;
 
-      const memoryEntry = await callConvex("mcpMemory/read", { key }) as MemoryEntry | null;
+      const res = await callConvex("GET", `/api/mcpMemory?key=${encodeURIComponent(key)}`) as any;
+      const memoryEntry = (res?.entries?.[0] ?? null) as MemoryEntry | null;
       if (!memoryEntry) {
         throw new Error(`No memory found for key: ${key}`);
       }
@@ -138,7 +153,11 @@ export const memoryTools = [
     handler: async (args: any) => {
       const { filter } = args;
 
-      const list = await callConvex("mcpMemory/list", { filter: filter ?? "" }) as MemoryEntry[];
+      const res = await callConvex(
+        "GET",
+        `/api/mcpMemory?contains=${encodeURIComponent(filter ?? "")}`
+      ) as any;
+      const list = (res?.entries ?? []) as MemoryEntry[];
       const memoryList = list.map((entry: MemoryEntry) => ({
         key: entry.key,
         memoryId: entry.id,
@@ -169,10 +188,11 @@ export const memoryTools = [
     handler: async (args: any) => {
       const { key } = args;
 
-      const result = await callConvex("mcpMemory/delete", { key });
-      if (!result?.success) {
-        throw new Error(result?.error || `No memory found for key: ${key}`);
-      }
+      const res = await callConvex("GET", `/api/mcpMemory?key=${encodeURIComponent(key)}`) as any;
+      const entry = (res?.entries?.[0] ?? null) as MemoryEntry | null;
+      if (!entry?.id) throw new Error(`No memory found for key: ${key}`);
+
+      await callConvex("DELETE", `/api/mcpMemory/${encodeURIComponent(entry.id)}`);
 
       return {
         success: true,

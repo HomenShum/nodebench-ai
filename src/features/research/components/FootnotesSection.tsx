@@ -14,6 +14,8 @@ interface FootnotesSectionProps {
   showBackLinks?: boolean;
   /** Custom class name */
   className?: string;
+  /** Callback to open internal reader */
+  onOpenReader?: (item: { id: string; title: string; url?: string; source?: string; publishedAt?: string }) => void;
 }
 
 /**
@@ -62,7 +64,8 @@ const getTypeBadgeColors = (type: CitationType) => {
 const FootnoteEntry: React.FC<{
   citation: Citation;
   showBackLinks: boolean;
-}> = ({ citation, showBackLinks }) => {
+  onOpenReader?: (item: { id: string; title: string; url?: string; source?: string; publishedAt?: string }) => void;
+}> = ({ citation, showBackLinks, onOpenReader }) => {
   const Icon = getCitationIcon(citation.type);
   const badgeColors = getTypeBadgeColors(citation.type);
 
@@ -108,15 +111,25 @@ const FootnoteEntry: React.FC<{
             <span>{new Date(citation.publishedAt).toLocaleDateString()}</span>
           )}
           {citation.url && (
-            <a
-              href={citation.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline"
+            <button
+              onClick={() => {
+                if (onOpenReader) {
+                  onOpenReader({
+                    id: citation.id,
+                    title: citation.label,
+                    url: citation.url,
+                    source: citation.author,
+                    publishedAt: citation.publishedAt,
+                  });
+                } else {
+                  window.open(citation.url, "_blank");
+                }
+              }}
+              className="flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline cursor-pointer bg-transparent border-0 p-0"
             >
               <ExternalLink className="w-3 h-3" />
               <span className="truncate max-w-[200px]">{new URL(citation.url).hostname}</span>
-            </a>
+            </button>
           )}
           {citation.accessedAt && (
             <span className="text-gray-300">
@@ -160,6 +173,7 @@ export const FootnotesSection: React.FC<FootnotesSectionProps> = ({
   title = "Sources & References",
   showBackLinks = true,
   className = "",
+  onOpenReader,
 }) => {
   const citations = getOrderedCitations(library);
 
@@ -181,6 +195,7 @@ export const FootnotesSection: React.FC<FootnotesSectionProps> = ({
             key={citation.id}
             citation={citation}
             showBackLinks={showBackLinks}
+            onOpenReader={onOpenReader}
           />
         ))}
       </div>
@@ -189,4 +204,3 @@ export const FootnotesSection: React.FC<FootnotesSectionProps> = ({
 };
 
 export default FootnotesSection;
-

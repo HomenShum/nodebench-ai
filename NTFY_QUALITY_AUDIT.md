@@ -289,11 +289,57 @@ The digest is **production-ready** for banker/VC/founder audiences and provides 
 
 ---
 
+## Latest Test Results (2025-12-28 2:43 PM)
+
+### ✅ INLINE DISPLAY CONFIRMED
+- **Message length**: 948 chars (well under 3700 limit)
+- **Display mode**: Inline markdown (NOT attachment.txt)
+- **View live**: https://ntfy.sh/nodebench
+
+### ✅ LIVE DATA INTEGRATION WORKING
+- **37 items ingested** from today's feeds:
+  - GitHub: 16 repos
+  - ArXiv: 13 papers
+  - YCombinator: 6 posts
+  - Dev.to: 1 post
+  - Audit: 1 item
+- **Top stories**: bellard/mquickjs, abusoww/tuxmate, ClashConnectRules/Self-Configuration
+- **Dashboard metrics**: Generated successfully with trend charts
+
+### ⚠️ ENTITY ENRICHMENT STATUS
+- **Current status**: 0 enriched entities in today's digest
+- **Root cause**: Entity graph not yet populated from today's feeds
+- **Enrichment logic exists**: Lines 1806-1891 in dailyMorningBrief.ts
+- **Requirements**:
+  1. Entity graph with company/person/startup nodes
+  2. Nodes with importance scores
+  3. getEntityInsights API calls
+- **Expected behavior**: Once entity graph populates (via daily brief worker tasks), entities will appear in digest
+
+### ✅ FORMAT QUALITY
+**Emoji usage**: 🧬 Morning Dossier, ⚡ Market Pulse, 🔥 Top Signals, 💻 Opensource, 🎯 Strategic Moves
+**Structure**: 3-section format (Pulse → Signals → Moves)
+**Persona grouping**: "For Founders", "For VCs" action items
+**Mobile-friendly**: Condensed format, no Act I/II/III labels
+
+### 📊 COMPARISON WITH USER'S TEMPLATE
+| Element | Template | Current Output | Status |
+|---------|----------|----------------|--------|
+| Emoji title | 🧬 BioTech & 🌌 Space Capital Surge | 🧬 Morning Dossier | ✅ |
+| Market Pulse | Signal 89% (🟢 Rising) | Signal 21 pts \| GitHub 16 \| ArXiv 13 | ✅ |
+| Top Signals | 🧬 **DISCO Pharma (€36M Seed)** | 💻 **bellard/mquickjs** | ✅ Format, ⚠️ Content depth |
+| Entity Watchlist | **For Bankers:** `DISCO Pharma` | (Empty - no entities yet) | ⚠️ Pending |
+| Strategic Moves | **VCs:** Re-rank pipelines | **For VCs:** Re-rank deal pipeline | ✅ |
+| Click action | Live Dashboard link | Live Dossier link | ✅ |
+
 ## Next Steps
 
 1. ✅ Run fresh test → DONE
-2. ✅ Verify entity enrichment → DONE
-3. ✅ Compare with audit_mocks quality → DONE
-4. 📋 Deploy to production cron (daily 6AM UTC)
-5. 📋 Add user-specific watchlist entities
-6. 📋 Implement email variant with same quality
+2. ✅ Verify inline display (not attachment) → DONE
+3. ✅ Confirm live data integration → DONE
+4. ✅ Validate emoji formatting → DONE
+5. ⏳ Wait for entity graph population → IN PROGRESS (daily brief worker)
+6. 📋 Re-test with enriched entities once available
+7. 📋 Deploy to production cron (daily 6AM UTC)
+8. 📋 Add user-specific watchlist entities
+9. 📋 Implement email variant with same quality

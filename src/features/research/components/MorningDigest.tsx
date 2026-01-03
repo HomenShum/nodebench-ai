@@ -1135,7 +1135,12 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         <div className="flex items-start gap-3">
                           <span className="mt-2 h-1.5 w-1.5 rounded-full bg-gray-200 group-hover:bg-blue-400 transition-colors" />
                           <div className="text-sm font-medium text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors">
-                            <CrossLinkedText text={item.text} onAskAI={(prompt) => onItemClick?.({ text: prompt, relevance: 'high' })} />
+                            <CrossLinkedText
+                              text={item.text}
+                              entities={entityLibrary.entities}
+                              onEntityClick={(name, type) => onEntityClick?.(name, type as any)}
+                              onAskAI={(prompt) => onItemClick?.({ text: prompt, relevance: 'high' })}
+                            />
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">

@@ -1099,4 +1099,229 @@ export const AUDIT_MOCKS: Record<string, any> = {
       },
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // NEW DEALS FOR DEAL RADAR (December 2025)
+  // ---------------------------------------------------------------------------
+  "NEURAL_FORGE": {
+    entityId: "NEURAL_FORGE",
+    entityType: "private_company",
+    canonicalName: "NeuralForge AI",
+    asOf: "2025-12-27",
+
+    summary: "NeuralForge AI (San Francisco, CA) closed a $12M Seed round to build autonomous AI agents for enterprise workflow automation, with a focus on financial services compliance workflows.",
+
+    crmFields: {
+      hqLocation: "San Francisco, CA, USA",
+      foundingYear: "2024",
+      website: "https://neuralforge.ai",
+      fundingStage: "Seed",
+      totalFunding: "$12M",
+      sectors: ["AI/ML", "Enterprise Software", "Automation"],
+    },
+
+    funding: {
+      stage: "Seed",
+      totalRaised: { amount: 12, currency: "USD", unit: "M" },
+      lastRound: {
+        roundType: "Seed",
+        announcedDate: "2025-12-20",
+        amount: { amount: 12, currency: "USD", unit: "M" },
+        coLeads: ["Greylock Partners"],
+        participants: ["Y Combinator", "Operator Collective"],
+        useOfProceeds: "Product development and enterprise go-to-market expansion",
+
+      },
+    },
+
+    people: {
+      founders: [
+        { name: "Sarah Chen", role: "CEO", background: "Ex-OpenAI, Stanford CS PhD" },
+        { name: "Michael Torres", role: "CTO", background: "Ex-Google Brain" },
+      ],
+      executives: [],
+    },
+
+    productPipeline: {
+      platform: "Agentic AI platform for enterprise workflow automation",
+      leadPrograms: [
+        { program: "Enterprise Compliance Agent", stage: "Beta with 5 Fortune 500 customers" },
+      ],
+    },
+
+    recentNews: {
+      items: [
+        {
+          title: "NeuralForge raises $12M Seed to automate enterprise compliance",
+          publishedDate: "2025-12-20",
+          url: "https://techcrunch.com/neuralforge-seed",
+          type: "Trade press",
+        },
+      ],
+    },
+
+    contactPoints: {
+      primary: { channel: "email", value: "[email protected]" },
+    },
+
+    sources: [
+      { name: "TechCrunch", url: "https://techcrunch.com/neuralforge-seed", sourceType: "secondary", credibility: "high" },
+    ],
+
+    freshness: { newsAgeDays: 7, withinBankerWindow: true },
+
+    personaHooks: {
+      JPM_STARTUP_BANKER: {
+        passCriteria: ["Recent seed funding", "Enterprise focus", "Fortune 500 customers"],
+        failTriggers: [],
+      },
+    },
+  },
+
+  "VAULTPAY": {
+    entityId: "VAULTPAY",
+    entityType: "private_company",
+    canonicalName: "VaultPay",
+    asOf: "2025-12-27",
+
+    summary: "VaultPay (London, UK) raised $45M Series A to expand its embedded banking infrastructure for vertical SaaS platforms across Europe and North America.",
+
+    crmFields: {
+      hqLocation: "London, UK",
+      foundingYear: "2022",
+      website: "https://vaultpay.io",
+      fundingStage: "Series A",
+      totalFunding: "$45M",
+      sectors: ["Fintech", "Infrastructure", "B2B SaaS"],
+    },
+
+    funding: {
+      stage: "Series A",
+      totalRaised: { amount: 45, currency: "USD", unit: "M" },
+      lastRound: {
+        roundType: "Series A",
+        announcedDate: "2025-12-18",
+        amount: { amount: 45, currency: "USD", unit: "M" },
+        coLeads: ["Index Ventures", "Ribbit Capital"],
+        participants: ["Stripe", "Plaid"],
+        useOfProceeds: "North American expansion and product development",
+      },
+    },
+
+    people: {
+      founders: [
+        { name: "James Morrison", role: "CEO", background: "Ex-Wise (TransferWise), Oxford MBA" },
+      ],
+      executives: [],
+    },
+
+    productPipeline: {
+      platform: "Embedded banking APIs for vertical SaaS",
+      leadPrograms: [
+        { program: "VaultPay Embed", stage: "Production with 150+ SaaS platforms" },
+      ],
+    },
+
+    recentNews: {
+      items: [
+        {
+          title: "VaultPay secures $45M Series A led by Index and Ribbit",
+          publishedDate: "2025-12-18",
+          url: "https://techcrunch.com/vaultpay-series-a",
+          type: "Trade press",
+        },
+      ],
+    },
+
+    contactPoints: {
+      primary: { channel: "email", value: "[email protected]" },
+    },
+
+    sources: [
+      { name: "TechCrunch", url: "https://techcrunch.com/vaultpay-series-a", sourceType: "secondary", credibility: "high" },
+    ],
+
+    freshness: { newsAgeDays: 9, withinBankerWindow: true },
+
+    personaHooks: {
+      JPM_STARTUP_BANKER: {
+        passCriteria: ["Series A fintech", "Strong VC syndicate", "Production traction"],
+        failTriggers: [],
+      },
+    },
+  },
+
+  "GENOMIQ": {
+    entityId: "GENOMIQ",
+    entityType: "private_company",
+    canonicalName: "GenomiQ Therapeutics",
+    asOf: "2025-12-27",
+
+    summary: "GenomiQ Therapeutics (Boston, MA) raised $80M Series B to advance its gene therapy pipeline for rare genetic disorders, with lead programs in Phase 2.",
+
+    crmFields: {
+      hqLocation: "Boston, MA, USA",
+      foundingYear: "2020",
+      website: "https://genomiq.bio",
+      fundingStage: "Series B",
+      totalFunding: "$155M",
+      sectors: ["HealthTech", "Gene Therapy", "Rare Disease"],
+    },
+
+    funding: {
+      stage: "Series B",
+      totalRaised: { amount: 155, currency: "USD", unit: "M" },
+      lastRound: {
+        roundType: "Series B",
+        announcedDate: "2025-12-15",
+        amount: { amount: 80, currency: "USD", unit: "M" },
+        coLeads: ["Arch Venture Partners", "Third Rock Ventures"],
+        participants: ["Novo Holdings", "BioVentures"],
+        useOfProceeds: "Phase 2 clinical trials and manufacturing scale-up",
+      },
+    },
+
+    people: {
+      founders: [
+        { name: "Dr. Emily Watson", role: "CEO", background: "Ex-Moderna, MIT PhD" },
+      ],
+      executives: [],
+    },
+
+    productPipeline: {
+      platform: "AAV-based gene therapy platform for rare genetic disorders",
+      leadPrograms: [
+        { program: "GQ-101 (Duchenne Muscular Dystrophy)", stage: "Phase 2" },
+        { program: "GQ-202 (Hemophilia B)", stage: "Phase 1/2" },
+      ],
+    },
+
+    recentNews: {
+      items: [
+        {
+          title: "GenomiQ closes $80M Series B for gene therapy advancement",
+          publishedDate: "2025-12-15",
+          url: "https://fiercebiotech.com/genomiq-series-b",
+          type: "Trade press",
+        },
+      ],
+    },
+
+    contactPoints: {
+      primary: { channel: "email", value: "[email protected]" },
+    },
+
+    sources: [
+      { name: "Fierce Biotech", url: "https://fiercebiotech.com/genomiq-series-b", sourceType: "secondary", credibility: "high" },
+    ],
+
+    freshness: { newsAgeDays: 12, withinBankerWindow: true },
+
+    personaHooks: {
+      JPM_STARTUP_BANKER: {
+        passCriteria: ["Series B biotech", "Clinical stage assets", "Top-tier life sciences VCs"],
+        failTriggers: [],
+      },
+    },
+  },
 };

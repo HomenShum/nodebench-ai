@@ -5,10 +5,9 @@
  * as tool-accessible documents. This is Pillar 1 of Deep Agents architecture.
  */
 
-import fetch from "node-fetch";
-
 const CONVEX_BASE_URL = process.env.CONVEX_BASE_URL;
 const CONVEX_ADMIN_KEY = process.env.CONVEX_ADMIN_KEY;
+const MCP_SECRET = process.env.MCP_SECRET;
 
 type PlanStep = {
   step: string;
@@ -25,17 +24,28 @@ type Plan = {
   updatedAt: string;
 };
 
-async function callConvex(path: string, body: any) {
-  if (!CONVEX_BASE_URL || !CONVEX_ADMIN_KEY) {
-    throw new Error("Missing CONVEX_BASE_URL or CONVEX_ADMIN_KEY for MCP storage");
+async function callConvex(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: any) {
+  if (!CONVEX_BASE_URL) {
+    throw new Error("Missing CONVEX_BASE_URL for MCP storage");
   }
-  const res = await fetch(`${CONVEX_BASE_URL}/api/${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${CONVEX_ADMIN_KEY}`,
-    },
-    body: JSON.stringify(body),
+  if (!MCP_SECRET) {
+    throw new Error("Missing MCP_SECRET for MCP storage");
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-mcp-secret": MCP_SECRET,
+  };
+
+  // Optional: allow admin key auth as well (not required for mcp-3 endpoints)
+  if (CONVEX_ADMIN_KEY) {
+    headers["Authorization"] = `Bearer ${CONVEX_ADMIN_KEY}`;
+  }
+
+  const res = await fetch(`${CONVEX_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`, {
+    method,
+    headers,
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -101,7 +111,7 @@ export const planningTools = [
       };
 
       // Store plan in Convex
-      await callConvex("mcpPlans/create", { plan });
+      await callConvex("POST", "/api/mcpPlans", plan);
 
       // Generate markdown representation
       const markdown = `# Task Plan: ${goal}\n\n` +
@@ -151,10 +161,9 @@ export const planningTools = [
     handler: async (args: any) => {
       const { planId, stepIndex, status, notes } = args;
 
-      const plan = await callConvex("mcpPlans/get", { planId }) as Plan | null;
-      if (!plan) {
-        throw new Error(`Plan not found: ${planId}`);
-      }
+      const fetched = await callConvex("GET", `/api/mcpPlans/${planId}`) as any;
+      const plan = (fetched?.plan ?? null) as Plan | null;
+      if (!plan) throw new Error(`Plan not found: ${planId}`);
 
       if (stepIndex < 0 || stepIndex >= plan.steps.length) {
         throw new Error(`Invalid step index: ${stepIndex}`);
@@ -170,7 +179,7 @@ export const planningTools = [
 
       plan.updatedAt = new Date().toISOString();
       plan.steps[stepIndex] = plan.steps[stepIndex];
-      await callConvex("mcpPlans/update", { planId, plan });
+      await callConvex("PATCH", `/api/mcpPlans/${planId}`, { steps: plan.steps, updatedAt: plan.updatedAt });
 
       return {
         success: true,
@@ -195,10 +204,9 @@ export const planningTools = [
     handler: async (args: any) => {
       const { planId } = args;
 
-      const plan = await callConvex("mcpPlans/get", { planId }) as Plan | null;
-      if (!plan) {
-        throw new Error(`Plan not found: ${planId}`);
-      }
+      const fetched = await callConvex("GET", `/api/mcpPlans/${planId}`) as any;
+      const plan = (fetched?.plan ?? null) as Plan | null;
+      if (!plan) throw new Error(`Plan not found: ${planId}`);
 
       return {
         success: true,

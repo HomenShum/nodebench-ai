@@ -21,7 +21,9 @@ A comprehensive AI-powered document management and research platform with multi-
 - 🔐 **Secure** - User authentication and authorization on all operations
 - 🧭 **Persona Day Starter** - Right-rail presets (banking/product/research/sales/general) that launch Fast/Arbitrage Agent briefs
 - 📑 **Deal & Move Rail** - Overnight moves, deal list, and watchlist flyouts with dates, sources, FDA/patent/paper context
+- 📊 **Deal Radar** - Banker Morning Routine support with filterable deal table, sector/stage filters, and banker score algorithm  
 - 📧 **Email Intelligence Pipeline** - Gmail parsing, entity extraction, dossier + PRD composer workflows with scheduled sweeps and scrollytelling dossier UI
+
 
 ---
 

@@ -2,8 +2,12 @@
 OpenBB SDK Client Wrapper
 Provides a clean interface to OpenBB Platform functionality
 """
+from __future__ import annotations
+
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
-from openbb import obb
+
+import yfinance as yf
 from config import get_settings
 
 settings = get_settings()
@@ -11,18 +15,31 @@ settings = get_settings()
 
 class OpenBBClient:
     """
-    Wrapper around OpenBB SDK
-    
-    Provides methods for executing OpenBB tools and retrieving data
+    Minimal data client used by the OpenBB MCP server.
+
+    Notes:
+    - The OpenBB Python package can be brittle across versions/environments.
+    - For this server's REST surface (used by Convex), we only require stable
+      "equity quote" and "equity historical" style capabilities.
+    - We currently back these tools with `yfinance`, which is already an OpenBB
+      dependency in many setups and works without additional API keys.
     """
     
     def __init__(self):
-        """Initialize OpenBB client"""
-        # Configure OpenBB with API key if provided
-        if settings.openbb_api_key:
-            # TODO: Configure OpenBB with API key
-            # obb.account.login(api_key=settings.openbb_api_key)
-            pass
+        """Initialize client (kept for parity with previous OpenBB wrapper)."""
+        self._configured_api_key = bool(settings.openbb_api_key)
+
+    def _now_iso(self) -> str:
+        return datetime.now(timezone.utc).isoformat()
+
+    def _pick_first(self, *values: Any) -> Any:
+        for v in values:
+            if v is None:
+                continue
+            if isinstance(v, str) and not v.strip():
+                continue
+            return v
+        return None
     
     async def execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
         """
@@ -69,8 +86,40 @@ class OpenBBClient:
     async def _equity_price_quote(self, symbol: str, **kwargs) -> Dict[str, Any]:
         """Get real-time stock quote"""
         try:
-            data = obb.equity.price.quote(symbol=symbol, **kwargs)
-            return self._format_response(data)
+            ticker = yf.Ticker(symbol)
+
+            fast_info: Dict[str, Any] = {}
+            info: Dict[str, Any] = {}
+            try:
+                fast_info = dict(getattr(ticker, "fast_info", {}) or {})
+            except Exception:
+                fast_info = {}
+
+            # `Ticker.info` can be slow and occasionally error; treat as best-effort.
+            try:
+                info = dict(getattr(ticker, "info", {}) or {})
+            except Exception:
+                info = {}
+
+            price = self._pick_first(
+                fast_info.get("last_price"),
+                info.get("currentPrice"),
+                info.get("regularMarketPrice"),
+            )
+
+            return {
+                "symbol": symbol,
+                "price": price,
+                "currency": self._pick_first(fast_info.get("currency"), info.get("currency")),
+                "marketCap": info.get("marketCap"),
+                "dayHigh": info.get("dayHigh"),
+                "dayLow": info.get("dayLow"),
+                "previousClose": info.get("previousClose"),
+                "open": info.get("open"),
+                "volume": info.get("volume"),
+                "source": "yfinance",
+                "fetchedAt": self._now_iso(),
+            }
         except Exception as e:
             raise Exception(f"Failed to get quote for {symbol}: {str(e)}")
     
@@ -83,21 +132,71 @@ class OpenBBClient:
     ) -> Dict[str, Any]:
         """Get historical stock price data"""
         try:
-            data = obb.equity.price.historical(
-                symbol=symbol,
-                start_date=start_date,
-                end_date=end_date,
-                **kwargs
+            ticker = yf.Ticker(symbol)
+
+            hist = ticker.history(
+                start=start_date,
+                end=end_date,
+                interval=kwargs.get("interval", "1d"),
+                auto_adjust=False,
             )
-            return self._format_response(data)
+            # Ensure JSON-serializable output.
+            hist = hist.reset_index()
+            points = []
+            for _, row in hist.iterrows():
+                # Row may contain Timestamp-like objects.
+                dt = row.get("Date")
+                if dt is None:
+                    dt = row.get("Datetime")
+                if hasattr(dt, "to_pydatetime"):
+                    dt = dt.to_pydatetime()
+                if hasattr(dt, "isoformat"):
+                    ts = dt.isoformat()
+                else:
+                    ts = str(dt)
+
+                points.append(
+                    {
+                        "t": ts,
+                        "open": float(row["Open"]) if row.get("Open") is not None else None,
+                        "high": float(row["High"]) if row.get("High") is not None else None,
+                        "low": float(row["Low"]) if row.get("Low") is not None else None,
+                        "close": float(row["Close"]) if row.get("Close") is not None else None,
+                        "volume": int(row["Volume"]) if row.get("Volume") is not None else None,
+                    }
+                )
+
+            return {
+                "symbol": symbol,
+                "count": len(points),
+                "points": points,
+                "source": "yfinance",
+                "fetchedAt": self._now_iso(),
+            }
         except Exception as e:
             raise Exception(f"Failed to get historical data for {symbol}: {str(e)}")
     
     async def _equity_fundamental_overview(self, symbol: str, **kwargs) -> Dict[str, Any]:
         """Get company fundamental overview"""
         try:
-            data = obb.equity.fundamental.overview(symbol=symbol, **kwargs)
-            return self._format_response(data)
+            ticker = yf.Ticker(symbol)
+            info = dict(getattr(ticker, "info", {}) or {})
+            # Return a stable subset.
+            return {
+                "symbol": symbol,
+                "longName": info.get("longName"),
+                "sector": info.get("sector"),
+                "industry": info.get("industry"),
+                "website": info.get("website"),
+                "marketCap": info.get("marketCap"),
+                "trailingPE": info.get("trailingPE"),
+                "forwardPE": info.get("forwardPE"),
+                "priceToBook": info.get("priceToBook"),
+                "beta": info.get("beta"),
+                "dividendYield": info.get("dividendYield"),
+                "source": "yfinance",
+                "fetchedAt": self._now_iso(),
+            }
         except Exception as e:
             raise Exception(f"Failed to get fundamentals for {symbol}: {str(e)}")
     
@@ -106,8 +205,8 @@ class OpenBBClient:
     async def _crypto_price_quote(self, symbol: str, **kwargs) -> Dict[str, Any]:
         """Get cryptocurrency quote"""
         try:
-            data = obb.crypto.price.quote(symbol=symbol, **kwargs)
-            return self._format_response(data)
+            yf_symbol = symbol if "-" in symbol else f"{symbol.upper()}-USD"
+            return await self._equity_price_quote(symbol=yf_symbol, **kwargs)
         except Exception as e:
             raise Exception(f"Failed to get crypto quote for {symbol}: {str(e)}")
     
@@ -120,13 +219,13 @@ class OpenBBClient:
     ) -> Dict[str, Any]:
         """Get historical cryptocurrency data"""
         try:
-            data = obb.crypto.price.historical(
-                symbol=symbol,
+            yf_symbol = symbol if "-" in symbol else f"{symbol.upper()}-USD"
+            return await self._equity_price_historical(
+                symbol=yf_symbol,
                 start_date=start_date,
                 end_date=end_date,
-                **kwargs
+                **kwargs,
             )
-            return self._format_response(data)
         except Exception as e:
             raise Exception(f"Failed to get crypto historical data for {symbol}: {str(e)}")
     
@@ -134,51 +233,45 @@ class OpenBBClient:
     
     async def _economy_gdp(self, country: str = "US", **kwargs) -> Dict[str, Any]:
         """Get GDP data"""
-        try:
-            data = obb.economy.gdp(country=country, **kwargs)
-            return self._format_response(data)
-        except Exception as e:
-            raise Exception(f"Failed to get GDP data: {str(e)}")
+        raise Exception("economy_gdp not implemented in this deployment")
     
     async def _economy_inflation(self, country: str = "US", **kwargs) -> Dict[str, Any]:
         """Get inflation data"""
-        try:
-            data = obb.economy.cpi(country=country, **kwargs)
-            return self._format_response(data)
-        except Exception as e:
-            raise Exception(f"Failed to get inflation data: {str(e)}")
+        raise Exception("economy_inflation not implemented in this deployment")
     
     # ===== News Tools =====
     
     async def _news_company(self, symbol: str, limit: int = 10, **kwargs) -> Dict[str, Any]:
         """Get company news"""
         try:
-            data = obb.news.company(symbol=symbol, limit=limit, **kwargs)
-            return self._format_response(data)
+            ticker = yf.Ticker(symbol)
+            news = list(getattr(ticker, "news", []) or [])
+            return {
+                "symbol": symbol,
+                "count": min(len(news), int(limit)),
+                "items": news[: int(limit)],
+                "source": "yfinance",
+                "fetchedAt": self._now_iso(),
+            }
         except Exception as e:
             raise Exception(f"Failed to get news for {symbol}: {str(e)}")
     
     async def _news_world(self, limit: int = 10, **kwargs) -> Dict[str, Any]:
         """Get world news"""
-        try:
-            data = obb.news.world(limit=limit, **kwargs)
-            return self._format_response(data)
-        except Exception as e:
-            raise Exception(f"Failed to get world news: {str(e)}")
+        # `yfinance` doesn't provide a stable global feed without a ticker.
+        return {
+            "count": 0,
+            "items": [],
+            "note": "world news not implemented in this deployment",
+            "source": "yfinance",
+            "fetchedAt": self._now_iso(),
+        }
     
     # ===== Helper Methods =====
     
     def _format_response(self, data: Any) -> Dict[str, Any]:
-        """Format OpenBB response to JSON-serializable dict"""
-        if hasattr(data, 'to_dict'):
-            return data.to_dict()
-        elif hasattr(data, 'results'):
-            # Handle OBBject response
-            results = data.results
-            if hasattr(results, 'to_dict'):
-                return results.to_dict()
-            return results
-        return data
+        """Backward-compat shim (no longer used)."""
+        return {"data": data}
 
 
 # Global client instance
@@ -191,4 +284,3 @@ def get_openbb_client() -> OpenBBClient:
     if _client is None:
         _client = OpenBBClient()
     return _client
-

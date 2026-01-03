@@ -8,16 +8,21 @@ import { RefreshCw, TrendingUp, Clock } from "lucide-react";
 interface ModelComparisonTableProps {
   modelKey: string;
   context?: string;
+  initialData?: any;
 }
 
-export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ modelKey, context }) => {
+export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ modelKey, context, initialData }) => {
   const refresh = useAction(api.domains.research.modelComparison.refreshModelComparison);
-  const [comparison, setComparison] = useState<any | null>(null);
+  const [comparison, setComparison] = useState<any | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    if (initialData) {
+      setComparison(initialData);
+      return;
+    }
     if (!modelKey) return;
     setIsLoading(true);
     refresh({ modelKey, context })

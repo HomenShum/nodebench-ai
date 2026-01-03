@@ -9,16 +9,21 @@ interface StrategyMetricsPanelProps {
   title: string;
   summary?: string;
   url?: string;
+  initialData?: any;
 }
 
-export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ title, summary, url }) => {
+export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ title, summary, url, initialData }) => {
   const refresh = useAction(api.domains.research.strategyMetrics.refreshStrategyMetrics);
-  const [report, setReport] = useState<any | null>(null);
+  const [report, setReport] = useState<any | null>(initialData ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    if (initialData) {
+      setReport(initialData);
+      return;
+    }
     if (!title) return;
     setIsLoading(true);
     refresh({ title, summary, url })
@@ -34,7 +39,7 @@ export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ titl
     return () => {
       mounted = false;
     };
-  }, [refresh, summary, title, url]);
+  }, [initialData, refresh, summary, title, url]);
 
   if (error) {
     return (

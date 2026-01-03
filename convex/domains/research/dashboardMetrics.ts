@@ -78,12 +78,23 @@ function calculateTimelineProgress(): number {
 
 function calculateSourceSummary(feedItems: any[]) {
   // Initialize expected sources with 0 so they always appear
+  // Include both original sources AND new RSS funding sources
   const bySource: Record<string, number> = {
     GitHub: 0,
     ArXiv: 0,
     HackerNews: 0,
     Reddit: 0,
     "Dev.to": 0,
+    YCombinator: 0,
+    // Enhanced RSS funding sources
+    "TechCrunch Venture": 0,
+    "TechCrunch Startups": 0,
+    "VentureBeat Deals": 0,
+    FierceBiotech: 0,
+    "BioPharma Dive": 0,
+    TechCrunch: 0, // General TechCrunch feed
+    "Ars Technica": 0,
+    Wired: 0,
   };
   const byCategory: Record<string, number> = {};
   const tagCounts: Record<string, number> = {};

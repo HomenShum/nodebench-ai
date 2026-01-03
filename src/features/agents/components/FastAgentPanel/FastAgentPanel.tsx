@@ -22,6 +22,7 @@ import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
 import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
+import { ParallelTaskTimeline } from './FastAgentPanel.ParallelTaskTimeline';
 import { EditsTab } from './FastAgentPanel.EditsTab';
 import { BriefTab } from './FastAgentPanel.BriefTab';
 import { MemoryStatusHeader, type PlanItem } from './MemoryStatusHeader';
@@ -1402,7 +1403,7 @@ export function FastAgentPanel({
 
             {/* Bottom Row: Tabs */}
             <div className="flex p-1 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
-              {(['thread', 'artifacts', 'tasks', 'brief', 'edits'] as const).map((tab) => (
+              {(['thread', 'explore', 'artifacts', 'tasks', 'brief', 'edits'] as const).map((tab) => (
                 <button
                   type="button"
                   key={tab}
@@ -1437,7 +1438,23 @@ export function FastAgentPanel({
 
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] relative">
-            {activeTab === 'artifacts' ? (
+            {activeTab === 'explore' ? (
+              <div className="flex-1 p-4 overflow-y-auto">
+                {streamingThread?.agentThreadId ? (
+                  <ParallelTaskTimeline
+                    agentThreadId={streamingThread.agentThreadId}
+                    className="h-full"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-[var(--text-secondary)]">
+                    <div className="text-sm">Start a conversation to see parallel exploration</div>
+                    <div className="text-xs mt-1 text-[var(--text-tertiary)]">
+                      Complex queries are decomposed into parallel branches
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : activeTab === 'artifacts' ? (
               <ArtifactsTab
                 media={aggregatedMedia}
                 documents={aggregatedDocumentActions}

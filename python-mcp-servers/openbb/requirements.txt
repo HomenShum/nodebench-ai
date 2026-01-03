@@ -1,13 +1,14 @@
 # OpenBB MCP Server Dependencies
+# Uses yfinance for financial data (lighter than full OpenBB SDK)
 
-# OpenBB Platform
-openbb==4.1.6
-
-# Web framework (inherited from parent but specified for clarity)
+# Web framework
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 pydantic==2.5.3
 pydantic-settings==2.1.0
+
+# Financial data
+yfinance==0.2.36
 
 # HTTP client
 httpx==0.26.0
@@ -17,8 +18,6 @@ python-dotenv==1.0.0
 
 # Data processing
 pandas==2.1.4
-numpy==1.26.3
 
 # Logging
 structlog==24.1.0
-

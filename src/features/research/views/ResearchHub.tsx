@@ -22,6 +22,7 @@ import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/feature
 import { NotificationActivityPanel } from "@/components/NotificationActivityPanel";
 import { FeedReaderModal, type ReaderItem } from "@/features/research/components/FeedReaderModal";
 import { EntityContextDrawer } from "@/features/research/components/EntityContextDrawer";
+import { DealRadar } from "@/features/research/components/DealRadar";
 
 export interface ResearchHubProps {
   onDocumentSelect?: (documentId: string) => void;
@@ -418,262 +419,266 @@ function ResearchHubContent(props: ResearchHubProps) {
   }, [openWithContext, dossierContextBase]);
 
   return (
-      <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-[#faf9f6] overflow-hidden`}>
-        {!embedded && (
-          <header className="h-20 bg-[#faf9f6]/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-stone-200 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gray-900 rounded-none flex items-center justify-center text-white shadow-none transform hover:scale-105 transition-transform duration-300">
-                <span className="text-2xl font-serif">N</span>
-              </div>
-              <div>
-                <div className="text-2xl font-serif font-bold tracking-tight text-gray-900 italic leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
-                <div className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em] mt-1 ml-0.5 opacity-60">Archive Dossier 2027</div>
-              </div>
+    <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-[#faf9f6] overflow-hidden`}>
+      {!embedded && (
+        <header className="h-20 bg-[#faf9f6]/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-stone-200 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-gray-900 rounded-none flex items-center justify-center text-white shadow-none transform hover:scale-105 transition-transform duration-300">
+              <span className="text-2xl font-serif">N</span>
+            </div>
+            <div>
+              <div className="text-2xl font-serif font-bold tracking-tight text-gray-900 italic leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
+              <div className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em] mt-1 ml-0.5 opacity-60">Archive Dossier 2027</div>
+            </div>
+          </div>
+
+          {onGoHome && (
+            <button
+              onClick={onGoHome}
+              className="flex items-center gap-2 text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] hover:text-emerald-900 transition-colors"
+            >
+              <ArrowRight className="w-3 h-3 rotate-180" />
+              <span>Return to Pulse</span>
+            </button>
+          )}
+
+          <div className="flex items-center gap-8">
+            {/* Historical Date Selector */}
+            <div className="flex items-center gap-2 p-1 bg-stone-100/50 border border-stone-200">
+              {availableDates && availableDates.length > 0 ? (
+                <>
+                  {availableDates.slice(0, 3).map((date: string) => (
+                    <button
+                      key={date}
+                      onClick={() => setSelectedDate(date)}
+                      className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
+                        ? "bg-emerald-950 text-white shadow-lg"
+                        : "text-stone-400 hover:text-stone-900"
+                        }`}
+                    >
+                      {new Date(date + "T00:00:00").toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </button>
+                  ))}
+                  <div className="w-[1px] h-3 bg-stone-300 mx-1" />
+                  <button
+                    onClick={() => setSelectedDate(undefined)}
+                    className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-emerald-950 text-white" : "text-stone-400"}`}
+                  >
+                    Latest
+                  </button>
+                </>
+              ) : (
+                <span className="px-3 py-1 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Live Live Live</span>
+              )}
             </div>
 
-            {onGoHome && (
+            <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em]">
+              <div className="w-2 h-2 rounded-full bg-emerald-700 animate-pulse" />
+              <span>Encrypted Intelligence Stream</span>
+            </div>
+            <div className="hidden sm:block w-[1px] h-6 bg-stone-200" />
+            <div className="text-sm font-semibold text-stone-600 font-mono tracking-widest">
+              <span>{briefingDateString?.replace(/-/g, '.').toUpperCase()}</span>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* UNIFIED SCROLL CONTAINER */}
+      <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#faf9f6]">
+        {embedded && onGoHome && (
+          <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-200 pb-3">
               <button
+                type="button"
                 onClick={onGoHome}
-                className="flex items-center gap-2 text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] hover:text-emerald-900 transition-colors"
+                className="flex items-center gap-2 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] hover:text-emerald-900 transition-colors"
               >
                 <ArrowRight className="w-3 h-3 rotate-180" />
-                <span>Return to Pulse</span>
+                <span>Return to Pulse Overview</span>
               </button>
-            )}
-
-            <div className="flex items-center gap-8">
-              {/* Historical Date Selector */}
-              <div className="flex items-center gap-2 p-1 bg-stone-100/50 border border-stone-200">
-                {availableDates && availableDates.length > 0 ? (
-                  <>
-                    {availableDates.slice(0, 3).map((date: string) => (
-                      <button
-                        key={date}
-                        onClick={() => setSelectedDate(date)}
-                        className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
-                          ? "bg-emerald-950 text-white shadow-lg"
-                          : "text-stone-400 hover:text-stone-900"
-                          }`}
-                      >
-                        {new Date(date + "T00:00:00").toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                      </button>
-                    ))}
-                    <div className="w-[1px] h-3 bg-stone-300 mx-1" />
-                    <button
-                      onClick={() => setSelectedDate(undefined)}
-                      className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-emerald-950 text-white" : "text-stone-400"}`}
-                    >
-                      Latest
-                    </button>
-                  </>
-                ) : (
-                  <span className="px-3 py-1 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Live Live Live</span>
-                )}
-              </div>
-
-              <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em]">
-                <div className="w-2 h-2 rounded-full bg-emerald-700 animate-pulse" />
-                <span>Encrypted Intelligence Stream</span>
-              </div>
-              <div className="hidden sm:block w-[1px] h-6 bg-stone-200" />
-              <div className="text-sm font-semibold text-stone-600 font-mono tracking-widest">
-                <span>{briefingDateString?.replace(/-/g, '.').toUpperCase()}</span>
-              </div>
+              {briefDateLabel && (
+                <div className="text-[10px] font-mono text-stone-400 uppercase tracking-widest">
+                  {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
+                </div>
+              )}
             </div>
-          </header>
-        )}
-
-        {/* UNIFIED SCROLL CONTAINER */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#faf9f6]">
-          {embedded && onGoHome && (
-            <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-200 pb-3">
-                <button
-                  type="button"
-                  onClick={onGoHome}
-                  className="flex items-center gap-2 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] hover:text-emerald-900 transition-colors"
-                >
-                  <ArrowRight className="w-3 h-3 rotate-180" />
-                  <span>Return to Pulse Overview</span>
-                </button>
-                {briefDateLabel && (
-                  <div className="text-[10px] font-mono text-stone-400 uppercase tracking-widest">
-                    {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          {/* TIMELINE STRIP - Past + Present + Future temporal context */}
-          <TimelineStrip
-            events={timelineEvents}
-            activeEventId={activeAct === 'actI' ? 'today-briefing' : undefined}
-            phaseFilter={phaseFilter}
-            onPhaseChange={setPhaseFilter}
-            onEventClick={(event) => {
-              const currentAct = event.phase === 'past' ? 'actI' : event.phase === 'present' ? 'actII' : 'actIII';
-              openWithContext({
-                contextTitle: `Timeline: ${event.label}`,
-                initialMessage: `Tell me more about: "${event.label}" (${event.date})${event.description ? `\n\nContext: ${event.description}` : ''}`,
-                dossierContext: {
-                  ...dossierContextBase,
-                  currentAct,
-                  activeSectionId: "timeline_strip",
-                },
-              });
-              // Also update the active act based on event phase
-              if (event.phase === 'past') setActiveAct('actI');
-              else if (event.phase === 'present') setActiveAct('actII');
-              else setActiveAct('actIII');
-              setPhaseFilter(event.phase);
-            }}
-            className="mx-auto max-w-[1600px] px-16 pt-8"
-          />
-
-          <div className="max-w-[1600px] mx-auto flex items-start">
-
-            {/* LEFT: THE PAPER (Scrolls with the main container) */}
-            <div className="flex-1 pl-16 pr-12 py-16 space-y-28 pb-32">
-
-              {/* 1. EXECUTIVE SYNTHESIS (ACT I) */}
-              <section
-                ref={actIRef}
-                data-act-id="actI"
-                className="animate-in fade-in duration-700"
-              >
-                <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                  <div className="flex items-center gap-4">
-                    <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Executive Synthesis</h3>
-                    {selectedDate && (
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[9px] font-black uppercase tracking-widest border border-amber-900/10">Archive View</span>
-                    )}
-                  </div>
-                  <div className={`w-2 h-2 rounded-full ${selectedDate ? 'bg-amber-500' : 'bg-emerald-900'} animate-pulse`} />
-                </div>
-                <DigestSection
-                  onItemClick={handleDigestItemClick}
-                  onEntityClick={handleEntityOpen}
-                />
-              </section>
-
-              {/* PERSONALIZED OVERLAY SECTION */}
-              <section className="animate-in fade-in duration-700 delay-75">
-                <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                  <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Personal Pulse</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest">Local_Context_Active</span>
-                  </div>
-                </div>
-                <PersonalPulse
-                  personalizedContext={personalizedContext}
-                  tasksToday={tasksToday || []}
-                  recentDocs={recentDocs || []}
-                  onDocumentSelect={props.onDocumentSelect}
-                />
-              </section>
-
-              {/* 2. THE BRIEFING (ACT II) */}
-              <section
-                ref={actIIRef}
-                data-act-id="actII"
-                className="animate-in fade-in duration-700 delay-100"
-              >
-                <div className="mb-14 flex items-center justify-between border-b border-stone-200 pb-4">
-                  <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Institutional Briefing</h3>
-                  <span className="text-[10px] font-serif italic text-stone-400">Deep Analysis</span>
-                </div>
-                <BriefingSection
-                  onActChange={(act) => {
-                    setActiveAct(act as any);
-                    // Logic for internal act changes within BriefingSection could still update focus
-                    updateFocus({ briefId: (briefMemory as any)?._id || "morning_brief_latest", currentAct: act as any });
-                  }}
-                  onAskAI={handleAskAI}
-                  onOpenReader={handleOpenReader}
-                />
-              </section>
-
-              {/* 3. SIGNAL STREAM (ACT III) */}
-              <section
-                ref={actIIIRef}
-                data-act-id="actIII"
-                className="animate-in fade-in duration-700 delay-200"
-              >
-                <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                  <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Live Signal Stream</h3>
-                  <div className="px-2 py-0.5 bg-emerald-50 text-emerald-900 border border-emerald-900/10 text-[9px] font-black uppercase tracking-widest">Real-time Nodes</div>
-                </div>
-                <div className="bg-[#f2f1ed]/30 p-10 border border-stone-200/60">
-                  <FeedSection
-                    onItemClick={handleFeedItemClick}
-                    onOpenWithAgent={handleFeedOpenWithAgent}
-                  />
-                </div>
-              </section>
-
-              {/* 4. DEAL WATCHLIST */}
-              <section className="animate-in fade-in duration-700 delay-300 pb-32">
-                <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                  <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Institutional Deal Flow</h3>
-                  <div className="px-2 py-0.5 bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest">PRO_ACCESS</div>
-                </div>
-                <DealListSection />
-              </section>
-            </div>
-
-            {/* RIGHT: THE HUD (Sticky to the main scroll container) */}
-            <aside className="w-[450px] shrink-0 sticky top-0 h-fit p-12 pr-16 hidden xl:block">
-              {/* Gradient separator fallback */}
-              <div className="absolute left-0 top-12 bottom-12 w-px bg-gradient-to-b from-stone-200/0 via-stone-200 to-stone-200/0" />
-
-              <div className="space-y-12">
-                {phasedDashboardMetrics ? (
-                  <ActAwareDashboard
-                    activeAct={activeAct}
-                    dashboardData={phasedDashboardMetrics}
-                    executiveBrief={executiveBrief}
-                    sourceSummary={sourceSummary}
-                    evidence={evidence || []}
-                    workflowSteps={workflowSteps}
-                    deltas={deltas}
-                    onDataPointClick={handleDashboardPointClick}
-                    onEvidenceClick={handleEvidenceOpen}
-                  />
-                ) : (
-                  // Fallback while loading
-                  <DashboardSection activeAct={activeAct} />
-                )}
-                <NotificationActivityPanel
-                  mode="topic"
-                  variant="hub"
-                  title="Morning Digest Log"
-                  subtitle="Global ntfy channel: nodebench"
-                  limit={5}
-                />
-              </div>
-            </aside>
           </div>
-        </main>
-
-        {/* LIVE INTEL FLOW MONITOR */}
-        <IntelPulseMonitor taskResults={taskResults || []} />
-
-        <FeedReaderModal
-          item={readerItem}
-          techStack={techStack}
-          onClose={() => setReaderItem(null)}
+        )}
+        {/* TIMELINE STRIP - Past + Present + Future temporal context */}
+        <TimelineStrip
+          events={timelineEvents}
+          activeEventId={activeAct === 'actI' ? 'today-briefing' : undefined}
+          phaseFilter={phaseFilter}
+          onPhaseChange={setPhaseFilter}
+          onEventClick={(event) => {
+            const currentAct = event.phase === 'past' ? 'actI' : event.phase === 'present' ? 'actII' : 'actIII';
+            openWithContext({
+              contextTitle: `Timeline: ${event.label}`,
+              initialMessage: `Tell me more about: "${event.label}" (${event.date})${event.description ? `\n\nContext: ${event.description}` : ''}`,
+              dossierContext: {
+                ...dossierContextBase,
+                currentAct,
+                activeSectionId: "timeline_strip",
+              },
+            });
+            // Also update the active act based on event phase
+            if (event.phase === 'past') setActiveAct('actI');
+            else if (event.phase === 'present') setActiveAct('actII');
+            else setActiveAct('actIII');
+            setPhaseFilter(event.phase);
+          }}
+          className="mx-auto max-w-[1600px] px-16 pt-8"
         />
-        <EntityContextDrawer
-          isOpen={Boolean(activeEntity)}
-          entityName={activeEntity?.name ?? null}
-          entityType={activeEntity?.type}
-          trackedHashtags={trackedHashtags}
-          techStack={techStack}
-          onClose={handleEntityClose}
-          onOpenReader={handleOpenReader}
-        />
-      </div>
+
+        <div className="max-w-[1600px] mx-auto flex items-start">
+
+          {/* LEFT: THE PAPER (Scrolls with the main container) */}
+          <div className="flex-1 pl-16 pr-12 py-16 space-y-28 pb-32">
+
+            {/* 1. EXECUTIVE SYNTHESIS (ACT I) */}
+            <section
+              ref={actIRef}
+              data-act-id="actI"
+              className="animate-in fade-in duration-700"
+            >
+              <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Executive Synthesis</h3>
+                  {selectedDate && (
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[9px] font-black uppercase tracking-widest border border-amber-900/10">Archive View</span>
+                  )}
+                </div>
+                <div className={`w-2 h-2 rounded-full ${selectedDate ? 'bg-amber-500' : 'bg-emerald-900'} animate-pulse`} />
+              </div>
+              <DigestSection
+                onItemClick={handleDigestItemClick}
+                onEntityClick={handleEntityOpen}
+              />
+            </section>
+
+            {/* PERSONALIZED OVERLAY SECTION */}
+            <section className="animate-in fade-in duration-700 delay-75">
+              <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
+                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Personal Pulse</h3>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest">Local_Context_Active</span>
+                </div>
+              </div>
+              <PersonalPulse
+                personalizedContext={personalizedContext}
+                tasksToday={tasksToday || []}
+                recentDocs={recentDocs || []}
+                onDocumentSelect={props.onDocumentSelect}
+              />
+            </section>
+
+            {/* 2. THE BRIEFING (ACT II) */}
+            <section
+              ref={actIIRef}
+              data-act-id="actII"
+              className="animate-in fade-in duration-700 delay-100"
+            >
+              <div className="mb-14 flex items-center justify-between border-b border-stone-200 pb-4">
+                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Institutional Briefing</h3>
+                <span className="text-[10px] font-serif italic text-stone-400">Deep Analysis</span>
+              </div>
+              <BriefingSection
+                onActChange={(act) => {
+                  setActiveAct(act as any);
+                  // Logic for internal act changes within BriefingSection could still update focus
+                  updateFocus({ briefId: (briefMemory as any)?._id || "morning_brief_latest", currentAct: act as any });
+                }}
+                onAskAI={handleAskAI}
+                onOpenReader={handleOpenReader}
+              />
+            </section>
+
+            {/* 3. SIGNAL STREAM (ACT III) */}
+            <section
+              ref={actIIIRef}
+              data-act-id="actIII"
+              className="animate-in fade-in duration-700 delay-200"
+            >
+              <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
+                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Live Signal Stream</h3>
+                <div className="px-2 py-0.5 bg-emerald-50 text-emerald-900 border border-emerald-900/10 text-[9px] font-black uppercase tracking-widest">Real-time Nodes</div>
+              </div>
+              <div className="bg-[#f2f1ed]/30 p-10 border border-stone-200/60">
+                <FeedSection
+                  onItemClick={handleFeedItemClick}
+                  onOpenWithAgent={handleFeedOpenWithAgent}
+                />
+              </div>
+            </section>
+
+            {/* 4. DEAL RADAR */}
+            <section className="animate-in fade-in duration-700 delay-300 pb-32">
+              <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
+                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Deal Radar</h3>
+                <div className="px-2 py-0.5 bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest">JPM_BANKER</div>
+              </div>
+              <DealRadar
+                onDealClick={(dealId, companyName) => {
+                  setActiveEntity({ name: companyName, type: "company" });
+                }}
+              />
+            </section>
+          </div>
+
+          {/* RIGHT: THE HUD (Sticky to the main scroll container) */}
+          <aside className="w-[450px] shrink-0 sticky top-0 h-fit p-12 pr-16 hidden xl:block">
+            {/* Gradient separator fallback */}
+            <div className="absolute left-0 top-12 bottom-12 w-px bg-gradient-to-b from-stone-200/0 via-stone-200 to-stone-200/0" />
+
+            <div className="space-y-12">
+              {phasedDashboardMetrics ? (
+                <ActAwareDashboard
+                  activeAct={activeAct}
+                  dashboardData={phasedDashboardMetrics}
+                  executiveBrief={executiveBrief}
+                  sourceSummary={sourceSummary}
+                  evidence={evidence || []}
+                  workflowSteps={workflowSteps}
+                  deltas={deltas}
+                  onDataPointClick={handleDashboardPointClick}
+                  onEvidenceClick={handleEvidenceOpen}
+                />
+              ) : (
+                // Fallback while loading
+                <DashboardSection activeAct={activeAct} />
+              )}
+              <NotificationActivityPanel
+                mode="topic"
+                variant="hub"
+                title="Morning Digest Log"
+                subtitle="Global ntfy channel: nodebench"
+                limit={5}
+              />
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      {/* LIVE INTEL FLOW MONITOR */}
+      <IntelPulseMonitor taskResults={taskResults || []} />
+
+      <FeedReaderModal
+        item={readerItem}
+        techStack={techStack}
+        onClose={() => setReaderItem(null)}
+      />
+      <EntityContextDrawer
+        isOpen={Boolean(activeEntity)}
+        entityName={activeEntity?.name ?? null}
+        entityType={activeEntity?.type}
+        trackedHashtags={trackedHashtags}
+        techStack={techStack}
+        onClose={handleEntityClose}
+        onOpenReader={handleOpenReader}
+      />
+    </div>
   );
 }
 

@@ -2,7 +2,6 @@
 Research MCP Server Configuration
 """
 import os
-from typing import List
 from pydantic_settings import BaseSettings
 
 
@@ -25,10 +24,12 @@ class Settings(BaseSettings):
     environment: str = os.getenv("ENVIRONMENT", "development")
     
     # CORS
-    allowed_origins: List[str] = os.getenv(
+    # Use string here (instead of List[str]) to avoid pydantic-settings attempting
+    # JSON parsing for env vars like `ALLOWED_ORIGINS=*` or comma-separated lists.
+    allowed_origins: str = os.getenv(
         "ALLOWED_ORIGINS",
-        "http://localhost:3000,http://localhost:5173"
-    ).split(",")
+        "http://localhost:3000,http://localhost:5173",
+    )
     
     class Config:
         env_file = "../.env"
@@ -42,4 +43,3 @@ settings = Settings()
 def get_settings() -> Settings:
     """Get application settings"""
     return settings
-

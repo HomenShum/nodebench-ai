@@ -1,4 +1,4 @@
-import { SignOutButton } from "../../../SignOutButton";
+﻿import { SignOutButton } from "../../../SignOutButton";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../../convex/_generated/api";
@@ -102,6 +102,17 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                         </>
                     )}
                 </div>
+            </div>
+            {/* Powered by Railway referral */}
+            <div className="mt-2 text-center">
+                <a
+                    href="https://railway.com?referralCode=VaLiq9"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors opacity-60 hover:opacity-100"
+                >
+                    Infra powered by Railway 
+                </a>
             </div>
         </div>
     );

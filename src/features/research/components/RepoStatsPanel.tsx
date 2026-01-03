@@ -8,10 +8,12 @@ import { GitBranch, Star, Clock, RefreshCw } from "lucide-react";
 
 interface RepoStatsPanelProps {
   repoUrl: string;
+  initialData?: any;
 }
 
-export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl }) => {
-  const stats = useQuery(api.domains.research.repoStatsQueries.getRepoStats, { repoUrl });
+export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initialData }) => {
+  const statsQuery = useQuery(api.domains.research.repoStatsQueries.getRepoStats, { repoUrl });
+  const stats = initialData ?? statsQuery;
   const refresh = useAction(api.domains.research.repoStats.refreshRepoStats);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
