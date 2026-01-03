@@ -542,20 +542,34 @@ async function seedMcpServers(ctx: any) {
   const testUser = await getOrCreateTestUser(ctx);
   const now = Date.now();
 
+  let coreAgentUrl: string | undefined;
+  let openbbUrl: string | undefined;
+  try {
+    coreAgentUrl = process.env.CORE_AGENT_MCP_SERVER_URL;
+    openbbUrl = process.env.OPENBB_MCP_SERVER_URL;
+  } catch {
+    // noop
+  }
+
   const servers = [
-    {
+    coreAgentUrl ? {
       name: "core_agent_server",
-      url: "http://localhost:8005",
+      url: coreAgentUrl,
       description: "Core Agent Planning & Memory Server",
       isEnabled: true,
-    },
-    {
+    } : null,
+    openbbUrl ? {
       name: "openbb_server",
-      url: "http://localhost:8001",
+      url: openbbUrl,
       description: "OpenBB Financial Data Server",
       isEnabled: true,
-    }
-  ];
+    } : null,
+  ].filter(Boolean) as Array<{ name: string; url: string; description: string; isEnabled: boolean }>;
+
+  if (servers.length === 0) {
+    console.log("   No MCP server URLs configured (CORE_AGENT_MCP_SERVER_URL / OPENBB_MCP_SERVER_URL). Skipping MCP server seeding.");
+    return;
+  }
 
   for (const serverConfig of servers) {
     // Check if server exists

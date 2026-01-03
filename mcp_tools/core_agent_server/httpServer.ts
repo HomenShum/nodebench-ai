@@ -41,10 +41,16 @@ function getSuppliedToken(req: http.IncomingMessage): string | undefined {
 }
 
 const server = http.createServer(async (req, res) => {
+  // Health check endpoint for Railway
+  if (req.method === "GET" && (req.url === "/" || req.url === "/health")) {
+    respond(res, 200, { status: "ok", service: "core-agent-mcp" });
+    return;
+  }
+
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization, x-mcp-token, x-mcp-secret",
     });
     res.end();

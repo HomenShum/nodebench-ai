@@ -483,6 +483,65 @@ export const createWithContent = mutation({
   },
 });
 
+/**
+ * Create a new dossier document (documentType: "dossier", dossierType: "primary").
+ * Stores TipTap/ProseMirror JSON as a string in `content`.
+ */
+export const createDossier = mutation({
+  args: {
+    title: v.string(),
+    content: v.optional(v.string()),
+    parentId: v.optional(v.id("documents")),
+    isPublic: v.optional(v.boolean()),
+    allowPublicEdit: v.optional(v.boolean()),
+  },
+  returns: v.id("documents"),
+  handler: async (ctx, args) => {
+    // Support evaluation mode where userId is passed in ctx.evaluationUserId
+    let userId = (ctx as any).evaluationUserId;
+    if (!userId) {
+      userId = await getAuthUserId(ctx);
+    }
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const now = Date.now();
+    const initialContent =
+      args.content ??
+      JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            attrs: { textAlignment: "left" },
+            content: [{ type: "text", text: "" }],
+          },
+        ],
+      });
+
+    const documentId = await ctx.db.insert("documents", {
+      title: args.title,
+      parentId: args.parentId,
+      createdBy: userId,
+      isPublic: args.isPublic ?? false,
+      allowPublicEdit: args.allowPublicEdit ?? false,
+      isArchived: false,
+      content: initialContent,
+      lastModified: now,
+      documentType: "dossier",
+      dossierType: "primary",
+    } as any);
+
+    // Asynchronously index into Gemini File Search
+    await ctx.scheduler.runAfter(0, internal.domains.documents.fileSearch.upsertDocument, {
+      documentId,
+    });
+
+    return documentId as Id<"documents">;
+  },
+});
+
 // Notes scheduled on a calendar day (documents with agendaDate in range)
 export const listNotesInRange = query({
   args: { start: v.number(), end: v.number() },

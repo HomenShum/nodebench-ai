@@ -10,6 +10,8 @@
  * - Real-time streaming for incremental TTS
  */
 
+"use node";
+
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";

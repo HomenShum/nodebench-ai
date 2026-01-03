@@ -8,6 +8,19 @@ import { components } from "./_generated/api";
 import { createCoordinatorAgent } from "./domains/agents/core/coordinatorAgent";
 import { DEFAULT_MODEL, normalizeModelInput } from "./domains/agents/mcp_tools/models";
 import { z } from "zod";
+import {
+  createPlanHttp,
+  deletePlanByIdHttp,
+  getPlanByIdHttp,
+  listPlansHttp,
+  patchPlanByIdHttp,
+} from "./domains/mcp/mcpPlansHttp";
+import {
+  createMemoryHttp,
+  deleteMemoryByIdHttp,
+  getMemoryByIdHttp,
+  listMemoryHttp,
+} from "./domains/mcp/mcpMemoryHttp";
 
 const http = httpRouter();
 
@@ -224,6 +237,26 @@ http.route({
     }
   }),
 });
+
+// -----------------------------------------------------------------------------
+// MCP persistence endpoints (mcp-3): plan + memory storage for external MCP servers
+// Auth: x-mcp-secret must match process.env.MCP_SECRET
+// -----------------------------------------------------------------------------
+
+// Plans (collection routes)
+http.route({ path: "/api/mcpPlans", method: "POST", handler: createPlanHttp });
+http.route({ path: "/api/mcpPlans", method: "GET", handler: listPlansHttp });
+// Plans (item routes)
+http.route({ pathPrefix: "/api/mcpPlans/", method: "GET", handler: getPlanByIdHttp });
+http.route({ pathPrefix: "/api/mcpPlans/", method: "PATCH", handler: patchPlanByIdHttp });
+http.route({ pathPrefix: "/api/mcpPlans/", method: "DELETE", handler: deletePlanByIdHttp });
+
+// Memory (collection routes)
+http.route({ path: "/api/mcpMemory", method: "POST", handler: createMemoryHttp });
+http.route({ path: "/api/mcpMemory", method: "GET", handler: listMemoryHttp });
+// Memory (item routes)
+http.route({ pathPrefix: "/api/mcpMemory/", method: "GET", handler: getMemoryByIdHttp });
+http.route({ pathPrefix: "/api/mcpMemory/", method: "DELETE", handler: deleteMemoryByIdHttp });
 
 http.route({
   path: "/api/stream/:runId",

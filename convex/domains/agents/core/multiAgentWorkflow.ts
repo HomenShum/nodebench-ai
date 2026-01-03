@@ -2,7 +2,6 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 import type { Id } from "../../../_generated/dataModel";
-import { createCoordinatorAgent } from "./coordinatorAgent";
 
 /**
  * Workflow metrics type for tracking sources, tools, and agents
@@ -130,6 +129,7 @@ export const runWorkflow = internalAction({
             // Use model catalog for consistent model selection
             const { getLlmModel } = await import("../../../../shared/llm/modelCatalog");
             const coordinatorModel = getLlmModel("agent", "openai");
+            const { createCoordinatorAgent } = await import("./coordinatorAgent");
             const coordinator = createCoordinatorAgent(coordinatorModel);
 
             // Get agent thread ID

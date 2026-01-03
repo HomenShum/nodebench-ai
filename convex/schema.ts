@@ -1386,10 +1386,10 @@ const voiceSessions = defineTable({
 /* Shared public feed sourced from HackerNews, ArXiv, RSS, etc.       */
 /* "Write Once, Read Many" - one hourly ingest, all users read free   */
 /* ------------------------------------------------------------------ */
-const feedItems = defineTable({
-  sourceId: v.string(),                    // e.g., "hn-12345" (deduplication key)
-  type: v.union(
-    v.literal("news"),
+const feedItems = defineTable({ 
+  sourceId: v.string(),                    // e.g., "hn-12345" (deduplication key) 
+  type: v.union( 
+    v.literal("news"), 
     v.literal("signal"),
     v.literal("dossier"),
     v.literal("repo"),                     // GitHub repos
@@ -1417,13 +1417,42 @@ const feedItems = defineTable({
   publishedAt: v.string(),                 // ISO date string
   score: v.number(),                       // For sorting by "Heat"
   createdAt: v.optional(v.number()),       // When we ingested this
-})
-  .index("by_published", ["publishedAt"])
-  .index("by_score", ["score"])
-  .index("by_source", ["source"])
-  .index("by_type", ["type"])
-  .index("by_category", ["category"])      // Segmented view filtering
+}) 
+  .index("by_published", ["publishedAt"]) 
+  .index("by_score", ["score"]) 
+  .index("by_source", ["source"]) 
+  .index("by_type", ["type"]) 
+  .index("by_category", ["category"])      // Segmented view filtering 
   .index("by_source_id", ["sourceId"]);    // Fast deduplication lookup
+
+/* ------------------------------------------------------------------ */
+/* LANDING PAGE LOG - Public, append-only "signals" style feed         */
+/* Used by #signals route + system crons (morning brief)               */
+/* ------------------------------------------------------------------ */
+const landingPageLog = defineTable({
+  day: v.string(), // YYYY-MM-DD (UTC)
+  kind: v.union(
+    v.literal("signal"),
+    v.literal("funding"),
+    v.literal("brief"),
+    v.literal("note"),
+    v.literal("system"),
+  ),
+  title: v.string(),
+  markdown: v.string(),
+  source: v.optional(v.string()),
+  url: v.optional(v.string()),
+  tags: v.optional(v.array(v.string())),
+  userId: v.optional(v.id("users")),
+  anonymousSessionId: v.optional(v.string()),
+  agentThreadId: v.optional(v.string()),
+  meta: v.optional(v.any()),
+  createdAt: v.number(),
+})
+  .index("by_createdAt", ["createdAt"])
+  .index("by_day_createdAt", ["day", "createdAt"])
+  .index("by_anon_day_createdAt", ["anonymousSessionId", "day", "createdAt"])
+  .index("by_agent_thread", ["agentThreadId", "createdAt"]);
 
 /* ------------------------------------------------------------------ */
 /* REPO STATS CACHE - GitHub repo stats + velocity snapshots           */
@@ -1667,6 +1696,69 @@ const searchEvaluations = defineTable({
   .index("by_created", ["createdAt"])
   .index("by_judge_model", ["judgeModel"]);
 
+/* ------------------------------------------------------------------ */
+/* AGENT EVALUATION RUNS - Boolean-based agent response evaluation     */
+/* ------------------------------------------------------------------ */
+/**
+ * Tracks evaluation runs against ground truth test queries.
+ * Supports both anonymous (sessionId) and authenticated (userId) modes.
+ *
+ * Used for continuous testing of agent response quality.
+ */
+const evaluationRuns = defineTable({
+  sessionId: v.string(),                    // Session ID (for anonymous) or derived from userId
+  userId: v.optional(v.id("users")),        // Optional user ID (for authenticated)
+  mode: v.union(
+    v.literal("anonymous"),
+    v.literal("authenticated"),
+    v.literal("batch"),
+  ),
+  status: v.union(
+    v.literal("running"),
+    v.literal("completed"),
+    v.literal("failed"),
+  ),
+  // Query tracking
+  queryIds: v.array(v.string()),            // List of test query IDs to run
+  completedQueries: v.number(),
+  passedQueries: v.number(),
+  failedQueries: v.number(),
+  // Individual results
+  results: v.array(v.object({
+    queryId: v.string(),
+    query: v.string(),
+    persona: v.string(),
+    expectedOutcome: v.string(),
+    actualOutcome: v.string(),
+    passed: v.boolean(),
+    containsRequired: v.boolean(),
+    noForbidden: v.boolean(),
+    failureReasons: v.array(v.string()),
+    responseLength: v.number(),
+    responseSnippet: v.optional(v.string()),
+    executedAt: v.number(),
+  })),
+  // Summary
+  summary: v.optional(v.object({
+    total: v.number(),
+    passed: v.number(),
+    failed: v.number(),
+    passRate: v.number(),
+    isPassing: v.boolean(),
+    threshold: v.number(),
+  })),
+  // Timestamps
+  startedAt: v.number(),
+  updatedAt: v.optional(v.number()),
+  completedAt: v.optional(v.number()),
+  // Error tracking
+  error: v.optional(v.string()),
+})
+  .index("by_session", ["sessionId"])
+  .index("by_user", ["userId"])
+  .index("by_status", ["status"])
+  .index("by_started", ["startedAt"]);
+
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
   documents,
@@ -1735,6 +1827,7 @@ export default defineSchema({
   repoScoutCache,
   strategyMetricsCache,
   searchEvaluations,
+  evaluationRuns,
 
   /* ------------------------------------------------------------------ */
   /* PARALLEL TASK TREE - Deep Agent 2.0 Decision Tree Execution        */
@@ -2411,7 +2504,7 @@ export default defineSchema({
     spreadsheetId: v.optional(v.id("documents")), // Optional link to source spreadsheet
     rowIndex: v.optional(v.number()),        // Optional row index in spreadsheet
     researchedAt: v.number(),                // Timestamp when researched
-    researchedBy: v.id("users"),            // User who triggered the research
+    researchedBy: v.optional(v.id("users")), // User who triggered the research (optional for anonymous)
     lastAccessedAt: v.number(),              // Last time this context was accessed
     accessCount: v.number(),                 // Number of times accessed (cache hits)
     version: v.number(),                     // Version number for cache invalidation

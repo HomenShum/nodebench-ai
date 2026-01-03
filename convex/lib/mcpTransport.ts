@@ -155,6 +155,7 @@ export async function createRemoteMcpClient(
       if (tavilyKey) {
         // Try multiple authentication approaches for Tavily
         headers['Authorization'] = `Bearer ${tavilyKey}`;
+        headers['x-mcp-token'] = tavilyKey;
         headers['X-API-Key'] = tavilyKey;
         headers['tavily-api-key'] = tavilyKey;
         console.log(`[MCP SDK] Added multiple authentication headers with extracted key`);
@@ -168,13 +169,19 @@ export async function createRemoteMcpClient(
     }
   } else if (apiKey) {
     headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['x-mcp-token'] = apiKey;
     console.log(`[MCP SDK] Added Authorization header with provided API key`);
   }
   
-  console.log(`[MCP SDK] Final headers (Authorization redacted):`, {
-    ...headers,
-    Authorization: headers.Authorization ? '[REDACTED]' : undefined
-  });
+  const redactedHeaders: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (/(authorization|token|key|secret)/i.test(key)) {
+      redactedHeaders[key] = "[REDACTED]";
+    } else {
+      redactedHeaders[key] = value;
+    }
+  }
+  console.log(`[MCP SDK] Final headers (sensitive redacted):`, redactedHeaders);
   
   return new HttpSSETransport(finalUrl, headers);
 }
@@ -182,12 +189,12 @@ export async function createRemoteMcpClient(
 /**
  * Discover tools using MCP SDK transport
  */
-export async function discoverToolsWithSdk(serverUrl: string): Promise<Array<{
+export async function discoverToolsWithSdk(serverUrl: string, apiKey?: string): Promise<Array<{
   name: string;
   description?: string;
   inputSchema?: any;
 }>> {
-  const transport = await createRemoteMcpClient(serverUrl);
+  const transport = await createRemoteMcpClient(serverUrl, apiKey);
   
   try {
     console.log(`[MCP SDK] Discovering tools from ${serverUrl}`);
@@ -213,9 +220,10 @@ export async function discoverToolsWithSdk(serverUrl: string): Promise<Array<{
 export async function executeToolWithSdk(
   serverUrl: string,
   toolName: string,
-  arguments_: any
+  arguments_: any,
+  apiKey?: string,
 ): Promise<any> {
-  const transport = await createRemoteMcpClient(serverUrl);
+  const transport = await createRemoteMcpClient(serverUrl, apiKey);
   
   try {
     console.log(`[MCP SDK] Executing tool '${toolName}' with args:`, arguments_);

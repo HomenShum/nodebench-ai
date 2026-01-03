@@ -98,7 +98,7 @@ export const memoryTools = [
         key: memoryEntry.key,
         content: memoryEntry.content,
         metadata: memoryEntry.metadata,
-      });
+      }) as { entry?: { id?: string } };
 
       return {
         success: true,

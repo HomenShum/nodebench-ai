@@ -35,7 +35,7 @@ function getLanguageModel(modelName: string) {
 /**
  * Create a Dossier Interaction Agent instance
  * 
- * @param model - Language model to use ("gpt-4o", "claude-sonnet-4-20250514", etc.)
+ * @param model - Language model to use ("gpt-5.2", "claude-sonnet-4.5", etc.)
  * @returns Configured Dossier Agent
  */
 export function createDossierAgent(model: string) {

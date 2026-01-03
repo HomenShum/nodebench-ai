@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     
     # Server configuration
     openbb_api_key: str = os.getenv("OPENBB_API_KEY", "")
-    openbb_port: int = int(os.getenv("OPENBB_PORT", "8001"))
+    # Railway uses PORT env var; fall back to OPENBB_PORT for local dev
+    openbb_port: int = int(os.getenv("PORT", os.getenv("OPENBB_PORT", "8001")))
     openbb_host: str = os.getenv("OPENBB_HOST", "0.0.0.0")
     
     # Environment

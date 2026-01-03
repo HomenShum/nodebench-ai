@@ -35,7 +35,7 @@ export const transcribeVoiceMemo = internalAction({
 
     // Generate title with GPT
     const titleResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       messages: [
         {
           role: "system",

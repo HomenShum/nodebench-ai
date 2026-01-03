@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     """Application settings"""
     
     # Server configuration
-    research_port: int = int(os.getenv("RESEARCH_PORT", "8002"))
+    # Railway uses PORT env var; fall back to RESEARCH_PORT for local dev
+    research_port: int = int(os.getenv("PORT", os.getenv("RESEARCH_PORT", "8002")))
     research_host: str = os.getenv("RESEARCH_HOST", "0.0.0.0")
     
     # Convex configuration

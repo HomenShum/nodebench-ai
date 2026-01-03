@@ -53,6 +53,11 @@ const PhaseAllShowcase = lazy(() =>
   })),
 );
 const FootnotesPage = lazy(() => import("@/features/research/views/FootnotesPage"));
+const PublicSignalsLog = lazy(() =>
+  import("@/features/research/views/PublicSignalsLog").then((mod) => ({
+    default: mod.PublicSignalsLog,
+  })),
+);
 
 const viewFallback = (
   <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
@@ -70,7 +75,7 @@ interface MainLayoutProps {
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowResearchHub }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes'>('research');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals'>('research');
   const [isGridMode, setIsGridMode] = useState(false);
   // Transition state for smooth view changes
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -543,24 +548,26 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   // Sync main view with URL hash for primary hubs
   useEffect(() => {
-    const applyFromHash = () => {
-      try {
-        const h = (window.location.hash || '').toLowerCase();
-        if (h.startsWith('#agents')) {
-          setCurrentView('agents');
-        } else if (h.startsWith('#calendar')) {
-          setCurrentView('calendar');
-        } else if (h.startsWith('#roadmap')) {
-          setCurrentView('roadmap');
-        } else if (h.startsWith('#timeline')) {
-          setCurrentView('timeline');
-        } else if (h.startsWith('#documents') || h.startsWith('#docs')) {
-          setCurrentView('documents');
-        } else if (h.startsWith('#showcase') || h.startsWith('#demo')) {
-          setCurrentView('showcase');
-        } else if (h.startsWith('#footnotes') || h.startsWith('#sources')) {
-          setCurrentView('footnotes');
-        }
+    const applyFromHash = () => { 
+      try { 
+        const h = (window.location.hash || '').toLowerCase(); 
+        if (h.startsWith('#agents')) { 
+          setCurrentView('agents'); 
+        } else if (h.startsWith('#calendar')) { 
+          setCurrentView('calendar'); 
+        } else if (h.startsWith('#roadmap')) { 
+          setCurrentView('roadmap'); 
+        } else if (h.startsWith('#timeline')) { 
+          setCurrentView('timeline'); 
+        } else if (h.startsWith('#signals')) { 
+          setCurrentView('signals'); 
+        } else if (h.startsWith('#documents') || h.startsWith('#docs')) { 
+          setCurrentView('documents'); 
+        } else if (h.startsWith('#showcase') || h.startsWith('#demo')) { 
+          setCurrentView('showcase'); 
+        } else if (h.startsWith('#footnotes') || h.startsWith('#sources')) { 
+          setCurrentView('footnotes'); 
+        } 
       } catch {
         // ignore
       }
@@ -649,21 +656,23 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 )}
               </button>
 
-              <h1 className="text-base sm:text-lg font-semibold text-gray-900">
-                {currentView === 'research'
-                  ? 'Home'
-                  : currentView === 'public'
-                    ? 'Public Documents'
-                    : currentView === 'calendar'
-                      ? 'Calendar'
-                      : currentView === 'roadmap'
-                        ? 'Roadmap'
-                        : currentView === 'timeline'
-                          ? 'Timeline'
-                          : selectedDocumentId
-                            ? 'My Documents'
-                            : 'My Workspace'}
-              </h1>
+              <h1 className="text-base sm:text-lg font-semibold text-gray-900"> 
+                {currentView === 'research' 
+                  ? 'Home' 
+                  : currentView === 'public' 
+                    ? 'Public Documents' 
+                    : currentView === 'calendar' 
+                      ? 'Calendar' 
+                      : currentView === 'roadmap' 
+                        ? 'Roadmap' 
+                        : currentView === 'timeline' 
+                          ? 'Timeline' 
+                          : currentView === 'signals'
+                            ? 'Signals'
+                          : selectedDocumentId 
+                            ? 'My Documents' 
+                            : 'My Workspace'} 
+              </h1> 
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
@@ -780,21 +789,23 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <TimelineRoadmapView />
               ) : currentView === 'showcase' ? (
                 <PhaseAllShowcase onBack={() => setCurrentView('research')} />
-              ) : currentView === 'footnotes' ? (
-                <FootnotesPage
-                  library={{
-                    citations: {},
-                    order: [],
-                    updatedAt: new Date().toISOString(),
-                  }}
-                  briefTitle="Latest Intelligence Brief"
-                  onBack={() => setCurrentView('research')}
-                />
-              ) : (
-                <div className="h-full flex">
-                  <div className="flex-1 overflow-hidden">
-                    {(isGridMode || !!selectedDocumentId) ? (
-                      <TabManager
+              ) : currentView === 'footnotes' ? ( 
+                <FootnotesPage 
+                  library={{ 
+                    citations: {}, 
+                    order: [], 
+                    updatedAt: new Date().toISOString(), 
+                  }} 
+                  briefTitle="Latest Intelligence Brief" 
+                  onBack={() => setCurrentView('research')} 
+                /> 
+              ) : currentView === 'signals' ? (
+                <PublicSignalsLog />
+              ) : ( 
+                <div className="h-full flex"> 
+                  <div className="flex-1 overflow-hidden"> 
+                    {(isGridMode || !!selectedDocumentId) ? ( 
+                      <TabManager 
                         selectedDocumentId={selectedDocumentId}
                         onDocumentSelect={handleDocumentSelect}
                         isGridMode={isGridMode}

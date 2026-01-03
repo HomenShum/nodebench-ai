@@ -216,7 +216,7 @@ Always structure your response as:
  */
 export const multiSourceResearchAgent = new Agent(components.agent, {
   name: "Multi-Source Research Agent",
-  languageModel: openai.chat("gpt-4o-mini"),
+  languageModel: openai.chat("gpt-5-mini"),
   instructions: RESEARCH_AGENT_PROMPT,
   tools: {
     comprehensiveResearch,

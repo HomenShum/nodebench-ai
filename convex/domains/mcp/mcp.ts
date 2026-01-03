@@ -512,6 +512,7 @@ export const connectToServer = internalAction({
         await ctx.runAction(internal.domains.mcp.mcp.discoverAndStoreTools, {
           serverId: args.serverId,
           serverUrl: server.url,
+          apiKey: server.apiKey,
         });
       }
 
@@ -583,11 +584,12 @@ export const discoverAndStoreTools = internalAction({
   args: {
     serverId: v.id("mcpServers"),
     serverUrl: v.string(),
+    apiKey: v.optional(v.string()),
   },
   returns: v.null(),
-  handler: async (ctx, { serverId, serverUrl }) => {
+  handler: async (ctx, { serverId, serverUrl, apiKey }) => {
     try {
-      const tools = await discoverToolsWithSdk(serverUrl);
+      const tools = await discoverToolsWithSdk(serverUrl, apiKey);
 
       // Mark existing tools unavailable before refresh
       await ctx.runMutation(internal.domains.mcp.mcp.markToolsUnavailable, { serverId });

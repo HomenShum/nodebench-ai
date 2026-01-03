@@ -9,7 +9,8 @@
  * 2. Start server: openbb-mcp --transport streamable-http --port 8001 --default-categories equity,crypto,economy,news
  * 3. Set environment variables:
  *    - OPENBB_MCP_SERVER_URL (default: http://127.0.0.1:8001)
- *    - OPENBB_MCP_AUTH_TOKEN (optional)
+ *    - OPENBB_API_KEY (optional; sent as Bearer token)
+ *    - OPENBB_MCP_AUTH_TOKEN (optional legacy alias)
  */
 
 "use node";
@@ -44,13 +45,12 @@ export const callOpenBBMCP = internalAction({
     }
 
     try {
+      const token = process.env.OPENBB_API_KEY || process.env.OPENBB_MCP_AUTH_TOKEN;
       const response = await fetch(url.toString(), {
         method: args.method,
         headers: {
           "Content-Type": "application/json",
-          ...(process.env.OPENBB_MCP_AUTH_TOKEN && {
-            "Authorization": `Bearer ${process.env.OPENBB_MCP_AUTH_TOKEN}`,
-          }),
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         ...(args.method === "POST" && args.body && {
           body: JSON.stringify(args.body),
@@ -76,6 +76,68 @@ export const callOpenBBMCP = internalAction({
         error: error.message || "Unknown error",
       };
     }
+  },
+});
+
+/**
+ * Health check against the OpenBB MCP server.
+ */
+export const openbbHealth = internalAction({
+  args: {},
+  returns: v.any(),
+  handler: async (ctx): Promise<any> => {
+    const result: any = await ctx.runAction(internal.actions.openbbActions.callOpenBBMCP, {
+      endpoint: "/health",
+      method: "GET",
+    });
+    if (!result?.success) {
+      throw new Error(result?.error || "OpenBB health check failed");
+    }
+    return result.data;
+  },
+});
+
+/**
+ * List available OpenBB tools (optionally by category).
+ */
+export const openbbListTools = internalAction({
+  args: { category: v.optional(v.string()) },
+  returns: v.any(),
+  handler: async (ctx, args): Promise<any> => {
+    const result: any = await ctx.runAction(internal.actions.openbbActions.callOpenBBMCP, {
+      endpoint: "/admin/available_tools",
+      method: "GET",
+      params: args.category ? { category: args.category } : undefined,
+    });
+    if (!result?.success) {
+      throw new Error(result?.error || "Failed to list OpenBB tools");
+    }
+    return result.data;
+  },
+});
+
+/**
+ * Execute an OpenBB tool.
+ */
+export const openbbExecuteTool = internalAction({
+  args: {
+    toolName: v.string(),
+    parameters: v.optional(v.any()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args): Promise<any> => {
+    const result: any = await ctx.runAction(internal.actions.openbbActions.callOpenBBMCP, {
+      endpoint: "/tools/execute",
+      method: "POST",
+      body: {
+        tool_name: args.toolName,
+        parameters: args.parameters ?? {},
+      },
+    });
+    if (!result?.success) {
+      throw new Error(result?.error || "OpenBB tool execution failed");
+    }
+    return result.data;
   },
 });
 
@@ -163,4 +225,3 @@ export const getOpenBBTools = internalAction({
     return result.data;
   },
 });
-

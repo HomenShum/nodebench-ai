@@ -284,19 +284,33 @@ export const runDailyMorningBrief = (internalAction as any)({
             storeResult.dateString,
           );
 
-          await ctx.runAction(api.domains.integrations.ntfy.sendNotification, {
-            title: digestPayload.title,
-            body: digestPayload.body,
-            priority: 3,
-            tags: ["newspaper", "bar_chart", "briefcase"],
-            click: DASHBOARD_URL,
-            attach: chartAttachment?.url,
-            filename: chartAttachment ? `dashboard-${storeResult.dateString}.svg` : undefined,
-            eventType: "morning_digest",
-          });
+          await ctx.runAction(api.domains.integrations.ntfy.sendNotification, { 
+            title: digestPayload.title, 
+            body: digestPayload.body, 
+            priority: 3, 
+            tags: ["newspaper", "bar_chart", "briefcase"], 
+            click: DASHBOARD_URL, 
+            attach: chartAttachment?.url, 
+            filename: chartAttachment ? `dashboard-${storeResult.dateString}.svg` : undefined, 
+            eventType: "morning_digest", 
+          }); 
 
-          ntfySent = true;
-          console.log("[dailyMorningBrief] ntfy digest sent");
+          // Also append the brief into the public landing log (#signals).
+          try {
+            await ctx.runMutation(internal.domains.landing.landingPageLog.appendSystem, {
+              kind: "brief",
+              title: `Morning Dossier - ${storeResult.dateString}`,
+              markdown: `${digestPayload.body}\n\n${formatMarkdownLink("Open Signals Log", `${DASHBOARD_URL}#signals`)}`,
+              source: "daily_brief_cron",
+              tags: ["morning_brief", "automated"],
+              day: storeResult.dateString,
+            });
+          } catch (logErr: any) {
+            console.warn("[dailyMorningBrief] landingPageLog append failed:", logErr?.message || logErr);
+          }
+ 
+          ntfySent = true; 
+          console.log("[dailyMorningBrief] ntfy digest sent"); 
 
           if (digestMemory?._id) {
             await ctx.runMutation(
@@ -2245,8 +2259,9 @@ function buildNtfyDigestPayload(args: {
         lines.push(`Editor's Take: ${clipText(editorTake, options.editorTakeLen)} ${formatMarkdownLink("Source", leadStory.url)}`);
       }
     }
-    lines.push(formatMarkdownLink("Open Full Dashboard", DASHBOARD_URL));
-    lines.push("");
+    lines.push(formatMarkdownLink("Open Full Dashboard", DASHBOARD_URL)); 
+    lines.push(formatMarkdownLink("Open Signals Log", `${DASHBOARD_URL}#signals`)); 
+    lines.push(""); 
 
     // === ACT I: THE SETUP (Narrative thesis, not metadata) ===
     lines.push("**ACT I: The Setup**");

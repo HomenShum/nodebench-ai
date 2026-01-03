@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen, LogIn } from 'lucide-react';
+import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen, LogIn, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
 
@@ -534,6 +534,8 @@ export function FastAgentPanel({
   const deleteStreamingThread = useMutation(api.domains.agents.fastAgentPanelStreaming.deleteThread);
   const deleteMessage = useMutation(api.domains.agents.fastAgentPanelStreaming.deleteMessage);
   const saveChatSessionToDossier = useMutation(api.domains.documents.documents.saveChatSessionToDossier);
+  // Append to landing page signals log
+  const appendToSignalsLog = useMutation((api as any).domains.landing.landingPageLog.appendFromUser);
   // NEW: Unified document generation and creation action
   const generateAndCreateDocument = useAction(api.domains.agents.fastAgentDocumentCreation.generateAndCreateDocument);
   // Auto-naming action for threads
@@ -1332,11 +1334,11 @@ export function FastAgentPanel({
                   )}
                 </button>
 
-                {/* Skills button with popover */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowSkillsPanel(!showSkillsPanel)}
+                {/* Skills button with popover */} 
+                <div className="relative"> 
+                  <button 
+                    type="button" 
+                    onClick={() => setShowSkillsPanel(!showSkillsPanel)} 
                     className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${showSkillsPanel
                       ? 'bg-blue-50 border-blue-200 text-blue-700'
                       : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
@@ -1363,11 +1365,70 @@ export function FastAgentPanel({
                         }}
                       />
                     </>
-                  )}
-                </div>
+                  )} 
+                </div> 
 
+                {/* Public signals log quick-link */}
                 <button
                   type="button"
+                  onClick={() => {
+                    try {
+                      window.location.hash = '#signals';
+                      toast.success('Opened Signals');
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]"
+                  title="Open public Signals log (#signals)"
+                >
+                  <Radio className="w-3.5 h-3.5" />
+                  Signals
+                </button>
+
+                {/* Share current thread summary to Signals log */}
+                {isAuthenticated && activeThreadId && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        // Get the thread title or use a default
+                        const threadTitle = threads.find((t) => t._id === activeThreadId)?.title || 'Agent Thread Summary';
+
+                        // Collect the last few messages as a summary
+                        const recentMsgs = (streamingMessages ?? [])
+                          .filter((m) => m.role === 'assistant' && m.content)
+                          .slice(-3)
+                          .map((m) => typeof m.content === 'string' ? m.content : JSON.stringify(m.content))
+                          .join('\n\n---\n\n');
+
+                        if (!recentMsgs.trim()) {
+                          toast.error('No assistant messages to share');
+                          return;
+                        }
+
+                        await appendToSignalsLog({
+                          kind: 'note',
+                          title: threadTitle,
+                          markdown: recentMsgs.slice(0, 10000), // Cap at 10k chars
+                          agentThreadId: activeThreadId,
+                          tags: ['agent', 'shared'],
+                        });
+                        toast.success('Shared to Signals');
+                      } catch (err: any) {
+                        toast.error(err?.message || 'Failed to share to Signals');
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]"
+                    title="Share thread summary to public Signals log"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    Share
+                  </button>
+                )}
+
+                <button 
+                  type="button" 
                   onClick={() => {
                     setActiveThreadId(null);
                     setInput('');

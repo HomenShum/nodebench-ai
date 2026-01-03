@@ -177,6 +177,56 @@ export const createForDocument = mutation({
 });
 
 /**
+ * Ensure a timeline exists for an agent thread.
+ *
+ * This is used by the Fast Agent Panel and other agent-thread keyed flows
+ * where no documentId is available at creation time.
+ */
+export const ensureForThread = mutation({
+  args: {
+    agentThreadId: v.string(),
+    name: v.string(),
+    baseStartMs: v.optional(v.number()),
+  },
+  returns: v.id("agentTimelines"),
+  handler: async (ctx, args) => {
+    const userId = await getSafeUserId(ctx);
+
+    const existing = await ctx.db
+      .query("agentTimelines")
+      .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", args.agentThreadId))
+      .first();
+
+    if (existing) {
+      if (existing.createdBy !== userId) {
+        throw new Error("Not authorized");
+      }
+      // Keep the name reasonably up to date for UI.
+      if (existing.name !== args.name || (args.baseStartMs && existing.baseStartMs !== args.baseStartMs)) {
+        await ctx.db.patch(existing._id, {
+          name: args.name,
+          baseStartMs: args.baseStartMs ?? existing.baseStartMs,
+          updatedAt: Date.now(),
+        });
+      }
+      return existing._id;
+    }
+
+    const now = Date.now();
+    const timelineId = await ctx.db.insert("agentTimelines", {
+      agentThreadId: args.agentThreadId,
+      name: args.name,
+      baseStartMs: args.baseStartMs,
+      createdBy: userId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return timelineId;
+  },
+});
+
+/**
  * List agent tasks by thread ID (for Fast Agent Panel Tasks Tab)
  * Returns hierarchical agent orchestration tasks for the given thread
  */

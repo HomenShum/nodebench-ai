@@ -41,6 +41,8 @@ export const APPROVED_MODELS = [
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 
+// Default model: claude-haiku-4.5 (fast, cost-effective)
+// Fallback chain: anthropic → openai → gemini
 export const DEFAULT_MODEL: ApprovedModel = "claude-haiku-4.5";
 
 /**

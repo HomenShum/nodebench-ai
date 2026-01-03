@@ -20,6 +20,12 @@ import {
   type LlmTask,
 } from "../../../shared/llm/modelCatalog";
 
+const UNLIMITED_SMALL_MODELS = new Set([
+  "gpt-5-nano",
+  "gemini-3-flash",
+  "claude-haiku-4.5",
+]);
+
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -165,7 +171,7 @@ export const canUseModel = query({
  * Note: When called from an action, pass the userId explicitly since auth context
  * is not available in action -> query calls.
  */
-export const checkRequestAllowed = query({
+export const checkRequestAllowed = query({ 
   args: {
     model: v.string(),
     estimatedInputTokens: v.number(),
@@ -178,7 +184,7 @@ export const checkRequestAllowed = query({
     estimatedCost: v.number(),
     suggestedModel: v.optional(v.string()),
   }),
-  handler: async (ctx, { model, estimatedInputTokens, estimatedOutputTokens, userId: explicitUserId }) => {
+  handler: async (ctx, { model, estimatedInputTokens, estimatedOutputTokens, userId: explicitUserId }) => { 
     // Use explicit userId if provided (from actions), otherwise try auth context
     const userId = explicitUserId ?? await getAuthUserId(ctx);
     const tier = await getUserTier(ctx, userId) as UserTier;
@@ -196,18 +202,23 @@ export const checkRequestAllowed = query({
       };
     }
 
-    // Calculate estimated cost
-    const outputTokens = estimatedOutputTokens ?? Math.ceil(estimatedInputTokens * 0.5);
-    const estimatedCost = calculateRequestCost(model, estimatedInputTokens, outputTokens);
+    // Calculate estimated cost 
+    const outputTokens = estimatedOutputTokens ?? Math.ceil(estimatedInputTokens * 0.5); 
+    const estimatedCost = calculateRequestCost(model, estimatedInputTokens, outputTokens); 
 
-    // Check token limit per request
-    const totalTokens = estimatedInputTokens + outputTokens;
-    if (totalTokens > limits.maxTokensPerRequest) {
-      return {
-        allowed: false,
-        reason: `Request exceeds max tokens per request (${limits.maxTokensPerRequest.toLocaleString()})`,
-        estimatedCost,
-      };
+    // Check token limit per request 
+    const totalTokens = estimatedInputTokens + outputTokens; 
+    if (totalTokens > limits.maxTokensPerRequest) { 
+      return { 
+        allowed: false, 
+        reason: `Request exceeds max tokens per request (${limits.maxTokensPerRequest.toLocaleString()})`, 
+        estimatedCost, 
+      }; 
+    } 
+
+    // Unlimited small models: skip daily request/token/cost gating (still keep per-request max).
+    if (UNLIMITED_SMALL_MODELS.has(model)) {
+      return { allowed: true, estimatedCost: 0, reason: "unlimited_small_model" };
     }
 
     // Get current usage

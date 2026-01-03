@@ -498,11 +498,11 @@ export function getProviderStatus(provider: LlmProvider): ProviderStatus | undef
  * Check if a prompt fits within a model's context window.
  * Returns { fits: boolean, tokenEstimate: number, contextWindow: number, overflow: number }
  */
-export function validateContextWindow(
-  modelName: string,
-  promptText: string,
-  reserveOutputTokens: number = 4000
-): { fits: boolean; tokenEstimate: number; contextWindow: number; overflow: number } {
+export function validateContextWindow( 
+  modelName: string, 
+  promptText: string, 
+  reserveOutputTokens: number = 4000 
+): { fits: boolean; tokenEstimate: number; contextWindow: number; overflow: number } { 
   const pricing = modelPricing[modelName];
   const contextWindow = pricing?.contextWindow ?? 128000; // Default to 128K
   
@@ -517,6 +517,32 @@ export function validateContextWindow(
     contextWindow,
     overflow,
   };
+} 
+
+// -----------------------------------------------------------------------------
+// MODEL FALLBACK CHAINS (model-level, not just provider-level)
+// -----------------------------------------------------------------------------
+
+/**
+ * Explicit per-model fallback chains used when a request fails due to rate limits
+ * or temporary provider issues. Chains should only include approved models.
+ */
+export const modelFallbackChains: Record<string, string[]> = {
+  // OpenAI flagship → smaller OpenAI → cross-provider small model
+  "gpt-5.2": ["gpt-5-mini", "gpt-5-nano", "claude-haiku-4.5", "gemini-3-flash"],
+  "gpt-5-mini": ["gpt-5-nano", "claude-haiku-4.5", "gemini-3-flash"],
+
+  // Anthropic premium → cheaper Anthropic → cross-provider small model
+  "claude-opus-4.5": ["claude-sonnet-4.5", "claude-haiku-4.5", "gpt-5-mini", "gemini-3-flash"],
+  "claude-sonnet-4.5": ["claude-haiku-4.5", "gpt-5-mini", "gemini-3-flash"],
+
+  // Gemini long-context → fast Gemini → cross-provider small model
+  "gemini-3-pro": ["gemini-3-flash", "gpt-5-mini", "claude-haiku-4.5"],
+};
+
+export function getNextFallback(model: string, attempted: string[]): string | null {
+  const chain = modelFallbackChains[model] ?? [];
+  return chain.find((m) => !attempted.includes(m)) ?? null;
 }
 
 /**

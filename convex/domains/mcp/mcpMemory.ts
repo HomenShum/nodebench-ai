@@ -4,7 +4,6 @@ import { v } from "convex/values";
 export const writeMemory = internalMutation({
   args: {
     entry: v.object({
-      id: v.optional(v.string()),
       key: v.string(),
       content: v.string(),
       metadata: v.optional(v.any()),
@@ -13,7 +12,6 @@ export const writeMemory = internalMutation({
   returns: v.string(),
   handler: async (ctx, args) => {
     const now = Date.now();
-    const entryId = args.entry.id ?? `mem_${now}_${Math.random().toString(36).substr(2, 9)}`;
     const existing = await ctx.db
       .query("mcpMemoryEntries")
       .withIndex("by_key", (q) => q.eq("key", args.entry.key))
@@ -28,7 +26,7 @@ export const writeMemory = internalMutation({
       return existing._id as any;
     }
 
-    await ctx.db.insert("mcpMemoryEntries", {
+    const id = await ctx.db.insert("mcpMemoryEntries", {
       key: args.entry.key,
       content: args.entry.content,
       metadata: args.entry.metadata,
@@ -36,7 +34,7 @@ export const writeMemory = internalMutation({
       updatedAt: now,
     });
 
-    return entryId;
+    return id as any;
   },
 });
 
@@ -67,7 +65,12 @@ export const readMemory = internalQuery({
 });
 
 export const listMemory = internalQuery({
-  args: { filter: v.optional(v.string()) },
+  args: {
+    filter: v.optional(v.string()),
+    key: v.optional(v.string()),
+    contains: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
   returns: v.array(v.object({
     id: v.string(),
     key: v.string(),
@@ -75,16 +78,37 @@ export const listMemory = internalQuery({
     metadata: v.optional(v.any()),
   })),
   handler: async (ctx, args) => {
-    const filter = args.filter ?? "";
+    const limit = args.limit && args.limit > 0 ? args.limit : 100;
+
+    // Exact key lookup fast-path.
+    if (args.key) {
+      const entry = await ctx.db
+        .query("mcpMemoryEntries")
+        .withIndex("by_key", (q) => q.eq("key", args.key as string))
+        .first();
+      if (!entry) return [];
+      return [{
+        id: entry._id as any,
+        key: entry.key,
+        content: entry.content,
+        metadata: entry.metadata,
+      }];
+    }
+
+    const contains = (args.contains ?? args.filter ?? "").toLowerCase();
     const entries = await ctx.db.query("mcpMemoryEntries").collect();
-    return entries
-      .filter((e) => e.key.includes(filter))
-      .map((e) => ({
-        id: e._id as any,
-        key: e.key,
-        content: e.content,
-        metadata: e.metadata,
-      }));
+    const filtered = contains
+      ? entries.filter((e) => (e.key ?? "").toLowerCase().includes(contains))
+      : entries;
+
+    filtered.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+
+    return filtered.slice(0, limit).map((e) => ({
+      id: e._id as any,
+      key: e.key,
+      content: e.content,
+      metadata: e.metadata,
+    }));
   },
 });
 
@@ -98,6 +122,40 @@ export const deleteMemory = internalMutation({
       .first();
     if (!entry) return false;
     await ctx.db.delete(entry._id);
+    return true;
+  },
+});
+
+export const getMemoryById = internalQuery({
+  args: { id: v.id("mcpMemoryEntries") },
+  returns: v.union(
+    v.object({
+      id: v.string(),
+      key: v.string(),
+      content: v.string(),
+      metadata: v.optional(v.any()),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const entry = await ctx.db.get(args.id);
+    if (!entry) return null;
+    return {
+      id: entry._id as any,
+      key: entry.key,
+      content: entry.content,
+      metadata: entry.metadata,
+    };
+  },
+});
+
+export const deleteMemoryById = internalMutation({
+  args: { id: v.id("mcpMemoryEntries") },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const entry = await ctx.db.get(args.id);
+    if (!entry) return false;
+    await ctx.db.delete(args.id);
     return true;
   },
 });

@@ -50,7 +50,8 @@ export const storeEntityContext = mutation({
     personaHooks: v.optional(v.any()),
     spreadsheetId: v.optional(v.id("documents")),
     rowIndex: v.optional(v.number()),
-    researchedBy: v.id("users"),
+    // Optional for anonymous users - they can still research entities
+    researchedBy: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
     const now = Date.now();

@@ -21,7 +21,16 @@
       "Bash(node test-ntfy-comprehensive.js:*)",
       "Bash(node test-ntfy-entity-quality.js:*)",
       "Bash(node:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add Deep Agent + Linkup API Intelligence Layer for funding detection\n\n## Enrichment Pipeline\n- Add fundingEvents and enrichmentJobs tables to schema\n- Implement pattern-based funding detection from feed items\n- Add cross-source verification with confidence scoring\n- Create entity promotion pipeline for banker-grade dossiers\n\n## New Tools & Actions\n- linkupFetch: Linkup /fetch API with auto-escalation for thin content\n- fundingDetection: Pattern matching for funding announcements\n- fundingVerification: Multi-source corroboration/contradiction detection\n- entityPromotion: Promote funding events to first-class entities\n\n## Agent Integration\n- Register getTodaysFundingEvents, searchFundingEvents, detectFundingFromFeeds\n- Add Funding Detection Workflow to agent instructions\n- Enable natural language queries like \"who raised money today?\"\n\n## Digest Enhancement\n- Add funding sections to daily morning brief\n- Format by round type (Seed, Series A, etc.)\n- Include verification status and source count\n\nTested with Vaccinex $60M funding:\n- 85% confidence (verified)\n- 4 corroborating sources found\n- Entity promotion working\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add Deep Agent + Linkup API Intelligence Layer for funding detection\n\n## Enrichment Pipeline\n- Add fundingEvents and enrichmentJobs tables to schema\n- Implement pattern-based funding detection from feed items\n- Add cross-source verification with confidence scoring\n- Create entity promotion pipeline for banker-grade dossiers\n\n## New Tools & Actions\n- linkupFetch: Linkup /fetch API with auto-escalation for thin content\n- fundingDetection: Pattern matching for funding announcements\n- fundingVerification: Multi-source corroboration/contradiction detection\n- entityPromotion: Promote funding events to first-class entities\n\n## Agent Integration\n- Register getTodaysFundingEvents, searchFundingEvents, detectFundingFromFeeds\n- Add Funding Detection Workflow to agent instructions\n- Enable natural language queries like \"who raised money today?\"\n\n## Digest Enhancement\n- Add funding sections to daily morning brief\n- Format by round type (Seed, Series A, etc.)\n- Include verification status and source count\n\nTested with Vaccinex $60M funding:\n- 85% confidence (verified)\n- 4 corroborating sources found\n- Entity promotion working\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(cat:*)",
+      "Bash(CONVEX_URL=https://formal-shepherd-851.convex.cloud npx tsx:*)",
+      "Bash(CONVEX_URL=https://agile-caribou-964.convex.cloud npx tsx:*)",
+      "Bash(timeout 180 npx tsx:*)",
+      "Bash(timeout 60 npx tsx:*)",
+      "Bash(npx convex:*)",
+      "Bash(timeout 90 npx tsx:*)",
+      "Bash(timeout 50 npx tsx:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []

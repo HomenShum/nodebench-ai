@@ -35,6 +35,8 @@ export const callMcpTool: any = action({
   }> => {
     const userIdentity = await ctx.auth.getUserIdentity();
     const userId = userIdentity?.subject as Id<"users"> | undefined;
+    let serverId = args.serverId as Id<"mcpServers"> | undefined;
+    let server: any = null;
 
     // Durable per-user daily rate limit via dailyUsage
     const today = new Date().toISOString().slice(0, 10);
@@ -62,9 +64,6 @@ export const callMcpTool: any = action({
         return idx === -1 ? PRIORITY.length : idx;
       };
 
-      let serverId = args.serverId as Id<"mcpServers"> | undefined;
-      let server: any = null;
-
       // If no serverId provided, pick the best available server for the current user
       if (!serverId) {
         const servers = await ctx.runQuery(api.domains.mcp.mcp.listMcpServers, {});
@@ -80,11 +79,21 @@ export const callMcpTool: any = action({
       }
 
       if (!serverId) {
-        return { success: false, error: "No MCP server configured", serverId: undefined, serverName: undefined };
+        const envUrl = process.env.CORE_AGENT_MCP_SERVER_URL;
+        if (envUrl) {
+          server = {
+            name: "core_agent_server",
+            url: envUrl,
+            apiKey: process.env.CORE_AGENT_MCP_AUTH_TOKEN,
+          };
+        } else {
+          return { success: false, error: "No MCP server configured", serverId: undefined, serverName: undefined };
+        }
       }
 
+
       // Get server configuration from database (if not already fetched)
-      if (!server) {
+      if (!server && serverId) {
         server = await ctx.runQuery(api.domains.mcp.mcp.getMcpServerById, {
           serverId,
         });
@@ -117,13 +126,14 @@ export const callMcpTool: any = action({
         "Accept": "application/json",
       };
 
-      if (userId) {
+      if (userId && serverId) {
         headers["X-User-Id"] = userId;
       }
 
       // Add API key if provided
       if (server.apiKey) {
         headers["Authorization"] = `Bearer ${server.apiKey}`;
+        headers["x-mcp-token"] = server.apiKey;
       }
 
       console.log(`Making MCP request to ${server.url}:`, JSON.stringify(requestBody, null, 2));
@@ -168,11 +178,11 @@ export const callMcpTool: any = action({
       }
 
       // TODO: Update tool usage statistics when properly implemented
-      if (userId) {
+      if (userId && serverId) {
         try {
           await ctx.runMutation((api as any).mcp.storeUsageHistory, {
             userId,
-            toolId: serverId ? await findToolId(ctx, serverId, args.toolName) : (undefined as any),
+            toolId: await findToolId(ctx, serverId, args.toolName),
             serverId: serverId as Id<"mcpServers">,
             naturalLanguageQuery: args.toolName,
             parameters: args.parameters,
@@ -194,12 +204,12 @@ export const callMcpTool: any = action({
 
     } catch (error) {
       console.error(`Failed to call MCP tool ${args.toolName}:`, error);
-      if (userId) {
+      if (userId && serverId) {
         try {
           await ctx.runMutation((api as any).mcp.storeUsageHistory, {
             userId,
-            toolId: args.serverId ? await findToolId(ctx, args.serverId as Id<"mcpServers">, args.toolName) : (undefined as any),
-            serverId: args.serverId as Id<"mcpServers">,
+            toolId: await findToolId(ctx, serverId, args.toolName),
+            serverId: serverId as Id<"mcpServers">,
             naturalLanguageQuery: args.toolName,
             parameters: args.parameters,
             executionSuccess: false,
@@ -213,7 +223,7 @@ export const callMcpTool: any = action({
       return {
         success: false,
         error: error instanceof Error ? error.message : "Tool execution failed",
-        serverId: args.serverId ?? undefined,
+        serverId,
       };
     }
   },

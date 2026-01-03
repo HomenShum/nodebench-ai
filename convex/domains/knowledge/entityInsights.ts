@@ -1098,8 +1098,11 @@ export const getEntityInsights = action({
     forceRefresh: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    // Support both authenticated and anonymous users
+    // Anonymous users can still perform entity research (external data)
+    // This enables evaluation mode and anonymous chat usage
+    const userId = (ctx as any).evaluationUserId ?? await getAuthUserId(ctx);
+    // Note: userId can be null for anonymous users - that's OK for entity research
 
     const existing: any = await ctx.runQuery(
       api.domains.knowledge.entityContexts.getEntityContext,

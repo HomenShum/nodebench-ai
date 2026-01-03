@@ -17,13 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Expose port
+# Railway injects PORT env var at runtime
+ENV PORT=8002
+
+# Expose default port (Railway overrides at runtime)
 EXPOSE 8002
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8002/health || exit 1
-
-# Run the application
+# Run the application (uses PORT from env)
 CMD ["python", "server.py"]
 
