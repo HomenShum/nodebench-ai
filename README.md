@@ -1915,6 +1915,111 @@ Comprehensive UI improvements to the Live Dossier view to enhance readability, v
 
 ---
 
+### 2026-01-06 - Agent-Powered Digest System + Funding Detection + Multi-Persona Intelligence ✅
+
+**Status**: ✅ Complete - Production Deployed & Tested
+
+#### Overview
+Major enhancement to the agent-powered digest system with persona-specific intelligence briefs, funding event detection pipeline, and the "What? So What? Now What?" reflection framework. Includes 3-iteration refinement loop for quality optimization.
+
+#### Key Features
+
+##### 1. **Agent-Powered Digest Generation** (`convex/domains/agents/digestAgent.ts`)
+- Structured output mode with Zod schema validation (`AgentDigestObjectSchema`)
+- 16 persona configurations (JPM_STARTUP_BANKER, EARLY_STAGE_VC, CTO_TECH_LEAD, etc.)
+- "What? / So What? / Now What?" reflection framework on lead story and signals
+- Budget-based ntfy formatting guaranteeing ACT III (action items) always visible
+- Persona name normalization map (47 LLM variations → 16 valid personas)
+- Database caching with TTL via `digestCache` table
+
+##### 2. **Funding Detection Pipeline** (`convex/tools/media/linkupFetch.ts`, `linkupSearch.ts`)
+- Linkup API integration for deep web fetches with auto-escalation
+- Pattern-based funding event detection from feed items
+- Cross-source verification with confidence scoring
+- Entity promotion pipeline for banker-grade dossiers
+
+##### 3. **Multi-Persona Morning Brief** (`convex/workflows/dailyMorningBrief.ts`)
+- `runAgentPoweredDigest` action with persona parameter
+- Breaking alert detection with urgency classification
+- Multi-channel payload storage (ntfy, Slack, email-ready)
+- Export function for offline inspection (`exportDailyBriefNtfyPayloads`)
+
+##### 4. **Quality Refinements (3-Iteration Loop)**
+- **Iteration 1**: Persona normalization + entity spotlight parsing fixes
+- **Iteration 2**: Diverse persona prompts + fundingStage cleanup
+- **Iteration 3**: Final validation across CTO_TECH_LEAD and JPM_STARTUP_BANKER personas
+
+#### Files Added
+| File | Purpose |
+|------|---------|
+| `convex/domains/agents/digestAgent.ts` | Core digest generation agent with caching |
+| `convex/tools/integration/notificationTools.ts` | ntfy notification tool for coordinator |
+| `scripts/test-agent-digest.ts` | Integration test for digest formatting |
+| `scripts/export-dailybrief-ntfy-results.ts` | Export script for cached digests |
+| `scripts/results/iteration*.json` | Test results from refinement loop |
+| `convex/domains/documents/citations.ts` | Citation validation utilities |
+| `convex/domains/documents/citationValidator.ts` | Citation URL validator |
+| `convex/domains/evaluation/benchmarkHarness.ts` | Benchmark suite harness |
+| `convex/domains/evaluation/personaEpisodeEval.ts` | Persona episode evaluator |
+| `convex/domains/evaluation/systemE2E.ts` | System E2E tests |
+| `convex/tools/evaluation/groundTruthLookupTool.ts` | Ground truth lookup tool |
+| `convex/domains/tasks/workflows/bankingMemoWorkflow.ts` | Banking memo workflow |
+| `convex/domains/artifacts/` | Artifact persistence system |
+| `convex/domains/orchestrator/` | Agent orchestration layer |
+| `convex/domains/social/` | Social features module |
+| `scripts/run-*.ts` | Various test runner scripts |
+| `scripts/fetch-*-pricing.ts` | API pricing fetchers |
+
+#### Files Modified
+| File | Changes |
+|------|---------|
+| `convex/schema.ts` | Added `digestCache`, `fundingEvents`, `enrichmentJobs` tables |
+| `convex/workflows/dailyMorningBrief.ts` | Integrated agent-powered digest flow |
+| `convex/domains/agents/core/coordinatorAgent.ts` | Registered notification tools |
+| `convex/crons.ts` | Updated cron schedules |
+| `convex/domains/integrations/ntfy.ts` | Enhanced notification handling |
+| `convex/actions/openbbActions.ts` | OpenBB integration updates |
+| `convex/actions/researchMcpActions.ts` | Research MCP enhancements |
+| `convex/domains/billing/rateLimiting.ts` | Rate limit adjustments |
+| `convex/domains/evaluation/*.ts` | Evaluation framework updates |
+| `convex/domains/mcp/mcpClient.ts` | MCP client improvements |
+| `mcp_tools/core_agent_server/*` | Railway deployment configs |
+| `src/features/agents/components/FastAgentPanel/*` | UI streaming improvements |
+| `src/components/MiniNoteAgentChat.tsx` | Agent chat enhancements |
+| `python-mcp-servers/openbb/services/openbb_client.py` | OpenBB client updates |
+| `package.json` | Dependency updates |
+| `.gitignore` | Updated ignore patterns |
+
+#### Test Results
+```json
+{
+  "persona": "JPM_STARTUP_BANKER",
+  "metrics": {
+    "totalTimeMs": 580,
+    "digestGenerationMs": 37894,
+    "actionItemsCount": 5,
+    "signalsCount": 7,
+    "entitySpotlightCount": 3
+  },
+  "qualityMetrics": {
+    "allActionItemsTargetCorrectPersona": true,
+    "entityNamesClean": true,
+    "fundingStageClean": true,
+    "reflectionFrameworkPresent": true
+  }
+}
+```
+
+#### Verification
+- ✅ TypeScript compilation passes (`npx tsc -p convex --noEmit`)
+- ✅ Convex deployment successful
+- ✅ ntfy notifications delivered
+- ✅ Persona-specific action items validated
+- ✅ Reflection framework visible in output
+- ✅ ACT III (action items) never truncated
+
+---
+
 ### Previous Updates
 
 Earlier sessions produced several standalone markdown reports for agent

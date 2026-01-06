@@ -3,7 +3,7 @@
 // Supports hierarchical rendering for coordinator/specialized agent delegation
 
 import React, { useEffect, useRef, useMemo, useTransition, useDeferredValue } from 'react';
-import { UIMessageBubble } from './FastAgentPanel.UIMessageBubble';
+import { FastAgentUIMessageBubble as UIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import { TypingIndicator } from './TypingIndicator';
 import { useSmartAutoScroll } from './hooks/useSmartAutoScroll';
 import type { UIMessage } from '@convex-dev/agent/react';
@@ -23,11 +23,12 @@ interface UIMessageStreamProps {
   onEventSelect?: (event: EventOption) => void;
   onNewsSelect?: (article: NewsArticleOption) => void;
   onDocumentSelect?: (documentId: string) => void;
+  isQueued?: boolean;
 }
 
 // Extended UIMessage type with hierarchical metadata
 interface ExtendedUIMessage extends UIMessage {
-  id?: string;
+  id: string; // Enforce string ID to match UIMessage requirement
   _id?: string;
   metadata?: {
     agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
@@ -57,6 +58,7 @@ export function UIMessageStream({
   onEventSelect,
   onNewsSelect,
   onDocumentSelect,
+  isQueued = false,
 }: UIMessageStreamProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -451,6 +453,20 @@ export function UIMessageStream({
               return words.length > 40 ? words.substring(0, 40) + '...' : words;
             };
 
+            // Case 0: Queue processing
+            if (isQueued) {
+              const recentUserMessage = [...filteredMessages].reverse().find(msg => msg.role === 'user');
+              const intent = recentUserMessage?.text ? extractIntent(recentUserMessage.text) : 'your request';
+              return (
+                <div className="flex flex-col gap-2">
+                  <TypingIndicator message={`Waiting for available agent to handle ${intent}...`} />
+                  <div className="text-xs text-gray-400 pl-12 animate-pulse">
+                    Position in queue: 1 (Estimated wait: &lt; 5s)
+                  </div>
+                </div>
+              );
+            }
+
             // Case 1: User message with no assistant response yet (agent intercepting)
             if (lastMessage && lastMessage.role === 'user') {
               // Check if there's an assistant message after this user message
@@ -470,10 +486,10 @@ export function UIMessageStream({
             // Case 2: Streaming assistant message with NO parts/tools yet (truly empty)
             // If it has parts (tool calls, reasoning), the message bubble will show them
             if (lastMessage &&
-                lastMessage.role === 'assistant' &&
-                lastMessage.status === 'streaming' &&
-                (!lastMessage.text || lastMessage.text.trim().length === 0) &&
-                (!lastMessage.parts || lastMessage.parts.length === 0)) {
+              lastMessage.role === 'assistant' &&
+              lastMessage.status === 'streaming' &&
+              (!lastMessage.text || lastMessage.text.trim().length === 0) &&
+              (!lastMessage.parts || lastMessage.parts.length === 0)) {
 
               // Find the most recent user message to extract intent
               const recentUserMessage = [...filteredMessages].reverse().find(msg => msg.role === 'user');

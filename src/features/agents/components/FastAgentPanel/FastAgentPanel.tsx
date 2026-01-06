@@ -252,7 +252,7 @@ export function FastAgentPanel({
 
   const humanRequests = useQuery(
     api.domains.agents.humanInTheLoop.getPendingHumanRequests,
-    activeThreadId ? { threadId: activeThreadId } : 'skip'
+    (isAuthenticated && activeThreadId) ? { threadId: activeThreadId } : 'skip'
   );
 
   // Query for agent planning data (ambient memory - plan progress)
@@ -838,6 +838,21 @@ export function FastAgentPanel({
         // Send message with optimistic updates using the mutation
         if (!threadId) throw new Error("Thread ID is required");
 
+        const clientContext =
+          typeof window !== "undefined"
+            ? {
+              timezone: (() => {
+                try {
+                  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+                } catch {
+                  return undefined;
+                }
+              })(),
+              locale: typeof navigator !== "undefined" ? navigator.language : undefined,
+              utcOffsetMinutes: new Date().getTimezoneOffset(),
+            }
+            : undefined;
+
         await sendStreamingMessage({
           threadId: threadId as Id<"chatThreadsStream">,
           prompt: messageContent,
@@ -845,25 +860,26 @@ export function FastAgentPanel({
           useCoordinator: true,  // Enable smart routing via coordinator
           arbitrageEnabled,
           anonymousSessionId: anonymousSession.sessionId ?? undefined,
+          clientContext,
         });
 
         console.log('[FastAgentPanel] Streaming initiated');
         setIsStreaming(false);
 
         // Auto-name the thread if it's new (fire and forget)
-          if (isNewThread && threadId && isAuthenticated) {
-            autoNameThread({
-              threadId: threadId as Id<"chatThreadsStream">,
-              firstMessage: text,
-            }).then((result) => {
-              if (!result.skipped) {
-                console.log('[FastAgentPanel] Thread auto-named:', result.title);
-              }
-            }).catch((err) => {
-              console.warn('[FastAgentPanel] Failed to auto-name thread:', err);
-            });
-          }
+        if (isNewThread && threadId && isAuthenticated) {
+          autoNameThread({
+            threadId: threadId as Id<"chatThreadsStream">,
+            firstMessage: text,
+          }).then((result) => {
+            if (!result.skipped) {
+              console.log('[FastAgentPanel] Thread auto-named:', result.title);
+            }
+          }).catch((err) => {
+            console.warn('[FastAgentPanel] Failed to auto-name thread:', err);
+          });
         }
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
       toast.error("Failed to send message");
@@ -963,11 +979,27 @@ export function FastAgentPanel({
     console.log('[FastAgentPanel] Regenerating with prompt:', userPrompt.substring(0, 100));
 
     try {
+      const clientContext =
+        typeof window !== "undefined"
+          ? {
+            timezone: (() => {
+              try {
+                return Intl.DateTimeFormat().resolvedOptions().timeZone;
+              } catch {
+                return undefined;
+              }
+            })(),
+            locale: typeof navigator !== "undefined" ? navigator.language : undefined,
+            utcOffsetMinutes: new Date().getTimezoneOffset(),
+          }
+          : undefined;
+
       await sendStreamingMessage({
         threadId: activeThreadId as Id<"chatThreadsStream">,
         prompt: userPrompt,
         model: selectedModel,
         useCoordinator: true,
+        clientContext,
       });
       toast.success('Regenerating response...');
     } catch (err) {
@@ -1334,11 +1366,11 @@ export function FastAgentPanel({
                   )}
                 </button>
 
-                {/* Skills button with popover */} 
-                <div className="relative"> 
-                  <button 
-                    type="button" 
-                    onClick={() => setShowSkillsPanel(!showSkillsPanel)} 
+                {/* Skills button with popover */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowSkillsPanel(!showSkillsPanel)}
                     className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${showSkillsPanel
                       ? 'bg-blue-50 border-blue-200 text-blue-700'
                       : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
@@ -1365,8 +1397,8 @@ export function FastAgentPanel({
                         }}
                       />
                     </>
-                  )} 
-                </div> 
+                  )}
+                </div>
 
                 {/* Public signals log quick-link */}
                 <button
@@ -1427,8 +1459,8 @@ export function FastAgentPanel({
                   </button>
                 )}
 
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => {
                     setActiveThreadId(null);
                     setInput('');
@@ -1626,6 +1658,19 @@ export function FastAgentPanel({
                     />
                   ))}
 
+                  {/* Queued Indicator */}
+                  {(streamingThread as any)?.runStatus === 'queued' && (
+                    <div className="flex flex-col gap-2 px-4 mb-4">
+                      <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] animate-pulse">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Waiting for available agent...</span>
+                      </div>
+                      <div className="text-xs text-blue-500 pl-5">
+                        Position in queue: 1 (Estimated wait: &lt; 5s)
+                      </div>
+                    </div>
+                  )}
+
                   {/* Streaming Indicator */}
                   {isStreaming && (
                     <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] px-4 animate-pulse">
@@ -1641,11 +1686,10 @@ export function FastAgentPanel({
 
             {/* Anonymous User Banner */}
             {anonymousSession.isAnonymous && !anonymousSession.isLoading && (
-              <div className={`mx-4 mt-2 px-3 py-2 rounded-lg border ${
-                anonymousSession.canSendMessage
-                  ? 'bg-blue-500/10 border-blue-500/30'
-                  : 'bg-amber-500/10 border-amber-500/30'
-              }`}>
+              <div className={`mx-4 mt-2 px-3 py-2 rounded-lg border ${anonymousSession.canSendMessage
+                ? 'bg-blue-500/10 border-blue-500/30'
+                : 'bg-amber-500/10 border-amber-500/30'
+                }`}>
                 <div className="flex items-center justify-between gap-2 text-sm">
                   <div className="flex items-center gap-2">
                     {anonymousSession.canSendMessage ? (

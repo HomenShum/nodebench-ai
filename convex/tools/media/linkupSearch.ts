@@ -6,14 +6,21 @@
 // URLs are persisted to artifact store and returned as sourceArtifactIds.
 // The LLM should NEVER construct URLs - only reference tool output.
 
-"use node";
-
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { internal } from "../../_generated/api";
 import { generateCacheKey, getTTL } from "../../globalResearch/cacheSimple";
 
-// Linkup API types
+import { v } from "convex/values";
+
+async function sha256Hex(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 interface LinkupSearchResult {
   answer?: string;
   sources?: Array<{
@@ -64,26 +71,26 @@ IMPORTANT RULES:
 4. Set includeImages=true ONLY when user explicitly asks for images/pictures
 
 The tool returns verified sources that get stored in the artifact system.`,
-  
+
   args: z.object({
     query: z.string().describe("The natural language search query. Be specific and detailed for best results."),
     depth: z.enum(["standard", "deep"]).default("standard").describe("Search depth: 'standard' (€0.005, faster), 'deep' (€0.05, more comprehensive)"),
-    
+
     // NEW: Date filtering (critical for temporal queries)
     fromDate: z.string().optional().describe("Start date in ISO format YYYY-MM-DD. Use for 'past week', 'since Monday', etc."),
     toDate: z.string().optional().describe("End date in ISO format YYYY-MM-DD. Use for 'until yesterday', 'before Dec 1', etc."),
-    
+
     // NEW: Output type selection
     outputType: z.enum(["sourcedAnswer", "searchResults"]).default("sourcedAnswer")
       .describe("'sourcedAnswer' returns natural language answer with citations. 'searchResults' returns raw chunks for grounding."),
-    
+
     // NEW: Inline citations for sourcedAnswer
     includeInlineCitations: z.boolean().default(true)
       .describe("When true, answer includes [1], [2] markers mapped to sources. Recommended for traceability."),
-    
+
     // NEW: Max results
     maxResults: z.number().optional().describe("Maximum number of results to return (default: API decides)"),
-    
+
     // Source control (per Linkup API spec)
     includeSources: z.boolean().default(true)
       .describe("Include source URLs in response. Always true for traceability - sources stored in artifact system."),
@@ -93,7 +100,7 @@ The tool returns verified sources that get stored in the artifact system.`,
     includeDomains: z.array(z.string()).optional().describe("Limit search to these domains (e.g., ['techcrunch.com', 'sec.gov'])"),
     excludeDomains: z.array(z.string()).optional().describe("Exclude these domains from search"),
   }),
-  
+
   handler: async (ctx, args): Promise<string> => {
     const apiKey = process.env.LINKUP_API_KEY;
     const startTime = Date.now();
@@ -136,7 +143,7 @@ The tool returns verified sources that get stored in the artifact system.`,
 
     // Determine output type: use searchResults when images requested, otherwise use provided outputType
     const effectiveOutputType = args.includeImages ? "searchResults" : args.outputType;
-    
+
     // Build request body with all Linkup API parameters
     const requestBody: Record<string, unknown> = {
       q: args.query,
@@ -144,7 +151,7 @@ The tool returns verified sources that get stored in the artifact system.`,
       outputType: effectiveOutputType,
       includeImages: args.includeImages,
     };
-    
+
     // Add optional parameters only if provided
     if (args.fromDate) requestBody.fromDate = args.fromDate;
     if (args.toDate) requestBody.toDate = args.toDate;
@@ -153,7 +160,7 @@ The tool returns verified sources that get stored in the artifact system.`,
     if (args.includeSources !== undefined) requestBody.includeSources = args.includeSources;
     if (args.includeDomains?.length) requestBody.includeDomains = args.includeDomains;
     if (args.excludeDomains?.length) requestBody.excludeDomains = args.excludeDomains;
-    
+
     console.log(`[linkupSearch] Searching for: "${args.query}"`, {
       depth: args.depth,
       outputType: effectiveOutputType,
@@ -182,6 +189,27 @@ The tool returns verified sources that get stored in the artifact system.`,
 
       const data: LinkupSearchResult = await response.json();
 
+      // Persist sourceArtifact for audit/replayability
+      try {
+        const rawContent = JSON.stringify(data);
+        const contentHash = await sha256Hex(rawContent);
+        await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+          sourceType: "api_response",
+          contentHash,
+          rawContent,
+          extractedData: {
+            tool: "linkupSearch",
+            query: args.query,
+            depth: args.depth,
+            totalResults: data.results?.length ?? 0,
+            hasAnswer: !!data.answer,
+          },
+          fetchedAt: Date.now(),
+        });
+      } catch (err) {
+        console.warn("[linkupSearch] Failed to persist artifact:", err);
+      }
+
       // Filter results by type
       const textResults = data.results?.filter(r => r.type === "text") || [];
       const imageResults = data.results?.filter(r => r.type === "image") || [];
@@ -197,7 +225,7 @@ The tool returns verified sources that get stored in the artifact system.`,
         hasAnswer: !!data.answer,
         hasSources: !!data.sources
       });
-      
+
       // Debug: Log first image if present
       if (imageResults.length > 0) {
         console.log(`[linkupSearch] 📸 First image URL:`, imageResults[0].url);
@@ -212,7 +240,7 @@ The tool returns verified sources that get stored in the artifact system.`,
       // but human-readable output uses citation markers [1], [2] NOT raw URLs.
       // This prevents the LLM from copying URLs into its response.
       // ═══════════════════════════════════════════════════════════════════════
-      
+
       let result = "";
       const citationMap: Array<{ marker: string; title: string; domain: string }> = [];
 
@@ -296,7 +324,7 @@ The tool returns verified sources that get stored in the artifact system.`,
           const marker = `[${idx + 1}]`;
           const domain = extractDomain(text.url);
           citationMap.push({ marker, title: text.name, domain });
-          
+
           result += `${marker} **${text.name}** (${domain})\n`;
           if (text.content) {
             result += `   ${text.content.substring(0, 200)}...\n`;
@@ -324,7 +352,7 @@ The tool returns verified sources that get stored in the artifact system.`,
           const marker = `[${idx + 1}]`;
           const domain = extractDomain(source.url);
           citationMap.push({ marker, title: source.name, domain });
-          
+
           result += `${marker} **${source.name}** (${domain})\n`;
           if (source.snippet) {
             result += `   ${source.snippet.substring(0, 200)}...\n`;
@@ -341,13 +369,13 @@ The tool returns verified sources that get stored in the artifact system.`,
       }
 
       success = true;
-      
+
       // ═══════════════════════════════════════════════════════════════════════
       // CACHE STORE (MVP: simple TTL cache)
       // ═══════════════════════════════════════════════════════════════════════
       const hasDateFilter = !!(args.fromDate || args.toDate);
       const ttlMs = getTTL(args.query, hasDateFilter);
-      
+
       try {
         await ctx.runMutation(internal.globalResearch.cacheSimple.setCache, {
           queryKey: cacheKey,
@@ -360,7 +388,7 @@ The tool returns verified sources that get stored in the artifact system.`,
         // Cache store failed - not critical, just log
         console.warn(`[linkupSearch] Failed to cache result:`, cacheStoreError);
       }
-      
+
       // Track API usage (asynchronously, don't wait)
       // Linkup Pricing (2025): €5/1,000 standard searches = ~$0.0055/search = 0.55 cents
       // Deep search would be ~5.5 cents but we only use standard
@@ -379,7 +407,7 @@ The tool returns verified sources that get stored in the artifact system.`,
     } catch (error) {
       errorMsg = error instanceof Error ? error.message : String(error);
       console.error("[linkupSearch] Error:", error);
-      
+
       // Track failed API call (asynchronously)
       const responseTime = Date.now() - startTime;
       try {
@@ -396,9 +424,8 @@ The tool returns verified sources that get stored in the artifact system.`,
       } catch (trackError) {
         console.error("[linkupSearch] Failed to track error:", trackError);
       }
-      
+
       throw error;
     }
   },
 });
-

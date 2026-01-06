@@ -25,6 +25,12 @@
     "eval:docs": "convex run tools/evaluation/quickTest:testDocumentTools",
     "eval:web": "convex run tools/evaluation/quickTest:testWebSearch",
     "eval:workflow": "convex run tools/evaluation/quickTest:testWorkflow",
+    "bench:postable": "tsx scripts/run-postable-benchmarks.ts",
+    "bench:persona": "tsx scripts/run-persona-episode-eval.ts",
+    "pricing:openai": "tsx scripts/fetch-openai-api-pricing.ts",
+    "pricing:anthropic": "tsx scripts/fetch-anthropic-api-pricing.ts",
+    "pricing:google": "tsx scripts/fetch-google-gemini-api-pricing.ts",
+    "pricing:all": "npm run pricing:openai -- --latest && npm run pricing:anthropic -- --latest && npm run pricing:google -- --latest",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

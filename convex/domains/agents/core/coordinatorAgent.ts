@@ -85,6 +85,7 @@ const dataAccessTools = {
 import { dossierCrudTools } from "../../../tools/dossier/dossierCrudTools";
 import { calendarCrudTools } from "../../../tools/calendar/calendarCrudTools";
 import { spreadsheetCrudTools } from "../../../tools/spreadsheet/spreadsheetCrudTools";
+import { lookupGroundTruthEntity } from "../../../tools/evaluation/groundTruthLookupTool";
 import {
   searchHashtag,
   createHashtagDossier,
@@ -118,6 +119,13 @@ import { analyzeWithArbitrage } from "../../../tools/arbitrage";
 // Import email and SMS tools (Resend + Twilio A2P 10DLC)
 import { sendEmail } from "../../../tools/sendEmail";
 import { sendSms } from "../../../tools/sendSms";
+
+// Import notification tools (ntfy push notifications)
+import {
+  sendNotification,
+  scheduleNotification,
+  checkNotificationPrefs,
+} from "../../../tools/integration/notificationTools";
 
 // Import 2025 Deep Agents pattern tools
 import { contextInitializerTool } from "../mcp_tools/context";
@@ -325,6 +333,9 @@ export const createCoordinatorAgent = (
     getUserContext,
     getSystemDateTime,
 
+    // === QA / EVALUATION (Ground Truth / AUDIT_MOCKS) ===
+    lookupGroundTruthEntity,
+
     // === DIRECT ACCESS TOOLS ===
     linkupSearch,
     fusionSearch,
@@ -383,6 +394,11 @@ export const createCoordinatorAgent = (
     // === EMAIL & SMS TOOLS (Resend + Twilio A2P 10DLC) ===
     sendEmail,
     sendSms,
+
+    // === PUSH NOTIFICATION TOOLS (ntfy - Real-time alerts) ===
+    sendNotification,
+    scheduleNotification,
+    checkNotificationPrefs,
 
     // === 2025 DEEP AGENTS PATTERN TOOLS ===
     // Context Initializer (Initializer Agent pattern - prevents "wasted time")
@@ -858,7 +874,7 @@ When researching companies or entities, use this enhanced workflow:
 
 ## FIRST: Check Ground Truth (MANDATORY for evaluation entities)
 
-For these KNOWN entities, ALWAYS call \`lookupGroundTruth\` FIRST and ONLY:
+For these KNOWN entities, ALWAYS call \`lookupGroundTruthEntity\` FIRST and ONLY:
 - DISCO Pharmaceuticals (Cologne, €36M Seed)
 - Ambros Therapeutics (Irvine, $125M Series A)
 - ClearSpace (Switzerland, debris removal - STALE, will FAIL banker)
@@ -866,13 +882,18 @@ For these KNOWN entities, ALWAYS call \`lookupGroundTruth\` FIRST and ONLY:
 - NeuralForge AI (SF, $12M Seed)
 - VaultPay (London, $45M Series A)
 - GenomiQ Therapeutics (Boston, $80M Series B)
+- QuickJS / MicroQuickJS (CVE-2025-62495, publication date + severity)
+- SoundCloud VPN incident (403/VPN/WAF timeline + second-order effects)
+- Salesforce Agentforce (public-company strategy, avoid invented metrics)
+- Google Gemini 3 (enterprise pricing economics, context caching)
+- RyR2 / Alzheimer's calcium signaling (literature anchor; avoid fake 2025 papers)
 
-Call: \`lookupGroundTruth({ entityName, persona })\`
+Call: \`lookupGroundTruthEntity({ entity: "<id or name>" })\`
+- Returns the authoritative ground truth anchor \`{{fact:ground_truth:...}}\`
 - Returns verified facts you MUST include in your response
 - Returns forbidden facts you MUST NOT include (they are WRONG)
-- Returns expected PASS/FAIL outcome for each persona
 
-**CRITICAL - YOU MUST GENERATE A RESPONSE**: After calling \`lookupGroundTruth\`:
+**CRITICAL - YOU MUST GENERATE A RESPONSE**: After calling \`lookupGroundTruthEntity\`:
 1. The tool returns data - YOU MUST THEN WRITE A COMPLETE RESPONSE using that data
 2. DO NOT end your turn after the tool call - the user needs to see the information
 3. DO NOT call additional tools - the ground truth data is COMPLETE
@@ -925,6 +946,45 @@ Entity research results include **personaHooks** for 10 specialized personas. Us
 - QUANT_ANALYST: Quantitative signal extraction
 - PRODUCT_DESIGNER: Schema density for UI/UX
 - SALES_ENGINEER: Share-ready summary validation
+
+# PERSONA INFERENCE + SELF-ADAPTIVE PACKAGING (MANDATORY)
+
+If the user does NOT explicitly specify a persona, you MUST infer the best-fit persona from the user’s wording and context, then proceed without stalling.
+
+Rules:
+- If unsure, pick the most likely persona and state your assumption in the first 2 lines (do not ask multiple clarifying questions).
+- If the user prompt is ultra-vague (e.g., just an entity name), proceed with a default persona of JPM_STARTUP_BANKER and produce a complete debrief, then end with one optional follow-up question.
+- Your output MUST be tailored to the inferred persona’s “definition of done”.
+
+Heuristics (use the first strong match; otherwise default to JPM_STARTUP_BANKER):
+IMPORTANT: Do NOT default to JPM_STARTUP_BANKER if the request contains clear non-banker cues (e.g. "wedge" => EARLY_STAGE_VC, "signal/what to track/timeline points" => QUANT_ANALYST, "schema/UI card" => PRODUCT_DESIGNER).
+- JPM_STARTUP_BANKER: outreach readiness, worth reaching out, talk track, pipeline, verified funding, direct contact, "this week".
+- EARLY_STAGE_VC: thesis, wedge, why it matters, competitive map/comps, TAM, "what would change your mind".
+- CTO_TECH_LEAD: security exposure, CVE, dependency risk, integration feasibility, patch/upgrade plan, verification steps.
+- FOUNDER_STRATEGY: pivot, positioning, go-to-market moves, moat, strategic tradeoffs, board-level decision framing.
+- ACADEMIC_RD: papers, literature, methodology, replication, citations quality, "show the evidence".
+- ENTERPRISE_EXEC: vendor assessment, procurement, P&L impact, cost/risk drivers, compliance, rollout risk.
+- ECOSYSTEM_PARTNER: partnerships, second-order effects, platform dynamics, beneficiaries/losers, ecosystem map.
+- QUANT_ANALYST: signals, metrics, time-series, regressions, backtests, forecasting, "what to track".
+- PRODUCT_DESIGNER: UI schema/card fields, display priorities, structured JSON/table for rendering, null handling.
+- SALES_ENGINEER: share-ready single-screen summary, objections, CTA, buyer-specific framing, "send to customer".
+
+Persona packaging templates (use as headings, adapt as needed):
+- JPM_STARTUP_BANKER: **Verdict (PASS/FAIL)**, Funding, Why-now, Outreach angles (3), Contact channels, Next actions (3-5), Risks, Grounding.
+- EARLY_STAGE_VC: Thesis, Why it matters, Competitive map/comps, What would change my mind, Risks, Next steps, Grounding.
+- CTO_TECH_LEAD: Exposure assessment, Impact, Mitigations, Patch/upgrade plan, Verification steps, Grounding.
+- FOUNDER_STRATEGY: Strategic implications, Positioning moves, Risks/tradeoffs, Next actions, Grounding.
+- ACADEMIC_RD: Key findings, Methodology notes, Where evidence is weak, Next reads, Grounding.
+- ENTERPRISE_EXEC: Decision summary, Cost/risk drivers, Vendor fit, Procurement next step, Grounding.
+- ECOSYSTEM_PARTNER: Second-order effects, Beneficiaries/losers, Partnership plays, Next actions, Grounding.
+- QUANT_ANALYST: Structured signal table, Key variables to track, Data gaps, Next steps, Grounding.
+- PRODUCT_DESIGNER: UI-ready schema/card fields, Display priorities, Null handling, Grounding.
+- SALES_ENGINEER: Single-screen summary, 3 bullets, Objection handling, CTA/next step, Grounding.
+
+Self-adaptive “repair” loop (single-pass, no extra user input):
+1) Before finishing, run a checklist: persona-required fields present, no invented facts, grounding present, nextActions >= 3.
+2) If anything is missing and you can retrieve it via tools, do so immediately and revise.
+3) If you cannot retrieve it, keep fields null/unknown and clearly state what’s missing (do not guess).
 
 **Quality Gate Logic:**
 When asked about entity readiness (e.g., "Is X ready for banker outreach?"):
@@ -1031,6 +1091,48 @@ If/when the tool \`linkEvidence\` becomes available in your toolset:
 - NEVER call artifact-producing tools without setActiveSection first
 - If you realize you forgot setActiveSection, immediately call it, then continue (do not rewrite prior text)
 
+# PUSH NOTIFICATION TOOLS (Real-time Alerts)
+
+You have access to push notification tools to alert users about important discoveries:
+
+## sendNotification
+Send an immediate push notification to the user's device via ntfy.
+
+**When to use:**
+- Breaking news discovered during research (major funding, security vulnerability, acquisition)
+- User explicitly asks to be notified about something
+- Long-running task completion where user may have navigated away
+- Time-sensitive information that can't wait for daily digest
+
+**When NOT to use:**
+- Routine research results (include in response instead)
+- Information user is actively viewing in conversation
+- Low-importance updates
+- Every single finding - be selective to avoid alert fatigue!
+
+**Urgency levels:**
+- critical: Security vulnerabilities, major acquisitions, breaking regulatory news
+- high: Significant funding ($50M+), important product launches
+- medium: Notable news, task completions
+- low: FYI updates, background task results
+
+Example:
+\`\`\`
+sendNotification({
+  title: "NVIDIA acquires startup",
+  body: "NVIDIA announced $2B acquisition of AI chip startup. This affects your Tesla research.",
+  urgency: "high",
+  tags: ["money", "fire"],
+  relatedEntity: "NVIDIA"
+})
+\`\`\`
+
+## scheduleNotification
+Schedule a notification for later (reminders, deadlines).
+
+## checkNotificationPrefs
+Check if user has notifications enabled before sending non-critical alerts.
+
 # CRITICAL BEHAVIOR RULES
 
 1. **DELEGATE FIRST** - Always check if a subagent can handle the task before using direct tools
@@ -1039,6 +1141,7 @@ If/when the tool \`linkEvidence\` becomes available in your toolset:
 4. **COMPLETE WORKFLOWS** - Finish all steps of multi-step tasks
 5. **USE PLANNING** - Create explicit plans for complex tasks
 6. **RESPECT TIMEFRAMES** - Normalize relative time asks ("past week", "today", "last day") into concrete start/end dates and pass them to search/delegation tools so results stay fresh
+7. **BE SELECTIVE WITH ALERTS** - Only use sendNotification for genuinely important, time-sensitive information
 
 # CITATION RULES (ENFORCED BY SYSTEM - VIOLATIONS WILL BE SCRUBBED)
 
@@ -1049,11 +1152,12 @@ If/when the tool \`linkEvidence\` becomes available in your toolset:
    - If a tool returned a URL, you may reference it
    - If no tool returned a URL, DO NOT invent one
    - Use fact anchors instead: \`{{fact:section:slug}}\`
+   - For evaluation / synthetic entities (e.g., DISCO, Ambros, QuickJS/MicroQuickJS, OpenAutoGLM), call \`lookupGroundTruthEntity\` and include its \`{{fact:ground_truth:...}}\` anchor as your citation source.
 
 8. **NO FABRICATED METADATA** - NEVER add:
-   - Confidence scores (e.g., "0.95", "90% confidence") - unless a tool explicitly returned it
-   - Retrieval timestamps (e.g., "retrieved 02:40 UTC") - unless a tool explicitly returned it
-   - Verification claims you didn't verify
+    - Confidence scores (e.g., "0.95", "90% confidence") - unless a tool explicitly returned it
+    - Retrieval timestamps (e.g., "retrieved 02:40 UTC") - unless a tool explicitly returned it
+    - Verification claims you didn't verify
 
 9. **CITE TOOL OUTPUT ONLY** - When presenting sources:
    - Say "Source: [tool name]" or "According to [tool name] results"

@@ -230,11 +230,26 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         setCreating(false);
         setSending(true);
         console.log('[MiniNoteAgentChat] Sending message to new thread...');
+        const clientContext =
+          typeof window !== "undefined"
+            ? {
+                timezone: (() => {
+                  try {
+                    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+                  } catch {
+                    return undefined;
+                  }
+                })(),
+                locale: typeof navigator !== "undefined" ? navigator.language : undefined,
+                utcOffsetMinutes: new Date().getTimezoneOffset(),
+              }
+            : undefined;
         await sendStreaming({
           threadId: newId as Id<'chatThreadsStream'>,
           prompt: msg,
           useCoordinator: true,  // Enable smart routing via coordinator
           anonymousSessionId: anonymousSession.sessionId ?? undefined,
+          clientContext,
         });
         setSending(false);
         // Clear optimistic message once backend confirms
@@ -244,11 +259,26 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
       } else {
         console.log('[MiniNoteAgentChat] Sending message to existing thread:', threadId);
         setSending(true);
+        const clientContext =
+          typeof window !== "undefined"
+            ? {
+                timezone: (() => {
+                  try {
+                    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+                  } catch {
+                    return undefined;
+                  }
+                })(),
+                locale: typeof navigator !== "undefined" ? navigator.language : undefined,
+                utcOffsetMinutes: new Date().getTimezoneOffset(),
+              }
+            : undefined;
         await sendStreaming({
           threadId,
           prompt: msg,
           useCoordinator: true,  // Enable smart routing via coordinator
           anonymousSessionId: anonymousSession.sessionId ?? undefined,
+          clientContext,
         });
         setSending(false);
         // Clear optimistic message once backend confirms

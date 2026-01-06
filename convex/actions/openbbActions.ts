@@ -9,6 +9,7 @@
  * 2. Start server: openbb-mcp --transport streamable-http --port 8001 --default-categories equity,crypto,economy,news
  * 3. Set environment variables:
  *    - OPENBB_MCP_SERVER_URL (default: http://127.0.0.1:8001)
+ *    - OPENBB_MCP_URL (alias)
  *    - OPENBB_API_KEY (optional; sent as Bearer token)
  *    - OPENBB_MCP_AUTH_TOKEN (optional legacy alias)
  */
@@ -17,6 +18,20 @@
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
+
+const MAX_INLINE_RAW_CHARS = 120_000;
+function truncateForDb(input: string): string {
+  if (input.length <= MAX_INLINE_RAW_CHARS) return input;
+  return input.slice(0, MAX_INLINE_RAW_CHARS) + `\n\n<!-- TRUNCATED: ${input.length} chars -->\n`;
+}
+
+function getOpenbbMetricToolName(args: { endpoint: string; method: "GET" | "POST"; body?: any }) {
+  if (args.endpoint === "/tools/execute") {
+    const toolName = args.body?.tool_name;
+    if (typeof toolName === "string" && toolName.length > 0) return `openbb.tool.${toolName}`;
+  }
+  return `openbb.mcp.${args.method}.${args.endpoint}`;
+}
 
 /**
  * Call OpenBB MCP server endpoint
@@ -32,8 +47,10 @@ export const callOpenBBMCP = internalAction({
     body: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const baseUrl = process.env.OPENBB_MCP_SERVER_URL || "http://127.0.0.1:8001";
+    const baseUrl = process.env.OPENBB_MCP_SERVER_URL || process.env.OPENBB_MCP_URL || "http://127.0.0.1:8001";
     const url = new URL(args.endpoint, baseUrl);
+    const metricToolName = getOpenbbMetricToolName({ endpoint: args.endpoint, method: args.method, body: args.body });
+    const startedAt = Date.now();
 
     // Add query parameters for GET requests
     if (args.method === "GET" && args.params) {
@@ -65,12 +82,50 @@ export const callOpenBBMCP = internalAction({
       }
 
       const data = await response.json();
+      try {
+        const raw = JSON.stringify(data);
+        await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+          sourceType: "api_response",
+          sourceUrl: url.toString(),
+          rawContent: truncateForDb(raw),
+          extractedData: {
+            tool: "openbbMcp",
+            endpoint: args.endpoint,
+            method: args.method,
+            params: args.params ?? null,
+            body: args.body ?? null,
+            response: data,
+          },
+          fetchedAt: Date.now(),
+        });
+      } catch (artifactErr) {
+        console.warn("[openbbActions] Failed to persist sourceArtifact", artifactErr);
+      }
+      const latencyMs = Math.max(0, Date.now() - startedAt);
+      try {
+        await ctx.runMutation(internal.domains.agents.orchestrator.toolHealth.recordToolSuccess, {
+          toolName: metricToolName,
+          latencyMs,
+        });
+      } catch (telemetryErr) {
+        console.warn("[openbbActions] Failed to record tool success telemetry", telemetryErr);
+      }
       return {
         success: true,
         data,
       };
     } catch (error: any) {
       console.error("OpenBB MCP error:", error);
+      const latencyMs = Math.max(0, Date.now() - startedAt);
+      try {
+        await ctx.runMutation(internal.domains.agents.orchestrator.toolHealth.recordToolFailure, {
+          toolName: metricToolName,
+          latencyMs,
+          error: error?.message || "Unknown error",
+        });
+      } catch (telemetryErr) {
+        console.warn("[openbbActions] Failed to record tool failure telemetry", telemetryErr);
+      }
       return {
         success: false,
         error: error.message || "Unknown error",
@@ -160,7 +215,8 @@ export const testOpenBBConnection = internalAction({
         return {
           success: true,
           message: "OpenBB MCP server is accessible",
-          serverUrl: process.env.OPENBB_MCP_SERVER_URL || "http://127.0.0.1:8001",
+          serverUrl:
+            process.env.OPENBB_MCP_SERVER_URL || process.env.OPENBB_MCP_URL || "http://127.0.0.1:8001",
         };
       } else {
         return {

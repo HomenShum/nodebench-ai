@@ -495,8 +495,8 @@ function logFusionPayloadEvent(event: FusionPayloadEvent): void {
 function isFusionSearchTool(toolName: string | undefined): boolean {
   if (!toolName) return false;
   return toolName === 'fusionSearch' ||
-         toolName === 'quickSearch' ||
-         toolName.includes('fusion') && toolName.includes('Search');
+    toolName === 'quickSearch' ||
+    toolName.includes('fusion') && toolName.includes('Search');
 }
 
 /**
@@ -760,10 +760,10 @@ function parseSearchResponsePayload(
 
   // Parse errors
   const errors: SourceError[] = Array.isArray(data.errors)
-    ? (data.errors as Array<{source: string; error: string}>).map(e => ({
-        source: e.source as SearchSource,
-        error: String(e.error),
-      }))
+    ? (data.errors as Array<{ source: string; error: string }>).map(e => ({
+      source: e.source as SearchSource,
+      error: String(e.error),
+    }))
     : [];
 
   const timing = (data.timing || {}) as Record<SearchSource, number>;

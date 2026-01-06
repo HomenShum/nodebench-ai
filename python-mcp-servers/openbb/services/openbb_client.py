@@ -7,6 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
+import httpx
 import yfinance as yf
 from config import get_settings
 
@@ -40,6 +41,132 @@ class OpenBBClient:
                 continue
             return v
         return None
+
+    def _yahoo_headers(self) -> Dict[str, str]:
+        # Yahoo often blocks "unknown" clients; set a realistic UA.
+        return {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "application/json,text/plain,*/*",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+
+    async def _fetch_stooq_quote(self, symbol: str) -> Dict[str, Any]:
+        """
+        Fetch a quote from Stooq (free CSV endpoint).
+
+        Example:
+          https://stooq.com/q/l/?s=crm.us&f=sd2t2ohlcv&h&e=csv
+        """
+        stooq_symbol = symbol.strip()
+        if not stooq_symbol:
+            raise Exception("Missing symbol")
+
+        # Stooq uses market suffixes like ".us" for US equities.
+        if "." not in stooq_symbol:
+            stooq_symbol = f"{stooq_symbol}.us"
+
+        url = "https://stooq.com/q/l/"
+        params = {"s": stooq_symbol.lower(), "f": "sd2t2ohlcv", "h": "1", "e": "csv"}
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url, params=params)
+
+        if resp.status_code != 200:
+            raise Exception(f"Stooq quote HTTP {resp.status_code}")
+
+        lines = [ln.strip() for ln in (resp.text or "").splitlines() if ln.strip()]
+        if len(lines) < 2:
+            raise Exception("Stooq quote returned no rows")
+
+        header = [h.strip() for h in lines[0].split(",")]
+        row = [c.strip() for c in lines[1].split(",")]
+        if len(row) != len(header):
+            raise Exception("Stooq quote CSV column mismatch")
+
+        data = dict(zip(header, row))
+        close = data.get("Close")
+        if not close or close.upper() == "N/D":
+            raise Exception("Stooq quote missing Close")
+
+        def to_float(value: Optional[str]) -> Optional[float]:
+            if value is None:
+                return None
+            v = value.strip()
+            if not v or v.upper() == "N/D":
+                return None
+            try:
+                return float(v)
+            except Exception:
+                return None
+
+        def to_int(value: Optional[str]) -> Optional[int]:
+            if value is None:
+                return None
+            v = value.strip()
+            if not v or v.upper() == "N/D":
+                return None
+            try:
+                return int(float(v))
+            except Exception:
+                return None
+
+        return {
+            "symbol": symbol,
+            "stooqSymbol": data.get("Symbol") or stooq_symbol,
+            "date": data.get("Date"),
+            "time": data.get("Time"),
+            "open": to_float(data.get("Open")),
+            "high": to_float(data.get("High")),
+            "low": to_float(data.get("Low")),
+            "close": to_float(data.get("Close")),
+            "volume": to_int(data.get("Volume")),
+        }
+
+    async def _fetch_yahoo_quote(self, symbol: str) -> Dict[str, Any]:
+        """
+        Fetch quote fields directly from Yahoo Finance's public quote endpoint.
+
+        This avoids `yfinance` returning `None` fields in certain hosted/containerized environments.
+        """
+        url = "https://query1.finance.yahoo.com/v7/finance/quote"
+        params = {"symbols": symbol}
+
+        async with httpx.AsyncClient(timeout=15.0, headers=self._yahoo_headers()) as client:
+            resp = await client.get(url, params=params)
+
+        if resp.status_code != 200:
+            raise Exception(f"Yahoo quote HTTP {resp.status_code}")
+
+        payload = resp.json()
+        result = (payload or {}).get("quoteResponse", {}).get("result", []) or []
+        if not result:
+            raise Exception("Yahoo quote returned no results")
+
+        q = result[0] or {}
+        return q
+
+    def _parse_world_bank_series(self, payload: Any) -> Dict[str, Any]:
+        """
+        World Bank API returns: [metadata, [dataPoints...]]
+        Pick the most recent non-null value.
+        """
+        if not isinstance(payload, list) or len(payload) < 2 or not isinstance(payload[1], list):
+            raise Exception("Unexpected World Bank payload shape")
+
+        points = payload[1]
+        for p in points:
+            if not isinstance(p, dict):
+                continue
+            value = p.get("value")
+            if value is None:
+                continue
+            return {
+                "value": value,
+                "date": p.get("date"),
+                "country": (p.get("country") or {}).get("value"),
+                "indicator": (p.get("indicator") or {}).get("value"),
+            }
+        raise Exception("No non-null datapoints returned")
     
     async def execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
         """
@@ -86,42 +213,72 @@ class OpenBBClient:
     async def _equity_price_quote(self, symbol: str, **kwargs) -> Dict[str, Any]:
         """Get real-time stock quote"""
         try:
-            ticker = yf.Ticker(symbol)
-
-            fast_info: Dict[str, Any] = {}
-            info: Dict[str, Any] = {}
+            # Prefer Stooq in hosted environments (no auth, predictable response format).
             try:
-                fast_info = dict(getattr(ticker, "fast_info", {}) or {})
+                stooq = await self._fetch_stooq_quote(symbol)
+                if stooq.get("close") is not None:
+                    return {
+                        "symbol": symbol,
+                        "price": stooq.get("close"),
+                        "currency": "USD",
+                        "marketCap": None,
+                        "dayHigh": stooq.get("high"),
+                        "dayLow": stooq.get("low"),
+                        "previousClose": None,
+                        "open": stooq.get("open"),
+                        "volume": stooq.get("volume"),
+                        "source": "stooq",
+                        "fetchedAt": self._now_iso(),
+                        "asOf": stooq.get("date"),
+                    }
             except Exception:
-                fast_info = {}
+                pass
 
-            # `Ticker.info` can be slow and occasionally error; treat as best-effort.
-            try:
-                info = dict(getattr(ticker, "info", {}) or {})
-            except Exception:
-                info = {}
-
-            price = self._pick_first(
-                fast_info.get("last_price"),
-                info.get("currentPrice"),
-                info.get("regularMarketPrice"),
-            )
-
+            # Fall back to Yahoo quote endpoint (may be blocked in some environments).
+            q = await self._fetch_yahoo_quote(symbol)
+            price = q.get("regularMarketPrice")
+            if price is None:
+                raise Exception("Yahoo quote missing regularMarketPrice")
             return {
                 "symbol": symbol,
                 "price": price,
-                "currency": self._pick_first(fast_info.get("currency"), info.get("currency")),
-                "marketCap": info.get("marketCap"),
-                "dayHigh": info.get("dayHigh"),
-                "dayLow": info.get("dayLow"),
-                "previousClose": info.get("previousClose"),
-                "open": info.get("open"),
-                "volume": info.get("volume"),
-                "source": "yfinance",
+                "currency": q.get("currency"),
+                "marketCap": q.get("marketCap"),
+                "dayHigh": q.get("regularMarketDayHigh"),
+                "dayLow": q.get("regularMarketDayLow"),
+                "previousClose": q.get("regularMarketPreviousClose"),
+                "open": q.get("regularMarketOpen"),
+                "volume": q.get("regularMarketVolume"),
+                "source": "yahoo_finance_quote",
                 "fetchedAt": self._now_iso(),
             }
         except Exception as e:
-            raise Exception(f"Failed to get quote for {symbol}: {str(e)}")
+            # Final fallback: yfinance (kept for parity, may still fail silently in some hosts).
+            try:
+                ticker = yf.Ticker(symbol)
+                info = ticker.info or {}
+                price = self._pick_first(
+                    info.get("regularMarketPrice"),
+                    info.get("currentPrice"),
+                    info.get("previousClose"),
+                )
+                if price is None:
+                    raise Exception("yfinance missing price")
+                return {
+                    "symbol": symbol,
+                    "price": price,
+                    "currency": info.get("currency"),
+                    "marketCap": info.get("marketCap"),
+                    "dayHigh": info.get("dayHigh") or info.get("regularMarketDayHigh"),
+                    "dayLow": info.get("dayLow") or info.get("regularMarketDayLow"),
+                    "previousClose": info.get("previousClose") or info.get("regularMarketPreviousClose"),
+                    "open": info.get("open") or info.get("regularMarketOpen"),
+                    "volume": info.get("volume") or info.get("regularMarketVolume"),
+                    "source": "yfinance",
+                    "fetchedAt": self._now_iso(),
+                }
+            except Exception as yf_err:
+                raise Exception(f"Failed to get quote for {symbol}: {str(e)}; yfinance fallback: {str(yf_err)}")
     
     async def _equity_price_historical(
         self,
@@ -166,11 +323,78 @@ class OpenBBClient:
                     }
                 )
 
+            if points:
+                return {
+                    "symbol": symbol,
+                    "count": len(points),
+                    "points": points,
+                    "source": "yfinance",
+                    "fetchedAt": self._now_iso(),
+                }
+        except Exception:
+            # Fall through to Stooq fallback.
+            pass
+
+        # Stooq fallback (works well in hosted environments).
+        try:
+            stooq_symbol = symbol.strip()
+            if "." not in stooq_symbol:
+                stooq_symbol = f"{stooq_symbol}.us"
+
+            url = "https://stooq.com/q/d/l/"
+            params = {"s": stooq_symbol.lower(), "i": "d"}
+
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                resp = await client.get(url, params=params)
+
+            if resp.status_code != 200:
+                raise Exception(f"Stooq historical HTTP {resp.status_code}")
+
+            lines = [ln.strip() for ln in (resp.text or "").splitlines() if ln.strip()]
+            if len(lines) < 2:
+                raise Exception("Stooq historical returned no rows")
+
+            header = [h.strip() for h in lines[0].split(",")]
+            date_idx = header.index("Date") if "Date" in header else -1
+            open_idx = header.index("Open") if "Open" in header else -1
+            high_idx = header.index("High") if "High" in header else -1
+            low_idx = header.index("Low") if "Low" in header else -1
+            close_idx = header.index("Close") if "Close" in header else -1
+            volume_idx = header.index("Volume") if "Volume" in header else -1
+            if min(date_idx, open_idx, high_idx, low_idx, close_idx, volume_idx) < 0:
+                raise Exception("Stooq historical missing required columns")
+
+            out_points = []
+            for ln in lines[1:]:
+                cols = [c.strip() for c in ln.split(",")]
+                if len(cols) < len(header):
+                    continue
+                dt = cols[date_idx]
+                if start_date and dt < start_date:
+                    continue
+                if end_date and dt > end_date:
+                    continue
+                if cols[close_idx].upper() == "N/D":
+                    continue
+                try:
+                    out_points.append(
+                        {
+                            "t": dt,
+                            "open": float(cols[open_idx]) if cols[open_idx].upper() != "N/D" else None,
+                            "high": float(cols[high_idx]) if cols[high_idx].upper() != "N/D" else None,
+                            "low": float(cols[low_idx]) if cols[low_idx].upper() != "N/D" else None,
+                            "close": float(cols[close_idx]) if cols[close_idx].upper() != "N/D" else None,
+                            "volume": int(float(cols[volume_idx])) if cols[volume_idx].upper() != "N/D" else None,
+                        }
+                    )
+                except Exception:
+                    continue
+
             return {
                 "symbol": symbol,
-                "count": len(points),
-                "points": points,
-                "source": "yfinance",
+                "count": len(out_points),
+                "points": out_points,
+                "source": "stooq",
                 "fetchedAt": self._now_iso(),
             }
         except Exception as e:
@@ -178,27 +402,81 @@ class OpenBBClient:
     
     async def _equity_fundamental_overview(self, symbol: str, **kwargs) -> Dict[str, Any]:
         """Get company fundamental overview"""
+        quote: Optional[Dict[str, Any]] = None
+        quote_error: Optional[str] = None
         try:
+            # Always include a "quote" view via our Stooq-based implementation (reliable, no key).
+            quote = await self._equity_price_quote(symbol=symbol, **kwargs)
+        except Exception as e:
+            quote_error = str(e)
+
+        info: Dict[str, Any] = {}
+        info_error: Optional[str] = None
+        try:
+            # Best-effort enrichment via yfinance (can be sparse / rate-limited).
             ticker = yf.Ticker(symbol)
             info = dict(getattr(ticker, "info", {}) or {})
-            # Return a stable subset.
-            return {
-                "symbol": symbol,
-                "longName": info.get("longName"),
-                "sector": info.get("sector"),
-                "industry": info.get("industry"),
-                "website": info.get("website"),
-                "marketCap": info.get("marketCap"),
-                "trailingPE": info.get("trailingPE"),
-                "forwardPE": info.get("forwardPE"),
-                "priceToBook": info.get("priceToBook"),
-                "beta": info.get("beta"),
-                "dividendYield": info.get("dividendYield"),
-                "source": "yfinance",
-                "fetchedAt": self._now_iso(),
-            }
         except Exception as e:
-            raise Exception(f"Failed to get fundamentals for {symbol}: {str(e)}")
+            info_error = str(e)
+
+        if quote is None:
+            raise Exception(f"Failed to get fundamentals for {symbol}: quote unavailable ({quote_error or 'unknown error'})")
+
+        # Backward-compatible fields (existing clients expect these keys).
+        overview: Dict[str, Any] = {
+            "symbol": symbol,
+            "longName": info.get("longName"),
+            "sector": info.get("sector"),
+            "industry": info.get("industry"),
+            "website": info.get("website"),
+            "marketCap": info.get("marketCap"),
+            "trailingPE": info.get("trailingPE"),
+            "forwardPE": info.get("forwardPE"),
+            "priceToBook": info.get("priceToBook"),
+            "beta": info.get("beta"),
+            "dividendYield": info.get("dividendYield"),
+            # Added: quote snapshot (always present when successful).
+            "price": quote.get("price"),
+            "currency": quote.get("currency"),
+            "dayHigh": quote.get("dayHigh"),
+            "dayLow": quote.get("dayLow"),
+            "volume": quote.get("volume"),
+            "asOf": quote.get("asOf"),
+            # Metadata
+            "source": "mixed",
+            "quoteSource": quote.get("source"),
+            "partial": False,
+            "errors": {},
+            "fetchedAt": self._now_iso(),
+        }
+
+        missing_yf = [
+            k
+            for k in [
+                "longName",
+                "sector",
+                "industry",
+                "website",
+                "marketCap",
+                "trailingPE",
+                "forwardPE",
+                "priceToBook",
+                "beta",
+                "dividendYield",
+            ]
+            if overview.get(k) is None
+        ]
+        if missing_yf:
+            overview["partial"] = True
+            overview["errors"]["yfinance_missing_fields"] = missing_yf
+
+        if info_error:
+            overview["partial"] = True
+            overview["errors"]["yfinance_error"] = info_error
+        if quote_error:
+            overview["errors"]["quote_error"] = quote_error
+
+        return overview
     
     # ===== Crypto Tools =====
     
@@ -233,11 +511,49 @@ class OpenBBClient:
     
     async def _economy_gdp(self, country: str = "US", **kwargs) -> Dict[str, Any]:
         """Get GDP data"""
-        raise Exception("economy_gdp not implemented in this deployment")
+        try:
+            # GDP (current US$) indicator: NY.GDP.MKTP.CD
+            url = f"https://api.worldbank.org/v2/country/{country}/indicator/NY.GDP.MKTP.CD"
+            params = {"format": "json", "per_page": 10}
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(url, params=params)
+            if resp.status_code != 200:
+                raise Exception(f"World Bank HTTP {resp.status_code}")
+            parsed = resp.json()
+            point = self._parse_world_bank_series(parsed)
+            return {
+                "country": country,
+                "value": point.get("value"),
+                "year": point.get("date"),
+                "unit": "USD",
+                "source": "world_bank",
+                "fetchedAt": self._now_iso(),
+            }
+        except Exception as e:
+            raise Exception(f"Failed to get GDP for {country}: {str(e)}")
     
     async def _economy_inflation(self, country: str = "US", **kwargs) -> Dict[str, Any]:
         """Get inflation data"""
-        raise Exception("economy_inflation not implemented in this deployment")
+        try:
+            # Inflation, consumer prices (annual %) indicator: FP.CPI.TOTL.ZG
+            url = f"https://api.worldbank.org/v2/country/{country}/indicator/FP.CPI.TOTL.ZG"
+            params = {"format": "json", "per_page": 10}
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(url, params=params)
+            if resp.status_code != 200:
+                raise Exception(f"World Bank HTTP {resp.status_code}")
+            parsed = resp.json()
+            point = self._parse_world_bank_series(parsed)
+            return {
+                "country": country,
+                "value": point.get("value"),
+                "year": point.get("date"),
+                "unit": "percent",
+                "source": "world_bank",
+                "fetchedAt": self._now_iso(),
+            }
+        except Exception as e:
+            raise Exception(f"Failed to get inflation for {country}: {str(e)}")
     
     # ===== News Tools =====
     

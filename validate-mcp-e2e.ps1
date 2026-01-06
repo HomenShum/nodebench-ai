@@ -3,17 +3,17 @@
   End-to-end MCP validation (Convex Cloud -> external MCP servers -> live APIs).
 
 .DESCRIPTION
-  This script:
+  Default mode (live) validates against your deployed MCP services:
     1) Reads your Convex deployment URL from .env.local (VITE_CONVEX_URL).
     2) Reads MCP_SECRET from your Convex deployment (npx convex env get MCP_SECRET).
-    3) Starts local servers:
-        - Core Agent MCP JSON-RPC server (Node) on :4001
-        - OpenBB REST server (Python) on :8001
-        - Research REST server (Python) on :8002
-    4) Exposes them via Cloudflare Quick Tunnels (cloudflared) to get public HTTPS URLs.
-    5) Temporarily sets Convex env vars to point to those public URLs.
-    6) Runs the live smoke in Convex via scripts/run-live-api-smoke.ts with --require-mcp.
-    7) Restores Convex env vars and stops all processes.
+    3) Runs Convex smoke checks end-to-end (Core Agent MCP + OpenBB + Research + public APIs).
+    4) Runs Daily Brief workflow + landing log verification.
+    5) Runs Fast Agent Panel local-context verification (anonymous).
+    6) Runs a small anonymous QA suite (ground-truth eval queries).
+    7) Optionally runs persona live eval scenarios.
+
+  Tunnel mode validates local servers by tunneling them with cloudflared and temporarily
+  pointing Convex env vars at the tunnel URLs.
 
   Notes:
     - This can spend money (Linkup). Use -SkipLinkup to avoid.
@@ -39,8 +39,14 @@
 #requires -Version 5.1
 
 param(
+  [ValidateSet("live", "tunnel")]
+  [string]$Mode = "live",
   [string]$LinkupQuery = "DISCO Pharmaceuticals seed funding December 2025",
   [switch]$SkipLinkup,
+  [switch]$SkipPersona,
+  [switch]$SkipDailyBrief,
+  [switch]$SkipLocalContext,
+  [switch]$SkipAnonEval,
   [switch]$BootstrapPython,
   [switch]$KeepLogs
 )
@@ -108,6 +114,44 @@ function Set-ConvexEnvValue([string]$name, [string]$value) {
 function Unset-ConvexEnvValue([string]$name) {
   $null = npx convex env remove $name
   if ($LASTEXITCODE -ne 0) { throw "Failed to unset Convex env var: $name" }
+}
+
+function Require-ConvexEnv([string[]]$names) {
+  $missing = @()
+  foreach ($n in $names) {
+    $v = Get-ConvexEnvValue $n
+    if (-not $v) { $missing += $n }
+  }
+  if ($missing.Count -gt 0) {
+    throw ("Missing Convex env vars: " + ($missing -join ", "))
+  }
+}
+
+function Extract-TrailingJson([string]$text) {
+  # Convex client libraries may print server logs before the final JSON payload.
+  # Extract the trailing JSON object/array so result files are machine-parsable.
+  $sentinels = @(
+    "`n{`n  `"checkedAt`"",
+    "`r`n{`r`n  `"checkedAt`"",
+    "{`n  `"checkedAt`"",
+    "{`r`n  `"checkedAt`"",
+    "`n{`n  `"ok`"",
+    "`r`n{`r`n  `"ok`"",
+    "{`n  `"ok`"",
+    "{`r`n  `"ok`""
+  )
+  foreach ($s in $sentinels) {
+    $idx = $text.LastIndexOf($s)
+    if ($idx -ge 0) {
+      $startIdx = $idx
+      if ($s.StartsWith("`n")) { $startIdx = $idx + 1 }
+      elseif ($s.StartsWith("`r`n")) { $startIdx = $idx + 2 }
+      return $text.Substring($startIdx).Trim()
+    }
+  }
+  $m = [regex]::Match($text, '(\{[\s\S]*\}|\[[\s\S]*\])\s*$', 'Singleline')
+  if ($m.Success) { return $m.Groups[1].Value.Trim() }
+  return $text.Trim()
 }
 
 function Ensure-Cloudflared([string]$toolsDir) {
@@ -314,180 +358,232 @@ if (-not $mcpSecret) {
   throw "Convex env MCP_SECRET is not set. Set it with: npx convex env set MCP_SECRET <value>"
 }
 
-$cloudflared = Ensure-Cloudflared $tmpDir
+if ($Mode -eq "live") {
+  Write-Info "Mode=live: validating deployed MCP services + app workflows"
 
-Write-Info "Preparing local servers..."
+  Require-ConvexEnv @(
+    "CORE_AGENT_MCP_SERVER_URL",
+    "OPENBB_MCP_SERVER_URL",
+    "RESEARCH_MCP_SERVER_URL"
+  )
 
-$coreToken = New-RandomToken
-
-$coreOut = Join-Path $logsDir "core-agent-mcp.out.log"
-$coreErr = Join-Path $logsDir "core-agent-mcp.err.log"
-$openbbOut = Join-Path $logsDir "openbb.out.log"
-$openbbErr = Join-Path $logsDir "openbb.err.log"
-$researchOut = Join-Path $logsDir "research.out.log"
-$researchErr = Join-Path $logsDir "research.err.log"
-
-$coreProc = $null
-$openbbProc = $null
-$researchProc = $null
-$coreTunnel = $null
-$openbbTunnel = $null
-$researchTunnel = $null
-
-$convexEnvBackup = @{}
-$convexEnvVarsToManage = @(
-  "CORE_AGENT_MCP_SERVER_URL",
-  "CORE_AGENT_MCP_AUTH_TOKEN",
-  "OPENBB_MCP_SERVER_URL",
-  "RESEARCH_MCP_SERVER_URL"
-)
-
-try {
-  foreach ($name in $convexEnvVarsToManage) {
-    $convexEnvBackup[$name] = Get-ConvexEnvValue $name
-  }
-
-  $corePort = Get-FreeTcpPort 4001
-  $openbbPort = Get-FreeTcpPort 8001
-  $researchStart = [Math]::Max(8002, ($openbbPort + 1))
-  $researchPort = Get-FreeTcpPort $researchStart
-
-  Write-Info "Using local ports: core=$corePort openbb=$openbbPort research=$researchPort"
-
-  # Core Agent MCP server (Node -> JSON-RPC over HTTP)
-  $coreProc = Start-LoggedProcess `
-    -FilePath "cmd.exe" `
-    -ArgumentList @("/c","npx","tsx","mcp_tools/core_agent_server/httpServer.ts") `
-    -WorkingDirectory $repoRoot `
-    -StdoutPath $coreOut `
-    -StderrPath $coreErr `
-    -Environment @{
-      CONVEX_BASE_URL = $urls.Site
-      MCP_SECRET = $mcpSecret
-      MCP_HTTP_TOKEN = $coreToken
-      PORT = [string]$corePort
-      MCP_HTTP_HOST = "127.0.0.1"
-    }
-
-  # OpenBB server (Python -> REST)
-  $openbbVenvDir = Join-Path $repoRoot "python-mcp-servers\\openbb\\.venv"
-  $openbbPy = Join-Path $openbbVenvDir "Scripts\\python.exe"
-  Ensure-PythonVenv $openbbPy $openbbVenvDir (Join-Path $repoRoot "python-mcp-servers\\openbb\\requirements.txt")
-  $openbbProc = Start-LoggedProcess `
-    -FilePath $openbbPy `
-    -ArgumentList @("python-mcp-servers\\openbb\\server.py") `
-    -WorkingDirectory $repoRoot `
-    -StdoutPath $openbbOut `
-    -StderrPath $openbbErr `
-    -Environment @{
-      OPENBB_HOST = "127.0.0.1"
-      OPENBB_PORT = [string]$openbbPort
-      ENVIRONMENT = "production"
-      LOG_LEVEL = "INFO"
-      ALLOWED_ORIGINS = "*"
-    }
-
-  # Research server (Python -> REST)
-  $researchVenvDir = Join-Path $repoRoot "python-mcp-servers\\research\\.venv"
-  $researchPy = Join-Path $researchVenvDir "Scripts\\python.exe"
-  Ensure-PythonVenv $researchPy $researchVenvDir (Join-Path $repoRoot "python-mcp-servers\\research\\requirements.txt")
-  $researchProc = Start-LoggedProcess `
-    -FilePath $researchPy `
-    -ArgumentList @("python-mcp-servers\\research\\server.py") `
-    -WorkingDirectory $repoRoot `
-    -StdoutPath $researchOut `
-    -StderrPath $researchErr `
-    -Environment @{
-      RESEARCH_HOST = "127.0.0.1"
-      RESEARCH_PORT = [string]$researchPort
-      CONVEX_URL = $urls.Cloud
-      MCP_SECRET = $mcpSecret
-      ENVIRONMENT = "production"
-      LOG_LEVEL = "INFO"
-      ALLOWED_ORIGINS = "*"
-    }
-
-  Write-Info "Waiting for local health endpoints..."
-  Wait-HttpOk ("http://127.0.0.1:" + $openbbPort + "/health") 45
-  Wait-HttpOk ("http://127.0.0.1:" + $researchPort + "/health") 45
-
-  Write-Info "Starting Cloudflare tunnels..."
-  $coreTunnelLog = Join-Path $logsDir "tunnel-core.log"
-  $openbbTunnelLog = Join-Path $logsDir "tunnel-openbb.log"
-  $researchTunnelLog = Join-Path $logsDir "tunnel-research.log"
-
-  $coreTunnel = Start-Tunnel $cloudflared ("http://127.0.0.1:" + $corePort) $coreTunnelLog
-  $openbbTunnel = Start-Tunnel $cloudflared ("http://127.0.0.1:" + $openbbPort) $openbbTunnelLog
-  $researchTunnel = Start-Tunnel $cloudflared ("http://127.0.0.1:" + $researchPort) $researchTunnelLog
-
-  Write-Info "Core Agent MCP URL: $($coreTunnel.Url)"
-  Write-Info "OpenBB MCP URL:     $($openbbTunnel.Url)"
-  Write-Info "Research MCP URL:   $($researchTunnel.Url)"
-
-  # Quick public tunnel sanity
-  $null = Invoke-RestMethod -Method Get -Uri ($openbbTunnel.Url + "/health")
-  $null = Invoke-RestMethod -Method Get -Uri ($researchTunnel.Url + "/health")
-  $null = Invoke-RestMethod -Method Post -Uri $coreTunnel.Url -Headers @{ "x-mcp-token" = $coreToken } -ContentType "application/json" -Body (@{
-    jsonrpc = "2.0"; id = "1"; method = "tools/list"; params = @{}
-  } | ConvertTo-Json -Depth 6)
-
-  Write-Info "Temporarily setting Convex MCP server env vars..."
-  Set-ConvexEnvValue "CORE_AGENT_MCP_SERVER_URL" $coreTunnel.Url
-  Set-ConvexEnvValue "CORE_AGENT_MCP_AUTH_TOKEN" $coreToken
-  Set-ConvexEnvValue "OPENBB_MCP_SERVER_URL" $openbbTunnel.Url
-  Set-ConvexEnvValue "RESEARCH_MCP_SERVER_URL" $researchTunnel.Url
-
-  Write-Info "Running Convex live MCP smoke..."
   $env:CONVEX_URL = $urls.Cloud
   $env:MCP_SECRET = $mcpSecret
 
-  $resultPath = Join-Path $logsDir "validate-mcp-e2e.result.json"
-  $args = @("tsx","scripts/run-live-api-smoke.ts","--require-mcp")
+  $overallOk = $true
+
+  # 1) MCP + public API smoke (calls live external APIs)
+  $smokePath = Join-Path $logsDir "liveApiSmoke.result.json"
+  $smokeRawPath = Join-Path $logsDir "liveApiSmoke.raw.log"
+  $smokeArgs = @("tsx","scripts/run-live-api-smoke.ts","--require-mcp")
   if (-not $SkipLinkup) {
-    $args += @("--include-linkup","--linkup-query",$LinkupQuery)
+    $smokeArgs += @("--include-linkup","--linkup-query",$LinkupQuery)
   }
-  $json = (& npx @args) -join "`n"
-  $json | Set-Content -Encoding utf8 $resultPath
+  $smokeOut = (& npx @smokeArgs 2>&1) -join "`n"
+  $smokeExit = $LASTEXITCODE
+  $smokeOut | Set-Content -Encoding utf8 $smokeRawPath
+  (Extract-TrailingJson $smokeOut) | Set-Content -Encoding utf8 $smokePath
+  if ($smokeExit -ne 0) { $overallOk = $false }
 
-  $parsed = $null
-  try { $parsed = $json | ConvertFrom-Json } catch {}
+  # 2) System-level E2E checks inside Convex (daily brief, fast panel local context, QA suite, persona)
+  $suitePath = Join-Path $logsDir "systemE2E.result.json"
+  $suiteRawPath = Join-Path $logsDir "systemE2E.raw.log"
+  $suiteArgs = @("tsx", "scripts/run-system-e2e.ts")
+  if ($SkipDailyBrief) { $suiteArgs += @("--skip-daily-brief") }
+  if ($SkipLocalContext) { $suiteArgs += @("--skip-local-context") }
+  if ($SkipAnonEval) { $suiteArgs += @("--skip-anon-eval") }
+  if ($SkipPersona) { $suiteArgs += @("--skip-persona") }
+  $suiteOut = (& npx @suiteArgs 2>&1) -join "`n"
+  $suiteExit = $LASTEXITCODE
+  $suiteOut | Set-Content -Encoding utf8 $suiteRawPath
+  (Extract-TrailingJson $suiteOut) | Set-Content -Encoding utf8 $suitePath
+  if ($suiteExit -ne 0) { $overallOk = $false }
 
-  if ($parsed -and $parsed.ok -eq $true) {
-    Write-Info "PASS (details: $resultPath)"
+  if ($overallOk) {
+    Write-Info "PASS (details: $logsDir)"
     $script:ExitCode = 0
   } else {
-    Write-Info "FAIL (details: $resultPath)"
+    Write-Info "FAIL (details: $logsDir)"
     $script:ExitCode = 2
   }
-}
-finally {
-  Write-Info "Restoring Convex env vars..."
-  foreach ($name in $convexEnvVarsToManage) {
-    $prev = $convexEnvBackup[$name]
-    try {
-      if ($prev) {
-        Set-ConvexEnvValue $name $prev
-      } else {
-        Unset-ConvexEnvValue $name
+} else {
+  $cloudflared = Ensure-Cloudflared $tmpDir
+
+  Write-Info "Preparing local servers..."
+
+  $coreToken = New-RandomToken
+
+  $coreOut = Join-Path $logsDir "core-agent-mcp.out.log"
+  $coreErr = Join-Path $logsDir "core-agent-mcp.err.log"
+  $openbbOut = Join-Path $logsDir "openbb.out.log"
+  $openbbErr = Join-Path $logsDir "openbb.err.log"
+  $researchOut = Join-Path $logsDir "research.out.log"
+  $researchErr = Join-Path $logsDir "research.err.log"
+
+  $coreProc = $null
+  $openbbProc = $null
+  $researchProc = $null
+  $coreTunnel = $null
+  $openbbTunnel = $null
+  $researchTunnel = $null
+
+  $convexEnvBackup = @{}
+  $convexEnvVarsToManage = @(
+    "CORE_AGENT_MCP_SERVER_URL",
+    "CORE_AGENT_MCP_AUTH_TOKEN",
+    "OPENBB_MCP_SERVER_URL",
+    "RESEARCH_MCP_SERVER_URL"
+  )
+
+  try {
+    foreach ($name in $convexEnvVarsToManage) {
+      $convexEnvBackup[$name] = Get-ConvexEnvValue $name
+    }
+
+    $corePort = Get-FreeTcpPort 4001
+    $openbbPort = Get-FreeTcpPort 8001
+    $researchStart = [Math]::Max(8002, ($openbbPort + 1))
+    $researchPort = Get-FreeTcpPort $researchStart
+
+    Write-Info "Using local ports: core=$corePort openbb=$openbbPort research=$researchPort"
+
+    # Core Agent MCP server (Node -> JSON-RPC over HTTP)
+    $coreProc = Start-LoggedProcess `
+      -FilePath "cmd.exe" `
+      -ArgumentList @("/c","npx","tsx","mcp_tools/core_agent_server/httpServer.ts") `
+      -WorkingDirectory $repoRoot `
+      -StdoutPath $coreOut `
+      -StderrPath $coreErr `
+      -Environment @{
+        CONVEX_BASE_URL = $urls.Site
+        MCP_SECRET = $mcpSecret
+        MCP_HTTP_TOKEN = $coreToken
+        PORT = [string]$corePort
+        MCP_HTTP_HOST = "127.0.0.1"
       }
-    } catch {
-      # best-effort cleanup
+
+    # OpenBB server (Python -> REST)
+    $openbbVenvDir = Join-Path $repoRoot "python-mcp-servers\\openbb\\.venv"
+    $openbbPy = Join-Path $openbbVenvDir "Scripts\\python.exe"
+    Ensure-PythonVenv $openbbPy $openbbVenvDir (Join-Path $repoRoot "python-mcp-servers\\openbb\\requirements.txt")
+    $openbbProc = Start-LoggedProcess `
+      -FilePath $openbbPy `
+      -ArgumentList @("python-mcp-servers\\openbb\\server.py") `
+      -WorkingDirectory $repoRoot `
+      -StdoutPath $openbbOut `
+      -StderrPath $openbbErr `
+      -Environment @{
+        OPENBB_HOST = "127.0.0.1"
+        # Python server reads Railway-style PORT at runtime (see server.py).
+        PORT = [string]$openbbPort
+        OPENBB_PORT = [string]$openbbPort
+        ENVIRONMENT = "production"
+        LOG_LEVEL = "INFO"
+        ALLOWED_ORIGINS = "*"
+      }
+
+    # Research server (Python -> REST)
+    $researchVenvDir = Join-Path $repoRoot "python-mcp-servers\\research\\.venv"
+    $researchPy = Join-Path $researchVenvDir "Scripts\\python.exe"
+    Ensure-PythonVenv $researchPy $researchVenvDir (Join-Path $repoRoot "python-mcp-servers\\research\\requirements.txt")
+    $researchProc = Start-LoggedProcess `
+      -FilePath $researchPy `
+      -ArgumentList @("python-mcp-servers\\research\\server.py") `
+      -WorkingDirectory $repoRoot `
+      -StdoutPath $researchOut `
+      -StderrPath $researchErr `
+      -Environment @{
+        RESEARCH_HOST = "127.0.0.1"
+        # Python server reads Railway-style PORT at runtime (see server.py).
+        PORT = [string]$researchPort
+        RESEARCH_PORT = [string]$researchPort
+        CONVEX_URL = $urls.Cloud
+        MCP_SECRET = $mcpSecret
+        ENVIRONMENT = "production"
+        LOG_LEVEL = "INFO"
+        ALLOWED_ORIGINS = "*"
+      }
+
+    Write-Info "Waiting for local health endpoints..."
+    Wait-HttpOk ("http://127.0.0.1:" + $openbbPort + "/health") 45
+    Wait-HttpOk ("http://127.0.0.1:" + $researchPort + "/health") 45
+
+    Write-Info "Starting Cloudflare tunnels..."
+    $coreTunnelLog = Join-Path $logsDir "tunnel-core.log"
+    $openbbTunnelLog = Join-Path $logsDir "tunnel-openbb.log"
+    $researchTunnelLog = Join-Path $logsDir "tunnel-research.log"
+
+    $coreTunnel = Start-Tunnel $cloudflared ("http://127.0.0.1:" + $corePort) $coreTunnelLog
+    $openbbTunnel = Start-Tunnel $cloudflared ("http://127.0.0.1:" + $openbbPort) $openbbTunnelLog
+    $researchTunnel = Start-Tunnel $cloudflared ("http://127.0.0.1:" + $researchPort) $researchTunnelLog
+
+    Write-Info "Core Agent MCP URL: $($coreTunnel.Url)"
+    Write-Info "OpenBB MCP URL:     $($openbbTunnel.Url)"
+    Write-Info "Research MCP URL:   $($researchTunnel.Url)"
+
+    # Quick public tunnel sanity
+    $null = Invoke-RestMethod -Method Get -Uri ($openbbTunnel.Url + "/health")
+    $null = Invoke-RestMethod -Method Get -Uri ($researchTunnel.Url + "/health")
+    $null = Invoke-RestMethod -Method Post -Uri $coreTunnel.Url -Headers @{ "x-mcp-token" = $coreToken } -ContentType "application/json" -Body (@{
+      jsonrpc = "2.0"; id = "1"; method = "tools/list"; params = @{}
+    } | ConvertTo-Json -Depth 6)
+
+    Write-Info "Temporarily setting Convex MCP server env vars..."
+    Set-ConvexEnvValue "CORE_AGENT_MCP_SERVER_URL" $coreTunnel.Url
+    Set-ConvexEnvValue "CORE_AGENT_MCP_AUTH_TOKEN" $coreToken
+    Set-ConvexEnvValue "OPENBB_MCP_SERVER_URL" $openbbTunnel.Url
+    Set-ConvexEnvValue "RESEARCH_MCP_SERVER_URL" $researchTunnel.Url
+
+    Write-Info "Running Convex live MCP smoke..."
+    $env:CONVEX_URL = $urls.Cloud
+    $env:MCP_SECRET = $mcpSecret
+
+    $resultPath = Join-Path $logsDir "validate-mcp-e2e.result.json"
+    $args = @("tsx","scripts/run-live-api-smoke.ts","--require-mcp")
+    if (-not $SkipLinkup) {
+      $args += @("--include-linkup","--linkup-query",$LinkupQuery)
+    }
+    $out = (& npx @args 2>&1) -join "`n"
+    $exit = $LASTEXITCODE
+    $out | Set-Content -Encoding utf8 $resultPath
+
+    if ($exit -eq 0) {
+      Write-Info "PASS (details: $resultPath)"
+      $script:ExitCode = 0
+    } else {
+      Write-Info "FAIL (details: $resultPath)"
+      $script:ExitCode = 2
     }
   }
-
-  Write-Info "Stopping tunnels and servers..."
-  foreach ($t in @($coreTunnel, $openbbTunnel, $researchTunnel)) {
-    if ($t -and $t.Job) {
-      try { Stop-Job -Job $t.Job -ErrorAction SilentlyContinue } catch {}
-      try { Remove-Job -Job $t.Job -Force -ErrorAction SilentlyContinue } catch {}
+  finally {
+    Write-Info "Restoring Convex env vars..."
+    foreach ($name in $convexEnvVarsToManage) {
+      $prev = $convexEnvBackup[$name]
+      try {
+        if ($prev) {
+          Set-ConvexEnvValue $name $prev
+        } else {
+          Unset-ConvexEnvValue $name
+        }
+      } catch {
+        # best-effort cleanup
+      }
     }
-  }
 
-  $pids = @()
-  if ($coreProc) { $pids += $coreProc.Id }
-  if ($openbbProc) { $pids += $openbbProc.Id }
-  if ($researchProc) { $pids += $researchProc.Id }
-  Stop-Quiet $pids
+    Write-Info "Stopping tunnels and servers..."
+    foreach ($t in @($coreTunnel, $openbbTunnel, $researchTunnel)) {
+      if ($t -and $t.Job) {
+        try { Stop-Job -Job $t.Job -ErrorAction SilentlyContinue } catch {}
+        try { Remove-Job -Job $t.Job -Force -ErrorAction SilentlyContinue } catch {}
+      }
+    }
+
+    $pids = @()
+    if ($coreProc) { $pids += $coreProc.Id }
+    if ($openbbProc) { $pids += $openbbProc.Id }
+    if ($researchProc) { $pids += $researchProc.Id }
+    Stop-Quiet $pids
+  }
 }
 
 if (-not (Get-Variable -Name "ExitCode" -Scope Script -ErrorAction SilentlyContinue)) {

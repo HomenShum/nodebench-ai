@@ -118,6 +118,16 @@ const documents = defineTable({
     ),
   })),
 
+  // ═══════════════════════════════════════════════════════════════════
+  // LINKED ARTIFACTS (for citation tracking)
+  // ═══════════════════════════════════════════════════════════════════
+  linkedArtifacts: v.optional(v.array(v.object({
+    artifactId: v.id("sourceArtifacts"),
+    citationKey: v.string(),      // e.g., "[1]"
+    addedAt: v.number(),
+    addedBy: v.id("users"),
+  }))),
+
 })
   .index("by_user", ["createdBy"])
   .index("by_user_archived", ["createdBy", "isArchived"])
@@ -439,14 +449,17 @@ const mcpMemoryEntries = defineTable({
 /* AGENT RUNS - streaming progress for AI chat                        */
 /* ------------------------------------------------------------------ */
 const agentRuns = defineTable({
-  userId: v.id("users"),
+  userId: v.optional(v.id("users")),
   threadId: v.optional(v.string()),
   documentId: v.optional(v.id("documents")),
   mcpServerId: v.optional(v.id("mcpServers")),
   model: v.optional(v.string()),
+  workflow: v.optional(v.string()),
+  args: v.optional(v.any()),
   openaiVariant: v.optional(v.string()),
   status: v.union(
     v.literal("pending"),
+    v.literal("queued"),
     v.literal("running"),
     v.literal("completed"),
     v.literal("error"),
@@ -457,13 +470,64 @@ const agentRuns = defineTable({
   finalResponse: v.optional(v.string()),
   errorMessage: v.optional(v.string()),
   nextSeq: v.optional(v.number()),
+
+  // Distributed work leasing (optional / backwards compatible)
+  leaseOwner: v.optional(v.string()),
+  leaseExpiresAt: v.optional(v.number()),
+  priority: v.optional(v.number()),
+  availableAt: v.optional(v.number()),
+
   createdAt: v.number(),
   updatedAt: v.number(),
 })
   .index("by_user", ["userId"])
   .index("by_thread", ["threadId"])
   .index("by_createdAt", ["createdAt"])
-  .index("by_user_createdAt", ["userId", "createdAt"]);
+  .index("by_user_createdAt", ["userId", "createdAt"])
+  .index("by_status_availableAt", ["status", "availableAt"])
+  .index("by_leaseExpiresAt", ["leaseExpiresAt"]);
+
+/* ------------------------------------------------------------------ */
+/* SOURCE ARTIFACTS - unified durable snapshots of external sources    */
+/* ------------------------------------------------------------------ */
+const sourceArtifacts = defineTable({
+  runId: v.optional(v.id("agentRuns")),
+  sourceType: v.union(
+    v.literal("url_fetch"),
+    v.literal("api_response"),
+    v.literal("file_upload"),
+    v.literal("extracted_text"),
+    v.literal("video_transcript"),
+  ),
+  sourceUrl: v.optional(v.string()),
+  contentHash: v.string(),
+  rawContent: v.optional(v.string()),
+  extractedData: v.optional(v.any()),
+  fetchedAt: v.number(),
+  expiresAt: v.optional(v.number()),
+})
+  .index("by_run", ["runId", "fetchedAt"])
+  .index("by_hash", ["contentHash"])
+  .index("by_sourceUrl_hash", ["sourceUrl", "contentHash"])
+  .index("by_sourceUrl", ["sourceUrl", "fetchedAt"]);
+
+/* ------------------------------------------------------------------ */
+/* TOOL HEALTH - adaptive routing telemetry + circuit breaker          */
+/* ------------------------------------------------------------------ */
+const toolHealth = defineTable({
+  toolName: v.string(),
+  successCount: v.number(),
+  failureCount: v.number(),
+  avgLatencyMs: v.number(),
+  lastSuccessAt: v.optional(v.number()),
+  lastFailureAt: v.optional(v.number()),
+  lastError: v.optional(v.string()),
+  consecutiveFailures: v.optional(v.number()),
+  circuitOpen: v.boolean(),
+  circuitOpenedAt: v.optional(v.number()),
+})
+  .index("by_toolName", ["toolName"])
+  .index("by_circuitOpen", ["circuitOpen", "toolName"]);
 
 const agentRunEvents = defineTable({
   runId: v.id("agentRuns"),
@@ -476,6 +540,49 @@ const agentRunEvents = defineTable({
   .index("by_run", ["runId", "seq"]);
 
 /* ------------------------------------------------------------------ */
+/* INSTAGRAM POSTS - Social media content ingestion                    */
+/* ------------------------------------------------------------------ */
+const instagramPosts = defineTable({
+  userId: v.id("users"),
+  postUrl: v.string(),
+  shortcode: v.optional(v.string()),              // Instagram post ID
+  mediaType: v.union(
+    v.literal("image"),
+    v.literal("video"),
+    v.literal("carousel")
+  ),
+  caption: v.optional(v.string()),
+  transcript: v.optional(v.string()),              // Gemini video transcription
+  extractedClaims: v.optional(v.array(v.object({
+    claim: v.string(),
+    confidence: v.number(),                        // 0-1
+    sourceTimestamp: v.optional(v.number()),       // seconds into video
+    category: v.optional(v.string()),              // "financial", "product", "opinion"
+  }))),
+  mediaStorageId: v.optional(v.id("_storage")),    // Downloaded media
+  thumbnailUrl: v.optional(v.string()),
+  authorUsername: v.optional(v.string()),
+  authorFullName: v.optional(v.string()),
+  likeCount: v.optional(v.number()),
+  commentCount: v.optional(v.number()),
+  postedAt: v.optional(v.number()),                // Original post timestamp
+  fetchedAt: v.number(),
+  status: v.union(
+    v.literal("pending"),
+    v.literal("transcribing"),
+    v.literal("analyzing"),
+    v.literal("completed"),
+    v.literal("error")
+  ),
+  errorMessage: v.optional(v.string()),
+})
+  .index("by_user", ["userId"])
+  .index("by_url", ["postUrl"])
+  .index("by_shortcode", ["shortcode"])
+  .index("by_status", ["status"]);
+
+
+/* ------------------------------------------------------------------ */
 /* AGENT DELEGATIONS - Tracking parallel subagent execution           */
 /* ------------------------------------------------------------------ */
 const agentDelegations = defineTable({
@@ -483,7 +590,7 @@ const agentDelegations = defineTable({
   runId: v.string(),                      // coordinatorThreadId (for UI scoping)
   delegationId: v.string(),               // UUID, stable ID for this delegation
   userId: v.id("users"),                  // Multi-user isolation
-  
+
   // Agent info
   agentName: v.union(
     v.literal("DocumentAgent"),
@@ -493,7 +600,7 @@ const agentDelegations = defineTable({
     v.literal("EntityResearchAgent"),
   ),
   query: v.string(),                      // Original task description
-  
+
   // Lifecycle
   status: v.union(
     v.literal("scheduled"),               // Scheduler accepted
@@ -502,17 +609,17 @@ const agentDelegations = defineTable({
     v.literal("failed"),                  // Error
     v.literal("cancelled"),               // User cancelled
   ),
-  
+
   // Timing
   scheduledAt: v.number(),
   startedAt: v.optional(v.number()),
   finishedAt: v.optional(v.number()),
-  
+
   // Results (refs, not inline - avoids OCC on streaming)
   subagentThreadId: v.optional(v.string()),
   finalPatchRef: v.optional(v.string()),  // Pointer to patch document
   errorMessage: v.optional(v.string()),
-  
+
   // Merge tracking
   mergeStatus: v.optional(v.union(
     v.literal("pending"),
@@ -1386,10 +1493,10 @@ const voiceSessions = defineTable({
 /* Shared public feed sourced from HackerNews, ArXiv, RSS, etc.       */
 /* "Write Once, Read Many" - one hourly ingest, all users read free   */
 /* ------------------------------------------------------------------ */
-const feedItems = defineTable({ 
+const feedItems = defineTable({
   sourceId: v.string(),                    // e.g., "hn-12345" (deduplication key) 
-  type: v.union( 
-    v.literal("news"), 
+  type: v.union(
+    v.literal("news"),
     v.literal("signal"),
     v.literal("dossier"),
     v.literal("repo"),                     // GitHub repos
@@ -1417,11 +1524,11 @@ const feedItems = defineTable({
   publishedAt: v.string(),                 // ISO date string
   score: v.number(),                       // For sorting by "Heat"
   createdAt: v.optional(v.number()),       // When we ingested this
-}) 
-  .index("by_published", ["publishedAt"]) 
-  .index("by_score", ["score"]) 
-  .index("by_source", ["source"]) 
-  .index("by_type", ["type"]) 
+})
+  .index("by_published", ["publishedAt"])
+  .index("by_score", ["score"])
+  .index("by_source", ["source"])
+  .index("by_type", ["type"])
   .index("by_category", ["category"])      // Segmented view filtering 
   .index("by_source_id", ["sourceId"]);    // Fast deduplication lookup
 
@@ -1488,42 +1595,42 @@ const repoStatsCache = defineTable({
 /* ------------------------------------------------------------------ */
 /* PAPER DETAILS CACHE - ArXiv metadata + methodology extraction       */
 /* ------------------------------------------------------------------ */
-  const paperDetailsCache = defineTable({
-    paperId: v.string(),                    // arXiv ID
-    url: v.string(),
-    title: v.optional(v.string()),
-    abstract: v.optional(v.string()),
-    methodology: v.optional(v.string()),
-    keyFindings: v.array(v.string()),
-    authors: v.optional(v.array(v.string())),
-    citationCount: v.optional(v.number()),
-    doi: v.optional(v.string()),
-    pdfUrl: v.optional(v.string()),
-    publishedAt: v.optional(v.string()),
-    sourceUrls: v.optional(v.array(v.string())),
-    fetchedAt: v.number(),
-  })
+const paperDetailsCache = defineTable({
+  paperId: v.string(),                    // arXiv ID
+  url: v.string(),
+  title: v.optional(v.string()),
+  abstract: v.optional(v.string()),
+  methodology: v.optional(v.string()),
+  keyFindings: v.array(v.string()),
+  authors: v.optional(v.array(v.string())),
+  citationCount: v.optional(v.number()),
+  doi: v.optional(v.string()),
+  pdfUrl: v.optional(v.string()),
+  publishedAt: v.optional(v.string()),
+  sourceUrls: v.optional(v.array(v.string())),
+  fetchedAt: v.number(),
+})
   .index("by_paper_id", ["paperId"])
   .index("by_url", ["url"]);
 
 /* ------------------------------------------------------------------ */
 /* STACK IMPACT CACHE - CVE impact mapping vs user tech stack          */
 /* ------------------------------------------------------------------ */
-  const stackImpactCache = defineTable({
-    signalKey: v.string(),                  // hash of signal + stack
-    signalTitle: v.optional(v.string()),
-    signalUrl: v.optional(v.string()),
-    techStack: v.array(v.string()),
-    summary: v.string(),
-    riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
-    cveId: v.optional(v.string()),
-    cveUrl: v.optional(v.string()),
-    sourceUrls: v.optional(v.array(v.string())),
-    graph: v.object({
-      focusNodeId: v.optional(v.string()),
-      nodes: v.array(v.object({
-        id: v.string(),
-        label: v.string(),
+const stackImpactCache = defineTable({
+  signalKey: v.string(),                  // hash of signal + stack
+  signalTitle: v.optional(v.string()),
+  signalUrl: v.optional(v.string()),
+  techStack: v.array(v.string()),
+  summary: v.string(),
+  riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+  cveId: v.optional(v.string()),
+  cveUrl: v.optional(v.string()),
+  sourceUrls: v.optional(v.array(v.string())),
+  graph: v.object({
+    focusNodeId: v.optional(v.string()),
+    nodes: v.array(v.object({
+      id: v.string(),
+      label: v.string(),
       type: v.optional(v.string()),
       importance: v.optional(v.number()),
       tier: v.optional(v.number()),       // 1 = direct, 2 = second-order
@@ -1546,119 +1653,119 @@ const repoStatsCache = defineTable({
 /* MODEL COMPARISON CACHE - Token cost + perf trade-offs               */
 /* ------------------------------------------------------------------ */
 const modelComparisonCache = defineTable({
-    modelKey: v.string(),
-    context: v.optional(v.string()),
-    summary: v.optional(v.string()),
-    recommendation: v.optional(v.string()),
-    rows: v.array(v.object({
-      model: v.string(),
-      inputCostPer1M: v.number(),
-      outputCostPer1M: v.number(),
-      contextWindow: v.number(),
-      reliabilityScore: v.optional(v.number()),
-      performance: v.optional(v.string()),
-      notes: v.optional(v.string()),
-    })),
-    sourceUrls: v.optional(v.array(v.string())),
-    fetchedAt: v.number(),
-  })
-    .index("by_model_key", ["modelKey"]);
+  modelKey: v.string(),
+  context: v.optional(v.string()),
+  summary: v.optional(v.string()),
+  recommendation: v.optional(v.string()),
+  rows: v.array(v.object({
+    model: v.string(),
+    inputCostPer1M: v.number(),
+    outputCostPer1M: v.number(),
+    contextWindow: v.number(),
+    reliabilityScore: v.optional(v.number()),
+    performance: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  })),
+  sourceUrls: v.optional(v.array(v.string())),
+  fetchedAt: v.number(),
+})
+  .index("by_model_key", ["modelKey"]);
 
-  /* ------------------------------------------------------------------ */
-  /* DEAL FLOW CACHE - AI-curated startup deal flow snapshots           */
-  /* ------------------------------------------------------------------ */
-  const dealFlowCache = defineTable({
-    dateString: v.string(),
-    focusSectors: v.optional(v.array(v.string())),
-    deals: v.array(v.object({
-      id: v.string(),
-      company: v.string(),
-      sector: v.string(),
-      stage: v.string(),
-      amount: v.string(),
-      date: v.string(),
-      location: v.string(),
-      foundingYear: v.optional(v.string()),
-      foundersBackground: v.optional(v.string()),
-      leads: v.array(v.string()),
-      coInvestors: v.optional(v.array(v.string())),
-      summary: v.string(),
-      traction: v.optional(v.string()),
-      sentiment: v.optional(v.union(v.literal("hot"), v.literal("watch"))),
-      spark: v.optional(v.array(v.number())),
-      people: v.array(v.object({
-        name: v.string(),
-        role: v.string(),
-        past: v.string(),
-      })),
-      timeline: v.array(v.object({
-        label: v.string(),
-        detail: v.string(),
-      })),
-      regulatory: v.optional(v.object({
-        fdaStatus: v.optional(v.string()),
-        patents: v.optional(v.array(v.string())),
-        papers: v.optional(v.array(v.string())),
-      })),
-      sources: v.optional(v.array(v.object({
-        name: v.string(),
-        url: v.string(),
-      }))),
+/* ------------------------------------------------------------------ */
+/* DEAL FLOW CACHE - AI-curated startup deal flow snapshots           */
+/* ------------------------------------------------------------------ */
+const dealFlowCache = defineTable({
+  dateString: v.string(),
+  focusSectors: v.optional(v.array(v.string())),
+  deals: v.array(v.object({
+    id: v.string(),
+    company: v.string(),
+    sector: v.string(),
+    stage: v.string(),
+    amount: v.string(),
+    date: v.string(),
+    location: v.string(),
+    foundingYear: v.optional(v.string()),
+    foundersBackground: v.optional(v.string()),
+    leads: v.array(v.string()),
+    coInvestors: v.optional(v.array(v.string())),
+    summary: v.string(),
+    traction: v.optional(v.string()),
+    sentiment: v.optional(v.union(v.literal("hot"), v.literal("watch"))),
+    spark: v.optional(v.array(v.number())),
+    people: v.array(v.object({
+      name: v.string(),
+      role: v.string(),
+      past: v.string(),
     })),
-    fetchedAt: v.number(),
-  })
-    .index("by_date", ["dateString"])
-    .index("by_fetched_at", ["fetchedAt"]);
-
-  /* ------------------------------------------------------------------ */
-  /* REPO SCOUT CACHE - open-source alternatives for signals            */
-  /* ------------------------------------------------------------------ */
-  const repoScoutCache = defineTable({
-    signalKey: v.string(),
-    signalTitle: v.string(),
-    signalSummary: v.optional(v.string()),
-    repos: v.array(v.object({
+    timeline: v.array(v.object({
+      label: v.string(),
+      detail: v.string(),
+    })),
+    regulatory: v.optional(v.object({
+      fdaStatus: v.optional(v.string()),
+      patents: v.optional(v.array(v.string())),
+      papers: v.optional(v.array(v.string())),
+    })),
+    sources: v.optional(v.array(v.object({
       name: v.string(),
       url: v.string(),
-      description: v.optional(v.string()),
-      stars: v.number(),
-      starVelocity: v.number(),
-      commitsPerWeek: v.number(),
-      lastPush: v.optional(v.string()),
-      languages: v.optional(v.array(v.object({
-        name: v.string(),
-        pct: v.number(),
-      }))),
-    })),
-    moatSummary: v.optional(v.string()),
-    moatRisks: v.optional(v.array(v.string())),
-    fetchedAt: v.number(),
-  })
-    .index("by_signal_key", ["signalKey"]);
-
-  /* ------------------------------------------------------------------ */
-  /* STRATEGY METRICS CACHE - pivot KPI extractions                     */
-  /* ------------------------------------------------------------------ */
-  const strategyMetricsCache = defineTable({
-    signalKey: v.string(),
-    signalTitle: v.string(),
-    signalSummary: v.optional(v.string()),
-    metrics: v.array(v.object({
-      label: v.string(),
-      value: v.string(),
-      unit: v.optional(v.string()),
-      context: v.optional(v.string()),
-      source: v.optional(v.string()),
-    })),
-    narrative: v.optional(v.string()),
-    risks: v.optional(v.array(v.string())),
-    sources: v.optional(v.array(v.object({
-      title: v.string(),
-      url: v.string(),
     }))),
-    fetchedAt: v.number(),
-  })
-    .index("by_signal_key", ["signalKey"]);
+  })),
+  fetchedAt: v.number(),
+})
+  .index("by_date", ["dateString"])
+  .index("by_fetched_at", ["fetchedAt"]);
+
+/* ------------------------------------------------------------------ */
+/* REPO SCOUT CACHE - open-source alternatives for signals            */
+/* ------------------------------------------------------------------ */
+const repoScoutCache = defineTable({
+  signalKey: v.string(),
+  signalTitle: v.string(),
+  signalSummary: v.optional(v.string()),
+  repos: v.array(v.object({
+    name: v.string(),
+    url: v.string(),
+    description: v.optional(v.string()),
+    stars: v.number(),
+    starVelocity: v.number(),
+    commitsPerWeek: v.number(),
+    lastPush: v.optional(v.string()),
+    languages: v.optional(v.array(v.object({
+      name: v.string(),
+      pct: v.number(),
+    }))),
+  })),
+  moatSummary: v.optional(v.string()),
+  moatRisks: v.optional(v.array(v.string())),
+  fetchedAt: v.number(),
+})
+  .index("by_signal_key", ["signalKey"]);
+
+/* ------------------------------------------------------------------ */
+/* STRATEGY METRICS CACHE - pivot KPI extractions                     */
+/* ------------------------------------------------------------------ */
+const strategyMetricsCache = defineTable({
+  signalKey: v.string(),
+  signalTitle: v.string(),
+  signalSummary: v.optional(v.string()),
+  metrics: v.array(v.object({
+    label: v.string(),
+    value: v.string(),
+    unit: v.optional(v.string()),
+    context: v.optional(v.string()),
+    source: v.optional(v.string()),
+  })),
+  narrative: v.optional(v.string()),
+  risks: v.optional(v.array(v.string())),
+  sources: v.optional(v.array(v.object({
+    title: v.string(),
+    url: v.string(),
+  }))),
+  fetchedAt: v.number(),
+})
+  .index("by_signal_key", ["signalKey"]);
 
 /* ------------------------------------------------------------------ */
 /* SEARCH EVALUATIONS - LLM-as-judge benchmark results                 */
@@ -1759,6 +1866,80 @@ const evaluationRuns = defineTable({
   .index("by_status", ["status"])
   .index("by_started", ["startedAt"]);
 
+/* ------------------------------------------------------------------ */
+/* DIGEST CACHE - Agent-generated digest storage                       */
+/* ------------------------------------------------------------------ */
+const digestCache = defineTable({
+  dateString: v.string(),                    // YYYY-MM-DD
+  persona: v.string(),                       // GENERAL, JPM_STARTUP_BANKER, etc.
+  model: v.string(),                         // claude-haiku-4.5, etc.
+  // Raw agent output
+  rawText: v.string(),                       // Full LLM response
+  // Parsed digest
+  digest: v.object({
+    dateString: v.string(),
+    narrativeThesis: v.string(),
+    leadStory: v.optional(v.object({
+      title: v.string(),
+      url: v.optional(v.string()),
+      whyItMatters: v.string(),
+      reflection: v.optional(v.object({
+        what: v.string(),
+        soWhat: v.string(),
+        nowWhat: v.string(),
+      })),
+    })),
+    signals: v.array(v.object({
+      title: v.string(),
+      url: v.optional(v.string()),
+      summary: v.string(),
+      hardNumbers: v.optional(v.string()),
+      directQuote: v.optional(v.string()),
+      reflection: v.optional(v.object({
+        what: v.string(),
+        soWhat: v.string(),
+        nowWhat: v.string(),
+      })),
+    })),
+    actionItems: v.array(v.object({
+      persona: v.string(),
+      action: v.string(),
+    })),
+    entitySpotlight: v.optional(v.array(v.object({
+      name: v.string(),
+      type: v.string(),
+      keyInsight: v.string(),
+      fundingStage: v.optional(v.string()),
+    }))),
+    storyCount: v.number(),
+    topSources: v.array(v.string()),
+    topCategories: v.array(v.string()),
+    processingTimeMs: v.number(),
+  }),
+  // Formatted outputs (for different channels)
+  ntfyPayload: v.optional(v.object({
+    title: v.string(),
+    body: v.string(),
+  })),
+  slackPayload: v.optional(v.string()),
+  emailPayload: v.optional(v.string()),
+  // Usage tracking
+  usage: v.object({
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+  }),
+  feedItemCount: v.number(),
+  // Metadata
+  createdAt: v.number(),
+  expiresAt: v.number(),                     // TTL for cache invalidation
+  sentToNtfy: v.optional(v.boolean()),
+  sentToSlack: v.optional(v.boolean()),
+  sentToEmail: v.optional(v.boolean()),
+})
+  .index("by_date_persona", ["dateString", "persona"])
+  .index("by_date", ["dateString"])
+  .index("by_expires", ["expiresAt"]);
+
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
   documents,
@@ -1791,7 +1972,10 @@ export default defineSchema({
   mcpPlans,
   mcpMemoryEntries,
   agentRuns,
+  sourceArtifacts,
+  toolHealth,
   agentRunEvents,
+  instagramPosts,
   agentDelegations,
   agentWriteEvents,
   fileSearchStores,
@@ -1818,6 +2002,7 @@ export default defineSchema({
   agentTimelineRuns,
   agentImageResults,
   voiceSessions,
+  landingPageLog,
   feedItems,
   repoStatsCache,
   paperDetailsCache,
@@ -1828,6 +2013,7 @@ export default defineSchema({
   strategyMetricsCache,
   searchEvaluations,
   evaluationRuns,
+  digestCache,
 
   /* ------------------------------------------------------------------ */
   /* PARALLEL TASK TREE - Deep Agent 2.0 Decision Tree Execution        */
@@ -3115,7 +3301,7 @@ export default defineSchema({
       isCited: v.boolean(),
       isEnriched: v.boolean(),
     }),
-    
+
     // Verification health (light indicator, claim-specific verdicts in claimVerifications)
     verificationHealth: v.optional(v.union(
       v.literal("unknown"),
@@ -3221,7 +3407,7 @@ export default defineSchema({
     runId: v.string(),
     factId: v.string(),           // Links to facts table
     artifactId: v.string(),       // Which artifact was checked
-    
+
     // Verdict from LLM-as-a-judge
     verdict: v.union(
       v.literal("supported"),     // Source explicitly states the claim
@@ -3232,7 +3418,7 @@ export default defineSchema({
     confidence: v.number(),       // 0-1 confidence score
     explanation: v.optional(v.string()), // Short explanation (max 60 words)
     snippet: v.optional(v.string()),     // Cached source excerpt for display
-    
+
     createdAt: v.number(),
   })
     .index("by_run", ["runId"])
@@ -4189,5 +4375,133 @@ export default defineSchema({
     .index("by_targetFeedItem", ["targetFeedItemId"])
     .index("by_createdAt", ["createdAt"])
     .index("by_jobId", ["jobId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* BENCHMARK HARNESS - Deterministic evaluation & regression testing  */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Benchmark task definitions - the golden dataset of test cases.
+   * Each task represents a deterministic, reproducible test scenario.
+   */
+  benchmarkTasks: defineTable({
+    taskId: v.string(),                          // Unique task identifier (e.g., "sec_10k_retrieval_01")
+    suite: v.string(),                           // Suite name: "banking_memo", "social_factcheck", "mcp_smoke"
+    name: v.string(),                            // Human-readable name
+    description: v.optional(v.string()),
+
+    // Task configuration
+    taskType: v.union(
+      v.literal("sec_retrieval"),                // SEC filing retrieval
+      v.literal("memo_generation"),              // Banking memo workflow
+      v.literal("instagram_ingestion"),          // Instagram post ingestion
+      v.literal("claim_extraction"),             // Claim extraction from content
+      v.literal("citation_validation"),          // Citation integrity check
+      v.literal("tool_health"),                  // Tool availability check
+      v.literal("artifact_replay"),              // Artifact idempotency check
+    ),
+    inputPayload: v.any(),                       // Task-specific input parameters
+
+    // Expected outcomes (for validation)
+    expectations: v.object({
+      minArtifacts: v.optional(v.number()),      // Minimum artifact count
+      requiredFields: v.optional(v.array(v.string())),
+      maxLatencyMs: v.optional(v.number()),      // Performance threshold
+      successRequired: v.boolean(),              // Must succeed to pass
+      idempotent: v.optional(v.boolean()),       // Should produce same result on re-run
+    }),
+
+    // Metadata
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+    isActive: v.boolean(),
+    priority: v.optional(v.number()),            // Execution order priority
+  })
+    .index("by_taskId", ["taskId"])
+    .index("by_suite", ["suite"])
+    .index("by_type", ["taskType"])
+    .index("by_active", ["isActive"]),
+
+  /**
+   * Benchmark runs - execution of a suite of tasks.
+   */
+  benchmarkRuns: defineTable({
+    runId: v.string(),                           // Unique run identifier
+    suite: v.string(),                           // Suite being run
+    triggeredBy: v.optional(v.string()),         // "manual" | "ci" | "scheduled"
+    gitCommit: v.optional(v.string()),           // Git commit hash for traceability
+
+    // Status tracking
+    status: v.union(
+      v.literal("pending"),
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+
+    // Task tracking
+    totalTasks: v.number(),
+    completedTasks: v.number(),
+    passedTasks: v.number(),
+    failedTasks: v.number(),
+
+    // Aggregate metrics
+    totalLatencyMs: v.optional(v.number()),
+    avgLatencyMs: v.optional(v.number()),
+
+    // Timestamps
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+
+    // Error summary
+    errors: v.optional(v.array(v.object({
+      taskId: v.string(),
+      error: v.string(),
+    }))),
+  })
+    .index("by_runId", ["runId"])
+    .index("by_suite", ["suite"])
+    .index("by_status", ["status"])
+    .index("by_started", ["startedAt"]),
+
+  /**
+   * Benchmark scores - individual task results within a run.
+   */
+  benchmarkScores: defineTable({
+    runId: v.string(),                           // Parent benchmark run
+    taskId: v.string(),                          // Task that was executed
+    suite: v.string(),                           // Suite for filtering
+
+    // Execution result
+    passed: v.boolean(),
+    latencyMs: v.number(),
+
+    // Validation details
+    validationResults: v.object({
+      artifactCountValid: v.optional(v.boolean()),
+      requiredFieldsPresent: v.optional(v.boolean()),
+      latencyWithinThreshold: v.optional(v.boolean()),
+      idempotencyVerified: v.optional(v.boolean()),
+      customChecks: v.optional(v.array(v.object({
+        name: v.string(),
+        passed: v.boolean(),
+        message: v.optional(v.string()),
+      }))),
+    }),
+
+    // Artifacts produced (for traceability)
+    artifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
+
+    // Raw output (for debugging)
+    outputPreview: v.optional(v.string()),       // First 500 chars of output
+    error: v.optional(v.string()),
+
+    // Timestamps
+    executedAt: v.number(),
+  })
+    .index("by_run", ["runId"])
+    .index("by_task", ["taskId"])
+    .index("by_suite_passed", ["suite", "passed"])
+    .index("by_executed", ["executedAt"]),
 
 });

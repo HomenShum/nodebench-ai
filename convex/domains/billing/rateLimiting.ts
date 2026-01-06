@@ -352,6 +352,64 @@ export const recordLlmUsage = mutation({
 });
 
 /**
+ * Record usage for a non-authenticated "session" (anonymous user or internal eval run).
+ *
+ * This updates the `anonymousUsageDaily` table which is keyed by `sessionId` + date.
+ * It is intentionally separate from `llmUsageDaily/Log` which require a real `userId`.
+ */
+export const recordSessionLlmUsage = mutation({
+  args: {
+    sessionId: v.string(),
+    model: v.string(),
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+    cachedTokens: v.optional(v.number()),
+    latencyMs: v.optional(v.number()),
+    success: v.boolean(),
+    errorMessage: v.optional(v.string()),
+    /** Set true if the caller did not already count this request elsewhere. */
+    incrementRequest: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const date = todayISO();
+    const cost = calculateRequestCost(
+      args.model,
+      args.inputTokens,
+      args.outputTokens,
+      (args.cachedTokens ?? 0) > 0
+    );
+    const totalTokens = args.inputTokens + args.outputTokens;
+    const now = Date.now();
+
+    const existing = await ctx.db
+      .query("anonymousUsageDaily")
+      .withIndex("by_session_date", (q: any) => q.eq("sessionId", args.sessionId).eq("date", date))
+      .first();
+
+    const inc = args.incrementRequest === true ? 1 : 0;
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        requests: existing.requests + inc,
+        totalTokens: existing.totalTokens + totalTokens,
+        totalCost: existing.totalCost + cost,
+        updatedAt: now,
+      });
+    } else {
+      await ctx.db.insert("anonymousUsageDaily", {
+        sessionId: args.sessionId,
+        date,
+        requests: inc,
+        totalTokens,
+        totalCost: cost,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  },
+});
+
+/**
  * Get the best model for current user's tier
  */
 export const getRecommendedModel = query({

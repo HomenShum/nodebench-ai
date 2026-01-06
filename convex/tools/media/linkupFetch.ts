@@ -6,10 +6,13 @@
  *
  * API Reference: https://api.linkup.so/v1/fetch
  */
+"use node";
+
 import { v } from "convex/values";
 import { internalAction, action } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { generateCacheKey, getTTL } from "../../globalResearch/cacheSimple";
+import { createHash } from "crypto";
 
 export interface LinkupFetchResult {
   url: string;
@@ -38,6 +41,18 @@ const THIN_CONTENT_INDICATORS = [
 ];
 
 const MIN_CONTENT_WORD_COUNT = 200;
+
+const STORE_TO_STORAGE_CHARS = 250_000;
+const MAX_INLINE_RAW_CONTENT_CHARS = 120_000;
+
+function sha256Hex(input: string): string {
+  return createHash("sha256").update(input).digest("hex");
+}
+
+function truncateForDb(input: string): string {
+  if (input.length <= MAX_INLINE_RAW_CONTENT_CHARS) return input;
+  return input.slice(0, MAX_INLINE_RAW_CONTENT_CHARS) + `\n\n<!-- TRUNCATED: ${input.length} chars -->\n`;
+}
 
 function isContentThin(content: string): boolean {
   const wordCount = content.split(/\s+/).filter(Boolean).length;
@@ -70,6 +85,8 @@ export const linkupFetch = action({
       throw new Error("LINKUP_API_KEY environment variable is not set.");
     }
 
+    const fetchedAt = Date.now();
+
     // Check cache unless force refresh
     if (!args.forceRefresh) {
       const cacheKey = generateCacheKey("linkupFetch", args.url, {
@@ -83,6 +100,23 @@ export const linkupFetch = action({
 
         if (cached.hit) {
           console.log(`[linkupFetch] 🎯 Cache HIT for: "${args.url}" (age: ${Math.round(cached.ageMs / 1000)}s)`);
+          try {
+            const contentHash = sha256Hex(cached.response);
+            await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+              sourceType: "url_fetch",
+              sourceUrl: args.url,
+              contentHash,
+              rawContent: truncateForDb(cached.response),
+              extractedData: {
+                tool: "linkupFetch",
+                cacheHit: true,
+                cacheAgeMs: cached.ageMs,
+              },
+              fetchedAt,
+            });
+          } catch (artifactErr) {
+            console.warn("[linkupFetch] Failed to persist sourceArtifact from cache hit", artifactErr);
+          }
           return cached.response;
         }
       } catch (cacheError) {
@@ -183,6 +217,48 @@ export const linkupFetch = action({
         jsRendered: renderJs,
       });
 
+      // Persist durable snapshot for citations / replayability.
+      try {
+        const contentHash = sha256Hex(result);
+        const existing = await ctx.runQuery(internal.domains.artifacts.sourceArtifacts.findByUrlAndHash, {
+          sourceUrl: args.url,
+          contentHash,
+        });
+
+        if (!existing) {
+          let storageId: string | undefined;
+          if (result.length >= STORE_TO_STORAGE_CHARS) {
+            const blob = new Blob([result], { type: "text/markdown; charset=utf-8" });
+            storageId = await ctx.storage.store(blob);
+          }
+
+          await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+            sourceType: "url_fetch",
+            sourceUrl: args.url,
+            contentHash,
+            rawContent: storageId ? truncateForDb(result) : result,
+            extractedData: {
+              tool: "linkupFetch",
+              cacheHit: false,
+              jsRendered: renderJs,
+              title: data.title,
+              description: data.description,
+              author: data.author,
+              publishedDate: data.publishedDate,
+              siteName: data.siteName,
+              language: data.language,
+              images: data.images,
+              includeRawHtml: args.includeRawHtml ?? false,
+              storageId,
+              contentLength: result.length,
+            },
+            fetchedAt,
+          });
+        }
+      } catch (artifactErr) {
+        console.warn("[linkupFetch] Failed to persist sourceArtifact", artifactErr);
+      }
+
       // Cache the result
       const cacheKey = generateCacheKey("linkupFetch", args.url, {
         renderJs,
@@ -251,8 +327,8 @@ export const linkupFetchInternal = internalAction({
     fundingEventId: v.optional(v.id("fundingEvents")),
   },
   handler: async (ctx, args) => {
-    // Use the public action handler
-    const result = await linkupFetch.handler(ctx, {
+    // Delegate to the public action to keep caching/telemetry/artifact persistence consistent.
+    const result = await ctx.runAction(internal.tools.media.linkupFetch.linkupFetch, {
       url: args.url,
       renderJs: args.renderJs,
     });

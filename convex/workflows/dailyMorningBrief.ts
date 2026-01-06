@@ -145,6 +145,16 @@ export const runDailyMorningBrief = (internalAction as any)({
         );
         const digestMemory = memoryForDate ?? latestMemory;
         const digestContext = (digestMemory?.context ?? {}) as any;
+        const briefRecord = (digestContext as any)?.executiveBriefRecord;
+        const executiveBrief =
+          briefRecord?.brief ||
+          digestContext.executiveBrief ||
+          digestContext.generatedBrief ||
+          null;
+        let landingBriefBody: string | null =
+          typeof digestContext.ntfyDigestBody === "string" && digestContext.ntfyDigestBody.trim()
+            ? digestContext.ntfyDigestBody.trim()
+            : null;
         const alreadySent = memoriesForDate.some(
           (memory) => memory?.context?.ntfyDigestDate === storeResult.dateString,
         );
@@ -153,13 +163,6 @@ export const runDailyMorningBrief = (internalAction as any)({
           ntfySkipped = true;
           console.log("[dailyMorningBrief] ntfy digest already sent; skipping");
         } else {
-          const briefRecord = (digestContext as any)?.executiveBriefRecord;
-          const executiveBrief =
-            briefRecord?.brief ||
-            digestContext.executiveBrief ||
-            digestContext.generatedBrief ||
-            null;
-
           const signalUrls = Array.isArray(executiveBrief?.actII?.signals)
             ? executiveBrief.actII.signals
                 .map((signal: any) => signal?.evidence?.[0]?.url)
@@ -276,6 +279,7 @@ export const runDailyMorningBrief = (internalAction as any)({
             briefRecordStatus: briefRecord?.status,
             evidence: briefRecord?.evidence,
           });
+          landingBriefBody = digestPayload.body;
 
           const chartAttachment = await buildNtfyChartAttachment(
             ctx,
@@ -295,20 +299,6 @@ export const runDailyMorningBrief = (internalAction as any)({
             eventType: "morning_digest", 
           }); 
 
-          // Also append the brief into the public landing log (#signals).
-          try {
-            await ctx.runMutation(internal.domains.landing.landingPageLog.appendSystem, {
-              kind: "brief",
-              title: `Morning Dossier - ${storeResult.dateString}`,
-              markdown: `${digestPayload.body}\n\n${formatMarkdownLink("Open Signals Log", `${DASHBOARD_URL}#signals`)}`,
-              source: "daily_brief_cron",
-              tags: ["morning_brief", "automated"],
-              day: storeResult.dateString,
-            });
-          } catch (logErr: any) {
-            console.warn("[dailyMorningBrief] landingPageLog append failed:", logErr?.message || logErr);
-          }
- 
           ntfySent = true; 
           console.log("[dailyMorningBrief] ntfy digest sent"); 
 
@@ -320,12 +310,48 @@ export const runDailyMorningBrief = (internalAction as any)({
                 contextPatch: {
                   ntfyDigestDate: storeResult.dateString,
                   ntfyDigestSentAt: Date.now(),
+                  ntfyDigestTitle: digestPayload.title,
+                  ntfyDigestBody: digestPayload.body,
                   ntfyChartStorageId: chartAttachment?.storageId ?? digestContext.ntfyChartStorageId,
                   ntfyChartDate: chartAttachment ? storeResult.dateString : digestContext.ntfyChartDate,
                 },
               },
             );
           }
+        }
+
+        // Always ensure the public landing log contains a brief entry, even if ntfy is skipped.
+        try {
+          const existing: any[] = await ctx.runQuery(api.domains.landing.landingPageLog.listPublic as any, {
+            day: storeResult.dateString,
+            limit: 200,
+          });
+          const hasBrief = Array.isArray(existing) && existing.some((e: any) => e?.kind === "brief");
+          if (!hasBrief) {
+            const fallbackSynthesis =
+              executiveBrief?.actII?.synthesis ||
+              executiveBrief?.actI?.brief ||
+              executiveBrief?.summary ||
+              null;
+            const body =
+              landingBriefBody ||
+              (typeof fallbackSynthesis === "string" && fallbackSynthesis.trim()
+                ? `**Executive Synthesis**\n\n${fallbackSynthesis.trim()}`
+                : null);
+
+            if (body) {
+              await ctx.runMutation(internal.domains.landing.landingPageLog.appendSystem, {
+                kind: "brief",
+                title: `Morning Dossier - ${storeResult.dateString}`,
+                markdown: `${body}\n\n${formatMarkdownLink("Open Signals Log", `${DASHBOARD_URL}#signals`)}`,
+                source: "daily_brief_cron",
+                tags: ["morning_brief", "automated"],
+                day: storeResult.dateString,
+              });
+            }
+          }
+        } catch (logErr: any) {
+          console.warn("[dailyMorningBrief] landingPageLog append failed:", logErr?.message || logErr);
         }
       } catch (ntfyErr: any) {
         console.warn("[dailyMorningBrief] ntfy digest failed:", ntfyErr?.message);
@@ -2653,3 +2679,285 @@ function buildPersonaActions(feedItems: FeedItemLite[]): string[] {
 
   return actions;
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENT-POWERED DIGEST GENERATION (Phase 2)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Run the daily morning brief with agent-powered digest generation.
+ * 
+ * This is an alternative to the rule-based buildNtfyDigestPayload that uses
+ * the coordinator agent for narrative synthesis and story analysis.
+ * 
+ * Benefits:
+ * - Dynamic narrative that adapts to content themes
+ * - Persona-aware prioritization of stories
+ * - Can use tools for deeper analysis if needed
+ * - Same quality as Fast Agent Panel responses
+ */
+export const runAgentPoweredDigest = (internalAction as any)({
+  args: {
+    useTools: v.optional(v.boolean()), // Enable deep analysis (slower, more thorough)
+    persona: v.optional(v.string()),   // Target persona for digest
+    model: v.optional(v.string()),     // Override default model
+    sendNtfy: v.optional(v.boolean()), // Actually send the notification (default: true)
+    maxFeedItems: v.optional(v.number()), // Reduce prompt size for faster runs
+    maxDigestChars: v.optional(v.number()), // Hint for digest size (passed to digest agent)
+    detectBreakingAlerts: v.optional(v.boolean()),
+    breakingMinUrgency: v.optional(v.string()),
+    breakingTopic: v.optional(v.string()),
+  },
+  handler: async (ctx: any, args: any): Promise<any> => {
+    const startTime = Date.now();
+    const useTools = args.useTools ?? false;
+    const persona = args.persona ?? "GENERAL";
+    const model = args.model ?? "claude-haiku-4.5";
+    const sendNtfy = args.sendNtfy ?? true;
+    const maxFeedItems = typeof args.maxFeedItems === "number" ? args.maxFeedItems : 50;
+    const maxDigestChars = typeof args.maxDigestChars === "number" ? args.maxDigestChars : 3500;
+    const detectBreakingAlerts = args.detectBreakingAlerts ?? true;
+    const breakingMinUrgency = args.breakingMinUrgency ?? "high";
+    const breakingTopic = args.breakingTopic;
+
+    console.log(`[agentPoweredDigest] Starting agent digest generation, persona=${persona}, useTools=${useTools}, model=${model}`);
+
+    try {
+      // Step 1: Get feed items
+      const feedItems = await ctx.runQuery(
+        internal.domains.research.dashboardQueries.getFeedItemsForMetrics,
+        {}
+      ) as FeedItemLite[];
+
+      console.log(`[agentPoweredDigest] Retrieved ${feedItems.length} feed items`);
+
+      // Step 2: Generate agent-powered digest
+      const digestResult = await ctx.runAction(
+        internal.domains.agents.digestAgent.generateAgentDigest,
+        {
+          feedItems: feedItems.slice(0, Math.max(1, maxFeedItems)).map((item: FeedItemLite) => ({
+            title: item.title,
+            summary: item.summary,
+            source: item.source,
+            tags: item.tags,
+            category: item.category,
+            score: item.score,
+            publishedAt: item.publishedAt,
+            type: item.type,
+            url: item.url,
+          })),
+          persona,
+          model,
+          useTools,
+          maxLength: maxDigestChars,
+          outputMode: "structured",
+          useCache: true,
+        }
+      );
+
+      if (digestResult.error || !digestResult.digest) {
+        console.error(`[agentPoweredDigest] Agent digest failed:`, digestResult.error);
+        return {
+          success: false,
+          error: digestResult.error || "No digest generated",
+          usage: digestResult.usage,
+        };
+      }
+
+      console.log(`[agentPoweredDigest] Agent digest generated in ${digestResult.digest.processingTimeMs}ms`);
+
+      // Optional: breaking alert detection on the lead story (digest flow integration)
+      if (detectBreakingAlerts && digestResult.digest.leadStory) {
+        const leadUrl = digestResult.digest.leadStory.url;
+        const leadTitle = digestResult.digest.leadStory.title;
+
+        const leadItem =
+          feedItems.find((i) => leadUrl && i.url && i.url === leadUrl) ??
+          feedItems.find((i) => i.title && i.title === leadTitle) ??
+          null;
+
+        if (leadItem) {
+          try {
+            await ctx.runAction(internal.domains.agents.digestAgent.sendBreakingAlertIfWarranted, {
+              story: {
+                title: leadItem.title,
+                summary: leadItem.summary,
+                source: leadItem.source,
+                url: leadItem.url,
+                publishedAt: leadItem.publishedAt,
+                category: leadItem.category,
+                tags: leadItem.tags,
+              },
+              topic: breakingTopic,
+              minUrgency: breakingMinUrgency,
+            });
+          } catch (err: any) {
+            console.warn(`[agentPoweredDigest] Breaking alert detection failed (non-blocking):`, err?.message);
+          }
+        }
+      }
+
+      // Step 3: Format for ntfy
+      const { formatDigestForNtfy } = await import("../domains/agents/digestAgent");
+      const ntfyPayload = formatDigestForNtfy(digestResult.digest, {
+        maxLength: 3800,
+        dashboardUrl: DASHBOARD_URL,
+      });
+
+      console.log(`[agentPoweredDigest] Formatted for ntfy: ${ntfyPayload.body.length} chars`);
+
+      // Cache the ntfy payload so other channels can reuse the digest without regeneration.
+      let cacheId: any = null;
+      try {
+        cacheId = await ctx.runMutation(internal.domains.agents.digestAgent.cacheDigest, {
+          dateString: digestResult.digest.dateString,
+          persona,
+          model,
+          rawText: digestResult.rawText,
+          digest: digestResult.digest,
+          ntfyPayload,
+          usage: {
+            inputTokens: digestResult.usage.inputTokens ?? 0,
+            outputTokens: digestResult.usage.outputTokens ?? 0,
+          },
+          feedItemCount: digestResult.digest.storyCount,
+          ttlHours: 24,
+        });
+      } catch (cacheErr: any) {
+        console.warn("[agentPoweredDigest] Failed to cache digest payload (non-blocking):", cacheErr?.message);
+      }
+
+      // Step 4: Send notification
+      let ntfySent = false;
+      if (sendNtfy) {
+        await ctx.runAction(api.domains.integrations.ntfy.sendNotification, {
+          title: ntfyPayload.title,
+          body: ntfyPayload.body,
+          priority: 3,
+          tags: ["newspaper", "robot", "briefcase"],
+          click: DASHBOARD_URL,
+          eventType: "agent_morning_digest",
+        });
+        ntfySent = true;
+        console.log(`[agentPoweredDigest] ntfy notification sent`);
+
+        if (cacheId) {
+          try {
+            await ctx.runMutation(internal.domains.agents.digestAgent.markDigestSent, {
+              digestId: cacheId,
+              channel: "ntfy",
+            });
+          } catch (markErr: any) {
+            console.warn("[agentPoweredDigest] Failed to mark digest as sent (non-blocking):", markErr?.message);
+          }
+        }
+      }
+
+      const totalTime = Date.now() - startTime;
+
+      return {
+        success: true,
+        ntfySent,
+        digest: digestResult.digest,
+        ntfyPayload,
+        usage: digestResult.usage,
+        totalTimeMs: totalTime,
+        storyCount: feedItems.length,
+      };
+    } catch (error: any) {
+      console.error(`[agentPoweredDigest] Error:`, error);
+      return {
+        success: false,
+        error: error.message || String(error),
+        totalTimeMs: Date.now() - startTime,
+      };
+    }
+  },
+});
+
+/**
+ * Run breaking alert detection on recent feed items.
+ * 
+ * This scans recent stories and sends push notifications for
+ * genuinely important breaking news.
+ */
+export const runBreakingAlertScan = (internalAction as any)({
+  args: {
+    hoursBack: v.optional(v.number()),   // How far back to scan (default: 2)
+    limit: v.optional(v.number()),       // Max stories to check (default: 20)
+    minUrgency: v.optional(v.string()),  // Minimum urgency to alert (default: "high")
+    topic: v.optional(v.string()),       // ntfy topic override
+  },
+  handler: async (ctx: any, args: any): Promise<any> => {
+    const hoursBack = args.hoursBack ?? 2;
+    const limit = args.limit ?? 20;
+    const minUrgency = args.minUrgency ?? "high";
+    const topic = args.topic;
+
+    console.log(`[breakingAlertScan] Scanning last ${hoursBack}h, limit=${limit}, minUrgency=${minUrgency}`);
+
+    // Get recent feed items
+    const feedItems = await ctx.runAction(
+      internal.domains.agents.digestAgent.getFeedItemsForDigest,
+      { hoursBack, limit }
+    );
+
+    console.log(`[breakingAlertScan] Found ${feedItems.length} recent items to analyze`);
+
+    const results: Array<{
+      title: string;
+      alertSent: boolean;
+      urgency: string;
+    }> = [];
+
+    let alertsSent = 0;
+
+    // Analyze each story (with rate limiting to avoid spam)
+    for (const item of feedItems) {
+      if (alertsSent >= 3) {
+        console.log(`[breakingAlertScan] Max alerts (3) reached, stopping scan`);
+        break;
+      }
+
+      try {
+        const result = await ctx.runAction(
+          internal.domains.agents.digestAgent.sendBreakingAlertIfWarranted,
+          {
+            story: {
+              title: item.title,
+              summary: item.summary,
+              source: item.source,
+              url: item.url,
+              publishedAt: item.publishedAt,
+              category: item.category,
+              tags: item.tags,
+            },
+            topic,
+            minUrgency,
+          }
+        );
+
+        results.push({
+          title: item.title,
+          alertSent: result.alertSent,
+          urgency: result.analysis.urgency,
+        });
+
+        if (result.alertSent) {
+          alertsSent++;
+        }
+      } catch (err: any) {
+        console.warn(`[breakingAlertScan] Error analyzing "${item.title}":`, err?.message);
+      }
+    }
+
+    console.log(`[breakingAlertScan] Complete: ${alertsSent} alerts sent from ${feedItems.length} stories`);
+
+    return {
+      storiesAnalyzed: feedItems.length,
+      alertsSent,
+      results,
+    };
+  },
+});

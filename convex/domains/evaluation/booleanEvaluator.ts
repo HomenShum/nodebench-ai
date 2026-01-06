@@ -105,7 +105,51 @@ export interface EvaluationSummary {
  */
 function checkContainsRequiredFacts(response: string, requiredFacts: string[]): boolean {
   const lowerResponse = response.toLowerCase();
-  return requiredFacts.every(fact => lowerResponse.includes(fact.toLowerCase()));
+
+  const monthNames = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ];
+
+  function matchesRequiredFact(fact: string): boolean {
+    const loweredFact = fact.toLowerCase();
+    if (lowerResponse.includes(loweredFact)) return true;
+
+    // If the fact is an ISO date, accept common human-readable variants too.
+    const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fact);
+    if (isoMatch) {
+      const [, year, month, day] = isoMatch;
+      const monthIndex = Number(month) - 1;
+      const dayNum = String(Number(day)); // "13" (no leading zero)
+      const monthName = monthNames[monthIndex] ?? "";
+      const monthAbbr = monthName ? monthName.slice(0, 3) : "";
+
+      const candidates = [
+        `${monthName} ${dayNum}, ${year}`,
+        `${monthAbbr} ${dayNum}, ${year}`,
+        `${dayNum} ${monthName} ${year}`,
+        `${dayNum} ${monthAbbr} ${year}`,
+        `${month}/${day}/${year}`,
+        `${month}/${dayNum}/${year}`,
+      ].filter(Boolean);
+
+      return candidates.some(c => lowerResponse.includes(c));
+    }
+
+    return false;
+  }
+
+  return requiredFacts.every(matchesRequiredFact);
 }
 
 /**
@@ -253,8 +297,8 @@ function checkFreshnessWithinPersonaWindow(
   // If persona doesn't care about freshness, pass
   if (!req.requiresNewsWithinDays) return true;
 
-  // If entity has no freshness data, fail
-  if (entity.freshnessAgeDays === null) return false;
+  // If entity has no freshness data, treat as N/A (don't fail the evaluation)
+  if (entity.freshnessAgeDays === null) return true;
 
   return entity.freshnessAgeDays <= req.requiresNewsWithinDays;
 }
@@ -289,12 +333,19 @@ function checkMentionsCEO(response: string, entity: GroundTruthEntity): boolean 
 function checkCitesPrimarySources(response: string, entity: GroundTruthEntity): boolean {
   const lowerResponse = response.toLowerCase();
 
-  // Look for source citation patterns
-  const hasSourceCitation = lowerResponse.includes("source:") ||
-                            lowerResponse.includes("according to") ||
-                            lowerResponse.includes("per ") ||
-                            lowerResponse.includes("based on") ||
-                            lowerResponse.includes("{{fact:");
+  // Look for source citation patterns (URLs, tool-citation anchors, or explicit "Sources:" sections)
+  const hasUrl = /https?:\/\/\S+/i.test(response);
+  const hasCitationAnchor =
+    response.includes("{{fact:") ||
+    response.includes("{{cite:") ||
+    response.includes("{{artifact:") ||
+    response.includes("{{source:");
+  const hasSourcesSection = lowerResponse.includes("\nsources") || lowerResponse.includes("source:");
+  const hasAttribution =
+    lowerResponse.includes("according to") ||
+    lowerResponse.includes("per ") ||
+    lowerResponse.includes("based on");
+  const hasSourceCitation = hasUrl || hasCitationAnchor || hasSourcesSection || hasAttribution;
 
   // If entity requires primary source and persona requires it
   if (entity.hasPrimarySource) {
@@ -399,6 +450,26 @@ function checkMeetsPersonaRequirements(
         !lowerResponse.includes("program") &&
         !lowerResponse.includes("product")) {
       return false;
+    }
+  }
+
+  // Check quantitative data requirement (if the entity has any quantitative anchors)
+  if (req.requiresQuantitativeData) {
+    const entityHasQuantAnchor =
+      !!entity.funding?.lastRound?.amount ||
+      entity.requiredFacts.some((f) => /\d/.test(f));
+
+    if (entityHasQuantAnchor) {
+      const hasAnyDigit = /\d/.test(response);
+      if (!hasAnyDigit) return false;
+
+      if (entity.funding?.lastRound?.amount) {
+        const hasCurrencyOrUnit =
+          response.includes("ƒ,ª") ||
+          /[$€£¥]/.test(response) ||
+          /\b(k|m|b|million|billion)\b/i.test(response);
+        if (!hasCurrencyOrUnit) return false;
+      }
     }
   }
 

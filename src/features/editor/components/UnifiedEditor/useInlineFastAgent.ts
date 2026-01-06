@@ -297,10 +297,25 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
 
         // Send message to Fast Agent
         const message = context ? `${question}\n\nContext:\n${context}` : question;
+        const clientContext =
+          typeof window !== "undefined"
+            ? {
+                timezone: (() => {
+                  try {
+                    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+                  } catch {
+                    return undefined;
+                  }
+                })(),
+                locale: typeof navigator !== "undefined" ? navigator.language : undefined,
+                utcOffsetMinutes: new Date().getTimezoneOffset(),
+              }
+            : undefined;
         const result = await sendStreamingMessage({
           threadId: threadId as Id<"chatThreadsStream">,
           prompt: message,
           model: "gpt-5-chat-latest",
+          clientContext,
         });
 
         setStreamingState((prev) => ({ ...prev, messageId: result.messageId }));
@@ -362,4 +377,3 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
     threadId: streamingState.threadId,
   };
 }
-

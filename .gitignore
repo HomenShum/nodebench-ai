@@ -43,6 +43,7 @@ playwright-report/
 # Temporary files
 temp_*.txt
 temp_*.md
+.tmp-tools/
 
 # Implementation notes (keep only core docs)
 docs/
@@ -56,3 +57,4 @@ docs/
 !docs/BIDIRECTIONAL_FOCUS_IMPLEMENTATION_PLAN.md
 !docs/BIDIRECTIONAL_FOCUS_TEST_PLAN.md
 .node-24/
+.cache/

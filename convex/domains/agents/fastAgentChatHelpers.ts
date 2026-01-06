@@ -14,6 +14,7 @@ export const updateRunStatus = internalMutation({
     runId: v.id("agentRuns"),
     status: v.union(
       v.literal("pending"),
+      v.literal("queued"),
       v.literal("running"),
       v.literal("completed"),
       v.literal("error")
@@ -103,4 +104,3 @@ export const appendRunEvent = internalMutation({
     return { seq: 1 };
   },
 });
-

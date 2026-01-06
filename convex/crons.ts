@@ -199,4 +199,12 @@ crons.interval(
   {}
 );
 
+// Agent run orchestration: reclaim expired leases frequently so work can be picked up by other workers.
+crons.interval(
+  "reclaim expired agent run leases",
+  { minutes: 1 },
+  internal.domains.agents.orchestrator.queueProtocol.reclaimExpiredLeases,
+  {}
+);
+
 export default crons;

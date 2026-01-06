@@ -4,10 +4,15 @@
 
 import { v } from "convex/values";
 import { action } from "../../_generated/server";
-import { api } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 
 const rateLimiter = new Map<string, { count: number; expiresAt: number }>();
+const MAX_INLINE_RAW_CHARS = 120_000;
+function truncateForDb(input: string): string {
+  if (input.length <= MAX_INLINE_RAW_CHARS) return input;
+  return input.slice(0, MAX_INLINE_RAW_CHARS) + `\n\n<!-- TRUNCATED: ${input.length} chars -->\n`;
+}
 
 /**
  * Call an MCP tool via HTTP (static tool-calling only)
@@ -52,6 +57,9 @@ export const callMcpTool: any = action({
         error: "MCP daily rate limit exceeded. Please retry tomorrow.",
       };
     }
+    let metricToolName: string | null = null;
+    let startedAt: number | null = null;
+
     try {
       // Helper to score preferred servers (lower is better)
       const PRIORITY = (args.prioritizedServers && args.prioritizedServers.length > 0)
@@ -79,12 +87,12 @@ export const callMcpTool: any = action({
       }
 
       if (!serverId) {
-        const envUrl = process.env.CORE_AGENT_MCP_SERVER_URL;
+        const envUrl = process.env.CORE_AGENT_MCP_SERVER_URL || process.env.CORE_AGENT_MCP_URL;
         if (envUrl) {
           server = {
             name: "core_agent_server",
             url: envUrl,
-            apiKey: process.env.CORE_AGENT_MCP_AUTH_TOKEN,
+            apiKey: process.env.CORE_AGENT_MCP_AUTH_TOKEN || process.env.CORE_AGENT_MCP_TOKEN,
           };
         } else {
           return { success: false, error: "No MCP server configured", serverId: undefined, serverName: undefined };
@@ -138,6 +146,9 @@ export const callMcpTool: any = action({
 
       console.log(`Making MCP request to ${server.url}:`, JSON.stringify(requestBody, null, 2));
 
+      const serverLabel = String(server?.name ?? "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+      metricToolName = `mcp.${serverLabel}.tool.${args.toolName}`;
+      startedAt = Date.now();
       const response: Response = await fetch(server.url, {
         method: "POST",
         headers,
@@ -172,9 +183,41 @@ export const callMcpTool: any = action({
         throw new Error(`MCP Error ${result.error.code}: ${result.error.message}`);
       }
 
+      try {
+        await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+          sourceType: "api_response",
+          sourceUrl: server.url,
+          rawContent: truncateForDb(responseText),
+          extractedData: {
+            tool: "mcpClient",
+            serverName: server?.name,
+            serverUrl: server?.url,
+            toolName: args.toolName,
+            requestId,
+            requestBody,
+            response: result,
+          },
+          fetchedAt: Date.now(),
+        });
+      } catch (artifactErr) {
+        console.warn("[mcpClient] Failed to persist sourceArtifact", artifactErr);
+      }
+
       // Validate JSON-RPC 2.0 response format
       if (result.jsonrpc !== "2.0" || result.id !== requestId) {
         console.warn("Response doesn't follow JSON-RPC 2.0 format, but proceeding...");
+      }
+
+      if (metricToolName && startedAt !== null) {
+        const latencyMs = Math.max(0, Date.now() - startedAt);
+        try {
+          await ctx.runMutation(internal.domains.agents.orchestrator.toolHealth.recordToolSuccess, {
+            toolName: metricToolName,
+            latencyMs,
+          });
+        } catch (telemetryErr) {
+          console.warn("[mcpClient] Failed to record tool success telemetry", telemetryErr);
+        }
       }
 
       // TODO: Update tool usage statistics when properly implemented
@@ -204,6 +247,18 @@ export const callMcpTool: any = action({
 
     } catch (error) {
       console.error(`Failed to call MCP tool ${args.toolName}:`, error);
+      if (metricToolName && startedAt !== null) {
+        const latencyMs = Math.max(0, Date.now() - startedAt);
+        try {
+          await ctx.runMutation(internal.domains.agents.orchestrator.toolHealth.recordToolFailure, {
+            toolName: metricToolName,
+            latencyMs,
+            error: error instanceof Error ? error.message : "Tool execution failed",
+          });
+        } catch (telemetryErr) {
+          console.warn("[mcpClient] Failed to record tool failure telemetry", telemetryErr);
+        }
+      }
       if (userId && serverId) {
         try {
           await ctx.runMutation((api as any).mcp.storeUsageHistory, {

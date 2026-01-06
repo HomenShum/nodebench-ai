@@ -1,0 +1,62 @@
+{
+  "iteration": 2,
+  "testTimestamp": "2026-01-06T01:30:00Z",
+  "improvements": {
+    "personaSpecificActions": {
+      "before": "All action items used GENERAL when running with GENERAL persona",
+      "after": "Prompt now instructs diverse persona assignment for GENERAL mode; non-GENERAL personas get consistent persona tags",
+      "status": "FIXED",
+      "verification": "CTO_TECH_LEAD run shows all 5 action items with 'CTO_TECH_LEAD' persona"
+    },
+    "entityFundingStageCleaning": {
+      "before": "fundingStage contained artifacts like 'N/A - Anthropic product'",
+      "after": "cleanFundingStage() extracts just the label: 'N/A', 'Seed', 'Series A', etc.",
+      "status": "FIXED",
+      "verification": "CTO_TECH_LEAD entities show clean 'N/A' values"
+    }
+  },
+  "ctoTechLeadResults": {
+    "metrics": {
+      "totalTimeMs": 38856,
+      "digestGenerationMs": 36226,
+      "storyCount": 26,
+      "ntfyBodyLength": 3471,
+      "actionItemsCount": 5,
+      "signalsCount": 6,
+      "entitySpotlightCount": 3,
+      "usage": {
+        "inputTokens": 4333,
+        "outputTokens": 3391,
+        "totalTokens": 7724,
+        "model": "claude-haiku-4.5"
+      }
+    },
+    "qualityChecks": {
+      "allActionItemsHaveCTO_TECH_LEADPersona": true,
+      "entityFundingStageClean": true,
+      "reflectionFrameworkPresent": true,
+      "leadStoryHasReflection": true
+    },
+    "sampleActionItems": [
+      {"persona": "CTO_TECH_LEAD", "action": "Audit AI-generated code policies: implement explicit human code review..."},
+      {"persona": "CTO_TECH_LEAD", "action": "Evaluate Claude Code observability gap: install claude-hud plugin..."},
+      {"persona": "CTO_TECH_LEAD", "action": "Abstract Claude API coupling: identify 3-5 highest-value Claude Code integrations..."},
+      {"persona": "CTO_TECH_LEAD", "action": "Request formal Data Processing Agreement (DPA) from Anthropic..."},
+      {"persona": "CTO_TECH_LEAD", "action": "Profile document processing pipelines: if PDF/image parsing is >5%..."}
+    ],
+    "sampleEntitySpotlight": [
+      {"name": "Anthropic Claude (via ecosystem)", "type": "LLM Platform / API Service", "fundingStage": "N/A"},
+      {"name": "LLVM Project", "type": "Open-Source Infrastructure / Compiler", "fundingStage": "N/A"},
+      {"name": "Zig Language Community", "type": "Systems Programming Language", "fundingStage": "N/A"}
+    ]
+  },
+  "remainingIssues": [
+    "Cache lookup doesn't differentiate by model - same date/persona returns cached result regardless of model change",
+    "GENERAL persona may still need fresh run to verify diverse personas work (cache hit returning old results)"
+  ],
+  "reflection": {
+    "what": "Implemented persona-specific action item generation and entity funding stage cleanup in digestAgent.ts",
+    "soWhat": "The CTO_TECH_LEAD persona test demonstrates high-quality, targeted action items and clean entity data. Structured output mode is producing banker-grade intelligence briefs.",
+    "nowWhat": "Iteration 3: (1) Verify GENERAL persona with fresh feed items produces diverse personas, (2) Consider cache key enhancement to include model, (3) Run final validation across multiple personas"
+  }
+}

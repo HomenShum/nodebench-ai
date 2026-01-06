@@ -545,8 +545,8 @@ async function seedMcpServers(ctx: any) {
   let coreAgentUrl: string | undefined;
   let openbbUrl: string | undefined;
   try {
-    coreAgentUrl = process.env.CORE_AGENT_MCP_SERVER_URL;
-    openbbUrl = process.env.OPENBB_MCP_SERVER_URL;
+    coreAgentUrl = process.env.CORE_AGENT_MCP_SERVER_URL || process.env.CORE_AGENT_MCP_URL;
+    openbbUrl = process.env.OPENBB_MCP_SERVER_URL || process.env.OPENBB_MCP_URL;
   } catch {
     // noop
   }
@@ -567,7 +567,9 @@ async function seedMcpServers(ctx: any) {
   ].filter(Boolean) as Array<{ name: string; url: string; description: string; isEnabled: boolean }>;
 
   if (servers.length === 0) {
-    console.log("   No MCP server URLs configured (CORE_AGENT_MCP_SERVER_URL / OPENBB_MCP_SERVER_URL). Skipping MCP server seeding.");
+    console.log(
+      "   No MCP server URLs configured (CORE_AGENT_MCP_SERVER_URL|CORE_AGENT_MCP_URL / OPENBB_MCP_SERVER_URL|OPENBB_MCP_URL). Skipping MCP server seeding."
+    );
     return;
   }
 

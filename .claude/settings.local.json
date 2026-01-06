@@ -30,7 +30,10 @@
       "Bash(npx convex:*)",
       "Bash(timeout 90 npx tsx:*)",
       "Bash(timeout 50 npx tsx:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(timeout 120 npx tsx:*)",
+      "Bash(timeout 120 npx convex run:*)",
+      "Bash(CONVEX_URL=https://agile-caribou-964.convex.cloud timeout 120 npx convex run:*)"
     ],
     "deny": [],
     "ask": []

@@ -42,6 +42,16 @@ function generateEvalSessionId(): string {
   return `${EVAL_SESSION_PREFIX}${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
 }
 
+function getBestAssistantText(messages: any[]): string {
+  let best = "";
+  for (const message of messages) {
+    if (!message || message.role !== "assistant") continue;
+    const text = typeof message.content === "string" ? message.content.trim() : "";
+    if (text.length > best.length) best = text;
+  }
+  return best;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // LIVE EVALUATION ACTIONS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -91,17 +101,23 @@ export const runSingleEvalAnonymous = action({
         anonymousSessionId: sessionId,
       });
 
-      // Send the evaluation query
-      await ctx.runAction(api.domains.agents.fastAgentPanelStreaming.sendMessageStreaming, {
-        threadId,
-        content: query.query,
-        anonymousSessionId: sessionId,
-      });
+       // Send the evaluation query
+       await ctx.runAction(api.domains.agents.fastAgentPanelStreaming.sendMessageStreaming, {
+         threadId,
+         content: query.query,
+         anonymousSessionId: sessionId,
+         // Evaluation queries are grounded by injected local context + ground truth anchors;
+         // avoid coordinator/tool routing to reduce latency and timeout flakiness.
+         useCoordinator: false,
+       });
 
       // Wait for response to complete (poll for messages)
       let responseText = "";
       let attempts = 0;
-      const maxAttempts = 30; // 30 * 2s = 60s max
+      const maxAttempts = 90; // 90 * 2s = 180s max (allows for provider fallback backoff)
+      const minResponseChars = 200;
+      let bestTextSoFar = "";
+      let stablePolls = 0;
 
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -111,14 +127,33 @@ export const runSingleEvalAnonymous = action({
           anonymousSessionId: sessionId,
         });
 
-        // Find assistant message
-        const assistantMessages = messages.filter((m: any) => m.role === "assistant");
-        if (assistantMessages.length > 0) {
-          const lastMessage = assistantMessages[assistantMessages.length - 1];
-          if (lastMessage.content && lastMessage.content.length > 50) {
-            responseText = lastMessage.content;
-            break;
-          }
+        const bestText = getBestAssistantText(messages);
+        if (bestText && bestText !== bestTextSoFar) {
+          bestTextSoFar = bestText;
+          stablePolls = 0;
+        } else if (bestText) {
+          stablePolls++;
+        }
+
+        const lower = bestTextSoFar.toLowerCase();
+        const looksInterim =
+          lower.includes("let me search") ||
+          lower.includes("let me look up") ||
+          lower.includes("let me check") ||
+          lower.includes("let me find") ||
+          lower.includes("i'll search") ||
+          lower.includes("i'll look up") ||
+          lower.includes("i'll check") ||
+          lower.includes("i'll find") ||
+          lower.includes("i need to") && lower.includes("search");
+
+        if (bestTextSoFar.length >= minResponseChars && stablePolls >= 2 && !looksInterim) {
+          responseText = bestTextSoFar;
+          break;
+        }
+        if (attempts >= maxAttempts - 1 && bestTextSoFar.length > 50) {
+          responseText = bestTextSoFar;
+          break;
         }
 
         attempts++;
@@ -243,7 +278,10 @@ export const runBatchEvalAuthenticated = action({
         // Wait for response
         let responseText = "";
         let attempts = 0;
-        const maxAttempts = 45; // 45 * 2s = 90s max
+        const maxAttempts = 75; // 75 * 2s = 150s max (allows for provider fallback backoff)
+        const minResponseChars = 200;
+        let bestTextSoFar = "";
+        let stablePolls = 0;
 
         while (attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 2000));
@@ -251,15 +289,35 @@ export const runBatchEvalAuthenticated = action({
           const messages = await ctx.runQuery(api.domains.agents.fastAgentPanelStreaming.getThreadMessagesForEval, {
           threadId,
           anonymousSessionId: sessionId,
-        });
+         });
 
-          const assistantMessages = messages.filter((m: any) => m.role === "assistant");
-          if (assistantMessages.length > 0) {
-            const lastMessage = assistantMessages[assistantMessages.length - 1];
-            if (lastMessage.content && lastMessage.content.length > 50) {
-              responseText = lastMessage.content;
-              break;
-            }
+          const bestText = getBestAssistantText(messages);
+          if (bestText && bestText !== bestTextSoFar) {
+            bestTextSoFar = bestText;
+            stablePolls = 0;
+          } else if (bestText) {
+            stablePolls++;
+          }
+
+          const lower = bestTextSoFar.toLowerCase();
+          const looksInterim =
+            lower.includes("let me search") ||
+            lower.includes("let me look up") ||
+            lower.includes("let me check") ||
+            lower.includes("let me find") ||
+            lower.includes("i'll search") ||
+            lower.includes("i'll look up") ||
+            lower.includes("i'll check") ||
+            lower.includes("i'll find") ||
+            lower.includes("i need to") && lower.includes("search");
+
+          if (bestTextSoFar.length >= minResponseChars && stablePolls >= 2 && !looksInterim) {
+            responseText = bestTextSoFar;
+            break;
+          }
+          if (attempts >= maxAttempts - 1 && bestTextSoFar.length > 50) {
+            responseText = bestTextSoFar;
+            break;
           }
 
           attempts++;
@@ -416,8 +474,12 @@ export const quickEval = action({
       // Wait for response
       let responseText = "";
       let attempts = 0;
+      const maxAttempts = 90;
+      const minResponseChars = 200;
+      let bestTextSoFar = "";
+      let stablePolls = 0;
 
-      while (attempts < 30) {
+      while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         const messages = await ctx.runQuery(api.domains.agents.fastAgentPanelStreaming.getThreadMessagesForEval, {
@@ -425,13 +487,33 @@ export const quickEval = action({
           anonymousSessionId: sessionId,
         });
 
-        const assistantMessages = messages.filter((m: any) => m.role === "assistant");
-        if (assistantMessages.length > 0) {
-          const lastMessage = assistantMessages[assistantMessages.length - 1];
-          if (lastMessage.content && lastMessage.content.length > 50) {
-            responseText = lastMessage.content;
-            break;
-          }
+        const bestText = getBestAssistantText(messages);
+        if (bestText && bestText !== bestTextSoFar) {
+          bestTextSoFar = bestText;
+          stablePolls = 0;
+        } else if (bestText) {
+          stablePolls++;
+        }
+
+        const lower = bestTextSoFar.toLowerCase();
+        const looksInterim =
+          lower.includes("let me search") ||
+          lower.includes("let me look up") ||
+          lower.includes("let me check") ||
+          lower.includes("let me find") ||
+          lower.includes("i'll search") ||
+          lower.includes("i'll look up") ||
+          lower.includes("i'll check") ||
+          lower.includes("i'll find") ||
+          lower.includes("i need to") && lower.includes("search");
+
+        if (bestTextSoFar.length >= minResponseChars && stablePolls >= 2 && !looksInterim) {
+          responseText = bestTextSoFar;
+          break;
+        }
+        if (attempts >= maxAttempts - 1 && bestTextSoFar.length > 50) {
+          responseText = bestTextSoFar;
+          break;
         }
 
         attempts++;

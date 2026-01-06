@@ -1,0 +1,58 @@
+{
+  "iteration": 1,
+  "testTimestamp": "2026-01-06T01:00:00Z",
+  "improvements": {
+    "personaNormalization": {
+      "before": "CTO_PERSONA, VC_PERSONA, FOUNDER_PERSONA, SERIES (orphan)",
+      "after": "GENERAL (all action items now use valid persona names)",
+      "status": "FIXED"
+    },
+    "entitySpotlightParsing": {
+      "before": "Names contained markdown like '- **Name:** Claude Code (Anthropic)'",
+      "after": "Clean names: 'Claude Code Platform', 'LLVM Project', 'OpenAI / ChatGPT'",
+      "status": "FIXED"
+    }
+  },
+  "metrics": {
+    "totalTimeMs": 31132,
+    "digestGenerationMs": 28131,
+    "storyCount": 26,
+    "ntfyBodyLength": 3564,
+    "actionItemsCount": 5,
+    "signalsCount": 7,
+    "entitySpotlightCount": 3,
+    "usage": {
+      "inputTokens": 4182,
+      "outputTokens": 2716,
+      "totalTokens": 6898,
+      "model": "claude-haiku-4.5"
+    }
+  },
+  "qualityChecks": {
+    "actionItemsHaveValidPersonas": true,
+    "entityNamesAreClean": true,
+    "actIIIVisible": true,
+    "reflectionFrameworkPresent": true,
+    "hardNumbersPresent": true
+  },
+  "remainingIssues": [
+    "All action items use GENERAL persona instead of varied personas for richer targeting",
+    "Signal reflections are all included but could be more targeted per-persona",
+    "Entity funding stage sometimes returns 'N/A - Anthropic product' with artifact text"
+  ],
+  "sampleOutput": {
+    "narrativeThesis": "Claude Code ecosystem is rapidly maturing into production infrastructure: trending libraries show a shift from experimentation to specialized tooling (agents, workflows, persistent memory), while parallel research advances address scaling, compression, and multimodal robustness—signaling AI developer tools are moving from prototypes to enterprise-grade systems.",
+    "leadStoryTitle": "Claude Code Workflow Extensions Drive Ecosystem Verticalization",
+    "signalTitles": [
+      "LLVM AI Tool Policy: Human-in-the-Loop Enforcement",
+      "OpenAI Data Retention Practices Under Scrutiny",
+      "High-Performance PDF Parsing: Zero-Copy with SIMD",
+      "Data Efficiency Estimation for LLM Fine-tuning",
+      "Multi-Agent Population Intelligence from Single Transformers",
+      "LLM Impact on News Consumption and Publisher Economics",
+      "Resilient Collective Communication for Distributed LLM Training"
+    ],
+    "actionItemPersonas": ["GENERAL", "GENERAL", "GENERAL", "GENERAL", "GENERAL"],
+    "entityNames": ["Claude Code Platform", "LLVM Project", "OpenAI / ChatGPT"]
+  }
+}

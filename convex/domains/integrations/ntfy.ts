@@ -511,6 +511,50 @@ export const handleNotificationOptIn = internalMutation({
   },
 });
 
+
+// ------------------------------------------------------------------
+// Scheduled Notification (for scheduler-based alerts)
+// ------------------------------------------------------------------
+export const sendScheduledNotification = internalAction({
+  args: {
+    title: v.string(),
+    body: v.string(),
+    priority: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4), v.literal(5))),
+    tags: v.optional(v.array(v.string())),
+    topic: v.optional(v.string()),
+    click: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const topic = args.topic || NTFY_DEFAULT_TOPIC;
+
+    try {
+      const response = await sendNtfyNotification({
+        topic,
+        message: args.body,
+        title: args.title,
+        priority: args.priority ?? 3,
+        tags: args.tags,
+        click: args.click,
+      });
+
+      // Log the scheduled notification
+      await ctx.runMutation(internal.domains.integrations.ntfy.logNotification, {
+        topic,
+        body: args.body,
+        status: response.event || "sent",
+        messageId: response.id,
+        eventType: "scheduled_notification",
+      });
+
+      console.log(`[ntfy.sendScheduledNotification] Scheduled notification sent to ${topic}`);
+      return { success: true, response };
+    } catch (err: any) {
+      console.error(`[ntfy.sendScheduledNotification] Error:`, err);
+      return { success: false, error: err?.message || String(err) };
+    }
+  },
+});
+
 // ------------------------------------------------------------------
 // Query: Get notification logs
 // ------------------------------------------------------------------

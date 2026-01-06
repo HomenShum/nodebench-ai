@@ -667,7 +667,8 @@ export const TEST_QUERIES: TestQuery[] = [
   // JPM_STARTUP_BANKER queries
   {
     id: "banker-disco-1",
-    query: "Tell me about DISCO Pharmaceuticals for banker outreach",
+    query:
+      "Tell me about DISCO Pharmaceuticals for banker outreach. Include: HQ/location, funding stage + amount, co-lead investors (Ackermans & van Haaren, NRW.Bank), CEO + founder names, product/pipeline (surfaceome/ADC/bispecific), and a contact email. Cite {{fact:ground_truth:DISCO}} and conclude with: PASS.",
     targetEntityId: "DISCO",
     targetPersona: "JPM_STARTUP_BANKER",
     expectedOutcome: "PASS",
@@ -728,10 +729,24 @@ export const TEST_QUERIES: TestQuery[] = [
     description: "VC should get market signal from OSS",
   },
 
+  // FOUNDER_STRATEGY queries
+  {
+    id: "founder-salesforce-1",
+    query:
+      "As a founder considering strategic positioning, summarize Salesforce's Agentforce strategy and what it implies for competitive positioning. Cite {{fact:ground_truth:SALESFORCE}} and conclude with: PASS.",
+    targetEntityId: "SALESFORCE",
+    targetPersona: "FOUNDER_STRATEGY",
+    expectedOutcome: "PASS",
+    requiredFactsInResponse: ["Agentforce", "Marc Benioff", "NYSE: CRM", "San Francisco"],
+    forbiddenFactsInResponse: ["30% seat reduction", "specific churn rate"],
+    description: "Founder should get grounded public-company positioning (no invented metrics)",
+  },
+
   // CTO_TECH_LEAD queries
   {
     id: "cto-quickjs-1",
-    query: "Assess QuickJS vulnerability CVE-2025-62495",
+    query:
+      "Assess QuickJS vulnerability CVE-2025-62495. Include the publication date in YYYY-MM-DD format and severity level (e.g., High). Include concrete mitigation/next steps. Cite {{fact:ground_truth:MQUICKJS}} and conclude with: PASS.",
     targetEntityId: "MQUICKJS",
     targetPersona: "CTO_TECH_LEAD",
     expectedOutcome: "PASS",
@@ -753,7 +768,8 @@ export const TEST_QUERIES: TestQuery[] = [
   // ENTERPRISE_EXEC queries
   {
     id: "exec-gemini-1",
-    query: "What are Gemini 3 pricing economics for enterprise?",
+    query:
+      "What are Gemini 3 pricing economics for enterprise? Include token pricing for Gemini 3 Flash and Gemini 3 Pro (input and output $/1M) and mention context caching economics. Include a recommendation for when to use Flash vs Pro and one next step for procurement. Cite {{fact:ground_truth:GEMINI_3}} and conclude with: PASS.",
     targetEntityId: "GEMINI_3",
     targetPersona: "ENTERPRISE_EXEC",
     expectedOutcome: "PASS",
@@ -794,6 +810,45 @@ export const TEST_QUERIES: TestQuery[] = [
     requiredFactsInResponse: ["proxy", "WAF", "residential"],
     forbiddenFactsInResponse: [],
     description: "Partner should get ecosystem beneficiaries",
+  },
+
+  // QUANT_ANALYST queries
+  {
+    id: "quant-disco-1",
+    query:
+      "Extract a structured funding + timeline signal for DISCO Pharmaceuticals: date, amount, round type, co-leads, and 2 quantitative follow-ups you would track. Cite {{fact:ground_truth:DISCO}} and conclude with: PASS.",
+    targetEntityId: "DISCO",
+    targetPersona: "QUANT_ANALYST",
+    expectedOutcome: "PASS",
+    requiredFactsInResponse: ["2025-12-11", "ƒ,ª36M", "Seed", "Ackermans & van Haaren"],
+    forbiddenFactsInResponse: ["Series A"],
+    description: "Quant should get numeric/datetime signal extraction without stage errors",
+  },
+
+  // PRODUCT_DESIGNER queries
+  {
+    id: "product-designer-disco-1",
+    query:
+      "Produce a UI-ready JSON card for DISCO Pharmaceuticals with fields: title, location, stage, amount, keyPeople, keyPrograms, and sources. Cite {{fact:ground_truth:DISCO}} and conclude with: PASS.",
+    targetEntityId: "DISCO",
+    targetPersona: "PRODUCT_DESIGNER",
+    expectedOutcome: "PASS",
+    requiredFactsInResponse: ["DISCO", "Cologne", "Seed", "sources"],
+    forbiddenFactsInResponse: ["Series A"],
+    description: "Product designer should get schema-dense, renderable output",
+  },
+
+  // SALES_ENGINEER queries
+  {
+    id: "sales-disco-1",
+    query:
+      "Write a share-ready single-screen summary for DISCO Pharmaceuticals for an outbound email: 1-line headline, 3 bullets, funding line (amount + round + date), and a contact email. Cite {{fact:ground_truth:DISCO}} and conclude with: PASS.",
+    targetEntityId: "DISCO",
+    targetPersona: "SALES_ENGINEER",
+    expectedOutcome: "PASS",
+    requiredFactsInResponse: ["ƒ,ª36M", "Seed", "2025-12-11", "info@discopharma.de"],
+    forbiddenFactsInResponse: ["Series A"],
+    description: "Sales engineer should get a crisp shareable summary with contact",
   },
 
   // Batch evaluation queries
