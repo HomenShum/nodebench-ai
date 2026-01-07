@@ -208,6 +208,7 @@ import type * as domains_evaluation_benchmarkHarness from "../domains/evaluation
 import type * as domains_evaluation_booleanEvaluator from "../domains/evaluation/booleanEvaluator.js";
 import type * as domains_evaluation_evalHarness from "../domains/evaluation/evalHarness.js";
 import type * as domains_evaluation_evalRunTracking from "../domains/evaluation/evalRunTracking.js";
+import type * as domains_evaluation_evaluationPrompts from "../domains/evaluation/evaluationPrompts.js";
 import type * as domains_evaluation_evidencePlanner from "../domains/evaluation/evidencePlanner.js";
 import type * as domains_evaluation_groundTruth from "../domains/evaluation/groundTruth.js";
 import type * as domains_evaluation_index from "../domains/evaluation/index.js";
@@ -219,6 +220,7 @@ import type * as domains_evaluation_systemE2E from "../domains/evaluation/system
 import type * as domains_evaluation_testAgentDirect from "../domains/evaluation/testAgentDirect.js";
 import type * as domains_evaluation_testAgentQueries from "../domains/evaluation/testAgentQueries.js";
 import type * as domains_evaluation_testAnthropicApi from "../domains/evaluation/testAnthropicApi.js";
+import type * as domains_evaluation_testDirectApi from "../domains/evaluation/testDirectApi.js";
 import type * as domains_integrations_email from "../domains/integrations/email.js";
 import type * as domains_integrations_email_dossierEmailExample from "../domains/integrations/email/dossierEmailExample.js";
 import type * as domains_integrations_email_dossierEmailTemplate from "../domains/integrations/email/dossierEmailTemplate.js";
@@ -449,6 +451,7 @@ import type * as tools_sendEmail from "../tools/sendEmail.js";
 import type * as tools_sendEmailMutations from "../tools/sendEmailMutations.js";
 import type * as tools_sendNotification from "../tools/sendNotification.js";
 import type * as tools_sendSms from "../tools/sendSms.js";
+import type * as tools_social_instagramTools from "../tools/social/instagramTools.js";
 import type * as tools_spreadsheet_spreadsheetCrudTools from "../tools/spreadsheet/spreadsheetCrudTools.js";
 import type * as tools_teachability_index from "../tools/teachability/index.js";
 import type * as tools_teachability_learnUserSkill from "../tools/teachability/learnUserSkill.js";
@@ -671,6 +674,7 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/booleanEvaluator": typeof domains_evaluation_booleanEvaluator;
   "domains/evaluation/evalHarness": typeof domains_evaluation_evalHarness;
   "domains/evaluation/evalRunTracking": typeof domains_evaluation_evalRunTracking;
+  "domains/evaluation/evaluationPrompts": typeof domains_evaluation_evaluationPrompts;
   "domains/evaluation/evidencePlanner": typeof domains_evaluation_evidencePlanner;
   "domains/evaluation/groundTruth": typeof domains_evaluation_groundTruth;
   "domains/evaluation/index": typeof domains_evaluation_index;
@@ -682,6 +686,7 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/testAgentDirect": typeof domains_evaluation_testAgentDirect;
   "domains/evaluation/testAgentQueries": typeof domains_evaluation_testAgentQueries;
   "domains/evaluation/testAnthropicApi": typeof domains_evaluation_testAnthropicApi;
+  "domains/evaluation/testDirectApi": typeof domains_evaluation_testDirectApi;
   "domains/integrations/email": typeof domains_integrations_email;
   "domains/integrations/email/dossierEmailExample": typeof domains_integrations_email_dossierEmailExample;
   "domains/integrations/email/dossierEmailTemplate": typeof domains_integrations_email_dossierEmailTemplate;
@@ -912,6 +917,7 @@ declare const fullApi: ApiFromModules<{
   "tools/sendEmailMutations": typeof tools_sendEmailMutations;
   "tools/sendNotification": typeof tools_sendNotification;
   "tools/sendSms": typeof tools_sendSms;
+  "tools/social/instagramTools": typeof tools_social_instagramTools;
   "tools/spreadsheet/spreadsheetCrudTools": typeof tools_spreadsheet_spreadsheetCrudTools;
   "tools/teachability/index": typeof tools_teachability_index;
   "tools/teachability/learnUserSkill": typeof tools_teachability_learnUserSkill;

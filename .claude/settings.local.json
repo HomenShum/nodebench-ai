@@ -33,7 +33,15 @@
       "Bash(npm run:*)",
       "Bash(timeout 120 npx tsx:*)",
       "Bash(timeout 120 npx convex run:*)",
-      "Bash(CONVEX_URL=https://agile-caribou-964.convex.cloud timeout 120 npx convex run:*)"
+      "Bash(CONVEX_URL=https://agile-caribou-964.convex.cloud timeout 120 npx convex run:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Agent-powered digest system + funding detection + multi-persona intelligence\n\n## Digest Agent System\n- Add digestAgent.ts with structured output mode (Zod schema)\n- Implement 16 persona configurations (JPM_STARTUP_BANKER, CTO_TECH_LEAD, etc.)\n- Add \"What? / So What? / Now What?\" reflection framework\n- Budget-based ntfy formatting guaranteeing ACT III visibility\n- Persona name normalization (47 LLM variations → 16 valid personas)\n- Database caching with TTL via digestCache table\n\n## Funding Detection Pipeline\n- Linkup API integration for deep web fetches\n- Pattern-based funding event detection\n- Cross-source verification with confidence scoring\n- Entity promotion pipeline for banker-grade dossiers\n\n## Multi-Persona Morning Brief\n- runAgentPoweredDigest action with persona parameter\n- Breaking alert detection with urgency classification\n- Multi-channel payload storage (ntfy, Slack, email-ready)\n- Export function for offline inspection\n\n## Quality Refinements (3-Iteration Loop)\n- Iteration 1: Persona normalization + entity parsing fixes\n- Iteration 2: Diverse persona prompts + fundingStage cleanup\n- Iteration 3: Final validation (CTO_TECH_LEAD, JPM_STARTUP_BANKER)\n\n## Files Added\n- convex/domains/agents/digestAgent.ts\n- convex/domains/agents/orchestrator/*\n- convex/domains/artifacts/sourceArtifacts.ts\n- convex/domains/evaluation/benchmarkHarness.ts\n- convex/domains/evaluation/personaEpisodeEval.ts\n- convex/domains/evaluation/systemE2E.ts\n- convex/tools/integration/notificationTools.ts\n- scripts/test-agent-digest.ts\n- scripts/results/*.json\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(timeout 60 npx convex run:*)",
+      "Bash(timeout 90 npx convex run:*)",
+      "Bash(timeout 600 npx tsx:*)",
+      "Bash(tee:*)",
+      "Bash(timeout 240 npx tsx:*)",
+      "Bash(timeout 180 npx convex run:*)",
+      "Bash(timeout 300 npx convex run:*)"
     ],
     "deny": [],
     "ask": []

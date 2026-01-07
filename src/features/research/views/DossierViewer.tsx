@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import type { VideoAsset, ImageAsset, DocumentAsset } from "@/features/research/components/dossier/mediaExtractor";
 import { FocusSyncProvider } from "@/features/research/contexts/FocusSyncContext";
 import { useDossierAgentHandlers } from "@/features/research/hooks/useDossierAgentHandlers";
+import { isValidConvexId } from "@/lib/ids";
 
 type ViewMode = 'split' | 'unified';
 
@@ -36,9 +37,11 @@ interface DossierViewerProps {
  * - Unified Editor Mode: Full-width editable UnifiedEditor for direct content editing
  */
 export function DossierViewer({ documentId, isGridMode = false, isFullscreen = false, variant = 'classic' }: DossierViewerProps) {
-  const document = useQuery(api.domains.documents.documents.getById, { documentId });
+  // Validate id before issuing any Convex query. When invalid, skip the query entirely.
+  const isValidId = isValidConvexId(documentId);
+  const document = useQuery(api.domains.documents.documents.getById, isValidId ? { documentId } : "skip");
 
-  const linkedAssets = useQuery(api.domains.documents.documents.getLinkedAssets, { dossierId: documentId });
+  const linkedAssets = useQuery(api.domains.documents.documents.getLinkedAssets, isValidId ? { dossierId: documentId } : "skip");
   const analyzeSelectedFilesIntoDossier = useAction(api.domains.ai.metadataAnalyzer.analyzeSelectedFilesIntoDossier);
 
   // Get or create Quick Notes document (separate from main dossier)
@@ -47,7 +50,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
 
   // Fetch or create quick notes on mount
   useEffect(() => {
-    if (documentId && !quickNotesDocId) {
+    if (isValidId && !quickNotesDocId) {
       getOrCreateQuickNotes({ dossierId: documentId })
         .then((doc) => {
           if (doc) {
@@ -617,8 +620,8 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 type="button"
                 onClick={() => setViewMode('split')}
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'split'
-                    ? 'bg-[var(--accent-primary)] text-white shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                   }`}
                 title="Classic view"
                 aria-label="Switch to classic view"
@@ -630,8 +633,8 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 type="button"
                 onClick={() => setViewMode('unified')}
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'unified'
-                    ? 'bg-[var(--accent-primary)] text-white shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                   }`}
                 title="Edit mode"
                 aria-label="Switch to edit mode"

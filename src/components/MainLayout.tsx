@@ -19,6 +19,7 @@ import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import { CommandPalette } from "./CommandPalette";
 import { useCommandPalette } from "../hooks/useCommandPalette";
 import { QuickCaptureWidget } from "./QuickCapture";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 
 const PublicDocuments = lazy(() =>
   import("@/features/documents/views/PublicDocuments").then((mod) => ({
@@ -548,26 +549,26 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   // Sync main view with URL hash for primary hubs
   useEffect(() => {
-    const applyFromHash = () => { 
-      try { 
-        const h = (window.location.hash || '').toLowerCase(); 
-        if (h.startsWith('#agents')) { 
-          setCurrentView('agents'); 
-        } else if (h.startsWith('#calendar')) { 
-          setCurrentView('calendar'); 
-        } else if (h.startsWith('#roadmap')) { 
-          setCurrentView('roadmap'); 
-        } else if (h.startsWith('#timeline')) { 
-          setCurrentView('timeline'); 
-        } else if (h.startsWith('#signals')) { 
-          setCurrentView('signals'); 
-        } else if (h.startsWith('#documents') || h.startsWith('#docs')) { 
-          setCurrentView('documents'); 
-        } else if (h.startsWith('#showcase') || h.startsWith('#demo')) { 
-          setCurrentView('showcase'); 
-        } else if (h.startsWith('#footnotes') || h.startsWith('#sources')) { 
-          setCurrentView('footnotes'); 
-        } 
+    const applyFromHash = () => {
+      try {
+        const h = (window.location.hash || '').toLowerCase();
+        if (h.startsWith('#agents')) {
+          setCurrentView('agents');
+        } else if (h.startsWith('#calendar')) {
+          setCurrentView('calendar');
+        } else if (h.startsWith('#roadmap')) {
+          setCurrentView('roadmap');
+        } else if (h.startsWith('#timeline')) {
+          setCurrentView('timeline');
+        } else if (h.startsWith('#signals')) {
+          setCurrentView('signals');
+        } else if (h.startsWith('#documents') || h.startsWith('#docs')) {
+          setCurrentView('documents');
+        } else if (h.startsWith('#showcase') || h.startsWith('#demo')) {
+          setCurrentView('showcase');
+        } else if (h.startsWith('#footnotes') || h.startsWith('#sources')) {
+          setCurrentView('footnotes');
+        }
       } catch {
         // ignore
       }
@@ -656,23 +657,23 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 )}
               </button>
 
-              <h1 className="text-base sm:text-lg font-semibold text-gray-900"> 
-                {currentView === 'research' 
-                  ? 'Home' 
-                  : currentView === 'public' 
-                    ? 'Public Documents' 
-                    : currentView === 'calendar' 
-                      ? 'Calendar' 
-                      : currentView === 'roadmap' 
-                        ? 'Roadmap' 
-                        : currentView === 'timeline' 
-                          ? 'Timeline' 
+              <h1 className="text-base sm:text-lg font-semibold text-gray-900">
+                {currentView === 'research'
+                  ? 'Home'
+                  : currentView === 'public'
+                    ? 'Public Documents'
+                    : currentView === 'calendar'
+                      ? 'Calendar'
+                      : currentView === 'roadmap'
+                        ? 'Roadmap'
+                        : currentView === 'timeline'
+                          ? 'Timeline'
                           : currentView === 'signals'
                             ? 'Signals'
-                          : selectedDocumentId 
-                            ? 'My Documents' 
-                            : 'My Workspace'} 
-              </h1> 
+                            : selectedDocumentId
+                              ? 'My Documents'
+                              : 'My Workspace'}
+              </h1>
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
@@ -789,23 +790,23 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <TimelineRoadmapView />
               ) : currentView === 'showcase' ? (
                 <PhaseAllShowcase onBack={() => setCurrentView('research')} />
-              ) : currentView === 'footnotes' ? ( 
-                <FootnotesPage 
-                  library={{ 
-                    citations: {}, 
-                    order: [], 
-                    updatedAt: new Date().toISOString(), 
-                  }} 
-                  briefTitle="Latest Intelligence Brief" 
-                  onBack={() => setCurrentView('research')} 
-                /> 
+              ) : currentView === 'footnotes' ? (
+                <FootnotesPage
+                  library={{
+                    citations: {},
+                    order: [],
+                    updatedAt: new Date().toISOString(),
+                  }}
+                  briefTitle="Latest Intelligence Brief"
+                  onBack={() => setCurrentView('research')}
+                />
               ) : currentView === 'signals' ? (
                 <PublicSignalsLog />
-              ) : ( 
-                <div className="h-full flex"> 
-                  <div className="flex-1 overflow-hidden"> 
-                    {(isGridMode || !!selectedDocumentId) ? ( 
-                      <TabManager 
+              ) : (
+                <div className="h-full flex">
+                  <div className="flex-1 overflow-hidden">
+                    {(isGridMode || !!selectedDocumentId) ? (
+                      <TabManager
                         selectedDocumentId={selectedDocumentId}
                         onDocumentSelect={handleDocumentSelect}
                         isGridMode={isGridMode}
@@ -842,41 +843,42 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           />
         )}
 
-        {/* AI Chat Panel - Right Side Column */}
+        {/* AI Chat Panel - Right Side Column (Desktop) */}
         {showFastAgent && (
           <div
-            className="flex-shrink-0 h-full bg-white border-l border-gray-200 z-20 shadow-xl lg:shadow-none lg:relative absolute right-0 top-0 bottom-0 overflow-hidden"
+            className="hidden lg:flex flex-shrink-0 h-full bg-white border-l border-gray-200 z-20 shadow-xl lg:shadow-none lg:relative overflow-hidden"
             style={{ width: `${agentPanelWidth}px` }}
           >
-            <FastAgentPanel
-              isOpen={true}
-              onClose={() => setShowFastAgent(false)}
-              selectedDocumentId={selectedDocumentId || undefined}
-              selectedDocumentIds={selectedDocumentIdsForAgent}
-              initialThreadId={fastAgentThreadId}
-              variant="sidebar"
-              openOptions={fastAgentOpenOptions}
-              onOptionsConsumed={clearFastAgentOptions}
-            />
+            <ErrorBoundary title="Fast Agent Panel Error">
+              <FastAgentPanel
+                isOpen={true}
+                onClose={() => setShowFastAgent(false)}
+                selectedDocumentIds={selectedDocumentIdsForAgent}
+                initialThreadId={fastAgentThreadId}
+                variant="sidebar"
+                openOptions={fastAgentOpenOptions}
+                onOptionsConsumed={clearFastAgentOptions}
+              />
+            </ErrorBoundary>
           </div>
         )}
       </div>
 
       {/* Fast Agent Panel - Overlay (Mobile Only) */}
       <div className="lg:hidden">
-        <FastAgentPanel
-          isOpen={showFastAgent}
-          onClose={() => setShowFastAgent(false)}
-          selectedDocumentId={selectedDocumentId || undefined}
-          selectedDocumentIds={selectedDocumentIdsForAgent}
-          initialThreadId={fastAgentThreadId}
-          variant="overlay"
-          openOptions={fastAgentOpenOptions}
-          onOptionsConsumed={clearFastAgentOptions}
-        />
+        <ErrorBoundary title="Fast Agent Panel Error">
+          <FastAgentPanel
+            isOpen={showFastAgent}
+            onClose={() => setShowFastAgent(false)}
+            selectedDocumentIds={selectedDocumentIdsForAgent}
+            initialThreadId={fastAgentThreadId}
+            variant="overlay"
+            openOptions={fastAgentOpenOptions}
+            onOptionsConsumed={clearFastAgentOptions}
+          />
+        </ErrorBoundary>
       </div>
 
-      {/* Central Settings Modal */}
       {showSettingsModal && (
         <SettingsModal
           isOpen={showSettingsModal}
@@ -925,6 +927,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
       {/* Quick Capture Widget - Floating FAB */}
       {isAuthenticated && <QuickCaptureWidget />}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        initialTab={settingsInitialTab}
+      />
     </div>
   );
 }

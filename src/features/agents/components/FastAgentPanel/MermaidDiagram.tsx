@@ -24,7 +24,7 @@ let mermaidLoading = false;
 
 async function loadMermaid() {
   if (window.mermaid) return;
-  
+
   if (mermaidLoading) {
     // Wait for it to load
     await new Promise(resolve => {
@@ -37,11 +37,12 @@ async function loadMermaid() {
     });
     return;
   }
-  
+
   mermaidLoading = true;
-  
+
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
+    script.type = 'module';
     // Use latest Mermaid from Cloudflare CDN
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.12.0/mermaid.min.js';
     script.onload = () => {
@@ -84,14 +85,14 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
 
     // Reset retry state when code changes
     setIsRetrying(false);
-    
+
     const renderDiagram = async () => {
       isRendering.current = true;
       lastRenderedCode.current = code;
       try {
         // Load Mermaid from CDN
         await loadMermaid();
-        
+
         // Initialize mermaid if not already done
         if (!mermaidInitialized && window.mermaid) {
           window.mermaid.initialize({
@@ -108,10 +109,10 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
           });
           mermaidInitialized = true;
         }
-        
+
         // Generate unique ID for this diagram
         const diagramId = id || `mermaid-${Math.random().toString(36).substr(2, 9)}`;
-        
+
         // Render the diagram
         const { svg: renderedSvg } = await window.mermaid.render(diagramId, code);
         setSvg(renderedSvg);
@@ -148,7 +149,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
 
   const handleDownload = async (format: 'svg' | 'png') => {
     if (!svg) return;
-    
+
     setIsDownloading(true);
     try {
       if (format === 'svg') {
@@ -177,14 +178,14 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
           canvas.width = img.width * 2;
           canvas.height = img.height * 2;
           ctx.scale(2, 2);
-          
+
           // White background
           ctx.fillStyle = 'white';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-          
+
           // Draw image
           ctx.drawImage(img, 0, 0);
-          
+
           // Download
           canvas.toBlob((blob) => {
             if (blob) {
@@ -198,7 +199,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             }
             setIsDownloading(false);
           }, 'image/png');
-          
+
           URL.revokeObjectURL(url);
         };
 
@@ -210,7 +211,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
 
         img.src = url;
       }
-      
+
       if (format === 'svg') {
         setIsDownloading(false);
       }
@@ -319,12 +320,12 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
       </div>
 
       {/* Main diagram - clickable to zoom */}
-      <div 
+      <div
         className="relative p-4 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={() => setIsZoomed(true)}
         title="Click to zoom"
       >
-        <div 
+        <div
           className="overflow-x-auto"
           dangerouslySetInnerHTML={{ __html: svg }}
         />
@@ -338,7 +339,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
 
       {/* Zoom Modal */}
       {isZoomed && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4"
           onClick={() => {
             setIsZoomed(false);
@@ -385,7 +386,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
                   <span className="text-xs font-medium text-gray-700">Reset</span>
                 </button>
               </div>
-              
+
               <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
                 <button
                   onClick={(e) => {
@@ -423,10 +424,10 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
                 </button>
               </div>
             </div>
-            
+
             {/* Zoomed diagram with scroll */}
             <div className="flex-1 bg-white rounded-lg shadow-2xl overflow-auto">
-              <div 
+              <div
                 className="p-8 transition-transform duration-200"
                 style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
                 onClick={(e) => e.stopPropagation()}

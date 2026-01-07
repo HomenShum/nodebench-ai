@@ -2297,65 +2297,17 @@ export const streamAsync = internalAction({
     }
 
     if (responsePromptOverride && evaluationMode) {
+      // Use model-specific evaluation prompts (P0 FIX - Iteration 2)
+      const { getEvaluationPrompt, getPromptConfig } = await import("../evaluation/evaluationPrompts");
+      const evalPrompt = getEvaluationPrompt(activeModel);
+      const config = getPromptConfig(activeModel);
+
+      console.log(`[streamAsync:${executionId}] Using ${config.complexity} evaluation prompt for ${activeModel} (~${config.tokenEstimate} tokens)`);
+
       responsePromptOverride = [
         responsePromptOverride,
         "",
-        "EVALUATION MODE (machine-readable debrief required):",
-        "After your normal human-readable answer, append EXACTLY one JSON object wrapped like this:",
-        "[DEBRIEF_V1_JSON]",
-        "{",
-        "  \"schemaVersion\": \"debrief_v1\",",
-        "  \"persona\": { \"inferred\": \"JPM_STARTUP_BANKER\", \"confidence\": 0.0, \"assumptions\": [] },",
-        "  \"clarifyingQuestionsAsked\": 0,",
-        "  \"clarifyingQuestions\": [],",
-        "  \"entity\": {",
-        "    \"input\": \"\",",
-        "    \"resolvedId\": null,",
-        "    \"canonicalName\": null,",
-        "    \"type\": null,",
-        "    \"confidence\": 0.0,",
-        "    \"candidates\": []",
-        "  },",
-        "  \"planSteps\": [],",
-        "  \"toolsUsed\": [{ \"name\": \"\", \"ok\": true, \"error\": null }],",
-        "  \"fallbacks\": [],",
-        "  \"verdict\": \"UNKNOWN\",",
-        "  \"keyFacts\": {",
-        "    \"hqLocation\": null,",
-        "    \"funding\": {",
-        "      \"stage\": null,",
-        "      \"amount\": { \"amount\": null, \"currency\": null, \"unit\": null },",
-        "      \"date\": null,",
-        "      \"coLeads\": []",
-        "    },",
-        "    \"people\": { \"founders\": [], \"ceo\": null },",
-        "    \"product\": { \"platform\": null, \"leadPrograms\": [] },",
-        "    \"contact\": { \"email\": null, \"channel\": null },",
-        "    \"freshness\": { \"ageDays\": null }",
-        "  },",
-        "  \"risks\": [],",
-        "  \"nextActions\": [],",
-        "  \"grounding\": []",
-        "}",
-        "[/DEBRIEF_V1_JSON]",
-        "",
-        "Rules:",
-        "- The JSON must be valid (no trailing commas, no markdown fences).",
-        "- The [DEBRIEF_V1_JSON] block MUST contain the DebriefV1 schemaVersion=debrief_v1 exactly. If you output any other JSON (e.g., a UI card), put it OUTSIDE the DEBRIEF_V1_JSON block.",
-        "- Use ONLY the 10 personas in our system (see audit_mocks.ts): JPM_STARTUP_BANKER, EARLY_STAGE_VC, CTO_TECH_LEAD, FOUNDER_STRATEGY, ACADEMIC_RD, ENTERPRISE_EXEC, ECOSYSTEM_PARTNER, QUANT_ANALYST, PRODUCT_DESIGNER, SALES_ENGINEER.",
-        "- Persona inference is REQUIRED: set persona.inferred to the best-fit persona for the USER REQUEST (do not leave the template value unless it truly matches).",
-        "- Persona cue map (use the first strong match): wedge/thesis/comps/market => EARLY_STAGE_VC; signal/metrics/what to track/timeline/time-series => QUANT_ANALYST; schema/UI card/rendering => PRODUCT_DESIGNER; share-ready/one-screen/outbound/objections/CTA => SALES_ENGINEER; risk exposure/CVE/patch plan/upgrade => CTO_TECH_LEAD; partnerships/second-order effects => ECOSYSTEM_PARTNER; positioning/pivot/strategy => FOUNDER_STRATEGY; pricing/cost/standardize/vendor/procurement/P&L => ENTERPRISE_EXEC; literature/methodology => ACADEMIC_RD; outreach/contacts/pipeline/this week => JPM_STARTUP_BANKER.",
-        "- If persona was not explicitly stated by the user, persona.assumptions MUST include at least 1 short string explaining why you chose that persona.",
-        "- If you ask any clarifying question in your human-readable answer, set clarifyingQuestionsAsked and include the exact question text(s) in clarifyingQuestions. Ask at most 1 clarifier unless the user explicitly requests an interview.",
-        "- If GROUND_TRUTH_INJECTED is false and the request appears to be about an evaluation/synthetic entity (e.g., DISCO, AMBROS, MQUICKJS, OPEN-AUTOGLM, SOUNDCLOUD, SALESFORCE, ALZHEIMERS, GEMINI_3), call lookupGroundTruthEntity BEFORE answering and cite the returned {{fact:ground_truth:...}} anchor.",
-        "- Evaluation runs are non-interactive: do NOT call askHuman. If uncertain, proceed with best guess and state your assumption.",
-        "- Entity parsing: if the USER REQUEST starts with \"<ENTITY> —\" or \"<ENTITY> -\", treat <ENTITY> as the entity.input and pass that exact string to lookupGroundTruthEntity.",
-        "- Use null for unknown fields; do not guess.",
-        "- planSteps MUST include at least 1 explicit verification step (e.g., 'Verify: freshness window + contradictions + sources') and your human-readable answer should reflect that verification happened.",
-        "- verdict MUST be exactly one of: PASS, FAIL, UNKNOWN.",
-        "- grounding[] MUST include at least 1 ground-truth anchor you used (e.g., {{fact:ground_truth:DISCO}}).",
-        "- nextActions MUST contain >= 3 items (even for PRODUCT_DESIGNER: actions can be 'rendering validation', 'QA checklist', etc.).",
-        "- If you call lookupGroundTruthEntity and it returns an HQ/location, you MUST copy it into keyFacts.hqLocation (do not leave it null).",
+        evalPrompt,
       ].join("\n");
     }
 
@@ -2745,24 +2697,24 @@ export const streamAsync = internalAction({
     const attemptedModels: ApprovedModel[] = [];
     let telemetry:
       | {
-          modelUsed: ApprovedModel;
-          agentType: string;
-          attemptLabel: string;
-          latencyMs: number;
-          stepsCount: number;
-          estimatedInputTokens: number;
-          estimatedOutputTokens: number;
-          providerUsage: {
-            promptTokens: number;
-            completionTokens: number;
-            totalTokens: number;
-            reasoningTokens: number;
-            cachedInputTokens: number;
-          };
-          finalText: string;
-          toolCalls: Array<{ name: string; argsPreview?: string }>;
-          toolResults: Array<{ name: string; ok?: boolean; error?: string; resultPreview?: string }>;
-        }
+        modelUsed: ApprovedModel;
+        agentType: string;
+        attemptLabel: string;
+        latencyMs: number;
+        stepsCount: number;
+        estimatedInputTokens: number;
+        estimatedOutputTokens: number;
+        providerUsage: {
+          promptTokens: number;
+          completionTokens: number;
+          totalTokens: number;
+          reasoningTokens: number;
+          cachedInputTokens: number;
+        };
+        finalText: string;
+        toolCalls: Array<{ name: string; argsPreview?: string }>;
+        toolResults: Array<{ name: string; ok?: boolean; error?: string; resultPreview?: string }>;
+      }
       | null = null;
 
     try {

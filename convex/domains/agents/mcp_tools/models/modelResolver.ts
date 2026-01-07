@@ -159,19 +159,19 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
   "gemini-3-pro": {
     alias: "gemini-3-pro",
     provider: "google",
-    sdkId: "gemini-2.5-pro-preview-06-05",  // Gemini 3 Pro Preview SDK ID
+    sdkId: "gemini-3-pro-preview",  // Gemini 3 Pro Preview - flagship reasoning model (Jan 2026)
     capabilities: {
       vision: true,
       toolUse: true,
       streaming: true,
       structuredOutputs: true,
-      maxContext: 2_000_000
+      maxContext: 1_000_000
     },
   },
   "gemini-3-flash": {
     alias: "gemini-3-flash",
     provider: "google",
-    sdkId: "gemini-3-flash",  // Gemini 3 Flash (Dec 17, 2025) - frontier intelligence built for speed
+    sdkId: "gemini-3-flash-preview",  // Gemini 3 Flash Preview - Pro-level at Flash speed (Jan 2026)
     capabilities: {
       vision: true,
       toolUse: true,

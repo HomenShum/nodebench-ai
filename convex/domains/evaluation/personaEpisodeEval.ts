@@ -197,8 +197,8 @@ function scoreAgainstGroundTruth(params: {
     return { ok: false, checks, reasons };
   }
 
-  const resolvedId = normalizeLower(params.debrief.entity.resolvedId);
-  const canonical = normalizeLower(params.debrief.entity.canonicalName);
+  const resolvedId = normalizeLower(params.debrief.entity?.resolvedId ?? "");
+  const canonical = normalizeLower(params.debrief.entity?.canonicalName ?? "");
   const expectedCanonical = normalizeLower(entity.canonicalName);
   const expectedId = normalizeLower(entity.entityId);
   checks.entityResolved =
@@ -209,17 +209,17 @@ function scoreAgainstGroundTruth(params: {
     canonical.includes(expectedCanonical) ||
     expectedCanonical.includes(canonical) ||
     hasMeaningfulEntityTokenOverlap(canonical, expectedCanonical);
-  if (!checks.entityResolved) reasons.push(`entity mismatch: got resolvedId='${params.debrief.entity.resolvedId}' canonical='${params.debrief.entity.canonicalName}' expected '${entity.entityId}'`);
+  if (!checks.entityResolved) reasons.push(`entity mismatch: got resolvedId='${params.debrief.entity?.resolvedId ?? "N/A"}' canonical='${params.debrief.entity?.canonicalName ?? "N/A"}' expected '${entity.entityId}'`);
 
-  const hq = normalizeLower(params.debrief.keyFacts.hqLocation);
+  const hq = normalizeLower(params.debrief.keyFacts?.hqLocation ?? "");
   checks.hq = entity.hqLocation ? normalizeLower(entity.hqLocation).split(/[,\s]+/).some((p) => p.length >= 3 && hq.includes(p)) : true;
   if (!checks.hq) reasons.push("hqLocation does not match ground truth");
 
-  const stage = normalizeLower(params.debrief.keyFacts.funding.stage);
+  const stage = normalizeLower(params.debrief.keyFacts?.funding?.stage ?? "");
   checks.fundingStage = entity.funding?.stage ? stage.includes(normalizeLower(entity.funding.stage)) : true;
-  if (!checks.fundingStage) reasons.push(`funding.stage mismatch: got '${params.debrief.keyFacts.funding.stage}' expected '${entity.funding?.stage ?? ""}'`);
+  if (!checks.fundingStage) reasons.push(`funding.stage mismatch: got '${params.debrief.keyFacts?.funding?.stage ?? "N/A"}' expected '${entity.funding?.stage ?? ""}'`);
 
-  const email = normalizeLower(params.debrief.keyFacts.contact.email);
+  const email = normalizeLower(params.debrief.keyFacts?.contact?.email ?? "");
   if (!entity.primaryContact) {
     checks.contact = true;
   } else if (isRedactedEmailLike(entity.primaryContact)) {
@@ -229,11 +229,13 @@ function scoreAgainstGroundTruth(params: {
   }
   if (!checks.contact) reasons.push("contact.email missing or mismatched");
 
-  const hasAnchor = params.debrief.grounding.some((a) => a.includes(`{{fact:ground_truth:${entity.entityId}}}`));
+  const groundingArray = params.debrief.grounding ?? [];
+  const hasAnchor = Array.isArray(groundingArray) && groundingArray.some((a) => a.includes(`{{fact:ground_truth:${entity.entityId}}}`));
   checks.grounding = hasAnchor;
   if (!checks.grounding) reasons.push("missing ground truth citation anchor in grounding[]");
 
-  checks.nextActions = params.debrief.nextActions.length >= 3;
+  const nextActionsArray = params.debrief.nextActions ?? [];
+  checks.nextActions = Array.isArray(nextActionsArray) && nextActionsArray.length >= 3;
   if (!checks.nextActions) reasons.push("nextActions must have >= 3 items");
 
   const ok = Object.values(checks).every(Boolean);

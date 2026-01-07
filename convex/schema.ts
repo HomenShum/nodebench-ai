@@ -481,7 +481,7 @@ const agentRuns = defineTable({
   updatedAt: v.number(),
 })
   .index("by_user", ["userId"])
-  .index("by_thread", ["threadId"])
+  .index("by_threadId", ["threadId"])
   .index("by_createdAt", ["createdAt"])
   .index("by_user_createdAt", ["userId", "createdAt"])
   .index("by_status_availableAt", ["status", "availableAt"])
