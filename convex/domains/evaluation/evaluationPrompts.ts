@@ -145,7 +145,7 @@ CRITICAL RULES:
 
 2. **DO NOT default to JPM_STARTUP_BANKER** - Only use it when query explicitly mentions banker-related terms
 
-3. For evaluation entities (DISCO, Ambros, etc): ALWAYS call lookupGroundTruthEntity FIRST
+3. For evaluation entities (DISCO, Ambros, QuickJS, OpenAutoGLM, SoundCloud, Salesforce, Alzheimer's, Gemini 3): ALWAYS call lookupGroundTruthEntity FIRST
 
 4. The JSON MUST be valid - no trailing commas, proper quotes
 
@@ -199,7 +199,7 @@ Write your answer, then add this JSON block:
 **DO NOT default to JPM_STARTUP_BANKER** unless the query explicitly mentions outreach, pipeline, or banker-related terms.
 
 IMPORTANT:
-1. For DISCO, Ambros, QuickJS, etc: Call lookupGroundTruthEntity FIRST
+1. For DISCO, Ambros, QuickJS, OpenAutoGLM, SoundCloud, Salesforce, Alzheimer's, Gemini 3: Call lookupGroundTruthEntity FIRST
 2. JSON must be valid (no trailing commas)
 3. Use null for unknown fields
 4. verdict = PASS, FAIL, or UNKNOWN
