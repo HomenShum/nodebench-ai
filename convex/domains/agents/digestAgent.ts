@@ -28,6 +28,9 @@ import {
 // Import coordinator agent for full tool access
 import { createCoordinatorAgent } from "./core/coordinatorAgent";
 
+// Import disclosure logger for progressive disclosure tracking
+import { DisclosureLogger, type DisclosureSummary } from "../telemetry/disclosureEvents";
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -56,7 +59,7 @@ export type AgentDigestOutput = {
 
   // Act I: The Setup
   narrativeThesis: string;
-  leadStory: {
+  leadStory?: {
     title: string;
     url?: string;
     whyItMatters: string;
@@ -65,7 +68,7 @@ export type AgentDigestOutput = {
       soWhat: string;
       nowWhat: string;
     };
-  } | null;
+  };
 
   // Act II: The Signal
   signals: Array<{
@@ -273,6 +276,89 @@ export const PERSONA_CONFIGS = {
 export type DigestPersona = keyof typeof PERSONA_CONFIGS;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SKILL RETRIEVAL HELPERS (Progressive Disclosure Integration)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Convert a persona key to its corresponding skill name.
+ * E.g., "JPM_STARTUP_BANKER" -> "digest-jpm-startup-banker"
+ */
+function personaToSkillName(persona: string): string {
+  return `digest-${persona.toLowerCase().replace(/_/g, "-")}`;
+}
+
+/**
+ * Try to load a persona-specific skill from the registry.
+ * Falls back to PERSONA_CONFIGS if skill not found.
+ *
+ * @returns Object with personaInstructions, tags, and disclosure metadata
+ */
+async function loadPersonaSkill(
+  ctx: any,
+  persona: string,
+  logger: DisclosureLogger
+): Promise<{
+  personaInstructions: string;
+  priorityCategories: readonly string[];
+  tags: readonly string[];
+  fromSkill: boolean;
+  skillName: string | null;
+}> {
+  const skillName = personaToSkillName(persona);
+  const fallbackConfig = PERSONA_CONFIGS[persona as DigestPersona] || PERSONA_CONFIGS.GENERAL;
+
+  try {
+    // Search for the skill
+    logger.logSkillSearch(`digest ${persona}`, [], 1);
+
+    const searchResult = await ctx.runQuery(
+      internal.tools.meta.skillDiscoveryQueries.getSkillByName,
+      { name: skillName }
+    );
+
+    if (searchResult && searchResult.fullInstructions) {
+      // Log skill describe (L2 expansion)
+      const tokensAdded = Math.ceil(searchResult.fullInstructions.length / 4);
+      logger.logSkillDescribe(skillName, tokensAdded);
+
+      console.log(`[digestAgent] Loaded skill "${skillName}" (${tokensAdded} tokens)`);
+
+      return {
+        personaInstructions: searchResult.fullInstructions,
+        priorityCategories: searchResult.keywords || fallbackConfig.priorityCategories,
+        tags: fallbackConfig.tags, // Keep original tags for ntfy formatting
+        fromSkill: true,
+        skillName,
+      };
+    }
+
+    // Skill not found - log fallback and use PERSONA_CONFIGS
+    logger.logSkillFallback(`digest ${persona}`, `Skill "${skillName}" not found`);
+    console.log(`[digestAgent] Skill "${skillName}" not found, using PERSONA_CONFIGS fallback`);
+
+    return {
+      personaInstructions: `Focus: ${fallbackConfig.focus}\n\nAction: ${fallbackConfig.actionPrompt}`,
+      priorityCategories: fallbackConfig.priorityCategories,
+      tags: fallbackConfig.tags,
+      fromSkill: false,
+      skillName: null,
+    };
+  } catch (error) {
+    // Query failed - log fallback
+    logger.logSkillFallback(`digest ${persona}`, `Error: ${error instanceof Error ? error.message : String(error)}`);
+    console.warn(`[digestAgent] Skill lookup failed for "${skillName}":`, error);
+
+    return {
+      personaInstructions: `Focus: ${fallbackConfig.focus}\n\nAction: ${fallbackConfig.actionPrompt}`,
+      priorityCategories: fallbackConfig.priorityCategories,
+      tags: fallbackConfig.tags,
+      fromSkill: false,
+      skillName: null,
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // PROMPTS
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -407,16 +493,21 @@ export const generateAgentDigest = internalAction({
 
     console.log(`[digestAgent] Generating digest for ${args.feedItems.length} items, persona=${persona}, model=${model}, useTools=${useTools}`);
 
-    // Get persona config for customized digest
-    const personaConfig = PERSONA_CONFIGS[persona as DigestPersona] || PERSONA_CONFIGS.GENERAL;
+    // Initialize disclosure logger for progressive disclosure tracking
+    const sessionId = `digest-${persona}-${Date.now()}`;
+    const disclosureLogger = new DisclosureLogger(sessionId, "digest");
+
+    // Load persona skill (with fallback to PERSONA_CONFIGS)
+    const personaSkill = await loadPersonaSkill(ctx, persona, disclosureLogger);
+    console.log(`[digestAgent] Persona skill loaded: fromSkill=${personaSkill.fromSkill}, skillName=${personaSkill.skillName}`);
 
     // Filter and prioritize feed items based on persona
     const prioritizedItems = [...args.feedItems].sort((a, b) => {
       // Boost items matching persona's priority categories
-      const aBoost = personaConfig.priorityCategories.some((cat: string) =>
+      const aBoost = personaSkill.priorityCategories.some((cat: string) =>
         a.category?.toLowerCase().includes(cat) || a.tags?.some((t: string) => t.toLowerCase().includes(cat))
       ) ? 10 : 0;
-      const bBoost = personaConfig.priorityCategories.some((cat: string) =>
+      const bBoost = personaSkill.priorityCategories.some((cat: string) =>
         b.category?.toLowerCase().includes(cat) || b.tags?.some((t: string) => t.toLowerCase().includes(cat))
       ) ? 10 : 0;
 
@@ -464,13 +555,17 @@ export const generateAgentDigest = internalAction({
       }
     }
 
-    // Build persona-specific prompt section
+    // Build persona-specific prompt section using skill instructions (or fallback)
     const personaPromptSection = persona !== "GENERAL" ? `
 ## PERSONA-SPECIFIC FOCUS
 You are generating this digest for a ${persona.replace(/_/g, " ")} persona.
-Focus on: ${personaConfig.focus}
-Priority categories: ${personaConfig.priorityCategories.join(", ")}
-Action item guidance: ${personaConfig.actionPrompt}
+${personaSkill.fromSkill ? `
+### Loaded from Skill Registry: ${personaSkill.skillName}
+${personaSkill.personaInstructions}
+` : `
+${personaSkill.personaInstructions}
+`}
+Priority categories: ${personaSkill.priorityCategories.join(", ")}
 In **ACTION_ITEMS**, tag every action with persona="${persona}".
 ` : "";
 
@@ -623,7 +718,7 @@ ${persona === "GENERAL"
                   whyItMatters: obj.leadStory.whyItMatters,
                   reflection: obj.leadStory.reflection,
                 }
-                : null,
+                : undefined, // Convex schema requires undefined, not null
               signals: obj.signals,
               actionItems: obj.actionItems,
               entitySpotlight: obj.entitySpotlight,
@@ -752,7 +847,7 @@ function parseDigestOutput(
     const narrativeThesis = narrativeMatch?.[1]?.trim() || "Today's news highlights emerging trends across tech and finance.";
 
     // Parse lead story
-    let leadStory: AgentDigestOutput["leadStory"] = null;
+    let leadStory: AgentDigestOutput["leadStory"] = undefined;
     if (leadMatch) {
       const leadText = leadMatch[1];
       const titleMatch = leadText.match(/Title:\s*(.+?)(?:\n|$)/i);
@@ -994,7 +1089,7 @@ function parseDigestOutput(
     return {
       dateString,
       narrativeThesis,
-      leadStory,
+      leadStory: leadStory ?? undefined, // Convert null to undefined for Convex schema
       signals,
       actionItems: uniqueActionItems,
       entitySpotlight: entitySpotlight.length > 0 ? entitySpotlight : undefined,

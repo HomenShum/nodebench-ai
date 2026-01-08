@@ -161,6 +161,9 @@ import {
   type ApprovedModel
 } from "./mcp_tools/models";
 
+// Progressive disclosure telemetry
+import { DisclosureLogger, type DisclosureSummary } from "../telemetry/disclosureEvents";
+
 const streamCancellationControllers = new Map<string, AbortController>();
 
 const RATE_LIMIT_BACKOFF_MS = 1200;
@@ -2473,6 +2476,9 @@ export const streamAsync = internalAction({
       lastAttemptStart = Date.now();
       const { agent, agentType } = await createAgentForModel(model);
 
+      // Initialize disclosure logger for progressive disclosure tracking
+      const disclosureLogger = new DisclosureLogger(`${args.threadId}-${executionId}`, "fastAgent");
+
       console.log(`[streamAsync:${executionId}] (${attemptLabel}) Calling ${agentType} agent.streamText...`);
       console.log(`[streamAsync:${executionId}] (${attemptLabel}) Using promptMessageId:`, args.promptMessageId);
       console.log(`[streamAsync:${executionId}] (${attemptLabel}) ThreadId:`, args.threadId);
@@ -2677,6 +2683,17 @@ export const streamAsync = internalAction({
         }))
         : [];
 
+      // Log tool invocations to disclosure tracker for progressive disclosure metrics
+      // This captures tool usage after-the-fact since tools are executed by the agent
+      for (const result of toolResultsSummary) {
+        const ok = result.ok !== false && !result.error;
+        disclosureLogger.logToolInvoke(result.name, ok, undefined, result.error);
+      }
+
+      // Get disclosure summary for telemetry
+      const disclosureMetrics = disclosureLogger.getSummary();
+      console.log(`[streamAsync:${executionId}] (${attemptLabel}) Disclosure metrics: ${disclosureMetrics.toolsInvoked.length} tools invoked, ${disclosureMetrics.toolInvokeErrors} errors`);
+
       return {
         modelUsed: model,
         agentType,
@@ -2689,6 +2706,7 @@ export const streamAsync = internalAction({
         finalText: finalText ?? "",
         toolCalls: toolCallsSummary,
         toolResults: toolResultsSummary,
+        disclosureMetrics,
       };
     };
 
@@ -2714,6 +2732,7 @@ export const streamAsync = internalAction({
         finalText: string;
         toolCalls: Array<{ name: string; argsPreview?: string }>;
         toolResults: Array<{ name: string; ok?: boolean; error?: string; resultPreview?: string }>;
+        disclosureMetrics?: DisclosureSummary;
       }
       | null = null;
 

@@ -21,6 +21,7 @@ import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
+import { DisclosureTrace, type DisclosureEvent } from './FastAgentPanel.DisclosureTrace';
 import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
 import { ParallelTaskTimeline } from './FastAgentPanel.ParallelTaskTimeline';
 import { EditsTab } from './FastAgentPanel.EditsTab';
@@ -240,6 +241,10 @@ export function FastAgentPanel({
 
   const [liveToolCalls, setLiveToolCalls] = useState<ToolCall[]>([]);
   const [liveSources, setLiveSources] = useState<Source[]>([]);
+
+  // Progressive Disclosure state
+  const [disclosureEvents, setDisclosureEvents] = useState<DisclosureEvent[]>([]);
+  const [showDisclosureTrace, setShowDisclosureTrace] = useState(false);
 
   // Tab state - MUST be declared before any conditional logic or loops
   const [activeTab, setActiveTab] = useState<'thread' | 'artifacts' | 'tasks' | 'brief' | 'edits'>('thread');
@@ -1629,6 +1634,17 @@ export function FastAgentPanel({
                         className="mb-4"
                       />
                     </div>
+                  )}
+
+                  {/* Progressive Disclosure Trace */}
+                  {disclosureEvents.length > 0 && (
+                    <DisclosureTrace
+                      events={disclosureEvents}
+                      isExpanded={showDisclosureTrace}
+                      onToggle={() => setShowDisclosureTrace(!showDisclosureTrace)}
+                      budgetLimit={10000}
+                      className="mb-4"
+                    />
                   )}
 
                   {/* Welcome / Empty State */}
