@@ -19,11 +19,21 @@ export interface EvaluationPromptConfig {
 export function getPromptComplexityForModel(model: string): PromptComplexity {
   const normalized = model.toLowerCase();
 
-  // Full complexity for flagship models
+  // Full complexity for flagship models (native + OpenRouter)
   if (normalized.includes("gpt-5.2") && !normalized.includes("mini")) {
     return "full";
   }
   if (normalized.includes("claude-opus") || normalized.includes("claude-sonnet-4")) {
+    return "full";
+  }
+  // OpenRouter flagship reasoning/large models get full complexity
+  if (normalized.includes("deepseek-r1") || normalized.includes("deepseek-v3")) {
+    return "full";
+  }
+  if (normalized.includes("qwen3-235b") || normalized.includes("qwen3-72b")) {
+    return "full";
+  }
+  if (normalized.includes("mistral-large")) {
     return "full";
   }
 
@@ -32,8 +42,11 @@ export function getPromptComplexityForModel(model: string): PromptComplexity {
     return "minimal";
   }
 
-  // Standard for mid-tier models
+  // Standard for mid-tier models (minimax, cohere, smaller qwen, etc.)
   if (normalized.includes("haiku") || normalized.includes("pro")) {
+    return "standard";
+  }
+  if (normalized.includes("minimax") || normalized.includes("cohere")) {
     return "standard";
   }
 
@@ -100,7 +113,9 @@ Rules:
 - verdict MUST be exactly one of: PASS, FAIL, UNKNOWN.
 - grounding[] MUST include at least 1 ground-truth anchor you used (e.g., {{fact:ground_truth:DISCO}}).
 - nextActions MUST contain >= 3 items (even for PRODUCT_DESIGNER: actions can be 'rendering validation', 'QA checklist', etc.).
-- If you call lookupGroundTruthEntity and it returns an HQ/location, you MUST copy it into keyFacts.hqLocation (do not leave it null).`;
+- If you call lookupGroundTruthEntity and it returns an HQ/location, you MUST copy it into keyFacts.hqLocation (do not leave it null).
+
+CRITICAL: You MUST always end your response with the [DEBRIEF_V1_JSON]...[/DEBRIEF_V1_JSON] block. This is REQUIRED for evaluation scoring. Keep your human-readable analysis concise (2-3 paragraphs max) to ensure the JSON block fits within output limits.`;
 
 /**
  * STANDARD COMPLEXITY - For Claude Haiku, Gemini Pro
@@ -153,7 +168,9 @@ CRITICAL RULES:
 
 6. nextActions needs at least 3 items
 
-7. grounding[] must cite {{fact:ground_truth:...}} if you used ground truth`;;
+7. grounding[] must cite {{fact:ground_truth:...}} if you used ground truth
+
+CRITICAL: You MUST always end your response with the [DEBRIEF_V1_JSON]...[/DEBRIEF_V1_JSON] block. This is REQUIRED.`;
 
 /**
  * MINIMAL COMPLEXITY - For GPT-5 Mini, Gemini Flash
@@ -204,7 +221,9 @@ IMPORTANT:
 3. Use null for unknown fields
 4. verdict = PASS, FAIL, or UNKNOWN
 5. Must have 3+ nextActions
-6. Must cite ground truth in grounding[]`;;
+6. Must cite ground truth in grounding[]
+
+CRITICAL: You MUST always end your response with the [DEBRIEF_V1_JSON]...[/DEBRIEF_V1_JSON] block. This is REQUIRED.`;
 
 /**
  * Get the appropriate evaluation prompt for a model

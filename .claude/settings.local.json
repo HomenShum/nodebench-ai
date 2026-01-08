@@ -41,7 +41,15 @@
       "Bash(tee:*)",
       "Bash(timeout 240 npx tsx:*)",
       "Bash(timeout 180 npx convex run:*)",
-      "Bash(timeout 300 npx convex run:*)"
+      "Bash(timeout 300 npx convex run:*)",
+      "Bash(git commit:*)",
+      "Bash(powershell -Command \"(Get-Content ''docs\\architecture\\benchmarks\\fully-parallel-eval-2026-01-07T20-02-24.json'' -Raw | ConvertFrom-Json).results | Where-Object { $_model -eq ''claude-haiku-4.5'' -and $_scenarioId -eq ''banker_vague_disco'' } | ConvertTo-Json -Depth 10\")",
+      "Bash(timeout 300 npx tsx:*)",
+      "Bash(timeout 900 npx tsx:*)",
+      "Bash(npm install:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(timeout 30 npx convex run:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

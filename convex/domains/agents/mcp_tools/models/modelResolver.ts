@@ -46,6 +46,11 @@ export type Provider = "openai" | "anthropic" | "google" | "openrouter";
 /**
  * The approved model aliases - includes native providers + OpenRouter models
  * OpenRouter models provide access to additional frontier models at competitive pricing
+ *
+ * LATEST MODELS (Jan 2026):
+ * - DeepSeek R1: Reasoning model, open weights ($0.70/M in)
+ * - DeepSeek V3.2 Speciale: Agentic variant ($0.27/M in)
+ * - Qwen3 235B: Latest Qwen with tool calling ($0.18/M in)
  */
 export const APPROVED_MODELS = [
   // Native providers (direct API)
@@ -55,14 +60,15 @@ export const APPROVED_MODELS = [
   "claude-opus-4.5",   // Anthropic flagship
   "claude-sonnet-4.5", // Anthropic balanced
   "claude-haiku-4.5",  // Anthropic fast (DEFAULT)
-  "gemini-3-pro",      // Google flagship
+  "gemini-3-pro",      // Google flagship (Nov 18, 2025)
   "gemini-3-flash",    // Google fast (Dec 17, 2025)
-  // OpenRouter models - affordable frontier models with tool calling
-  "deepseek-v3.2",     // DeepSeek V3.2 - sparse attention, tool use ($0.25/M in)
-  "minimax-m2.1",      // MiniMax M2.1 - optimized for agentic workflows ($0.28/M in)
-  "qwen-2.5-72b",      // Qwen 2.5 72B - coding/math specialist ($0.12/M in)
-  "mistral-large",     // Mistral Large 2411 - improved function calling ($2/M in)
-  "cohere-command-r+", // Cohere Command R+ - RAG optimized ($2.50/M in)
+  // OpenRouter models - LATEST frontier models with tool calling (Jan 2026)
+  "deepseek-r1",       // DeepSeek R1 - reasoning model (Jan 20, 2025) $0.70/M
+  "deepseek-v3.2-speciale", // DeepSeek V3.2 Speciale - agentic variant $0.27/M
+  "deepseek-v3.2",     // DeepSeek V3.2 - general purpose $0.25/M
+  "qwen3-235b",        // Qwen3 235B - latest Qwen $0.18/M
+  "minimax-m2.1",      // MiniMax M2.1 - agentic workflows $0.28/M
+  "mistral-large",     // Mistral Large 2411 - function calling $2/M
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
@@ -94,15 +100,25 @@ export interface ModelCapabilities {
 }
 
 /**
+ * Model pricing per million tokens (for cost tracking)
+ */
+export interface ModelPricing {
+  inputPerMillion: number;   // USD per 1M input tokens
+  outputPerMillion: number;  // USD per 1M output tokens
+}
+
+/**
  * Model specification with full metadata
  * - alias: User-facing model name (shown in UI)
  * - sdkId: Provider-specific ID sent to API (internal, may include dates)
+ * - pricing: Cost per million tokens for tracking
  */
 export interface ModelSpec {
   alias: ApprovedModel;
   provider: Provider;
   sdkId: string;                    // Actual SDK model ID (internal)
   capabilities: ModelCapabilities;
+  pricing: ModelPricing;            // Cost tracking (Jan 2026 prices)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -110,164 +126,109 @@ export interface ModelSpec {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NATIVE PROVIDERS - Direct API access
+  // ═══════════════════════════════════════════════════════════════════════════
   "gpt-5.2": {
     alias: "gpt-5.2",
     provider: "openai",
-    sdkId: "gpt-5.2",  // Real GPT-5.2 API (Dec 11, 2025)
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 256_000
-    },
+    sdkId: "gpt-5.2",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 256_000 },
+    pricing: { inputPerMillion: 2.50, outputPerMillion: 10.00 },
   },
   "gpt-5-mini": {
     alias: "gpt-5-mini",
     provider: "openai",
-    sdkId: "gpt-5-mini",  // GPT-5 Mini (Aug 7, 2025) - efficient reasoning
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 272_000  // 272K input, 128K output
-    },
+    sdkId: "gpt-5-mini",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 400_000 },
+    pricing: { inputPerMillion: 0.25, outputPerMillion: 2.00 },  // OpenRouter pricing
   },
   "gpt-5-nano": {
     alias: "gpt-5-nano",
     provider: "openai",
-    sdkId: "gpt-5-nano",  // GPT-5 Nano (Aug 7, 2025) - ultra-efficient
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 272_000  // 272K input, 128K output
-    },
+    sdkId: "gpt-5-nano",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 272_000 },
+    pricing: { inputPerMillion: 0.10, outputPerMillion: 0.40 },
   },
   "claude-opus-4.5": {
     alias: "claude-opus-4.5",
     provider: "anthropic",
-    sdkId: "claude-opus-4-5-20251101",  // Dated ID for reproducibility
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 200_000
-    },
+    sdkId: "claude-opus-4-5-20251101",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
+    pricing: { inputPerMillion: 15.00, outputPerMillion: 75.00 },
   },
   "claude-sonnet-4.5": {
     alias: "claude-sonnet-4.5",
     provider: "anthropic",
-    sdkId: "claude-sonnet-4-5-20250929",  // Dated ID for reproducibility
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 200_000
-    },
+    sdkId: "claude-sonnet-4-5-20250929",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
+    pricing: { inputPerMillion: 3.00, outputPerMillion: 15.00 },
   },
   "claude-haiku-4.5": {
     alias: "claude-haiku-4.5",
     provider: "anthropic",
-    sdkId: "claude-haiku-4-5-20251001",  // Dated ID for reproducibility
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 200_000
-    },
+    sdkId: "claude-haiku-4-5-20251001",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
+    pricing: { inputPerMillion: 1.00, outputPerMillion: 5.00 },
   },
   "gemini-3-pro": {
     alias: "gemini-3-pro",
     provider: "google",
-    sdkId: "gemini-3-pro-preview",  // Gemini 3 Pro Preview - flagship reasoning model (Jan 2026)
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 1_000_000
-    },
+    sdkId: "gemini-3-pro-preview",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
+    pricing: { inputPerMillion: 2.00, outputPerMillion: 12.00 },
   },
   "gemini-3-flash": {
     alias: "gemini-3-flash",
     provider: "google",
-    sdkId: "gemini-3-flash-preview",  // Gemini 3 Flash Preview - Pro-level at Flash speed (Jan 2026)
-    capabilities: {
-      vision: true,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 1_000_000
-    },
+    sdkId: "gemini-3-flash-preview",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
+    pricing: { inputPerMillion: 0.50, outputPerMillion: 3.00 },
   },
   // ═══════════════════════════════════════════════════════════════════════════
-  // OPENROUTER MODELS - Frontier models via unified API
+  // OPENROUTER MODELS - Latest frontier models via unified API (Jan 2026)
   // ═══════════════════════════════════════════════════════════════════════════
+  "deepseek-r1": {
+    alias: "deepseek-r1",
+    provider: "openrouter",
+    sdkId: "deepseek/deepseek-r1",  // DeepSeek R1 - reasoning model (Jan 20, 2025)
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 163_840 },
+    pricing: { inputPerMillion: 0.70, outputPerMillion: 2.40 },
+  },
+  "deepseek-v3.2-speciale": {
+    alias: "deepseek-v3.2-speciale",
+    provider: "openrouter",
+    sdkId: "deepseek/deepseek-v3.2-speciale",  // DeepSeek V3.2 Speciale - agentic variant
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 163_840 },
+    pricing: { inputPerMillion: 0.27, outputPerMillion: 0.41 },
+  },
   "deepseek-v3.2": {
     alias: "deepseek-v3.2",
     provider: "openrouter",
-    sdkId: "deepseek/deepseek-v3.2",  // DeepSeek V3.2 - sparse attention (Dec 2025)
-    capabilities: {
-      vision: false,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 163_840
-    },
+    sdkId: "deepseek/deepseek-v3.2",  // DeepSeek V3.2 - general purpose
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 163_840 },
+    pricing: { inputPerMillion: 0.25, outputPerMillion: 0.38 },
+  },
+  "qwen3-235b": {
+    alias: "qwen3-235b",
+    provider: "openrouter",
+    sdkId: "qwen/qwen3-235b-a22b",  // Qwen3 235B - latest with tool calling
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
+    pricing: { inputPerMillion: 0.18, outputPerMillion: 0.54 },
   },
   "minimax-m2.1": {
     alias: "minimax-m2.1",
     provider: "openrouter",
     sdkId: "minimax/minimax-m2.1",  // MiniMax M2.1 - agentic workflows (Dec 2025)
-    capabilities: {
-      vision: false,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 196_608
-    },
-  },
-  "qwen-2.5-72b": {
-    alias: "qwen-2.5-72b",
-    provider: "openrouter",
-    sdkId: "qwen/qwen-2.5-72b-instruct",  // Qwen 2.5 72B - coding/math specialist
-    capabilities: {
-      vision: false,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 32_768
-    },
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 196_608 },
+    pricing: { inputPerMillion: 0.28, outputPerMillion: 1.20 },
   },
   "mistral-large": {
     alias: "mistral-large",
     provider: "openrouter",
     sdkId: "mistralai/mistral-large-2411",  // Mistral Large 2411 - improved function calling
-    capabilities: {
-      vision: false,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 131_072
-    },
-  },
-  "cohere-command-r+": {
-    alias: "cohere-command-r+",
-    provider: "openrouter",
-    sdkId: "cohere/command-r-plus-08-2024",  // Cohere Command R+ - RAG optimized
-    capabilities: {
-      vision: false,
-      toolUse: true,
-      streaming: true,
-      structuredOutputs: true,
-      maxContext: 128_000
-    },
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
+    pricing: { inputPerMillion: 2.00, outputPerMillion: 6.00 },
   },
 };
 
@@ -500,4 +461,43 @@ export function normalizeModelInput(input: string | undefined | null): ApprovedM
     return DEFAULT_MODEL;
   }
   return resolved;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COST TRACKING (Jan 2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get pricing for a model
+ */
+export function getModelPricing(model: ApprovedModel): ModelPricing {
+  return MODEL_SPECS[model].pricing;
+}
+
+/**
+ * Calculate cost for a given token usage
+ */
+export function calculateCost(
+  model: ApprovedModel,
+  inputTokens: number,
+  outputTokens: number
+): { inputCost: number; outputCost: number; totalCost: number } {
+  const pricing = MODEL_SPECS[model].pricing;
+  const inputCost = (inputTokens / 1_000_000) * pricing.inputPerMillion;
+  const outputCost = (outputTokens / 1_000_000) * pricing.outputPerMillion;
+  return {
+    inputCost,
+    outputCost,
+    totalCost: inputCost + outputCost,
+  };
+}
+
+/**
+ * Format cost as USD string
+ */
+export function formatCost(cost: number): string {
+  if (cost < 0.01) {
+    return `$${(cost * 100).toFixed(4)}¢`;
+  }
+  return `$${cost.toFixed(4)}`;
 }

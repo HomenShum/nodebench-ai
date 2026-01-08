@@ -60,3 +60,16 @@ export { DashboardPanel } from "./DashboardPanel";
 export { SignalCard } from "./SignalCard";
 export { ActionCard } from "./ActionCard";
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MODEL EVALUATION & BENCHMARKS
+// ═══════════════════════════════════════════════════════════════════════════
+
+export {
+  ModelEvalDashboard,
+  LATEST_EVAL_DATA,
+  LATEST_SCENARIO_DATA,
+  type ModelEvalResult,
+  type ScenarioResult,
+  type EvalDashboardProps,
+} from "./ModelEvalDashboard";
+

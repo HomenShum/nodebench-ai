@@ -19,11 +19,17 @@ import {
   ChevronRight,
   Shield,
   Database,
+  ListOrdered,
+  CheckCircle2,
+  XCircle,
+  Minimize2,
+  Brain,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TYPES (matching disclosureEvents.ts)
+// TYPES (matching disclosureEvents.ts + Section 5.3 enhancements)
 // ═══════════════════════════════════════════════════════════════════════════
 
 export type DisclosureEvent =
@@ -40,7 +46,13 @@ export type DisclosureEvent =
   | { t: number; kind: "policy.confirm_denied"; draftId: string; reason: string }
   | { t: number; kind: "budget.warning"; currentTokens: number; budgetLimit: number; expansionCost: number }
   | { t: number; kind: "budget.exceeded"; currentTokens: number; budgetLimit: number }
-  | { t: number; kind: "enforcement.blocked"; rule: string; toolName?: string; reason: string };
+  | { t: number; kind: "enforcement.blocked"; rule: string; toolName?: string; reason: string }
+  // Section 5.3 enhancements: Tool ordering, invariants, compaction, memory
+  | { t: number; kind: "tool.ordering"; sequence: string[]; memoryFirstCompliant: boolean; violation?: string }
+  | { t: number; kind: "invariant.check"; invariantId: "A" | "C" | "D"; status: "pass" | "fail" | "skip"; details?: string }
+  | { t: number; kind: "context.compaction"; beforeTokens: number; afterTokens: number; reduction: number; factsKept: number }
+  | { t: number; kind: "memory.update"; entityId: string; action: "create" | "update" | "skip"; factsAdded: number; reason?: string }
+  | { t: number; kind: "memory.query"; entityName: string; found: boolean; qualityTier?: string; ageInDays?: number; isStale?: boolean };
 
 export interface DisclosureSummary {
   skillSearchCalls: number;
@@ -52,6 +64,18 @@ export interface DisclosureSummary {
   confirmationsGranted: number;
   blockedAttempts: number;
   usedSkillFirst: boolean;
+  // Section 5.3 enhancements
+  memoryFirstCompliant: boolean;
+  toolOrderingViolations: string[];
+  invariantStatus: {
+    A: "pass" | "fail" | "skip"; // Message ID isolation
+    C: "pass" | "fail" | "skip"; // Memory deduplication
+    D: "pass" | "fail" | "skip"; // Capability version check
+  };
+  compactionEvents: number;
+  tokensSavedByCompaction: number;
+  memoryUpdates: { entityId: string; action: "create" | "update" | "skip"; factsAdded: number }[];
+  memoryQueries: { entityName: string; found: boolean; qualityTier?: string; isStale?: boolean }[];
 }
 
 interface DisclosureTraceProps {
@@ -107,6 +131,17 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
       return <AlertTriangle className="w-3.5 h-3.5 text-red-500" />;
     case "enforcement.blocked":
       return <X className="w-3.5 h-3.5 text-red-400" />;
+    // Section 5.3 enhancements
+    case "tool.ordering":
+      return <ListOrdered className="w-3.5 h-3.5 text-blue-400" />;
+    case "invariant.check":
+      return <Shield className="w-3.5 h-3.5 text-violet-400" />;
+    case "context.compaction":
+      return <Minimize2 className="w-3.5 h-3.5 text-teal-400" />;
+    case "memory.update":
+      return <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />;
+    case "memory.query":
+      return <Brain className="w-3.5 h-3.5 text-purple-400" />;
     default:
       return <Clock className="w-3.5 h-3.5 text-gray-400" />;
   }
@@ -142,6 +177,19 @@ function getEventLabel(event: DisclosureEvent): string {
       return `BUDGET EXCEEDED`;
     case "enforcement.blocked":
       return `blocked: ${event.reason}`;
+    // Section 5.3 enhancements
+    case "tool.ordering":
+      return event.memoryFirstCompliant
+        ? `tool ordering: memory-first ✓`
+        : `tool ordering: VIOLATION`;
+    case "invariant.check":
+      return `invariant ${event.invariantId}: ${event.status.toUpperCase()}`;
+    case "context.compaction":
+      return `context compaction: ${event.reduction}% reduction`;
+    case "memory.update":
+      return `memory.${event.action}: ${event.entityId}`;
+    case "memory.query":
+      return `memory.query: ${event.entityName}`;
     default:
       return "unknown event";
   }
@@ -169,6 +217,26 @@ function getEventDetail(event: DisclosureEvent): string | null {
         return event.latencyMs ? `→ success (${event.latencyMs}ms)` : "→ success";
       }
       return `→ error: ${event.error ?? "unknown"}`;
+    // Section 5.3 enhancements
+    case "tool.ordering":
+      if (event.violation) {
+        return `→ ${event.violation}`;
+      }
+      return `→ sequence: ${event.sequence.slice(0, 5).join(" → ")}${event.sequence.length > 5 ? "..." : ""}`;
+    case "invariant.check":
+      return event.details ? `→ ${event.details}` : null;
+    case "context.compaction":
+      return `→ ${event.beforeTokens.toLocaleString()} → ${event.afterTokens.toLocaleString()} tokens, ${event.factsKept} facts kept`;
+    case "memory.update":
+      if (event.action === "skip") {
+        return `→ skipped: ${event.reason ?? "already updated"}`;
+      }
+      return `→ +${event.factsAdded} facts`;
+    case "memory.query":
+      if (!event.found) {
+        return "→ not found, will trigger enrichment";
+      }
+      return `→ ${event.qualityTier ?? "unknown"} tier, ${event.ageInDays ?? "?"}d old${event.isStale ? " (STALE)" : ""}`;
     default:
       return null;
   }
@@ -198,7 +266,7 @@ export function DisclosureTrace({
   }
 
   // Compute quick stats from events if no summary provided
-  const stats = summary ?? {
+  const stats: DisclosureSummary = summary ?? {
     skillSearchCalls: events.filter((e) => e.kind === "skill.search").length,
     skillsActivated: Array.from(
       new Set(
@@ -232,6 +300,29 @@ export function DisclosureTrace({
       const firstTool = events.find((e) => e.kind === "tool.invoke")?.t ?? Infinity;
       return firstSkill < firstTool;
     })(),
+    // Section 5.3 enhanced stats
+    memoryFirstCompliant: (() => {
+      const orderingEvent = events.find((e): e is Extract<DisclosureEvent, { kind: "tool.ordering" }> => e.kind === "tool.ordering");
+      return orderingEvent?.memoryFirstCompliant ?? true;
+    })(),
+    toolOrderingViolations: events
+      .filter((e): e is Extract<DisclosureEvent, { kind: "tool.ordering" }> => e.kind === "tool.ordering" && !e.memoryFirstCompliant)
+      .map((e) => e.violation ?? "unknown violation"),
+    invariantStatus: (() => {
+      const invariantEvents = events.filter((e): e is Extract<DisclosureEvent, { kind: "invariant.check" }> => e.kind === "invariant.check");
+      const getStatus = (id: "A" | "C" | "D") => invariantEvents.find(e => e.invariantId === id)?.status ?? "skip";
+      return { A: getStatus("A"), C: getStatus("C"), D: getStatus("D") };
+    })(),
+    compactionEvents: events.filter((e) => e.kind === "context.compaction").length,
+    tokensSavedByCompaction: events
+      .filter((e): e is Extract<DisclosureEvent, { kind: "context.compaction" }> => e.kind === "context.compaction")
+      .reduce((sum, e) => sum + (e.beforeTokens - e.afterTokens), 0),
+    memoryUpdates: events
+      .filter((e): e is Extract<DisclosureEvent, { kind: "memory.update" }> => e.kind === "memory.update")
+      .map((e) => ({ entityId: e.entityId, action: e.action, factsAdded: e.factsAdded })),
+    memoryQueries: events
+      .filter((e): e is Extract<DisclosureEvent, { kind: "memory.query" }> => e.kind === "memory.query")
+      .map((e) => ({ entityName: e.entityName, found: e.found, qualityTier: e.qualityTier, isStale: e.isStale })),
   };
 
   const budgetUtilization = Math.min((stats.totalTokensAdded / budgetLimit) * 100, 100);
@@ -317,7 +408,8 @@ export function DisclosureTrace({
           </div>
 
           {/* Summary Footer */}
-          <div className="border-t border-[var(--border-secondary)] p-3">
+          <div className="border-t border-[var(--border-secondary)] p-3 space-y-2">
+            {/* Row 1: Basic stats */}
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-4">
                 <span className="text-[var(--text-secondary)]">
@@ -356,6 +448,115 @@ export function DisclosureTrace({
                 )}
               </div>
             </div>
+
+            {/* Row 2: Section 5.3 Enhanced Stats - Memory & Ordering */}
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-4">
+                {/* Memory-first compliance */}
+                {stats.memoryFirstCompliant ? (
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Memory-first
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-red-400">
+                    <XCircle className="w-3 h-3" />
+                    Memory-first violated
+                  </span>
+                )}
+
+                {/* Memory queries */}
+                {stats.memoryQueries.length > 0 && (
+                  <span className="text-[var(--text-secondary)]">
+                    Memory:{" "}
+                    <span className="text-purple-400 font-medium">
+                      {stats.memoryQueries.filter(q => q.found).length}/{stats.memoryQueries.length} found
+                    </span>
+                    {stats.memoryQueries.some(q => q.isStale) && (
+                      <span className="ml-1 text-amber-400">(stale)</span>
+                    )}
+                  </span>
+                )}
+
+                {/* Compaction */}
+                {stats.compactionEvents > 0 && (
+                  <span className="text-[var(--text-secondary)]">
+                    Compaction:{" "}
+                    <span className="text-teal-400 font-medium">
+                      -{stats.tokensSavedByCompaction.toLocaleString()} tokens
+                    </span>
+                  </span>
+                )}
+              </div>
+
+              {/* Invariants */}
+              <div className="flex items-center gap-2">
+                {(stats.invariantStatus.A !== "skip" || stats.invariantStatus.C !== "skip" || stats.invariantStatus.D !== "skip") && (
+                  <span className="flex items-center gap-1 text-[var(--text-secondary)]">
+                    Invariants:
+                    <span className={cn(
+                      "px-1 rounded text-[10px] font-mono",
+                      stats.invariantStatus.A === "pass" ? "bg-emerald-500/20 text-emerald-400" :
+                      stats.invariantStatus.A === "fail" ? "bg-red-500/20 text-red-400" :
+                      "bg-gray-500/20 text-gray-400"
+                    )}>A</span>
+                    <span className={cn(
+                      "px-1 rounded text-[10px] font-mono",
+                      stats.invariantStatus.C === "pass" ? "bg-emerald-500/20 text-emerald-400" :
+                      stats.invariantStatus.C === "fail" ? "bg-red-500/20 text-red-400" :
+                      "bg-gray-500/20 text-gray-400"
+                    )}>C</span>
+                    <span className={cn(
+                      "px-1 rounded text-[10px] font-mono",
+                      stats.invariantStatus.D === "pass" ? "bg-emerald-500/20 text-emerald-400" :
+                      stats.invariantStatus.D === "fail" ? "bg-red-500/20 text-red-400" :
+                      "bg-gray-500/20 text-gray-400"
+                    )}>D</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Row 3: Memory updates */}
+            {stats.memoryUpdates.length > 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <RefreshCw className="w-3 h-3 text-emerald-400" />
+                <span className="text-[var(--text-secondary)]">Updates:</span>
+                <div className="flex flex-wrap gap-1">
+                  {stats.memoryUpdates.slice(0, 5).map((u, i) => (
+                    <span
+                      key={i}
+                      className={cn(
+                        "px-1.5 py-0.5 rounded text-[10px]",
+                        u.action === "create" ? "bg-emerald-500/20 text-emerald-400" :
+                        u.action === "update" ? "bg-blue-500/20 text-blue-400" :
+                        "bg-gray-500/20 text-gray-400"
+                      )}
+                    >
+                      {u.entityId} (+{u.factsAdded})
+                    </span>
+                  ))}
+                  {stats.memoryUpdates.length > 5 && (
+                    <span className="text-[var(--text-muted)]">+{stats.memoryUpdates.length - 5} more</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tool ordering violations warning */}
+            {stats.toolOrderingViolations.length > 0 && (
+              <div className="flex items-start gap-2 text-xs p-2 bg-red-500/10 rounded border border-red-500/20">
+                <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-red-400 font-medium">Tool Ordering Violations:</span>
+                  <ul className="text-red-300 mt-0.5 list-disc list-inside">
+                    {stats.toolOrderingViolations.slice(0, 3).map((v, i) => (
+                      <li key={i}>{v}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
 
             {/* Budget Bar */}
             <div className="mt-2">

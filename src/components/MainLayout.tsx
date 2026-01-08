@@ -59,6 +59,11 @@ const PublicSignalsLog = lazy(() =>
     default: mod.PublicSignalsLog,
   })),
 );
+const ModelEvalDashboard = lazy(() =>
+  import("@/features/research/components/ModelEvalDashboard").then((mod) => ({
+    default: mod.ModelEvalDashboard,
+  })),
+);
 
 const viewFallback = (
   <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
@@ -76,7 +81,7 @@ interface MainLayoutProps {
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowResearchHub }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals'>('research');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals' | 'benchmarks'>('research');
   const [isGridMode, setIsGridMode] = useState(false);
   // Transition state for smooth view changes
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -568,6 +573,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           setCurrentView('showcase');
         } else if (h.startsWith('#footnotes') || h.startsWith('#sources')) {
           setCurrentView('footnotes');
+        } else if (h.startsWith('#benchmarks') || h.startsWith('#eval')) {
+          setCurrentView('benchmarks');
         }
       } catch {
         // ignore
@@ -670,9 +677,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                           ? 'Timeline'
                           : currentView === 'signals'
                             ? 'Signals'
-                            : selectedDocumentId
-                              ? 'My Documents'
-                              : 'My Workspace'}
+                            : currentView === 'benchmarks'
+                              ? 'Model Benchmarks'
+                              : selectedDocumentId
+                                ? 'My Documents'
+                                : 'My Workspace'}
               </h1>
             </div>
 
@@ -802,6 +811,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 />
               ) : currentView === 'signals' ? (
                 <PublicSignalsLog />
+              ) : currentView === 'benchmarks' ? (
+                <div className="h-full overflow-auto p-6 bg-gray-50">
+                  <ModelEvalDashboard />
+                </div>
               ) : (
                 <div className="h-full flex">
                   <div className="flex-1 overflow-hidden">

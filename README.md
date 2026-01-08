@@ -27,6 +27,58 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ---
 
+## Model Benchmarks (January 8, 2026)
+
+NodeBench AI evaluates multiple LLM providers on persona-based intelligence tasks. Latest results from our 70-evaluation parallel benchmark suite:
+
+### Pass Rate by Model
+
+| Model | Provider | Pass Rate | Avg Time | Cost ($/1M tokens) | Status |
+|-------|----------|-----------|----------|-------------------|--------|
+| **gemini-3-flash** | Google | **100%** | 16.4s | $0.50 / $3.00 | PERFECT |
+| **gpt-5-mini** | OpenAI | **100%** | 46.2s | $0.25 / $2.00 | PERFECT |
+| **deepseek-v3.2** | OpenRouter | **100%** | 80.7s | $0.25 / $0.38 | PERFECT |
+| claude-haiku-4.5 | Anthropic | 90% | 38.9s | $1.00 / $5.00 | GOOD |
+| minimax-m2.1 | OpenRouter | 90% | 27.3s | $0.28 / $1.20 | GOOD |
+| deepseek-r1 | OpenRouter | 80% | 53.2s | $0.70 / $2.40 | GOOD |
+| qwen3-235b | OpenRouter | 70% | 33.9s | $0.18 / $0.54 | PARTIAL |
+
+### Scenario Performance
+
+| Scenario | Pass Rate | Description |
+|----------|-----------|-------------|
+| Banker vague outreach debrief | 100% | JPM Startup Banker persona, entity extraction |
+| VC wedge from OSS signal | 100% | Early Stage VC persona, investment thesis |
+| CTO risk exposure + patch plan | 100% | CTO Tech Lead persona, security analysis |
+| Academic literature anchor | 100% | Academic R&D persona, citation synthesis |
+| Quant signal extraction | 100% | Quant Analyst persona, data synthesis |
+| Exec vendor evaluation | 85.7% | Enterprise Exec persona, vendor analysis |
+| Product designer schema card | 85.7% | Product Designer persona, UX artifact generation |
+| Sales engineer one-screen summary | 85.7% | Sales Engineer persona, product briefing |
+| Ecosystem second-order effects | 71.4% | Ecosystem Partner persona, impact analysis |
+| Founder positioning vs incumbent | 71.4% | Founder Strategy persona, competitive analysis |
+
+### Key Insights
+
+- **3 Models at 100%**: `gemini-3-flash`, `gpt-5-mini`, and `deepseek-v3.2` achieve perfect pass rates
+- **Best Value**: `deepseek-v3.2` - 100% pass rate at just $0.63/1M tokens total
+- **Fastest**: `gemini-3-flash` at 16.4s average response time
+- **Claude Haiku Working**: After spend limit fix, achieves 90% pass rate (38.9s avg)
+- **Overall Suite**: 63/70 tests passing (90% total pass rate)
+
+### Running Benchmarks
+
+```bash
+# Full parallel evaluation (all models, all scenarios)
+npx tsx scripts/run-fully-parallel-eval.ts
+
+# Results saved to docs/architecture/benchmarks/
+```
+
+See `src/features/research/components/ModelEvalDashboard.tsx` for interactive dashboard visualization.
+
+---
+
 ## Directory Structure & Feature Mapping
 
 NodeBench AI is organized into modular features. Below is a map of core features to their primary implementation paths.

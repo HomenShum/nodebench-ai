@@ -136,18 +136,18 @@ async function main() {
   const ndjsonMode = hasFlag("--ndjson"); // P0: Enable NDJSON streaming output
 
   // Determine which models to test
-  // Native providers + OpenRouter models for comprehensive evaluation
+  // Native providers + OpenRouter models for comprehensive evaluation (Jan 2026)
+  // Pricing: input/output per million tokens
   const availableModels = [
-    // Native providers (baseline)
-    "gpt-5-mini",
-    "claude-haiku-4.5",
-    "gemini-3-flash",
-    // OpenRouter models (frontier, affordable)
-    "deepseek-v3.2",    // DeepSeek V3.2 - $0.25/M in, sparse attention
-    "minimax-m2.1",     // MiniMax M2.1 - $0.28/M in, agentic workflows
-    "qwen-2.5-72b",     // Qwen 2.5 72B - $0.12/M in, coding/math
-    "mistral-large",    // Mistral Large - $2/M in, function calling
-    "cohere-command-r+", // Cohere R+ - $2.50/M in, RAG optimized
+    // Native providers (baseline) - All major providers
+    "claude-haiku-4.5", // Anthropic - $1.00/$5.00 - fast, cost-effective (DEFAULT)
+    "gpt-5-mini",       // OpenAI - $0.25/$2.00 - efficient reasoning
+    "gemini-3-flash",   // Google - $0.50/$3.00 - fast multimodal
+    // OpenRouter models - LATEST frontier models (Jan 2026)
+    "deepseek-r1",      // DeepSeek R1 - $0.70/$2.40 - reasoning model
+    "deepseek-v3.2",    // DeepSeek V3.2 - $0.25/$0.38 - general purpose
+    "qwen3-235b",       // Qwen3 235B - $0.18/$0.54 - latest with tools
+    "minimax-m2.1",     // MiniMax M2.1 - $0.28/$1.20 - agentic workflows
   ];
   let modelsToTest: string[];
 

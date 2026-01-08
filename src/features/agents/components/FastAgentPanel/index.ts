@@ -13,3 +13,23 @@ export {
   type FusedSearchResultsProps,
   type SearchSource as FusedSearchSource,
 } from './FusedSearchResults';
+
+// Prompt enhancement components
+export {
+  PromptEnhancer,
+  InlineEnhancer,
+} from './FastAgentPanel.PromptEnhancer';
+
+// Scratchpad visualization components
+export {
+  ScratchpadView,
+  CompactScratchpad,
+} from './FastAgentPanel.Scratchpad';
+
+// Memory preview components
+export {
+  MemoryPreviewCard,
+  MemoryBadge,
+  MemoryStatusIndicator,
+  MultiEntityMemoryPreview,
+} from './FastAgentPanel.MemoryPreview';

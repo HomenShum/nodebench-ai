@@ -1,13 +1,16 @@
 // src/components/FastAgentPanel/FastAgentPanel.InputBar.tsx
 // Enhanced input bar with auto-resize, context pills, drag-and-drop, and floating design
 
-import React, { useState, useRef, useEffect, KeyboardEvent, DragEvent } from 'react';
+import React, { useState, useRef, useEffect, useCallback, KeyboardEvent, DragEvent } from 'react';
 import { Send, Loader2, Paperclip, X, Mic, Video, Image as ImageIcon, FileText, Sparkles, ChevronUp, StopCircle, FolderOpen, Table2, Calendar } from 'lucide-react';
 import { MediaRecorderComponent } from './FastAgentPanel.MediaRecorder';
 import { FileDropOverlay } from '@/shared/components/FileDropOverlay';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useSelection } from '@/features/agents/context/SelectionContext';
+import { InlineEnhancer } from './FastAgentPanel.PromptEnhancer';
+import { useAction } from 'convex/react';
+import { api } from '../../../../../convex/_generated/api';
 
 // Import from SINGLE SOURCE OF TRUTH for models
 import {
@@ -61,6 +64,9 @@ interface FastAgentInputBarProps {
   contextCalendarEvents?: CalendarEventContextItem[];
   onAddCalendarEvent?: (event: CalendarEventContextItem) => void;
   onRemoveCalendarEvent?: (eventId: string) => void;
+  // Prompt enhancement
+  threadId?: string; // For memory context
+  enableEnhancement?: boolean; // Enable Ctrl+P prompt enhancement
   placeholder?: string;
   maxLength?: number;
 }
@@ -86,6 +92,8 @@ export function FastAgentInputBar({
   contextCalendarEvents = [],
   onAddCalendarEvent,
   onRemoveCalendarEvent,
+  threadId,
+  enableEnhancement = true,
   placeholder = 'Ask anything...',
   maxLength = 10000,
 }: FastAgentInputBarProps) {
@@ -94,6 +102,7 @@ export function FastAgentInputBar({
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragType, setDragType] = useState<'document' | 'calendar' | 'file' | null>(null);
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,6 +110,49 @@ export function FastAgentInputBar({
 
   // Selection context for "Chat with Selection" feature
   const { selection, clearSelection } = useSelection();
+
+  // Prompt enhancement action
+  const enhancePromptAction = useAction(api.domains.agents.promptEnhancer.enhancePrompt);
+
+  // Handle prompt enhancement (Ctrl+P)
+  const handleEnhance = useCallback(async () => {
+    if (!input.trim() || isStreaming || isEnhancing) return;
+
+    setIsEnhancing(true);
+    try {
+      const attachedFileIds = attachedFiles.map((_, i) => `file-${i}`); // Placeholder IDs
+      const result = await enhancePromptAction({
+        prompt: input,
+        threadId,
+        attachedFileIds: attachedFileIds.length > 0 ? attachedFileIds : undefined,
+      });
+
+      if (result && result.enhanced) {
+        setInput(result.enhanced);
+        toast.success('Prompt enhanced with context', {
+          description: `Added ${result.injectedContext.memory.length} memory contexts, ${result.injectedContext.suggestedTools.length} tool hints`,
+        });
+      }
+    } catch (error) {
+      console.error('Enhancement failed:', error);
+      toast.error('Failed to enhance prompt');
+    } finally {
+      setIsEnhancing(false);
+    }
+  }, [input, threadId, attachedFiles, isStreaming, isEnhancing, enhancePromptAction, setInput]);
+
+  // Keyboard shortcut for enhancement (Ctrl+P)
+  useEffect(() => {
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p' && enableEnhancement) {
+        e.preventDefault();
+        handleEnhance();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleEnhance, enableEnhancement]);
 
   // Handle document drag-and-drop
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -635,6 +687,16 @@ export function FastAgentInputBar({
             rows={1}
           />
 
+          {/* Enhance Button (Ctrl+P) */}
+          {enableEnhancement && (
+            <InlineEnhancer
+              value={input}
+              onEnhance={handleEnhance}
+              isEnhancing={isEnhancing}
+              disabled={isStreaming}
+            />
+          )}
+
           {/* Send/Stop Button */}
           {isStreaming ? (
             <button
@@ -668,6 +730,12 @@ export function FastAgentInputBar({
           <span>Enter to send</span>
           <span>•</span>
           <span>Shift + Enter for new line</span>
+          {enableEnhancement && (
+            <>
+              <span>•</span>
+              <span>Ctrl+P to enhance</span>
+            </>
+          )}
         </div>
         {input.length > maxLength * 0.8 && (
           <span>{input.length} / {maxLength}</span>

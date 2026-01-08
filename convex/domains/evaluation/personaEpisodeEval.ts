@@ -305,10 +305,11 @@ const ENTITY_NAME_STOPWORDS = new Set([
 
 function tokenizeEntityName(s: string): string[] {
   return normalizeLower(s)
+    .replace(/'s\b/g, "s")  // Convert possessives: "Alzheimer's" → "Alzheimers"
     .replace(/[^a-z0-9]+/g, " ")
     .split(/\s+/g)
     .map((t) => t.trim())
-    .filter((t) => t.length > 0 && !ENTITY_NAME_STOPWORDS.has(t));
+    .filter((t) => t.length > 1 && !ENTITY_NAME_STOPWORDS.has(t));  // Filter single-char tokens
 }
 
 function hasMeaningfulEntityTokenOverlap(actualName: string, expectedName: string): boolean {
