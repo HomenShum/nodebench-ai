@@ -106,8 +106,9 @@ function SafeImage({ src, alt, className }: { src: string; alt: string; classNam
 
 /**
  * Helper to render tool output with markdown support and gallery layout for images, videos, and SEC documents
+ * Memoized to prevent expensive regex parsing on every render
  */
-function ToolOutputRenderer({
+const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
   output,
   onCompanySelect,
   onPersonSelect,
@@ -120,82 +121,110 @@ function ToolOutputRenderer({
   onEventSelect?: (event: EventOption) => void;
   onNewsSelect?: (article: NewsArticleOption) => void;
 }) {
-  const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
+  // Memoize the expensive parsing operations
+  const parsedData = useMemo(() => {
+    const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
 
-  // Extract YouTube gallery data
-  const youtubeMatch = outputText.match(/<!-- YOUTUBE_GALLERY_DATA\n([\s\S]*?)\n-->/);
-  const youtubeVideos: YouTubeVideo[] = youtubeMatch ? JSON.parse(youtubeMatch[1]) : [];
+    // Extract YouTube gallery data
+    const youtubeMatch = outputText.match(/<!-- YOUTUBE_GALLERY_DATA\n([\s\S]*?)\n-->/);
+    const youtubeVideos: YouTubeVideo[] = youtubeMatch ? JSON.parse(youtubeMatch[1]) : [];
 
-  // Extract SEC gallery data
-  const secMatch = outputText.match(/<!-- SEC_GALLERY_DATA\n([\s\S]*?)\n-->/);
-  const secDocuments: SECDocument[] = secMatch ? JSON.parse(secMatch[1]) : [];
+    // Extract SEC gallery data
+    const secMatch = outputText.match(/<!-- SEC_GALLERY_DATA\n([\s\S]*?)\n-->/);
+    const secDocuments: SECDocument[] = secMatch ? JSON.parse(secMatch[1]) : [];
 
-  // Convert SEC documents to FileViewer format
-  const fileViewerFiles: FileViewerFile[] = secDocuments.map(doc => ({
-    url: doc.viewerUrl || doc.documentUrl,
-    fileType: doc.documentUrl.endsWith('.pdf') ? 'pdf' : 'html' as 'pdf' | 'html' | 'txt',
-    title: doc.title,
-    metadata: {
-      formType: doc.formType,
-      date: doc.filingDate,
-      source: 'SEC EDGAR',
-      accessionNumber: doc.accessionNumber,
-    },
-  }));
+    // Convert SEC documents to FileViewer format
+    const fileViewerFiles: FileViewerFile[] = secDocuments.map(doc => ({
+      url: doc.viewerUrl || doc.documentUrl,
+      fileType: doc.documentUrl.endsWith('.pdf') ? 'pdf' : 'html' as 'pdf' | 'html' | 'txt',
+      title: doc.title,
+      metadata: {
+        formType: doc.formType,
+        date: doc.filingDate,
+        source: 'SEC EDGAR',
+        accessionNumber: doc.accessionNumber,
+      },
+    }));
 
-  // Extract company selection data
-  const companySelectionMatch = outputText.match(/<!-- COMPANY_SELECTION_DATA\n([\s\S]*?)\n-->/);
-  const companySelectionData: { prompt: string; companies: CompanyOption[] } | null = companySelectionMatch
-    ? JSON.parse(companySelectionMatch[1])
-    : null;
+    // Extract company selection data
+    const companySelectionMatch = outputText.match(/<!-- COMPANY_SELECTION_DATA\n([\s\S]*?)\n-->/);
+    const companySelectionData: { prompt: string; companies: CompanyOption[] } | null = companySelectionMatch
+      ? JSON.parse(companySelectionMatch[1])
+      : null;
 
-  // Extract people selection data
-  const peopleSelectionMatch = outputText.match(/<!-- PEOPLE_SELECTION_DATA\n([\s\S]*?)\n-->/);
-  const peopleSelectionData: { prompt: string; people: PersonOption[] } | null = peopleSelectionMatch
-    ? JSON.parse(peopleSelectionMatch[1])
-    : null;
+    // Extract people selection data
+    const peopleSelectionMatch = outputText.match(/<!-- PEOPLE_SELECTION_DATA\n([\s\S]*?)\n-->/);
+    const peopleSelectionData: { prompt: string; people: PersonOption[] } | null = peopleSelectionMatch
+      ? JSON.parse(peopleSelectionMatch[1])
+      : null;
 
-  // Extract event selection data
-  const eventSelectionMatch = outputText.match(/<!-- EVENT_SELECTION_DATA\n([\s\S]*?)\n-->/);
-  const eventSelectionData: { prompt: string; events: EventOption[] } | null = eventSelectionMatch
-    ? JSON.parse(eventSelectionMatch[1])
-    : null;
+    // Extract event selection data
+    const eventSelectionMatch = outputText.match(/<!-- EVENT_SELECTION_DATA\n([\s\S]*?)\n-->/);
+    const eventSelectionData: { prompt: string; events: EventOption[] } | null = eventSelectionMatch
+      ? JSON.parse(eventSelectionMatch[1])
+      : null;
 
-  // Extract news selection data
-  const newsSelectionMatch = outputText.match(/<!-- NEWS_SELECTION_DATA\n([\s\S]*?)\n-->/);
-  const newsSelectionData: { prompt: string; articles: NewsArticleOption[] } | null = newsSelectionMatch
-    ? JSON.parse(newsSelectionMatch[1])
-    : null;
+    // Extract news selection data
+    const newsSelectionMatch = outputText.match(/<!-- NEWS_SELECTION_DATA\n([\s\S]*?)\n-->/);
+    const newsSelectionData: { prompt: string; articles: NewsArticleOption[] } | null = newsSelectionMatch
+      ? JSON.parse(newsSelectionMatch[1])
+      : null;
 
-  // Check if this output contains multiple images (for gallery layout)
-  const imageMatches = outputText.match(/!\[.*?\]\(.*?\)/g) || [];
-  const imageCount = imageMatches.length;
-  const hasMultipleImages = imageCount > 2;
+    // Check if this output contains multiple images (for gallery layout)
+    const imageMatches = outputText.match(/!\[.*?\]\(.*?\)/g) || [];
+    const hasMultipleImages = imageMatches.length > 2;
 
-  // Extract image URLs for gallery
-  const imageUrls = imageMatches.map(match => {
-    const urlMatch = match.match(/\((.*?)\)/);
-    const altMatch = match.match(/!\[(.*?)\]/);
+    // Extract image URLs for gallery
+    const imageUrls = imageMatches.map(match => {
+      const urlMatch = match.match(/\((.*?)\)/);
+      const altMatch = match.match(/!\[(.*?)\]/);
+      return {
+        url: urlMatch?.[1] || '',
+        alt: altMatch?.[1] || 'Image'
+      };
+    });
+
+    // Remove gallery data markers and all selection data from content
+    const cleanedContent = outputText
+      .replace(/<!-- YOUTUBE_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
+      .replace(/<!-- SEC_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
+      .replace(/<!-- COMPANY_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
+      .replace(/<!-- PEOPLE_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
+      .replace(/<!-- EVENT_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
+      .replace(/<!-- NEWS_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '');
+
+    // Split content to separate images section from rest
+    const parts = cleanedContent.split(/## Images\s*\n*/);
+    const beforeImages = parts[0];
+    const afterImages = parts[1]?.split(/##/);
+    const restOfContent = afterImages ? '##' + afterImages.slice(1).join('##') : '';
+
     return {
-      url: urlMatch?.[1] || '',
-      alt: altMatch?.[1] || 'Image'
+      youtubeVideos,
+      fileViewerFiles,
+      companySelectionData,
+      peopleSelectionData,
+      eventSelectionData,
+      newsSelectionData,
+      hasMultipleImages,
+      imageUrls,
+      beforeImages,
+      restOfContent,
     };
-  });
+  }, [output]);
 
-  // Remove gallery data markers and all selection data from content
-  const cleanedContent = outputText
-    .replace(/<!-- YOUTUBE_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
-    .replace(/<!-- SEC_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
-    .replace(/<!-- COMPANY_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
-    .replace(/<!-- PEOPLE_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
-    .replace(/<!-- EVENT_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
-    .replace(/<!-- NEWS_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '');
-
-  // Split content to separate images section from rest
-  const parts = cleanedContent.split(/## Images\s*\n*/);
-  const beforeImages = parts[0];
-  const afterImages = parts[1]?.split(/##/);
-  const restOfContent = afterImages ? '##' + afterImages.slice(1).join('##') : '';
+  const {
+    youtubeVideos,
+    fileViewerFiles,
+    companySelectionData,
+    peopleSelectionData,
+    eventSelectionData,
+    newsSelectionData,
+    hasMultipleImages,
+    imageUrls,
+    beforeImages,
+    restOfContent,
+  } = parsedData;
 
   return (
     <div className="text-xs text-[var(--text-secondary)] mt-1 space-y-2">
@@ -312,7 +341,7 @@ function ToolOutputRenderer({
       )}
     </div>
   );
-}
+});
 
 /**
  * FileTextPreview - Shows a preview of text file contents
@@ -478,14 +507,14 @@ interface FusionPayloadEvent {
 /**
  * Log structured observability event for fusion payload parsing.
  * Does NOT log payload content (PII risk).
+ * Note: Disabled in production for performance
  */
-function logFusionPayloadEvent(event: FusionPayloadEvent): void {
-  // Log structured event (can be picked up by observability systems)
-  console.info(`[FusionPayload] ${event.event}`, {
-    ...event,
-    // Explicit omission of payload content for PII safety
-    _note: 'Payload content intentionally omitted for PII safety',
-  });
+function logFusionPayloadEvent(_event: FusionPayloadEvent): void {
+  // Disabled for performance - enable only for debugging
+  // console.info(`[FusionPayload] ${event.event}`, {
+  //   ...event,
+  //   _note: 'Payload content intentionally omitted for PII safety',
+  // });
 }
 
 /**
@@ -720,22 +749,8 @@ function parseSearchResponsePayload(
   for (let idx = 0; idx < data.results.length; idx++) {
     const r = data.results[idx] as Record<string, unknown>;
 
-    // Required field validation
-    if (!r.id || typeof r.id !== 'string') {
-      console.warn(`[parseFusionSearchOutput] Result ${idx} missing valid id, using fallback`);
-    }
-    if (!r.source || typeof r.source !== 'string') {
-      console.warn(`[parseFusionSearchOutput] Result ${idx} missing valid source, using 'linkup'`);
-    }
-    if (!r.title || typeof r.title !== 'string') {
-      console.warn(`[parseFusionSearchOutput] Result ${idx} missing valid title, using 'Untitled'`);
-    }
-
-    // Validate source is known
+    // Validate source is known (silently fallback to defaults for performance)
     const source = String(r.source || 'linkup');
-    if (!VALID_SEARCH_SOURCES.includes(source as SearchSource)) {
-      console.warn(`[parseFusionSearchOutput] Result ${idx} has unknown source: ${source}`);
-    }
 
     results.push({
       id: String(r.id || `result-${idx}`),
@@ -948,15 +963,6 @@ export function FastAgentUIMessageBubble({
   isChild,
   agentRole,
 }: FastAgentUIMessageBubbleProps) {
-  // Debug: Log message structure to understand role detection
-  console.log('[UIMessageBubble] Message structure:', {
-    role: message.role,
-    text: message.text?.slice(0, 50),
-    hasMessage: 'message' in message,
-    messageRole: (message as any).message?.role,
-    keys: Object.keys(message),
-  });
-
   const isUser = message.role === 'user';
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

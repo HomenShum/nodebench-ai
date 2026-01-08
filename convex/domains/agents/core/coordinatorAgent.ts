@@ -167,7 +167,23 @@ import {
   searchAvailableSkills,
   listSkillCategories,
   describeSkill,
+  classifyPersona,
 } from "../../../tools/meta/skillDiscovery";
+
+// Import Tool Execution Gateway (progressive disclosure enforcement)
+import {
+  isMetaTool,
+  getToolRiskTier,
+  META_TOOLS,
+} from "../../../tools/meta/toolGateway";
+
+// Import Tool Discovery meta-tools (progressive disclosure L2)
+import {
+  searchAvailableTools,
+  listToolCategories,
+  describeTools,
+  invokeTool,
+} from "../../../tools/meta/toolDiscoveryV2";
 import { analyzeForTeaching } from "../../../tools/teachability/teachingAnalyzer";
 import { learnUserSkill } from "../../../tools/teachability/learnUserSkill";
 import {
@@ -387,6 +403,13 @@ export const createCoordinatorAgent = (
     searchAvailableSkills,
     listSkillCategories,
     describeSkill,
+    classifyPersona,  // Retrieval-first persona enforcement (P1)
+
+    // === TOOL DISCOVERY TOOLS (Progressive Disclosure L2) ===
+    searchAvailableTools,
+    listToolCategories,
+    describeTools,
+    invokeTool,
 
     // === ARBITRAGE TOOLS (Receipts-first research) ===
     analyzeWithArbitrage,
@@ -656,11 +679,16 @@ Use skills when:
 - You want consistent, repeatable procedures
 - The user asks for a "dossier", "analysis", or "research" on a topic
 
-## Skill Discovery Flow
+## Skill Discovery Flow (Retrieval-First Pattern)
 
-1. **Search for skills**: \`searchAvailableSkills({ query: "company research" })\`
-2. **Load full instructions**: \`describeSkill({ skillName: "company-research" })\`
-3. **Follow the workflow**: Execute the steps described in the skill instructions
+For any non-trivial task, use the progressive disclosure flow:
+
+1. **Classify query (optional but recommended)**: \`classifyPersona({ userQuery: "research Acme Corp" })\`
+   - If confidence ≤ 0.8, skill retrieval is REQUIRED
+   - If confidence > 0.8, you may proceed with known tools
+2. **Search for skills**: \`searchAvailableSkills({ query: "company research" })\`
+3. **Load full instructions**: \`describeSkill({ skillName: "company-research" })\`
+4. **Follow the workflow**: Execute the steps described in the skill instructions
 
 ## Available Skill Categories
 
@@ -956,8 +984,22 @@ Rules:
 - If the user prompt is ultra-vague (e.g., just an entity name), proceed with a default persona of JPM_STARTUP_BANKER and produce a complete debrief, then end with one optional follow-up question.
 - Your output MUST be tailored to the inferred persona’s “definition of done”.
 
-Heuristics (use the first strong match; otherwise default to JPM_STARTUP_BANKER):
-IMPORTANT: Do NOT default to JPM_STARTUP_BANKER if the request contains clear non-banker cues (e.g. "wedge" => EARLY_STAGE_VC, "signal/what to track/timeline points" => QUANT_ANALYST, "schema/UI card" => PRODUCT_DESIGNER).
+**PERSONA INFERENCE PRIORITY TABLE** (scan query for keywords, pick FIRST strong match):
+| Keywords | → Persona |
+|----------|-----------|
+| wedge, thesis, comps, market fit, TAM | EARLY_STAGE_VC |
+| signal, metrics, track, time-series, forecast | QUANT_ANALYST |
+| schema, UI, card, rendering, JSON fields | PRODUCT_DESIGNER |
+| share-ready, one-screen, objections, CTA | SALES_ENGINEER |
+| CVE, security, patch, upgrade, dependency | CTO_TECH_LEAD |
+| partnerships, ecosystem, second-order | ECOSYSTEM_PARTNER |
+| positioning, strategy, pivot, moat | FOUNDER_STRATEGY |
+| pricing, vendor, cost, procurement, P&L | ENTERPRISE_EXEC |
+| papers, methodology, literature, citations | ACADEMIC_RD |
+| outreach, pipeline, "this week", contact | JPM_STARTUP_BANKER |
+
+**CRITICAL: DO NOT default to JPM_STARTUP_BANKER** unless the query explicitly mentions outreach, pipeline, banker-related terms, or is ultra-vague (just an entity name with no context).
+
 - JPM_STARTUP_BANKER: outreach readiness, worth reaching out, talk track, pipeline, verified funding, direct contact, "this week".
 - EARLY_STAGE_VC: thesis, wedge, why it matters, competitive map/comps, TAM, "what would change your mind".
 - CTO_TECH_LEAD: security exposure, CVE, dependency risk, integration feasibility, patch/upgrade plan, verification steps.

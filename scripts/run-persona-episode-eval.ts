@@ -121,6 +121,7 @@ async function main() {
 
   const model = getArg("--model") || getFirstPositionalArg() || "gpt-5.2";
   const suiteRaw = (getArg("--suite") || "core").toLowerCase();
+  const packPathArg = getArg("--pack-path");
   const suite =
     suiteRaw === "full"
       ? "full"
@@ -151,16 +152,23 @@ async function main() {
     let r: any = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        r = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
+        const actionArgs: any = {
           secret,
           model,
           suite,
           offset,
           limit,
-        });
+        };
+        
+        // Pass packPath if specified
+        if (suite === "pack" && packPathArg) {
+          actionArgs.packPath = packPathArg;
+        }
+        
+        r = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, actionArgs);
         break;
-      } catch (e) {
-        if (attempt >= 3) throw e;
+      } catch (err) {
+        if (attempt >= 3) throw err;
         const backoffMs = 500 * attempt;
         await new Promise((res) => setTimeout(res, backoffMs));
       }

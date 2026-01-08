@@ -62,3 +62,23 @@ export type {
 // - internal.tools.meta.hybridSearchQueries.getCachedSearchResults
 // - internal.tools.meta.hybridSearchQueries.setCachedSearchResults
 
+// Tool Execution Gateway (progressive disclosure enforcement)
+export {
+  executeViaGateway,
+  confirmActionDraft,
+  denyActionDraft,
+  isMetaTool,
+  getToolRiskTier,
+  requiresConfirmation,
+  createGatewayContext,
+  setActiveSkill,
+  getActiveSkill,
+  getGatewayDisclosureSummary,
+  META_TOOLS,
+  TOOL_RISK_TIERS,
+  type ActiveSkill,
+  type GatewayContext,
+  type GatewayResult,
+  type ToolExecutor,
+} from "./toolGateway";
+

@@ -560,6 +560,143 @@ export const generateSkillEmbedding = internalAction({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// META-TOOL #4: classifyPersona (Retrieval-First Persona Enforcement)
+// Classifies user queries to enforce skill retrieval for low-confidence cases
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * classifyPersona - Determines if skill retrieval is required
+ *
+ * Used to enforce the retrieval-first persona pattern:
+ * - High confidence (>0.8): Can proceed directly if agent knows the tools
+ * - Low confidence (≤0.8): MUST call searchAvailableSkills first
+ *
+ * This tool helps ensure agents don't skip the progressive disclosure flow
+ * by requiring explicit classification of query understanding.
+ */
+export const classifyPersona = createTool({
+  description: `Classify a user query to determine if skill retrieval is required.
+
+IMPORTANT: Call this BEFORE attempting to use any non-meta tools.
+
+This enforces the retrieval-first persona pattern:
+- If confidence ≤ 0.8, you MUST call searchAvailableSkills before proceeding
+- If confidence > 0.8, you may proceed with tools you know about
+
+Returns:
+- confidence: 0-1 score of how well you understand the required tools
+- requiresRetrieval: boolean indicating if searchAvailableSkills is mandatory
+- reasoning: brief explanation of the classification
+- suggestedQuery: if retrieval required, a suggested search query`,
+
+  args: z.object({
+    userQuery: z.string().describe("The user's original query or request"),
+    knownTools: z.array(z.string()).optional().describe("Tools the agent already knows are relevant (from prior context)"),
+    taskDomain: z.string().optional().describe("Identified domain of the task (e.g., 'document editing', 'search', 'financial analysis')"),
+  }),
+
+  handler: async (_ctx: ActionCtx, args): Promise<string> => {
+    const { userQuery, knownTools = [], taskDomain } = args;
+
+    // Keywords that indicate specific, well-known operations
+    const highConfidencePatterns = [
+      /create\s+(a\s+)?document/i,
+      /search\s+(for|the)\s+web/i,
+      /read\s+(the\s+)?file/i,
+      /list\s+(my\s+)?tasks/i,
+      /what\s+time/i,
+      /schedule\s+/i,
+      /edit\s+(the\s+)?document/i,
+      /delete\s+/i,
+      /update\s+/i,
+    ];
+
+    // Keywords that indicate complex, multi-step, or ambiguous operations
+    const lowConfidencePatterns = [
+      /research\s+/i,
+      /analyze\s+/i,
+      /find\s+information\s+about/i,
+      /help\s+me\s+/i,
+      /investigate\s+/i,
+      /what\s+do\s+you\s+know\s+about/i,
+      /can\s+you\s+/i,
+      /how\s+do\s+I\s+/i,
+      /dossier/i,
+      /deep\s+dive/i,
+      /comprehensive/i,
+      /funding/i,
+      /investor/i,
+      /sec\s+filing/i,
+    ];
+
+    // Calculate base confidence
+    let confidence = 0.5; // Start neutral
+    let reasoning: string[] = [];
+
+    // Check high-confidence patterns
+    for (const pattern of highConfidencePatterns) {
+      if (pattern.test(userQuery)) {
+        confidence += 0.2;
+        reasoning.push(`Matched high-confidence pattern: ${pattern.source}`);
+        break;
+      }
+    }
+
+    // Check low-confidence patterns
+    for (const pattern of lowConfidencePatterns) {
+      if (pattern.test(userQuery)) {
+        confidence -= 0.3;
+        reasoning.push(`Matched low-confidence pattern: ${pattern.source}`);
+        break;
+      }
+    }
+
+    // Boost confidence if agent already knows relevant tools
+    if (knownTools.length > 0) {
+      confidence += Math.min(0.2, knownTools.length * 0.05);
+      reasoning.push(`Agent knows ${knownTools.length} relevant tools`);
+    }
+
+    // Reduce confidence for unknown domains
+    if (!taskDomain) {
+      confidence -= 0.1;
+      reasoning.push(`No task domain identified`);
+    }
+
+    // Clamp confidence to [0, 1]
+    confidence = Math.max(0, Math.min(1, confidence));
+
+    // Determine if retrieval is required
+    const requiresRetrieval = confidence <= 0.8;
+
+    // Generate suggested query if retrieval is needed
+    let suggestedQuery = "";
+    if (requiresRetrieval) {
+      // Extract key nouns/verbs from the query
+      const words = userQuery.toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .split(/\s+/)
+        .filter(w => w.length > 3 && !["what", "that", "this", "with", "from", "about", "would", "could", "should"].includes(w));
+
+      suggestedQuery = words.slice(0, 4).join(" ");
+      if (taskDomain) {
+        suggestedQuery = `${taskDomain} ${suggestedQuery}`;
+      }
+    }
+
+    const result = {
+      confidence: Math.round(confidence * 100) / 100,
+      requiresRetrieval,
+      reasoning: reasoning.join("; ") || "Default classification",
+      suggestedQuery: suggestedQuery || undefined,
+      knownToolsCount: knownTools.length,
+    };
+
+    return JSON.stringify(result, null, 2);
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // EXPORTS
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -577,5 +714,6 @@ export const skillMetaTools = {
   searchAvailableSkills,
   listSkillCategories,
   describeSkill,
+  classifyPersona,
 };
 

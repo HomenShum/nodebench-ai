@@ -214,8 +214,10 @@ import type * as domains_evaluation_groundTruth from "../domains/evaluation/grou
 import type * as domains_evaluation_index from "../domains/evaluation/index.js";
 import type * as domains_evaluation_liveApiSmoke from "../domains/evaluation/liveApiSmoke.js";
 import type * as domains_evaluation_liveEval from "../domains/evaluation/liveEval.js";
+import type * as domains_evaluation_migrateEvaluationScenarios from "../domains/evaluation/migrateEvaluationScenarios.js";
 import type * as domains_evaluation_personaEpisodeEval from "../domains/evaluation/personaEpisodeEval.js";
 import type * as domains_evaluation_personaLiveEval from "../domains/evaluation/personaLiveEval.js";
+import type * as domains_evaluation_scenarioQueries from "../domains/evaluation/scenarioQueries.js";
 import type * as domains_evaluation_systemE2E from "../domains/evaluation/systemE2E.js";
 import type * as domains_evaluation_testAgentDirect from "../domains/evaluation/testAgentDirect.js";
 import type * as domains_evaluation_testAgentQueries from "../domains/evaluation/testAgentQueries.js";
@@ -325,6 +327,7 @@ import type * as domains_tasks_workflows_bankingMemoWorkflow from "../domains/ta
 import type * as domains_tasks_workflows_coordinatorWorkflow from "../domains/tasks/workflows/coordinatorWorkflow.js";
 import type * as domains_tasks_workflows_index from "../domains/tasks/workflows/index.js";
 import type * as domains_teachability_index from "../domains/teachability/index.js";
+import type * as domains_telemetry_disclosureEvents from "../domains/telemetry/disclosureEvents.js";
 import type * as domains_utilities_migrations from "../domains/utilities/migrations.js";
 import type * as domains_utilities_seedGoldenDataset from "../domains/utilities/seedGoldenDataset.js";
 import type * as domains_utilities_snapshotMigrations from "../domains/utilities/snapshotMigrations.js";
@@ -430,6 +433,7 @@ import type * as tools_media_linkupStructuredSearch from "../tools/media/linkupS
 import type * as tools_media_mediaTools from "../tools/media/mediaTools.js";
 import type * as tools_media_recentNewsSearch from "../tools/media/recentNewsSearch.js";
 import type * as tools_media_youtubeSearch from "../tools/media/youtubeSearch.js";
+import type * as tools_meta_actionDraftMutations from "../tools/meta/actionDraftMutations.js";
 import type * as tools_meta_hybridSearch from "../tools/meta/hybridSearch.js";
 import type * as tools_meta_hybridSearchQueries from "../tools/meta/hybridSearchQueries.js";
 import type * as tools_meta_hybridSearchTest from "../tools/meta/hybridSearchTest.js";
@@ -441,6 +445,7 @@ import type * as tools_meta_seedToolRegistryQueries from "../tools/meta/seedTool
 import type * as tools_meta_skillDiscovery from "../tools/meta/skillDiscovery.js";
 import type * as tools_meta_skillDiscoveryQueries from "../tools/meta/skillDiscoveryQueries.js";
 import type * as tools_meta_toolDiscoveryV2 from "../tools/meta/toolDiscoveryV2.js";
+import type * as tools_meta_toolGateway from "../tools/meta/toolGateway.js";
 import type * as tools_meta_toolRegistry from "../tools/meta/toolRegistry.js";
 import type * as tools_search_fusionSearchTool from "../tools/search/fusionSearchTool.js";
 import type * as tools_search_index from "../tools/search/index.js";
@@ -680,8 +685,10 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/index": typeof domains_evaluation_index;
   "domains/evaluation/liveApiSmoke": typeof domains_evaluation_liveApiSmoke;
   "domains/evaluation/liveEval": typeof domains_evaluation_liveEval;
+  "domains/evaluation/migrateEvaluationScenarios": typeof domains_evaluation_migrateEvaluationScenarios;
   "domains/evaluation/personaEpisodeEval": typeof domains_evaluation_personaEpisodeEval;
   "domains/evaluation/personaLiveEval": typeof domains_evaluation_personaLiveEval;
+  "domains/evaluation/scenarioQueries": typeof domains_evaluation_scenarioQueries;
   "domains/evaluation/systemE2E": typeof domains_evaluation_systemE2E;
   "domains/evaluation/testAgentDirect": typeof domains_evaluation_testAgentDirect;
   "domains/evaluation/testAgentQueries": typeof domains_evaluation_testAgentQueries;
@@ -791,6 +798,7 @@ declare const fullApi: ApiFromModules<{
   "domains/tasks/workflows/coordinatorWorkflow": typeof domains_tasks_workflows_coordinatorWorkflow;
   "domains/tasks/workflows/index": typeof domains_tasks_workflows_index;
   "domains/teachability/index": typeof domains_teachability_index;
+  "domains/telemetry/disclosureEvents": typeof domains_telemetry_disclosureEvents;
   "domains/utilities/migrations": typeof domains_utilities_migrations;
   "domains/utilities/seedGoldenDataset": typeof domains_utilities_seedGoldenDataset;
   "domains/utilities/snapshotMigrations": typeof domains_utilities_snapshotMigrations;
@@ -896,6 +904,7 @@ declare const fullApi: ApiFromModules<{
   "tools/media/mediaTools": typeof tools_media_mediaTools;
   "tools/media/recentNewsSearch": typeof tools_media_recentNewsSearch;
   "tools/media/youtubeSearch": typeof tools_media_youtubeSearch;
+  "tools/meta/actionDraftMutations": typeof tools_meta_actionDraftMutations;
   "tools/meta/hybridSearch": typeof tools_meta_hybridSearch;
   "tools/meta/hybridSearchQueries": typeof tools_meta_hybridSearchQueries;
   "tools/meta/hybridSearchTest": typeof tools_meta_hybridSearchTest;
@@ -907,6 +916,7 @@ declare const fullApi: ApiFromModules<{
   "tools/meta/skillDiscovery": typeof tools_meta_skillDiscovery;
   "tools/meta/skillDiscoveryQueries": typeof tools_meta_skillDiscoveryQueries;
   "tools/meta/toolDiscoveryV2": typeof tools_meta_toolDiscoveryV2;
+  "tools/meta/toolGateway": typeof tools_meta_toolGateway;
   "tools/meta/toolRegistry": typeof tools_meta_toolRegistry;
   "tools/search/fusionSearchTool": typeof tools_search_fusionSearchTool;
   "tools/search/index": typeof tools_search_index;

@@ -1862,9 +1862,37 @@ const evaluationRuns = defineTable({
   error: v.optional(v.string()),
 })
   .index("by_session", ["sessionId"])
-  .index("by_user", ["userId"])
-  .index("by_status", ["status"])
-  .index("by_started", ["startedAt"]);
+
+/**
+ * Persona Episode Evaluation Scenarios
+ *
+ * Stores the 100 test scenarios for persona episode evaluation.
+ * Loaded from persona-episode-eval-pack-v2.json during migration.
+ */
+const evaluation_scenarios = defineTable({
+  scenarioId: v.string(),                   // Unique scenario ID (e.g., "banker_vague_disco")
+  name: v.string(),                         // Human-readable name
+  query: v.string(),                        // The test query/prompt
+  expectedPersona: v.string(),              // Expected persona (e.g., "JPM_STARTUP_BANKER")
+  expectedEntityId: v.string(),             // Expected entity ground truth ID
+  allowedPersonas: v.optional(v.array(v.string())),  // Optional: multiple allowed personas
+  domain: v.optional(v.string()),           // Domain category (e.g., "finance", "tech", "medical")
+  // Behavioral requirements
+  requirements: v.optional(v.object({
+    minToolCalls: v.optional(v.number()),
+    maxToolCalls: v.optional(v.number()),
+    maxCostUsd: v.optional(v.number()),
+    maxClarifyingQuestions: v.optional(v.number()),
+    requireVerificationStep: v.optional(v.boolean()),
+    requireProviderUsage: v.optional(v.boolean()),
+    requireTools: v.optional(v.array(v.string())),
+  })),
+  // Metadata
+  createdAt: v.number(),
+  version: v.optional(v.string()),          // Pack version (e.g., "v2")
+})
+  .index("by_scenario_id", ["scenarioId"])
+  .index("by_domain", ["domain"]);
 
 /* ------------------------------------------------------------------ */
 /* DIGEST CACHE - Agent-generated digest storage                       */
@@ -2013,6 +2041,7 @@ export default defineSchema({
   strategyMetricsCache,
   searchEvaluations,
   evaluationRuns,
+  evaluation_scenarios,
   digestCache,
 
   /* ------------------------------------------------------------------ */
@@ -3764,6 +3793,19 @@ export default defineSchema({
     allowedTools: v.optional(v.array(v.string())), // Pre-approved tools this skill uses
     metadata: v.optional(v.any()),             // Custom metadata
 
+    // L3 Nested Resources (Progressive Disclosure Level 3)
+    // Resources are loaded on-demand when referenced in fullInstructions
+    nestedResources: v.optional(v.array(v.object({
+      name: v.string(),                        // Resource identifier (e.g., "examples", "keyword-table")
+      type: v.union(v.literal("markdown"), v.literal("json"), v.literal("template")),
+      uri: v.string(),                         // Resource URI (e.g., "./persona-inference-examples.md")
+      tokensEstimate: v.optional(v.number()),  // Estimated tokens when loaded
+    }))),
+
+    // Skill Caching (avoid re-expanding unchanged skills)
+    contentHash: v.optional(v.string()),       // SHA-256 hash of fullInstructions
+    version: v.optional(v.number()),           // Monotonic version number
+
     // Usage tracking
     usageCount: v.number(),        // Times this skill was used
     lastUsedAt: v.optional(v.number()), // Last usage timestamp
@@ -3780,6 +3822,8 @@ export default defineSchema({
     .index("by_usage", ["usageCount"])
     .index("by_enabled", ["isEnabled"])
     .index("by_enabled_category", ["isEnabled", "category"])
+    .index("by_content_hash", ["contentHash"])  // For skill caching
+    .index("by_version", ["version"])           // For version tracking
     .searchIndex("search_description", {
       searchField: "description",
       filterFields: ["category", "isEnabled"],
@@ -4503,5 +4547,51 @@ export default defineSchema({
     .index("by_task", ["taskId"])
     .index("by_suite_passed", ["suite", "passed"])
     .index("by_executed", ["executedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ACTION DRAFTS - Write operation confirmation flow (P2 enforcement)  */
+  /* Enables risk tier gating for write/destructive tool calls           */
+  /* ------------------------------------------------------------------ */
+  actionDrafts: defineTable({
+    // Identity
+    sessionId: v.string(),           // Conversation/batch session
+    userId: v.optional(v.id("users")),
+
+    // Action details
+    toolName: v.string(),            // Tool that would be invoked
+    args: v.string(),                // JSON-stringified arguments
+    riskTier: v.union(
+      v.literal("write"),
+      v.literal("destructive")
+    ),
+    actionSummary: v.string(),       // Human-readable summary
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("denied"),
+      v.literal("expired")
+    ),
+
+    // Timestamps
+    createdAt: v.number(),
+    expiresAt: v.number(),           // 5 minute default
+    confirmedAt: v.optional(v.number()),
+    deniedAt: v.optional(v.number()),
+    expiredAt: v.optional(v.number()),
+
+    // Denial reason
+    denyReason: v.optional(v.string()),
+
+    // Execution result (after confirmation)
+    executedAt: v.optional(v.number()),
+    result: v.optional(v.string()),  // JSON-stringified result
+    error: v.optional(v.string()),
+  })
+    .index("by_session", ["sessionId", "createdAt"])
+    .index("by_user", ["userId", "createdAt"])
+    .index("by_status", ["status", "createdAt"])
+    .index("by_expiry", ["expiresAt"]),
 
 });

@@ -87,8 +87,6 @@ export function UIMessageStream({
   // Filter out empty messages and agent-generated sub-query messages before processing
   // Use deferredMessages to prevent blocking UI during heavy filtering
   const filteredMessages = useMemo(() => {
-    console.log('[UIMessageStream] 📥 Input messages:', deferredMessages.length);
-
     // First pass: identify delegation patterns
     const delegationIndices = new Set<number>();
 
@@ -115,16 +113,14 @@ export function UIMessageStream({
       }
     });
 
-    const result = deferredMessages.filter((msg, idx) => {
+    return deferredMessages.filter((msg, idx) => {
       // Filter out ONLY agent-generated sub-query messages (between delegation and response)
       if (delegationIndices.has(idx)) {
-        console.log('[UIMessageStream] ❌ Filtering agent-generated sub-query:', msg.text?.substring(0, 50));
         return false;
       }
 
       // CRITICAL: Always keep real user messages (actual user input)
       if (msg.role === 'user') {
-        console.log('[UIMessageStream] ✅ Keeping user message:', msg.text?.substring(0, 50));
         return true;
       }
 
@@ -135,28 +131,17 @@ export function UIMessageStream({
         const hasToolCalls = msg.parts?.some(p => p.type.startsWith('tool-'));
 
         // Keep if has text, parts, or tool calls
-        const keep = hasText || hasParts || hasToolCalls;
-        if (!keep) {
-          console.log('[UIMessageStream] ❌ Filtering empty assistant message');
-        } else {
-          console.log('[UIMessageStream] ✅ Keeping assistant message (hasText:', hasText, 'hasParts:', hasParts, 'hasToolCalls:', hasToolCalls, ')');
-        }
-        return keep;
+        return hasText || hasParts || hasToolCalls;
       }
 
       // Keep all other message types (system, etc.)
-      console.log('[UIMessageStream] ✅ Keeping other message type:', msg.role);
       return true;
     });
-
-    console.log('[UIMessageStream] 📤 Filtered messages:', result.length);
-    return result;
   }, [deferredMessages]);
 
   // Infer hierarchy from tool calls (Option 3 approach)
   // When a coordinator message has delegation tool calls, the next N messages are likely children
   const groupedMessages = useMemo(() => {
-    console.log('[UIMessageStream] 🔄 Grouping', filteredMessages.length, 'filtered messages');
     const extendedMessages = filteredMessages as ExtendedUIMessage[];
     const groups: MessageGroup[] = [];
     const processedIndices = new Set<number>();
@@ -169,14 +154,10 @@ export function UIMessageStream({
       // Skip if we've already seen this message ID
       const messageId = msg._id || msg.key;
       if (messageId && seenMessageIds.has(messageId)) {
-        console.log('[UIMessageStream] ⚠️ DUPLICATE DETECTED - Skipping duplicate message:', messageId, 'role:', msg.role, 'text:', msg.text?.substring(0, 50));
         return;
       }
       if (messageId) {
-        console.log('[UIMessageStream] ✅ Adding message to seen set:', messageId, 'role:', msg.role, 'text:', msg.text?.substring(0, 50));
         seenMessageIds.add(messageId);
-      } else {
-        console.log('[UIMessageStream] ⚠️ Message has no ID:', 'role:', msg.role, 'text:', msg.text?.substring(0, 50));
       }
 
       // Check if this message has delegation tool calls
@@ -199,7 +180,6 @@ export function UIMessageStream({
             // Skip if we've already seen this child message
             const childId = nextMsg._id || nextMsg.key;
             if (childId && seenMessageIds.has(childId)) {
-              console.log('[UIMessageStream] ⚠️ Skipping duplicate child message:', childId, nextMsg.text?.substring(0, 50));
               processedIndices.add(i);
               childrenFound++;
               continue;
@@ -251,16 +231,8 @@ export function UIMessageStream({
       }
     });
 
-    console.log('[UIMessageStream] 📊 Grouped messages:', groups.length, 'groups');
     return groups;
   }, [filteredMessages]);
-
-  // Debug: Log grouped messages
-  console.log('[UIMessageStream] 📊 Pipeline summary:', {
-    total: messages.length,
-    filtered: filteredMessages.length,
-    grouped: groupedMessages.length,
-  });
 
   // Deduplication: Check if a message appears in a previous group
   const isDuplicate = (message: ExtendedUIMessage, currentGroupIndex: number): boolean => {
@@ -273,7 +245,6 @@ export function UIMessageStream({
       const group = groupedMessages[i];
       const parentId = group.parent._id || group.parent.key;
       if (parentId === messageId) {
-        console.log('[UIMessageStream] ⚠️ Duplicate parent message detected:', messageId, message.text?.substring(0, 50));
         return true;
       }
 
@@ -282,7 +253,6 @@ export function UIMessageStream({
         return childId === messageId;
       });
       if (childMatch) {
-        console.log('[UIMessageStream] ⚠️ Duplicate child message detected:', messageId, message.text?.substring(0, 50));
         return true;
       }
     }

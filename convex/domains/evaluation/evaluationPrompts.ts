@@ -114,7 +114,7 @@ export const STANDARD_EVALUATION_PROMPT = `EVALUATION MODE - Respond with your a
 [DEBRIEF_V1_JSON]
 {
   "schemaVersion": "debrief_v1",
-  "persona": { "inferred": "<PERSONA>", "confidence": 0.8 },
+  "persona": { "inferred": "<INFER_FROM_QUERY>", "confidence": 0.8 },
   "entity": { "input": "<ENTITY>", "canonicalName": "<NAME>", "type": "company" },
   "planSteps": ["Step 1", "Step 2", "Verify results"],
   "toolsUsed": [{ "name": "lookupGroundTruthEntity", "ok": true }],
@@ -131,15 +131,19 @@ export const STANDARD_EVALUATION_PROMPT = `EVALUATION MODE - Respond with your a
 [/DEBRIEF_V1_JSON]
 
 CRITICAL RULES:
-1. Persona must be ONE of: JPM_STARTUP_BANKER, EARLY_STAGE_VC, CTO_TECH_LEAD, FOUNDER_STRATEGY, ACADEMIC_RD, ENTERPRISE_EXEC, ECOSYSTEM_PARTNER, QUANT_ANALYST, PRODUCT_DESIGNER, SALES_ENGINEER
-
-2. Persona selection hints:
+1. **PERSONA INFERENCE IS REQUIRED** - Analyze the query and pick the best match:
+   - "wedge"/"thesis"/"comps"/"market" → EARLY_STAGE_VC
+   - "signal"/"metrics"/"track"/"time-series" → QUANT_ANALYST
+   - "schema"/"UI"/"card"/"rendering" → PRODUCT_DESIGNER
+   - "share-ready"/"one-screen"/"objections" → SALES_ENGINEER
+   - "CVE"/"security"/"patch"/"upgrade" → CTO_TECH_LEAD
+   - "partnerships"/"ecosystem"/"effects" → ECOSYSTEM_PARTNER
+   - "positioning"/"strategy"/"pivot" → FOUNDER_STRATEGY
+   - "pricing"/"vendor"/"cost"/"procurement" → ENTERPRISE_EXEC
+   - "papers"/"methodology"/"literature" → ACADEMIC_RD
    - "outreach"/"pipeline"/"this week" → JPM_STARTUP_BANKER
-   - "wedge"/"thesis"/"comps" → EARLY_STAGE_VC
-   - "CVE"/"security"/"patch" → CTO_TECH_LEAD
-   - "signal"/"metrics"/"track" → QUANT_ANALYST
-   - "schema"/"UI"/"card" → PRODUCT_DESIGNER
-   - "share-ready"/"one-screen" → SALES_ENGINEER
+
+2. **DO NOT default to JPM_STARTUP_BANKER** - Only use it when query explicitly mentions banker-related terms
 
 3. For evaluation entities (DISCO, Ambros, etc): ALWAYS call lookupGroundTruthEntity FIRST
 
@@ -149,7 +153,7 @@ CRITICAL RULES:
 
 6. nextActions needs at least 3 items
 
-7. grounding[] must cite {{fact:ground_truth:...}} if you used ground truth`;
+7. grounding[] must cite {{fact:ground_truth:...}} if you used ground truth`;;
 
 /**
  * MINIMAL COMPLEXITY - For GPT-5 Mini, Gemini Flash
@@ -162,31 +166,37 @@ Write your answer, then add this JSON block:
 [DEBRIEF_V1_JSON]
 {
   "schemaVersion": "debrief_v1",
-  "persona": { "inferred": "JPM_STARTUP_BANKER", "confidence": 0.8 },
-  "entity": { "input": "DISCO", "canonicalName": "DISCO Pharmaceuticals" },
+  "persona": { "inferred": "<INFER_FROM_QUERY>", "confidence": 0.8 },
+  "entity": { "input": "<ENTITY_NAME>", "canonicalName": "<FULL_NAME>" },
   "planSteps": ["Lookup ground truth", "Verify facts", "Format response"],
   "toolsUsed": [{ "name": "lookupGroundTruthEntity", "ok": true }],
   "verdict": "PASS",
   "keyFacts": {
-    "hqLocation": "Cologne, Germany",
-    "funding": { "stage": "Seed", "amount": { "amount": 36, "currency": "EUR", "unit": "M" }}
+    "hqLocation": "<city, country>",
+    "funding": { "stage": "<stage>", "amount": { "amount": null, "currency": null, "unit": null }},
+    "contact": { "email": "<email@company.com or null>" }
   },
   "nextActions": ["Action 1", "Action 2", "Action 3"],
-  "grounding": ["{{fact:ground_truth:DISCO}}"]
+  "grounding": ["{{fact:ground_truth:<ENTITY_ID>}}"]
 }
 [/DEBRIEF_V1_JSON]
 
-PERSONAS (pick the best match):
-- JPM_STARTUP_BANKER: outreach, pipeline, "this week"
-- EARLY_STAGE_VC: wedge, thesis, competitive
-- CTO_TECH_LEAD: CVE, security, patch
-- QUANT_ANALYST: signals, metrics, track
-- PRODUCT_DESIGNER: UI, schema, card
-- SALES_ENGINEER: share-ready, one-screen
-- ENTERPRISE_EXEC: pricing, vendor, cost
-- FOUNDER_STRATEGY: positioning, strategy
-- ACADEMIC_RD: papers, methodology
-- ECOSYSTEM_PARTNER: partnerships, effects
+**PERSONA INFERENCE IS REQUIRED** - You MUST analyze the user query and pick the correct persona:
+
+| Query Keywords | → Persona |
+|----------------|-----------|
+| wedge, thesis, comps, market fit | EARLY_STAGE_VC |
+| signal, metrics, track, time-series | QUANT_ANALYST |
+| schema, UI, card, rendering | PRODUCT_DESIGNER |
+| share-ready, one-screen, objections | SALES_ENGINEER |
+| CVE, security, patch, upgrade | CTO_TECH_LEAD |
+| partnerships, ecosystem, effects | ECOSYSTEM_PARTNER |
+| positioning, strategy, pivot | FOUNDER_STRATEGY |
+| pricing, vendor, cost, procurement | ENTERPRISE_EXEC |
+| papers, methodology, literature | ACADEMIC_RD |
+| outreach, pipeline, "this week" | JPM_STARTUP_BANKER |
+
+**DO NOT default to JPM_STARTUP_BANKER** unless the query explicitly mentions outreach, pipeline, or banker-related terms.
 
 IMPORTANT:
 1. For DISCO, Ambros, QuickJS, etc: Call lookupGroundTruthEntity FIRST
@@ -194,7 +204,7 @@ IMPORTANT:
 3. Use null for unknown fields
 4. verdict = PASS, FAIL, or UNKNOWN
 5. Must have 3+ nextActions
-6. Must cite ground truth in grounding[]`;
+6. Must cite ground truth in grounding[]`;;
 
 /**
  * Get the appropriate evaluation prompt for a model
