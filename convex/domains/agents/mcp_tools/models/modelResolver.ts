@@ -16,19 +16,39 @@
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OPENROUTER PROVIDER SETUP
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Create OpenRouter provider with API key from environment
+ * Falls back gracefully if key not available
+ */
+function getOpenRouterProvider() {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    console.warn("[modelResolver] OPENROUTER_API_KEY not set, OpenRouter models unavailable");
+    return null;
+  }
+  return createOpenRouter({ apiKey });
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS (Convex backend cannot import from src/shared)
 // These MUST match src/shared/llm/approvedModels.ts exactly
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type Provider = "openai" | "anthropic" | "google";
+export type Provider = "openai" | "anthropic" | "google" | "openrouter";
 
 /**
- * The 9 approved model aliases - ONLY these are allowed
+ * The approved model aliases - includes native providers + OpenRouter models
+ * OpenRouter models provide access to additional frontier models at competitive pricing
  */
 export const APPROVED_MODELS = [
+  // Native providers (direct API)
   "gpt-5.2",           // OpenAI flagship (Dec 11, 2025)
   "gpt-5-mini",        // OpenAI efficient reasoning (Aug 7, 2025)
   "gpt-5-nano",        // OpenAI ultra-efficient (Aug 7, 2025)
@@ -36,7 +56,13 @@ export const APPROVED_MODELS = [
   "claude-sonnet-4.5", // Anthropic balanced
   "claude-haiku-4.5",  // Anthropic fast (DEFAULT)
   "gemini-3-pro",      // Google flagship
-  "gemini-3-flash",    // Google fast (Dec 17, 2025) - frontier intelligence built for speed
+  "gemini-3-flash",    // Google fast (Dec 17, 2025)
+  // OpenRouter models - affordable frontier models with tool calling
+  "deepseek-v3.2",     // DeepSeek V3.2 - sparse attention, tool use ($0.25/M in)
+  "minimax-m2.1",      // MiniMax M2.1 - optimized for agentic workflows ($0.28/M in)
+  "qwen-2.5-72b",      // Qwen 2.5 72B - coding/math specialist ($0.12/M in)
+  "mistral-large",     // Mistral Large 2411 - improved function calling ($2/M in)
+  "cohere-command-r+", // Cohere Command R+ - RAG optimized ($2.50/M in)
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
@@ -180,6 +206,69 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
       maxContext: 1_000_000
     },
   },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OPENROUTER MODELS - Frontier models via unified API
+  // ═══════════════════════════════════════════════════════════════════════════
+  "deepseek-v3.2": {
+    alias: "deepseek-v3.2",
+    provider: "openrouter",
+    sdkId: "deepseek/deepseek-v3.2",  // DeepSeek V3.2 - sparse attention (Dec 2025)
+    capabilities: {
+      vision: false,
+      toolUse: true,
+      streaming: true,
+      structuredOutputs: true,
+      maxContext: 163_840
+    },
+  },
+  "minimax-m2.1": {
+    alias: "minimax-m2.1",
+    provider: "openrouter",
+    sdkId: "minimax/minimax-m2.1",  // MiniMax M2.1 - agentic workflows (Dec 2025)
+    capabilities: {
+      vision: false,
+      toolUse: true,
+      streaming: true,
+      structuredOutputs: true,
+      maxContext: 196_608
+    },
+  },
+  "qwen-2.5-72b": {
+    alias: "qwen-2.5-72b",
+    provider: "openrouter",
+    sdkId: "qwen/qwen-2.5-72b-instruct",  // Qwen 2.5 72B - coding/math specialist
+    capabilities: {
+      vision: false,
+      toolUse: true,
+      streaming: true,
+      structuredOutputs: true,
+      maxContext: 32_768
+    },
+  },
+  "mistral-large": {
+    alias: "mistral-large",
+    provider: "openrouter",
+    sdkId: "mistralai/mistral-large-2411",  // Mistral Large 2411 - improved function calling
+    capabilities: {
+      vision: false,
+      toolUse: true,
+      streaming: true,
+      structuredOutputs: true,
+      maxContext: 131_072
+    },
+  },
+  "cohere-command-r+": {
+    alias: "cohere-command-r+",
+    provider: "openrouter",
+    sdkId: "cohere/command-r-plus-08-2024",  // Cohere Command R+ - RAG optimized
+    capabilities: {
+      vision: false,
+      toolUse: true,
+      streaming: true,
+      structuredOutputs: true,
+      maxContext: 128_000
+    },
+  },
 };
 
 /**
@@ -228,6 +317,15 @@ function buildLanguageModel(spec: ModelSpec): LanguageModel {
       return anthropic(spec.sdkId);
     case "google":
       return google(spec.sdkId);
+    case "openrouter": {
+      const openrouter = getOpenRouterProvider();
+      if (!openrouter) {
+        throw new Error(
+          `OpenRouter model "${spec.alias}" requested but OPENROUTER_API_KEY not configured`
+        );
+      }
+      return openrouter.chat(spec.sdkId);
+    }
     default:
       throw new Error(`Unknown provider: ${spec.provider}`);
   }

@@ -21,6 +21,7 @@ export const PROVIDER_ENV_VARS: Record<Provider, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
   google: "GOOGLE_GENERATIVE_AI_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -89,7 +90,7 @@ export function getProviderHealth(provider: LlmProvider): ProviderHealthStatus {
  * Run a full healthcheck on all providers
  */
 export function runHealthcheck(): HealthcheckResult {
-  const providers: LlmProvider[] = ["openai", "anthropic", "google"];
+  const providers: LlmProvider[] = ["openai", "anthropic", "google", "openrouter"];
   const providerStatuses = providers.map(getProviderHealth);
   
   const configuredProviders = new Set(

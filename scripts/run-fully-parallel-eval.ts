@@ -136,7 +136,19 @@ async function main() {
   const ndjsonMode = hasFlag("--ndjson"); // P0: Enable NDJSON streaming output
 
   // Determine which models to test
-  const availableModels = ["gpt-5-mini", "claude-haiku-4.5", "gemini-3-flash"];
+  // Native providers + OpenRouter models for comprehensive evaluation
+  const availableModels = [
+    // Native providers (baseline)
+    "gpt-5-mini",
+    "claude-haiku-4.5",
+    "gemini-3-flash",
+    // OpenRouter models (frontier, affordable)
+    "deepseek-v3.2",    // DeepSeek V3.2 - $0.25/M in, sparse attention
+    "minimax-m2.1",     // MiniMax M2.1 - $0.28/M in, agentic workflows
+    "qwen-2.5-72b",     // Qwen 2.5 72B - $0.12/M in, coding/math
+    "mistral-large",    // Mistral Large - $2/M in, function calling
+    "cohere-command-r+", // Cohere R+ - $2.50/M in, RAG optimized
+  ];
   let modelsToTest: string[];
 
   if (allModels) {
