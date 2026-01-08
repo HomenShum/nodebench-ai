@@ -49,7 +49,8 @@
       "Bash(npm install:*)",
       "Bash(powershell -Command:*)",
       "Bash(timeout 30 npx convex run:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

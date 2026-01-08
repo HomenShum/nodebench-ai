@@ -1,13 +1,25 @@
 #!/usr/bin/env npx tsx
 
 /**
- * Expanded Evaluation Runner for Calendar, Spreadsheet, Document, Web, and Media scenarios
+ * Expanded Evaluation Runner for ALL Agent Features
  *
- * Uses gemini-3-flash (top performer) for iterative testing and refinement.
+ * Categories:
+ *   - calendar: Calendar CRUD (create, update, list, delete events)
+ *   - spreadsheet: Spreadsheet CRUD (create, edit cells, rows)
+ *   - document: Document creation and editing
+ *   - web: Web search, fetch, multi-source verification
+ *   - media: Media search, file analysis, multi-modal
+ *   - skills: Skill discovery, activation, allowed tools
+ *   - tools: Tool discovery, invocation, risk tiers
+ *   - hybrid: Hybrid retrieval (memory + external)
+ *   - disclosure: Progressive disclosure P0-P3
+ *
+ * Uses gemini-3-flash (100% pass rate, fastest) as default model.
  *
  * Usage:
  *   npx tsx scripts/run-expanded-eval.ts --category calendar
  *   npx tsx scripts/run-expanded-eval.ts --category all
+ *   npx tsx scripts/run-expanded-eval.ts --category skills --verbose
  */
 
 import dotenv from "dotenv";
@@ -24,10 +36,21 @@ dotenv.config();
 // EXPANDED SCENARIO DEFINITIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
+type FeatureCategory =
+  | "calendar"
+  | "spreadsheet"
+  | "document"
+  | "web"
+  | "media"
+  | "skills"
+  | "tools"
+  | "hybrid"
+  | "disclosure";
+
 interface ExpandedScenario {
   id: string;
   name: string;
-  category: "calendar" | "spreadsheet" | "document" | "web" | "media";
+  category: FeatureCategory;
   query: string;
   expectedPersona: string;
   expectedEntityId: string;
@@ -38,6 +61,11 @@ interface ExpandedScenario {
     mustContainInOutput?: string[];
     mustCallTools?: string[];
     outputFormat?: "json" | "markdown" | "text";
+    // New validation rules for skills/tools/disclosure
+    mustUseSkillFirst?: boolean;
+    mustUseMetaTools?: boolean;
+    disclosureLevel?: "none" | "partial" | "full";
+    memoryFirstCompliant?: boolean;
   };
 }
 
@@ -256,6 +284,230 @@ const MEDIA_SCENARIOS: ExpandedScenario[] = [
   },
 ];
 
+// ═══════════════════════════════════════════════════════════════════════════
+// NEW FEATURE CATEGORIES (v0.1.0)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Skills System Scenarios - test skill discovery, activation, and allowed tools
+const SKILLS_SCENARIOS: ExpandedScenario[] = [
+  {
+    id: "skill_banker_discovery",
+    name: "Skills: Banker skill discovery",
+    category: "skills",
+    query: "I'm a JPM startup banker. What skills are available for due diligence on DISCO?",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["searchAvailableSkills", "lookupGroundTruthEntity"],
+    validationRules: {
+      mustUseSkillFirst: true,
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+  {
+    id: "skill_vc_thesis",
+    name: "Skills: VC thesis skill",
+    category: "skills",
+    query: "As an early stage VC, help me evaluate OpenAutoGLM for investment thesis fit.",
+    expectedPersona: "EARLY_STAGE_VC",
+    expectedEntityId: "OPENAUTOGLM",
+    requiredTools: ["searchAvailableSkills", "lookupGroundTruthEntity"],
+    validationRules: {
+      mustUseSkillFirst: true,
+      mustContainInOutput: ["OpenAutoGLM"],
+    },
+  },
+  {
+    id: "skill_quant_analysis",
+    name: "Skills: Quant signal skill",
+    category: "skills",
+    query: "Quant analyst here. Activate the signal extraction skill for DISCO's funding metrics.",
+    expectedPersona: "QUANT_ANALYST",
+    expectedEntityId: "DISCO",
+    requiredTools: ["searchAvailableSkills", "lookupGroundTruthEntity"],
+    validationRules: {
+      mustUseSkillFirst: true,
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+  {
+    id: "skill_digest_morning",
+    name: "Skills: Digest persona skill",
+    category: "skills",
+    query: "Run my morning banker digest for today. What overnight moves should I know about?",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["searchAvailableSkills"],
+    validationRules: {
+      mustUseSkillFirst: true,
+      mustContainInOutput: ["digest", "morning"],
+    },
+  },
+];
+
+// Tools System Scenarios - test tool discovery, invocation, risk tiers
+const TOOLS_SCENARIOS: ExpandedScenario[] = [
+  {
+    id: "tool_discovery_basic",
+    name: "Tools: Basic tool discovery",
+    category: "tools",
+    query: "What tools are available for researching DISCO? List the top 5.",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["searchAvailableTools"],
+    validationRules: {
+      mustUseMetaTools: true,
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+  {
+    id: "tool_describe_schemas",
+    name: "Tools: Describe tool schemas",
+    category: "tools",
+    query: "Describe the lookupGroundTruthEntity and linkupSearch tools for me.",
+    expectedPersona: "CTO_TECH_LEAD",
+    expectedEntityId: "DISCO",
+    requiredTools: ["describeTools"],
+    validationRules: {
+      mustUseMetaTools: true,
+      mustContainInOutput: ["schema", "parameter"],
+    },
+  },
+  {
+    id: "tool_gateway_invocation",
+    name: "Tools: Gateway invocation",
+    category: "tools",
+    query: "Use the tool gateway to look up Ambros Therapeutics funding details.",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "AMBROS",
+    requiredTools: ["invokeTool", "lookupGroundTruthEntity"],
+    validationRules: {
+      mustUseMetaTools: true,
+      mustContainInOutput: ["Ambros"],
+    },
+  },
+  {
+    id: "tool_safe_tier",
+    name: "Tools: Safe tier tool",
+    category: "tools",
+    query: "Use a safe-tier read-only tool to get DISCO's company profile.",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["lookupGroundTruthEntity"],
+    validationRules: {
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+];
+
+// Hybrid Retrieval Scenarios - test memory-first + external tool ordering
+const HYBRID_SCENARIOS: ExpandedScenario[] = [
+  {
+    id: "hybrid_memory_first",
+    name: "Hybrid: Memory-first retrieval",
+    category: "hybrid",
+    query: "What do we know about DISCO from memory before searching externally?",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["queryMemory", "lookupGroundTruthEntity"],
+    validationRules: {
+      memoryFirstCompliant: true,
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+  {
+    id: "hybrid_fusion_search",
+    name: "Hybrid: Fusion search ranking",
+    category: "hybrid",
+    query: "Search for DISCO using both keyword and semantic matching. What's the best result?",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["lookupGroundTruthEntity"],
+    validationRules: {
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+  {
+    id: "hybrid_cross_source",
+    name: "Hybrid: Cross-source aggregation",
+    category: "hybrid",
+    query: "Verify DISCO's €36M seed funding across memory, ground truth, and web sources.",
+    expectedPersona: "EARLY_STAGE_VC",
+    expectedEntityId: "DISCO",
+    requiredTools: ["lookupGroundTruthEntity"],
+    validationRules: {
+      mustContainInOutput: ["DISCO", "36"],
+    },
+  },
+  {
+    id: "hybrid_stale_detection",
+    name: "Hybrid: Stale data detection",
+    category: "hybrid",
+    query: "Check if ClearSpace data is stale. What's their last funding update?",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "CLEARSPACE",
+    requiredTools: ["lookupGroundTruthEntity"],
+    validationRules: {
+      mustContainInOutput: ["ClearSpace"],
+    },
+  },
+];
+
+// Progressive Disclosure Scenarios - test P0-P3 instrumentation
+const DISCLOSURE_SCENARIOS: ExpandedScenario[] = [
+  {
+    id: "disclosure_p0_telemetry",
+    name: "Disclosure: P0 telemetry events",
+    category: "disclosure",
+    query: "Research DISCO and track all tool calls for disclosure metrics.",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["lookupGroundTruthEntity"],
+    validationRules: {
+      disclosureLevel: "partial",
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+  {
+    id: "disclosure_p1_persona_classify",
+    name: "Disclosure: P1 persona classification",
+    category: "disclosure",
+    query: "Classify my persona from this query: What's the thesis fit for DISCO?",
+    expectedPersona: "EARLY_STAGE_VC",
+    expectedEntityId: "DISCO",
+    requiredTools: ["lookupGroundTruthEntity"],
+    validationRules: {
+      disclosureLevel: "partial",
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+  {
+    id: "disclosure_p2_skill_allowlist",
+    name: "Disclosure: P2 skill allowlist",
+    category: "disclosure",
+    query: "As a banker, use only allowed tools for DISCO research. What's in my skill allowlist?",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["lookupGroundTruthEntity"],
+    validationRules: {
+      disclosureLevel: "partial",
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+  {
+    id: "disclosure_p3_full_trace",
+    name: "Disclosure: P3 full disclosure trace",
+    category: "disclosure",
+    query: "Full disclosure: research DISCO and show me the complete tool ordering trace.",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "DISCO",
+    requiredTools: ["lookupGroundTruthEntity"],
+    validationRules: {
+      disclosureLevel: "full",
+      mustContainInOutput: ["DISCO"],
+    },
+  },
+];
+
 // All scenarios combined
 const ALL_SCENARIOS: ExpandedScenario[] = [
   ...CALENDAR_SCENARIOS,
@@ -263,6 +515,10 @@ const ALL_SCENARIOS: ExpandedScenario[] = [
   ...DOCUMENT_SCENARIOS,
   ...WEB_SCENARIOS,
   ...MEDIA_SCENARIOS,
+  ...SKILLS_SCENARIOS,
+  ...TOOLS_SCENARIOS,
+  ...HYBRID_SCENARIOS,
+  ...DISCLOSURE_SCENARIOS,
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -436,6 +692,18 @@ async function main() {
     case "media":
       scenarios = MEDIA_SCENARIOS;
       break;
+    case "skills":
+      scenarios = SKILLS_SCENARIOS;
+      break;
+    case "tools":
+      scenarios = TOOLS_SCENARIOS;
+      break;
+    case "hybrid":
+      scenarios = HYBRID_SCENARIOS;
+      break;
+    case "disclosure":
+      scenarios = DISCLOSURE_SCENARIOS;
+      break;
     case "all":
     default:
       scenarios = ALL_SCENARIOS;
@@ -482,7 +750,17 @@ async function main() {
   console.log(``);
 
   // Group by category
-  const categories = ["calendar", "spreadsheet", "document", "web", "media"] as const;
+  const categories: FeatureCategory[] = [
+    "calendar",
+    "spreadsheet",
+    "document",
+    "web",
+    "media",
+    "skills",
+    "tools",
+    "hybrid",
+    "disclosure",
+  ];
   console.log(`📋 By Category:`);
   for (const cat of categories) {
     const catResults = results.filter((r) => r.scenario.category === cat);

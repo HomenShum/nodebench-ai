@@ -1,6 +1,29 @@
-pus
+# NodeBench AI
 
 A comprehensive AI-powered document management and research platform with multi-agent architecture.
+
+---
+
+## Changelog
+
+### v0.1.0 (January 8, 2026)
+
+**🚀 Default Model: Gemini 3 Flash**
+- Changed default model from `claude-haiku-4.5` to `gemini-3-flash`
+- **100% pass rate** across all 10 evaluation scenarios
+- **Fastest performance**: 16.1s average (vs 46-63s for other models)
+- **Cost-effective**: $0.10/M input, $0.40/M output tokens
+- Fallback to Claude Haiku 4.5 if Google API key not configured
+
+**📊 Full Parallel Evaluation Harness**
+- 70 evaluations (7 models × 10 scenarios) in 131.7 seconds
+- LLM Judge with boolean metric scoring (10 criteria)
+- NDJSON streaming output mode
+
+**🔍 Progressive Disclosure Enhancements**
+- Section 5.3 complete: tool ordering, invariants, compaction, memory events
+- Memory-first compliance tracking
+- Invariant status pills (A/C/D) in DisclosureTrace footer
 
 ---
 

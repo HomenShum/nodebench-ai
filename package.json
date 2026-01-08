@@ -1,7 +1,7 @@
 {
-  "name": "flex-template",
+  "name": "nodebench-ai",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend dev:voice",

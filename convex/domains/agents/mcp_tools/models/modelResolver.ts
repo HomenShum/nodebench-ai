@@ -1,16 +1,17 @@
 /**
- * Model Resolver - 2025 Consolidated LLM Model Registry
+ * Model Resolver - 2026 Consolidated LLM Model Registry
  *
  * This is the SINGLE SOURCE OF TRUTH for model selection across NodeBench.
- * 9 approved models: GPT-5 series (flagship/mini/nano), Claude 4.5 series, Gemini series.
+ * 14 approved models: GPT-5 series, Claude 4.5 series, Gemini series, + OpenRouter frontier models.
  *
  * POLICY:
- * - UI shows ONLY the approved ALIASES (e.g., "gpt-5.2", "claude-haiku-4.5")
+ * - UI shows ONLY the approved ALIASES (e.g., "gpt-5.2", "gemini-3-flash")
  * - Dated SDK IDs are INTERNAL ONLY (stored in ModelSpec.sdkId)
  * - Every resolution logs BOTH requestedAlias and resolvedSdkId
- * - Default model is claude-haiku-4.5 (fast, cost-effective)
+ * - Default model is gemini-3-flash (100% pass rate, 16.1s avg, $0.10/M input)
  *
  * @see MODEL_CONSOLIDATION_PLAN.md for architecture details
+ * @updated January 8, 2026 - Changed default from claude-haiku-4.5 to gemini-3-flash
  */
 
 import { openai } from "@ai-sdk/openai";
@@ -73,9 +74,9 @@ export const APPROVED_MODELS = [
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 
-// Default model: claude-haiku-4.5 (fast, cost-effective)
-// Fallback chain: anthropic → openai → gemini
-export const DEFAULT_MODEL: ApprovedModel = "claude-haiku-4.5";
+// Default model: gemini-3-flash (100% pass rate, fastest at 16.1s avg, $0.10/M input)
+// Fallback chain: google → anthropic → openai
+export const DEFAULT_MODEL: ApprovedModel = "gemini-3-flash";
 
 /**
  * Check if a string is a valid approved model

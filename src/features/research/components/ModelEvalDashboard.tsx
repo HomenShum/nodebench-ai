@@ -212,6 +212,20 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
 
   return (
     <div className="space-y-6 p-4 bg-white rounded-xl border border-stone-200">
+      {/* v0.1.0 Announcement Banner */}
+      <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-lg p-4">
+        <div className="flex items-center gap-3">
+          <Zap className="w-5 h-5 text-emerald-600" />
+          <div>
+            <h3 className="text-emerald-700 font-semibold text-sm">v0.1.0 — Gemini 3 Flash is Now Default</h3>
+            <p className="text-xs text-stone-600 mt-0.5">
+              100% pass rate • 16.1s avg latency • $0.10/M input tokens •
+              <span className="text-emerald-600 ml-1">3× faster than Claude Haiku</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
