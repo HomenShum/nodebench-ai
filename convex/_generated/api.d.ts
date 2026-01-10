@@ -133,6 +133,9 @@ import type * as domains_agents_parallelTaskOrchestrator from "../domains/agents
 import type * as domains_agents_parallelTaskTree from "../domains/agents/parallelTaskTree.js";
 import type * as domains_agents_promptEnhancer from "../domains/agents/promptEnhancer.js";
 import type * as domains_agents_researchJobs from "../domains/agents/researchJobs.js";
+import type * as domains_agents_swarmMutations from "../domains/agents/swarmMutations.js";
+import type * as domains_agents_swarmOrchestrator from "../domains/agents/swarmOrchestrator.js";
+import type * as domains_agents_swarmQueries from "../domains/agents/swarmQueries.js";
 import type * as domains_agents_types from "../domains/agents/types.js";
 import type * as domains_ai_ai from "../domains/ai/ai.js";
 import type * as domains_ai_genai from "../domains/ai/genai.js";
@@ -615,6 +618,9 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/parallelTaskTree": typeof domains_agents_parallelTaskTree;
   "domains/agents/promptEnhancer": typeof domains_agents_promptEnhancer;
   "domains/agents/researchJobs": typeof domains_agents_researchJobs;
+  "domains/agents/swarmMutations": typeof domains_agents_swarmMutations;
+  "domains/agents/swarmOrchestrator": typeof domains_agents_swarmOrchestrator;
+  "domains/agents/swarmQueries": typeof domains_agents_swarmQueries;
   "domains/agents/types": typeof domains_agents_types;
   "domains/ai/ai": typeof domains_ai_ai;
   "domains/ai/genai": typeof domains_ai_genai;

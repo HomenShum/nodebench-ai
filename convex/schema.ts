@@ -671,6 +671,8 @@ const chatThreadsStream = defineTable({
   cancelRequested: v.optional(v.boolean()),
   cancelRequestedAt: v.optional(v.number()),
   workflowProgress: v.optional(v.any()), // Stores Deep Agent steps: { steps: [...], status: "running"|"completed" }
+  // Swarm support - links thread to parallel agent swarm
+  swarmId: v.optional(v.string()),       // Links to agentSwarms table
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -679,7 +681,8 @@ const chatThreadsStream = defineTable({
   .index("by_updatedAt", ["updatedAt"])
   .index("by_user_updatedAt", ["userId", "updatedAt"])
   .index("by_agentThreadId", ["agentThreadId"])
-  .index("by_anonymous_session", ["anonymousSessionId"]);
+  .index("by_anonymous_session", ["anonymousSessionId"])
+  .index("by_swarmId", ["swarmId"]);
 
 const chatMessagesStream = defineTable({
   threadId: v.id("chatThreadsStream"),
@@ -2043,6 +2046,134 @@ export default defineSchema({
   evaluationRuns,
   evaluation_scenarios,
   digestCache,
+
+  /* ------------------------------------------------------------------ */
+  /* AGENT SWARMS - Parallel SubAgent Orchestration                     */
+  /* Implements Fan-Out/Gather pattern for parallel agent execution     */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Swarm definitions - groups of parallel agents working together.
+   * Each swarm is linked to a thread for UI display.
+   */
+  agentSwarms: defineTable({
+    swarmId: v.string(),                   // UUID for this swarm
+    userId: v.id("users"),                 // Owner
+    threadId: v.string(),                  // Associated chatThreadsStream._id
+
+    // Swarm definition
+    name: v.optional(v.string()),          // User-defined name (e.g., "Research Team")
+    query: v.string(),                     // Original user query
+    pattern: v.union(
+      v.literal("fan_out_gather"),         // Parallel then merge (default)
+      v.literal("pipeline"),               // Sequential handoff
+      v.literal("swarm"),                  // Autonomous collaboration
+    ),
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("spawning"),
+      v.literal("executing"),
+      v.literal("gathering"),
+      v.literal("synthesizing"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+    ),
+
+    // Agent configurations
+    agentConfigs: v.array(v.object({
+      agentName: v.string(),               // DocumentAgent, MediaAgent, etc.
+      role: v.string(),                    // Role description
+      query: v.string(),                   // Task for this agent
+      stateKeyPrefix: v.string(),          // Unique namespace: "agent_name:key"
+    })),
+
+    // Results
+    mergedResult: v.optional(v.string()),
+    confidence: v.optional(v.number()),    // 0-1 confidence score
+
+    // Timing
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+  })
+    .index("by_swarm", ["swarmId"])
+    .index("by_thread", ["threadId"])
+    .index("by_user", ["userId"])
+    .index("by_user_status", ["userId", "status"]),
+
+  /**
+   * Individual agent tasks within a swarm.
+   * Each task represents one agent's work.
+   */
+  swarmAgentTasks: defineTable({
+    swarmId: v.string(),
+    taskId: v.string(),                    // UUID
+    delegationId: v.optional(v.string()),  // Links to agentDelegations
+
+    // Agent assignment
+    agentName: v.string(),
+    query: v.string(),
+    role: v.string(),
+
+    // State isolation
+    stateKeyPrefix: v.string(),            // e.g., "DocumentAgent:research"
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+    ),
+
+    // Results
+    result: v.optional(v.string()),
+    resultSummary: v.optional(v.string()),
+
+    // Timing
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+  })
+    .index("by_swarm", ["swarmId"])
+    .index("by_task", ["taskId"])
+    .index("by_swarm_status", ["swarmId", "status"]),
+
+  /**
+   * Cross-agent context sharing with unique key isolation.
+   * Prevents race conditions via namespaced keys.
+   */
+  swarmContextSharing: defineTable({
+    swarmId: v.string(),
+
+    // Namespaced key: "{agentName}:{type}:{specificKey}"
+    key: v.string(),
+
+    // Context data
+    value: v.any(),
+    valueType: v.union(
+      v.literal("discovery"),              // New fact discovered
+      v.literal("artifact"),               // File/URL reference
+      v.literal("question"),               // Follow-up question
+      v.literal("synthesis"),              // Partial synthesis
+    ),
+
+    // Provenance
+    sourceAgentName: v.string(),
+    sourceTaskId: v.string(),
+
+    createdAt: v.number(),
+  })
+    .index("by_swarm", ["swarmId"])
+    .index("by_key", ["key"])
+    .index("by_swarm_type", ["swarmId", "valueType"]),
 
   /* ------------------------------------------------------------------ */
   /* PARALLEL TASK TREE - Deep Agent 2.0 Decision Tree Execution        */

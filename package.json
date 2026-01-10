@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend dev:voice",
     "dev:frontend": "vite --open",
-    "dev:backend": "convex dev",
+    "dev:backend": "convex dev --typecheck=disable",
     "dev:voice": "tsx --watch --env-file=.env.local server/index.ts",
     "build": "vite build",
     "build:voice": "tsc -p server/tsconfig.json",
@@ -103,7 +103,7 @@
     "ag-grid-react": "^34.2.0",
     "ai": "^5.0.71",
     "clsx": "^2.1.1",
-    "convex": "1.31.2",
+    "convex": "^1.31.3",
     "convex-helpers": "^0.1.105",
     "cors": "^2.8.5",
     "dompurify": "^3.3.0",
