@@ -978,7 +978,10 @@ const roadmapNav = [
 ];
 
 export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }) {
-  const data = slices ?? useMockRoadmap();
+  // Always call the hook unconditionally to satisfy React's rules of hooks
+  const mockData = useMockRoadmap();
+  // Then use slices if provided, otherwise fall back to mock data
+  const data = slices ?? mockData;
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [activeSection, setActiveSection] = useState<string>(roadmapNav[0]?.target ?? "roadmap-overview");
   const [scrollProgress, setScrollProgress] = useState<number>(0);

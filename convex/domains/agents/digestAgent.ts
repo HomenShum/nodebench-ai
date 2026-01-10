@@ -11,7 +11,7 @@
  */
 
 import { v } from "convex/values";
-import { internalAction, action, internalMutation, internalQuery } from "../../_generated/server";
+import { internalAction, action, internalMutation, internalQuery, query } from "../../_generated/server";
 import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import { Agent, stepCountIs } from "@convex-dev/agent";
@@ -93,9 +93,12 @@ export type AgentDigestOutput = {
   // Entity Spotlight (if any significant entities)
   entitySpotlight?: Array<{
     name: string;
-    type: string;
+    type: "company" | "person" | "product" | "technology" | "topic" | "region" | "event" | "metric" | "document" | "fda_approval" | "funding_event" | "research_paper";
     keyInsight: string;
     fundingStage?: string;
+    // Enhanced fields for hover preview
+    keyFacts?: string[];
+    sources?: Array<{ name: string; url?: string }>;
   }>;
 
   // Metadata
@@ -144,9 +147,34 @@ const AgentDigestObjectSchema = z.object({
     .array(
       z.object({
         name: z.string().min(1),
-        type: z.string().min(1),
+        type: z.enum([
+          "company",
+          "person",
+          "product",
+          "technology",
+          "topic",
+          "region",
+          "event",
+          "metric",
+          "document",
+          // Extended types for digest
+          "fda_approval",
+          "funding_event",
+          "research_paper",
+        ]),
         keyInsight: z.string().min(1),
         fundingStage: z.string().optional(),
+        // Enhanced fields for hover preview
+        keyFacts: z.array(z.string()).max(3).optional(),
+        sources: z
+          .array(
+            z.object({
+              name: z.string(),
+              url: z.string().url().optional(),
+            }),
+          )
+          .max(2)
+          .optional(),
       }),
     )
     .max(5)
@@ -483,7 +511,7 @@ export const generateAgentDigest = internalAction({
     error?: string;
   }> => {
     const startTime = Date.now();
-    const model = normalizeModelInput(args.model || "claude-haiku-4.5") as ApprovedModel;
+    const model = normalizeModelInput(args.model || "claude-haiku-4.5");
     const maxLength = args.maxLength || 3500;
     const persona = args.persona || "GENERAL";
     const useTools = args.useTools ?? false;
@@ -1054,9 +1082,13 @@ function parseDigestOutput(
 
         if (name && name.length > 1 && insightMatch) {
           const fundingStage = cleanFundingStage(fundingMatch?.[1]);
+          const rawType = cleanValue(typeMatch?.[1]) || "company";
+          const validTypes = ["company", "person", "product", "technology", "topic", "region", "event", "metric", "document", "fda_approval", "funding_event", "research_paper"] as const;
+          type EntitySpotlightType = typeof validTypes[number];
+          const entityType: EntitySpotlightType = validTypes.includes(rawType as any) ? rawType as EntitySpotlightType : "company";
           entitySpotlight.push({
             name: name,
-            type: cleanValue(typeMatch?.[1]) || "company",
+            type: entityType,
             keyInsight: cleanValue(insightMatch[1]) || "",
             fundingStage: fundingStage && fundingStage !== "N/A" ? fundingStage : undefined,
           });
@@ -1116,10 +1148,13 @@ export function formatDigestForNtfy(
   options: {
     maxLength?: number;
     dashboardUrl?: string;
+    entityBaseUrl?: string;
   } = {}
 ): { title: string; body: string } {
   const maxLength = options.maxLength || 3800;
   const dashboardUrl = options.dashboardUrl || "https://nodebench.ai";
+  // Use hash routing format for entity links (matches MainLayout routing)
+  const entityBaseUrl = options.entityBaseUrl || `${dashboardUrl}/#entity`;
 
   // Build sections separately so we can guarantee ACT III is always included
   // Priority order: Header + Act I + Act III + Footer > Act II > Entity Spotlight
@@ -1181,12 +1216,15 @@ export function formatDigestForNtfy(
   // --- Variable sections (included if space permits) ---
 
   // Entity Spotlight (lower priority than Act II)
+  // Now with hyperlinks to entity profile pages for deep dives
   const entityLines: string[] = [];
   if (digest.entitySpotlight && digest.entitySpotlight.length > 0 && remainingBudget > 400) {
     entityLines.push("**Entity Spotlight**");
     for (const entity of digest.entitySpotlight.slice(0, 2)) {
       const funding = entity.fundingStage ? ` (${entity.fundingStage.slice(0, 20)})` : "";
-      entityLines.push(`- **${entity.name.slice(0, 40)}**${funding}`);
+      // URL-encode entity name for the hyperlink
+      const entityUrl = `${entityBaseUrl}/${encodeURIComponent(entity.name)}`;
+      entityLines.push(`- [**${entity.name.slice(0, 40)}**](${entityUrl})${funding}`);
       entityLines.push(`  ${entity.keyInsight.slice(0, 80)}`);
     }
     entityLines.push("");
@@ -1281,7 +1319,7 @@ export const detectBreakingAlert = internalAction({
     model: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<BreakingAlertOutput> => {
-    const model = normalizeModelInput(args.model || "claude-haiku-4.5") as ApprovedModel;
+    const model = normalizeModelInput(args.model || "claude-haiku-4.5");
     const story = args.story;
     const prefs = args.userPreferences;
 
@@ -1423,7 +1461,7 @@ export const sendBreakingAlertIfWarranted = internalAction({
     // Check if urgency meets threshold
     const urgencyLevels = ["critical", "high", "medium", "low"];
     const analysisLevel = urgencyLevels.indexOf(analysis.urgency);
-    const thresholdLevel = urgencyLevels.indexOf(minUrgency as any);
+    const thresholdLevel = urgencyLevels.indexOf(minUrgency);
 
     if (!analysis.shouldAlert || analysisLevel > thresholdLevel) {
       console.log(`[digestAgent] Alert not warranted: shouldAlert=${analysis.shouldAlert}, urgency=${analysis.urgency}, threshold=${minUrgency}`);
@@ -1747,6 +1785,153 @@ export const getDigestsForDate = internalQuery({
 });
 
 /**
+ * Get the latest cached digest with entity enrichment for frontend consumption.
+ * Returns entity spotlight data formatted for EntityHoverPreview components.
+ * Now also fetches adaptive profiles for richer hover previews.
+ */
+export const getLatestDigestWithEntities = query({
+  args: {
+    persona: v.optional(v.string()), // Default: "GENERAL"
+  },
+  handler: async (ctx, args) => {
+    const dateString = new Date().toISOString().split("T")[0];
+    const persona = args.persona ?? "GENERAL";
+
+    // Find the latest cached digest for today
+    const cached = await ctx.db
+      .query("digestCache")
+      .withIndex("by_date_persona", (q) =>
+        q.eq("dateString", dateString).eq("persona", persona)
+      )
+      .order("desc")
+      .first();
+
+    if (!cached) {
+      return null;
+    }
+
+    // Get entity names from spotlight for adaptive profile lookup
+    const entitySpotlight = cached.digest.entitySpotlight ?? [];
+    const entityNames = entitySpotlight.map((e: any) => e.name);
+
+    // Fetch adaptive profiles for all entities in parallel
+    const adaptiveProfiles: Record<string, any> = {};
+    await Promise.all(
+      entityNames.map(async (name: string) => {
+        const profile = await ctx.db
+          .query("adaptiveEntityProfiles")
+          .withIndex("by_name", (q) => q.eq("entityName", name))
+          .first();
+        if (profile?.profile) {
+          adaptiveProfiles[name] = profile.profile;
+        }
+      })
+    );
+
+    // Transform entitySpotlight into EntityHoverData format for frontend
+    // Now with adaptive enrichment fields for medium-detail hover previews
+    const entityEnrichment: Record<string, {
+      entityId: string;
+      name: string;
+      type: string;
+      summary: string;
+      keyFacts: string[];
+      funding?: { stage: string; totalRaised?: string };
+      sources?: { name: string; credibility: string }[];
+      // Adaptive enrichment fields
+      relationships?: Array<{
+        entityName: string;
+        relationshipType: string;
+        strength: "strong" | "moderate" | "weak";
+      }>;
+      circleOfInfluence?: {
+        tier1: string[];
+        tier2: string[];
+      };
+      timelineHighlight?: {
+        date: string;
+        title: string;
+        category: string;
+      };
+      executiveSummary?: {
+        whatTheyreKnownFor?: string;
+        currentFocus?: string;
+      };
+    }> = {};
+
+    for (const entity of entitySpotlight) {
+      const id = entity.name.toLowerCase().replace(/\s+/g, "-");
+      const adaptiveProfile = adaptiveProfiles[entity.name];
+
+      // Extract adaptive enrichment data
+      const relationships = adaptiveProfile?.relationships?.slice(0, 3).map((r: any) => ({
+        entityName: r.entityName,
+        relationshipType: r.relationshipType,
+        strength: r.strength || "moderate",
+      }));
+
+      const circleOfInfluence = adaptiveProfile?.circleOfInfluence
+        ? {
+            tier1: adaptiveProfile.circleOfInfluence.tier1?.slice(0, 3) || [],
+            tier2: adaptiveProfile.circleOfInfluence.tier2?.slice(0, 2) || [],
+          }
+        : undefined;
+
+      const timelineHighlight = adaptiveProfile?.timeline?.[0]
+        ? {
+            date: adaptiveProfile.timeline[0].date,
+            title: adaptiveProfile.timeline[0].title,
+            category: adaptiveProfile.timeline[0].category,
+          }
+        : undefined;
+
+      const executiveSummary = adaptiveProfile?.executiveSummary
+        ? {
+            whatTheyreKnownFor: adaptiveProfile.executiveSummary.whatTheyreKnownFor,
+            currentFocus: adaptiveProfile.executiveSummary.currentFocus,
+          }
+        : undefined;
+
+      entityEnrichment[id] = {
+        entityId: id,
+        name: entity.name,
+        type: entity.type,
+        summary: adaptiveProfile?.headline || entity.keyInsight,
+        keyFacts: entity.keyFacts || adaptiveProfile?.sections?.[0]?.keyPoints?.slice(0, 3) || [],
+        ...(entity.fundingStage && {
+          funding: { stage: entity.fundingStage }
+        }),
+        ...(entity.sources && {
+          sources: entity.sources.map((s: any) => ({
+            name: s.name,
+            credibility: "medium",
+          }))
+        }),
+        // Add adaptive enrichment fields
+        relationships,
+        circleOfInfluence,
+        timelineHighlight,
+        executiveSummary,
+      };
+      // Also index by name for easy lookup
+      entityEnrichment[entity.name] = entityEnrichment[id];
+    }
+
+    return {
+      dateString: cached.dateString,
+      persona: cached.persona,
+      narrativeThesis: cached.digest.narrativeThesis,
+      entityEnrichment,
+      entityCount: entitySpotlight.length,
+      storyCount: cached.digest.storyCount,
+      createdAt: cached.createdAt,
+      // Include count of entities with adaptive profiles for debugging
+      adaptiveProfileCount: Object.keys(adaptiveProfiles).length,
+    };
+  },
+});
+
+/**
  * Clean up expired cache entries
  */
 export const cleanupExpiredDigests = internalMutation({
@@ -1823,5 +2008,69 @@ export const exportDailyBriefNtfyPayloads = action({
       }));
 
     return { dateString, total: payloads.length, payloads };
+  },
+});
+
+/**
+ * Public action to trigger digest generation with entity extraction.
+ * This fetches feed items automatically and generates a fresh digest.
+ * Used by the EntityProfilePage and MorningDigest components.
+ */
+export const triggerDigestGeneration = action({
+  args: {
+    persona: v.optional(v.string()),
+    model: v.optional(v.string()),
+    forceRefresh: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const persona = args.persona || "GENERAL";
+    const model = args.model || "gemini-3-flash";
+    const forceRefresh = args.forceRefresh ?? false;
+
+    // Check for cached digest first (unless force refresh)
+    if (!forceRefresh) {
+      const dateString = new Date().toISOString().split("T")[0];
+      const cached = await ctx.runQuery(internal.domains.agents.digestAgent.getCachedDigest, {
+        dateString,
+        persona,
+      });
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          digest: cached.digest,
+          entityCount: cached.digest.entitySpotlight?.length || 0,
+        };
+      }
+    }
+
+    // Fetch feed items
+    const feedItems = await ctx.runAction(internal.domains.agents.digestAgent.getFeedItemsForDigest, {
+      limit: 15,
+    });
+
+    if (!feedItems || feedItems.length === 0) {
+      return {
+        success: false,
+        error: "No feed items available",
+      };
+    }
+
+    // Generate the digest
+    const result = await ctx.runAction(internal.domains.agents.digestAgent.generateAgentDigest, {
+      feedItems,
+      persona,
+      model,
+      outputMode: "structured",
+      useCache: true,
+    });
+
+    return {
+      success: !result.error,
+      cached: result.cache?.hit || false,
+      digest: result.digest,
+      entityCount: result.digest?.entitySpotlight?.length || 0,
+      error: result.error,
+    };
   },
 });

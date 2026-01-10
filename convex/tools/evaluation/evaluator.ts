@@ -75,7 +75,7 @@ export const runSingleTest = internalAction({
     const startTime = Date.now();
     let response = "";
     let toolsCalled: string[] = [];
-    let errors: string[] = [];
+    const errors: string[] = [];
 
     try {
       // Use OpenAI function-calling implementation directly

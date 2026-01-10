@@ -439,7 +439,7 @@ async function runJudge(
 
   // Parse JSON from response - find balanced braces
   const text = result.text;
-  let jsonStart = text.indexOf("{");
+  const jsonStart = text.indexOf("{");
   if (jsonStart < 0) {
     throw new Error("Judge did not return valid JSON");
   }
@@ -749,7 +749,7 @@ Evaluate using the 10 boolean criteria.`;
 
     // Extract JSON more carefully - find balanced braces
     const text = result.text;
-    let jsonStart = text.indexOf("{");
+    const jsonStart = text.indexOf("{");
     if (jsonStart < 0) {
       throw new Error("Judge did not return valid JSON");
     }

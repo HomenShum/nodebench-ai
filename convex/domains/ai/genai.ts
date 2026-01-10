@@ -97,6 +97,7 @@ export const extractAndIndexFile = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
     const fileDoc: Doc<"files"> | null = await ctx.runQuery(internal.domains.documents.files.getFile, { fileId });
     if (!fileDoc) throw new Error("File not found");
     if (fileDoc.userId !== userId) throw new Error("Forbidden");

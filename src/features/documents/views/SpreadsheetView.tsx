@@ -201,7 +201,9 @@ export const SpreadsheetView: React.FC<SpreadsheetViewProps> = ({
       const md = `### AI Analysis for ${file.fileName}\n\n${analysisText}`;
       try {
         window.dispatchEvent(new CustomEvent('nodebench:applyActions', { detail: { actions: [{ type: 'createNode', markdown: md }] } }));
-      } catch {}
+      } catch {
+        // Event dispatch failed
+      }
       toast.success('Analysis added to Quick notes');
     } catch (e) {
       console.warn('[SpreadsheetView] Analyze to notes failed', e);

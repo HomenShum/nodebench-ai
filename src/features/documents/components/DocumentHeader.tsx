@@ -278,7 +278,9 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               onClick={() => {
                 try {
                   window.dispatchEvent(new CustomEvent('nodebench:toggleInspector'));
-                } catch { }
+                } catch {
+                  // Event dispatch failed
+                }
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-200"
               title="Toggle Inspect view"

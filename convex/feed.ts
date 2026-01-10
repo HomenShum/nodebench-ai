@@ -40,7 +40,7 @@ export const get = query({
     if (args.category) {
       return await ctx.db
         .query("feedItems")
-        .withIndex("by_category", q => q.eq("category", args.category!))
+        .withIndex("by_category", q => q.eq("category", args.category))
         .order("desc")
         .take(limit);
     }
@@ -49,7 +49,7 @@ export const get = query({
     if (args.type) {
       return await ctx.db
         .query("feedItems")
-        .withIndex("by_type", q => q.eq("type", args.type!))
+        .withIndex("by_type", q => q.eq("type", args.type))
         .order("desc")
         .take(limit);
     }
@@ -761,13 +761,13 @@ export const ingestAll = action({
     ]);
 
     // Process results
-    if (hnResult.status === 'fulfilled') results.hackerNews = hnResult.value as any;
-    if (arxivResult.status === 'fulfilled') results.arxiv = arxivResult.value as any;
-    if (redditResult.status === 'fulfilled') results.reddit = redditResult.value as any;
-    if (rssResult.status === 'fulfilled') results.rss = rssResult.value as any;
-    if (ghResult.status === 'fulfilled') results.github = ghResult.value as any;
-    if (phResult.status === 'fulfilled') results.productHunt = phResult.value as any;
-    if (devtoResult.status === 'fulfilled') results.devTo = devtoResult.value as any;
+    if (hnResult.status === 'fulfilled') results.hackerNews = hnResult.value;
+    if (arxivResult.status === 'fulfilled') results.arxiv = arxivResult.value;
+    if (redditResult.status === 'fulfilled') results.reddit = redditResult.value;
+    if (rssResult.status === 'fulfilled') results.rss = rssResult.value;
+    if (ghResult.status === 'fulfilled') results.github = ghResult.value;
+    if (phResult.status === 'fulfilled') results.productHunt = phResult.value;
+    if (devtoResult.status === 'fulfilled') results.devTo = devtoResult.value;
 
     const totalIngested = Object.values(results).reduce((sum, r) => sum + (r.ingested || 0), 0);
 

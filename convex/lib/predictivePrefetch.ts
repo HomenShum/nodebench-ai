@@ -190,7 +190,7 @@ export class PrefetchManager {
     console.log(`[Prefetch] Scheduled: ${action} (priority: ${priority})`);
 
     // Try to execute immediately if capacity
-    this.tryExecute(id, executor);
+    void this.tryExecute(id, executor);
 
     return id;
   }
@@ -248,7 +248,7 @@ export class PrefetchManager {
   /**
    * Get prefetched result if available
    */
-  getResult(taskId: string): any | null {
+  getResult(taskId: string): unknown {
     const task = this.tasks.get(taskId);
     if (!task || task.status !== 'completed') return null;
 
@@ -366,7 +366,7 @@ export class PredictivePrefetchSystem {
   /**
    * Get prefetch result if available
    */
-  tryGetPrefetchedResult(taskId: string): any | null {
+  tryGetPrefetchedResult(taskId: string): unknown {
     return this.prefetchManager.getResult(taskId);
   }
 

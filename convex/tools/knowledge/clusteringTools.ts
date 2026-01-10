@@ -55,7 +55,7 @@ Prerequisites: Graphs must be fingerprinted (call fingerprintKnowledgeGraph firs
       graphs = await Promise.all(
         args.graphIds.map(id => 
           ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphById, { 
-            graphId: id as Id<"knowledgeGraphs"> 
+            graphId: id 
           })
         )
       );
@@ -95,7 +95,7 @@ Prerequisites: Graphs must be fingerprinted (call fingerprintKnowledgeGraph firs
     // Update each graph with cluster assignment
     for (const assignment of clusterResult.assignments) {
       await ctx.runMutation(internal.domains.knowledge.knowledgeGraph.updateClusterAssignment, {
-        graphId: assignment.graphId as Id<"knowledgeGraphs">,
+        graphId: assignment.graphId,
         clusterId: assignment.clusterId,
         isOddOneOut: assignment.isOddOneOut,
       });
@@ -176,7 +176,7 @@ Use this when:
 
     // Load the graph
     const graph = await ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphById, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
     });
 
     if (!graph) {
@@ -221,7 +221,7 @@ Use this when:
 
     // Update graph with novelty status
     await ctx.runMutation(internal.domains.knowledge.knowledgeGraph.updateClusterAssignment, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
       clusterId: result.nearestClusterId,
       isOddOneOut: !result.isInClusterSupport,
       isInClusterSupport: result.isInClusterSupport,
@@ -291,10 +291,10 @@ Use this when:
     // Load both graphs
     const graphResults = await Promise.all([
       ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphById, { 
-        graphId: args.graphId1 as Id<"knowledgeGraphs"> 
+        graphId: args.graphId1 
       }) as Promise<GraphDoc>,
       ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphById, { 
-        graphId: args.graphId2 as Id<"knowledgeGraphs"> 
+        graphId: args.graphId2 
       }) as Promise<GraphDoc>,
     ]);
     const graph1 = graphResults[0];
@@ -310,10 +310,10 @@ Use this when:
     // Load claims for both graphs
     const claimsResults = await Promise.all([
       ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphClaims, { 
-        graphId: args.graphId1 as Id<"knowledgeGraphs"> 
+        graphId: args.graphId1 
       }) as Promise<ClaimDoc[]>,
       ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphClaims, { 
-        graphId: args.graphId2 as Id<"knowledgeGraphs"> 
+        graphId: args.graphId2 
       }) as Promise<ClaimDoc[]>,
     ]);
     const claims1 = claimsResults[0];

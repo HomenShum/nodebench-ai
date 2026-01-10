@@ -387,7 +387,7 @@ export const executeSECRetrievalTask = internalAction({
         internal.domains.agents.orchestrator.secEdgarWrapper.searchFilings,
         {
           ticker: args.inputPayload.ticker,
-          formType: args.inputPayload.formType as any,
+          formType: args.inputPayload.formType,
           limit: args.inputPayload.limit ?? 3,
         }
       );
@@ -424,7 +424,7 @@ export const executeSECRetrievalTask = internalAction({
           internal.domains.agents.orchestrator.secEdgarWrapper.searchFilings,
           {
             ticker: args.inputPayload.ticker,
-            formType: args.inputPayload.formType as any,
+            formType: args.inputPayload.formType,
             limit: args.inputPayload.limit ?? 3,
           }
         );

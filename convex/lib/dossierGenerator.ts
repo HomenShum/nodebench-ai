@@ -21,7 +21,7 @@ export type EmailIntelligenceDossier = {
     employeeCount?: string;
     website?: string;
     productDescription?: string;
-    stage?: "Pre-Seed" | "Seed" | "Series A" | "Series B+" | "Public" | string;
+    stage?: string;
   };
   team: Array<{
     name: string;
@@ -39,7 +39,7 @@ export type EmailIntelligenceDossier = {
     rounds: FundingRound[];
     investorProfiles: Array<{
       name: string;
-      type: "VC" | "Angel" | "Corporate" | string;
+      type: string;
       thesis?: string;
       portfolioFit?: string[];
     }>;
@@ -54,7 +54,7 @@ export type EmailIntelligenceDossier = {
   sources: Array<{
     title: string;
     url: string;
-    type?: "news" | "filing" | "blog" | "linkedin" | "crunchbase" | string;
+    type?: string;
     date?: string;
     snippet?: string;
     credibility?: "verified" | "secondary";
@@ -147,12 +147,12 @@ export function generateDossier({
   };
 }
 
-function parseMaybeJson(input: any): any | null {
+function parseMaybeJson(input: unknown): Record<string, unknown> | null {
   if (!input) return null;
-  if (typeof input === "object") return input;
+  if (typeof input === "object" && input !== null) return input as Record<string, unknown>;
   if (typeof input === "string") {
     try {
-      return JSON.parse(input);
+      return JSON.parse(input) as Record<string, unknown>;
     } catch {
       return { summary: input };
     }

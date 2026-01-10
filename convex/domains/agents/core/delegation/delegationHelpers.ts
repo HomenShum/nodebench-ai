@@ -28,7 +28,7 @@ export type DelegationCtx = ToolCtx & {
  * @throws Error if no user ID is available (unauthenticated)
  */
 export function pickUserId(ctx: DelegationCtx): string {
-  const userId = (ctx.evaluationUserId as string | undefined) ?? ctx.userId;
+  const userId = (ctx.evaluationUserId) ?? ctx.userId;
 
   if (!userId) {
     throw new Error("Authentication required: No user ID found in context. User must be authenticated to delegate tasks.");

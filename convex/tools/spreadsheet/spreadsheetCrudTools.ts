@@ -51,7 +51,7 @@ export const setCell = createTool({
   }),
   handler: async (ctx, args): Promise<string> => {
     const res = await ctx.runMutation(api.domains.integrations.spreadsheets.applyOperations, {
-      sheetId: args.sheetId as Id<"spreadsheets">,
+      sheetId: args.sheetId,
       operations: [
         {
           op: "setCell",
@@ -80,7 +80,7 @@ export const setRange = createTool({
   }),
   handler: async (ctx, args): Promise<string> => {
     const res = await ctx.runMutation(api.domains.integrations.spreadsheets.applyOperations, {
-      sheetId: args.sheetId as Id<"spreadsheets">,
+      sheetId: args.sheetId,
       operations: [
         {
           op: "setRange",
@@ -106,7 +106,7 @@ export const clearCell = createTool({
   }),
   handler: async (ctx, args): Promise<string> => {
     const res = await ctx.runMutation(api.domains.integrations.spreadsheets.applyOperations, {
-      sheetId: args.sheetId as Id<"spreadsheets">,
+      sheetId: args.sheetId,
       operations: [{ op: "clearCell", row: args.row, col: args.col }],
     });
     return `Cleared cell (${args.row},${args.col}) on ${args.sheetId}. Applied=${res.applied} Errors=${res.errors}.`;
@@ -122,7 +122,7 @@ export const insertRow = createTool({
   }),
   handler: async (ctx, args): Promise<string> => {
     const res = await ctx.runMutation(api.domains.integrations.spreadsheets.insertRow, {
-      sheetId: args.sheetId as Id<"spreadsheets">,
+      sheetId: args.sheetId,
       atRow: args.atRow,
       values: args.values,
     });
@@ -138,7 +138,7 @@ export const deleteRow = createTool({
   }),
   handler: async (ctx, args): Promise<string> => {
     const res = await ctx.runMutation(api.domains.integrations.spreadsheets.deleteRow, {
-      sheetId: args.sheetId as Id<"spreadsheets">,
+      sheetId: args.sheetId,
       row: args.row,
     });
     return `Deleted row ${args.row} on ${args.sheetId}. DeletedCells=${res.deletedCells} Shifted=${res.shiftedCells}.`;

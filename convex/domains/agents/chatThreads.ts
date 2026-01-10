@@ -108,7 +108,7 @@ export const appendMessage = mutation({
       .withIndex("by_document", (q) => q.eq("documentId", threadDocumentId))
       .collect();
 
-    const rootNodes = existing.filter((n) => !("parentId" in n) || (n as any).parentId === undefined || (n as any).parentId === null);
+    const rootNodes = existing.filter((n) => !("parentId" in n) || (n).parentId === undefined || (n).parentId === null);
     const nextOrder = rootNodes.length;
 
     const nodeType = detectNodeType(markdown);
@@ -185,7 +185,7 @@ export const listThreadsForUser = query({
       .collect();
 
     const threads = docs
-      .filter((d) => !d.isArchived && typeof d.title === "string" && /^Chat\s\u2014|^Chat\s\-\-|^Chat\s\u2013|^Chat\s\u2015|^Chat\s\-/.test(d.title) || d.title.startsWith("Chat — ") || d.title.startsWith("Chat - "))
+      .filter((d) => !d.isArchived && typeof d.title === "string" && /^Chat\s\u2014|^Chat\s--|^Chat\s\u2013|^Chat\s\u2015|^Chat\s-/.test(d.title) || d.title.startsWith("Chat — ") || d.title.startsWith("Chat - "))
       .sort((a, b) => (Number(b.lastModified || 0) - Number(a.lastModified || 0)));
 
     const limited = typeof limit === "number" ? threads.slice(0, Math.max(1, limit)) : threads.slice(0, 50);
@@ -203,12 +203,12 @@ export const listThreadsForUser = query({
         .query("nodes")
         .withIndex("by_document", (q) => q.eq("documentId", d._id))
         .collect();
-      const rootNodes = nodes.filter((n) => !("parentId" in n) || (n as any).parentId === undefined || (n as any).parentId === null);
+      const rootNodes = nodes.filter((n) => !("parentId" in n) || (n).parentId === undefined || (n).parentId === null);
       const messageCount = rootNodes.length;
       const last = rootNodes.sort((a, b) => Number(b.createdAt) - Number(a.createdAt))[0];
       const lastMessage = last
         ? {
-            role: (last as any).isUserNode ? ("user" as const) : ("assistant" as const),
+            role: (last).isUserNode ? ("user" as const) : ("assistant" as const),
             text: String(last.text || "").slice(0, 200),
             createdAt: Number(last.createdAt || 0),
           }

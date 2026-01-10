@@ -26,7 +26,7 @@ export function useProposalSystem({
   editor,
   documentId,
   blocksFromMarkdown,
-  autoCreateIfEmpty,
+  autoCreateIfEmpty: _autoCreateIfEmpty,
 }: UseProposalSystemOptions) {
   const [pendingProposal, setPendingProposal] = useState<PendingProposal | null>(null);
   const attemptedAutoCreateRef = useRef(false);
@@ -45,17 +45,19 @@ export function useProposalSystem({
     serverMarkedRef.current = true;
     try {
       await setAgentsPrefs({ prefs: { [`doc.hasContent.${String(documentId)}`]: '1' } as any });
-    } catch {}
+    } catch {
+      // Prefs mutation failed
+    }
   }, [setAgentsPrefs, documentId]);
 
   // ProseMirror latest version preflight
-  const latestVersion = useQuery((api as any).prosemirror.latestVersion as any, { id: String(documentId) } as any) as number | null;
+  const latestVersion = useQuery((api as any).prosemirror.latestVersion, { id: String(documentId) } as any) as number | null;
   const safeLatestVersion: number = typeof latestVersion === 'number' ? latestVersion : 0;
 
   // Helper: get current or last block as a reasonable default target
-  const getCurrentOrLastBlock = useCallback((): any | null => {
+  const getCurrentOrLastBlock = useCallback((): unknown => {
     try {
-      const anyEd: any = editor as any;
+      const anyEd: any = editor;
       const pos = anyEd?.getTextCursorPosition?.();
       if (pos?.block) return pos.block;
       const all = anyEd?.topLevelBlocks ?? [];
@@ -64,9 +66,9 @@ export function useProposalSystem({
   }, [editor]);
 
   // Helper: resolve target block by heading text
-  const resolvePositionByHeading = useCallback((heading: string): any | null => {
+  const resolvePositionByHeading = useCallback((heading: string): unknown => {
     try {
-      const anyEd: any = editor as any;
+      const anyEd: any = editor;
       const blocks: any[] = anyEd?.topLevelBlocks ?? [];
       const needle = heading.trim().toLowerCase();
       return blocks.find((b: any) => {
@@ -77,9 +79,9 @@ export function useProposalSystem({
     } catch { return null; }
   }, [editor]);
 
-  const findBlockByNodeId = useCallback((nodeId: string): any | null => {
+  const findBlockByNodeId = useCallback((nodeId: string): unknown => {
     try {
-      const anyEd: any = editor as any;
+      const anyEd: any = editor;
       const all: any[] = anyEd?.topLevelBlocks ?? [];
       return all.find((b: any) => String(b?.props?.nodeId ?? "") === nodeId) ?? null;
     } catch { return null; }
@@ -87,10 +89,10 @@ export function useProposalSystem({
 
   // Apply a set of actions
   const applyActions = useCallback(async (actions: AIToolAction[], detail?: any) => {
-    const ed: any = editor as any;
+    const ed: any = editor;
     if (!ed) return;
 
-    let anchor: any | null = null;
+    let anchor: unknown = null;
     try {
       const anchorId: string | undefined = typeof detail?.anchorBlockId === 'string' ? detail.anchorBlockId : undefined;
       if (anchorId) {
@@ -104,7 +106,7 @@ export function useProposalSystem({
         continue; // Title rename handled elsewhere
       }
       if ((action.type === 'updateNode' || action.type === 'createNode') && typeof action.markdown === 'string') {
-        let target: any | null = null;
+        let target: unknown = null;
         const nodeId: string | undefined = (action as any)?.nodeId;
         const perActionAnchorId: string | undefined = (action as any)?.anchorBlockId;
 
@@ -150,7 +152,7 @@ export function useProposalSystem({
 
       let anchorBlockId: string | null = null;
       try {
-        const anyEd: any = editor as any;
+        const anyEd: any = editor;
         const pos = anyEd?.getTextCursorPosition?.();
         if (pos?.block?.id) anchorBlockId = String(pos.block.id);
         if (!anchorBlockId) {

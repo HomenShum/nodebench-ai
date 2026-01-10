@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Teachability memory queries and mutations
  * - Convex runtime (no Node.js)

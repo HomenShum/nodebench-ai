@@ -49,7 +49,7 @@ export const TipTapDocumentSchema = z.object({
  */
 export function parseInlineMarks(text: string): TipTapNode[] {
   const nodes: TipTapNode[] = [];
-  let currentIndex = 0;
+  const currentIndex = 0;
 
   // Regex patterns for markdown formatting (in order of precedence)
   const patterns: Array<{

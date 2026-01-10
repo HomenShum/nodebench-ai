@@ -134,7 +134,7 @@ export const testScheduledFlow = internalAction({
         order: "desc",
         paginationOpts: { cursor: null, numItems: 20 },
       });
-      const page: any[] = (messages as any)?.page ?? (messages as any) ?? [];
+      const page: any[] = (messages)?.page ?? (messages) ?? [];
       console.log(`[testScheduledFlow] Found ${page.length} messages`);
 
       const found = page.find((m: any) => String(m.messageId ?? m.id ?? m._id) === args.promptMessageId);
@@ -255,7 +255,7 @@ export const getAgentThreadId = action({
   },
   handler: async (ctx, args): Promise<string | null> => {
     const thread = await ctx.runQuery(internal.domains.evaluation.testAgentQueries.getStreamingThread, {
-      threadId: args.streamThreadId as any,
+      threadId: args.streamThreadId,
     });
     return thread?.agentThreadId || null;
   },
@@ -276,7 +276,7 @@ export const getRawMessages = action({
       paginationOpts: { cursor: null, numItems: 100 },
     });
 
-    const page: any[] = (messages as any)?.page ?? (messages as any) ?? [];
+    const page: any[] = (messages)?.page ?? (messages) ?? [];
 
     // Also try listUIMessages for comparison
     const uiMessages = await listUIMessages(ctx, components.agent, {

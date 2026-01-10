@@ -28,9 +28,9 @@ async function getSafeUserId(ctx: any): Promise<Id<"users"> | null> {
   if (typeof rawUserId === 'string' && rawUserId.includes('|')) {
     const userIdPart = rawUserId.split('|')[0];
     if (!userIdPart || userIdPart.length < 10) return null;
-    userId = userIdPart as Id<"users">;
+    userId = userIdPart;
   } else {
-    userId = rawUserId as Id<"users">;
+    userId = rawUserId;
   }
 
   // Verify the user exists

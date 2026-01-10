@@ -21,7 +21,7 @@ export function ProposalBar({
   const [confirmAll, setConfirmAll] = useState(false);
 
   const counts = useMemo(() => {
-    let blocks = targets.length;
+    const blocks = targets.length;
     let totalAdds = 0;
     let totalDels = 0;
     let selected = 0;
@@ -58,7 +58,9 @@ export function ProposalBar({
         window.dispatchEvent(new CustomEvent("nodebench:applyActions", { detail: { actions } }));
         onDismiss?.();
       }
-    } catch {}
+    } catch {
+      // Silently ignore action dispatch errors
+    }
   };
 
   const applyAll = () => {
@@ -79,8 +81,9 @@ export function ProposalBar({
         window.dispatchEvent(new CustomEvent("nodebench:applyActions", { detail: { actions } }));
         onDismiss?.();
       }
-    } catch {}
-    finally {
+    } catch {
+      // Silently ignore action dispatch errors
+    } finally {
       setConfirmAll(false);
     }
   };

@@ -53,8 +53,8 @@ export const findDocument = createTool({
       });
 
       if (doc) {
-        const docType = (doc as any).documentType || 'text';
-        const lastModified = new Date((doc as any).lastModified || doc._creationTime).toLocaleString();
+        const docType = (doc).documentType || 'text';
+        const lastModified = new Date((doc).lastModified || doc._creationTime).toLocaleString();
 
         let contentPreview = '';
 
@@ -69,7 +69,7 @@ export const findDocument = createTool({
             const fileSizeMB = (fileDoc.file.fileSize / (1024 * 1024)).toFixed(2);
             contentPreview = `File: ${fileDoc.file.fileName}
 Size: ${fileSizeMB} MB
-Type: ${(doc as any).fileType || 'unknown'}
+Type: ${(doc).fileType || 'unknown'}
 ${fileDoc.file.analysis ? `\nAnalysis:\n${fileDoc.file.analysis.substring(0, 500)}...` : 'No analysis available'}`;
           }
         } else {
@@ -99,10 +99,10 @@ ${results.length > 1 ? `\nNote: Found ${results.length} matching documents. Show
 
     // Otherwise, just return the list of documents
     const formattedResults = results.slice(0, args.limit).map((doc: any, idx: number) => {
-      const lastModified = (doc as any).lastModified || doc._creationTime;
+      const lastModified = (doc).lastModified || doc._creationTime;
       const date = new Date(lastModified).toLocaleDateString();
-      const docType = (doc as any).documentType || 'text';
-      const icon = (doc as any).icon || '📄';
+      const docType = (doc).documentType || 'text';
+      const icon = (doc).icon || '📄';
 
       return `${idx + 1}. ${icon} "${doc.title}"
    ID: ${doc._id}
@@ -141,8 +141,8 @@ export const getDocumentContent = createTool({
       return `Document not found or you don't have permission to access it.`;
     }
 
-    const docType = (doc as any).documentType || 'text';
-    const lastModified = new Date((doc as any).lastModified || doc._creationTime).toLocaleString();
+    const docType = (doc).documentType || 'text';
+    const lastModified = new Date((doc).lastModified || doc._creationTime).toLocaleString();
 
     let contentPreview = '';
 
@@ -157,7 +157,7 @@ export const getDocumentContent = createTool({
         const fileSizeMB = (fileDoc.file.fileSize / (1024 * 1024)).toFixed(2);
         contentPreview = `File: ${fileDoc.file.fileName}
 Size: ${fileSizeMB} MB
-Type: ${(doc as any).fileType || 'unknown'}
+Type: ${(doc).fileType || 'unknown'}
 ${fileDoc.file.analysis ? `\nAnalysis:\n${fileDoc.file.analysis.substring(0, 500)}...` : 'No analysis available'}`;
       }
     } else {
@@ -210,7 +210,7 @@ export const analyzeDocument = createTool({
       return `Document not found.`;
     }
 
-    const docType = (doc as any).documentType || 'text';
+    const docType = (doc).documentType || 'text';
 
     if (docType === 'file') {
       // For file documents, check if analysis exists
@@ -226,7 +226,7 @@ export const analyzeDocument = createTool({
 ${fileDoc.file.analysis}
 
 File Details:
-- Type: ${(doc as any).fileType || 'unknown'}
+- Type: ${(doc).fileType || 'unknown'}
 - Size: ${(fileDoc.file.fileSize / (1024 * 1024)).toFixed(2)} MB`;
         } else {
           return `File "${doc.title}" has not been analyzed yet. You can trigger analysis using the analyzeFile tool.`;
@@ -253,7 +253,7 @@ File Details:
 Type: Text Document
 Word Count: ${wordCount}
 Character Count: ${charCount}
-Last Modified: ${new Date((doc as any).lastModified || doc._creationTime).toLocaleString()}
+Last Modified: ${new Date((doc).lastModified || doc._creationTime).toLocaleString()}
 
 Content Preview:
 ${textContent.substring(0, 500)}${textContent.length > 500 ? '...' : ''}
@@ -370,9 +370,9 @@ export const analyzeMultipleDocuments = createTool({
       return {
         title: doc.title,
         id: doc._id,
-        type: (doc as any).documentType || 'text',
+        type: (doc).documentType || 'text',
         content: content.substring(0, 2000), // Limit per document for token efficiency
-        lastModified: new Date((doc as any).lastModified || doc._creationTime).toLocaleDateString(),
+        lastModified: new Date((doc).lastModified || doc._creationTime).toLocaleDateString(),
       };
     });
 

@@ -88,7 +88,7 @@ export const buildDossierMetadataTool = createTool({
   }),
   handler: async (ctx, { dossierId }): Promise<string> => {
     const result: any = await ctx.runAction(api.domains.ai.metadataAnalyzer.buildDossierMetadata, {
-      dossierId: dossierId as Id<'documents'>,
+      dossierId: dossierId,
     });
     return `🪄 Dossier metadata updated. Quick Notes: ${result?.quickNotesId ?? 'n/a'}.`;
   },

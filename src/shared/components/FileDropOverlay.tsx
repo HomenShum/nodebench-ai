@@ -97,7 +97,9 @@ export const FileDropOverlay: React.FC<FileDropOverlayProps> = ({
         el.removeEventListener("dragover", onDragOver as any);
         el.removeEventListener("dragleave", onDragLeave as any);
         el.removeEventListener("drop", onDrop as any);
-      } catch {}
+      } catch {
+        // Event listener cleanup failed
+      }
     };
   }, [containerRef, disabled, onFilesDrop]);
 

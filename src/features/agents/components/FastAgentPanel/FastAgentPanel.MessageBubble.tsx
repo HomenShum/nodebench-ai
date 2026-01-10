@@ -46,7 +46,9 @@ export function MessageBubble({
         const parsed: any = JSON.parse(trimmed);
         const extracted = parsed?.finalResponse ?? parsed?.response ?? parsed?.message;
         if (typeof extracted === 'string' && extracted.trim().length > 0) return extracted;
-      } catch {}
+      } catch {
+        // JSON parsing failed, continue with raw content
+      }
     }
     return raw as string;
   }, [isAssistant, message.content]);

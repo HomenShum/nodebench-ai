@@ -63,7 +63,7 @@ export const updateEvent = createTool({
     const endTime = args.endTime ? parseDateTimeToMs(args.endTime) : undefined;
 
     await ctx.runMutation(api.domains.calendar.events.updateEvent, {
-      eventId: args.eventId as Id<"events">,
+      eventId: args.eventId,
       title: args.title,
       description: args.description,
       startTime,
@@ -85,7 +85,7 @@ export const deleteEvent = createTool({
   }),
   handler: async (ctx, args): Promise<string> => {
     await ctx.runMutation(api.domains.calendar.events.deleteEvent, {
-      eventId: args.eventId as Id<"events">,
+      eventId: args.eventId,
     });
     return `Deleted event ${args.eventId}.`;
   },

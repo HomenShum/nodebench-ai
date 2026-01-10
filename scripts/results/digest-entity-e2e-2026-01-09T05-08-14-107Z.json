@@ -1,0 +1,85 @@
+{
+  "results": [
+    {
+      "name": "Default Model Configuration",
+      "passed": true,
+      "duration": 109,
+      "details": {
+        "defaultModel": "gemini-3-flash",
+        "expected": "gemini-3-flash"
+      }
+    },
+    {
+      "name": "Entity Type Extraction",
+      "passed": true,
+      "duration": 945,
+      "details": {
+        "entityTypes": [
+          "company",
+          "fda_approval",
+          "research_paper",
+          "person",
+          "funding_event"
+        ],
+        "missingTypes": [],
+        "bodyLength": 1299,
+        "hasEntitySection": true
+      }
+    },
+    {
+      "name": "Digest Generation with Entities",
+      "passed": true,
+      "duration": 1,
+      "details": {
+        "hasDigest": true,
+        "signalsCount": 3,
+        "actionItemsCount": 3,
+        "entityCount": 3,
+        "targetTime": "< 20000ms",
+        "withinTarget": true
+      }
+    },
+    {
+      "name": "ntfy Entity Formatting",
+      "passed": true,
+      "duration": 1,
+      "details": {
+        "title": "Morning Dossier 2026-01-09 | Test Digest for Entity Preview E2E",
+        "bodyLength": 812,
+        "hasEntitySection": true,
+        "hasAnthropicEntity": true
+      }
+    },
+    {
+      "name": "Schema Validation",
+      "passed": true,
+      "duration": 1,
+      "details": {
+        "currentTypes": [
+          "company",
+          "person",
+          "product",
+          "technology",
+          "topic",
+          "region",
+          "event",
+          "metric",
+          "document"
+        ],
+        "newTypes": [
+          "fda_approval",
+          "funding_event",
+          "research_paper"
+        ],
+        "hasFdaEntity": true,
+        "hasFundingEntity": true,
+        "hasResearchEntity": true
+      }
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "total": 5,
+    "totalDuration": 1057
+  }
+}

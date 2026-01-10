@@ -140,19 +140,64 @@ export const getEntityContext = query({
         q.eq("entityName", args.entityName).eq("entityType", args.entityType)
       )
       .first();
-    
+
     if (!context) {
       return null;
     }
-    
+
     // Check if stale (> 7 days)
     const age = Date.now() - context.researchedAt;
     const isStale = age > 7 * 24 * 60 * 60 * 1000;
-    
+
     return {
       ...context,
       isStale,
       ageInDays: Math.floor(age / (1000 * 60 * 60 * 24)),
+    };
+  },
+});
+
+/**
+ * Get entity context by name only - tries company first, then person
+ * Used by EntityProfilePage when type is unknown
+ */
+export const getEntityContextByName = query({
+  args: {
+    entityName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Try company first (most common)
+    let context = await ctx.db
+      .query("entityContexts")
+      .withIndex("by_entity", (q) =>
+        q.eq("entityName", args.entityName).eq("entityType", "company")
+      )
+      .first();
+
+    // Fall back to person
+    if (!context) {
+      context = await ctx.db
+        .query("entityContexts")
+        .withIndex("by_entity", (q) =>
+          q.eq("entityName", args.entityName).eq("entityType", "person")
+        )
+        .first();
+    }
+
+    if (!context) {
+      return null;
+    }
+
+    // Check if stale (> 7 days)
+    const age = Date.now() - context.researchedAt;
+    const isStale = age > 7 * 24 * 60 * 60 * 1000;
+
+    return {
+      ...context,
+      isStale,
+      ageInDays: Math.floor(age / (1000 * 60 * 60 * 24)),
+      // Include type for UI rendering
+      type: context.entityType,
     };
   },
 });
@@ -560,7 +605,7 @@ export const mergeFactsIntoMemory = internalMutation({
       version: entity.version + 1,
       lastAccessedAt: Date.now(),
       linkedDocIds: args.sourceDocId 
-        ? [...(entity.linkedDocIds || []), args.sourceDocId as any].slice(-MEMORY_LIMITS.maxLinkedDocsPerEntity)
+        ? [...(entity.linkedDocIds || []), args.sourceDocId].slice(-MEMORY_LIMITS.maxLinkedDocsPerEntity)
         : entity.linkedDocIds,
     });
     

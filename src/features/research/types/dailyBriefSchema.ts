@@ -35,7 +35,7 @@ export interface Evidence {
   /** Optional rank within the retrieval run (1 = highest) */
   rank?: number;
   /** Source provider */
-  source: EvidenceSource | string;
+  source: string;
   /** Article/repo/paper title */
   title: string;
   /** Canonical URL to the source */

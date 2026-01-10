@@ -19,21 +19,13 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
   url,
   techStack,
 }) => {
-  if (!techStack || techStack.length === 0) {
-    return (
-      <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-2">
-        <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Stack Impact</div>
-        <div className="text-sm font-semibold text-stone-900">Set your tech stack</div>
-        <div className="text-xs text-stone-500">
-          Add your stack in Settings to map direct and second-order exposure.
-        </div>
-      </div>
-    );
-  }
+  // All hooks must be called before any early returns
   const refresh = useAction(api.domains.research.stackImpact.refreshStackImpact);
   const [impact, setImpact] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const hasValidTechStack = techStack && techStack.length > 0;
 
   useEffect(() => {
     let mounted = true;
@@ -53,6 +45,19 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
       mounted = false;
     };
   }, [refresh, summary, techStack, title, url]);
+
+  // Early returns after all hooks are called
+  if (!hasValidTechStack) {
+    return (
+      <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-2">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Stack Impact</div>
+        <div className="text-sm font-semibold text-stone-900">Set your tech stack</div>
+        <div className="text-xs text-stone-500">
+          Add your stack in Settings to map direct and second-order exposure.
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

@@ -160,7 +160,7 @@ export const hybridSearchTools = internalAction({
             category: "",
             categoryName: "",
             score: r.score,
-            matchType: r.matchType as "keyword" | "semantic" | "hybrid",
+            matchType: r.matchType,
           }));
           return { results: cachedResults, cached: true };
         }

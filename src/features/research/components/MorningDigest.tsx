@@ -18,6 +18,7 @@ import { InteractiveSpanParser } from './InteractiveSpanParser';
 import { FootnotesSection } from './FootnotesSection';
 import type { CitationLibrary } from '../types/citationSchema';
 import type { EntityLibrary } from '../types/entitySchema';
+import type { EntityHoverData } from './EntityHoverPreview';
 
 interface DigestSection {
   id: string;
@@ -137,6 +138,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   // Check for cached summary first (avoids LLM call on every mount)
   const cachedSummary = useQuery(api.domains.ai.morningDigestQueries.getCachedDigestSummary);
+
+  // Fetch agent-generated digest with entity enrichment
+  const agentDigest = useQuery(api.domains.agents.digestAgent.getLatestDigestWithEntities, {});
 
   const generateSummary = useAction(api.domains.ai.morningDigest.generateDigestSummary);
   const cacheSummary = useMutation(api.domains.ai.morningDigestQueries.cacheDigestSummary);
@@ -433,6 +437,33 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
     return { entities, nameIndex, updatedAt: new Date().toISOString() };
   }, [digestData]);
+
+  // Build entity enrichment map from agent digest for hover previews
+  // Now includes adaptive enrichment fields (relationships, circle of influence, timeline, executive summary)
+  const entityEnrichment = useMemo((): Record<string, EntityHoverData> | undefined => {
+    if (!agentDigest?.entityEnrichment) return undefined;
+
+    // Transform the agent's entity enrichment to EntityHoverData format
+    const enrichmentMap: Record<string, EntityHoverData> = {};
+    for (const [key, data] of Object.entries(agentDigest.entityEnrichment)) {
+      const enrichmentData = data as any; // Type assertion for adaptive fields
+      enrichmentMap[key] = {
+        entityId: enrichmentData.entityId,
+        name: enrichmentData.name,
+        type: enrichmentData.type as EntityHoverData['type'],
+        summary: enrichmentData.summary,
+        keyFacts: enrichmentData.keyFacts ?? [],
+        funding: enrichmentData.funding,
+        sources: enrichmentData.sources as EntityHoverData['sources'],
+        // Adaptive enrichment fields for medium-detail hover previews
+        relationships: enrichmentData.relationships,
+        circleOfInfluence: enrichmentData.circleOfInfluence,
+        timelineHighlight: enrichmentData.timelineHighlight,
+        executiveSummary: enrichmentData.executiveSummary,
+      };
+    }
+    return enrichmentMap;
+  }, [agentDigest?.entityEnrichment]);
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -748,6 +779,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     text={fullSummary}
                     citations={citationLibrary}
                     entities={entityLibrary}
+                    entityEnrichment={entityEnrichment}
                     onCitationClick={(citation) => onItemClick?.({ text: `Tell me more about: ${citation.fullText}`, relevance: 'high' })}
                     onEntityClick={(entity) => onItemClick?.({ text: `Deep dive on ${entity.name}`, relevance: 'high', linkedEntity: entity.name })}
                   />"

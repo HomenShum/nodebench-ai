@@ -149,7 +149,7 @@ export const getRecentRuns = internalQuery({
     if (args.suiteId !== undefined) {
       query = ctx.db
         .query("evalRuns")
-        .withIndex("by_suite", q => q.eq("suiteId", args.suiteId!))
+        .withIndex("by_suite", q => q.eq("suiteId", args.suiteId))
         .order("desc");
     }
 

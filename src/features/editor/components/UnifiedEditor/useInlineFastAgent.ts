@@ -157,7 +157,7 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
           console.log("[useInlineFastAgent] Updating block with text:", fullText.substring(0, 50));
 
           // Remove HTML comment markers, image markdown, and plain image URL lists for cleaner inline display
-          let cleanText = fullText
+          const cleanText = fullText
             .replace(/<!-- YOUTUBE_GALLERY_DATA[\s\S]*?-->/g, '')
             .replace(/<!-- SEC_GALLERY_DATA[\s\S]*?-->/g, '')
             .replace(/<!-- WEB_SOURCE_DATA[\s\S]*?-->/g, '')

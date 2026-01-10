@@ -226,7 +226,7 @@ export const callMcpTool: any = action({
           await ctx.runMutation((api as any).mcp.storeUsageHistory, {
             userId,
             toolId: await findToolId(ctx, serverId, args.toolName),
-            serverId: serverId as Id<"mcpServers">,
+            serverId: serverId,
             naturalLanguageQuery: args.toolName,
             parameters: args.parameters,
             executionSuccess: true,
@@ -264,7 +264,7 @@ export const callMcpTool: any = action({
           await ctx.runMutation((api as any).mcp.storeUsageHistory, {
             userId,
             toolId: await findToolId(ctx, serverId, args.toolName),
-            serverId: serverId as Id<"mcpServers">,
+            serverId: serverId,
             naturalLanguageQuery: args.toolName,
             parameters: args.parameters,
             executionSuccess: false,

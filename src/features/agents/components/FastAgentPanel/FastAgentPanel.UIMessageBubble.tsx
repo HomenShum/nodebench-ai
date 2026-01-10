@@ -32,8 +32,9 @@ import {
 import { ArbitrageReportCard } from './ArbitrageReportCard';
 import { MemoryPill } from './MemoryPill';
 import { FusedSearchResults, type FusedResult, type SourceError, type SearchSource } from './FusedSearchResults';
-// Phase All: Citation & Entity parsing
+// Phase All: Citation & Entity parsing with adaptive enrichment
 import { InteractiveSpanParser } from '@/features/research/components/InteractiveSpanParser';
+import type { EntityHoverData } from '@/features/research/components/EntityHoverPreview';
 import {
   CITATION_REGEX,
   ENTITY_REGEX,
@@ -54,6 +55,8 @@ interface FastAgentUIMessageBubbleProps {
   isParent?: boolean; // Whether this message has child messages
   isChild?: boolean; // Whether this is a child message (specialized agent)
   agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
+  /** Pre-loaded entity enrichment data for medium-detail hover previews */
+  entityEnrichment?: Record<string, EntityHoverData>;
 }
 
 /**
@@ -962,6 +965,7 @@ export function FastAgentUIMessageBubble({
   isParent,
   isChild,
   agentRole,
+  entityEnrichment,
 }: FastAgentUIMessageBubbleProps) {
   const isUser = message.role === 'user';
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -1518,7 +1522,7 @@ export function FastAgentUIMessageBubble({
                   a({ href, children }) {
                     return <a href={href} className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">{children}</a>;
                   },
-                  // Phase All: Enhanced paragraph rendering with citation/entity parsing
+                  // Phase All: Enhanced paragraph rendering with citation/entity parsing + adaptive enrichment
                   p({ children }) {
                     // Convert children to string for token detection
                     const textContent = React.Children.toArray(children)
@@ -1526,10 +1530,14 @@ export function FastAgentUIMessageBubble({
                       .join('');
 
                     // If text contains {{cite:...}} or @@entity:...@@ tokens, use InteractiveSpanParser
+                    // Pass entityEnrichment for rich hover previews with adaptive profile data
                     if (CITATION_REGEX.test(textContent) || ENTITY_REGEX.test(textContent)) {
                       return (
                         <p className="mb-2">
-                          <InteractiveSpanParser text={textContent} />
+                          <InteractiveSpanParser
+                            text={textContent}
+                            entityEnrichment={entityEnrichment}
+                          />
                         </p>
                       );
                     }

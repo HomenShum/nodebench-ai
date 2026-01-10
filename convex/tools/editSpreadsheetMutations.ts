@@ -54,7 +54,7 @@ export const storeSpreadsheetEvent = internalMutation({
 
     // Build the event payload
     const eventData: any = {
-      spreadsheetId: args.spreadsheetId as any,
+      spreadsheetId: args.spreadsheetId,
       operation: operationType,
       payload: {
         operations: args.operations,

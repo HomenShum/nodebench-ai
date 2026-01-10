@@ -15,3 +15,4 @@ export {
   type FocusSource,
   type FocusState,
 } from './useFocusSyncDebounced';
+export { useEntityHoverData, useEntityHoverDataBatch } from './useEntityHoverData';

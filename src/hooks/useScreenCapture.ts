@@ -32,7 +32,7 @@ export function useScreenCapture(): UseScreenCaptureReturn {
       // Create video element to capture frame
       const video = document.createElement('video');
       video.srcObject = stream;
-      video.play();
+      void video.play();
 
       // Wait for video to load
       await new Promise<void>((resolve) => {

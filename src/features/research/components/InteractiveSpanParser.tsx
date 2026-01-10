@@ -5,6 +5,7 @@ import SmartLink from "./SmartLink";
 import { InteractiveSpan } from "./InteractiveSpan";
 import FootnoteMarker from "./FootnoteMarker";
 import EntityLink from "./EntityLink";
+import type { EntityHoverData } from "./EntityHoverPreview";
 import type { Citation, CitationLibrary, CitationType } from "../types/citationSchema";
 import { CITATION_REGEX } from "../types/citationSchema";
 import type { Entity, EntityLibrary, EntityType } from "../types/entitySchema";
@@ -21,6 +22,8 @@ export interface InteractiveSpanParserProps {
   citations?: CitationLibrary;
   /** Optional entity library for @@entity:id@@ tokens */
   entities?: EntityLibrary;
+  /** Pre-loaded entity enrichment data for medium-detail hover previews */
+  entityEnrichment?: Record<string, EntityHoverData>;
   /** Prefix used to generate stable span IDs (e.g., section + paragraph) */
   spanPrefix?: string;
   /** Whether to show [index] indicator before the label when dataIndex is present */
@@ -41,7 +44,7 @@ export const parseSmartLinks = (
   text: string,
   linksData?: Record<string, SmartLinkMeta>,
 ): React.ReactNode[] => {
-  const regex = /<SmartLink id=['"]([^'\"]+)['"]>(.*?)<\/SmartLink>/g;
+  const regex = /<SmartLink id=['"]([^'"]+)['"]>(.*?)<\/SmartLink>/g;
   const parts: Array<string | { id: string; label: string }> = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -79,6 +82,7 @@ const parseEntitiesAndSmartLinks = (
   linksData?: Record<string, SmartLinkMeta>,
   entities?: EntityLibrary,
   onEntityClick?: (entity: Entity) => void,
+  entityEnrichment?: Record<string, EntityHoverData>,
 ): React.ReactNode[] => {
   if (!entities || Object.keys(entities.entities).length === 0) {
     return parseSmartLinks(text, linksData);
@@ -102,12 +106,18 @@ const parseEntitiesAndSmartLinks = (
     const entity = entities.entities[entityId];
     if (entity) {
       const displayEntity = typeOverride ? { ...entity, type: typeOverride } : entity;
+      // Get pre-loaded enrichment data for medium-detail preview
+      const enrichment = entityEnrichment?.[entityId] || entityEnrichment?.[entity.name];
+      const useMediumPreview = !!enrichment || !!entityEnrichment;
+
       nodes.push(
         <EntityLink
           key={`entity-${entityId}-${match.index}`}
           entity={displayEntity}
           displayName={displayName}
           onClick={onEntityClick}
+          preloadedEnrichment={enrichment}
+          useMediumPreview={useMediumPreview}
         />,
       );
     } else {
@@ -145,10 +155,11 @@ const parseCitationsEntitiesAndSmartLinks = (
   entities?: EntityLibrary,
   onCitationClick?: (citation: Citation) => void,
   onEntityClick?: (entity: Entity) => void,
+  entityEnrichment?: Record<string, EntityHoverData>,
 ): React.ReactNode[] => {
   // If no citations, delegate to entity parser
   if (!citations || Object.keys(citations.citations).length === 0) {
-    return parseEntitiesAndSmartLinks(text, linksData, entities, onEntityClick);
+    return parseEntitiesAndSmartLinks(text, linksData, entities, onEntityClick, entityEnrichment);
   }
 
   const nodes: React.ReactNode[] = [];
@@ -160,7 +171,7 @@ const parseCitationsEntitiesAndSmartLinks = (
     // Add text before the citation (parse for entities)
     const before = text.slice(lastIndex, match.index);
     if (before) {
-      nodes.push(...parseEntitiesAndSmartLinks(before, linksData, entities, onEntityClick));
+      nodes.push(...parseEntitiesAndSmartLinks(before, linksData, entities, onEntityClick, entityEnrichment));
     }
 
     const citationId = match[1];
@@ -199,7 +210,7 @@ const parseCitationsEntitiesAndSmartLinks = (
   if (lastIndex < text.length) {
     const rest = text.slice(lastIndex);
     if (rest) {
-      nodes.push(...parseEntitiesAndSmartLinks(rest, linksData, entities, onEntityClick));
+      nodes.push(...parseEntitiesAndSmartLinks(rest, linksData, entities, onEntityClick, entityEnrichment));
     }
   }
 
@@ -231,6 +242,7 @@ export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   smartLinks,
   citations,
   entities,
+  entityEnrichment,
   spanPrefix = "interactive-span",
   showIndicator = true,
   onCitationClick,
@@ -246,7 +258,7 @@ export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   while ((match = tokenRegex.exec(text)) !== null) {
     const before = text.slice(lastIndex, match.index);
     if (before) {
-      nodes.push(...parseCitationsEntitiesAndSmartLinks(before, smartLinks, citations, entities, onCitationClick, onEntityClick));
+      nodes.push(...parseCitationsEntitiesAndSmartLinks(before, smartLinks, citations, entities, onCitationClick, onEntityClick, entityEnrichment));
     }
 
     const rawContent = match[1].trim();
@@ -283,7 +295,7 @@ export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   if (lastIndex < text.length) {
     const rest = text.slice(lastIndex);
     if (rest) {
-      nodes.push(...parseCitationsEntitiesAndSmartLinks(rest, smartLinks, citations, entities, onCitationClick, onEntityClick));
+      nodes.push(...parseCitationsEntitiesAndSmartLinks(rest, smartLinks, citations, entities, onCitationClick, onEntityClick, entityEnrichment));
     }
   }
 

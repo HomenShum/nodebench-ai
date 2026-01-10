@@ -294,7 +294,7 @@ export const ensureUpToDateIndexForUser = internalAction({
       try {
         // Step A: Ensure metadata is present/up-to-date before indexing (lazy analysis)
         try {
-          if (doc.documentType === "dossier" && (doc as any).dossierType === "primary") {
+          if (doc.documentType === "dossier" && (doc).dossierType === "primary") {
             await ctx.runAction(api.domains.ai.metadataAnalyzer.buildDossierMetadata, { dossierId: doc._id as Id<"documents"> });
           } else {
             await ctx.runAction(api.domains.ai.metadataAnalyzer.analyzeDocumentMetadata, { documentId: doc._id as Id<"documents"> });

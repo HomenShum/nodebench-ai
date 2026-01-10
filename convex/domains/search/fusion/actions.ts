@@ -186,7 +186,7 @@ export const fusionSearch = action({
       maxPerSource: args.maxPerSource,
       maxTotal: args.maxTotal,
       enableReranking: args.enableReranking,
-      contentTypes: args.contentTypes as any,
+      contentTypes: args.contentTypes,
       dateRange: args.dateRange,
       userId: args.userId,
     });
@@ -300,7 +300,7 @@ async function persistObservability(
       const sourceResultCount = response.results.filter((r) => r.source === source).length;
       return {
         source,
-        latencyMs: latencyMs as number,
+        latencyMs: latencyMs,
         resultCount: sourceResultCount,
         success: !error,
         errorMessage: error?.error,

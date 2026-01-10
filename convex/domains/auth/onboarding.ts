@@ -136,7 +136,7 @@ export const seedOnboardingContent = mutation({
   handler: async (ctx) => {
     const rawUserId = await getAuthUserId(ctx);
     if (!rawUserId) throw new Error("Not authenticated");
-    const userId = rawUserId as Id<"users">;
+    const userId = rawUserId;
 
     // Helper: case-insensitive title equality
     const eqIgnoreCase = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -285,7 +285,7 @@ export const ensureSeedOnLogin = mutation({
   handler: async (ctx) => {
     const rawUserId = await getAuthUserId(ctx);
     if (!rawUserId) throw new Error("Not authenticated");
-    const userId = rawUserId as Id<"users">;
+    const userId = rawUserId;
 
     // Check if we've already seeded onboarding for this user
     const existingPrefs = await ctx.db
@@ -293,7 +293,7 @@ export const ensureSeedOnLogin = mutation({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
 
-    if (existingPrefs && (existingPrefs as any).onboardingSeededAt) {
+    if (existingPrefs && (existingPrefs).onboardingSeededAt) {
       return { seeded: false, createdDocuments: 0, createdTasks: 0 } as const;
     }
 

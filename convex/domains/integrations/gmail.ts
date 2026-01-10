@@ -67,9 +67,9 @@ export const upsertEventFromGmail = internalMutation({
       )
       .collect();
 
-    const existing = candidates.find((e) => (e.meta as any)?.hash === hash || e.sourceId === sourceId);
+    const existing = candidates.find((e) => (e.meta)?.hash === hash || e.sourceId === sourceId);
 
-    const ingestionConf = (confidence >= 0.7 ? "high" : confidence >= 0.4 ? "med" : "low") as "high" | "med" | "low";
+    const ingestionConf = (confidence >= 0.7 ? "high" : confidence >= 0.4 ? "med" : "low");
     const baseEvent = {
       userId,
       title,

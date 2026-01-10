@@ -44,7 +44,7 @@ export const searchHashtag = createTool({
     // Filter by match types if specified
     let matches: any[] = searchResult.matches;
     if (matchTypes && matchTypes.length > 0) {
-      matches = matches.filter((m: any) => matchTypes.includes(m.matchType as any));
+      matches = matches.filter((m: any) => matchTypes.includes(m.matchType));
     }
 
     // Limit results

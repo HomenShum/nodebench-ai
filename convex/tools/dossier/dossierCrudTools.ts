@@ -44,7 +44,7 @@ export const updateDossier = createTool({
   handler: async (ctx, args): Promise<string> => {
     const content = args.markdown ? JSON.stringify(markdownToTipTap(args.markdown)) : undefined;
     await ctx.runMutation(api.domains.documents.documents.update, {
-      id: args.dossierId as Id<"documents">,
+      id: args.dossierId,
       title: args.title,
       content,
       isPublic: args.isPublic,
@@ -61,7 +61,7 @@ export const deleteDossier = createTool({
   }),
   handler: async (ctx, args): Promise<string> => {
     await ctx.runMutation(api.domains.documents.documents.archive, {
-      id: args.dossierId as Id<"documents">,
+      id: args.dossierId,
     });
     return `Archived dossier ${args.dossierId}.`;
   },

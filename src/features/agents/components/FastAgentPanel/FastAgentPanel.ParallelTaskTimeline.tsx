@@ -235,13 +235,13 @@ export function ParallelTaskTimeline({
     agentThreadId,
   });
 
-  if (!data || !data.tree) {
-    return null;
-  }
+  // Extract data - but hooks must be called unconditionally
+  const tree = data?.tree;
+  const nodes = data?.nodes ?? [];
+  // Note: events and crossChecks are available but currently unused
+  // const { events, crossChecks } = data ?? {};
 
-  const { tree, nodes, events, crossChecks } = data;
-
-  // Build tree structure
+  // Build tree structure - called unconditionally
   const nodesByParent = useMemo(() => {
     const map = new Map<string | null, TaskNode[]>();
     for (const node of nodes) {
@@ -258,10 +258,16 @@ export function ParallelTaskTimeline({
 
   const rootNodes = nodesByParent.get(null) ?? [];
 
-  // Transform data for kanban view
+  // Transform data for kanban view - called unconditionally
   const kanbanGraph = useMemo(() => {
+    if (!tree) return null;
     return transformToAgentSessionState(tree, nodes as TaskNode[]);
   }, [tree, nodes]);
+
+  // Early return AFTER all hooks are called
+  if (!data || !tree) {
+    return null;
+  }
 
   return (
     <div className={`bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg overflow-hidden ${className}`}>

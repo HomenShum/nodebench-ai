@@ -108,7 +108,7 @@ export const getUserCalendarArtifacts = internalQuery({
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db
+    const query = ctx.db
       .query("calendarArtifacts")
       .withIndex("by_user", q => q.eq("userId", args.userId));
 

@@ -17,7 +17,7 @@ async function getSafeUserId(ctx: any): Promise<string | null> {
   if (typeof rawUserId === 'string' && rawUserId.includes('|')) {
     return rawUserId.split('|')[0] || null;
   }
-  return rawUserId as string;
+  return rawUserId;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

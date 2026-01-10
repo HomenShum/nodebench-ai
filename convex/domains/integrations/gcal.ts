@@ -91,7 +91,7 @@ export const syncPrimaryCalendar = internalAction({
               .collect()
           : [];
 
-        const existing = candidates.find((e: any) => (e.meta as any)?.hash === hash || e.sourceId === item.id);
+        const existing = candidates.find((e: any) => (e.meta)?.hash === hash || e.sourceId === item.id);
 
         const baseEvent = {
           userId,
@@ -101,7 +101,7 @@ export const syncPrimaryCalendar = internalAction({
           endTime,
           allDay,
           location: item.location,
-          status: (item.status as any) || "confirmed",
+          status: (item.status) || "confirmed",
           sourceType: "gcal" as const,
           sourceId: item.id as string,
           ingestionConfidence: "high" as const,

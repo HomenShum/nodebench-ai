@@ -77,7 +77,7 @@ export function announceToScreenReader(
   // Clear and set message (needs to be done in sequence for screen readers)
   liveRegion.textContent = '';
   requestAnimationFrame(() => {
-    liveRegion!.textContent = message;
+    liveRegion.textContent = message;
   });
 }
 

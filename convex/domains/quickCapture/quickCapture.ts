@@ -79,7 +79,7 @@ export const getRecentCaptures = query({
     if (args.type) {
       captures = await ctx.db
         .query("quickCaptures")
-        .withIndex("by_user_type", (q) => q.eq("userId", userId).eq("type", args.type!))
+        .withIndex("by_user_type", (q) => q.eq("userId", userId).eq("type", args.type))
         .order("desc")
         .take(limit);
     } else {

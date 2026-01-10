@@ -424,7 +424,7 @@ export const getMcpTools = query({
       if (!server || server.userId !== userId) {
         return [];
       }
-      toolsQuery = ctx.db.query("mcpTools").withIndex("by_server", (q) => q.eq("serverId", args.serverId!));
+      toolsQuery = ctx.db.query("mcpTools").withIndex("by_server", (q) => q.eq("serverId", args.serverId));
     } else {
       // Get all tools for user's servers
       const userServers = await ctx.db

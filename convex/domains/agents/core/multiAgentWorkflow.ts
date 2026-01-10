@@ -204,7 +204,7 @@ export const updateWorkflowProgress = internalMutation({
     handler: async (ctx, args) => {
         // Get existing progress to merge metrics
         const thread = await ctx.db.get(args.threadId);
-        const existingProgress = (thread?.workflowProgress as any) || {};
+        const existingProgress = (thread?.workflowProgress) || {};
         const existingMetrics = existingProgress.metrics || {
             sourcesExplored: 0,
             toolsUsed: [],
@@ -246,7 +246,7 @@ export const incrementWorkflowMetrics = internalMutation({
         const thread = await ctx.db.get(args.threadId);
         if (!thread) return;
 
-        const existingProgress = (thread.workflowProgress as any) || {};
+        const existingProgress = (thread.workflowProgress) || {};
         const existingMetrics = existingProgress.metrics || {
             sourcesExplored: 0,
             toolsUsed: [],

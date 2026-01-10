@@ -192,7 +192,7 @@ export const run = action({
           const missing = required.filter((name) => !toolNames.includes(name));
           return { toolCount: toolNames.length, missing, toolNames: toolNames.slice(0, 50) };
         });
-        const ok = (value.missing as string[]).length === 0;
+        const ok = (value.missing).length === 0;
         return { ok: ok || !requireMcp, elapsedMs, details: value, ...(ok ? {} : { error: "Missing required tools" }) };
       } catch (err) {
         return requireMcp
@@ -226,11 +226,11 @@ export const run = action({
             ],
           };
           const planRes = await executeToolWithSdk(coreAgentUrl, "createPlan", toolArgs, coreAgentToken || undefined);
-          const planId = (planRes as any)?.planId;
+          const planId = (planRes)?.planId;
           if (!planId) throw new Error("createPlan did not return planId");
 
           const getRes = await executeToolWithSdk(coreAgentUrl, "getPlan", { planId }, coreAgentToken || undefined);
-          const gotPlan = (getRes as any)?.plan;
+          const gotPlan = (getRes)?.plan;
           if (!gotPlan?.id) throw new Error("getPlan did not return a plan");
 
           const memKey = `mcp1:e2e:${Date.now()}`;
@@ -246,7 +246,7 @@ export const run = action({
             { key: memKey },
             coreAgentToken || undefined,
           );
-          const content = (readRes as any)?.content;
+          const content = (readRes)?.content;
           if (typeof content !== "string" || !content.includes(planId)) {
             throw new Error("readAgentMemory did not return expected content");
           }
@@ -321,7 +321,7 @@ export const run = action({
           const calls: any = {};
 
           const unwrap = (res: any) =>
-            res && typeof res === "object" && "data" in res ? (res as any).data : res;
+            res && typeof res === "object" && "data" in res ? (res).data : res;
 
           const quoteResp = await ctx.runAction(internal.actions.openbbActions.openbbExecuteTool, {
             toolName: "equity_price_quote",

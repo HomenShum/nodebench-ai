@@ -22,18 +22,17 @@ export const validateToolsHaveEmbeddings = internalQuery({
     const withoutEmbeddings = allTools
       .filter((t) => !t.embedding || t.embedding.length !== 1536)
       .map((t) => t.toolName);
+    // Build category counts
+    const categoryMap = new Map<string, number>();
+    for (const t of allTools) {
+      categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + 1);
+    }
+
     return {
       total: allTools.length,
       withEmbeddings: withEmbeddings.length,
       withoutEmbeddings,
-      categories: Object.fromEntries(
-        Array.from(
-          allTools.reduce((acc, t) => {
-            acc.set(t.category, (acc.get(t.category) || 0) + 1);
-            return acc;
-          }, new Map<string, number>())
-        ) as [string, number][]
-      ),
+      categories: Object.fromEntries(categoryMap),
     };
   },
 });

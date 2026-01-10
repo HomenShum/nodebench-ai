@@ -123,7 +123,7 @@ export const analyzeContradictions = action({
   },
   handler: async (ctx, args): Promise<string> => {
     console.log(`[ArbitrageAgent.analyzeContradictions] ${args.facts.length} facts`);
-    const result = await executeContradictionDetection(ctx, args as any);
+    const result = await executeContradictionDetection(ctx, args);
     return JSON.stringify(result, null, 2);
   },
 });
@@ -142,7 +142,7 @@ export const rankSources = action({
   },
   handler: async (ctx, args): Promise<string> => {
     console.log(`[ArbitrageAgent.rankSources] ${args.sources.length} sources`);
-    const result = await executeSourceQualityRanking(ctx, args as any);
+    const result = await executeSourceQualityRanking(ctx, args);
     return JSON.stringify(result, null, 2);
   },
 });

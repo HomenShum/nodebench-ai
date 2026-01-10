@@ -269,7 +269,7 @@ http.route({
       return new Response("Missing runId", { status: 400 });
     }
 
-    const runId = runIdParam as Id<"agentRuns">;
+    const runId = runIdParam;
     // Legacy function - aiAgents module doesn't exist
     // For now, just return a stub response since we can't access db from action context
     // const run = await ctx.runQuery(api.aiAgents.getAgentRun, { runId });
@@ -963,7 +963,7 @@ http.route({
       }
 
       const prompt = lastUserMessage.content;
-      const threadModel = (streamingThread as any)?.model as string | undefined;
+      const threadModel = (streamingThread)?.model as string | undefined;
       const modelName = normalizeModelInput(model || threadModel || DEFAULT_MODEL);
       const agentThreadId = streamingThread.agentThreadId;
       console.log(`[chat-stream-agent] Prompt: "${prompt.substring(0, 50)}..." for thread ${agentThreadId} with model ${modelName}`);

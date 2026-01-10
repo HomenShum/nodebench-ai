@@ -361,7 +361,7 @@ Generates a unique messageId that all subsequent tools must match.`,
     const messageId = newMessageId();
 
     // Try to load an existing scratchpad if persistence is enabled
-    let persisted = await loadPersistedScratchpad(ctx, args.agentThreadId, args.userId);
+    const persisted = await loadPersistedScratchpad(ctx, args.agentThreadId, args.userId);
     let scratchpad: Scratchpad;
 
     if (persisted) {

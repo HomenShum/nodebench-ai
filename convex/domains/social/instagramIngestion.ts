@@ -105,7 +105,7 @@ export const listPosts = query({
         const userId = await getAuthUserId(ctx);
         if (!userId) return [];
 
-        let query = ctx.db
+        const query = ctx.db
             .query("instagramPosts")
             .withIndex("by_user", (q) => q.eq("userId", userId));
 

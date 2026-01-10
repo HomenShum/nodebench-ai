@@ -23,7 +23,13 @@ import { CalendarHomeHub } from '@/features/calendar/components/CalendarHomeHub'
 
 describe('CalendarHomeHub pills + hash sync', () => {
   afterEach(() => cleanup());
-  beforeEach(() => { try { window.location.hash = ''; } catch {} });
+  beforeEach(() => {
+    try {
+      window.location.hash = '';
+    } catch {
+      // Hash reset failed
+    }
+  });
 
   it('defaults to Calendar active (hash #calendar)', () => {
     render(<CalendarHomeHub onDocumentSelect={() => {}} />);

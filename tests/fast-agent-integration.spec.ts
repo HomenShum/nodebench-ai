@@ -258,7 +258,7 @@ test.describe('Fast Agent Panel - Document & Spreadsheet Integration', () => {
         'searchFiles'
       ];
 
-      let toolsDetected: string[] = [];
+      const toolsDetected: string[] = [];
 
       page.on('request', request => {
         const url = request.url();
@@ -358,7 +358,7 @@ test.describe('Fast Agent Panel - Document & Spreadsheet Integration', () => {
         'getSpreadsheetSummary'
       ];
 
-      let toolsDetected: string[] = [];
+      const toolsDetected: string[] = [];
 
       page.on('request', request => {
         const url = request.url();

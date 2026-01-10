@@ -10,14 +10,14 @@ declare module "convex/server" {
     filter(_cb: (q: any) => any): QueryStub;
     order(_direction: any): QueryStub;
     take(_n: number): Promise<any[]>;
-    first(): Promise<any | null>;
-    unique(): Promise<any | null>;
+    first(): Promise<unknown>;
+    unique(): Promise<unknown>;
     collect(): Promise<any[]>;
     paginate(_paginationOpts: any): Promise<any>;
   }
 
   export interface GenericDatabaseReader<_DataModel = any> {
-    get(_id: any): Promise<any | null>;
+    get(_id: any): Promise<unknown>;
     query(_tableName: string): QueryStub;
   }
 

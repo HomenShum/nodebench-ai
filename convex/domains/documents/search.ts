@@ -51,7 +51,7 @@ export const instantSearch = query({
           : "Cached research dossier",
         matchType: "recent" as const,
         _creationTime: doc._creationTime,
-        updatedAt: (doc as any).lastModified || doc._creationTime,
+        updatedAt: (doc).lastModified || doc._creationTime,
       }));
     }
 
@@ -82,7 +82,7 @@ export const instantSearch = query({
           : "Document",
       matchType: "search" as const,
       _creationTime: doc._creationTime,
-      updatedAt: (doc as any).lastModified || doc._creationTime,
+      updatedAt: (doc).lastModified || doc._creationTime,
     }));
   },
 });
@@ -119,7 +119,7 @@ export const getRecentDossiers = query({
       title: doc.title || "Untitled Dossier",
       summary: doc.summary,
       _creationTime: doc._creationTime,
-      updatedAt: (doc as any).lastModified || doc._creationTime,
+      updatedAt: (doc).lastModified || doc._creationTime,
     }));
   },
 });

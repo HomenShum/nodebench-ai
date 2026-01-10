@@ -2,7 +2,7 @@
  * Storybook stories for DocumentCard component
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DocumentCard } from "./DocumentCard";
 import type { DocumentCardData } from "../utils/documentHelpers";
 

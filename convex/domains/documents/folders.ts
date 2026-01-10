@@ -10,8 +10,8 @@ import { getAuthUserId } from "@convex-dev/auth/server";
  */
 async function getSafeUserId(ctx: any): Promise<Id<"users">> {
   // Support evaluation mode where userId is passed in ctx.evaluationUserId
-  if ((ctx as any).evaluationUserId) {
-    return (ctx as any).evaluationUserId as Id<"users">;
+  if ((ctx).evaluationUserId) {
+    return (ctx).evaluationUserId as Id<"users">;
   }
 
   const rawUserId = await getAuthUserId(ctx);
@@ -30,9 +30,9 @@ async function getSafeUserId(ctx: any): Promise<Id<"users">> {
       throw new Error("Invalid user ID format. Please sign out and sign back in.");
     }
     
-    userId = userIdPart as Id<"users">;
+    userId = userIdPart;
   } else {
-    userId = rawUserId as Id<"users">;
+    userId = rawUserId;
   }
 
   // Verify the user exists in the database
@@ -65,7 +65,7 @@ function getSafeUserIdFromIdentity(identity: any): Id<"users"> {
       throw new Error("Invalid user ID format. Please sign out and sign back in.");
     }
     
-    return userIdPart as Id<"users">;
+    return userIdPart;
   }
   
   return rawSubject as Id<"users">;
@@ -145,7 +145,7 @@ export const updateFolder = mutation({
       const existingFolder = await ctx.db
         .query("folders")
         .withIndex("by_user_name", (q) => 
-          q.eq("userId", userId).eq("name", args.name!)
+          q.eq("userId", userId).eq("name", args.name)
         )
         .first();
 
@@ -347,7 +347,7 @@ export const getUserFolders = query({
 
     const folders = await ctx.db
       .query("folders")
-      .withIndex("by_user", (q) => q.eq("userId", userId!))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("asc")
       .collect();
 

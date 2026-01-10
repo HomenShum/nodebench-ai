@@ -16,7 +16,7 @@ export interface ToolCall {
   args?: any;
   result?: any;
   error?: string;
-  status?: 'pending' | 'running' | 'complete' | 'error' | string;
+  status?: string;
   elapsedMs?: number;
   timestamp?: Date;
 }
@@ -29,7 +29,7 @@ export interface Source {
   score?: number;
   datetime?: string;
   publishedDate?: string;
-  type?: 'document' | 'web' | 'image' | 'video' | 'context' | string;
+  type?: string;
   thumbnail?: string;
   mediaUrl?: string;
 }

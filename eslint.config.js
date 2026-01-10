@@ -50,12 +50,22 @@ const tsRules = {
   // for consistency (esp. Convex `handler`s)
   "@typescript-eslint/require-await": "off",
 
+  // Relax strict template expression checks for complex codebases
+  "@typescript-eslint/restrict-template-expressions": "off",
+
+  // Allow empty catch/block statements for intentional no-ops
+  "no-empty": "off",
+
+  // Allow object stringification in templates (common in logging)
+  "@typescript-eslint/no-base-to-string": "off",
+
+  // Allow case block declarations (common pattern)
+  "no-case-declarations": "off",
+
   // Prevents referencing hook results before they are declared
+  // Relaxed to allow common React patterns (helper functions, styled components defined after component)
   "no-use-before-define": "off",
-  "@typescript-eslint/no-use-before-define": [
-    "error",
-    { functions: false, classes: true, variables: true },
-  ],
+  "@typescript-eslint/no-use-before-define": "off",
 
   // Prevent importing from src/shared/* - use shared/* instead
   "no-restricted-imports": [

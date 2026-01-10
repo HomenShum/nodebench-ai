@@ -133,7 +133,7 @@ export const getMentionsByQuery = internalQuery({
     sinceMs: v.optional(v.number()),
   },
   handler: async (ctx, { queryKey, limit = 100, sinceMs }) => {
-    let query = ctx.db
+    const query = ctx.db
       .query("globalArtifactMentions")
       .withIndex("by_queryKey_seenAt", (q) => {
         const base = q.eq("queryKey", queryKey);
@@ -179,7 +179,7 @@ export const getMentionsByEntity = internalQuery({
       return [];
     }
 
-    let query = ctx.db
+    const query = ctx.db
       .query("globalArtifactMentions")
       .withIndex("by_entityKey_seenAt", (q) => {
         const base = q.eq("entityKey", entityKey);

@@ -69,7 +69,7 @@ export const searchMedia = createTool({
           size: `${fileSizeMB} MB`,
           url: fileDoc.storageUrl || 'URL not available',
           analysis: fileDoc.file.analysis ? fileDoc.file.analysis.substring(0, 200) : 'No analysis',
-          lastModified: new Date((doc as any).lastModified || doc._creationTime).toLocaleDateString(),
+          lastModified: new Date((doc).lastModified || doc._creationTime).toLocaleDateString(),
         });
       }
     }
@@ -154,10 +154,10 @@ File Details:
         analysisType: args.analysisType,
       });
       
-      if ((result as any)?.success) {
+      if ((result)?.success) {
         return `Analysis Complete for "${fileDoc.document.title}":
 
-${(result as any).analysis}
+${(result).analysis}
 
 File Details:
 - Type: ${fileDoc.document.fileType || 'unknown'}
@@ -279,7 +279,7 @@ export const listMediaFiles = createTool({
     
     const formattedList = limitedFiles.map((doc: any, idx: number) => {
       const mediaType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes((doc.fileType || '').toLowerCase()) ? '🖼️' : '🎥';
-      const date = new Date((doc as any).lastModified || doc._creationTime).toLocaleDateString();
+      const date = new Date((doc).lastModified || doc._creationTime).toLocaleDateString();
       
       return `${idx + 1}. ${mediaType} "${doc.title}"
    ID: ${doc._id}

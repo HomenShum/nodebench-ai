@@ -172,12 +172,12 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     if (!msg) return;
 
     // Prevent duplicate sends (global guard across mounts) + waiting state
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     if (creating || sending || waitingForAgent || (window as any).__miniNoteSendLock) {
       console.log('[MiniNoteAgentChat] Already sending or locked, ignoring duplicate send');
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (window as any).__miniNoteSendLock = true;
 
     // Check anonymous user rate limit
@@ -188,7 +188,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
           <div className="text-xs">Sign in for unlimited access!</div>
         </div>
       );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (window as any).__miniNoteSendLock = false;
       return;
     }
@@ -297,7 +297,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
       const errorMsg = e instanceof Error ? e.message : 'Failed to send message';
       toast.error(errorMsg);
     } finally {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       setTimeout(() => { (window as any).__miniNoteSendLock = false; }, 1200);
     }
   };

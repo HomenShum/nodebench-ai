@@ -154,7 +154,7 @@ export const getTaskEvents = query({
     taskId: v.optional(v.string()),
   },
   handler: async (ctx, { treeId, afterSeq, taskId }) => {
-    let query = ctx.db
+    const query = ctx.db
       .query("parallelTaskEvents")
       .withIndex("by_tree", (q) => q.eq("treeId", treeId));
 
@@ -702,7 +702,7 @@ export const internalLogEvent = internalMutation({
       treeId,
       taskId,
       seq,
-      eventType: eventType as any,
+      eventType: eventType,
       message,
       data,
       createdAt: now,

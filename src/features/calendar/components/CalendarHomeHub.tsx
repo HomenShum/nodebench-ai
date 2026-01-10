@@ -49,23 +49,37 @@ export function CalendarHomeHub({
       const w = Math.ceil(el.getBoundingClientRect().width);
       try {
         document.documentElement.style.setProperty('--left-overlay-padding', isOverlay && w > 0 ? `${w}px` : '0px');
-      } catch { }
+      } catch {
+        // Style property setting failed
+      }
     };
     update();
     let ro: ResizeObserver | null = null;
     try {
       if (typeof ResizeObserver !== 'undefined' && el) {
-        // @ts-ignore
+        // @ts-expect-error ResizeObserver may not be available in all environments
         ro = new ResizeObserver(() => update());
-        // @ts-ignore
+        // @ts-expect-error ResizeObserver may not be available in all environments
         ro.observe(el);
       }
-    } catch { }
+    } catch {
+      // ResizeObserver not available
+    }
     window.addEventListener('resize', update);
     return () => {
-      try { document.documentElement.style.setProperty('--left-overlay-padding', '0px'); } catch { }
+      try {
+        document.documentElement.style.setProperty('--left-overlay-padding', '0px');
+      } catch {
+        // Cleanup style setting failed
+      }
       window.removeEventListener('resize', update);
-      if (ro) try { ro.disconnect(); } catch { }
+      if (ro) {
+        try {
+          ro.disconnect();
+        } catch {
+          // ResizeObserver disconnect failed
+        }
+      }
     };
   }, [sidebarOpen]);
 

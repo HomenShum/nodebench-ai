@@ -287,6 +287,7 @@ async function getAndScrubArtifactRow(
   runId: string,
   artifactId: string,
   counters: WriteCounters
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 ): Promise<Doc<"artifacts"> | null> {
   const matches = await ctx.db
     .query("artifacts")
@@ -1468,7 +1469,7 @@ export const stressArtifactsReliability = internalAction({
     // Count how many scheduled retries
     let scheduledCount = 0;
     for (const r of results) {
-      if (r.status === "fulfilled" && (r.value as any)?.scheduled) {
+      if (r.status === "fulfilled" && (r.value)?.scheduled) {
         scheduledCount++;
       }
     }

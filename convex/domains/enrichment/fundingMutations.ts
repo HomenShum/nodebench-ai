@@ -195,7 +195,7 @@ export const getRecentFundingEvents = query({
     const cutoff = Date.now() - lookbackMs;
     const minConfidence = args.minConfidence ?? 0;
 
-    let query = ctx.db
+    const query = ctx.db
       .query("fundingEvents")
       .withIndex("by_announcedAt")
       .order("desc")
@@ -206,7 +206,7 @@ export const getRecentFundingEvents = query({
     // Filter by round type and confidence
     return events.filter((e) => {
       if (e.confidence < minConfidence) return false;
-      if (args.roundTypes && !args.roundTypes.includes(e.roundType as any)) return false;
+      if (args.roundTypes && !args.roundTypes.includes(e.roundType)) return false;
       return true;
     });
   },

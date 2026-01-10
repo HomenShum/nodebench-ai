@@ -73,9 +73,9 @@ function getServerJudgeModel(): ApprovedModel {
   if (envModel) {
     const normalized = normalizeModelInput(envModel);
     // Verify it's actually an approved model
-    if (APPROVED_MODELS.includes(normalized as ApprovedModel)) {
+    if (APPROVED_MODELS.includes(normalized)) {
       console.log(`[benchmark] Using env SEARCH_JUDGE_MODEL: ${normalized}`);
-      return normalized as ApprovedModel;
+      return normalized;
     }
     console.warn(`[benchmark] Invalid SEARCH_JUDGE_MODEL: ${envModel}, falling back to default`);
   }

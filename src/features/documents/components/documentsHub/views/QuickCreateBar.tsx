@@ -104,7 +104,7 @@ export function QuickCreateBar({
         }
 
         const startTime = new Date(newEventStart).getTime();
-        let endTime = newEventEnd
+        const endTime = newEventEnd
             ? new Date(newEventEnd).getTime()
             : startTime + 60 * 60 * 1000; // Default 1 hour
 

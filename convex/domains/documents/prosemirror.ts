@@ -250,7 +250,7 @@ export const {
   submitSteps,
 } = prosemirrorSync.syncApi<DataModel>({
   async checkRead(ctx, id) {
-    const document = await ctx.db.get(id as Id<"documents">);
+    const document = await ctx.db.get(id);
     if (!document) {
       throw new Error("Document not found");
     }
@@ -265,13 +265,13 @@ export const {
     }
   },
   async checkWrite(ctx, id) {
-    const document = await ctx.db.get(id as Id<"documents">);
+    const document = await ctx.db.get(id);
     if (!document) {
       throw new Error("Document not found");
     }
 
     // If author enabled public editing, allow writes for anyone
-    if (document.isPublic && (document as any).allowPublicEdit === true) return;
+    if (document.isPublic && (document).allowPublicEdit === true) return;
 
     // Otherwise only allow writes to the document creator
     const userId = await getAuthUserId(ctx);
@@ -282,12 +282,12 @@ export const {
     const sanitized = sanitizeProseMirrorSnapshot(snapshot);
 
     // Avoid overwriting dossier content with ProseMirror snapshots (dossiers have special handling)
-    const document = await ctx.db.get(id as Id<"documents">);
+    const document = await ctx.db.get(id);
     if (!document) {
       return;
     }
 
-    if (document.documentType === "dossier" || (document as any).dossierType === "primary") {
+    if (document.documentType === "dossier" || (document).dossierType === "primary") {
       return;
     }
 
@@ -321,7 +321,7 @@ export const createDocumentWithInitialSnapshot = mutation({
     const content = args.initialContent;
 
     // Branch 1: Provided a full ProseMirror JSON document
-    if (content && typeof content === "object" && !Array.isArray(content) && 'type' in (content as object) && (content as any).type === "doc") {
+    if (content && typeof content === "object" && !Array.isArray(content) && 'type' in (content as object) && (content).type === "doc") {
       contentObject = content as object;
       contentString = JSON.stringify(contentObject);
       docId = await ctx.db.insert("documents", {
@@ -342,7 +342,7 @@ export const createDocumentWithInitialSnapshot = mutation({
       });
       docId = createdId as Id<"documents">;
 
-      const blocksInput: any[] = Array.isArray(content) ? content as any[] : [];
+      const blocksInput: any[] = Array.isArray(content) ? content : [];
 
       // Minimal, robust converter from our simple block array to PM JSON compatible with BlockNote sync
       type PMNode = { type: string; attrs?: Record<string, any>; content?: PMNode[] } & Record<string, any>;
@@ -420,7 +420,7 @@ export const createDocumentWithInitialSnapshot = mutation({
         if (!doc || typeof doc !== "object" || doc.type !== "doc") {
           return { type: "doc", content: [] };
         }
-        const arr = Array.isArray((doc as any).content) ? (doc as any).content : [];
+        const arr = Array.isArray((doc).content) ? (doc).content : [];
         const toParagraph = (text: string) => ({
           type: "paragraph",
           attrs: { textAlignment: "left" },
@@ -428,10 +428,10 @@ export const createDocumentWithInitialSnapshot = mutation({
         });
         const normalized: any[] = [];
         for (const n of arr) {
-          if (n && typeof n === "object" && typeof (n as any).type === "string" && (n as any).type !== "text") {
+          if (n && typeof n === "object" && typeof (n).type === "string" && (n).type !== "text") {
             normalized.push(n);
-          } else if (typeof n === "string" || (n && typeof n === "object" && (n as any).type === "text")) {
-            const t = typeof n === "string" ? n : String((n as any).text ?? "");
+          } else if (typeof n === "string" || (n && typeof n === "object" && (n).type === "text")) {
+            const t = typeof n === "string" ? n : String((n).text ?? "");
             normalized.push(toParagraph(t));
           } else {
             normalized.push(toParagraph(""));

@@ -77,11 +77,12 @@ export const searchCompanies = internalAction({
       const data = await response.json();
       
       // Convert to array and search for matches
-      const companies = Object.values(data) as Array<{
-        cik_str: number;
-        ticker: string;
+      interface SecCompany {
         title: string;
-      }>;
+        ticker: string;
+        cik_str: string | number;
+      }
+      const companies = Object.values(data);
 
       const searchTerm = args.companyName.toLowerCase();
       const matches: Array<{ cik: string; name: string; ticker?: string }> = [];

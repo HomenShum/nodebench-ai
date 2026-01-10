@@ -13,13 +13,13 @@ import { api } from "../_generated/api";
 // Simple phone number format validation (E.164 format preferred)
 function isValidPhoneNumber(phone: string): boolean {
   // Accept E.164 format (+1XXXXXXXXXX) or 10-digit US numbers
-  const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  const cleaned = phone.replace(/[\s\-()]/g, '');
   return /^\+?1?\d{10,14}$/.test(cleaned);
 }
 
 function formatPhoneNumber(phone: string): string {
   // Convert to E.164 format for Twilio
-  const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  const cleaned = phone.replace(/[\s\-()]/g, '');
   if (cleaned.startsWith('+')) return cleaned;
   if (cleaned.length === 10) return `+1${cleaned}`;
   if (cleaned.length === 11 && cleaned.startsWith('1')) return `+${cleaned}`;

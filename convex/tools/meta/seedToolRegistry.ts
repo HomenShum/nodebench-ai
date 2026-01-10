@@ -41,7 +41,7 @@ export const seedAllTools = internalAction({
             { toolName, description: summary.description, keywords: summary.keywords }
           );
         }
-        const categoryInfo = toolCategories[summary.category as ToolCategory];
+        const categoryInfo = toolCategories[summary.category];
         const result = await ctx.runMutation(
           internal.tools.meta.seedToolRegistryQueries.upsertTool,
           {

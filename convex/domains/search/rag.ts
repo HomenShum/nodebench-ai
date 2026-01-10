@@ -100,16 +100,16 @@ export const addDocumentToRag = internalAction({
     // Attempt to extract plain text from TipTap JSON; fallback to raw content
     let plain = "";
     try {
-      const contentStr = String((doc as any).content ?? "");
+      const contentStr = String((doc).content ?? "");
       const maybeJson = JSON.parse(contentStr);
       // Lazy import to avoid cyclic deps during build
       const { extractTextFromTipTap } = await import("../../lib/markdownToTipTap");
-      plain = extractTextFromTipTap(maybeJson as any) || contentStr;
+      plain = extractTextFromTipTap(maybeJson) || contentStr;
     } catch {
-      plain = String((doc as any).content ?? "");
+      plain = String((doc).content ?? "");
     }
 
-    const text = `${(doc as any).title}\n\n${plain}`;
+    const text = `${(doc).title}\n\n${plain}`;
     await rag.add(ctx, {
       namespace: "global",
       key: documentId, // unique key

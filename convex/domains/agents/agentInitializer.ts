@@ -34,7 +34,7 @@ async function generatePlanForThread(ctx: any, prompt: string, model?: string): 
 
   try {
     const res = await planner.generateText(
-      ctx as any,
+      ctx,
       {},
       { prompt }
     );

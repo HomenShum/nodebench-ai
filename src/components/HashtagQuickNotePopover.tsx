@@ -175,7 +175,7 @@ function HashtagContent({
   }
 
   // Parse TipTap content to extract context
-  let contextItems: Array<{ title: string; snippet?: string; matchType: string; documentId?: string }> = [];
+  const contextItems: Array<{ title: string; snippet?: string; matchType: string; documentId?: string }> = [];
   try {
     const content = JSON.parse(document.content || "{}");
     if (content.content && Array.isArray(content.content)) {

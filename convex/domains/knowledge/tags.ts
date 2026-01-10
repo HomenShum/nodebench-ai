@@ -332,7 +332,7 @@ export const updateTagKind = mutation({
     if (!tag) throw new Error("Tag not found");
 
     const canonical = canonicalizeKind(kind, tag.name) || kind;
-    await ctx.db.patch(tagId, { kind: canonical as any });
+    await ctx.db.patch(tagId, { kind: canonical });
 
     // Return updated tag list for this document
     const updated = await ctx.db

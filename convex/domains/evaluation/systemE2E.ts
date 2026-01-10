@@ -17,7 +17,7 @@ function utcDayString(ms = Date.now()): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function extractJsonObject(text: string): any | null {
+function extractJsonObject(text: string): unknown {
   const raw = (text ?? "").trim();
   if (!raw) return null;
 
@@ -69,7 +69,7 @@ export const validateDailyBriefing = action({
 
     let workflowOk = true;
     let workflowError: string | null = null;
-    let workflowResult: any | null = null;
+    let workflowResult: unknown = null;
 
     if (args.runWorkflow !== false) {
       try {
@@ -124,7 +124,7 @@ export const validateFastAgentLocalContext = action({
       utcOffsetMinutes: 480,
       location: "San Francisco, CA, US",
     };
-    const latestSnapshot: any | null = await (async () => {
+    const latestSnapshot: unknown = await (async () => {
       try {
         return await ctx.runQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot, {});
       } catch {
@@ -144,15 +144,15 @@ export const validateFastAgentLocalContext = action({
       "",
       "JSON schema:",
       "{",
-      '  \"nowIso\": string,',
-      '  \"timezone\": string,',
-      '  \"utcDay\": string,',
-      '  \"latestSnapshotDate\": string | null,',
-      '  \"trendingTopics\": string[],',
-      '  \"recentDiscoveries\": string[],',
-      '  \"clientLocale\": string | null,',
-      '  \"clientUtcOffsetMinutes\": number | null,',
-      '  \"location\": string | null',
+      '  "nowIso": string,',
+      '  "timezone": string,',
+      '  "utcDay": string,',
+      '  "latestSnapshotDate": string | null,',
+      '  "trendingTopics": string[],',
+      '  "recentDiscoveries": string[],',
+      '  "clientLocale": string | null,',
+      '  "clientUtcOffsetMinutes": number | null,',
+      '  "location": string | null',
       "}",
       "",
       "Rules:",

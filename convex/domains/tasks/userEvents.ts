@@ -7,8 +7,8 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 // Supports evaluation mode where userId is passed in ctx.evaluationUserId
 async function getSafeUserId(ctx: any): Promise<Id<"users">> {
   // Check for evaluation userId first (for testing)
-  if ((ctx as any).evaluationUserId) {
-    return (ctx as any).evaluationUserId as Id<"users">;
+  if ((ctx).evaluationUserId) {
+    return (ctx).evaluationUserId as Id<"users">;
   }
 
   const rawUserId = await getAuthUserId(ctx);
@@ -17,9 +17,9 @@ async function getSafeUserId(ctx: any): Promise<Id<"users">> {
   if (typeof rawUserId === "string" && rawUserId.includes("|")) {
     const first = rawUserId.split("|")[0];
     if (!first || first.length < 10) throw new Error("Invalid user ID format. Please sign out and in.");
-    userId = first as Id<"users">;
+    userId = first;
   } else {
-    userId = rawUserId as Id<"users">;
+    userId = rawUserId;
   }
   const user = await ctx.db.get(userId);
   if (!user) throw new Error("User not found. Please sign out and sign back in.");
@@ -30,8 +30,8 @@ async function getSafeUserId(ctx: any): Promise<Id<"users">> {
 // Supports evaluation mode where userId is passed in ctx.evaluationUserId
 async function getOptionalUserId(ctx: any): Promise<Id<"users"> | null> {
   // Check for evaluation userId first (for testing)
-  if ((ctx as any).evaluationUserId) {
-    return (ctx as any).evaluationUserId as Id<"users">;
+  if ((ctx).evaluationUserId) {
+    return (ctx).evaluationUserId as Id<"users">;
   }
 
   const rawUserId = await getAuthUserId(ctx);
@@ -40,9 +40,9 @@ async function getOptionalUserId(ctx: any): Promise<Id<"users"> | null> {
   if (typeof rawUserId === "string" && rawUserId.includes("|")) {
     const first = rawUserId.split("|")[0];
     if (!first || first.length < 10) return null;
-    userId = first as Id<"users">;
+    userId = first;
   } else {
-    userId = rawUserId as Id<"users">;
+    userId = rawUserId;
   }
   const user = userId ? await ctx.db.get(userId) : null;
   if (!user) return null;

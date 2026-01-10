@@ -32,7 +32,13 @@ function Wrapper() {
 
 describe('DocumentsHomeHub header pills', () => {
   afterEach(() => cleanup());
-  beforeEach(() => { try { window.location.hash = ''; } catch {} });
+  beforeEach(() => {
+    try {
+      window.location.hash = '';
+    } catch {
+      // Hash reset failed
+    }
+  });
 
   it('renders the unified pill group with Documents active', () => {
     render(<Wrapper />);

@@ -20,9 +20,9 @@ async function getSafeUserId(ctx: any): Promise<Id<"users"> | null> {
     if (!userIdPart || userIdPart.length < 10) {
       return null; // Invalid format, needs re-authentication
     }
-    userId = userIdPart as Id<"users">;
+    userId = userIdPart;
   } else {
-    userId = rawUserId as Id<"users">;
+    userId = rawUserId;
   }
 
   // Verify the user exists in the database

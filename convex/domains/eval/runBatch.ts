@@ -473,7 +473,7 @@ export const sendEvalReport = action({
     // Fetch run and results from database
     // First, get the run ID from the string runId
     const runDoc = await ctx.runQuery(internal.domains.eval.evalStorage.getEvalRun, {
-      runId: args.runId as any, // Cast to Id<"evalRuns">
+      runId: args.runId, // Cast to Id<"evalRuns">
     });
 
     if (!runDoc) {

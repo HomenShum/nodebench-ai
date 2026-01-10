@@ -43,7 +43,7 @@ function clipToByteLimit(text: string, byteLimit: number): { text: string; bytes
     return { text, bytes: originalBytes, truncated: false };
   }
 
-  let ratio = byteLimit / Math.max(originalBytes, 1);
+  const ratio = byteLimit / Math.max(originalBytes, 1);
   let end = Math.max(200, Math.floor(text.length * ratio));
   let clipped = text.slice(0, end);
   let clippedBytes = Buffer.byteLength(clipped, "utf8");

@@ -535,7 +535,7 @@ Use when:
 
     try {
       await ctx.runMutation(api.domains.calendar.events.confirmProposed, {
-        eventId: args.eventId as Id<"events">,
+        eventId: args.eventId,
       });
 
       return `Event confirmed successfully!
@@ -569,7 +569,7 @@ Use when:
 
     try {
       await ctx.runMutation(api.domains.calendar.events.dismissProposed, {
-        eventId: args.eventId as Id<"events">,
+        eventId: args.eventId,
       });
 
       return `Event dismissed successfully!

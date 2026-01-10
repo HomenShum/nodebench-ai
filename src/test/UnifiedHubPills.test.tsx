@@ -8,7 +8,11 @@ describe('UnifiedHubPills', () => {
   afterEach(() => cleanup());
   beforeEach(() => {
     // reset hash between tests
-    try { window.location.hash = ''; } catch {}
+    try {
+      window.location.hash = '';
+    } catch {
+      // Hash reset failed
+    }
   });
 
   it('marks the active pill via aria-selected', () => {

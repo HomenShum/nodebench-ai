@@ -2,7 +2,7 @@
  * Storybook stories for HolidayRow component
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { HolidayRowGlobal } from "./HolidayRow";
 
 const meta: Meta<typeof HolidayRowGlobal> = {

@@ -601,8 +601,8 @@ export const listDocumentsByTag = query({
       try {
         const doc = await ctx.db.get(docIdStr as Id<"documents">);
         if (!doc) continue;
-        if ((doc as any).isArchived) continue;
-        if ((doc as any).createdBy !== userId) continue;
+        if ((doc).isArchived) continue;
+        if ((doc).createdBy !== userId) continue;
         documents.push(doc);
       } catch {
         // Skip invalid IDs
@@ -656,8 +656,8 @@ export const getSidebar = query({
 
     // Sort by lastModified if available, otherwise by _creationTime
     return documents.sort((a, b) => {
-      const aTime = (a as any).lastModified || a._creationTime;
-      const bTime = (b as any).lastModified || b._creationTime;
+      const aTime = (a).lastModified || a._creationTime;
+      const bTime = (b).lastModified || b._creationTime;
       return bTime - aTime; // descending order (newest first)
     });
   },
@@ -764,8 +764,8 @@ export const getSidebarWithPreviews = query({
           ? plainText.substring(0, 150).trim()
           : null,
         // Include analyzedAt from file if available (for file-type documents)
-        analyzedAt: fileAnalyzedAt ?? (doc as any).analyzedAt,
-        fileSize: fileSize ?? (doc as any).fileSize,
+        analyzedAt: fileAnalyzedAt ?? (doc).analyzedAt,
+        fileSize: fileSize ?? (doc).fileSize,
         // Include thumbnail URL for image files
         thumbnailUrl,
         // Include media URL for playable media (images and videos)
@@ -776,8 +776,8 @@ export const getSidebarWithPreviews = query({
     }));
 
     return documentsWithPreviews.sort((a, b) => {
-      const aTime = (a as any).lastModified || a._creationTime;
-      const bTime = (b as any).lastModified || b._creationTime;
+      const aTime = (a).lastModified || a._creationTime;
+      const bTime = (b).lastModified || b._creationTime;
       return bTime - aTime; // descending order (newest first)
     });
   },
@@ -826,8 +826,8 @@ export const getSidebarWithOptions = query({
           break;
         case "updated":
         default:
-          aValue = (a as any).lastModified || a._creationTime;
-          bValue = (b as any).lastModified || b._creationTime;
+          aValue = (a).lastModified || a._creationTime;
+          bValue = (b).lastModified || b._creationTime;
           break;
       }
 
@@ -866,8 +866,8 @@ export const listUserDossiers = query({
       .take(limit);
 
     return documents.sort((a, b) => {
-      const aTime = (a as any).lastModified || a._creationTime;
-      const bTime = (b as any).lastModified || b._creationTime;
+      const aTime = (a).lastModified || a._creationTime;
+      const bTime = (b).lastModified || b._creationTime;
       return bTime - aTime; // newest first
     });
   },
@@ -899,11 +899,13 @@ export const getAncestors = query({
     const userId = await getAuthUserId(ctx);
     const ancestors: Array<{ _id: Id<"documents">; title: string }> = [];
 
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
     let currentDoc: Doc<"documents"> | null = await ctx.db.get(args.documentId);
     if (!currentDoc) return ancestors;
 
     // Walk up the parent chain
     while (currentDoc?.parentId) {
+      // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
       const parent: Doc<"documents"> | null = await ctx.db.get(currentDoc.parentId);
       if (!parent) break;
 
@@ -1136,7 +1138,7 @@ export const getSearch = query({
     return await ctx.db
       .query("documents")
       .withSearchIndex("search_title", (q) =>
-        q.search("title", args.query).eq("createdBy", userId as any).eq("isArchived", false)
+        q.search("title", args.query).eq("createdBy", userId).eq("isArchived", false)
       )
       .take(50);
   },
@@ -1158,8 +1160,8 @@ export const getRecentForMentions = query({
 
     // Sort by lastModified if available, otherwise by creation time (newest first)
     docs.sort((a, b) => {
-      const aTime = (a as any).lastModified || a._creationTime;
-      const bTime = (b as any).lastModified || b._creationTime;
+      const aTime = (a).lastModified || a._creationTime;
+      const bTime = (b).lastModified || b._creationTime;
       return bTime - aTime;
     });
 
@@ -1190,9 +1192,9 @@ export const getPreviewById = query({
     return {
       _id: doc._id,
       title: doc.title,
-      icon: (doc as any).icon,
+      icon: (doc).icon,
       isArchived: doc.isArchived,
-      lastModified: (doc as any).lastModified || doc._creationTime,
+      lastModified: (doc).lastModified || doc._creationTime,
       contentPreview,
     } as any;
   },
@@ -1225,7 +1227,7 @@ export const debugDocuments = query({
       isPublic: doc.isPublic,
       isArchived: doc.isArchived,
       createdBy: doc.createdBy,
-      lastModified: (doc as any).lastModified,
+      lastModified: (doc).lastModified,
       _creationTime: doc._creationTime
     }));
   },
@@ -1292,9 +1294,9 @@ export const getNodeEditInfo = query({
     if (!document) return null;
 
     const nodeEditKey = `node_${args.nodeId}`;
-    const editedBy = (document as any)[`${nodeEditKey}_editedBy`];
-    const editedAt = (document as any)[`${nodeEditKey}_editedAt`];
-    const content = (document as any)[`${nodeEditKey}_content`];
+    const editedBy = (document)[`${nodeEditKey}_editedBy`];
+    const editedAt = (document)[`${nodeEditKey}_editedAt`];
+    const content = (document)[`${nodeEditKey}_content`];
 
     if (!editedBy || !editedAt) return null;
 
@@ -1411,7 +1413,7 @@ export const getOrCreateQuickNotes = mutation({
   },
   handler: async (ctx, args) => {
     // Get raw userId from args or auth
-    const rawUserId = (args as any).userId || await getAuthUserId(ctx);
+    const rawUserId = (args).userId || await getAuthUserId(ctx);
     if (!rawUserId) throw new Error("Not authenticated");
 
     // Normalize userId to handle pipe-separated format from auth providers
@@ -1421,7 +1423,7 @@ export const getOrCreateQuickNotes = mutation({
       if (!userIdPart || userIdPart.length < 10) {
         throw new Error("Invalid user ID format. Please sign out and sign back in.");
       }
-      userId = userIdPart as Id<"users">;
+      userId = userIdPart;
     } else {
       userId = rawUserId as Id<"users">;
     }

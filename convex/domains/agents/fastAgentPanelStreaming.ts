@@ -267,7 +267,7 @@ async function buildLocalContextPreamble(ctx: any, clientContext?: ClientContext
       : null;
   const tz = tzFromClient ?? tzFromServer;
 
-  let snapshot: any | null = null;
+  let snapshot: unknown = null;
   try {
     snapshot = await ctx.runQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot, {});
   } catch {
@@ -494,7 +494,7 @@ export const createChatAgent = (model: string) => new Agent(components.agent, {
         .map((m: any) => ({ role: "assistant", content: m.metadata.lesson as string }));
 
       let memoryContext: any[] = [];
-      let skillContext: any[] = [];
+      const skillContext: any[] = [];
 
       if (userId) {
         const inputPrompt = typeof args.inputPrompt === "string" ? args.inputPrompt : "";
@@ -1012,7 +1012,7 @@ export const listThreads = query({
                 order: "desc",
                 paginationOpts: { cursor: null, numItems: 1 },
               });
-              const latest = agentMessagesResult?.page?.[0] as any;
+              const latest = agentMessagesResult?.page?.[0];
               if (latest?.text) {
                 lastMessage = String(latest.text).slice(0, 100);
                 lastMessageAt = typeof latest._creationTime === "number" ? latest._creationTime : lastMessageAt;
@@ -1080,7 +1080,7 @@ export const getThreadByStreamId = query({
     const latestRun = thread.agentThreadId
       ? await ctx.db
         .query("agentRuns")
-        .withIndex("by_threadId", (q) => q.eq("threadId", thread.agentThreadId!))
+        .withIndex("by_threadId", (q) => q.eq("threadId", thread.agentThreadId))
         .order("desc")
         .first()
       : null;
@@ -1589,7 +1589,7 @@ export const deleteMessage = mutation({
 
     try {
       // Try interpreting messageId as chatMessagesStream _id first
-      const streamMessage = await ctx.db.get(args.messageId as any);
+      const streamMessage = await ctx.db.get(args.messageId);
 
       if (streamMessage) {
         // Type guard: ensure it has expected fields
@@ -1597,16 +1597,16 @@ export const deleteMessage = mutation({
           throw new Error("Invalid message type");
         }
         // Verify belongs to thread
-        if ((streamMessage as any).threadId !== args.threadId) {
+        if ((streamMessage).threadId !== args.threadId) {
           throw new Error("Message does not belong to this thread");
         }
 
         // Delete stream message
-        await ctx.db.delete((streamMessage as any)._id);
+        await ctx.db.delete((streamMessage)._id);
         console.log(`[deleteMessage] ✅ Deleted from chatMessagesStream by _id`);
 
         // Cascade delete agent message if linked
-        const agentMessageId = (streamMessage as any).agentMessageId as string | undefined;
+        const agentMessageId = (streamMessage).agentMessageId as string | undefined;
         if (agentMessageId) {
           console.log(`[deleteMessage] Deleting linked agent message: ${agentMessageId}`);
           await deleteAgentMessageIfOwned(agentMessageId);
@@ -1979,7 +1979,7 @@ export const initiateAsyncStreaming = mutation({
           paginationOpts: { cursor: null, numItems: 10 },
         });
         const now = Date.now();
-        const recentPage: any[] = (recentResult as any)?.page ?? (recentResult as any) ?? [];
+        const recentPage: any[] = (recentResult)?.page ?? (recentResult) ?? [];
 
         // Find all messages with identical text within the window
         const duplicates = recentPage.filter((m: any) => {
@@ -2192,7 +2192,7 @@ export const streamAsync = internalAction({
     // Inject plan + progress + scratchpad summary into prompt so the agent boots with memory 
     // SKIP for anonymous users - they don't have plans/scratchpads and the empty context
     // was causing issues with the agent seeing two user messages
-    let previousCompactContext: any | undefined;
+    let previousCompactContext: unknown;
 
     if (isAnonymous) {
       console.log(`[streamAsync:${executionId}] Anonymous thread: building minimal prompt override (no plan/scratchpad injection)`);
@@ -2204,7 +2204,7 @@ export const streamAsync = internalAction({
           order: "desc",
           paginationOpts: { cursor: null, numItems: 20 },
         });
-        const page: any[] = (messages as any)?.page ?? (messages as any) ?? [];
+        const page: any[] = (messages)?.page ?? (messages) ?? [];
         const found = page.find((m) => String(m.messageId ?? m.id ?? m._id) === args.promptMessageId);
         if (found && typeof found.text === "string") {
           userPromptText = found.text;
@@ -2253,7 +2253,7 @@ export const streamAsync = internalAction({
           order: "desc",
           paginationOpts: { cursor: null, numItems: 20 },
         });
-        const page: any[] = (messages as any)?.page ?? (messages as any) ?? [];
+        const page: any[] = (messages)?.page ?? (messages) ?? [];
         console.log(`[streamAsync:${executionId}] Looking for promptMessageId:`, args.promptMessageId);
         console.log(`[streamAsync:${executionId}] Found ${page.length} messages:`, page.map((m: any) => ({
           id: String(m.messageId ?? m.id ?? m._id),
@@ -2535,7 +2535,7 @@ export const streamAsync = internalAction({
       };
       if (Array.isArray(steps)) {
         for (const step of steps) {
-          const usage = (step as any)?.usage;
+          const usage = (step)?.usage;
           if (!usage) continue;
           providerUsage.promptTokens += Number(usage.promptTokens ?? usage.inputTokens ?? 0) || 0;
           providerUsage.completionTokens += Number(usage.completionTokens ?? usage.outputTokens ?? 0) || 0;
@@ -2553,9 +2553,9 @@ export const streamAsync = internalAction({
       const stepToolResults: any[] = [];
       if (Array.isArray(steps)) {
         for (const step of steps) {
-          const calls = (step as any)?.toolCalls;
+          const calls = (step)?.toolCalls;
           if (Array.isArray(calls)) stepToolCalls.push(...calls);
-          const results = (step as any)?.toolResults;
+          const results = (step)?.toolResults;
           if (Array.isArray(results)) stepToolResults.push(...results);
         }
       }
@@ -2772,7 +2772,7 @@ export const streamAsync = internalAction({
           if (next) {
             attemptedModels.push(activeModel);
             fallbackAttempted = true;
-            activeModel = normalizeModelInput(next) as ApprovedModel;
+            activeModel = normalizeModelInput(next);
             console.warn(`[streamAsync:${executionId}] Rate limit detected for ${attemptedModels[attemptedModels.length - 1]}, retrying with fallback model ${activeModel}.`);
             await wait(RATE_LIMIT_BACKOFF_MS);
             telemetry = await runStreamAttempt(activeModel, "fallback-chain");
@@ -3962,10 +3962,10 @@ export const sendMessageInternal = internalAction({
         const msgs = recent.page || [];
         for (const msg of msgs) {
           const candidate =
-            (msg as any).tool?.name ||
-            (msg as any).tool?.toolName ||
-            (msg as any).message?.tool?.name ||
-            (msg as any).message?.tool;
+            (msg).tool?.name ||
+            (msg).tool?.toolName ||
+            (msg).message?.tool?.name ||
+            (msg).message?.tool;
           if (candidate && typeof candidate === "string" && !toolsCalled.includes(candidate)) {
             toolsCalled.push(candidate);
           }

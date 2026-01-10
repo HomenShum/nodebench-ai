@@ -11,6 +11,7 @@ import type { CompanyOption } from './CompanySelectionCard';
 import type { PersonOption } from './PeopleSelectionCard';
 import type { EventOption } from './EventSelectionCard';
 import type { NewsArticleOption } from './NewsSelectionCard';
+import type { EntityHoverData } from '@/features/research/components/EntityHoverPreview';
 
 interface UIMessageStreamProps {
   messages: UIMessage[];
@@ -24,6 +25,8 @@ interface UIMessageStreamProps {
   onNewsSelect?: (article: NewsArticleOption) => void;
   onDocumentSelect?: (documentId: string) => void;
   isQueued?: boolean;
+  /** Pre-loaded entity enrichment data for medium-detail hover previews */
+  entityEnrichment?: Record<string, EntityHoverData>;
 }
 
 // Extended UIMessage type with hierarchical metadata
@@ -59,6 +62,7 @@ export function UIMessageStream({
   onNewsSelect,
   onDocumentSelect,
   isQueued = false,
+  entityEnrichment,
 }: UIMessageStreamProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -312,6 +316,7 @@ export function UIMessageStream({
                     onDocumentSelect={onDocumentSelect}
                     isParent={isParent}
                     agentRole={group.parent.metadata?.agentRole}
+                    entityEnrichment={entityEnrichment}
                   />
                 )}
 
@@ -340,6 +345,7 @@ export function UIMessageStream({
                           onDocumentSelect={onDocumentSelect}
                           isChild={true}
                           agentRole={child.metadata?.agentRole}
+                          entityEnrichment={entityEnrichment}
                         />
                       );
                     })}

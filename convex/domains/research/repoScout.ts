@@ -70,7 +70,7 @@ async function generateWithProvider(
   return response.choices[0]?.message?.content || "";
 }
 
-function tryParseJson(raw: string): any | null {
+function tryParseJson(raw: string): unknown {
   const trimmed = (raw || "").trim();
   if (!trimmed) return null;
   const unfenced = trimmed.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();

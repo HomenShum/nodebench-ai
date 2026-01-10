@@ -198,6 +198,11 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
   const hoverClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
+  // Track domain changes to trigger subtle highlight animations
+  // Must be declared before any early returns
+  const previousDomain = useRef<{ minY: number; maxY: number } | null>(null);
+  const [isDomainTransitioning, setIsDomainTransitioning] = useState(false);
+
   // Compute all points with coordinates for nearest-point selection
   const allPointsWithCoords = useMemo(() => {
     if (!config?.series?.length) return [];
@@ -425,7 +430,23 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
 
   const activePoint = pinnedPoint ?? hoveredPoint ?? (!isFocusDismissed ? focusFallback : null);
 
-  // Empty state
+  // Compute scales before any early returns (for domain transition effect)
+  const allValuesForDomain = config?.series?.flatMap((s) => s.data.map((d) => d.value)) ?? [];
+  const minYComputed = config?.gridScale?.min ?? Math.min(0, ...allValuesForDomain);
+  const maxYComputed = config?.gridScale?.max ?? Math.max(...allValuesForDomain, 1) * 1.1;
+
+  // Domain transition effect - must be called before any early returns
+  React.useEffect(() => {
+    const prev = previousDomain.current;
+    if (prev && (prev.minY !== minYComputed || prev.maxY !== maxYComputed)) {
+      setIsDomainTransitioning(true);
+      const timeout = setTimeout(() => setIsDomainTransitioning(false), 600);
+      return () => clearTimeout(timeout);
+    }
+    previousDomain.current = { minY: minYComputed, maxY: maxYComputed };
+  }, [minYComputed, maxYComputed]);
+
+  // Empty state - now after all hooks
   if (!config?.series?.length) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-lg border border-slate-200 text-slate-400 text-xs">
@@ -449,30 +470,15 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
     );
   }
 
-  // Compute scales (domain will be animated on change for smooth transitions)
-  const allValues = config.series.flatMap((s) => s.data.map((d) => d.value));
-  const minY = config.gridScale?.min ?? Math.min(0, ...allValues);
-  const maxY = config.gridScale?.max ?? Math.max(...allValues) * 1.1;
+  // Use the precomputed values for rendering
+  const minY = minYComputed;
+  const maxY = maxYComputed;
   const range = Math.max(maxY - minY, 1);
   const xSteps = Math.max(
     ...config.series.map((s) => s.data.length - 1),
     config.xAxisLabels.length - 1,
     1,
   );
-
-  // Track domain changes to trigger subtle highlight animations
-  const previousDomain = useRef<{ minY: number; maxY: number } | null>(null);
-  const [isDomainTransitioning, setIsDomainTransitioning] = useState(false);
-
-  useEffect(() => {
-    const prev = previousDomain.current;
-    if (prev && (prev.minY !== minY || prev.maxY !== maxY)) {
-      setIsDomainTransitioning(true);
-      const timeout = setTimeout(() => setIsDomainTransitioning(false), 600);
-      return () => clearTimeout(timeout);
-    }
-    previousDomain.current = { minY, maxY };
-  }, [minY, maxY]);
 
   const getCoord = (index: number, value: number) => ({
     x: CHART.paddingX + (index / xSteps) * (CHART.width - CHART.paddingX * 2),

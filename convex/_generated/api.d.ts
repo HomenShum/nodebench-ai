@@ -249,6 +249,8 @@ import type * as domains_integrations_spreadsheets from "../domains/integrations
 import type * as domains_integrations_voice_voiceActions from "../domains/integrations/voice/voiceActions.js";
 import type * as domains_integrations_voice_voiceAgent from "../domains/integrations/voice/voiceAgent.js";
 import type * as domains_integrations_voice_voiceMutations from "../domains/integrations/voice/voiceMutations.js";
+import type * as domains_knowledge_adaptiveEntityEnrichment from "../domains/knowledge/adaptiveEntityEnrichment.js";
+import type * as domains_knowledge_adaptiveEntityQueries from "../domains/knowledge/adaptiveEntityQueries.js";
 import type * as domains_knowledge_entityContexts from "../domains/knowledge/entityContexts.js";
 import type * as domains_knowledge_entityInsights from "../domains/knowledge/entityInsights.js";
 import type * as domains_knowledge_knowledgeGraph from "../domains/knowledge/knowledgeGraph.js";
@@ -729,6 +731,8 @@ declare const fullApi: ApiFromModules<{
   "domains/integrations/voice/voiceActions": typeof domains_integrations_voice_voiceActions;
   "domains/integrations/voice/voiceAgent": typeof domains_integrations_voice_voiceAgent;
   "domains/integrations/voice/voiceMutations": typeof domains_integrations_voice_voiceMutations;
+  "domains/knowledge/adaptiveEntityEnrichment": typeof domains_knowledge_adaptiveEntityEnrichment;
+  "domains/knowledge/adaptiveEntityQueries": typeof domains_knowledge_adaptiveEntityQueries;
   "domains/knowledge/entityContexts": typeof domains_knowledge_entityContexts;
   "domains/knowledge/entityInsights": typeof domains_knowledge_entityInsights;
   "domains/knowledge/knowledgeGraph": typeof domains_knowledge_knowledgeGraph;

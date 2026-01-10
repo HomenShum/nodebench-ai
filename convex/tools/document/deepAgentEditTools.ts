@@ -30,7 +30,7 @@ Use this before making edits to understand document structure.`,
     console.log(`[readDocumentSections] Reading document: ${args.documentId}`);
 
     const doc = await ctx.runQuery(api.domains.documents.documents.getById, {
-      documentId: args.documentId as Id<"documents">,
+      documentId: args.documentId,
     });
 
     if (!doc) {
@@ -151,7 +151,7 @@ For deletions: use empty replace "" to delete the search text`,
 
     // Get document to verify it exists and get version
     const doc = await ctx.runQuery(api.domains.documents.documents.getById, {
-      documentId: args.documentId as Id<"documents">,
+      documentId: args.documentId,
     });
 
     if (!doc) {
@@ -159,12 +159,12 @@ For deletions: use empty replace "" to delete the search text`,
     }
 
     // Get document version for OCC (optimistic concurrency control)
-    const version = (doc as any).version || 1;
+    const version = (doc).version || 1;
 
     // Create the pending edit
     try {
       const result = await ctx.runMutation(internal.domains.documents.pendingEdits.createPendingEdit, {
-        documentId: args.documentId as Id<"documents">,
+        documentId: args.documentId,
         userId: userId as Id<"users">,
         agentThreadId: args.agentThreadId,
         documentVersion: version,
@@ -256,7 +256,7 @@ Use this when an edit fails to retrieve error information for self-correction.`,
     console.log(`[getFailedEdit] Getting failed edit for anchor: ${args.anchor}`);
 
     const failedEdit = await ctx.runQuery(internal.domains.documents.pendingEdits.getFailedEditForAnchor, {
-      documentId: args.documentId as Id<"documents">,
+      documentId: args.documentId,
       anchor: args.anchor,
     });
 

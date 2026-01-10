@@ -81,7 +81,7 @@ export const list = query({
       const listWithUserInfo = await Promise.all(
         presenceList.map(async (entry) => {
           try {
-            const user = await ctx.db.get(entry.userId as Id<"users">);
+            const user = await ctx.db.get(entry.userId);
             if (!user) {
               return entry;
             }
@@ -152,7 +152,7 @@ export const listRoom = internalQuery({
       const enriched = await Promise.all(
         base.map(async (entry: { userId: string; online: boolean; lastDisconnected: number }) => {
           try {
-            const user = await ctx.db.get(entry.userId as Id<"users">);
+            const user = await ctx.db.get(entry.userId);
             if (!user) return entry;
             return { ...entry, name: user.name, image: user.image };
           } catch (e) {
@@ -196,7 +196,7 @@ export const listUser = internalQuery({
       const enriched = await Promise.all(
         base.map(async (entry: { roomId: string; online: boolean; lastDisconnected: number }) => {
           try {
-            const doc = await ctx.db.get(entry.roomId as Id<"documents">);
+            const doc = await ctx.db.get(entry.roomId);
             if (!doc) return entry;
             return { ...entry, title: doc.title };
           } catch (e) {

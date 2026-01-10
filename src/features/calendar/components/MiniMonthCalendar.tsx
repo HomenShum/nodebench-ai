@@ -698,7 +698,9 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                       0, 0, 0, 0,
                     ).getTime();
                     _onSelectDate?.(localMidnightMs);
-                  } catch {}
+                  } catch {
+                    // Date computation failed
+                  }
                 }}
                 onDoubleClick={(e) => {
                   e.preventDefault();
@@ -708,7 +710,9 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                       0, 0, 0, 0,
                     ).getTime();
                     _onViewDay?.(localMidnightMs);
-                  } catch {}
+                  } catch {
+                    // Date computation failed
+                  }
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -721,7 +725,9 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                         0, 0, 0, 0,
                       ).getTime();
                       _onSelectDate?.(localMidnightMs);
-                    } catch {}
+                    } catch {
+                      // Date computation failed
+                    }
                   }
                 }}
                 onMouseEnter={() => setHoveredKey(d.key)}

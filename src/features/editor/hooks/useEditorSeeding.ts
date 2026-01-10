@@ -67,7 +67,7 @@ export function useEditorSeeding({
 
   // Seed the document with provided markdown if editor exists and doc is empty
   useEffect(() => {
-    const ed: any = editor as any;
+    const ed: any = editor;
     if (!ed) return;
     if (attemptedSeedRef.current) return;
 
@@ -94,7 +94,11 @@ export function useEditorSeeding({
             const existing: any[] = Array.isArray(ed.topLevelBlocks) ? ed.topLevelBlocks : [];
             ed.replaceBlocks(existing, newBlocks);
             seededDocCache.set(docKey, seed);
-            try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {};
+            try {
+              window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1');
+            } catch {
+              // localStorage not available
+            }
             void markHasContent();
           }
         } catch (e) {
@@ -108,7 +112,7 @@ export function useEditorSeeding({
 
   // Restore from provided markdown when signal changes
   useEffect(() => {
-    const ed: any = editor as any;
+    const ed: any = editor;
     if (!ed) return;
     if (typeof restoreSignal !== 'number') return;
     const seed = (restoreMarkdown || '').trim();
@@ -133,7 +137,11 @@ export function useEditorSeeding({
         ed.replaceBlocks(existing, newBlocks);
         restoreCache.set(docKey, { seed, signal: explicitRestore ? restoreSignal : 0 });
         seededDocCache.set(docKey, seed);
-        try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {};
+        try {
+          window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1');
+        } catch {
+          // localStorage not available
+        }
         void markHasContent();
       } catch (e) {
         console.warn('[useEditorSeeding] restore failed', e);

@@ -285,7 +285,7 @@ export async function runWithTools(config: {
 
   const anthropic = new Anthropic();
   const messages: AdapterMessage[] = [];
-  let currentMessages: Anthropic.MessageParam[] = [{ role: "user", content: query }];
+  const currentMessages: Anthropic.MessageParam[] = [{ role: "user", content: query }];
   let iteration = 0;
 
   while (iteration < maxIterations) {

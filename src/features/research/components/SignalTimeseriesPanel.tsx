@@ -42,7 +42,7 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
       ["date", "count", "events"].join(","),
       ...timeseries.map((point: any) => {
         const events = (point.events ?? []).map((ev: any) => ev.title).join(" | ");
-        const safeEvents = `"${events.replace(/\"/g, '\"\"')}"`;
+        const safeEvents = `"${events.replace(/"/g, '""')}"`;
         return `${point.date},${point.count},${safeEvents}`;
       }),
     ];

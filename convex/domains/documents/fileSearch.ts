@@ -24,7 +24,7 @@ async function ensureStoreForUser(ctx: any, userId: Id<"users">): Promise<string
   const ai = new GoogleGenAI({ apiKey });
 
   const displayName = `nb-store-${String(userId).slice(0, 8)}`;
-  // @ts-ignore - GoogleGenAI SDK version mismatch workaround
+  // @ts-expect-error - GoogleGenAI SDK version mismatch workaround
   const fileSearchStore = await ai.fileSearchStores.create({
     config: { displayName }
   });
@@ -52,7 +52,7 @@ async function uploadBufferToStore(args: {
   const blob = new Blob([payload as any], { type: args.mimeType });
 
   // Upload directly to the file search store
-  // @ts-ignore - GoogleGenAI SDK version mismatch workaround
+  // @ts-expect-error - GoogleGenAI SDK version mismatch workaround
   const operation = await ai.fileSearchStores.uploadToFileSearchStore({
     file: blob as any,
     fileSearchStoreName: args.store,
@@ -102,11 +102,11 @@ const extractPlain = (content: any): string => {
     return content.map(extractPlain).join("\n\n");
   }
   if (typeof content === "object") {
-    if (Array.isArray((content as any).blocks)) {
-      return (content as any).blocks.map((b: any) => b?.data?.text || "").join("\n\n");
+    if (Array.isArray((content).blocks)) {
+      return (content).blocks.map((b: any) => b?.data?.text || "").join("\n\n");
     }
-    if (Array.isArray((content as any).content)) {
-      return (content as any).content.map(extractPlain).join("\n");
+    if (Array.isArray((content).content)) {
+      return (content).content.map(extractPlain).join("\n");
     }
   }
   try {
@@ -153,7 +153,7 @@ export const upsertDocument = internalAction({
           });
         }
       } else {
-        const text = extractPlain((doc as any).content) || extractPlain((doc as any).summary);
+        const text = extractPlain((doc).content) || extractPlain((doc).summary);
         if (text?.trim()) {
           await uploadTextToStore({
             store: storeName,

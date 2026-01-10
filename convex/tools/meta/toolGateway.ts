@@ -185,7 +185,7 @@ export async function executeViaGateway<T>(
           userId: gatewayCtx.userId as any,
           toolName,
           args: JSON.stringify(args),
-          riskTier: riskTier as "write" | "destructive",
+          riskTier: riskTier,
           actionSummary: generateActionSummary(toolName, args),
           expiresAt: Date.now() + 5 * 60 * 1000, // 5 minute timeout
         }

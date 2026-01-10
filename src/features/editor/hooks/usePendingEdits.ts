@@ -188,7 +188,7 @@ export function usePendingEdits(
     await new Promise((r) => setTimeout(r, 50));
 
     // Process next edit in queue
-    processNextEdit();
+    void processNextEdit();
   }, [reportResult]);
 
   // Queue new pending edits and trigger processing
@@ -223,7 +223,7 @@ export function usePendingEdits(
 
     // Start processing if not already
     if (!isProcessingRef.current) {
-      processNextEdit();
+      void processNextEdit();
     }
   }, [pendingEdits, documentId, processNextEdit]);
 

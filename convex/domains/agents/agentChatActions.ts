@@ -32,9 +32,9 @@ async function getSafeUserId(ctx: ActionCtx): Promise<Id<"users">> {
     if (!userIdPart || userIdPart.length < 10) {
       throw new Error("Invalid user ID format. Please sign out and sign back in.");
     }
-    userId = userIdPart as Id<"users">;
+    userId = userIdPart;
   } else {
-    userId = rawUserId as Id<"users">;
+    userId = rawUserId;
   }
 
   return userId;

@@ -42,6 +42,12 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
 }) => {
   const [hoveredData, setHoveredData] = useState<HoveredPoint | null>(null);
 
+  // useMemo must be called unconditionally (before any early returns)
+  const allValues = useMemo(
+    () => config?.series?.flatMap((s) => s.data.map((d) => d.value)) ?? [],
+    [config?.series],
+  );
+
   // Build linked evidence for tooltip from evidenceMap
   const getLinkedEvidence = (linkedIds?: string[]): TooltipEvidence[] => {
     if (!linkedIds?.length || !evidenceMap) return [];
@@ -50,6 +56,7 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
       .filter(Boolean) as TooltipEvidence[];
   };
 
+  // Early return AFTER all hooks are called
   if (!config?.series?.length) {
     return <div className="w-full h-full rounded-md bg-slate-50" />;
   }
@@ -58,11 +65,6 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
   const height = 160;
   const paddingX = 20;
   const paddingY = 20;
-
-  const allValues = useMemo(
-    () => config.series.flatMap((s) => s.data.map((d) => d.value)),
-    [config.series],
-  );
   const minYRaw = Math.min(...allValues, 0);
   const maxYRaw = Math.max(...allValues, 1);
   const minY = typeof config.gridScale?.min === "number" ? config.gridScale.min : Math.min(0, minYRaw);

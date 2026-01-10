@@ -102,7 +102,7 @@ export const listUserGraphs = query({
 
     const graphs = await ctx.db
       .query("knowledgeGraphs")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId!))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .collect();
 
     if (args.sourceType) {
@@ -575,12 +575,12 @@ export const computeSemanticFingerprint = internalAction({
     }
 
     // Mean pooling
-    const dim = claimsWithEmbeddings[0].embedding!.length;
+    const dim = claimsWithEmbeddings[0].embedding.length;
     const meanVector = new Array(dim).fill(0);
 
     for (const claim of claimsWithEmbeddings) {
       for (let i = 0; i < dim; i++) {
-        meanVector[i] += claim.embedding![i];
+        meanVector[i] += claim.embedding[i];
       }
     }
 

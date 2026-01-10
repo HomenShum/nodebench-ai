@@ -35,13 +35,17 @@ export function UnifiedHubPills({
     try {
       window.location.hash = "#documents";
       window.dispatchEvent(new CustomEvent("navigate:documents"));
-    } catch {}
+    } catch {
+      // Navigation failed
+    }
   };
   const goCalendar = () => {
     try {
       window.location.hash = "#calendar";
       window.dispatchEvent(new CustomEvent("navigate:calendar"));
-    } catch {}
+    } catch {
+      // Navigation failed
+    }
   };
   const goAgents = () => {
     try {

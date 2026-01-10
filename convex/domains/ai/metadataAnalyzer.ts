@@ -71,7 +71,7 @@ export const buildDossierMetadata = action({
     });
 
     // 4) Include recent agent outputs if available (minimal)
-    let agentNotes: string[] = [];
+    const agentNotes: string[] = [];
 
     // 5) Summarize with Gemini (single lightweight call)
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
@@ -150,7 +150,7 @@ export const analyzeDocumentMetadata = action({
         fileId: doc.fileId,
         analysisPrompt: "Provide a concise summary capturing key content, entities, and actionable insights.",
         analysisType: doc.fileType || undefined,
-        testBypassUserId: userId as any,
+        testBypassUserId: userId,
       });
       await ctx.runMutation(internal.domains.knowledge.nodes.upsertMetadataSection, { documentId, contentLines: [clamp(result.analysis, 2000)], authorId: userId });
       const durMs = Date.now() - t0;
@@ -241,7 +241,7 @@ export const analyzeSelectedFilesIntoDossier = action({
             fileId: next.fileId,
             analysisPrompt: "Analyze file for dossier: provide a concise, token-efficient summary with key facts and sources.",
             analysisType: next.fileType || undefined,
-            testBypassUserId: userId as any,
+            testBypassUserId: userId,
           });
           results.push({ documentId: next.documentId, ok: true, analysis: clamp(res.analysis, 2000) });
         } catch (e: any) {
@@ -259,7 +259,7 @@ export const analyzeSelectedFilesIntoDossier = action({
       const title = doc?.title || String(r.documentId);
       if (r.ok) {
         lines.push(`• ${title}`);
-        lines.push(clamp(r.analysis!, 800));
+        lines.push(clamp(r.analysis, 800));
       } else {
         lines.push(`• ${title} — ERROR: ${r.error}`);
       }

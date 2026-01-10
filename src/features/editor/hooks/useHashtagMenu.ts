@@ -123,7 +123,7 @@ export function useHashtagMenu({ editor, documentId }: UseHashtagMenuOptions) {
       content.splice(-3, 3);
       content.push({ type: "text", text: `#${hashtag}`, styles: { backgroundColor: "#0ea5e933", textColor: "#0ea5e9" } });
       content.push(" ");
-      (editor as any).updateBlock(block, { content });
+      (editor).updateBlock(block, { content });
 
       console.log(`[useHashtagMenu] ✅ Created hashtag dossier #${hashtag} with ${searchResult.totalCount} documents`);
     } catch (error) {
@@ -135,7 +135,7 @@ export function useHashtagMenu({ editor, documentId }: UseHashtagMenuOptions) {
       content.splice(-3, 3);
       content.push({ type: "text", text: `#${hashtag} ❌`, styles: { textColor: "#ef4444" } });
       content.push(" ");
-      (editor as any).updateBlock(block, { content });
+      (editor).updateBlock(block, { content });
     }
   };
 

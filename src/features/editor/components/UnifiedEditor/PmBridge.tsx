@@ -3,7 +3,7 @@
  * Exposes PM context + accepts PM operations for AI integration
  */
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { useCurrentEditor } from '@tiptap/react';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { getBlockText } from '../../utils/blockUtils';
@@ -81,7 +81,9 @@ export const PmBridge: React.FC<PmBridgeProps> = ({
         try {
           const blk = getCurrentOrLastBlock();
           if (blk) preview = (getBlockText(blk) || '').slice(0, 200);
-        } catch {}
+        } catch {
+          // Block text extraction failed
+        }
         if (!preview) {
           try {
             const texts: string[] = [];
@@ -89,22 +91,50 @@ export const PmBridge: React.FC<PmBridgeProps> = ({
               if (n.isText && typeof n.text === 'string') texts.push(n.text);
             });
             preview = texts.join(' ').slice(0, 200);
-          } catch {}
+          } catch {
+            // Doc traversal failed
+          }
         }
         window.dispatchEvent(new CustomEvent('nodebench:editor:focused', { detail: { documentId, preview } }));
         if ((preview || '').trim().length > 0) {
-          try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch {};
+          try {
+            window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1');
+          } catch {
+            // localStorage not available
+          }
           void markHasContent();
         }
-      } catch {}
+      } catch {
+        // Emit failed
+      }
     };
 
-    try { emit(); } catch {}
-    try { editor?.on('selectionUpdate', emit); } catch {}
-    try { editor?.on('update', emit); } catch {}
+    try {
+      emit();
+    } catch {
+      // Initial emit failed
+    }
+    try {
+      editor?.on('selectionUpdate', emit);
+    } catch {
+      // Event listener registration failed
+    }
+    try {
+      editor?.on('update', emit);
+    } catch {
+      // Event listener registration failed
+    }
     return () => {
-      try { editor?.off?.('selectionUpdate', emit); } catch {}
-      try { editor?.off?.('update', emit); } catch {}
+      try {
+        editor?.off?.('selectionUpdate', emit);
+      } catch {
+        // Event listener cleanup failed
+      }
+      try {
+        editor?.off?.('update', emit);
+      } catch {
+        // Event listener cleanup failed
+      }
     };
   }, [syncEditor, editor, documentId, getCurrentOrLastBlock, markHasContent]);
 

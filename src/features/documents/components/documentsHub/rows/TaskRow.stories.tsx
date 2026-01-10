@@ -2,7 +2,7 @@
  * Storybook stories for TaskRow component
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { TaskRowGlobal } from "./TaskRow";
 
 const meta: Meta<typeof TaskRowGlobal> = {

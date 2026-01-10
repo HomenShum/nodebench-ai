@@ -20,7 +20,7 @@ export const startCoordinatorWorkflow = action({
   handler: async (ctx, args): Promise<{ runId: string }> => {
     const runId = await ctx.scheduler.runAfter(
       0,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (internal as any).workflows.coordinatorWorkflow.runCoordinatorWorkflow.start,
       {
         threadId: args.threadId,

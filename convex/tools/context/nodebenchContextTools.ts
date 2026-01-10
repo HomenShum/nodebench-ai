@@ -100,8 +100,8 @@ You can ask me to help you set up tracked topics or check your research feeds.`;
             response += `**Progress:** ${passingCount} passing / ${failingCount} failing / ${pendingCount} pending\n\n`;
 
             // Include top feed headlines if available (grounding for "today's news" requests)
-            const topFeedItems: any[] = Array.isArray((brief as any)?.context?.topFeedItems)
-                ? ((brief as any).context.topFeedItems as any[])
+            const topFeedItems: any[] = Array.isArray((brief)?.context?.topFeedItems)
+                ? ((brief).context.topFeedItems as any[])
                 : [];
 
             if (topFeedItems.length > 0) {

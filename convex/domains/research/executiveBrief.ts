@@ -129,7 +129,7 @@ function stripReservedKeys(value: unknown): unknown {
 }
 
 function toEvidence(item: FeedItem, idx: number, dateString: string): Evidence {
-  const source = (item.source ?? "Other") as string;
+  const source = (item.source ?? "Other");
   const title = (item.title ?? `Evidence ${idx + 1}`).slice(0, 240);
   const url = (item.url ?? "").trim();
   const publishedAt =
@@ -172,7 +172,7 @@ function buildEvidenceLibrary(args: {
 
     return {
       id: evidenceIdForUrl(url),
-      source: (item.source ?? "Other") as string,
+      source: (item.source ?? "Other"),
       title: (item.title ?? `Evidence ${idx + 1}`).slice(0, 240),
       url,
       publishedAt,
@@ -202,9 +202,9 @@ function buildDeterministicBrief(args: {
       : {};
   const topSources = Object.entries(bySource)
     .filter(([, c]) => typeof c === "number" && c > 0)
-    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .sort(([, a], [, b]) => (b) - (a))
     .slice(0, 6)
-    .map(([source, count]) => ({ source, count: count as number }));
+    .map(([source, count]) => ({ source, count: count }));
 
   const totalItems =
     typeof args.sourceSummary?.totalItems === "number"
@@ -451,7 +451,7 @@ function canonicalizeEvidenceFromLibrary(
     meta: {
       ...(brief.meta as any),
       hasEvidence: evidenceLibrary.length > 0,
-    } as any,
+    },
     actII: { ...brief.actII, signals: nextSignals },
   };
 }
@@ -469,7 +469,7 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
     );
     if (!memory) throw new Error("Daily brief memory not found");
 
-    const existing = (memory.context as any)?.executiveBrief as DailyBriefPayload | undefined;
+    const existing = (memory.context)?.executiveBrief as DailyBriefPayload | undefined;
     if (!args.forceRefresh && existing?.meta?.date === memory.dateString) {
       const sanitizedExisting = stripReservedKeys(existing) as DailyBriefPayload;
       return { ok: true, cached: true, brief: sanitizedExisting };
@@ -539,8 +539,8 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
       };
     });
 
-    const sourceSummary = (memory.context as any)?.snapshotSummary ?? null;
-    const dashboardMetrics = (memory.context as any)?.dashboardMetrics ?? null;
+    const sourceSummary = (memory.context)?.snapshotSummary ?? null;
+    const dashboardMetrics = (memory.context)?.dashboardMetrics ?? null;
 
     const context = {
       date: memory.dateString,
@@ -666,7 +666,7 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
       parsed = buildDeterministicBrief({
         dateString: memory.dateString,
         version: memory.version,
-        sourceSummary: sourceSummary ?? (memory.context as any)?.snapshotSummary,
+        sourceSummary: sourceSummary ?? (memory.context)?.snapshotSummary,
         feedItems,
         features,
       });

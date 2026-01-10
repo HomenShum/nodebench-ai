@@ -443,7 +443,7 @@ UI can subscribe to live updates using the returned runId and delegationIds.`,
       // Generate unique delegationIds for each task
       const tasks = args.tasks.map(task => ({
         delegationId: crypto.randomUUID(),
-        agentName: task.agentName as "DocumentAgent" | "MediaAgent" | "SECAgent" | "OpenBBAgent" | "EntityResearchAgent" | "DossierAgent",
+        agentName: task.agentName,
         query: task.query,
       }));
       

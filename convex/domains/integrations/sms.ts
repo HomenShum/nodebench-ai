@@ -194,7 +194,7 @@ export const logSms = internalMutation({
       // Find or create daily aggregate
       const existing = await ctx.db
         .query("smsUsageDaily")
-        .withIndex("by_user_date", (q) => q.eq("userId", args.userId!).eq("date", dateStr))
+        .withIndex("by_user_date", (q) => q.eq("userId", args.userId).eq("date", dateStr))
         .first();
 
       if (existing) {

@@ -2886,6 +2886,45 @@ export default defineSchema({
       filterFields: ["entityType", "researchedBy"],
     }),
 
+  /* ------------------------------------------------------------------ */
+  /* ADAPTIVE ENTITY PROFILES - LLM-discovered entity structure          */
+  /* Dynamic timeline, relationships, and sections (not hardcoded)       */
+  /* ------------------------------------------------------------------ */
+  adaptiveEntityProfiles: defineTable({
+    entityName: v.string(),                  // Name of the entity
+    entityType: v.string(),                  // LLM-inferred type (founder, investor, company, etc.)
+
+    // The full adaptive profile (stored as flexible JSON)
+    profile: v.any(),                        // AdaptiveEntityProfile object
+
+    // Metadata
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    version: v.number(),                     // Version for cache invalidation
+
+    // Quality tracking
+    completeness: v.optional(v.number()),    // 0-100 score
+    confidence: v.optional(v.number()),      // 0-100 score
+
+    // Research state
+    lastResearchedAt: v.optional(v.number()),
+    researchDepth: v.optional(v.union(
+      v.literal("quick"),
+      v.literal("standard"),
+      v.literal("deep")
+    )),
+
+    // Link to base entity context
+    entityContextId: v.optional(v.id("entityContexts")),
+  })
+    .index("by_name", ["entityName"])
+    .index("by_type", ["entityType"])
+    .index("by_updated", ["updatedAt"])
+    .searchIndex("search_name", {
+      searchField: "entityName",
+      filterFields: ["entityType"],
+    }),
+
   // Visitor tracking for analytics
   visitors: defineTable({
     userId: v.optional(v.id("users")),

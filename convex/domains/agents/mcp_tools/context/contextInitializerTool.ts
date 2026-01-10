@@ -119,7 +119,7 @@ Based on Anthropic's "Effective harnesses for long-running agents" (Nov 2025).`,
       const userSettings = await ctx.runQuery(api.domains.auth.userPreferences.getUserPreferences, {});
       if (userSettings && !('needsReauth' in userSettings && userSettings.needsReauth)) {
         userPreferences = userSettings as Record<string, unknown>;
-        trackedTopics = (userSettings as any).trackedHashtags ?? [];
+        trackedTopics = (userSettings).trackedHashtags ?? [];
       }
     } catch (e) {
       console.log('[contextInitializerTool] Could not load user settings');

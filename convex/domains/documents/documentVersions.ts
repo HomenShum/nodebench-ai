@@ -25,7 +25,7 @@ export const create = mutation({
     });
     const safeVersion: number = typeof version === "number" ? version : 0;
 
-    const content = (doc as any).content ?? "";
+    const content = (doc).content ?? "";
     const now = Date.now();
 
     const snapshotId: Id<"documentSnapshots"> = await ctx.db.insert("documentSnapshots", {
@@ -41,7 +41,7 @@ export const create = mutation({
     } as any);
 
     // Update counter on the document (optional)
-    const existingCount = (doc as any).snapshotCount ?? 0;
+    const existingCount = (doc).snapshotCount ?? 0;
     await ctx.db.patch(args.documentId, { snapshotCount: existingCount + 1, lastModified: now } as any);
 
     return { snapshotId, version: safeVersion };
@@ -66,7 +66,7 @@ export const listForDocument = query({
 
     const doc = await ctx.db.get(args.documentId);
     if (!doc) return [];
-    const d = doc as any;
+    const d = doc;
     if (!d.isPublic && d.createdBy !== userId) return [];
 
     const rows = await ctx.db
@@ -80,8 +80,8 @@ export const listForDocument = query({
       version: r.version as number,
       createdAt: r.createdAt as number,
       createdBy: r.createdBy as Id<"users">,
-      note: (r as any).triggerReason as string | undefined,
-      size: (r as any).contentSize as number | undefined,
+      note: (r).triggerReason as string | undefined,
+      size: (r).contentSize as number | undefined,
     }));
   },
 });
@@ -95,14 +95,14 @@ export const restore = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     const snap = await ctx.db.get(args.snapshotId);
-    const snapAny = snap as any;
+    const snapAny = snap;
     if (!snap) throw new Error("Snapshot not found");
 
     const doc = await ctx.db.get(snapAny.documentId as Id<"documents">);
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 
-    const content = String((snap as any).content ?? "");
+    const content = String((snap).content ?? "");
 
     // Set the document content to the snapshot immediately for read flows
     await ctx.db.patch(snapAny.documentId as Id<"documents">, {

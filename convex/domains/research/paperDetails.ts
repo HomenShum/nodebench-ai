@@ -63,7 +63,7 @@ async function generateWithProvider(
   return response.choices[0]?.message?.content || "";
 }
 
-function tryParseJson(raw: string): any | null {
+function tryParseJson(raw: string): unknown {
   const trimmed = (raw || "").trim();
   if (!trimmed) return null;
   const unfenced = trimmed.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();
@@ -99,7 +99,7 @@ function normalizePaperId(url: string) {
 }
 
 function extractEntryField(entry: string, tag: string): string | null {
-  const regex = new RegExp(`<${tag}>([\s\S]*?)<\/${tag}>`, "i");
+  const regex = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, "i");
   const match = entry.match(regex);
   if (!match) return null;
   return match[1].replace(/\s+/g, " ").trim();

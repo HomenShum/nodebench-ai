@@ -92,7 +92,7 @@ export const getCurrentUsage = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     const tier = await getUserTier(ctx, userId);
-    const limits = getTierLimits(tier as UserTier);
+    const limits = getTierLimits(tier);
     const date = todayISO();
 
     // Get today's usage
@@ -147,7 +147,7 @@ export const canUseModel = query({
   }),
   handler: async (ctx, { model }) => {
     const userId = await getAuthUserId(ctx);
-    const tier = await getUserTier(ctx, userId) as UserTier;
+    const tier = await getUserTier(ctx, userId);
     
     if (isModelAllowedForTier(model, tier)) {
       return { allowed: true };
@@ -187,7 +187,7 @@ export const checkRequestAllowed = query({
   handler: async (ctx, { model, estimatedInputTokens, estimatedOutputTokens, userId: explicitUserId }) => { 
     // Use explicit userId if provided (from actions), otherwise try auth context
     const userId = explicitUserId ?? await getAuthUserId(ctx);
-    const tier = await getUserTier(ctx, userId) as UserTier;
+    const tier = await getUserTier(ctx, userId);
     const limits = getTierLimits(tier);
     const date = todayISO();
 
@@ -420,7 +420,7 @@ export const getRecommendedModel = query({
   returns: v.string(),
   handler: async (ctx, { task, preferredProvider }) => {
     const userId = await getAuthUserId(ctx);
-    const tier = await getUserTier(ctx, userId) as UserTier;
+    const tier = await getUserTier(ctx, userId);
     
     return getBestModelForTier(
       task as LlmTask,

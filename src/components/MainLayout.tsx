@@ -64,6 +64,11 @@ const ModelEvalDashboard = lazy(() =>
     default: mod.ModelEvalDashboard,
   })),
 );
+const EntityProfilePage = lazy(() =>
+  import("@/features/research/views/EntityProfilePage").then((mod) => ({
+    default: mod.EntityProfilePage,
+  })),
+);
 
 const viewFallback = (
   <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
@@ -81,7 +86,9 @@ interface MainLayoutProps {
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowResearchHub }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals' | 'benchmarks'>('research');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals' | 'benchmarks' | 'entity'>('research');
+  // Entity name for entity profile page (extracted from hash)
+  const [entityName, setEntityName] = useState<string | null>(null);
   const [isGridMode, setIsGridMode] = useState(false);
   // Transition state for smooth view changes
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -557,6 +564,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     const applyFromHash = () => {
       try {
         const h = (window.location.hash || '').toLowerCase();
+        const rawHash = window.location.hash || '';
         if (h.startsWith('#agents')) {
           setCurrentView('agents');
         } else if (h.startsWith('#calendar')) {
@@ -575,6 +583,13 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           setCurrentView('footnotes');
         } else if (h.startsWith('#benchmarks') || h.startsWith('#eval')) {
           setCurrentView('benchmarks');
+        } else if (h.startsWith('#entity/') || h.startsWith('#entity%2f')) {
+          // Extract entity name from hash (preserve original case)
+          const match = rawHash.match(/^#entity[\/](.+)$/i);
+          if (match) {
+            setEntityName(decodeURIComponent(match[1]));
+            setCurrentView('entity');
+          }
         }
       } catch {
         // ignore
@@ -679,9 +694,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                             ? 'Signals'
                             : currentView === 'benchmarks'
                               ? 'Model Benchmarks'
-                              : selectedDocumentId
-                                ? 'My Documents'
-                                : 'My Workspace'}
+                              : currentView === 'entity'
+                                ? `Entity: ${entityName || 'Profile'}`
+                                : selectedDocumentId
+                                  ? 'My Documents'
+                                  : 'My Workspace'}
               </h1>
             </div>
 
@@ -815,6 +832,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <div className="h-full overflow-auto p-6 bg-gray-50">
                   <ModelEvalDashboard />
                 </div>
+              ) : currentView === 'entity' && entityName ? (
+                <EntityProfilePage
+                  entityName={entityName}
+                  onBack={() => {
+                    setEntityName(null);
+                    setCurrentView('research');
+                    window.location.hash = '';
+                  }}
+                />
               ) : (
                 <div className="h-full flex">
                   <div className="flex-1 overflow-hidden">

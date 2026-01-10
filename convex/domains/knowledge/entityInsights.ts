@@ -31,7 +31,7 @@ type SourceMatrixItem = {
 
 type FundingAmount = {
   amount: number;
-  currency: "USD" | "EUR" | "GBP" | string;
+  currency: string;
   unit: "M" | "B" | "K";
 };
 
@@ -646,7 +646,7 @@ function clipText(input: string, maxLen: number): string {
   return cleaned.slice(0, maxLen).trim();
 }
 
-function tryParseJson(raw: string): any | null {
+function tryParseJson(raw: string): unknown {
   const trimmed = (raw || "").trim();
   if (!trimmed) return null;
   const unfenced = trimmed.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();
@@ -687,8 +687,8 @@ function asKeyPeople(input: unknown): Array<{ name: string; title: string }> {
   return input
     .map((entry) => {
       if (!entry || typeof entry !== "object") return null;
-      const name = typeof (entry as any).name === "string" ? (entry as any).name.trim() : "";
-      const title = typeof (entry as any).title === "string" ? (entry as any).title.trim() : "";
+      const name = typeof (entry).name === "string" ? (entry).name.trim() : "";
+      const title = typeof (entry).title === "string" ? (entry).title.trim() : "";
       if (!name && !title) return null;
       return { name, title };
     })
@@ -822,7 +822,7 @@ const PRIMARY_SOURCE_PATTERNS = [
   // Academic / research
   /arxiv\.org|pubmed|ncbi\.nlm\.nih|nature\.com|science\.org/i,
   // GitHub (for OSS projects)
-  /github\.com\/[^\/]+\/[^\/]+$/i,
+  /github\.com\/[^/]+\/[^/]+$/i,
 ];
 
 const HIGH_CREDIBILITY_PATTERNS = [
@@ -1044,7 +1044,7 @@ IMPORTANT:
   }
 }
 
-function extractJsonFromText(raw: string): any | null {
+function extractJsonFromText(raw: string): unknown {
   const trimmed = (raw || "").trim();
   if (!trimmed) return null;
   try {

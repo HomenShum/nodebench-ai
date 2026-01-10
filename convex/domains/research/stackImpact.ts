@@ -62,7 +62,7 @@ async function generateWithProvider(
   return response.choices[0]?.message?.content || "";
 }
 
-function tryParseJson(raw: string): any | null {
+function tryParseJson(raw: string): unknown {
   const trimmed = (raw || "").trim();
   if (!trimmed) return null;
   const unfenced = trimmed.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();
@@ -301,8 +301,8 @@ export const refreshStackImpact = action({
       : null;
     const context = [
       args.summary,
-      (reader as any)?.excerpt,
-      (reader as any)?.content,
+      (reader)?.excerpt,
+      (reader)?.content,
     ]
       .filter(Boolean)
       .join("\n\n")
@@ -334,8 +334,8 @@ export const refreshStackImpact = action({
     const graph = augmentGraph(normalizeGraph(parsed.graph, fallbackGraph), args.title, args.summary, args.techStack);
     const cveId = extractCveId(args.title, args.summary, context);
     const cveUrl = cveId ? `https://nvd.nist.gov/vuln/detail/${cveId}` : undefined;
-    const sourceUrls = Array.isArray((reader as any)?.sourceMatrix)
-      ? (reader as any).sourceMatrix
+    const sourceUrls = Array.isArray((reader)?.sourceMatrix)
+      ? (reader).sourceMatrix
           .map((item: any) => item.url)
           .filter(Boolean)
           .slice(0, 6)

@@ -115,12 +115,12 @@ export const addDocumentToEnhancedRag = internalAction({
       // Extract plain text from TipTap JSON
       let plainText = "";
       try {
-        const contentStr = String((doc as any).content ?? "");
+        const contentStr = String((doc).content ?? "");
         const maybeJson = JSON.parse(contentStr);
         const { extractTextFromTipTap } = await import("../../lib/markdownToTipTap");
-        plainText = extractTextFromTipTap(maybeJson as any) || contentStr;
+        plainText = extractTextFromTipTap(maybeJson) || contentStr;
       } catch {
-        plainText = String((doc as any).content ?? "");
+        plainText = String((doc).content ?? "");
       }
 
       // Gather additional text sources: nodes content, quick notes metadata, file analysis summaries
@@ -132,7 +132,7 @@ export const addDocumentToEnhancedRag = internalAction({
 
       // If this is a primary dossier, include associated quick-notes content
       let quickNotesText = "";
-      if ((doc as any).documentType === "dossier" && (doc as any).dossierType === "primary") {
+      if ((doc).documentType === "dossier" && (doc).dossierType === "primary") {
         try {
           const quickNotes: any = await ctx.runMutation(api.domains.documents.documents.getOrCreateQuickNotes, { dossierId: documentId });
           if (quickNotes) {
@@ -149,8 +149,8 @@ export const addDocumentToEnhancedRag = internalAction({
 
       // If this is a file document, include extracted file summaries/analysis if available
       let fileMetaText = "";
-      if ((doc as any).documentType === "file" && (doc as any).fileId) {
-        const file = await ctx.runQuery(internal.domains.documents.files.getFile, { fileId: (doc as any).fileId });
+      if ((doc).documentType === "file" && (doc).fileId) {
+        const file = await ctx.runQuery(internal.domains.documents.files.getFile, { fileId: (doc).fileId });
 
         if (file) {
           fileMetaText = [file.contentSummary, file.textPreview, file.analysis]
@@ -160,7 +160,7 @@ export const addDocumentToEnhancedRag = internalAction({
       }
 
       // Combine all textual signals
-      const fullText = `${(doc as any).title}\n\n${plainText}\n\n${nodesText}\n\n${quickNotesText}\n\n${fileMetaText}`.trim();
+      const fullText = `${(doc).title}\n\n${plainText}\n\n${nodesText}\n\n${quickNotesText}\n\n${fileMetaText}`.trim();
 
       // Smart chunking with overlap
       const chunks = smartChunker(fullText, {
@@ -169,14 +169,14 @@ export const addDocumentToEnhancedRag = internalAction({
       });
 
       // Determine document type and category
-      const documentType = (doc as any).documentType || "text";
-      const category = (doc as any).dossierType || null;
+      const documentType = (doc).documentType || "text";
+      const category = (doc).dossierType || null;
 
       // Add to RAG with metadata and filters
       const result = await ragEnhanced.add(ctx, {
         namespace: userId, // User-scoped namespace for privacy
         key: documentId, // Unique key per document
-        title: (doc as any).title,
+        title: (doc).title,
         chunks,
         filterValues: [
           { name: "documentType", value: documentType },
@@ -185,9 +185,9 @@ export const addDocumentToEnhancedRag = internalAction({
         ],
         metadata: {
           documentId,
-          createdBy: (doc as any).createdBy,
-          lastModified: (doc as any).lastModified || doc._creationTime,
-          isPublic: (doc as any).isPublic || false,
+          createdBy: (doc).createdBy,
+          lastModified: (doc).lastModified || doc._creationTime,
+          isPublic: (doc).isPublic || false,
         },
       });
 

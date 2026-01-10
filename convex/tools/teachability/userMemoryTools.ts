@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use node";
 
 /**
@@ -50,22 +49,22 @@ async function embedText(text: string): Promise<number[]> {
     input: text,
   });
 
-  return (resp.data?.[0]?.embedding as number[]) ?? [];
+  return (resp.data?.[0]?.embedding) ?? [];
 }
 
-function coerceUserId(raw: Id<"users"> | string | null | undefined): Id<"users"> | null {
+function coerceUserId(raw: Id<"users">   | null | undefined): Id<"users"> | null {
   if (!raw) return null;
   if (typeof raw === "string") {
     const trimmed = raw.includes("|") ? raw.split("|")[0] : raw;
-    return trimmed as Id<"users">;
+    return trimmed;
   }
   return raw;
 }
 
 async function resolveUserId(ctx: any): Promise<Id<"users"> | null> {
-  const evalId = coerceUserId((ctx as any).evaluationUserId);
+  const evalId = coerceUserId((ctx).evaluationUserId);
   if (evalId) return evalId;
-  const authId = await getAuthUserId(ctx as any);
+  const authId = await getAuthUserId(ctx);
   return coerceUserId(authId as any);
 }
 
@@ -196,6 +195,7 @@ export const matchUserSkillTrigger = internalAction({
     userId: v.id("users"),
     userMessage: v.string(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   handler: async (ctx, args): Promise<UserTeaching | null> => {
     const lowerMessage = args.userMessage.toLowerCase();
 
@@ -229,6 +229,7 @@ export const matchUserSkillTrigger = internalAction({
       });
 
       for (const hit of vectorResults) {
+        // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
         const doc: UserTeaching | null = await ctx.runQuery(internal.tools.teachability.userMemoryQueries.getTeachingById, {
           teachingId: hit._id as Id<"userTeachings">,
         });

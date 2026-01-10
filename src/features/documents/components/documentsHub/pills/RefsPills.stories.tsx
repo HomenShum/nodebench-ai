@@ -2,7 +2,7 @@
  * Storybook stories for RefsPills component
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { RefsPills } from "./RefsPills";
 
 const meta: Meta<typeof RefsPills> = {

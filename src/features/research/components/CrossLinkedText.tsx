@@ -11,9 +11,7 @@ interface CrossLinkedTextProps {
 }
 
 export function CrossLinkedText({ text, entities = {}, onAskAI, onEntityClick, className = "" }: CrossLinkedTextProps) {
-    if (!text) return null;
-
-    // Memoize the regex construction
+    // Memoize the regex construction - must be called before any early returns
     const { regex, entityMap } = useMemo(() => {
         // Collect all entity names we want to match
         const names = Object.values(entities).map(e => e.name);
@@ -53,6 +51,8 @@ export function CrossLinkedText({ text, entities = {}, onAskAI, onEntityClick, c
         };
     }, [entities]);
 
+    // Early returns after all hooks are called
+    if (!text) return null;
     if (!regex) return <span className={className}>{text}</span>;
 
     const parts = text.split(regex);

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Core Agent Tools - MCP-first wrappers
  *

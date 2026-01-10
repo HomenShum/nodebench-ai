@@ -70,7 +70,7 @@ export const bulkUpdateSpreadsheet = action({
     }
 
     // Extract userId from identity subject
-    const userId = identity.subject as any;
+    const userId = identity.subject;
 
     // 2. Fetch file document
     const fileDoc = await ctx.runQuery(api.domains.documents.fileDocuments.getFileDocument, {

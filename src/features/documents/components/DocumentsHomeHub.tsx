@@ -1307,8 +1307,7 @@ export function DocumentsHomeHub({
         // Do NOT auto-analyze. Offer an action button to analyze on demand.
 
         toast.success(`Uploaded ${file.name}`, {
-          // @ts-ignore sonner supports action for interactive toasts
-
+          // @ts-expect-error sonner supports action for interactive toasts
           action: {
             label: "Analyze now",
 
@@ -6360,7 +6359,7 @@ export function DocumentsHomeHub({
       [agendaWeekRaw],
     );
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
 
     const allWeekItems = useMemo(() => {
       const tasks = (tasksWeekAnchored ?? []).map((t) => ({

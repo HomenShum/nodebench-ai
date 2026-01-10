@@ -225,7 +225,7 @@ export const generateResponse = action({
       return { message: responseMessage.content || "I'm not sure how to help with that.", actions: [] };
     }
 
-    const firstCallAny = toolCalls[0] as any;
+    const firstCallAny = toolCalls[0];
     const functionName: string | undefined = firstCallAny?.function?.name;
     const rawArgs = firstCallAny?.function?.arguments;
     if (firstCallAny?.type !== "function" || !functionName) {

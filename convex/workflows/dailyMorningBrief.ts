@@ -144,8 +144,8 @@ export const runDailyMorningBrief = (internalAction as any)({
           {},
         );
         const digestMemory = memoryForDate ?? latestMemory;
-        const digestContext = (digestMemory?.context ?? {}) as any;
-        const briefRecord = (digestContext as any)?.executiveBriefRecord;
+        const digestContext = (digestMemory?.context ?? {});
+        const briefRecord = (digestContext)?.executiveBriefRecord;
         const executiveBrief =
           briefRecord?.brief ||
           digestContext.executiveBrief ||
@@ -615,13 +615,13 @@ function clipText(input: string, maxLen: number): string {
     slice.lastIndexOf("?"),
   );
   if (sentenceEnd > Math.floor(maxLen * 0.6)) {
-    return slice.slice(0, sentenceEnd + 1).trim().replace(/[\[*(_]+$/g, "").trim();
+    return slice.slice(0, sentenceEnd + 1).trim().replace(/[[*(_]+$/g, "").trim();
   }
   const lastSpace = slice.lastIndexOf(" ");
   if (lastSpace > Math.floor(maxLen * 0.6)) {
-    return slice.slice(0, lastSpace).trim().replace(/[\[*(_]+$/g, "").trim();
+    return slice.slice(0, lastSpace).trim().replace(/[[*(_]+$/g, "").trim();
   }
-  return slice.trim().replace(/[\[*(_]+$/g, "").trim();
+  return slice.trim().replace(/[[*(_]+$/g, "").trim();
 }
 
 function formatTopList(entries: Array<[string, number]>, limit: number): string {
@@ -1362,7 +1362,7 @@ async function ensureStoryTasks(
   );
 }
 
-function extractJsonPayload(raw: string): any | null {
+function extractJsonPayload(raw: string): unknown {
   const trimmed = (raw || "").trim();
   if (!trimmed) return null;
   const unfenced = trimmed.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();
@@ -1385,7 +1385,7 @@ function extractJsonPayload(raw: string): any | null {
 
 function normalizeStoryIntel(raw: any): StoryIntel | null {
   if (!raw || typeof raw !== "object") return null;
-  const value = raw as any;
+  const value = raw;
   const summary = typeof value.summary === "string" ? value.summary : null;
   const hardNumbers =
     typeof value.hard_numbers === "string"
@@ -1879,7 +1879,7 @@ async function enrichTopEntitiesFromGraph(
       const personaHooks = result.personaHooks ?? {};
       const ready: string[] = [];
       const notReady: string[] = [];
-      for (const [persona, hooks] of Object.entries(personaHooks) as [string, any][]) {
+      for (const [persona, hooks] of Object.entries(personaHooks)) {
         const failCount = hooks?.failTriggers?.length || 0;
         if (failCount === 0) {
           ready.push(persona);
@@ -1890,7 +1890,7 @@ async function enrichTopEntitiesFromGraph(
 
       enriched.push({
         name: result.entityName ?? node.label,
-        type: entityType as "company" | "person",
+        type: entityType,
         summary: result.summary ? clipText(result.summary, 150) : undefined,
         funding: result.funding
           ? {

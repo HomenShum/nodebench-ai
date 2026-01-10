@@ -745,7 +745,7 @@ export const runComprehensiveEval = action({
           // Get turns - either from multi-turn scenario or single query
           const turns =
             "turns" in scenario
-              ? (scenario as MultiTurnScenario).turns
+              ? (scenario).turns
               : [{ query: (scenario as any).query }];
 
           for (const turn of turns) {

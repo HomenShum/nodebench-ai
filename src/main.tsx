@@ -19,7 +19,9 @@ if (import.meta.env?.DEV) {
         console.warn('[Dev] Suppressed extension messaging error (unhandledrejection):', msg);
         e.preventDefault();
       }
-    } catch {}
+    } catch {
+      // Error checking failed
+    }
   });
   window.addEventListener('error', (e) => {
     try {
@@ -28,7 +30,9 @@ if (import.meta.env?.DEV) {
         console.warn('[Dev] Suppressed extension messaging error (window.error):', msg);
         e.preventDefault();
       }
-    } catch {}
+    } catch {
+      // Error checking failed
+    }
   }, true);
 }
 

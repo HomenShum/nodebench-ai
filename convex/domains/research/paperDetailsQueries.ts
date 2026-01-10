@@ -11,12 +11,12 @@ export const getPaperDetails = query({
     if (args.paperId) {
       return await ctx.db
         .query("paperDetailsCache")
-        .withIndex("by_paper_id", (q) => q.eq("paperId", args.paperId!))
+        .withIndex("by_paper_id", (q) => q.eq("paperId", args.paperId))
         .first();
     }
     return await ctx.db
       .query("paperDetailsCache")
-      .withIndex("by_url", (q) => q.eq("url", args.url!))
+      .withIndex("by_url", (q) => q.eq("url", args.url))
       .first();
   },
 });

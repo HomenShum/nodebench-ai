@@ -23,7 +23,7 @@ export const writeMemory = internalMutation({
         metadata: args.entry.metadata,
         updatedAt: now,
       });
-      return existing._id as any;
+      return existing._id;
     }
 
     const id = await ctx.db.insert("mcpMemoryEntries", {
@@ -34,7 +34,7 @@ export const writeMemory = internalMutation({
       updatedAt: now,
     });
 
-    return id as any;
+    return id;
   },
 });
 
@@ -56,7 +56,7 @@ export const readMemory = internalQuery({
       .first();
     if (!entry) return null;
     return {
-      id: entry._id as any,
+      id: entry._id,
       key: entry.key,
       content: entry.content,
       metadata: entry.metadata,
@@ -88,7 +88,7 @@ export const listMemory = internalQuery({
         .first();
       if (!entry) return [];
       return [{
-        id: entry._id as any,
+        id: entry._id,
         key: entry.key,
         content: entry.content,
         metadata: entry.metadata,
@@ -104,7 +104,7 @@ export const listMemory = internalQuery({
     filtered.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 
     return filtered.slice(0, limit).map((e) => ({
-      id: e._id as any,
+      id: e._id,
       key: e.key,
       content: e.content,
       metadata: e.metadata,
@@ -141,7 +141,7 @@ export const getMemoryById = internalQuery({
     const entry = await ctx.db.get(args.id);
     if (!entry) return null;
     return {
-      id: entry._id as any,
+      id: entry._id,
       key: entry.key,
       content: entry.content,
       metadata: entry.metadata,

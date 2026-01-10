@@ -462,7 +462,7 @@ export const seedProseMirrorFromDocuments = internalMutation({
       }
 
       // Skip dossier documents (they use a different format)
-      if (doc.documentType === "dossier" || (doc as any).dossierType === "primary") {
+      if (doc.documentType === "dossier" || (doc).dossierType === "primary") {
         skipped++;
         continue;
       }

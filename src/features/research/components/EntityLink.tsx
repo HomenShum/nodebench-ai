@@ -14,26 +14,43 @@ import {
   FileText,
   ExternalLink,
   ArrowRight,
+  DollarSign,
+  ShieldCheck,
+  BookOpen,
 } from "lucide-react";
 import type { Entity, EntityType } from "../types/entitySchema";
+import { EntityHoverPreview, EntityHoverPreviewSkeleton, type EntityHoverData } from "./EntityHoverPreview";
+import { useEntityHoverData } from "../hooks/useEntityHoverData";
+
+// Extended entity type including new digest types
+type ExtendedEntityType = EntityType | "fda_approval" | "funding_event" | "research_paper";
+
+// Extended Entity interface
+interface ExtendedEntity extends Omit<Entity, "type"> {
+  type: ExtendedEntityType;
+}
 
 interface EntityLinkProps {
   /** Entity data */
-  entity: Entity;
+  entity: Entity | ExtendedEntity;
   /** Custom display name override */
   displayName?: string;
   /** Whether to show preview tooltip on hover */
   showPreview?: boolean;
   /** Callback when entity is clicked */
-  onClick?: (entity: Entity) => void;
+  onClick?: (entity: Entity | ExtendedEntity) => void;
+  /** Pre-loaded enrichment data for medium-detail preview */
+  preloadedEnrichment?: EntityHoverData;
+  /** Whether to use medium-detail preview (with lazy loading) */
+  useMediumPreview?: boolean;
   /** Custom class name */
   className?: string;
 }
 
 /**
- * Get icon for entity type
+ * Get icon for entity type (including extended types)
  */
-const getEntityIcon = (type: EntityType) => {
+const getEntityIcon = (type: ExtendedEntityType) => {
   switch (type) {
     case "company":
       return Building2;
@@ -53,15 +70,22 @@ const getEntityIcon = (type: EntityType) => {
       return TrendingUp;
     case "document":
       return FileText;
+    // Extended types
+    case "fda_approval":
+      return ShieldCheck;
+    case "funding_event":
+      return DollarSign;
+    case "research_paper":
+      return BookOpen;
     default:
       return Hash;
   }
 };
 
 /**
- * Get color classes for entity type
+ * Get color classes for entity type (including extended types)
  */
-const getEntityColors = (type: EntityType) => {
+const getEntityColors = (type: ExtendedEntityType) => {
   switch (type) {
     case "company":
       return {
@@ -135,6 +159,31 @@ const getEntityColors = (type: EntityType) => {
         icon: "text-gray-500",
         badge: "bg-gray-100 text-gray-700",
       };
+    // Extended types
+    case "fda_approval":
+      return {
+        text: "text-green-700",
+        bg: "bg-green-50 hover:bg-green-100",
+        border: "border-green-200",
+        icon: "text-green-500",
+        badge: "bg-green-100 text-green-700",
+      };
+    case "funding_event":
+      return {
+        text: "text-amber-700",
+        bg: "bg-amber-50 hover:bg-amber-100",
+        border: "border-amber-200",
+        icon: "text-amber-500",
+        badge: "bg-amber-100 text-amber-700",
+      };
+    case "research_paper":
+      return {
+        text: "text-indigo-700",
+        bg: "bg-indigo-50 hover:bg-indigo-100",
+        border: "border-indigo-200",
+        icon: "text-indigo-500",
+        badge: "bg-indigo-100 text-indigo-700",
+      };
     default:
       return {
         text: "text-gray-700",
@@ -147,21 +196,51 @@ const getEntityColors = (type: EntityType) => {
 };
 
 /**
+ * Format extended entity type for display
+ */
+const formatEntityType = (type: ExtendedEntityType): string => {
+  switch (type) {
+    case "fda_approval":
+      return "FDA Approval";
+    case "funding_event":
+      return "Funding";
+    case "research_paper":
+      return "Research";
+    default:
+      return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+};
+
+/**
  * EntityLink - AI-2027.com-inspired entity link with visual distinction
  *
  * Displays entities with type-specific styling, icons, and hover previews.
  * Supports internal dossier navigation and external links.
+ * Now supports medium-detail preview with lazy loading for enriched entities.
  */
 export const EntityLink: React.FC<EntityLinkProps> = ({
   entity,
   displayName,
   showPreview = true,
   onClick,
+  preloadedEnrichment,
+  useMediumPreview = false,
   className = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const tooltipId = useId();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Lazy load entity hover data if using medium preview
+  const { data: hoverData, isLoading } = useEntityHoverData(
+    entity.name,
+    entity.type as ExtendedEntityType,
+    {
+      enabled: useMediumPreview && isHovering && !preloadedEnrichment,
+      preloadedData: preloadedEnrichment,
+    }
+  );
 
   useEffect(() => {
     return () => {
@@ -170,12 +249,14 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
   }, []);
 
   const handleMouseEnter = () => {
+    setIsHovering(true);
     if (!showPreview) return;
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setIsOpen(true), 250);
+    timeoutRef.current = setTimeout(() => setIsOpen(true), useMediumPreview ? 300 : 250);
   };
 
   const handleMouseLeave = () => {
+    setIsHovering(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setIsOpen(false), 100);
   };
@@ -192,8 +273,17 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
     }
   };
 
-  const Icon = getEntityIcon(entity.type);
-  const colors = getEntityColors(entity.type);
+  const handleExplore = (data: EntityHoverData) => {
+    if (data.dossierId) {
+      window.location.href = `/documents/${data.dossierId}`;
+    } else {
+      // Navigate to entity profile page using hash-based routing
+      window.location.hash = `entity/${encodeURIComponent(data.name)}`;
+    }
+  };
+
+  const Icon = getEntityIcon(entity.type as ExtendedEntityType);
+  const colors = getEntityColors(entity.type as ExtendedEntityType);
   const name = displayName || entity.name;
 
   return (
@@ -226,8 +316,31 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
         )}
       </motion.button>
 
-      {/* Interactive Popover */}
-      {showPreview && (
+      {/* Interactive Popover - Medium Detail */}
+      {showPreview && useMediumPreview && (
+        <div
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          {isLoading ? (
+            <div className={`
+              absolute left-0 top-full z-50 mt-2
+              ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"}
+            `}>
+              <EntityHoverPreviewSkeleton />
+            </div>
+          ) : hoverData ? (
+            <EntityHoverPreview
+              data={hoverData}
+              isOpen={isOpen}
+              onExplore={handleExplore}
+            />
+          ) : null}
+        </div>
+      )}
+
+      {/* Interactive Popover - Basic (Legacy) */}
+      {showPreview && !useMediumPreview && (
         <div
           id={tooltipId}
           role="tooltip"
@@ -260,7 +373,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                   {entity.name}
                 </span>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.badge}`}>
-                  {entity.type}
+                  {formatEntityType(entity.type as ExtendedEntityType)}
                 </span>
               </div>
             </div>

@@ -362,7 +362,7 @@ export function buildEvidencePack(args: {
     }
   }
 
-  const linkup = args.results.find((r) => r.kind === "linkup") as Extract<EvidenceResult, { kind: "linkup" }> | undefined;
+  const linkup = args.results.find((r) => r.kind === "linkup");
   if (linkup) {
     lines.push("");
     lines.push("WEB ANSWER (with inline citations):");
@@ -377,7 +377,7 @@ export function buildEvidencePack(args: {
     }
   }
 
-  const fusionRuns = args.results.filter((r) => r.kind === "fusionSearch") as Array<Extract<EvidenceResult, { kind: "fusionSearch" }>>;
+  const fusionRuns = args.results.filter((r) => r.kind === "fusionSearch");
   for (const fr of fusionRuns) {
     lines.push("");
     lines.push(`FUSION SEARCH RESULTS (mode=${fr.task.mode}, q=${fr.task.query.slice(0, 120)}):`);

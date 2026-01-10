@@ -81,7 +81,7 @@ export function prismHighlight(code: string, lang?: string): string {
     const Prism = PrismRef;
     // Common fallback languages
     const key = (lang || '').toLowerCase();
-    const grammar = (Prism.languages as any)[key] || Prism.languages.javascript || Prism.languages.clike || Prism.languages.markup;
+    const grammar = (Prism.languages)[key] || Prism.languages.javascript || Prism.languages.clike || Prism.languages.markup;
     return Prism.highlight(code, grammar, key || 'javascript');
   } catch {
     // Fallback: escape HTML

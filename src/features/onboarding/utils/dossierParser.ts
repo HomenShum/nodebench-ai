@@ -138,8 +138,8 @@ function parseMarkdownDossiers(markdown: string): CompanyDossier[] {
   for (let i = 0; i < matches.length; i++) {
     const match = matches[i];
     const companyName = match[1].trim();
-    const startIndex = match.index! + match[0].length;
-    const endIndex = i < matches.length - 1 ? matches[i + 1].index! : markdown.length;
+    const startIndex = match.index + match[0].length;
+    const endIndex = i < matches.length - 1 ? matches[i + 1].index : markdown.length;
     const section = markdown.slice(startIndex, endIndex);
     
     // Extract funding details from section

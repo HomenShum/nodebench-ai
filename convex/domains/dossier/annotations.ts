@@ -39,7 +39,7 @@ export const getAnnotations = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    let q = ctx.db
+    const q = ctx.db
       .query("dossierAnnotations")
       .withIndex("by_user_brief", (q) => q.eq("userId", userId).eq("briefId", args.briefId));
 

@@ -10,6 +10,16 @@ import { internal } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import { enrichHighPriorityPool, enrichBackfillPool } from "./workpools";
 
+ 
+type AnyFunction = (...args: any[]) => any;
+
+/** Context type for enrichment job handlers */
+type EnrichmentContext = {
+  runMutation: AnyFunction;
+  runAction: AnyFunction;
+  runQuery: AnyFunction;
+};
+
 /**
  * Process a single enrichment job.
  * Routes to appropriate handler based on job type.
@@ -124,7 +134,7 @@ export const processJob = internalAction({
  * Analyzes content for funding keywords and extracts structured data.
  */
 async function processFundingDetection(
-  ctx: { runMutation: Function; runAction: Function; runQuery: Function },
+  ctx: EnrichmentContext,
   job: { inputPayload: { feedItemId?: Id<"feedItems"> } }
 ): Promise<{ detected: boolean; confidence?: number; extractedData?: unknown; fundingEventId?: Id<"fundingEvents"> }> {
   const { feedItemId } = job.inputPayload;
@@ -153,7 +163,7 @@ async function processFundingDetection(
  * Process entity promotion from feed item to entityContexts.
  */
 async function processEntityPromotion(
-  ctx: { runMutation: Function; runAction: Function; runQuery: Function },
+  ctx: EnrichmentContext,
   job: { inputPayload: { fundingEventId?: Id<"fundingEvents"> } }
 ): Promise<{ promoted: boolean; entityId?: Id<"entityContexts">; created?: boolean }> {
   const { fundingEventId } = job.inputPayload;
@@ -180,7 +190,7 @@ async function processEntityPromotion(
  * Fetch full article content via Linkup /fetch.
  */
 async function processFullArticleFetch(
-  ctx: { runMutation: Function; runAction: Function; runQuery: Function },
+  ctx: EnrichmentContext,
   job: { inputPayload: { url?: string; feedItemId?: Id<"feedItems">; fundingEventId?: Id<"fundingEvents"> } }
 ): Promise<{ fetched: boolean; contentLength?: number }> {
   const { url, feedItemId, fundingEventId } = job.inputPayload;
@@ -206,7 +216,7 @@ async function processFullArticleFetch(
  * Run structured search via Linkup for additional data.
  */
 async function processStructuredSearch(
-  ctx: { runMutation: Function; runAction: Function; runQuery: Function },
+  ctx: EnrichmentContext,
   job: { inputPayload: unknown }
 ): Promise<{ searched: boolean; resultsCount?: number }> {
   // Uses existing linkupStructuredSearch
@@ -221,7 +231,7 @@ async function processStructuredSearch(
  * Verify funding claims across multiple sources.
  */
 async function processVerification(
-  ctx: { runMutation: Function; runAction: Function; runQuery: Function },
+  ctx: EnrichmentContext,
   job: { inputPayload: { fundingEventId?: Id<"fundingEvents"> } }
 ): Promise<{ verified: boolean; confidence?: number; sources?: number }> {
   const { fundingEventId } = job.inputPayload;

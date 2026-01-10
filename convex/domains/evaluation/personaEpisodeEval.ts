@@ -837,12 +837,12 @@ export const runPersonaEpisodeEval = action({
 
     for (const s of scenariosRaw) {
       const scenarioStartedAt = Date.now();
-      const expectedPersona = isPersona((s as any).expectedPersona) ? ((s as any).expectedPersona as Persona) : "JPM_STARTUP_BANKER";
-      const expectedEntityId = String((s as any).expectedEntityId ?? "");
-      const allowedPersonas = Array.isArray((s as any).allowedPersonas)
-        ? ((s as any).allowedPersonas.filter(isPersona) as Persona[])
+      const expectedPersona = isPersona((s).expectedPersona) ? ((s).expectedPersona as Persona) : "JPM_STARTUP_BANKER";
+      const expectedEntityId = String((s).expectedEntityId ?? "");
+      const allowedPersonas = Array.isArray((s).allowedPersonas)
+        ? ((s).allowedPersonas.filter(isPersona) as Persona[])
         : undefined;
-      const requirements = (s as any).requirements as Scenario["requirements"] | undefined;
+      const requirements = (s).requirements as Scenario["requirements"] | undefined;
 
       let threadId: string | undefined;
       let promptMessageId: string | undefined;
@@ -905,11 +905,11 @@ export const runPersonaEpisodeEval = action({
       const providerUsage =
         providerUsageRaw && typeof providerUsageRaw === "object"
           ? {
-            promptTokens: Number((providerUsageRaw as any).promptTokens ?? 0),
-            completionTokens: Number((providerUsageRaw as any).completionTokens ?? 0),
-            totalTokens: Number((providerUsageRaw as any).totalTokens ?? 0),
-            cachedInputTokens: Number((providerUsageRaw as any).cachedInputTokens ?? 0),
-            reasoningTokens: Number((providerUsageRaw as any).reasoningTokens ?? 0),
+            promptTokens: Number((providerUsageRaw).promptTokens ?? 0),
+            completionTokens: Number((providerUsageRaw).completionTokens ?? 0),
+            totalTokens: Number((providerUsageRaw).totalTokens ?? 0),
+            cachedInputTokens: Number((providerUsageRaw).cachedInputTokens ?? 0),
+            reasoningTokens: Number((providerUsageRaw).reasoningTokens ?? 0),
           }
           : null;
 
@@ -948,7 +948,7 @@ export const runPersonaEpisodeEval = action({
           if (!extraChecks.requireTools) extraReasons.push(`missing required tools: expected ${requirements.requireTools.join(", ")} got [${callNames.join(", ")}]`);
         }
         if (requirements.requireVerificationStep) {
-          const plan = Array.isArray(normalizedDebrief?.planSteps) ? normalizedDebrief!.planSteps : [];
+          const plan = Array.isArray(normalizedDebrief?.planSteps) ? normalizedDebrief.planSteps : [];
           extraChecks.verificationStep = plan.some((p) => String(p).toLowerCase().includes("verify") || String(p).toLowerCase().includes("validate"));
           if (!extraChecks.verificationStep) extraReasons.push("missing verification loop (no planSteps entry includes 'verify' or 'validate')");
         }

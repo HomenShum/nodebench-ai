@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Agent Memory - Backend functions for persistent agent memory
  *

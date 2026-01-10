@@ -89,7 +89,7 @@ function buildSharedSeriesFromHistory(args: {
 function toMarketShare(bySource: Record<string, number>): DashboardState["charts"]["marketShare"] {
   const entries = Object.entries(bySource)
     .filter(([, count]) => typeof count === "number" && count > 0)
-    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .sort(([, a], [, b]) => (b) - (a))
     .slice(0, 3);
 
   const colors = ["black", "accent", "gray"] as const;

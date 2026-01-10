@@ -109,7 +109,7 @@ export const buildContextPack = internalAction({
       try {
         // Fetch document content using internal API (bypasses auth for agent tools)
         const doc = await ctx.runQuery(internal.domains.documents.documents.getDocumentById, {
-          documentId: docId as any,
+          documentId: docId,
         });
 
         if (!doc) {

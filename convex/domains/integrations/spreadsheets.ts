@@ -5,12 +5,12 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 
 async function getSafeUserId(ctx: any): Promise<Id<"users">> {
   // Support evaluation mode where userId is passed in ctx.evaluationUserId
-  if ((ctx as any).evaluationUserId) {
-    return (ctx as any).evaluationUserId as Id<"users">;
+  if ((ctx).evaluationUserId) {
+    return (ctx).evaluationUserId as Id<"users">;
   }
   const userId = await getAuthUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
-  return userId as Id<"users">;
+  return userId;
 }
 
 // Validators for spreadsheet operations

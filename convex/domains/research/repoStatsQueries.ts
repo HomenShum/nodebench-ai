@@ -12,13 +12,13 @@ export const getRepoStats = query({
     if (args.repoFullName) {
       return await ctx.db
         .query("repoStatsCache")
-        .withIndex("by_repo", (q) => q.eq("repoFullName", args.repoFullName!))
+        .withIndex("by_repo", (q) => q.eq("repoFullName", args.repoFullName))
         .first();
     }
 
     return await ctx.db
       .query("repoStatsCache")
-      .withIndex("by_repo_url", (q) => q.eq("repoUrl", args.repoUrl!))
+      .withIndex("by_repo_url", (q) => q.eq("repoUrl", args.repoUrl))
       .first();
   },
 });

@@ -129,7 +129,7 @@ Returns graphId and counts. Does NOT compute fingerprints (call fingerprintKnowl
     } else if (args.sourceType === "artifact") {
       // Load document
       sourceData = await ctx.runQuery(api.domains.documents.documents.getById, {
-        documentId: args.sourceId as Id<"documents">,
+        documentId: args.sourceId,
         userId,
       });
 
@@ -221,7 +221,7 @@ Call this after buildKnowledgeGraph.`,
     // Load the graph
     type GraphDoc = { _id: string } | null;
     const graph: GraphDoc = await ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphById, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
     });
 
     if (!graph) {
@@ -234,7 +234,7 @@ Call this after buildKnowledgeGraph.`,
     // Load all claims for this graph
     type ClaimDoc = { _id: string; embedding?: number[] };
     const claims: ClaimDoc[] = await ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphClaims, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
     });
 
     if (claims.length === 0) {
@@ -258,17 +258,17 @@ Call this after buildKnowledgeGraph.`,
 
     // Compute graph-level semantic fingerprint (mean pooling)
     const semanticFingerprint = await ctx.runAction(internal.domains.knowledge.knowledgeGraph.computeSemanticFingerprint, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
     });
 
     // Compute Weisfeiler-Lehman hash for structural fingerprint
     const wlSignature = await ctx.runAction(internal.domains.knowledge.knowledgeGraph.computeWLSignature, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
     });
 
     // Update the graph with fingerprints
     await ctx.runMutation(internal.domains.knowledge.knowledgeGraph.updateFingerprints, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
       semanticFingerprint,
       wlSignature,
     });
@@ -334,7 +334,7 @@ export const getGraphSummary = createTool({
     } | null;
     
     const graph: GraphDoc = await ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphById, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
     });
 
     if (!graph) {
@@ -347,7 +347,7 @@ export const getGraphSummary = createTool({
     // Get claim statistics
     type ClaimDoc = { isHighConfidence: boolean; predicate: string };
     const claims: ClaimDoc[] = await ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphClaims, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
     });
 
     const highConfidenceClaims = claims.filter((c) => c.isHighConfidence);
@@ -358,7 +358,7 @@ export const getGraphSummary = createTool({
     // Get edge statistics
     type EdgeDoc = { edgeType: string };
     const edges: EdgeDoc[] = await ctx.runQuery(api.domains.knowledge.knowledgeGraph.getGraphEdges, {
-      graphId: args.graphId as Id<"knowledgeGraphs">,
+      graphId: args.graphId,
     });
 
     const edgeTypeCounts: Record<string, number> = {};

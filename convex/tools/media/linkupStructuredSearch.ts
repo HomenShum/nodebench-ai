@@ -348,7 +348,7 @@ Returns structured JSON with deal data. Sources are stored in artifacts.`,
     }
 
     // Build natural language query from parameters
-    let queryParts = ["funding announcement", "investment round", "startup funding"];
+    const queryParts = ["funding announcement", "investment round", "startup funding"];
     
     if (args.sectors?.length) {
       queryParts.push(`in ${args.sectors.join(" OR ")}`);

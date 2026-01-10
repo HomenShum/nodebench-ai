@@ -18,11 +18,11 @@ function slugify(input: string): string {
     .slice(0, 60) || "custom-skill";
 }
 
-function coerceUserId(raw: Id<"users"> | string | null | undefined): Id<"users"> | null {
+function coerceUserId(raw: Id<"users">   | null | undefined): Id<"users"> | null {
   if (!raw) return null;
   if (typeof raw === "string") {
     const trimmed = raw.includes("|") ? raw.split("|")[0] : raw;
-    return trimmed as Id<"users">;
+    return trimmed;
   }
   return raw;
 }
@@ -39,7 +39,7 @@ Use when the user provides step-by-step guidance or a repeatable workflow.`,
   }),
   handler: async (ctx, args) => {
     const userId = coerceUserId(
-      (ctx as { evaluationUserId?: Id<"users"> | string }).evaluationUserId ??
+      (ctx as { evaluationUserId?: Id<"users">   }).evaluationUserId ??
       (await getAuthUserId(ctx as any))
     );
     if (!userId) {

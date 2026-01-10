@@ -35,7 +35,11 @@ export const getBlockText = (block: any): string => {
     if (n.type === 'text' && typeof n.text === 'string') { texts.push(n.text); }
     if (Array.isArray(n.content)) n.content.forEach(walk);
   };
-  try { walk(block); } catch {}
+  try {
+    walk(block);
+  } catch {
+    // Block walk failed
+  }
   return texts.join('');
 };
 

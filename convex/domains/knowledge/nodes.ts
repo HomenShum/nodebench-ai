@@ -163,7 +163,7 @@ export const updateOrders = mutation({
 
     let changed = 0;
     for (const [nodeIdStr, nextOrder] of dedup) {
-      const nodeId = nodeIdStr as Id<"nodes">;
+      const nodeId = nodeIdStr;
       const node = await ctx.db.get(nodeId);
       if (!node) continue;
       assertCanEdit(userId, node.authorId);

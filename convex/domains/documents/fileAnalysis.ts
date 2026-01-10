@@ -38,7 +38,7 @@ export const analyzeFileWithGenAI = action({
 
     const startTime = Date.now();
     // Using getAuthUserId for consistent authentication (with optional test bypass)
-    const userId = (args as any).testBypassUserId || await getAuthUserId(ctx);
+    const userId = (args).testBypassUserId || await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Not authenticated");
     }

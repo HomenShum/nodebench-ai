@@ -119,7 +119,7 @@ export const hybridSearchSkills = internalAction({
             category: "",
             categoryName: "",
             score: r.score,
-            matchType: r.matchType as "keyword" | "semantic" | "hybrid",
+            matchType: r.matchType,
           }));
           return { results: cachedResults, cached: true };
         }
@@ -631,7 +631,7 @@ Returns:
 
     // Calculate base confidence
     let confidence = 0.5; // Start neutral
-    let reasoning: string[] = [];
+    const reasoning: string[] = [];
 
     // Check high-confidence patterns
     for (const pattern of highConfidencePatterns) {

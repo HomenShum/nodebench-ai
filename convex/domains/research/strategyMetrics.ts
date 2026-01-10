@@ -62,7 +62,7 @@ async function generateWithProvider(
   return response.choices[0]?.message?.content || "";
 }
 
-function tryParseJson(raw: string): any | null {
+function tryParseJson(raw: string): unknown {
   const trimmed = (raw || "").trim();
   if (!trimmed) return null;
   const unfenced = trimmed.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();
@@ -144,11 +144,11 @@ export const refreshStrategyMetrics = action({
         })
       : null;
 
-    const sourceMatrix = (reader as any)?.sourceMatrix ?? [];
+    const sourceMatrix = (reader)?.sourceMatrix ?? [];
     const context = [
       args.summary,
-      (reader as any)?.excerpt,
-      (reader as any)?.content,
+      (reader)?.excerpt,
+      (reader)?.content,
     ]
       .filter(Boolean)
       .join("\n\n")
