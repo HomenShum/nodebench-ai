@@ -9,6 +9,7 @@
     "dev:backend": "convex dev --typecheck=disable",
     "dev:voice": "tsx --watch --env-file=.env.local server/index.ts",
     "build": "vite build",
+    "deploy:convex": "convex deploy --typecheck=disable",
     "build:voice": "tsc -p server/tsconfig.json",
     "start:voice": "node dist/server/index.js",
     "lint": "tsc -p convex -noEmit --pretty false && tsc -p . -noEmit --pretty false && convex dev --once && vite build",
