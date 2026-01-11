@@ -1076,9 +1076,11 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                 icon={"🗺️"}
                 title={"Roadmap Hub"}
                 date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                accent
+                className="mb-6"
                 presets={
                   <>
-                    <span className="text-xs text-gray-500 mr-2">
+                    <span className="text-xs text-[var(--text-secondary)] mr-2">
                       Presets:
                     </span>
 

@@ -145,7 +145,7 @@ function FileViewerModal({ file, onClose }: { file: FileViewerFile; onClose: () 
           <div className="pdf-viewer">
             {loading && (
               <div className="file-loading">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--text-muted)]" />
                 <p>Loading PDF...</p>
               </div>
             )}
@@ -167,7 +167,7 @@ function FileViewerModal({ file, onClose }: { file: FileViewerFile; onClose: () 
           <div className="html-viewer">
             {loading && (
               <div className="file-loading">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--text-muted)]" />
                 <p>Loading HTML...</p>
               </div>
             )}
@@ -349,14 +349,14 @@ const fileViewerStyles = `
     gap: 0.5rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
   }
 
   .viewer-count {
     font-size: 0.75rem;
     font-weight: 400;
-    color: #6b7280;
+    color: var(--text-secondary);
   }
 
   .file-grid {
@@ -366,8 +366,8 @@ const fileViewerStyles = `
   }
 
   .file-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     padding: 1rem;
     cursor: pointer;
@@ -404,7 +404,7 @@ const fileViewerStyles = `
   .file-title {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #111827;
+    color: var(--text-primary);
     line-height: 1.3;
     margin-bottom: 0.5rem;
     padding-right: 3rem;
@@ -412,13 +412,13 @@ const fileViewerStyles = `
 
   .file-meta {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin-bottom: 0.125rem;
   }
 
   .file-source {
     font-size: 0.6875rem;
-    color: #9ca3af;
+    color: var(--text-muted);
     margin-top: 0.25rem;
   }
 
@@ -429,17 +429,17 @@ const fileViewerStyles = `
 
   .action-btn {
     padding: 0.375rem;
-    background: #f3f4f6;
+    background: var(--bg-hover);
     border: none;
     border-radius: 0.25rem;
-    color: #6b7280;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s;
   }
 
   .action-btn:hover {
-    background: #e5e7eb;
-    color: #111827;
+    background: var(--border-color);
+    color: var(--text-primary);
   }
 
   .file-modal {
@@ -473,7 +473,7 @@ const fileViewerStyles = `
 
   .modal-content {
     position: relative;
-    background: white;
+    background: var(--bg-primary);
     border-radius: 0.75rem;
     max-width: 1200px;
     max-height: 90vh;
@@ -488,18 +488,18 @@ const fileViewerStyles = `
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .modal-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--text-primary);
   }
 
   .modal-subtitle {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin-top: 0.25rem;
   }
 
@@ -512,15 +512,15 @@ const fileViewerStyles = `
     padding: 0.5rem;
     background: transparent;
     border: none;
-    color: #6b7280;
+    color: var(--text-secondary);
     cursor: pointer;
     border-radius: 0.25rem;
     transition: all 0.15s;
   }
 
   .modal-btn:hover {
-    background: #f3f4f6;
-    color: #111827;
+    background: var(--bg-hover);
+    color: var(--text-primary);
   }
 
   .pdf-viewer,
@@ -528,7 +528,7 @@ const fileViewerStyles = `
   .txt-viewer {
     flex: 1;
     min-height: 600px;
-    background: #f9fafb;
+    background: var(--bg-secondary);
     position: relative;
   }
 
@@ -549,8 +549,8 @@ const fileViewerStyles = `
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    background: #f9fafb;
-    color: #6b7280;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
   }
 
   .file-error {
@@ -566,12 +566,12 @@ const fileViewerStyles = `
   .error-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--text-primary);
   }
 
   .error-message {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--text-secondary);
     max-width: 400px;
   }
 
@@ -617,7 +617,7 @@ const fileViewerStyles = `
 
   .modal-footer {
     padding: 1rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border-color);
   }
 
   .footer-row {
@@ -628,12 +628,12 @@ const fileViewerStyles = `
 
   .footer-label {
     font-size: 0.8125rem;
-    color: #6b7280;
+    color: var(--text-secondary);
   }
 
   .footer-value {
     font-size: 0.8125rem;
-    color: #111827;
+    color: var(--text-primary);
     font-family: monospace;
   }
 

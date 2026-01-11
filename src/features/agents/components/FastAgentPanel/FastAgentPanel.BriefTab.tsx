@@ -34,7 +34,7 @@ function statusIcon(status: BriefStatus) {
   if (status === "failing") {
     return <AlertCircle className="w-3.5 h-3.5 text-red-600" />;
   }
-  return <Circle className="w-3.5 h-3.5 text-gray-400" />;
+  return <Circle className="w-3.5 h-3.5 text-[var(--text-muted)]" />;
 }
 
 function TaskCard({
@@ -73,10 +73,10 @@ function TaskCard({
         <div className="mt-0.5">{statusIcon(task.status)}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-800 line-clamp-2">
+            <span className="text-xs font-medium text-[var(--text-primary)] line-clamp-2">
               {task.name}
             </span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-700">
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-primary)]">
               {task.type}
             </span>
             {isPersonal && (
@@ -90,14 +90,14 @@ function TaskCard({
                   "ml-auto text-[9px] px-1.5 py-0.5 rounded border",
                   isNextUp
                     ? "bg-indigo-600 text-white border-indigo-600"
-                    : "bg-white text-gray-600 border-gray-200",
+                    : "bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]",
                 )}
               >
                 {isNextUp ? "Next up" : `#${queuePosition}`}
               </span>
             )}
           </div>
-          <p className="text-[10px] text-gray-500 mt-0.5 line-clamp-2">
+          <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 line-clamp-2">
             {task.testCriteria}
           </p>
 
@@ -105,7 +105,7 @@ function TaskCard({
             <p
               className={cn(
                 "text-[10px] mt-1",
-                task.status === "failing" ? "text-red-700" : "text-gray-600",
+                task.status === "failing" ? "text-red-700" : "text-[var(--text-secondary)]",
               )}
             >
               {task.status === "failing" ? "Issue: " : "Notes: "}
@@ -114,7 +114,7 @@ function TaskCard({
           )}
 
           {resultMarkdown && (
-            <div className="mt-2 text-[11px] text-gray-700 whitespace-pre-wrap line-clamp-6">
+            <div className="mt-2 text-[11px] text-[var(--text-primary)] whitespace-pre-wrap line-clamp-6">
               {resultMarkdown}
             </div>
           )}
@@ -127,7 +127,7 @@ function TaskCard({
               className={cn(
                 "mt-2 gap-1 px-2 py-1 text-[10px] font-medium",
                 retryDisabled
-                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                  ? "bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed"
                   : buttonDanger,
               )}
             >
@@ -317,7 +317,7 @@ export function BriefTab() {
 
   if (memory === undefined) {
     return (
-      <div className="flex-1 flex items-center justify-center text-sm text-gray-500">
+      <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-secondary)]">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
         Loading daily brief...
       </div>
@@ -326,7 +326,7 @@ export function BriefTab() {
 
   if (!memory) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-sm text-gray-500 gap-2">
+      <div className="flex-1 flex flex-col items-center justify-center text-sm text-[var(--text-secondary)] gap-2">
         No daily brief memory yet.
         <button
           type="button"
@@ -401,11 +401,11 @@ export function BriefTab() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <RefreshCcw className="w-4 h-4 text-blue-500" />
-            <span className="text-sm font-medium text-gray-800">
+            <span className="text-sm font-medium text-[var(--text-primary)]">
               Daily Brief Memory
             </span>
           </div>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[var(--text-secondary)]">
             {passingCount} passing / {failingCount} failed / {pendingCount} pending
           </span>
         </div>
@@ -413,7 +413,7 @@ export function BriefTab() {
         {/* Progress bar */}
         {allFeatures.length > 0 && (
           <div className="mb-3">
-            <div className="h-1.5 w-full bg-gray-100 rounded overflow-hidden flex">
+            <div className="h-1.5 w-full bg-[var(--bg-hover)] rounded overflow-hidden flex">
               <div
                 className="h-full bg-emerald-500"
                 style={{ width: `${passingPct}%` }}
@@ -423,7 +423,7 @@ export function BriefTab() {
                 style={{ width: `${failingPct}%` }}
               />
               <div
-                className="h-full bg-gray-300"
+                className="h-full bg-[var(--text-muted)]"
                 style={{ width: `${pendingPct}%` }}
               />
             </div>
@@ -475,7 +475,7 @@ export function BriefTab() {
               buttonSecondary,
               "flex-1 gap-2 px-3 py-2 text-xs font-medium",
               (isRunning || isViewingHistorical || pendingCount === 0) &&
-                "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:bg-gray-100",
+                "bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed hover:bg-[var(--bg-hover)]",
             )}
           >
             {runAllProgress ? (
@@ -505,7 +505,7 @@ export function BriefTab() {
               buttonSecondary,
               "flex-1 gap-2 px-3 py-2 text-xs font-medium",
               (isRunning || isViewingHistorical || pendingCount === 0) &&
-                "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:bg-gray-100",
+                "bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed hover:bg-[var(--bg-hover)]",
             )}
             title={`Run all ${pendingCount} pending tasks`}
           >
@@ -651,7 +651,7 @@ export function BriefTab() {
             })}
 
             {globalFeatures.length === 0 && (
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-[var(--text-secondary)]">
                 No global tasks generated.
               </div>
             )}

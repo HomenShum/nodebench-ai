@@ -78,17 +78,17 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
   ];
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)] overflow-hidden ${className}`}>
+    <div className={`bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] overflow-hidden ${className}`}>
       
       {/* Header: "Live" Pulse */}
-      <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-white flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-[color:var(--border-color)] bg-gradient-to-r from-[color:var(--bg-secondary)]/80 to-[color:var(--bg-primary)] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-blue-100">
             <Activity className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest">Global Radar</h3>
-            <p className="text-[9px] text-gray-400">Agent-Curated Intelligence</p>
+            <h3 className="text-xs font-bold text-[color:var(--text-primary)] uppercase tracking-widest">Global Radar</h3>
+            <p className="text-[9px] text-[color:var(--text-secondary)]">Agent-Curated Intelligence</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 rounded-full border border-green-200">
@@ -98,16 +98,16 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
       </div>
 
       {/* Categories */}
-      <div className="flex p-1 gap-1 border-b border-gray-100 bg-gray-50/50">
+      <div className="flex p-1 gap-1 border-b border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]/50">
         {categoryTabs.map(tab => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-              activeTab === tab.id 
-                ? 'bg-white text-gray-900 shadow-sm border border-gray-200' 
-                : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+              activeTab === tab.id
+                ? 'bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] shadow-sm border border-[color:var(--border-color)]'
+                : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--bg-hover)] hover:text-[color:var(--text-primary)]'
             }`}
           >
             <tab.icon className="w-3 h-3" />
@@ -117,13 +117,13 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
       </div>
 
       {/* Signal List */}
-      <div className="divide-y divide-gray-50 min-h-[180px] max-h-[320px] overflow-y-auto">
+      <div className="divide-y divide-[color:var(--bg-secondary)] min-h-[180px] max-h-[320px] overflow-y-auto">
         {!signals ? (
-          <div className="flex items-center justify-center h-40 text-gray-400">
+          <div className="flex items-center justify-center h-40 text-[color:var(--text-secondary)]">
             <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : filteredSignals.length === 0 ? (
-          <div className="p-4 text-center text-xs text-gray-400">
+          <div className="p-4 text-center text-xs text-[color:var(--text-secondary)]">
             No active signals in this category.
           </div>
         ) : (
@@ -136,7 +136,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
               <div 
                 key={signal._id} 
                 onClick={() => handleAnalyze(signal)}
-                className="group p-3 hover:bg-gray-50/80 transition-colors cursor-pointer relative"
+                className="group p-3 hover:bg-[color:var(--bg-hover)]/80 transition-colors cursor-pointer relative"
               >
                 {/* Hover Action Hint */}
                 <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -147,15 +147,15 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
 
                 {/* Rank & Title */}
                 <div className="flex items-start gap-3 mb-2">
-                  <span className="text-xs font-mono font-bold text-gray-300 mt-0.5 w-5">
+                  <span className="text-xs font-mono font-bold text-[color:var(--bg-tertiary)] mt-0.5 w-5">
                     0{i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2 pr-16">
+                    <h4 className="text-sm font-semibold text-[color:var(--text-primary)] leading-tight group-hover:text-blue-600 transition-colors line-clamp-2 pr-16">
                       {signal.title}
                     </h4>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-[10px] text-gray-400">{signal.source}</span>
+                      <span className="text-[10px] text-[color:var(--text-secondary)]">{signal.source}</span>
                       
                       {/* Smart Badges */}
                       {isViral && (
@@ -179,16 +179,16 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
 
                 {/* Velocity Meter */}
                 <div className="flex items-center gap-3 pl-8">
-                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
+                  <div className="flex-1 h-1.5 bg-[color:var(--bg-secondary)] rounded-full overflow-hidden">
+                    <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        isViral ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 
-                        isTrending ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-gray-400'
+                        isViral ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                        isTrending ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-[color:var(--text-secondary)]'
                       }`} 
                       style={{ width: `${velocity}%` }} 
                     />
                   </div>
-                  <div className="flex items-center gap-0.5 text-[10px] font-mono font-medium text-gray-500 min-w-[40px]">
+                  <div className="flex items-center gap-0.5 text-[10px] font-mono font-medium text-[color:var(--text-secondary)] min-w-[40px]">
                     <Zap className={`w-3 h-3 ${isViral ? 'text-purple-500 fill-purple-500' : 'text-orange-400 fill-orange-400'}`} />
                     {Math.round(velocity)}
                   </div>
@@ -200,9 +200,9 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
       </div>
 
       {/* Footer */}
-      <button 
+      <button
         type="button"
-        className="w-full py-3 text-[10px] font-bold text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-colors border-t border-gray-100 uppercase tracking-widest flex items-center justify-center gap-2"
+        className="w-full py-3 text-[10px] font-bold text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors border-t border-[color:var(--border-color)] uppercase tracking-widest flex items-center justify-center gap-2"
       >
         View Full Intelligence Report <ArrowUpRight className="w-3 h-3" />
       </button>

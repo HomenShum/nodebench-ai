@@ -29,10 +29,10 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
                     )}
                 </div>
                 <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">
                         {isComplete ? "Deep Research Complete" : "Deep Research in Progress"}
                     </h3>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-[var(--text-secondary)]">
                         {isComplete ? "All tasks finished successfully." : "Orchestrating specialized agents..."}
                     </p>
                 </div>
@@ -41,7 +41,7 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
             {/* Steps */}
             <div className="relative space-y-0">
                 {/* Vertical Line */}
-                <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-gray-100" />
+                <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-[var(--bg-hover)]" />
 
                 {steps.map((step, idx) => {
                     const isLast = idx === steps.length - 1;
@@ -60,7 +60,7 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
                                             ? "bg-green-500 border-green-500"
                                             : isActive
                                                 ? "bg-white border-purple-500 ring-4 ring-purple-50"
-                                                : "bg-white border-gray-200"
+                                                : "bg-white border-[var(--border-color)]"
                                     )}
                                 >
                                     {isDone ? (
@@ -68,7 +68,7 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
                                     ) : isActive ? (
                                         <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
                                     ) : (
-                                        <Circle className="w-3 h-3 text-gray-300 fill-gray-50" />
+                                        <Circle className="w-3 h-3 text-[var(--text-muted)] fill-[var(--bg-secondary)]" />
                                     )}
                                 </div>
                             </div>
@@ -78,13 +78,13 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
                                 <h4
                                     className={cn(
                                         "text-sm font-semibold leading-none mb-1",
-                                        isActive ? "text-purple-700" : isDone ? "text-gray-900" : "text-gray-500"
+                                        isActive ? "text-purple-700" : isDone ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
                                     )}
                                 >
                                     {step.label}
                                 </h4>
                                 {step.details && (
-                                    <p className="text-xs text-gray-500 leading-relaxed max-w-md">{step.details}</p>
+                                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed max-w-md">{step.details}</p>
                                 )}
                             </div>
                         </div>

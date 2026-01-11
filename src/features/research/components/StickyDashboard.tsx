@@ -304,7 +304,7 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
           </div>
         )}
       </div>
-      <span className="text-xs font-mono font-bold text-gray-900">{normalizeCapabilityScore(score)}%</span>
+      <span className="text-xs font-mono font-bold text-[color:var(--text-primary)]">{normalizeCapabilityScore(score)}%</span>
     </div>
     <div className="h-1.5 w-full bg-stone-200 overflow-hidden">
       <motion.div

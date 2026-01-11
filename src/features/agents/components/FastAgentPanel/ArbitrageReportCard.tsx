@@ -77,7 +77,7 @@ function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
   const config = {
     high: { label: 'High', bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-300' },
     medium: { label: 'Medium', bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-300' },
-    low: { label: 'Low', bg: 'bg-gray-100 dark:bg-gray-800/40', text: 'text-gray-600 dark:text-gray-400' },
+    low: { label: 'Low', bg: 'bg-[var(--bg-hover)] dark:bg-[var(--bg-secondary)]', text: 'text-[var(--text-secondary)] dark:text-[var(--text-muted)]' },
   };
   const c = config[severity];
   return (
@@ -126,7 +126,7 @@ function CollapsibleSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
   const variantStyles = {
-    default: 'border-gray-200 dark:border-gray-700',
+    default: 'border-[var(--border-color)] dark:border-[var(--border-color)]',
     warning: 'border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/20',
     success: 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/20',
     error: 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-900/20',
@@ -136,19 +136,19 @@ function CollapsibleSection({
     <div className={cn('border rounded-lg overflow-hidden', variantStyles[variant])}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-left hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--bg-secondary)] transition-colors"
       >
         {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         <Icon className="h-4 w-4" />
         <span className="flex-1">{title}</span>
         {count !== undefined && (
-          <span className="px-1.5 py-0.5 text-xs font-medium bg-gray-200 dark:bg-gray-700 rounded-full">
+          <span className="px-1.5 py-0.5 text-xs font-medium bg-[var(--bg-secondary)] dark:bg-[var(--bg-secondary)] rounded-full">
             {count}
           </span>
         )}
       </button>
       {isOpen && (
-        <div className="px-3 pb-3 pt-1 border-t border-gray-200 dark:border-gray-700">
+        <div className="px-3 pb-3 pt-1 border-t border-[var(--border-color)] dark:border-[var(--border-color)]">
           {children}
         </div>
       )}
@@ -174,13 +174,13 @@ export function ArbitrageReportCard({ data, className }: ArbitrageReportCardProp
       {/* Header with overall status */}
       <div className="flex items-center gap-2 px-1">
         <Shield className="h-4 w-4 text-blue-500" />
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Verification Report</span>
+        <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">Verification Report</span>
         {data.overallStatus && <StatusBadge status={data.overallStatus} size="sm" />}
       </div>
 
       {/* Summary if provided */}
       {data.summary && (
-        <p className="text-xs text-gray-600 dark:text-gray-400 px-1">{data.summary}</p>
+        <p className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)] px-1">{data.summary}</p>
       )}
 
       {/* Contradictions */}
@@ -194,22 +194,22 @@ export function ArbitrageReportCard({ data, className }: ArbitrageReportCardProp
         >
           <div className="space-y-2">
             {data.contradictions!.map((c, idx) => (
-              <div key={c.id || idx} className="p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+              <div key={c.id || idx} className="p-2 bg-[var(--bg-primary)] dark:bg-[var(--bg-secondary)] rounded border border-[var(--border-color)] dark:border-[var(--border-color)]">
                 <div className="flex items-center gap-2 mb-1">
                   <SeverityBadge severity={c.severity} />
                 </div>
                 <div className="text-xs space-y-1">
                   <div className="flex gap-1">
-                    <span className="text-gray-500">Claim 1:</span>
-                    <span className="text-gray-700 dark:text-gray-300">{c.claim1.claim}</span>
-                    <span className="text-gray-400">({c.claim1.source})</span>
+                    <span className="text-[var(--text-secondary)]">Claim 1:</span>
+                    <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.claim1.claim}</span>
+                    <span className="text-[var(--text-muted)]">({c.claim1.source})</span>
                   </div>
                   <div className="flex gap-1">
-                    <span className="text-gray-500">Claim 2:</span>
-                    <span className="text-gray-700 dark:text-gray-300">{c.claim2.claim}</span>
-                    <span className="text-gray-400">({c.claim2.source})</span>
+                    <span className="text-[var(--text-secondary)]">Claim 2:</span>
+                    <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.claim2.claim}</span>
+                    <span className="text-[var(--text-muted)]">({c.claim2.source})</span>
                   </div>
-                  <div className="text-gray-600 dark:text-gray-400 italic mt-1">{c.analysis}</div>
+                  <div className="text-[var(--text-secondary)] dark:text-[var(--text-muted)] italic mt-1">{c.analysis}</div>
                 </div>
               </div>
             ))}
@@ -228,10 +228,10 @@ export function ArbitrageReportCard({ data, className }: ArbitrageReportCardProp
           <div className="space-y-1">
             {data.rankedSources!.map((s, idx) => (
               <div key={s.url || idx} className="flex items-center gap-2 py-1 text-xs">
-                <span className="font-mono text-gray-500 w-4">{idx + 1}.</span>
+                <span className="font-mono text-[var(--text-secondary)] w-4">{idx + 1}.</span>
                 <QualityTierBadge tier={s.tier} score={s.finalScore} />
-                <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{s.name}</span>
-                <span className="text-gray-400 text-[10px]">{s.type}</span>
+                <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate flex-1">{s.name}</span>
+                <span className="text-[var(--text-muted)] text-[10px]">{s.type}</span>
               </div>
             ))}
           </div>
@@ -253,9 +253,9 @@ export function ArbitrageReportCard({ data, className }: ArbitrageReportCardProp
                 {d.type === 'fact_removed' && <TrendingDown className="h-3 w-3 text-red-500" />}
                 {d.type === 'fact_modified' && <Minus className="h-3 w-3 text-amber-500" />}
                 {d.type.includes('conflict') && <AlertTriangle className="h-3 w-3 text-amber-500" />}
-                {d.type.includes('source') && <Link2 className="h-3 w-3 text-gray-500" />}
+                {d.type.includes('source') && <Link2 className="h-3 w-3 text-[var(--text-secondary)]" />}
                 <SeverityBadge severity={d.severity} />
-                <span className="text-gray-700 dark:text-gray-300 flex-1">{d.description}</span>
+                <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex-1">{d.description}</span>
               </div>
             ))}
           </div>
@@ -276,9 +276,9 @@ export function ArbitrageReportCard({ data, className }: ArbitrageReportCardProp
                 {h.status === 'ok' && <CheckCircle2 className="h-3 w-3 text-green-500" />}
                 {h.status === '404' && <XCircle className="h-3 w-3 text-red-500" />}
                 {h.status === 'content_changed' && <FileWarning className="h-3 w-3 text-amber-500" />}
-                <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{h.url}</span>
+                <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate flex-1">{h.url}</span>
                 {h.responseTimeMs && (
-                  <span className="text-gray-400 text-[10px]">{h.responseTimeMs}ms</span>
+                  <span className="text-[var(--text-muted)] text-[10px]">{h.responseTimeMs}ms</span>
                 )}
               </div>
             ))}

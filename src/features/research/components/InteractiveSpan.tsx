@@ -101,7 +101,7 @@ export const InteractiveSpan: React.FC<InteractiveSpanProps> = ({
     positive: "text-emerald-700 decoration-emerald-300/60 hover:bg-emerald-50 hover:text-emerald-800",
     negative: "text-red-700 decoration-red-300/60 hover:bg-red-50 hover:text-red-800",
     warning: "text-amber-700 decoration-amber-300/60 hover:bg-amber-50 hover:text-amber-800",
-    neutral: "text-gray-700 decoration-gray-300/60 hover:bg-gray-50 hover:text-gray-800",
+    neutral: "text-[color:var(--text-primary)] decoration-[color:var(--bg-tertiary)]/60 hover:bg-[color:var(--bg-hover)] hover:text-[color:var(--text-primary)]",
   };
 
   const VariantIcon = {
@@ -148,7 +148,7 @@ export const InteractiveSpan: React.FC<InteractiveSpanProps> = ({
           role="tooltip"
           className={cn(
             "pointer-events-none absolute left-0 top-full z-50 w-72 translate-y-2",
-            "rounded-lg border border-gray-200 bg-white p-3 text-left shadow-xl ring-1 ring-black/5",
+            "rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] p-3 text-left shadow-xl ring-1 ring-black/5",
             "transition-all duration-200 origin-top",
             isTooltipOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"
           )}
@@ -156,13 +156,13 @@ export const InteractiveSpan: React.FC<InteractiveSpanProps> = ({
           <span className="flex flex-col gap-1">
             <span className="flex items-center gap-2">
               <VariantIcon className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">
                 {dataIndex !== undefined ? `Point ${dataIndex}` : "Context"}
               </span>
             </span>
-            <span className="text-sm leading-relaxed text-gray-700 font-sans">{summary}</span>
+            <span className="text-sm leading-relaxed text-[color:var(--text-primary)] font-sans">{summary}</span>
             {source && (
-              <span className="border-t border-gray-100 pt-2 text-[10px] text-gray-400">
+              <span className="border-t border-[color:var(--border-color)] pt-2 text-[10px] text-[color:var(--text-secondary)]">
                 Source: {source}
               </span>
             )}

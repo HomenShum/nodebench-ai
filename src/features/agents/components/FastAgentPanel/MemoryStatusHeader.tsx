@@ -67,7 +67,7 @@ export function MemoryStatusHeader({
             done: { label: 'Done', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
             active: { label: 'Active', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
             failed: { label: 'Failed', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-            queued: { label: 'Queued', className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
+            queued: { label: 'Queued', className: 'bg-[var(--bg-hover)] text-[var(--text-secondary)] dark:bg-[var(--bg-secondary)] dark:text-[var(--text-muted)]' },
         };
         const { label, className } = config[status];
         return (
@@ -97,7 +97,7 @@ export function MemoryStatusHeader({
                     <div className={cn(
                         "w-2 h-2 rounded-full flex-shrink-0",
                         doneItems === totalItems && totalItems > 0 ? "bg-green-500" :
-                            activeItem ? "bg-blue-500 animate-pulse" : "bg-gray-400"
+                            activeItem ? "bg-blue-500 animate-pulse" : "bg-[var(--text-muted)]"
                     )} />
 
                     {/* Progress text */}

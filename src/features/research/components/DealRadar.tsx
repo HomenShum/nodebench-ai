@@ -43,7 +43,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             {/* Header with Stats */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-2xl font-serif font-bold text-gray-900 italic">Deal Radar</h3>
+                    <h3 className="text-2xl font-serif font-bold text-[color:var(--text-primary)] italic">Deal Radar</h3>
                     <p className="text-xs text-stone-500 mt-1">
                         Recent financings matching JPM criteria • {stats.filtered} of {stats.total} deals
                     </p>

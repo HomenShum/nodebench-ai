@@ -16,8 +16,8 @@ import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
 import { internal, api } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
-import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
+import { getLanguageModelSafe } from "./mcp_tools/models/modelResolver";
 
 // ============================================================================
 // Types & Constants
@@ -134,8 +134,8 @@ export const createSwarm = action({
     const now = Date.now();
 
     // 1. Create thread first for instant UI feedback
-    const threadId = await ctx.runMutation(
-      api.domains.agents.fastAgentPanelStreaming.createThreadMutation,
+    const threadId = await ctx.runAction(
+      internal.domains.agents.fastAgentPanelStreaming.createThreadForUserInternal,
       {
         userId,
         title: `Swarm: ${query.slice(0, 40)}...`,
@@ -263,6 +263,7 @@ export const executeSwarmInternal = internalAction({
       const MAX_WAIT_MS = 5 * 60 * 1000; // 5 minutes
       const POLL_INTERVAL_MS = 2000; // 2 seconds
       let elapsed = 0;
+      let completedPoll = false;
 
       while (elapsed < MAX_WAIT_MS) {
         await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
@@ -270,9 +271,14 @@ export const executeSwarmInternal = internalAction({
 
         // Check delegation statuses
         const delegations = await ctx.runQuery(
-          api.domains.agents.agentDelegations.getDelegationsForRun,
-          { runId: swarmId }
+          internal.domains.agents.agentDelegations.listByRunInternal as any,
+          { runId: swarmId, userId }
         );
+
+        // On first ticks, delegation records may not exist yet; don't treat empty as "all completed".
+        if (!Array.isArray(delegations) || delegations.length < delegationTasks.length) {
+          continue;
+        }
 
         const allCompleted = delegations.every(
           (d: any) => d.status === "completed" || d.status === "failed"
@@ -281,14 +287,13 @@ export const executeSwarmInternal = internalAction({
         if (allCompleted) {
           // Update task records with results
           for (const delegation of delegations) {
-            const task = tasks.find(
-              (t, i) => delegationTasks[i].delegationId === delegation.delegationId
-            );
+            const idx = delegationTasks.findIndex((t) => t.delegationId === delegation.delegationId);
+            const task = idx >= 0 ? tasks[idx] : null;
             if (task) {
               // Get the final write event for this delegation
               const events = await ctx.runQuery(
-                api.domains.agents.agentDelegations.getWriteEvents,
-                { delegationId: delegation.delegationId }
+                internal.domains.agents.agentDelegations.getWriteEventsInternal as any,
+                { delegationId: delegation.delegationId, limit: 500 }
               );
               const finalEvent = events.find((e: any) => e.kind === "final");
 
@@ -303,8 +308,19 @@ export const executeSwarmInternal = internalAction({
               });
             }
           }
+          completedPoll = true;
           break;
         }
+      }
+
+      if (!completedPoll) {
+        await ctx.runMutation(api.domains.agents.swarmMutations.updateSwarmStatus, {
+          swarmId,
+          status: "failed",
+          completedAt: Date.now(),
+          elapsedMs: Date.now() - startTime,
+        });
+        return;
       }
 
       // 6. Gather results and synthesize
@@ -347,7 +363,7 @@ export const executeSwarmInternal = internalAction({
         swarmId,
       });
 
-      const synthesis = await synthesizeResults(swarm?.query || "", results);
+      const synthesis = await synthesizeResults(model, swarm?.query || "", results);
 
       // 8. Save merged result
       await ctx.runMutation(api.domains.agents.swarmMutations.setSwarmResult, {
@@ -451,6 +467,7 @@ function getAgentFocus(agentName: string): string {
 }
 
 async function synthesizeResults(
+  model: string,
   query: string,
   results: Array<{ agentName: string; role: string; result: string }>
 ): Promise<{ content: string; confidence: number }> {
@@ -464,7 +481,7 @@ ${r.result}
     .join("\n");
 
   const { text } = await generateText({
-    model: anthropic("claude-sonnet-4-20250514"),
+    model: getLanguageModelSafe(model),
     prompt: `You are a synthesis agent. Merge multiple research results into a unified, coherent answer.
 
 Original Query: "${query}"

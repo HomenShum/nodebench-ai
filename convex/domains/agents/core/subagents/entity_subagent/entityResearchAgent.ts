@@ -8,18 +8,10 @@
  */
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
 import { createTool } from "@convex-dev/agent";
+import { getLanguageModelSafe } from "../../../mcp_tools/models/modelResolver";
 
-// Helper to get the appropriate language model based on model name
-function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) return anthropic(modelName);
-  if (modelName.startsWith("gemini-")) return google(modelName);
-  return openai.chat(modelName);
-}
 import { z } from "zod";
 
 // Import existing tools
@@ -88,7 +80,7 @@ const searchEntity = createTool({
 export function createEntityResearchAgent(model: string) {
     return new Agent(components.agent, {
         name: "EntityResearchAgent",
-        languageModel: getLanguageModel(model),
+        languageModel: getLanguageModelSafe(model),
         instructions: `You are the Entity Research Agent for NodeBench AI.
     
     # RESPONSIBILITIES

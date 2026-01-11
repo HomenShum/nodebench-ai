@@ -120,33 +120,33 @@ export function ToolResultPopover({
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto"
+          className="bg-[var(--bg-primary)] rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
             <div className="flex items-center gap-3">
               <Code2 className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-900">{displayToolName}</h2>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">{displayToolName}</h2>
             </div>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
+              className="p-1 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
               aria-label="Close"
             >
-              <X className="h-5 w-5 text-gray-500" />
+              <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 px-6 bg-white">
+          <div className="flex border-b border-[var(--border-color)] px-6 bg-[var(--bg-primary)]">
             <button
               onClick={() => setActiveTab('result')}
               className={cn(
                 'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
                 activeTab === 'result'
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
               Result
@@ -158,7 +158,7 @@ export function ToolResultPopover({
                   'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
                   activeTab === 'args'
                     ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
               >
                 Arguments
@@ -171,7 +171,7 @@ export function ToolResultPopover({
                   'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
                   activeTab === 'error'
                     ? 'border-red-600 text-red-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
               >
                 Error
@@ -186,28 +186,28 @@ export function ToolResultPopover({
                 {/* Media galleries */}
                 {extractedMedia.youtubeVideos.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Videos</h3>
+                    <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">Videos</h3>
                     <YouTubeGallery videos={extractedMedia.youtubeVideos} />
                   </div>
                 )}
 
                 {extractedMedia.secDocuments.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Documents</h3>
+                    <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">Documents</h3>
                     <SECDocumentGallery documents={extractedMedia.secDocuments} />
                   </div>
                 )}
 
                 {extractedMedia.images.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Images</h3>
+                    <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">Images</h3>
                     <div className="grid grid-cols-2 gap-2">
                       {extractedMedia.images.map((img, idx) => (
                         <img
                           key={idx}
                           src={img.url}
                           alt={img.alt}
-                          className="rounded-lg border border-gray-200 w-full h-auto"
+                          className="rounded-lg border border-[var(--border-color)] w-full h-auto"
                         />
                       ))}
                     </div>
@@ -217,8 +217,8 @@ export function ToolResultPopover({
                 {/* Text result */}
                 {typeof cleanedResult === 'string' && cleanedResult.trim() && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Output</h3>
-                    <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto max-h-64">
+                    <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">Output</h3>
+                    <pre className="bg-[var(--bg-primary)] text-[var(--text-primary)] p-3 rounded-lg text-xs overflow-x-auto max-h-64">
                       {cleanedResult}
                     </pre>
                   </div>
@@ -227,8 +227,8 @@ export function ToolResultPopover({
                 {/* JSON result */}
                 {typeof cleanedResult !== 'string' && cleanedResult !== undefined && cleanedResult !== null && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Output</h3>
-                    <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto max-h-64">
+                    <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">Output</h3>
+                    <pre className="bg-[var(--bg-primary)] text-[var(--text-primary)] p-3 rounded-lg text-xs overflow-x-auto max-h-64">
                       {formattedResult}
                     </pre>
                   </div>
@@ -239,9 +239,9 @@ export function ToolResultPopover({
                  extractedMedia.youtubeVideos.length === 0 &&
                  extractedMedia.secDocuments.length === 0 &&
                  extractedMedia.images.length === 0 && (
-                  <div className="flex items-center justify-center p-8 text-gray-500">
+                  <div className="flex items-center justify-center p-8 text-[var(--text-secondary)]">
                     <div className="text-center">
-                      <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <AlertCircle className="h-8 w-8 mx-auto mb-2 text-[var(--text-muted)]" />
                       <p className="text-sm">No result available</p>
                       <p className="text-xs mt-1">This tool may still be executing or returned no data</p>
                     </div>
@@ -252,15 +252,15 @@ export function ToolResultPopover({
 
             {activeTab === 'args' && args && (
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Tool Arguments</h3>
-                <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg text-xs overflow-x-auto max-h-64">
+                <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">Tool Arguments</h3>
+                <pre className="bg-[var(--bg-primary)] text-[var(--text-primary)] p-3 rounded-lg text-xs overflow-x-auto max-h-64">
                   {formattedArgs}
                 </pre>
               </div>
             )}
 
             {activeTab === 'error' && error && (
-              <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3 p-3 bg-red-50 border border-[var(--border-color)] rounded-lg">
                 <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-medium text-red-900 mb-1">Error</h3>
@@ -274,14 +274,14 @@ export function ToolResultPopover({
 
           {/* Footer with copy button */}
           {(activeTab === 'result' || activeTab === 'args') && (
-            <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-secondary)] flex justify-end">
               <button
                 onClick={handleCopy}
                 className={cn(
                   'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   copied
                     ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 )}
               >
                 {copied ? (

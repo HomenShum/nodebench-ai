@@ -52,7 +52,7 @@ const getTypeBadgeColors = (type: CitationType) => {
     case "analysis":
       return "bg-purple-50 text-purple-600 border-purple-200";
     case "internal":
-      return "bg-gray-50 text-gray-600 border-gray-200";
+      return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]";
     default:
       return "bg-blue-50 text-blue-600 border-blue-200";
   }
@@ -81,10 +81,10 @@ const FootnoteEntry: React.FC<{
   return (
     <div
       id={`footnote-${citation.id}`}
-      className="group flex gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+      className="group flex gap-3 p-3 rounded-lg hover:bg-[color:var(--bg-hover)] transition-colors"
     >
       {/* Number badge */}
-      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 font-semibold text-sm">
+      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] font-semibold text-sm">
         {citation.number}
       </div>
 
@@ -92,20 +92,20 @@ const FootnoteEntry: React.FC<{
       <div className="flex-1 min-w-0">
         {/* Header row */}
         <div className="flex items-center gap-2 mb-1">
-          <Icon className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900 text-sm">{citation.label}</span>
+          <Icon className="w-4 h-4 text-[color:var(--text-secondary)]" />
+          <span className="font-medium text-[color:var(--text-primary)] text-sm">{citation.label}</span>
           <span className={`text-[10px] px-1.5 py-0.5 rounded border ${badgeColors}`}>
             {citation.type}
           </span>
         </div>
 
         {/* Full text */}
-        <p className="text-sm text-gray-600 leading-relaxed mb-2">
+        <p className="text-sm text-[color:var(--text-primary)] leading-relaxed mb-2">
           {citation.fullText}
         </p>
 
         {/* Meta row */}
-        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-[color:var(--text-secondary)]">
           {citation.author && <span>{citation.author}</span>}
           {citation.publishedAt && (
             <span>{new Date(citation.publishedAt).toLocaleDateString()}</span>
@@ -132,7 +132,7 @@ const FootnoteEntry: React.FC<{
             </button>
           )}
           {citation.accessedAt && (
-            <span className="text-gray-300">
+            <span className="text-[color:var(--text-secondary)]">
               Accessed {new Date(citation.accessedAt).toLocaleDateString()}
             </span>
           )}
@@ -140,8 +140,8 @@ const FootnoteEntry: React.FC<{
 
         {/* Back-links */}
         {showBackLinks && citation.occurrences.length > 0 && (
-          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Jump to:</span>
+          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[color:var(--border-color)]">
+            <span className="text-[10px] text-[color:var(--text-secondary)] uppercase tracking-wider">Jump to:</span>
             {citation.occurrences.map((occ, idx) => (
               <button
                 key={occ.id}
@@ -182,14 +182,14 @@ export const FootnotesSection: React.FC<FootnotesSectionProps> = ({
   }
 
   return (
-    <section className={`mt-12 pt-8 border-t-2 border-gray-200 ${className}`}>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <FileText className="w-5 h-5 text-gray-400" />
+    <section className={`mt-12 pt-8 border-t-2 border-[color:var(--border-color)] ${className}`}>
+      <h3 className="text-lg font-semibold text-[color:var(--text-primary)] mb-4 flex items-center gap-2">
+        <FileText className="w-5 h-5 text-[color:var(--text-secondary)]" />
         {title}
-        <span className="text-sm font-normal text-gray-400">({citations.length})</span>
+        <span className="text-sm font-normal text-[color:var(--text-secondary)]">({citations.length})</span>
       </h3>
 
-      <div className="space-y-1 divide-y divide-gray-100">
+      <div className="space-y-1 divide-y divide-[color:var(--border-color)]">
         {citations.map((citation) => (
           <FootnoteEntry
             key={citation.id}

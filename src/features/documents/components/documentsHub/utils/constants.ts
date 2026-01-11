@@ -5,7 +5,7 @@
  */
 
 // Section header styling
-export const sectionHeader = "text-base font-semibold text-gray-500";
+export const sectionHeader = "text-base font-semibold text-[var(--text-secondary)]";
 
 // Tip badge styling
 export const tipBadge =
@@ -27,7 +27,7 @@ export const statusStripeClasses =
 
 // Kanban card styling
 export const kanbanCardClasses =
-  "bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer";
+  "bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer";
 
 // Priority badge styling
 export const priorityBadgeClasses =

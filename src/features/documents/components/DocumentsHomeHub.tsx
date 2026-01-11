@@ -168,7 +168,7 @@ type Status = TaskStatus;
 
 // Shared section header classes for consistent typography across h2/h3
 
-const sectionHeader = "text-base font-semibold text-gray-500";
+const sectionHeader = "text-base font-semibold text-[var(--text-secondary)]";
 
 // Globally scoped TaskRow for reuse across sections (Activity, Agenda, etc.) - NOW IMPORTED FROM documentsHub/rows
 // OLD TaskRowGlobal DEFINITION REMOVED - NOW USING IMPORTED VERSION
@@ -1562,7 +1562,7 @@ export function DocumentsHomeHub({
         "ring-2",
         "ring-blue-600",
         "ring-offset-1",
-        "ring-offset-gray-50",
+        "ring-offset-[color:var(--bg-secondary)]",
       );
 
       setTimeout(() => {
@@ -1570,7 +1570,7 @@ export function DocumentsHomeHub({
           "ring-2",
           "ring-blue-600",
           "ring-offset-1",
-          "ring-offset-gray-50",
+          "ring-offset-[color:var(--bg-secondary)]",
         );
       }, 1200);
 
@@ -4229,12 +4229,12 @@ export function DocumentsHomeHub({
           {/* Range selector */}
 
           <div className="mb-2 flex items-center gap-2">
-            <label className="text-xs text-gray-500">
+            <label className="text-xs text-[var(--text-secondary)]">
               Range:
             </label>
 
             <select
-              className="text-xs border border-gray-200 rounded-md bg-white px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="text-xs border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)] px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
               value={listRange}
               onChange={(e) => {
                 const v = e.target.value;
@@ -4256,14 +4256,14 @@ export function DocumentsHomeHub({
                   type="datetime-local"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
-                  className="text-xs border border-gray-200 rounded-md bg-white px-1.5 py-1"
+                  className="text-xs border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)] px-1.5 py-1"
                 />
 
                 <input
                   type="datetime-local"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
-                  className="text-xs border border-gray-200 rounded-md bg-white px-1.5 py-1"
+                  className="text-xs border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)] px-1.5 py-1"
                 />
               </>
             )}
@@ -4272,7 +4272,7 @@ export function DocumentsHomeHub({
           {/* Quick task input */}
 
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-gray-200 bg-white flex-1 focus-within:ring-2 focus-within:ring-blue-600">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] flex-1 focus-within:ring-2 focus-within:ring-blue-600">
               <Plus className="h-4 w-4 text-blue-600" />
 
               <input
@@ -4286,7 +4286,7 @@ export function DocumentsHomeHub({
                   }
                 }}
                 placeholder="Quick add a task…"
-                className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400"
+                className="w-full bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               />
             </div>
 
@@ -4303,7 +4303,7 @@ export function DocumentsHomeHub({
           {/* Quick event input */}
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-3">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-gray-200 bg-white flex-1 min-w-0">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] flex-1 min-w-0">
               <Calendar className="h-4 w-4 text-blue-600" />
 
               <input
@@ -4316,7 +4316,7 @@ export function DocumentsHomeHub({
                   }
                 }}
                 placeholder="Quick add an event (title)…"
-                className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400"
+                className="w-full bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               />
             </div>
 
@@ -4344,7 +4344,7 @@ export function DocumentsHomeHub({
                   void _handleCreateQuickEvent();
                 }
               }}
-              className="px-2 py-1.5 rounded-md border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400"
+              className="px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               aria-label="Event start"
               required
             />
@@ -4359,7 +4359,7 @@ export function DocumentsHomeHub({
                   void _handleCreateQuickEvent();
                 }
               }}
-              className="px-2 py-1.5 rounded-md border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400"
+              className="px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               aria-label="Event end"
             />
 
@@ -4386,7 +4386,7 @@ export function DocumentsHomeHub({
             <div className="mt-2">
               {isUploading && (
                 <div
-                  className="mb-2 text-xs text-gray-500 flex items-center gap-2"
+                  className="mb-2 text-xs text-[var(--text-secondary)] flex items-center gap-2"
                   aria-live="polite"
                   aria-atomic="true"
                 >
@@ -4398,12 +4398,12 @@ export function DocumentsHomeHub({
                 </div>
               )}
 
-              <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
+              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 Today
               </div>
 
               {orderedTodayAgenda.length === 0 ? (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-[var(--text-secondary)]">
                   Nothing scheduled for today.
                 </div>
               ) : (
@@ -4518,12 +4518,12 @@ export function DocumentsHomeHub({
 
           {listRange === "week" && (
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
+              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 This Week
               </div>
 
               {orderedWeekAgenda.length === 0 ? (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-[var(--text-secondary)]">
                   No upcoming items this week.
                 </div>
               ) : (
@@ -4661,12 +4661,12 @@ export function DocumentsHomeHub({
 
           {listRange === "month" && (
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
+              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 This Month
               </div>
 
               {tasksThisMonth.length === 0 ? (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-[var(--text-secondary)]">
                   No tasks due this month.
                 </div>
               ) : (
@@ -4739,12 +4739,12 @@ export function DocumentsHomeHub({
 
           {listRange === "custom" && customBounds && (
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
+              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 Custom Range
               </div>
 
               {tasksCustom.length === 0 ? (
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-[var(--text-secondary)]">
                   No tasks in this range.
                 </div>
               ) : (
@@ -5341,19 +5341,19 @@ export function DocumentsHomeHub({
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-blue-600">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] focus-within:ring-2 focus-within:ring-blue-600">
               <Plus className="h-4 w-4 text-blue-600" />
 
               <input
                 value={kanbanQuickTitle}
                 onChange={(e) => setKanbanQuickTitle(e.target.value)}
                 placeholder="Quick task title…"
-                className="w-48 bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400"
+                className="w-48 bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               />
             </div>
 
             <select
-              className="text-xs border border-gray-200 rounded-md bg-white px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="text-xs border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)] px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
               value={kanbanQuickStatus}
               onChange={(e) => setKanbanQuickStatus(e.target.value as Status)}
             >
@@ -5370,12 +5370,12 @@ export function DocumentsHomeHub({
               type="datetime-local"
               value={kanbanQuickDue}
               onChange={(e) => setKanbanQuickDue(e.target.value)}
-              className="text-xs border border-gray-200 rounded-md bg-white px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="text-xs border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)] px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
               aria-label="Due date"
             />
 
             <select
-              className="text-xs border border-gray-200 rounded-md bg-white px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="text-xs border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)] px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
               value={kanbanQuickPriority}
               onChange={(e) => setKanbanQuickPriority(e.target.value)}
             >
@@ -5401,11 +5401,11 @@ export function DocumentsHomeHub({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">Presets:</span>
+            <span className="text-xs text-[var(--text-muted)]">Presets:</span>
 
             <button
               onClick={() => void addMockTasks("sprint")}
-              className="px-2 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-100"
+              className="px-2 py-1 text-xs border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)]"
               title="Generate sprint task presets"
               disabled={!loggedInUser}
             >
@@ -5414,7 +5414,7 @@ export function DocumentsHomeHub({
 
             <button
               onClick={() => void addMockTasks("bugbash")}
-              className="px-2 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-100"
+              className="px-2 py-1 text-xs border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)]"
               title="Generate bug bash presets"
               disabled={!loggedInUser}
             >
@@ -5423,18 +5423,18 @@ export function DocumentsHomeHub({
 
             <button
               onClick={() => void addMockTasks("personal")}
-              className="px-2 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-100"
+              className="px-2 py-1 text-xs border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)]"
               title="Generate personal task presets"
               disabled={!loggedInUser}
             >
               Personal
             </button>
 
-            <div className="mx-1 h-5 w-px bg-gray-200" />
+            <div className="mx-1 h-5 w-px bg-[var(--border-color)]" />
 
             <button
               onClick={() => void handleRebalanceAll()}
-              className="px-2 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-100"
+              className="px-2 py-1 text-xs border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)]"
               title="Re-assign compact, spaced order values across all lanes"
               disabled={!loggedInUser}
             >
@@ -5470,7 +5470,7 @@ export function DocumentsHomeHub({
 
                     {isUploading && (
                       <div
-                        className="mb-2 text-[10px] text-gray-500 inline-flex items-center gap-1"
+                        className="mb-2 text-[10px] text-[var(--text-secondary)] inline-flex items-center gap-1"
                         aria-live="polite"
                         aria-atomic="true"
                       >
@@ -5485,7 +5485,7 @@ export function DocumentsHomeHub({
                     <div className="flex items-center justify-between mb-2">
                       {editingLane === key ? (
                         <input
-                          className={`text-sm font-semibold bg-transparent border-b border-gray-200 focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-emerald-700" : key === "blocked" ? "text-rose-700" : "text-slate-700"}`}
+                          className={`text-sm font-semibold bg-transparent border-b border-[var(--border-color)] focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-emerald-700" : key === "blocked" ? "text-rose-700" : "text-slate-700"}`}
                           autoFocus
                           value={laneDraft}
                           onChange={(e) => setLaneDraft(e.target.value)}
@@ -5531,7 +5531,7 @@ export function DocumentsHomeHub({
                               defaultKind: "task",
                             });
                           }}
-                          className="px-2 py-0.5 text-xs border border-gray-200 rounded-md hover:bg-gray-100 text-gray-500"
+                          className="px-2 py-0.5 text-xs border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
                           title="Add task"
                           aria-label="Add task"
                           disabled={!loggedInUser}
@@ -5541,7 +5541,7 @@ export function DocumentsHomeHub({
 
                         <button
                           onClick={() => void handleRebalanceLane(key)}
-                          className="px-2 py-0.5 text-xs border border-gray-200 rounded-md hover:bg-gray-100 text-gray-500"
+                          className="px-2 py-0.5 text-xs border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
                           title="Reassign compact, spaced order values for this lane"
                           aria-label="Rebalance lane"
                           disabled={!loggedInUser}
@@ -5552,7 +5552,7 @@ export function DocumentsHomeHub({
                     </div>
 
                     {sorted.length === 0 ? (
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-[var(--text-secondary)]">
                         No tasks.
                       </div>
                     ) : (
@@ -5644,7 +5644,7 @@ export function DocumentsHomeHub({
     return (
       <div
         ref={setNodeRef}
-        className={`relative group border-b border-r border-gray-200 p-2 min-h-[160px] ${isOver ? "bg-blue-50/40" : ""}`}
+        className={`relative group border-b border-r border-[var(--border-color)] p-2 min-h-[160px] ${isOver ? "bg-blue-50/40" : ""}`}
       >
         <div className="flex items-center justify-between">
           {isToday ? (
@@ -5658,7 +5658,7 @@ export function DocumentsHomeHub({
               </span>
             </div>
           ) : (
-            <span className="text-sm font-medium text-gray-800">
+            <span className="text-sm font-medium text-[var(--text-primary)]">
               {date.getDate()}
             </span>
           )}
@@ -5666,7 +5666,7 @@ export function DocumentsHomeHub({
           <button
             onClick={onAddTask}
             title="Add item"
-            className="w-6 h-6 flex items-center justify-center rounded-md bg-gray-100 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 ring-blue-600"
+            className="w-6 h-6 flex items-center justify-center rounded-md bg-[var(--bg-hover)] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 ring-blue-600"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -5830,7 +5830,7 @@ export function DocumentsHomeHub({
                           {/* Favorite */}
 
                           <button
-                            className={`w-5 h-5 rounded border ${entry.item.isFavorite ? "bg-yellow-500 text-yellow-100 border-yellow-500" : "bg-white hover:bg-gray-100 border-gray-200 text-gray-500 hover:text-blue-600"}`}
+                            className={`w-5 h-5 rounded border ${entry.item.isFavorite ? "bg-yellow-500 text-yellow-100 border-yellow-500" : "bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-blue-600"}`}
                             title={
                               entry.item.isFavorite ? "Unfavorite" : "Favorite"
                             }
@@ -5852,7 +5852,7 @@ export function DocumentsHomeHub({
                           {/* Open */}
 
                           <button
-                            className="w-5 h-5 rounded bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-blue-600"
+                            className="w-5 h-5 rounded bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-blue-600"
                             title="Open"
                             aria-label="Open"
                             onClick={(btnEv) => {
@@ -5871,7 +5871,7 @@ export function DocumentsHomeHub({
                           {/* Delete */}
 
                           <button
-                            className="w-5 h-5 rounded bg-white hover:bg-red-500 border border-gray-200 text-gray-500 hover:text-white"
+                            className="w-5 h-5 rounded bg-[var(--bg-primary)] hover:bg-red-500 border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-white"
                             title="Delete"
                             aria-label="Delete"
                             onClick={(btnEv) => {
@@ -5889,7 +5889,7 @@ export function DocumentsHomeHub({
                           {/* Convert to event with undo */}
 
                           <button
-                            className="w-5 h-5 rounded bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-blue-600"
+                            className="w-5 h-5 rounded bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-blue-600"
                             title="Convert to event"
                             aria-label="Convert to event"
                             onClick={async (btnEv) => {
@@ -6011,7 +6011,7 @@ export function DocumentsHomeHub({
                           {/* Open */}
 
                           <button
-                            className="w-5 h-5 rounded bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-blue-600"
+                            className="w-5 h-5 rounded bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-blue-600"
                             title="Open"
                             aria-label="Open"
                             onClick={(evBtn) => {
@@ -6034,7 +6034,7 @@ export function DocumentsHomeHub({
                           {/* Delete */}
 
                           <button
-                            className="w-5 h-5 rounded bg-white hover:bg-red-500 border border-gray-200 text-gray-500 hover:text-white"
+                            className="w-5 h-5 rounded bg-[var(--bg-primary)] hover:bg-red-500 border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-white"
                             title="Delete"
                             aria-label="Delete"
                             onClick={(evBtn) => {
@@ -6052,7 +6052,7 @@ export function DocumentsHomeHub({
                           {/* Convert to task with undo */}
 
                           <button
-                            className="w-5 h-5 rounded bg-white hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-blue-600"
+                            className="w-5 h-5 rounded bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-blue-600"
                             title="Convert to task"
                             aria-label="Convert to task"
                             onClick={async (evBtn) => {
@@ -6607,7 +6607,7 @@ export function DocumentsHomeHub({
     };
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="bg-[var(--bg-primary)] rounded-xl shadow-sm border border-[var(--border-color)] p-4">
         <DndContext
           sensors={kanbanSensors}
           onDragStart={handleWeeklyDragStart}
@@ -6616,11 +6616,11 @@ export function DocumentsHomeHub({
           collisionDetection={closestCenter}
           modifiers={[restrictToWindowEdges]}
         >
-          <div className="grid grid-cols-7 border-t border-l border-gray-200">
+          <div className="grid grid-cols-7 border-t border-l border-[var(--border-color)]">
             {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((day) => (
               <div
                 key={day}
-                className="text-center font-semibold text-xs text-gray-500 py-2 border-b border-r border-gray-200 bg-gray-50"
+                className="text-center font-semibold text-xs text-[var(--text-secondary)] py-2 border-b border-r border-[var(--border-color)] bg-[var(--bg-secondary)]"
               >
                 {day}
               </div>
@@ -6892,15 +6892,15 @@ export function DocumentsHomeHub({
           background: transparent;
         }
         .premium-scrollbar::-webkit-scrollbar-thumb {
-          background: #E5E7EB;
+          background: var(--border-color);
           border-radius: 10px;
         }
         .premium-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #D1D5DB;
+          background: var(--text-muted);
         }
       `}</style>
 
-      <div className="h-full w-full bg-white overflow-y-auto relative premium-scrollbar">
+      <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative premium-scrollbar">
         {/* Premium SaaS layout */}
 
         <div className="flex-1 px-6 sm:px-8 lg:px-12 py-8 relative z-10">
@@ -6919,10 +6919,12 @@ export function DocumentsHomeHub({
                 />
 
                 <PageHeroHeader
+                  icon={<FileText className="w-6 h-6" />}
                   title={"Documents Hub"}
                   subtitle={"Manage your documents, files, and research assets"}
                   date={todayLabel}
                   accent
+                  className="mb-6"
                 />
 
                 {/* Moved Filters/Tools into Documents & Files section below */}
@@ -6952,12 +6954,12 @@ export function DocumentsHomeHub({
                     <input {...getInputProps()} />
 
                     {isDragActive && (
-                      <div className="absolute inset-0 z-20 rounded-xl border-2 border-dashed border-gray-400 bg-white/95 backdrop-blur-sm flex items-center justify-center">
+                      <div className="absolute inset-0 z-20 rounded-xl border-2 border-dashed border-[var(--text-muted)] bg-[var(--bg-primary)]/95 backdrop-blur-sm flex items-center justify-center">
                         <div className="text-center">
-                          <p className="font-semibold text-gray-900 text-lg">
+                          <p className="font-semibold text-[var(--text-primary)] text-lg">
                             Drop files to upload
                           </p>
-                          <p className="text-sm text-gray-500 mt-1">
+                          <p className="text-sm text-[var(--text-secondary)] mt-1">
                             They will be uploaded and analyzed automatically
                           </p>
                         </div>
@@ -6992,8 +6994,8 @@ export function DocumentsHomeHub({
                     {(docViewMode === "list" || docViewMode === "cards") &&
                       filteredDocuments.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-16 text-center">
-                          <p className="text-gray-400 text-sm">No documents found</p>
-                          <p className="text-gray-400 text-xs mt-1">Upload or create a document to get started</p>
+                          <p className="text-[var(--text-muted)] text-sm">No documents found</p>
+                          <p className="text-[var(--text-muted)] text-xs mt-1">Upload or create a document to get started</p>
                         </div>
                       )}
 
@@ -7140,12 +7142,12 @@ export function DocumentsHomeHub({
                           groupedDocuments.favorites.length > 0 && (
                             <div>
                               <h3
-                                className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
+                                className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2"
                                 title="Starred documents you favorited"
                               >
                                 <Star className="h-4 w-4 text-yellow-500" />
                                 Favorites{" "}
-                                <span className="text-gray-500 font-normal">
+                                <span className="text-[var(--text-secondary)] font-normal">
                                   ({groupedDocuments.favorites.length})
                                 </span>
                               </h3>
@@ -7244,12 +7246,12 @@ export function DocumentsHomeHub({
                           groupedDocuments.calendar.length > 0 && (
                             <div>
                               <h3
-                                className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
+                                className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2"
                                 title="Calendar-related items like schedules and events"
                               >
                                 <Calendar className="h-4 w-4 text-blue-600" />
                                 Calendar{" "}
-                                <span className="text-gray-500 font-normal">
+                                <span className="text-[var(--text-secondary)] font-normal">
                                   ({groupedDocuments.calendar.length})
                                 </span>
                               </h3>
@@ -7348,12 +7350,12 @@ export function DocumentsHomeHub({
                           groupedDocuments.text.length > 0 && (
                             <div>
                               <h3
-                                className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
+                                className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2"
                                 title="Text documents you created or imported"
                               >
                                 <FileText className="h-4 w-4 text-blue-600" />
                                 Documents{" "}
-                                <span className="text-gray-500 font-normal">
+                                <span className="text-[var(--text-secondary)] font-normal">
                                   ({groupedDocuments.text.length})
                                 </span>
                               </h3>
@@ -7452,12 +7454,12 @@ export function DocumentsHomeHub({
                           groupedDocuments.files.length > 0 && (
                             <div>
                               <h3
-                                className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"
+                                className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2"
                                 title="Uploaded files (PDFs, images, spreadsheets, etc.)"
                               >
                                 <File className="h-4 w-4 text-blue-600" />
                                 Files{" "}
-                                <span className="text-gray-500 font-normal">
+                                <span className="text-[var(--text-secondary)] font-normal">
                                   ({groupedDocuments.files.length})
                                 </span>
                               </h3>
@@ -7557,7 +7559,7 @@ export function DocumentsHomeHub({
                           groupedDocuments.text.length === 0 &&
                           groupedDocuments.files.length === 0 &&
                           groupedDocuments.favorites.length === 0 && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-[var(--text-secondary)]">
                               No documents found.
                             </div>
                           )}
@@ -7571,7 +7573,7 @@ export function DocumentsHomeHub({
                               groupedDocuments.files.length === 0) ||
                             (filter === "favorites" &&
                               groupedDocuments.favorites.length === 0)) && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-[var(--text-secondary)]">
                               No documents found.
                             </div>
                           )}
@@ -7586,13 +7588,13 @@ export function DocumentsHomeHub({
 
             {/* Sidebar column */}
 
-            <aside className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-gray-200 bg-white/50 backdrop-blur-sm relative transition-all duration-300`}>
+            <aside className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-[var(--border-color)] bg-[var(--bg-primary)] relative transition-all duration-300`}>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
                 aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-                className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 flex items-center justify-center shadow-sm"
+                className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] flex items-center justify-center shadow-sm"
               >
                 {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
               </button>
@@ -7632,23 +7634,23 @@ export function DocumentsHomeHub({
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-task-modal-title"
-            className="w-full max-w-md rounded-xl border border-gray-200 bg-gray-50 shadow-2xl"
+            className="w-full max-w-md rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
             ref={modalRef}
             onKeyDown={handleModalKeyDown}
             aria-busy={isSubmittingTask}
           >
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
               <h3
                 id="new-task-modal-title"
-                className="text-sm font-semibold text-gray-900"
+                className="text-sm font-semibold text-[var(--text-primary)]"
               >
                 New Task
               </h3>
 
               <button
                 aria-label="Close"
-                className="w-7 h-7 p-1.5 rounded-md flex items-center justify-center bg-white hover:bg-gray-100 border border-gray-200 text-gray-500"
+                className="w-7 h-7 p-1.5 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)]"
                 onClick={() => !isSubmittingTask && setShowNewTaskModal(false)}
                 disabled={isSubmittingTask}
               >
@@ -7664,7 +7666,7 @@ export function DocumentsHomeHub({
               }}
             >
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
+                <label className="block text-xs text-[var(--text-muted)] mb-1">
                   Title
                 </label>
 
@@ -7674,12 +7676,12 @@ export function DocumentsHomeHub({
                   value={newTaskModalTitle}
                   onChange={(e) => setNewTaskModalTitle(e.target.value)}
                   placeholder="e.g., Follow up with design team"
-                  className="w-full text-sm bg-white border border-gray-200 rounded-md p-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
+                <label className="block text-xs text-[var(--text-muted)] mb-1">
                   Description (optional)
                 </label>
 
@@ -7688,13 +7690,13 @@ export function DocumentsHomeHub({
                   onChange={(e) => setNewTaskModalDescription(e.target.value)}
                   placeholder="Add a few details to provide context..."
                   rows={3}
-                  className="w-full text-sm bg-white border border-gray-200 rounded-md p-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 resize-y"
+                  className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-blue-600 resize-y"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">
+                  <label className="block text-xs text-[var(--text-muted)] mb-1">
                     Due date
                   </label>
 
@@ -7702,19 +7704,19 @@ export function DocumentsHomeHub({
                     type="date"
                     value={newTaskModalDue}
                     onChange={(e) => setNewTaskModalDue(e.target.value)}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">
+                  <label className="block text-xs text-[var(--text-muted)] mb-1">
                     Priority
                   </label>
 
                   <select
                     value={newTaskModalPriority}
                     onChange={(e) => setNewTaskModalPriority(e.target.value)}
-                    className="w-full text-sm bg-white border border-gray-200 rounded-md p-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-600"
                   >
                     <option value="">None</option>
 
@@ -7734,7 +7736,7 @@ export function DocumentsHomeHub({
                   type="button"
                   onClick={() => !isSubmittingTask && setShowNewTaskModal(false)}
                   disabled={isSubmittingTask}
-                  className="text-[11px] px-3 py-1.5 bg-white border border-gray-200 rounded-md hover:bg-gray-100 text-gray-500"
+                  className="text-[11px] px-3 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
                 >
                   Cancel
                 </button>
@@ -7744,7 +7746,7 @@ export function DocumentsHomeHub({
                   disabled={
                     !newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask
                   }
-                  className={`text-[11px] px-3 py-1.5 rounded-md transition-colors ${!newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask ? "bg-gray-50 text-gray-400 border border-gray-200 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+                  className={`text-[11px] px-3 py-1.5 rounded-md transition-colors ${!newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask ? "bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
                   title={!loggedInUser ? "Please sign in to create tasks" : undefined}
                 >
                   {isSubmittingTask ? "Creating..." : "Create Task"}
@@ -7771,15 +7773,15 @@ export function DocumentsHomeHub({
           role="dialog"
           aria-label="Create agenda item"
         >
-          <div className="w-[min(520px,calc(100vw-32px))] rounded-xl border border-gray-200 bg-gray-50 shadow-2xl">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white rounded-t-xl">
-              <div className="text-xs text-gray-500">
+          <div className="w-[min(520px,calc(100vw-32px))] rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-2xl">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-primary)] rounded-t-xl">
+              <div className="text-xs text-[var(--text-secondary)]">
                 Create on {new Date(inlineCreate.dateMs).toLocaleDateString()}
               </div>
 
               <button
                 aria-label="Close create panel"
-                className="w-7 h-7 p-1.5 rounded-md flex items-center justify-center bg-white hover:bg-gray-100 border border-gray-200 text-gray-500"
+                className="w-7 h-7 p-1.5 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)]"
                 onClick={() => setInlineCreate(null)}
               >
                 <X className="h-4 w-4" />

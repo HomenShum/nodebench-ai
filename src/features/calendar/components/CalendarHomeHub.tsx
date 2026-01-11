@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { CalendarView } from "@/features/calendar/views/CalendarView";
 
@@ -8,6 +8,7 @@ import { SidebarMiniCalendar } from "@shared/ui/SidebarMiniCalendar";
 import { SidebarUpcoming } from "@shared/ui/SidebarUpcoming";
 import { TopDividerBar } from "@shared/ui/TopDividerBar";
 import { UnifiedHubPills } from "@shared/ui/UnifiedHubPills";
+import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
 
 interface CalendarHomeHubProps {
   onDocumentSelect: (documentId: Id<"documents">) => void;
@@ -95,7 +96,14 @@ export function CalendarHomeHub({
                 <UnifiedHubPills active="calendar" showRoadmap roadmapDisabled={false} />
               }
             />
-            {/* Sub-tabs replaced by header breadcrumb/toggles */}
+
+            <PageHeroHeader
+              icon={<Calendar className="w-6 h-6" />}
+              title="Calendar Hub"
+              subtitle="Schedule meetings, events, and manage your time"
+              accent
+              className="mb-6"
+            />
 
             <CalendarView
               focusedDateMs={focusedDateMs}

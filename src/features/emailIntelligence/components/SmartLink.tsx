@@ -33,7 +33,7 @@ const SmartLink: React.FC<SmartLinkProps> = ({ children, summary, source }) => {
   };
 
   if (!summary) {
-    return <span className="font-semibold text-gray-900">{children}</span>;
+    return <span className="font-semibold text-[color:var(--text-primary)]">{children}</span>;
   }
 
   return (
@@ -58,7 +58,7 @@ const SmartLink: React.FC<SmartLinkProps> = ({ children, summary, source }) => {
         id={tooltipId}
         role="tooltip"
         className={`
-          pointer-events-none absolute left-0 top-full z-50 w-72 translate-y-2 rounded-lg border border-gray-200 bg-white p-4 text-left shadow-xl ring-1 ring-black/5
+          pointer-events-none absolute left-0 top-full z-50 w-72 translate-y-2 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] p-4 text-left shadow-xl ring-1 ring-black/5
           transition-all duration-200 origin-top
           ${isOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"}
         `}
@@ -66,11 +66,11 @@ const SmartLink: React.FC<SmartLinkProps> = ({ children, summary, source }) => {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Info className="w-3.5 h-3.5 text-blue-500" />
-            <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Context</h4>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">Context</h4>
           </div>
-          <p className="text-sm leading-relaxed text-gray-700 font-sans">{summary}</p>
+          <p className="text-sm leading-relaxed text-[color:var(--text-primary)] font-sans">{summary}</p>
           {source && (
-            <div className="border-t border-gray-100 pt-2 text-[10px] text-gray-400">Source: {source}</div>
+            <div className="border-t border-[color:var(--border-color)] pt-2 text-[10px] text-[color:var(--text-secondary)]">Source: {source}</div>
           )}
         </div>
       </span>

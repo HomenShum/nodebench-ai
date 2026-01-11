@@ -59,7 +59,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
   const handleSubmitQuestion = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      
+
       if (!uploadedFile || !question.trim()) return;
 
       setIsSubmitting(true);
@@ -73,7 +73,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
         // Reset state
         setUploadedFile(null);
         setQuestion("What's in this file?");
-        
+
         toast.success('Question submitted!');
         onFileSubmitted?.();
       } catch (error) {
@@ -94,7 +94,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
   const isImage = uploadedFile?.mimeType.startsWith('image/');
 
   return (
-    <div className="p-4 bg-gray-50 border-t border-gray-200">
+    <div className="p-4 bg-[var(--bg-secondary)] border-t border-[var(--border-color)]">
       <div className="max-w-2xl mx-auto">
         {!uploadedFile ? (
           <div className="flex items-center justify-center">
@@ -127,39 +127,39 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
         ) : (
           <form onSubmit={handleSubmitQuestion} className="space-y-3">
             {/* File Preview */}
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
+            <div className="bg-[var(--bg-primary)] rounded-lg p-3 border border-[var(--border-color)]">
               <div className="flex items-start gap-3">
                 {isImage ? (
                   <div className="flex-shrink-0">
                     <img
                       src={uploadedFile.url}
                       alt={uploadedFile.filename}
-                      className="w-20 h-20 object-cover rounded border border-gray-300"
+                      className="w-20 h-20 object-cover rounded border border-[var(--border-color)]"
                     />
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded flex items-center justify-center border border-gray-300">
-                    <FileText className="h-8 w-8 text-gray-400" />
+                  <div className="flex-shrink-0 w-20 h-20 bg-[var(--bg-hover)] rounded flex items-center justify-center border border-[var(--border-color)]">
+                    <FileText className="h-8 w-8 text-[var(--text-muted)]" />
                   </div>
                 )}
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                         {uploadedFile.filename}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-[var(--text-secondary)]">
                         {uploadedFile.mimeType}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={handleClearFile}
-                      className="flex-shrink-0 p-1 rounded hover:bg-gray-100 transition-colors"
+                      className="flex-shrink-0 p-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
                       title="Remove file"
                     >
-                      <X className="h-4 w-4 text-gray-500" />
+                      <X className="h-4 w-4 text-[var(--text-secondary)]" />
                     </button>
                   </div>
                 </div>
@@ -173,7 +173,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Ask a question about this file..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="flex-1 px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 disabled={isSubmitting}
               />
               <button

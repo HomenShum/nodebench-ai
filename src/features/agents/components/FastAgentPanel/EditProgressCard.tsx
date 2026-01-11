@@ -1,17 +1,17 @@
 /**
  * EditProgressCard - Displays Deep Agent document edit progress and status
- * 
+ *
  * Shows pending, applied, and failed edits with retry/cancel controls.
  * Follows the DocumentActionCard pattern for consistent UI.
  */
 
 import React from 'react';
-import { 
-  Edit3, 
-  CheckCircle2, 
-  XCircle, 
-  Loader2, 
-  RefreshCw, 
+import {
+  Edit3,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  RefreshCw,
   X,
   AlertTriangle,
   FileText
@@ -57,9 +57,9 @@ export function EditProgressCard({ edit, onRetry, onCancel, className }: EditPro
     },
     cancelled: {
       icon: X,
-      color: 'text-gray-400',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-200',
+      color: 'text-[var(--text-muted)]',
+      bgColor: 'bg-[var(--bg-secondary)]',
+      borderColor: 'border-[var(--border-color)]',
       label: 'Cancelled',
       animate: false,
     },
@@ -95,31 +95,31 @@ export function EditProgressCard({ edit, onRetry, onCancel, className }: EditPro
         "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
         config.bgColor
       )}>
-        <StatusIcon 
+        <StatusIcon
           className={cn(
             "h-4 w-4",
             config.color,
             config.animate && "animate-spin"
-          )} 
+          )}
         />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <Edit3 className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
+          <Edit3 className="h-3.5 w-3.5 text-[var(--text-secondary)] flex-shrink-0" />
           <span className={cn("text-xs font-medium", config.color)}>
             {config.label}
           </span>
           {edit.operation.sectionHint && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-[var(--text-secondary)]">
               • {edit.operation.sectionHint}
             </span>
           )}
         </div>
 
         {/* Anchor preview */}
-        <p className="text-xs text-gray-600 font-mono truncate mb-1">
+        <p className="text-xs text-[var(--text-secondary)] font-mono truncate mb-1">
           "{displayAnchor}"
         </p>
 
@@ -132,7 +132,7 @@ export function EditProgressCard({ edit, onRetry, onCancel, className }: EditPro
 
         {/* Retry count */}
         {edit.retryCount > 0 && (
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-[var(--text-muted)]">
             Retry #{edit.retryCount}
           </span>
         )}
@@ -155,10 +155,10 @@ export function EditProgressCard({ edit, onRetry, onCancel, className }: EditPro
             <button
               type="button"
               onClick={() => onCancel(edit._id)}
-              className="p-1.5 rounded hover:bg-gray-200 transition-colors"
+              className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
               title="Cancel edit"
             >
-              <X className="h-3.5 w-3.5 text-gray-400" />
+              <X className="h-3.5 w-3.5 text-[var(--text-muted)]" />
             </button>
           )}
         </div>
@@ -186,12 +186,12 @@ export function EditProgressPanel({ edits, onRetry, onCancelAll, className }: Ed
   const threadId = edits[0]?.agentThreadId;
 
   return (
-    <div className={cn("space-y-3 p-3 rounded-lg border border-gray-200 bg-white", className)}>
+    <div className={cn("space-y-3 p-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]", className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-gray-600" />
-          <h3 className="text-sm font-semibold text-gray-700">
+          <FileText className="h-4 w-4 text-[var(--text-secondary)]" />
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             Document Edits
           </h3>
         </div>
@@ -230,7 +230,7 @@ export function EditProgressPanel({ edits, onRetry, onCancelAll, className }: Ed
               <button
                 type="button"
                 onClick={() => onCancelAll(threadId)}
-                className="text-xs text-gray-500 hover:text-gray-700"
+                className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 Cancel all
               </button>
@@ -263,7 +263,7 @@ export function EditProgressPanel({ edits, onRetry, onCancelAll, className }: Ed
         <details className="group">
           <summary className="text-xs font-medium text-green-600 cursor-pointer list-none flex items-center gap-1">
             <span>Applied ({applied.length})</span>
-            <span className="text-gray-400 group-open:rotate-90 transition-transform">▶</span>
+            <span className="text-[var(--text-muted)] group-open:rotate-90 transition-transform">▶</span>
           </summary>
           <div className="mt-2 space-y-2">
             {applied.map(edit => (
@@ -275,4 +275,3 @@ export function EditProgressPanel({ edits, onRetry, onCancelAll, className }: Ed
     </div>
   );
 }
-

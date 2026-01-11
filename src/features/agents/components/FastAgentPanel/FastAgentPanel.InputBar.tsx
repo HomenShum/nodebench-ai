@@ -2,7 +2,7 @@
 // Enhanced input bar with auto-resize, context pills, drag-and-drop, and floating design
 
 import React, { useState, useRef, useEffect, useCallback, KeyboardEvent, DragEvent } from 'react';
-import { Send, Loader2, Paperclip, X, Mic, Video, Image as ImageIcon, FileText, Sparkles, ChevronUp, StopCircle, FolderOpen, Table2, Calendar } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Mic, Video, Image as ImageIcon, FileText, ChevronUp, StopCircle, FolderOpen, Table2, Calendar, Zap, Gift } from 'lucide-react';
 import { MediaRecorderComponent } from './FastAgentPanel.MediaRecorder';
 import { FileDropOverlay } from '@/shared/components/FileDropOverlay';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,111 @@ import { useSelection } from '@/features/agents/context/SelectionContext';
 import { InlineEnhancer } from './FastAgentPanel.PromptEnhancer';
 import { useAction } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
+
+// ============================================================================
+// Spawn Command Parser (local to InputBar)
+// ============================================================================
+
+const AGENT_SHORTCUTS: Record<string, string> = {
+  doc: "DocumentAgent",
+  media: "MediaAgent",
+  sec: "SECAgent",
+  finance: "OpenBBAgent",
+  research: "EntityResearchAgent",
+};
+
+const VALID_AGENTS = [
+  "DocumentAgent",
+  "MediaAgent",
+  "SECAgent",
+  "OpenBBAgent",
+  "EntityResearchAgent",
+] as const;
+
+/**
+ * Parse a /spawn command and extract query + agents
+ * Format: /spawn "query" --agents=doc,media,sec
+ * Or: /spawn query --agents=doc,media,sec
+ */
+function parseSpawnCommandLocal(input: string): { query: string; agents: string[] } | null {
+  // Match: /spawn "query" --agents=doc,media,sec
+  // Or: /spawn query --agents=doc,media,sec
+  const spawnMatch = input.match(/^\/spawn\s+(.+?)(?:\s+--agents?=([^\s]+))?$/i);
+  if (!spawnMatch) return null;
+
+  let query = spawnMatch[1].trim();
+  // Remove quotes if present
+  if ((query.startsWith('"') && query.endsWith('"')) ||
+      (query.startsWith("'") && query.endsWith("'"))) {
+    query = query.slice(1, -1);
+  }
+
+  // Parse agents
+  let agents: string[] = [];
+  if (spawnMatch[2]) {
+    agents = spawnMatch[2].split(",").map((a) => {
+      const trimmed = a.trim().toLowerCase();
+      return AGENT_SHORTCUTS[trimmed] || trimmed;
+    });
+  } else {
+    // Default agents if none specified
+    agents = ["DocumentAgent", "MediaAgent", "SECAgent"];
+  }
+
+  // Validate agents
+  agents = agents.filter((a) =>
+    VALID_AGENTS.includes(a as typeof VALID_AGENTS[number])
+  );
+
+  if (agents.length === 0) {
+    agents = ["DocumentAgent", "MediaAgent", "SECAgent"];
+  }
+
+  return { query, agents };
+}
+
+// ============================================================================
+// Slash Commands Definition
+// ============================================================================
+
+interface SlashCommand {
+  command: string;
+  label: string;
+  description: string;
+  example: string;
+  icon: React.ReactNode;
+}
+
+const SLASH_COMMANDS: SlashCommand[] = [
+  {
+    command: "/spawn",
+    label: "Spawn Swarm",
+    description: "Run multiple AI agents in parallel",
+    example: '/spawn "Tesla analysis" --agents=doc,media,sec',
+    icon: <Zap className="w-4 h-4" />,
+  },
+  {
+    command: "/spawn",
+    label: "Deep Research",
+    description: "Research with Doc, Media, and SEC agents",
+    example: '/spawn "query" --agents=doc,media,sec',
+    icon: <FileText className="w-4 h-4" />,
+  },
+  {
+    command: "/spawn",
+    label: "Financial Analysis",
+    description: "SEC filings, market data, and documents",
+    example: '/spawn "query" --agents=sec,finance,doc',
+    icon: <Table2 className="w-4 h-4" />,
+  },
+  {
+    command: "/spawn",
+    label: "Entity Deep Dive",
+    description: "Profile companies and relationships",
+    example: '/spawn "query" --agents=research,doc,sec',
+    icon: <FolderOpen className="w-4 h-4" />,
+  },
+];
 
 // Import from SINGLE SOURCE OF TRUTH for models
 import {
@@ -69,6 +174,8 @@ interface FastAgentInputBarProps {
   enableEnhancement?: boolean; // Enable Ctrl+P prompt enhancement
   placeholder?: string;
   maxLength?: number;
+  // Swarm support
+  onSpawn?: (query: string, agents: string[]) => void; // Handler for /spawn commands
 }
 
 /**
@@ -94,8 +201,9 @@ export function FastAgentInputBar({
   onRemoveCalendarEvent,
   threadId,
   enableEnhancement = true,
-  placeholder = 'Ask anything...',
+  placeholder = 'Message...',
   maxLength = 10000,
+  onSpawn,
 }: FastAgentInputBarProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'audio' | 'video' | null>(null);
@@ -103,10 +211,42 @@ export function FastAgentInputBar({
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragType, setDragType] = useState<'document' | 'calendar' | 'file' | null>(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [showSlashCommands, setShowSlashCommands] = useState(false);
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const objectUrlMapRef = useRef<Map<string, string>>(new Map());
+
+  // Show slash commands when input starts with "/"
+  useEffect(() => {
+    if (input === "/" || (input.startsWith("/") && !input.includes(" "))) {
+      setShowSlashCommands(true);
+      setSelectedCommandIndex(0);
+    } else {
+      setShowSlashCommands(false);
+    }
+  }, [input]);
+
+  // Handle slash command selection
+  const handleSelectSlashCommand = useCallback((command: SlashCommand) => {
+    const placeholder = '"query"';
+    const placeholderIndex = command.example.indexOf(placeholder);
+    const nextValue =
+      placeholderIndex >= 0 ? command.example.replace(placeholder, '""') : command.example;
+
+    setInput(nextValue);
+    setShowSlashCommands(false);
+    // Focus and position cursor inside the placeholder quotes (if present)
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const cursorPos = placeholderIndex >= 0 ? placeholderIndex + 1 : nextValue.length;
+        textareaRef.current.setSelectionRange(cursorPos, cursorPos);
+      }
+    }, 0);
+  }, [setInput]);
 
   // Selection context for "Chat with Selection" feature
   const { selection, clearSelection } = useSelection();
@@ -279,6 +419,19 @@ export function FastAgentInputBar({
     const hasCalendarEvents = contextCalendarEvents.length > 0;
     if ((!trimmed && attachedFiles.length === 0 && !hasSelection && !hasCalendarEvents) || isStreaming) return;
 
+    // Check for /spawn command
+    if (trimmed.toLowerCase().startsWith('/spawn ') && onSpawn) {
+      const spawnResult = parseSpawnCommandLocal(trimmed);
+      if (spawnResult) {
+        onSpawn(spawnResult.query, spawnResult.agents);
+        setInput('');
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+        }
+        return;
+      }
+    }
+
     let contextPrefix = '';
 
     // Add calendar event context
@@ -316,6 +469,34 @@ export function FastAgentInputBar({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle slash command navigation
+    if (showSlashCommands) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedCommandIndex((prev) =>
+          prev < SLASH_COMMANDS.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedCommandIndex((prev) =>
+          prev > 0 ? prev - 1 : SLASH_COMMANDS.length - 1
+        );
+        return;
+      }
+      if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+        e.preventDefault();
+        handleSelectSlashCommand(SLASH_COMMANDS[selectedCommandIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowSlashCommands(false);
+        return;
+      }
+    }
+
     // Enter to send (Shift+Enter for newline)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -343,6 +524,37 @@ export function FastAgentInputBar({
     // Reset input so same file can be selected again
     e.target.value = '';
   };
+
+  const fileKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`;
+
+  useEffect(() => {
+    const map = objectUrlMapRef.current;
+    const keepKeys = new Set<string>();
+
+    for (const file of attachedFiles) {
+      if (!file.type.startsWith("image/")) continue;
+      const key = fileKey(file);
+      keepKeys.add(key);
+      if (!map.has(key)) {
+        map.set(key, URL.createObjectURL(file));
+      }
+    }
+
+    for (const [key, url] of map.entries()) {
+      if (!keepKeys.has(key)) {
+        URL.revokeObjectURL(url);
+        map.delete(key);
+      }
+    }
+  }, [attachedFiles]);
+
+  useEffect(() => {
+    const map = objectUrlMapRef.current;
+    return () => {
+      for (const url of map.values()) URL.revokeObjectURL(url);
+      map.clear();
+    };
+  }, []);
 
   const handleFilesDrop = (files: File[]) => {
     // Filter for media files (images, audio, video)
@@ -391,10 +603,8 @@ export function FastAgentInputBar({
   };
 
   const getFilePreview = (file: File) => {
-    if (file.type.startsWith('image/')) {
-      return URL.createObjectURL(file);
-    }
-    return null;
+    if (!file.type.startsWith("image/")) return null;
+    return objectUrlMapRef.current.get(fileKey(file)) ?? null;
   };
 
   const canSend = (input.trim().length > 0 || attachedFiles.length > 0 || contextDocuments.length > 0 || selection !== null || contextCalendarEvents.length > 0) && !isStreaming;
@@ -485,28 +695,25 @@ export function FastAgentInputBar({
 
         {/* Context Pills Area (Documents, Models, etc.) */}
         <div className="px-3 pt-3 flex flex-wrap gap-2 items-center">
-          {/* Model Selector Pill */}
+          {/* Model Selector */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setShowModelSelector(!showModelSelector)}
-              className="flex items-center gap-1.5 px-2 py-1 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] rounded-full text-xs font-medium text-[var(--text-primary)] transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 text-[11px] hover:bg-[var(--bg-secondary)] rounded transition-colors"
             >
-              <Sparkles className="w-3 h-3 text-[var(--accent-secondary)]" />
-              {/* 2025 Model Consolidation: Uses shared/llm/approvedModels.ts */}
-              <span>{MODEL_UI_INFO[selectedModel as ApprovedModel]?.name ?? 'GPT-5.2'}</span>
-              <ChevronUp className={cn("w-3 h-3 transition-transform", showModelSelector ? "rotate-180" : "")} />
+              <span className="text-[var(--text-secondary)] flex items-center gap-1.5">
+                {MODEL_UI_INFO[selectedModel as ApprovedModel]?.isFree && <Gift className="w-3 h-3 text-violet-500" />}
+                {MODEL_UI_INFO[selectedModel as ApprovedModel]?.name ?? 'Gemini 3 Flash'}
+              </span>
+              <ChevronUp className={cn("w-3 h-3 text-[var(--text-muted)] transition-transform", showModelSelector ? "rotate-180" : "")} />
             </button>
 
-            {/* Model Dropdown - Uses APPROVED_MODEL_LIST from shared module */}
+            {/* Model Dropdown */}
             {showModelSelector && (
               <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowModelSelector(false)}
-                />
-                <div className="absolute bottom-full left-0 mb-2 w-48 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl overflow-hidden z-20 flex flex-col py-1">
-                  <div className="px-3 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Select Model</div>
+                <div className="fixed inset-0 z-10" onClick={() => setShowModelSelector(false)} />
+                <div className="absolute bottom-full left-0 mb-1 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-lg z-20 py-1 max-h-72 overflow-y-auto">
                   {APPROVED_MODEL_LIST.map((model) => (
                     <button
                       type="button"
@@ -516,15 +723,20 @@ export function FastAgentInputBar({
                         setShowModelSelector(false);
                       }}
                       className={cn(
-                        "px-3 py-2 text-left hover:bg-[var(--bg-hover)] transition-colors flex flex-col",
-                        selectedModel === model.id && "bg-[var(--accent-primary-bg)]"
+                        "w-full px-3 py-2 text-left hover:bg-[var(--bg-secondary)] transition-colors",
+                        selectedModel === model.id && "bg-[var(--bg-secondary)]"
                       )}
                     >
-                      <span className={cn("text-xs font-medium flex items-center gap-1.5", selectedModel === model.id ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]")}>
-                        <span>{model.icon}</span>
-                        {model.name}
-                      </span>
-                      <span className="text-[10px] text-[var(--text-muted)]">{model.description}</span>
+                      <div className="flex items-center justify-between">
+                        <span className={cn("text-xs flex items-center gap-1.5", selectedModel === model.id ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-secondary)]")}>
+                          {model.isFree && <Gift className="w-3 h-3 text-violet-500" />}
+                          {model.name}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)]">{model.contextWindow}</span>
+                      </div>
+                      <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                        {model.description}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -533,15 +745,15 @@ export function FastAgentInputBar({
           </div>
 
           {/* Document Pills (legacy) */}
-          {selectedDocumentIds && selectedDocumentIds.size > 0 && Array.from(selectedDocumentIds).map((docId) => (
-            <div key={docId} className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
-              <FileText className="w-3 h-3" />
-              <span className="max-w-[100px] truncate">Document</span>
-              <button type="button" className="hover:text-blue-900">
+           {selectedDocumentIds && selectedDocumentIds.size > 0 && Array.from(selectedDocumentIds).map((docId) => (
+             <div key={docId} className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+               <FileText className="w-3 h-3" />
+               <span className="max-w-[100px] truncate">Document</span>
+              <span className="text-blue-400" aria-hidden="true">
                 <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+              </span>
+             </div>
+           ))}
 
           {/* Context Documents Pills (drag-and-drop) */}
           {contextDocuments.map((doc) => (
@@ -654,6 +866,60 @@ export function FastAgentInputBar({
           </div>
         )}
 
+        {/* Slash Command Autocomplete Dropdown */}
+        {showSlashCommands && (
+          <div className="absolute bottom-full left-0 right-0 mb-2 mx-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl overflow-hidden z-50">
+            <div className="px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                Slash Commands
+              </span>
+            </div>
+            <div className="max-h-[240px] overflow-y-auto">
+              {SLASH_COMMANDS.map((cmd, index) => (
+                <button
+                  key={`${cmd.command}-${index}`}
+                  type="button"
+                  onClick={() => handleSelectSlashCommand(cmd)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors",
+                    index === selectedCommandIndex
+                      ? "bg-blue-500/10 text-[var(--text-primary)]"
+                      : "hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
+                  )}
+                >
+                  <span className="flex-shrink-0 text-[var(--text-muted)]">{cmd.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{cmd.label}</span>
+                      <code className="text-[10px] px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-[var(--text-muted)]">
+                        {cmd.command}
+                      </code>
+                    </div>
+                    <p className="text-[11px] text-[var(--text-muted)] truncate">
+                      {cmd.description}
+                    </p>
+                  </div>
+                  {index === selectedCommandIndex && (
+                    <kbd className="text-[9px] px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-[var(--text-muted)] flex-shrink-0">
+                      Tab/Enter
+                    </kbd>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="px-3 py-2 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <p className="text-[10px] text-[var(--text-muted)]">
+                <kbd className="px-1 py-0.5 bg-[var(--bg-primary)] rounded mr-1">↑/↓</kbd>
+                navigate
+                <kbd className="px-1 py-0.5 bg-[var(--bg-primary)] rounded ml-2 mr-1">Tab</kbd>
+                select
+                <kbd className="px-1 py-0.5 bg-[var(--bg-primary)] rounded ml-2 mr-1">Esc</kbd>
+                close
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Input Area */}
         <div className="p-3 flex items-end gap-2">
           {/* Attachment Button */}
@@ -664,6 +930,26 @@ export function FastAgentInputBar({
             title="Attach file"
           >
             <Paperclip className="w-5 h-5" />
+          </button>
+
+          {/* Audio/Video Recording */}
+          <button
+            type="button"
+            onClick={() => startRecording("audio")}
+            disabled={isStreaming || isRecording}
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+            title="Record audio"
+          >
+            <Mic className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => startRecording("video")}
+            disabled={isStreaming || isRecording}
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+            title="Record video"
+          >
+            <Video className="w-5 h-5" />
           </button>
           <input
             ref={fileInputRef}
@@ -724,23 +1010,12 @@ export function FastAgentInputBar({
         </div>
       </div>
 
-      {/* Footer / Hints */}
-      <div className="mt-2 flex items-center justify-between px-2 text-[10px] text-[var(--text-muted)]">
-        <div className="flex items-center gap-2">
-          <span>Enter to send</span>
-          <span>•</span>
-          <span>Shift + Enter for new line</span>
-          {enableEnhancement && (
-            <>
-              <span>•</span>
-              <span>Ctrl+P to enhance</span>
-            </>
-          )}
+      {/* Character count only when near limit */}
+      {input.length > maxLength * 0.8 && (
+        <div className="mt-1 px-2 text-[10px] text-[var(--text-muted)] text-right">
+          {input.length} / {maxLength}
         </div>
-        {input.length > maxLength * 0.8 && (
-          <span>{input.length} / {maxLength}</span>
-        )}
-      </div>
+      )}
     </div>
   );
 }

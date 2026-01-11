@@ -64,35 +64,35 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
   const filteredCount = filteredLibrary.order.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-[color:var(--bg-secondary)] to-[color:var(--bg-primary)]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-[color:var(--bg-primary)]/95 backdrop-blur-sm border-b border-[color:var(--border-color)] shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {onBack && (
                 <button
                   onClick={onBack}
-                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
+                  className="flex items-center gap-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span className="text-sm">Back to Brief</span>
                 </button>
               )}
-              <div className="h-6 w-px bg-gray-200" />
+              <div className="h-6 w-px bg-[color:var(--border-color)]" />
               <div>
-                <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-gray-400" />
+                <h1 className="text-lg font-semibold text-[color:var(--text-primary)] flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[color:var(--text-secondary)]" />
                   Sources & References
                 </h1>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[color:var(--text-secondary)]">
                   {briefTitle} {briefDate && `• ${briefDate}`}
                 </p>
               </div>
             </div>
-            
+
             {/* Citation count */}
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-[color:var(--text-secondary)]">
               {searchQuery ? (
                 <span>{filteredCount} of {citationCount} sources</span>
               ) : (
@@ -103,13 +103,13 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
           
           {/* Search bar */}
           <div className="mt-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--text-secondary)]" />
             <input
               type="text"
               placeholder="Search sources by title, author, or content..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm border border-[color:var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -119,8 +119,8 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
       <main className="max-w-4xl mx-auto px-6 py-8">
         {filteredLibrary.order.length === 0 ? (
           <div className="text-center py-12">
-            <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">
+            <FileText className="w-12 h-12 text-[color:var(--text-secondary)] mx-auto mb-4" />
+            <p className="text-[color:var(--text-secondary)]">
               {searchQuery ? "No sources match your search" : "No sources available"}
             </p>
           </div>

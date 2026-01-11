@@ -18,6 +18,19 @@ import {
   type EvidenceResult,
 } from "./evidencePlanner";
 
+function looksLikeProviderUnavailable(err: unknown): boolean {
+  const msg = String((err as any)?.message ?? err ?? "").toLowerCase();
+  return (
+    msg.includes("rate limit") ||
+    msg.includes("quota") ||
+    msg.includes("usage limits") ||
+    msg.includes("api usage limits") ||
+    msg.includes("resource exhausted") ||
+    msg.includes("overloaded") ||
+    msg.includes("timeout")
+  );
+}
+
 async function runExternalOrchestratorWithFallback(
   ctx: any,
   args: {
@@ -188,15 +201,70 @@ export const runPersonaLiveEval = action({
 
         // Now run an LLM call based on persona routing.
         if (arch.primarySdk === "anthropic" || String(arch.reasoningModel).startsWith("claude-")) {
-          const res = await generateText({
-            model: getLanguageModelSafe(String(arch.reasoningModel)),
-            prompt: finalPrompt,
-            maxOutputTokens: 450,
-          });
+          let text = "";
+          let primaryError: string | undefined;
 
-          record.modelChecks.anthropic = { model: String(arch.reasoningModel), ok: !!res.text };
-          record.answerPreview = res.text.slice(0, 900);
-          record.success = true;
+          try {
+            const res = await generateText({
+              model: getLanguageModelSafe(String(arch.reasoningModel)),
+              prompt: finalPrompt,
+              maxOutputTokens: 450,
+            });
+            text = String(res.text ?? "").trim();
+          } catch (e: any) {
+            primaryError = e?.message ?? String(e);
+          }
+
+          record.modelChecks.anthropic = {
+            model: String(arch.reasoningModel),
+            ok: text.length > 0,
+            error: text.length > 0 ? undefined : primaryError ?? "Empty text",
+          };
+
+          if (text.length > 0) {
+            record.answerPreview = text.slice(0, 900);
+            record.success = true;
+          } else {
+            // Anthropic can fail without impacting the rest of the system; fall back to Gemini/OpenAI.
+            const geminiFallback = await runExternalOrchestratorWithFallback(ctx, {
+              provider: "gemini",
+              message: finalPrompt,
+              models: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash", "gemini-1.5-pro"],
+              context: "You are a precise analyst. Preserve citations exactly; do not invent citations.",
+            });
+
+            record.modelChecks.gemini = { model: geminiFallback.modelUsed, ok: geminiFallback.ok, error: geminiFallback.ok ? undefined : geminiFallback.error };
+
+            if (geminiFallback.ok) {
+              record.answerPreview = geminiFallback.text.slice(0, 900);
+              record.success = true;
+            } else {
+              // Only try OpenAI fallback if the Anthropic failure looks like provider unavailability (quota/rate limits).
+              if (looksLikeProviderUnavailable(primaryError ?? "")) {
+                const openaiFallback = await runExternalOrchestratorWithFallback(ctx, {
+                  provider: "openai",
+                  message: finalPrompt,
+                  models: [MODEL_CATALOG.OPENAI.FLAGSHIP, MODEL_CATALOG.OPENAI.FAST, MODEL_CATALOG.OPENAI.NANO],
+                  context: "You are a precise analyst. Preserve citations exactly; do not invent citations.",
+                });
+
+                record.modelChecks.openai = { model: openaiFallback.modelUsed, ok: openaiFallback.ok, error: openaiFallback.ok ? undefined : openaiFallback.error };
+
+                if (openaiFallback.ok) {
+                  record.answerPreview = openaiFallback.text.slice(0, 900);
+                  record.success = true;
+                } else {
+                  record.error = openaiFallback.error ?? geminiFallback.error ?? primaryError ?? "Anthropic branch failed";
+                  record.answerPreview = String(linkup?.answer ?? "").slice(0, 900);
+                  record.success = !!linkup?.ok;
+                }
+              } else {
+                record.error = geminiFallback.error ?? primaryError ?? "Anthropic branch failed";
+                record.answerPreview = String(linkup?.answer ?? "").slice(0, 900);
+                record.success = !!linkup?.ok;
+              }
+            }
+          }
         } else if (
           arch.primarySdk === "openai" ||
           arch.primarySdk === "langgraph" ||

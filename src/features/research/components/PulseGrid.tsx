@@ -72,42 +72,42 @@ function InsightCardComponent({
       className={`
         group relative w-full text-left p-4 rounded-xl 
         bg-gradient-to-br ${gradientClass}
-        border hover:border-gray-300 
+        border hover:border-[color:var(--border-color)]
         transition-all duration-200 hover:shadow-md hover:scale-[1.02]
-        focus:outline-none focus:ring-2 focus:ring-gray-900/20
+        focus:outline-none focus:ring-2 focus:ring-[color:var(--text-primary)]/20
       `}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
-        <div className={`p-2 rounded-lg bg-white/80 shadow-sm ${iconColor}`}>
+        <div className={`p-2 rounded-lg bg-[color:var(--bg-primary)]/80 shadow-sm ${iconColor}`}>
           <Icon className="w-4 h-4" />
         </div>
         {card.source && (
-          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+          <span className="text-[10px] font-medium text-[color:var(--text-secondary)] uppercase tracking-wide">
             {card.source}
           </span>
         )}
       </div>
 
       {/* Title */}
-      <h3 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-1 group-hover:text-gray-700">
+      <h3 className="font-semibold text-sm text-[color:var(--text-primary)] line-clamp-2 mb-1 group-hover:text-[color:var(--text-primary)]">
         {card.title}
       </h3>
 
       {/* Description */}
-      <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+      <p className="text-xs text-[color:var(--text-primary)] line-clamp-2 mb-2">
         {card.description}
       </p>
 
       {/* Footer */}
       <div className="flex items-center justify-between">
         {timeAgo && (
-          <span className="flex items-center gap-1 text-[10px] text-gray-500">
+          <span className="flex items-center gap-1 text-[10px] text-[color:var(--text-secondary)]">
             <Clock className="w-3 h-3" />
             {timeAgo}
           </span>
         )}
-        <span className="flex items-center gap-1 text-[10px] text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="flex items-center gap-1 text-[10px] text-[color:var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
           <ExternalLink className="w-3 h-3" />
           View
         </span>
@@ -137,7 +137,7 @@ export function PulseGrid({
       {/* Section Header */}
       <div className="flex items-center gap-2 mb-4">
         <Zap className="w-4 h-4 text-amber-500" />
-        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+        <h2 className="text-sm font-semibold text-[color:var(--text-primary)] uppercase tracking-wide">
           Today's Pulse
         </h2>
       </div>

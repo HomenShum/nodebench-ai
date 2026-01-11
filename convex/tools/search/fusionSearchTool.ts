@@ -38,8 +38,6 @@ Examples:
   }),
 
   handler: async (ctx, args): Promise<string> => {
-    console.log(`[fusionSearch tool] Query: "${args.query}", Mode: ${args.mode}`);
-
     try {
       const fusionPayload = await ctx.runAction(api.domains.search.fusion.actions.fusionSearch, {
         query: args.query,
@@ -54,10 +52,40 @@ Examples:
         return `No results found for "${args.query}". Try a different query or search mode.`;
       }
 
+      const embeddedFusionPayload = [
+        "<!-- FUSION_SEARCH_DATA",
+        JSON.stringify(fusionPayload),
+        "-->",
+      ].join("\n");
+
+      const sourceGalleryItems = response.results
+        .filter((r: { url?: string }) => typeof r.url === "string" && r.url.length > 0)
+        .map((r: { title: string; url: string; snippet?: string }) => {
+          let domain: string | undefined;
+          try {
+            domain = new URL(r.url).hostname.replace(/^www\./, "");
+          } catch {
+            domain = undefined;
+          }
+          return {
+            title: r.title,
+            url: r.url,
+            domain,
+            description: r.snippet ? r.snippet.slice(0, 240) : undefined,
+          };
+        });
+
+      const embeddedSourceGallery = [
+        "<!-- SOURCE_GALLERY_DATA",
+        JSON.stringify(sourceGalleryItems),
+        "-->",
+      ].join("\n");
+
       // Format results for agent consumption
-      const formattedResults = response.results.map((r: { title: string; source: string; contentType: string; url?: string; snippet: string; publishedAt?: string }, i: number) => {
+      const formattedResults = response.results.map((r: { id: string; title: string; source: string; contentType: string; url?: string; snippet: string; publishedAt?: string }, i: number) => {
         const parts = [
           `${i + 1}. **${r.title}**`,
+          `   Id: ${r.id}`,
           `   Source: ${r.source} | Type: ${r.contentType}`,
         ];
         
@@ -74,7 +102,12 @@ Examples:
         `Found ${response.results.length} results (${response.totalBeforeFusion} before fusion)`,
         `Time: ${response.totalTimeMs}ms | Reranked: ${response.reranked}`,
         "",
+        "Tip: In your final answer, cite sources using `{{cite:<Id>|<Label>|type:source}}`.",
+        "",
         ...formattedResults,
+        "",
+        embeddedFusionPayload,
+        embeddedSourceGallery,
       ];
 
       return summary.join("\n");
@@ -99,8 +132,6 @@ Use this for simple queries where speed matters more than comprehensiveness.`,
   }),
 
   handler: async (ctx, args): Promise<string> => {
-    console.log(`[quickSearch tool] Query: "${args.query}"`);
-
     try {
       const fusionPayload = await ctx.runAction(api.domains.search.fusion.actions.quickSearch, {
         query: args.query,
@@ -108,21 +139,58 @@ Use this for simple queries where speed matters more than comprehensiveness.`,
       });
 
       // Extract results from versioned FusionSearchPayload
-      const results = fusionPayload.payload.results;
+      const response = fusionPayload.payload;
+      const results = response.results;
 
       if (results.length === 0) {
         return `No results found for "${args.query}".`;
       }
 
-      const formatted = results.map((r: { title: string; url?: string }, i: number) =>
-        `${i + 1}. ${r.title}${r.url ? ` - ${r.url}` : ""}`
+      const embeddedFusionPayload = [
+        "<!-- FUSION_SEARCH_DATA",
+        JSON.stringify(fusionPayload),
+        "-->",
+      ].join("\n");
+
+      const sourceGalleryItems = results
+        .filter((r: { url?: string }) => typeof r.url === "string" && r.url.length > 0)
+        .map((r: { title: string; url: string; snippet?: string }) => {
+          let domain: string | undefined;
+          try {
+            domain = new URL(r.url).hostname.replace(/^www\./, "");
+          } catch {
+            domain = undefined;
+          }
+          return {
+            title: r.title,
+            url: r.url,
+            domain,
+            description: r.snippet ? r.snippet.slice(0, 240) : undefined,
+          };
+        });
+
+      const embeddedSourceGallery = [
+        "<!-- SOURCE_GALLERY_DATA",
+        JSON.stringify(sourceGalleryItems),
+        "-->",
+      ].join("\n");
+
+      const formatted = results.map((r: { id: string; title: string; url?: string }, i: number) =>
+        `${i + 1}. ${r.title} (Id: ${r.id})${r.url ? ` - ${r.url}` : ""}`
       );
 
-      return `Quick search results for "${args.query}":\n${formatted.join("\n")}`;
+      return [
+        `Quick search results for "${args.query}":`,
+        ...formatted,
+        "",
+        "Tip: In your final answer, cite sources using `{{cite:<Id>|<Label>|type:source}}`.",
+        "",
+        embeddedFusionPayload,
+        embeddedSourceGallery,
+      ].join("\n");
     } catch (error) {
       console.error("[quickSearch tool] Error:", error);
       return `Quick search failed: ${error}`;
     }
   },
 });
-

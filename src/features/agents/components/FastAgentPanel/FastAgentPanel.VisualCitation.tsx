@@ -194,8 +194,8 @@ const STATUS_CONFIG: Record<ArbitrageStatus, {
   unverified: {
     label: 'Unverified',
     icon: '?',
-    bgClass: 'bg-gray-100 dark:bg-gray-800/40',
-    textClass: 'text-gray-600 dark:text-gray-400',
+    bgClass: 'bg-[var(--bg-hover)] dark:bg-gray-800/40',
+    textClass: 'text-[var(--text-secondary)] dark:text-[var(--text-secondary)]',
     description: 'No primary source confirmation',
   },
   contradicted: {

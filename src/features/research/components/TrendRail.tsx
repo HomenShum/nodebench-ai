@@ -34,7 +34,7 @@ export const TrendRail: React.FC<TrendRailProps> = ({
     if (trend.type === 'up' || trend.hot) return 'bg-green-100 text-green-700';
     if (trend.type === 'down') return 'bg-red-100 text-red-600';
     if (trend.type === 'new') return 'bg-blue-100 text-blue-700';
-    return 'bg-gray-100 text-gray-500';
+    return 'bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)]';
   };
 
   const getDeltaIcon = (trend: TrendItem) => {
@@ -63,9 +63,9 @@ export const TrendRail: React.FC<TrendRailProps> = ({
           <button 
             key={trend.id} 
             onClick={() => onTrendClick?.(trend)}
-            className="flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all whitespace-nowrap group shrink-0"
+            className="flex items-center gap-2 px-3 py-2 rounded-full bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-sm hover:shadow-md hover:border-blue-300 transition-all whitespace-nowrap group shrink-0"
           >
-            <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{trend.label}</span>
+            <span className="text-sm font-medium text-[color:var(--text-primary)] group-hover:text-[color:var(--text-primary)]">{trend.label}</span>
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${getDeltaStyle(trend)}`}>
               {getDeltaIcon(trend)}
               {trend.delta}

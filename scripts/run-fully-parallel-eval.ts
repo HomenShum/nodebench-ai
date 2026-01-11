@@ -10,6 +10,7 @@
  *   set CONVEX_URL=...; set MCP_SECRET=...
  *   npx tsx scripts/run-fully-parallel-eval.ts --models gpt-5-mini,claude-haiku-4.5,gemini-3-flash --limit 5
  *   npx tsx scripts/run-fully-parallel-eval.ts --all --suite core
+ *   npx tsx scripts/run-fully-parallel-eval.ts --all --suite pack --use-db   # Use DB-backed scenarios (if server supports it)
  *   npx tsx scripts/run-fully-parallel-eval.ts --all --ndjson   # Enable NDJSON streaming output
  */
 
@@ -80,45 +81,77 @@ function tryReadConvexEnvVar(name: string): string | null {
 }
 
 /**
- * Run a single scenario for a single model
+ * Run a single (suite, offset) scenario for a single model.
+ *
+ * IMPORTANT: We do NOT pass custom scenarios to the harness so server-side
+ * requirements (pack/full gating) are applied.
  */
 async function runSingleScenarioEval(
   client: ConvexHttpClient,
   secret: string,
   model: string,
-  scenario: any,
-  suite: string
+  suite: string,
+  offset: number,
+  useDbScenarios: boolean
 ): Promise<any> {
   const startTime = Date.now();
 
-  try {
-    const result = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
-      secret,
-      model,
-      suite: suite as any,
-      offset: 0,
-      limit: 1,
-      scenarios: [
-        {
-          id: scenario.id,
-          name: scenario.name,
-          query: scenario.query,
-          expectedPersona: scenario.expectedPersona,
-          expectedEntityId: scenario.expectedEntityId,
-        },
-      ],
-    });
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
+        secret,
+        model,
+        suite: suite as any,
+        offset,
+        limit: 1,
+        ...(useDbScenarios ? { useDbScenarios: true } : {}),
+      });
 
-    const elapsed = Date.now() - startTime;
-    const runs = result?.runs ?? [];
-    const run = runs[0];
+      const runs = Array.isArray((result as any)?.runs) ? (result as any).runs : [];
+      const run = runs[0];
+      if (!run) {
+        throw new Error(`No run returned for suite="${suite}" offset=${offset} (attempt ${attempt}/${maxAttempts})`);
+      }
 
-    return { model, scenarioId: scenario.id, result: run, elapsed, error: null };
-  } catch (err) {
-    const elapsed = Date.now() - startTime;
-    const msg = err instanceof Error ? err.message : String(err);
-    return { model, scenarioId: scenario.id, result: null, elapsed, error: msg };
+      const elapsed = Date.now() - startTime;
+      return {
+        model,
+        offset,
+        scenarioId: String(run?.id ?? `offset:${offset}`),
+        scenarioName: String(run?.name ?? `offset:${offset}`),
+        result: run,
+        elapsed,
+        error: null,
+      };
+    } catch (err) {
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 250 * attempt));
+        continue;
+      }
+      const elapsed = Date.now() - startTime;
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        model,
+        offset,
+        scenarioId: `offset:${offset}`,
+        scenarioName: `offset:${offset}`,
+        result: null,
+        elapsed,
+        error: msg,
+      };
+    }
   }
+  // Unreachable, but keeps TypeScript happy.
+  return {
+    model,
+    offset,
+    scenarioId: `offset:${offset}`,
+    scenarioName: `offset:${offset}`,
+    result: null,
+    elapsed: Date.now() - startTime,
+    error: "Unknown error",
+  };
 }
 
 async function main() {
@@ -134,6 +167,7 @@ async function main() {
   const suite = getArg("--suite") || "core"; // Default to core suite
   const limit = parseNonNegativeInt(getArg("--limit")) ?? 3;
   const ndjsonMode = hasFlag("--ndjson"); // P0: Enable NDJSON streaming output
+  const useDbScenarios = hasFlag("--use-db") || hasFlag("--db");
 
   // Determine which models to test
   // Native providers + OpenRouter models for comprehensive evaluation (Jan 2026)
@@ -148,6 +182,7 @@ async function main() {
     "deepseek-v3.2",    // DeepSeek V3.2 - $0.25/$0.38 - general purpose
     "qwen3-235b",       // Qwen3 235B - $0.18/$0.54 - latest with tools
     "minimax-m2.1",     // MiniMax M2.1 - $0.28/$1.20 - agentic workflows
+    "mimo-v2-flash-free", // Xiaomi MiMo V2 Flash - OpenRouter free tier
   ];
   let modelsToTest: string[];
 
@@ -158,6 +193,28 @@ async function main() {
   } else {
     modelsToTest = availableModels;
   }
+
+  const client = new ConvexHttpClient(convexUrl);
+  const authToken = process.env.CONVEX_AUTH_TOKEN;
+  if (authToken) client.setAuth(authToken);
+
+  // Probe suite scenario count from server (includes DB-backed suites + pack/full requirements)
+  if (modelsToTest.length === 0) throw new Error("No models selected");
+  const probeModel = modelsToTest[0];
+  const probe = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
+    secret,
+    model: probeModel,
+    suite: suite as any,
+    offset: 0,
+    limit: 1,
+    ...(useDbScenarios ? { useDbScenarios: true } : {}),
+  });
+  const totalAvailable = Number(probe?.window?.totalAvailable ?? 0);
+  if (!Number.isFinite(totalAvailable) || totalAvailable <= 0) {
+    throw new Error(`Failed to probe totalAvailable scenarios for suite="${suite}"`);
+  }
+  const offsetsToRun = Array.from({ length: totalAvailable }, (_, i) => i);
+  const offsets = limit > 0 ? offsetsToRun.slice(0, limit) : offsetsToRun;
 
   // Define ALL scenarios (DEFAULT + NEXT + STRESS from personaEpisodeEval.ts)
   // Total: 32 scenarios covering all 10 personas
@@ -231,22 +288,19 @@ async function main() {
   console.log(`\n🚀 Starting FULLY PARALLEL evaluation:`);
   console.log(`   Models: ${modelsToTest.join(", ")}`);
   console.log(`   Suite: ${suite}`);
-  console.log(`   Scenarios: ${scenarios.length}`);
-  console.log(`   Total evaluations: ${modelsToTest.length * scenarios.length}`);
+  console.log(`   Scenario source: ${useDbScenarios ? "db" : "builtin"}`);
+  console.log(`   Scenarios: ${offsets.length} of ${totalAvailable} (limit=${limit})`);
+  console.log(`   Total evaluations: ${modelsToTest.length * offsets.length}`);
   console.log(``);
-
-  const client = new ConvexHttpClient(convexUrl);
-  const authToken = process.env.CONVEX_AUTH_TOKEN;
-  if (authToken) client.setAuth(authToken);
 
   const startTime = Date.now();
 
   // Create all (model, scenario) combinations
   const tasks: Promise<any>[] = [];
   for (const model of modelsToTest) {
-    for (const scenario of scenarios) {
-      console.log(`[${model}/${scenario.id}] Starting...`);
-      tasks.push(runSingleScenarioEval(client, secret, model, scenario, suite));
+    for (const offset of offsets) {
+      console.log(`[${model}/offset:${offset}] Starting...`);
+      tasks.push(runSingleScenarioEval(client, secret, model, suite, offset, useDbScenarios));
     }
   }
 
@@ -271,7 +325,7 @@ async function main() {
   summaryLines.push(`Total Time: ${(totalElapsed / 1000).toFixed(1)}s`);
   summaryLines.push(`Suite: ${suite}`);
   summaryLines.push(`Models: ${modelsToTest.length}`);
-  summaryLines.push(`Scenarios: ${scenarios.length}`);
+  summaryLines.push(`Scenarios: ${offsets.length} of ${totalAvailable} (limit=${limit})`);
   summaryLines.push(`Total evaluations: ${results.length}`);
   summaryLines.push(``);
   summaryLines.push(`## Summary by Model`);
@@ -282,7 +336,7 @@ async function main() {
   for (const model of modelsToTest) {
     const modelResults = resultsByModel[model];
     const passed = modelResults.filter((r) => r.result?.ok === true).length;
-    const failed = modelResults.filter((r) => r.result?.ok === false || r.error).length;
+    const failed = modelResults.filter((r) => r.result?.ok !== true || r.error).length;
     const avgTime = modelResults.reduce((sum, r) => sum + r.elapsed, 0) / modelResults.length / 1000;
 
     summaryLines.push(`| ${model} | ${modelResults.length} | ${passed} | ${failed} | ${avgTime.toFixed(1)} |`);
@@ -294,12 +348,25 @@ async function main() {
   summaryLines.push(`| Scenario | Total | Passed | Failed |`);
   summaryLines.push(`|----------|-------|--------|--------|`);
 
-  for (const scenario of scenarios) {
-    const scenarioResults = results.filter((r) => r.scenarioId === scenario.id);
-    const passed = scenarioResults.filter((r) => r.result?.ok === true).length;
-    const failed = scenarioResults.filter((r) => r.result?.ok === false || r.error).length;
+  const scenarioAgg = new Map<string, { name: string; total: number; passed: number; failed: number }>();
+  for (const r of results) {
+    const id = String(r.scenarioId ?? `offset:${r.offset ?? "?"}`);
+    const name = String(r.scenarioName ?? id);
+    const entry = scenarioAgg.get(id) ?? { name, total: 0, passed: 0, failed: 0 };
+    entry.total++;
+    if (r.error) {
+      entry.failed++;
+    } else if (r.result?.ok === true) {
+      entry.passed++;
+    } else {
+      entry.failed++;
+    }
+    scenarioAgg.set(id, entry);
+  }
 
-    summaryLines.push(`| ${scenario.name} | ${scenarioResults.length} | ${passed} | ${failed} |`);
+  const scenarioEntries = Array.from(scenarioAgg.values()).sort((a, b) => a.name.localeCompare(b.name));
+  for (const s of scenarioEntries) {
+    summaryLines.push(`| ${s.name} | ${s.total} | ${s.passed} | ${s.failed} |`);
   }
 
   summaryLines.push(``);
@@ -324,7 +391,7 @@ async function main() {
           ? r.result.failureReasons[0].slice(0, 80)
           : "-";
 
-      const scenarioName = scenarios.find((s) => s.id === r.scenarioId)?.name || r.scenarioId;
+      const scenarioName = r.scenarioName || r.scenarioId || `offset:${r.offset ?? "?"}`;
       summaryLines.push(`| ${scenarioName} | ${status} | ${time} | ${failures} |`);
     }
 
@@ -408,7 +475,8 @@ async function main() {
         totalElapsed,
         modelsToTest,
         suite,
-        scenarios: scenarios.length,
+        totalAvailable,
+        scenarios: offsets.length,
         totalEvaluations: results.length,
         results,
       },

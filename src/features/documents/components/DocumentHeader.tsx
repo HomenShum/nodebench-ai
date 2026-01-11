@@ -324,41 +324,41 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                   <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
                 {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden ring-1 ring-black/5">
+                  <div className="absolute right-0 mt-2 w-56 bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border-color)] z-50 overflow-hidden ring-1 ring-black/5">
                     <div className="py-1">
                       {!document.isPublic ? (
                         <>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             Make Public (view-only)
                           </button>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: true }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: true }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             Make Public (editable)
                           </button>
                         </>
                       ) : (
                         <>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: false, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: false, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                             <Lock className="h-4 w-4" />
                             Make Private
                           </button>
-                          <button onClick={async () => { await updateDocument({ id: document._id, allowPublicEdit: !(document as any).allowPublicEdit }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors">
+                          <button onClick={async () => { await updateDocument({ id: document._id, allowPublicEdit: !(document as any).allowPublicEdit }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             {(document as any).allowPublicEdit ? "Disable public editing" : "Enable public editing"}
                           </button>
                         </>
                       )}
-                      <button onClick={() => { void handleAddIcon(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors">
+                      <button onClick={() => { void handleAddIcon(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                         <Smile className="h-4 w-4" />
                         Change Icon
                       </button>
-                      <button onClick={() => { void handleAddCover(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors">
+                      <button onClick={() => { void handleAddCover(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                         <ImageIcon className="h-4 w-4" />
                         Change Cover
                       </button>
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                      <button onClick={() => { void handleArchive(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors">
+                      <div className="border-t border-[var(--border-color)] my-1"></div>
+                      <button onClick={() => { void handleArchive(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
                         <Archive className="h-4 w-4" />
                         Archive
                       </button>

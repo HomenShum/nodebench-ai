@@ -51,7 +51,7 @@ const agentLabels: Record<AgentName, string> = {
 };
 
 const statusColors = {
-  scheduled: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+  scheduled: "bg-[var(--bg-secondary)]/20 text-[var(--text-muted)] border-[var(--border-color)]/30",
   running: "bg-blue-500/20 text-blue-400 border-blue-500/30",
   completed: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   failed: "bg-red-500/20 text-red-400 border-red-500/30",
@@ -59,7 +59,7 @@ const statusColors = {
 };
 
 const statusIcons = {
-  scheduled: <Loader2 className="w-3 h-3 text-gray-400" />,
+  scheduled: <Loader2 className="w-3 h-3 text-[var(--text-muted)]" />,
   running: <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />,
   completed: <CheckCircle2 className="w-3 h-3 text-emerald-400" />,
   failed: <AlertCircle className="w-3 h-3 text-red-400" />,
@@ -72,21 +72,21 @@ const statusIcons = {
 
 function LaneCard({ delegation }: LaneCardProps) {
   const { text, toolsUsed, isStreaming } = useLaneEvents(delegation.delegationId);
-  
+
   const truncatedText = useMemo(() => {
     if (!text) return "";
     // Show last 500 chars for streaming preview
     return text.length > 500 ? "..." + text.slice(-500) : text;
   }, [text]);
-  
+
   const isActive = delegation.status === "running" || delegation.status === "scheduled";
-  
+
   return (
-    <div 
+    <div
       className={`
         relative overflow-hidden rounded-xl border transition-all duration-300
         ${isActive ? 'border-blue-500/30 shadow-lg shadow-blue-500/10' : 'border-white/10'}
-        bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm
+        bg-gradient-to-br from-[var(--bg-primary)]/80 to-[var(--bg-secondary)]/80 backdrop-blur-sm
       `}
     >
       {/* Header */}
@@ -101,7 +101,7 @@ function LaneCard({ delegation }: LaneCardProps) {
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
           )}
         </div>
-        
+
         {/* Agent Name & Status */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -121,12 +121,12 @@ function LaneCard({ delegation }: LaneCardProps) {
           </p>
         </div>
       </div>
-      
+
       {/* Tools Used */}
       {toolsUsed.length > 0 && (
         <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-white/5">
           {toolsUsed.slice(0, 4).map((tool) => (
-            <span 
+            <span
               key={tool}
               className="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-300"
             >
@@ -134,13 +134,13 @@ function LaneCard({ delegation }: LaneCardProps) {
             </span>
           ))}
           {toolsUsed.length > 4 && (
-            <span className="px-2 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/20 text-[10px] text-gray-400">
+            <span className="px-2 py-0.5 rounded-full bg-[var(--bg-secondary)]/10 border border-[var(--border-color)]/20 text-[10px] text-[var(--text-muted)]">
               +{toolsUsed.length - 4} more
             </span>
           )}
         </div>
       )}
-      
+
       {/* Streaming Text Preview */}
       <div className="p-3 max-h-32 overflow-y-auto">
         {text ? (
@@ -161,7 +161,7 @@ function LaneCard({ delegation }: LaneCardProps) {
           </p>
         ) : null}
       </div>
-      
+
       {/* Completed indicator */}
       {delegation.status === "completed" && (
         <div className="absolute top-2 right-2">
@@ -177,7 +177,7 @@ function LaneCard({ delegation }: LaneCardProps) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
-  const { delegations, isLoading, hasActiveDelegations, completedCount, totalCount } = 
+  const { delegations, isLoading, hasActiveDelegations, completedCount, totalCount } =
     useAgentLanes(runId) as {
       delegations: Delegation[];
       isLoading: boolean;
@@ -185,12 +185,12 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
       completedCount: number;
       totalCount: number;
     };
-  
+
   // Don't render if no delegations
   if (!runId || (delegations.length === 0 && !isLoading)) {
     return null;
   }
-  
+
   return (
     <div className={`${className}`}>
       {/* Header */}
@@ -209,7 +209,7 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
           {completedCount}/{totalCount} complete
         </span>
       </div>
-      
+
       {/* Loading State */}
       {isLoading && delegations.length === 0 && (
         <div className="flex items-center justify-center py-8 text-white/40">
@@ -217,7 +217,7 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
           <span className="text-sm">Loading agent lanes...</span>
         </div>
       )}
-      
+
       {/* Lanes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {delegations.map((delegation) => (

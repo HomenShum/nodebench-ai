@@ -2,7 +2,7 @@
 
 import { action } from "../../_generated/server";
 import { v } from "convex/values";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { discoverToolsWithSdk, executeToolWithSdk } from "../../lib/mcpTransport";
 
 type SmokeCheckResult = {
@@ -42,6 +42,8 @@ export const run = action({
     includeMcpToolExec: v.optional(v.boolean()),
     includeLinkup: v.optional(v.boolean()),
     linkupQuery: v.optional(v.string()),
+    includeSwarm: v.optional(v.boolean()),
+    swarmModel: v.optional(v.string()),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -535,6 +537,102 @@ export const run = action({
       }
     })();
 
+    // 5) Swarm orchestration smoke (optional; uses real delegation + synthesis)
+    results.swarm_orchestration = await (async (): Promise<SmokeCheckResult> => {
+      if (!args.includeSwarm) {
+        return { ok: true, elapsedMs: 0, details: { skipped: true } };
+      }
+      try {
+        const { elapsedMs, value } = await timed(async () => {
+          const userId = await ctx.runQuery(internal.domains.agents.swarmQueries.getAnyUserIdInternal, {});
+          if (!userId) {
+            throw new Error("No users found (create at least one user to run swarm smoke).");
+          }
+
+          const model = args.swarmModel || "claude-haiku-4.5";
+          const swarmId = crypto.randomUUID();
+          const agentName = "DocumentAgent";
+          const stateKeyPrefix = `${agentName}:${swarmId.slice(0, 8)}:0`;
+
+          const threadId = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.createThreadForUserInternal, {
+            userId,
+            title: `Swarm Smoke (${new Date().toISOString()})`,
+            model,
+          });
+
+          const agentConfigs = [
+            {
+              agentName,
+              role: "Swarm smoke test",
+              query: "Return exactly the single token: OK (no extra text). Do not use tools.",
+              stateKeyPrefix,
+            },
+          ];
+
+          await ctx.runMutation(api.domains.agents.swarmMutations.createSwarmRecord, {
+            swarmId,
+            userId,
+            threadId: threadId as string,
+            name: "Swarm Smoke",
+            query: "Swarm smoke test",
+            pattern: "fan_out_gather",
+            agentConfigs,
+          });
+
+          await ctx.runMutation(api.domains.agents.swarmMutations.linkThreadToSwarm, {
+            threadId: threadId as any,
+            swarmId,
+          });
+
+          const tasks = agentConfigs.map((config, idx) => ({
+            taskId: crypto.randomUUID(),
+            agentName: config.agentName,
+            query: config.query,
+            role: config.role,
+            stateKeyPrefix: config.stateKeyPrefix,
+          }));
+
+          await ctx.runMutation(api.domains.agents.swarmMutations.createSwarmTasks, {
+            swarmId,
+            tasks,
+          });
+
+          await ctx.runAction(internal.domains.agents.swarmOrchestrator.executeSwarmInternal, {
+            swarmId,
+            userId,
+            model,
+            tasks,
+          });
+
+          const swarm = await ctx.runQuery(api.domains.agents.swarmQueries.getSwarmStatus, { swarmId });
+          const swarmTasks = await ctx.runQuery(api.domains.agents.swarmQueries.getSwarmTasks, { swarmId });
+
+          const statusCounts = (Array.isArray(swarmTasks) ? swarmTasks : []).reduce<Record<string, number>>(
+            (acc, t: any) => {
+              const key = String(t?.status ?? "unknown");
+              acc[key] = (acc[key] ?? 0) + 1;
+              return acc;
+            },
+            {}
+          );
+
+          return {
+            swarmId,
+            threadId,
+            model,
+            status: swarm?.status ?? null,
+            taskStatusCounts: statusCounts,
+            mergedResultSample: String(swarm?.mergedResult ?? "").slice(0, 300),
+          };
+        });
+
+        const ok = value?.status === "completed" && (value?.taskStatusCounts?.failed ?? 0) === 0;
+        return { ok, elapsedMs, details: value };
+      } catch (err) {
+        return { ok: false, elapsedMs: 0, error: toErrString(err) };
+      }
+    })();
+
     const envPresence = {
       MCP_SECRET: Boolean(process.env.MCP_SECRET),
       CORE_AGENT_MCP_SERVER_URL: Boolean(process.env.CORE_AGENT_MCP_SERVER_URL),
@@ -583,6 +681,7 @@ export const run = action({
       if (k.startsWith("openbb_")) return requireMcp;
       if (k.startsWith("research_")) return requireMcp;
       if (k === "linkup_search") return args.includeLinkup === true;
+      if (k === "swarm_orchestration") return args.includeSwarm === true;
       return true; // public api checks always required when enabled
     });
     const ok = requiredKeys.every((k) => results[k]?.ok);

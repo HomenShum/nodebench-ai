@@ -9,3 +9,5 @@ export * from "./agentTimelines";
 export * from "./agentInitializer";
 export * from "./agentScratchpads";
 export * from "./humanInTheLoop";
+export * from "./agentHubQueries";
+export * from "./swarmQueries";

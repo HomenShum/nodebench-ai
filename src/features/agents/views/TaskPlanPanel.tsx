@@ -2,10 +2,10 @@
 // Live stateful todo list showing agent workflow progress
 
 import React, { useMemo } from 'react';
-import { 
-  CheckCircle2, 
-  Circle, 
-  Loader2, 
+import {
+  CheckCircle2,
+  Circle,
+  Loader2,
   AlertCircle,
   ChevronDown,
   ChevronRight,
@@ -38,7 +38,7 @@ interface TaskPlanPanelProps {
 
 /**
  * TaskPlanPanel - Live stateful todo list showing workflow progress
- * 
+ *
  * Shows:
  * - Step-by-step tasks with status indicators
  * - Live progress updates
@@ -55,12 +55,12 @@ export function TaskPlanPanel({
   defaultExpanded = true,
 }: TaskPlanPanelProps) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
-  
+
   // Calculate progress
   const completedCount = steps.filter(s => s.status === 'completed').length;
   const totalCount = steps.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  
+
   // Determine overall status
   const hasError = steps.some(s => s.status === 'error');
   const isComplete = !hasError && completedCount === totalCount && totalCount > 0;
@@ -77,7 +77,7 @@ export function TaskPlanPanel({
 
   return (
     <div className={cn(
-      "border border-gray-200 rounded-lg bg-white overflow-hidden",
+      "border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] overflow-hidden",
       className
     )}>
       {/* Header */}
@@ -85,8 +85,8 @@ export function TaskPlanPanel({
         onClick={() => collapsible && setIsExpanded(!isExpanded)}
         className={cn(
           "w-full px-4 py-3 flex items-center justify-between text-left transition-colors",
-          collapsible && "hover:bg-gray-50 cursor-pointer",
-          isComplete ? "bg-green-50" : hasError ? "bg-red-50" : "bg-gray-50"
+          collapsible && "hover:bg-[var(--bg-hover)] cursor-pointer",
+          isComplete ? "bg-green-50" : hasError ? "bg-red-50" : "bg-[var(--bg-secondary)]"
         )}
         disabled={!collapsible}
       >
@@ -94,9 +94,9 @@ export function TaskPlanPanel({
           {/* Status icon */}
           <div className={cn(
             "w-8 h-8 rounded-full flex items-center justify-center",
-            isComplete ? "bg-green-100" : 
-            hasError ? "bg-red-100" : 
-            isRunning ? "bg-blue-100" : "bg-gray-100"
+            isComplete ? "bg-green-100" :
+            hasError ? "bg-red-100" :
+            isRunning ? "bg-blue-100" : "bg-[var(--bg-hover)]"
           )}>
             {isComplete ? (
               <CheckCircle2 className="w-4 h-4 text-green-600" />
@@ -105,15 +105,15 @@ export function TaskPlanPanel({
             ) : isRunning ? (
               <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
             ) : (
-              <Sparkles className="w-4 h-4 text-gray-500" />
+              <Sparkles className="w-4 h-4 text-[var(--text-secondary)]" />
             )}
           </div>
-          
+
           {/* Title and progress */}
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-900">{title}</span>
-              <span className="text-xs text-gray-500">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{title}</span>
+              <span className="text-xs text-[var(--text-secondary)]">
                 {completedCount} of {totalCount} steps
               </span>
             </div>
@@ -130,21 +130,21 @@ export function TaskPlanPanel({
           {metrics && (
             <InlineMetrics metrics={metrics} className="hidden sm:flex" />
           )}
-          
+
           {/* Expand/collapse */}
           {collapsible && (
             isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
+              <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
             )
           )}
         </div>
       </button>
 
       {/* Progress bar */}
-      <div className="h-1 bg-gray-100">
-        <div 
+      <div className="h-1 bg-[var(--bg-hover)]">
+        <div
           className={cn(
             "h-full transition-all duration-500 ease-out",
             isComplete ? "bg-green-500" : hasError ? "bg-red-500" : "bg-blue-500"
@@ -158,12 +158,12 @@ export function TaskPlanPanel({
         <div className="p-4">
           <div className="relative">
             {/* Vertical line */}
-            <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-gray-100" />
-            
+            <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-[var(--bg-hover)]" />
+
             {/* Steps */}
             <div className="space-y-0">
               {steps.map((step, idx) => (
-                <TaskStepItem 
+                <TaskStepItem
                   key={step.id || idx}
                   step={step}
                   isLast={idx === steps.length - 1}
@@ -199,7 +199,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
           isComplete ? "bg-green-500 border-green-500" :
           isActive ? "bg-white border-blue-500 ring-4 ring-blue-50" :
           isError ? "bg-red-500 border-red-500" :
-          "bg-white border-gray-200"
+          "bg-white border-[var(--border-color)]"
         )}>
           {isComplete ? (
             <CheckCircle2 className="w-4 h-4 text-white" />
@@ -208,7 +208,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
           ) : isError ? (
             <AlertCircle className="w-4 h-4 text-white" />
           ) : (
-            <Circle className="w-3 h-3 text-gray-300 fill-gray-50" />
+            <Circle className="w-3 h-3 text-[var(--text-muted)] fill-[var(--bg-secondary)]" />
           )}
         </div>
       </div>
@@ -222,32 +222,32 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
           <h4 className={cn(
             "text-sm font-medium leading-none",
             isActive ? "text-blue-700" :
-            isComplete ? "text-gray-900" :
+            isComplete ? "text-[var(--text-primary)]" :
             isError ? "text-red-700" :
-            "text-gray-500"
+            "text-[var(--text-secondary)]"
           )}>
             {step.label}
           </h4>
-          
+
           {/* Duration */}
           {step.durationMs && (
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
               <Clock className="w-3 h-3" />
               {formatDuration(step.durationMs)}
             </span>
           )}
         </div>
-        
+
         {/* Details */}
         {step.details && (
           <p className={cn(
             "text-xs mt-1 leading-relaxed",
-            isError ? "text-red-600" : "text-gray-500"
+            isError ? "text-red-600" : "text-[var(--text-secondary)]"
           )}>
             {step.details}
           </p>
         )}
-        
+
         {/* Tool/Agent info */}
         {(step.toolName || step.agentName) && (
           <div className="flex items-center gap-2 mt-1">
@@ -266,7 +266,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
 
         {/* Substeps */}
         {step.substeps && step.substeps.length > 0 && (
-          <div className="mt-2 pl-4 border-l-2 border-gray-100 space-y-2">
+          <div className="mt-2 pl-4 border-l-2 border-[var(--bg-hover)] space-y-2">
             {step.substeps.map((substep, idx) => (
               <div key={substep.id || idx} className="flex items-center gap-2">
                 <div className={cn(
@@ -274,9 +274,9 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
                   substep.status === 'completed' ? "bg-green-500" :
                   substep.status === 'in_progress' ? "bg-blue-500 animate-pulse" :
                   substep.status === 'error' ? "bg-red-500" :
-                  "bg-gray-300"
+                  "bg-[var(--text-muted)]"
                 )} />
-                <span className="text-xs text-gray-600">{substep.label}</span>
+                <span className="text-xs text-[var(--text-secondary)]">{substep.label}</span>
               </div>
             ))}
           </div>
@@ -291,7 +291,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
  */
 export function workflowProgressToTaskSteps(progress: any): TaskStep[] {
   if (!progress?.steps) return [];
-  
+
   return progress.steps.map((step: any, idx: number) => ({
     id: `step-${idx}`,
     label: step.label || `Step ${idx + 1}`,

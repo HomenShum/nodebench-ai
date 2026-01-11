@@ -81,17 +81,17 @@ export function DeepAgentProgress({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Loader2 className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" />
-          <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+          <span className="font-medium text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Deep Agent Processing
           </span>
         </div>
-        <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+        <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)]">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             <span>{formatDuration(elapsedTime)}</span>
           </div>
           {estimatedTotalDuration && (
-            <span className="text-gray-400 dark:text-gray-600">
+            <span className="text-[var(--text-muted)] dark:text-[var(--text-secondary)]">
               / ~{formatDuration(estimatedTotalDuration)}
             </span>
           )}
@@ -100,13 +100,13 @@ export function DeepAgentProgress({
 
       {/* Progress Bar */}
       <div className="space-y-1">
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+        <div className="w-full bg-[var(--border-color)] dark:bg-[var(--bg-secondary)] rounded-full h-2 overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-400 dark:to-indigo-400 transition-all duration-500 ease-out"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
-        <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+        <div className="flex justify-between text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)]">
           <span>{completedSteps} of {steps.length} steps completed</span>
           <span>{Math.round(progressPercentage)}%</span>
         </div>
@@ -143,7 +143,7 @@ export function DeepAgentProgress({
                       ? 'text-green-600 dark:text-green-400'
                       : isError
                       ? 'text-red-600 dark:text-red-400'
-                      : 'text-gray-400 dark:text-gray-600'
+                      : 'text-[var(--text-muted)] dark:text-[var(--text-secondary)]'
                   }`}
                 >
                   {isActive && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -163,19 +163,19 @@ export function DeepAgentProgress({
                           ? 'text-green-900 dark:text-green-100'
                           : isError
                           ? 'text-red-900 dark:text-red-100'
-                          : 'text-gray-700 dark:text-gray-300'
+                          : 'text-[var(--text-primary)] dark:text-[var(--text-muted)]'
                       }`}
                     >
                       {step.label}
                     </span>
                     {step.duration && (
-                      <span className="text-xs text-gray-500 dark:text-gray-500 flex-shrink-0">
+                      <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-secondary)] flex-shrink-0">
                         {formatDuration(step.duration)}
                       </span>
                     )}
                   </div>
                   {step.details && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 truncate">
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)] mt-0.5 truncate">
                       {step.details}
                     </p>
                   )}
@@ -188,10 +188,10 @@ export function DeepAgentProgress({
 
       {/* Actions */}
       {onCancel && (
-        <div className="flex justify-end pt-2 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end pt-2 border-t border-[var(--border-color)] dark:border-[var(--border-color)]">
           <button
             onClick={onCancel}
-            className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] transition-colors"
           >
             Cancel Operation
           </button>

@@ -109,12 +109,12 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-2xl mx-4 bg-[color:var(--bg-primary)] rounded-2xl shadow-2xl overflow-hidden">
                 {/* Skip button */}
                 {onSkip && (
                     <button
                         onClick={onSkip}
-                        className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors z-10"
+                        className="absolute top-4 right-4 p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors z-10"
                         aria-label="Skip onboarding"
                     >
                         <X className="w-5 h-5" />
@@ -127,7 +127,7 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
                         <button
                             key={idx}
                             onClick={() => setCurrentStep(idx)}
-                            className={`w-2 h-2 rounded-full transition-all ${idx === currentStep ? "w-6 bg-gray-900" : "bg-gray-300 hover:bg-gray-400"
+                            className={`w-2 h-2 rounded-full transition-all ${idx === currentStep ? "w-6 bg-gray-900" : "bg-[color:var(--bg-tertiary)] hover:bg-[color:var(--bg-hover)]"
                                 }`}
                             aria-label={`Go to step ${idx + 1}`}
                         />
@@ -142,16 +142,16 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
                     </div>
 
                     {/* Title */}
-                    <h2 className="text-3xl font-bold text-gray-900 mb-1 font-serif tracking-tight">{step.title}</h2>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">{step.subtitle}</p>
+                    <h2 className="text-3xl font-bold text-[color:var(--text-primary)] mb-1 font-serif tracking-tight">{step.title}</h2>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--text-secondary)] mb-4">{step.subtitle}</p>
 
                     {/* Description */}
-                    <p className="text-gray-600 mb-8 leading-relaxed text-lg font-light">{step.description}</p>
+                    <p className="text-[color:var(--text-primary)] mb-8 leading-relaxed text-lg font-light">{step.description}</p>
 
                     {/* Features */}
                     <ul className="space-y-3 mb-8">
                         {step.features.map((feature, idx) => (
-                            <li key={idx} className="flex items-start gap-3 text-sm text-gray-700">
+                            <li key={idx} className="flex items-start gap-3 text-sm text-[color:var(--text-primary)]">
                                 <span className={`w-5 h-5 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white text-xs shrink-0 mt-0.5`}>
                                     ✓
                                 </span>
@@ -166,8 +166,8 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
                             onClick={handlePrevious}
                             disabled={currentStep === 0}
                             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${currentStep === 0
-                                ? "text-gray-300 cursor-not-allowed"
-                                : "text-gray-600 hover:bg-gray-100"
+                                ? "text-[color:var(--text-secondary)] cursor-not-allowed"
+                                : "text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]"
                                 }`}
                         >
                             Previous

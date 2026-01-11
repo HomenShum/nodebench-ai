@@ -28,19 +28,19 @@ const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
 
   return (
     <div
-      className={`rounded-xl border border-gray-200 bg-[#fbfaf2]/90 px-3 py-2 shadow-sm ${className}`}
+      className={`rounded-xl border border-[color:var(--border-color)] bg-[#fbfaf2]/90 px-3 py-2 shadow-sm ${className}`}
     >
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[11px] font-semibold tracking-wide text-gray-700 uppercase">
+        <span className="text-[11px] font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
           Story Acts
         </span>
-        <span className="text-[11px] text-gray-500">
+        <span className="text-[11px] text-[color:var(--text-secondary)]">
           {ACTS[safeIndex]?.label ?? "Act I"}
         </span>
       </div>
       <div className="mt-1">
         {/* Progress bar */}
-        <div className="relative h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+        <div className="relative h-1.5 w-full rounded-full bg-[color:var(--bg-secondary)] overflow-hidden">
           <div
             className="h-full rounded-full bg-gray-900 transition-all duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
@@ -61,12 +61,12 @@ const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
                   className={`h-1.5 w-1.5 rounded-full ${
                     isActive
                       ? "bg-gray-900"
-                      : "bg-gray-400 group-hover:bg-gray-700"
+                      : "bg-[color:var(--text-secondary)] group-hover:bg-[color:var(--text-primary)]"
                   }`}
                 />
                 <span
                   className={`text-[9px] font-medium ${
-                    isActive ? "text-gray-900" : "text-gray-500"
+                    isActive ? "text-[color:var(--text-primary)]" : "text-[color:var(--text-secondary)]"
                   }`}
                 >
                   {act.label}

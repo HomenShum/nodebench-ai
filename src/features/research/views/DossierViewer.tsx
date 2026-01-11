@@ -496,16 +496,16 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     return (
       <div className="h-full overflow-y-auto bg-[#f8f6f1]">
         <div className="max-w-[1100px] mx-auto px-6 py-8">
-          <div className="bg-white shadow-lg border border-gray-300 font-serif">
+          <div className="bg-[color:var(--bg-primary)] shadow-lg border border-[color:var(--border-color)] font-serif">
             {/* Masthead */}
             <div className="border-b-4 border-black px-8 pt-6 pb-3">
-              <div className="text-center border-b border-gray-400 pb-3 mb-2">
+              <div className="text-center border-b border-[color:var(--border-color)] pb-3 mb-2">
                 <h1 className="font-serif text-5xl font-black tracking-tight text-black mb-1">
                   THE DAILY DOSSIER
                 </h1>
-                <p className="text-xs text-gray-600 uppercase tracking-widest">Research Intelligence Report</p>
+                <p className="text-xs text-[color:var(--text-primary)] uppercase tracking-widest">Research Intelligence Report</p>
               </div>
-              <div className="flex items-center justify-between text-xs text-gray-700">
+              <div className="flex items-center justify-between text-xs text-[color:var(--text-primary)]">
                 <span className="uppercase tracking-wide">Vol. 1, No. 1</span>
                 <span>
                   {new Date(document?._creationTime || Date.now()).toLocaleDateString("en-US", {
@@ -520,7 +520,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             </div>
 
             {/* Document Title */}
-            <div className="px-8 pt-6 pb-4 border-b border-gray-300">
+            <div className="px-8 pt-6 pb-4 border-b border-[color:var(--border-color)]">
               <h2 className="font-serif text-3xl font-bold text-black leading-tight">
                 {document?.title || 'Untitled Research'}
               </h2>
@@ -530,7 +530,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="px-8 py-6">
               <div className="prose prose-sm max-w-none">
                 {tipTapContent ? (
-                  <div className="text-gray-800 leading-relaxed">
+                  <div className="text-[color:var(--text-primary)] leading-relaxed">
                     {tipTapContent.content.map((node, idx) => (
                       <div key={idx} className="mb-4">
                         {renderTipTapNode(node)}
@@ -538,14 +538,14 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500 italic">
+                  <div className="text-sm text-[color:var(--text-secondary)] italic">
                     No content available.
                   </div>
                 )}
               </div>
 
               {/* Footer */}
-              <div className="mt-6 pt-3 text-xs border-t-2 border-gray-800 text-gray-600">
+              <div className="mt-6 pt-3 text-xs border-t-2 border-[color:var(--border-color)] text-[color:var(--text-primary)]">
                 <p>Analyzed {mediaCounts.total} media assets • Compiled on {new Date(document?._creationTime || Date.now()).toLocaleDateString("en-US")}</p>
               </div>
             </div>
@@ -751,7 +751,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                         key={idx}
                         className="group cursor-pointer rounded-xl overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 pressable"
                       >
-                        <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-50">
+                        <div className="relative aspect-video bg-gradient-to-br from-[color:var(--bg-secondary)] to-[color:var(--bg-secondary)]">
                           <img
                             src={video.thumbnail}
                             alt={video.title || 'Video'}

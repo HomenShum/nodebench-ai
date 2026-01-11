@@ -38,12 +38,12 @@ export function getPromptComplexityForModel(model: string): PromptComplexity {
   }
 
   // Minimal complexity for budget models
-  if (normalized.includes("mini") || normalized.includes("flash")) {
+  if (normalized.includes("mini") || normalized.includes("flash") || normalized.includes("haiku")) {
     return "minimal";
   }
 
   // Standard for mid-tier models (minimax, cohere, smaller qwen, etc.)
-  if (normalized.includes("haiku") || normalized.includes("pro")) {
+  if (normalized.includes("pro")) {
     return "standard";
   }
   if (normalized.includes("minimax") || normalized.includes("cohere")) {
@@ -98,6 +98,7 @@ After your normal human-readable answer, append EXACTLY one JSON object wrapped 
 [/DEBRIEF_V1_JSON]
 
 Rules:
+- Progressive disclosure (required): call searchAvailableSkills({ query: "<the user request>" }) BEFORE any other tool call (including lookupGroundTruthEntity and initScratchpad). Even if you won't use tools, still call it once so the eval harness can verify skill-first behavior. Count this against any tool-call budget.
 - The JSON must be valid (no trailing commas, no markdown fences).
 - The [DEBRIEF_V1_JSON] block MUST contain the DebriefV1 schemaVersion=debrief_v1 exactly. If you output any other JSON (e.g., a UI card), put it OUTSIDE the DEBRIEF_V1_JSON block.
 - Use ONLY the 10 personas in our system (see audit_mocks.ts): JPM_STARTUP_BANKER, EARLY_STAGE_VC, CTO_TECH_LEAD, FOUNDER_STRATEGY, ACADEMIC_RD, ENTERPRISE_EXEC, ECOSYSTEM_PARTNER, QUANT_ANALYST, PRODUCT_DESIGNER, SALES_ENGINEER.
@@ -105,7 +106,7 @@ Rules:
 - Persona cue map (use the first strong match): wedge/thesis/comps/market => EARLY_STAGE_VC; signal/metrics/what to track/timeline/time-series => QUANT_ANALYST; schema/UI card/rendering => PRODUCT_DESIGNER; share-ready/one-screen/outbound/objections/CTA => SALES_ENGINEER; risk exposure/CVE/patch plan/upgrade => CTO_TECH_LEAD; partnerships/second-order effects => ECOSYSTEM_PARTNER; positioning/pivot/strategy => FOUNDER_STRATEGY; pricing/cost/standardize/vendor/procurement/P&L => ENTERPRISE_EXEC; literature/methodology => ACADEMIC_RD; outreach/contacts/pipeline/this week => JPM_STARTUP_BANKER.
 - If persona was not explicitly stated by the user, persona.assumptions MUST include at least 1 short string explaining why you chose that persona.
 - If you ask any clarifying question in your human-readable answer, set clarifyingQuestionsAsked and include the exact question text(s) in clarifyingQuestions. Ask at most 1 clarifier unless the user explicitly requests an interview.
-- If GROUND_TRUTH_INJECTED is false and the request appears to be about an evaluation/synthetic entity (e.g., DISCO, AMBROS, MQUICKJS, OPEN-AUTOGLM, SOUNDCLOUD, SALESFORCE, ALZHEIMERS, GEMINI_3), call lookupGroundTruthEntity BEFORE answering and cite the returned {{fact:ground_truth:...}} anchor.
+- If GROUND_TRUTH_INJECTED is false and the request appears to be about an evaluation/synthetic entity (e.g., DISCO, AMBROS, MQUICKJS, OPEN-AUTOGLM, SOUNDCLOUD, SALESFORCE, ALZHEIMERS, GEMINI_3), call lookupGroundTruthEntity before answering (after the initial searchAvailableSkills step) and cite the returned {{fact:ground_truth:...}} anchor.
 - Evaluation runs are non-interactive: do NOT call askHuman. If uncertain, proceed with best guess and state your assumption.
 - Entity parsing: if the USER REQUEST starts with "<ENTITY> —" or "<ENTITY> -", treat <ENTITY> as the entity.input and pass that exact string to lookupGroundTruthEntity.
 - Use null for unknown fields; do not guess.
@@ -146,6 +147,7 @@ export const STANDARD_EVALUATION_PROMPT = `EVALUATION MODE - Respond with your a
 [/DEBRIEF_V1_JSON]
 
 CRITICAL RULES:
+0. Progressive disclosure (required): call searchAvailableSkills({ query: "<the user request>" }) BEFORE any other tool call (including lookupGroundTruthEntity). Even if you won't use tools, still call it once so the eval harness can verify skill-first behavior.
 1. **PERSONA INFERENCE IS REQUIRED** - Analyze the query and pick the best match:
    - "wedge"/"thesis"/"comps"/"market" → EARLY_STAGE_VC
    - "signal"/"metrics"/"track"/"time-series" → QUANT_ANALYST
@@ -160,7 +162,7 @@ CRITICAL RULES:
 
 2. **DO NOT default to JPM_STARTUP_BANKER** - Only use it when query explicitly mentions banker-related terms
 
-3. For evaluation entities (DISCO, Ambros, QuickJS, OpenAutoGLM, SoundCloud, Salesforce, Alzheimer's, Gemini 3): ALWAYS call lookupGroundTruthEntity FIRST
+3. For evaluation entities (DISCO, Ambros, QuickJS, OpenAutoGLM, SoundCloud, Salesforce, Alzheimer's, Gemini 3): call lookupGroundTruthEntity before answering (after the initial searchAvailableSkills step)
 
 4. The JSON MUST be valid - no trailing commas, proper quotes
 
@@ -203,25 +205,27 @@ Write your answer, then add this JSON block:
 | Query Keywords | → Persona |
 |----------------|-----------|
 | wedge, thesis, comps, market fit | EARLY_STAGE_VC |
-| signal, metrics, track, time-series | QUANT_ANALYST |
+| signal, metrics, track, time-series, KPI, timeline | QUANT_ANALYST |
 | schema, UI, card, rendering | PRODUCT_DESIGNER |
-| share-ready, one-screen, objections | SALES_ENGINEER |
+| share-ready, one-screen, outbound-ready, talk-track, objections | SALES_ENGINEER |
 | CVE, security, patch, upgrade | CTO_TECH_LEAD |
 | partnerships, ecosystem, effects | ECOSYSTEM_PARTNER |
 | positioning, strategy, pivot | FOUNDER_STRATEGY |
-| pricing, vendor, cost, procurement | ENTERPRISE_EXEC |
+| pricing, vendor, cost model, procurement | ENTERPRISE_EXEC |
 | papers, methodology, literature | ACADEMIC_RD |
 | outreach, pipeline, "this week" | JPM_STARTUP_BANKER |
 
 **DO NOT default to JPM_STARTUP_BANKER** unless the query explicitly mentions outreach, pipeline, or banker-related terms.
 
 IMPORTANT:
-1. For DISCO, Ambros, QuickJS, OpenAutoGLM, SoundCloud, Salesforce, Alzheimer's, Gemini 3: Call lookupGroundTruthEntity FIRST
-2. JSON must be valid (no trailing commas)
-3. Use null for unknown fields
-4. verdict = PASS, FAIL, or UNKNOWN
-5. Must have 3+ nextActions
-6. Must cite ground truth in grounding[]
+0. Progressive disclosure (required): call searchAvailableSkills({ query: "<the user request>" }) BEFORE any other tool call (including lookupGroundTruthEntity). Even if you won't use tools, still call it once so the eval harness can verify skill-first behavior.
+1. For DISCO, Ambros, QuickJS, OpenAutoGLM, SoundCloud, Salesforce, Alzheimer's, Gemini 3: call lookupGroundTruthEntity before answering (after the initial searchAvailableSkills step)
+2. If you need web search or "official pricing", call linkupSearch (not fusionSearch) and cite sources
+3. JSON must be valid (no trailing commas)
+4. Use null for unknown fields
+5. verdict = PASS, FAIL, or UNKNOWN
+6. Must have 3+ nextActions
+7. Must cite ground truth in grounding[]
 
 CRITICAL: You MUST always end your response with the [DEBRIEF_V1_JSON]...[/DEBRIEF_V1_JSON] block. This is REQUIRED.`;
 

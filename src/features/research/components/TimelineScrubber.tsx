@@ -49,19 +49,19 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           onScrubToSection(targetIndex);
         }}
       />
-      <div className="rounded-xl border border-gray-200 bg-white/90 px-3 py-2 shadow-sm">
+      <div className="rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)]/90 px-3 py-2 shadow-sm">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] font-semibold tracking-wide text-gray-700 uppercase">
+          <span className="text-[11px] font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
             Timeline
           </span>
-          <span className="text-[11px] text-gray-500">
+          <span className="text-[11px] text-[color:var(--text-secondary)]">
             {clampedActive + 1} / {totalSections}
           </span>
         </div>
         <div className="relative mt-1 h-8">
-          <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gray-100" />
+          <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[color:var(--bg-secondary)]" />
           <div
-            className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gray-900 transition-all duration-500 ease-out"
+            className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[color:var(--text-primary)] transition-all duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
           {Array.from({ length: totalSections }).map((_, index) => {
@@ -82,8 +82,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
                 <span
                   className={`h-2.5 w-2.5 rounded-full border ${
                     isActive
-                      ? "bg-gray-900 border-gray-900"
-                      : "bg-white border-gray-300 hover:bg-gray-100"
+                      ? "bg-[color:var(--text-primary)] border-[color:var(--text-primary)]"
+                      : "bg-[color:var(--bg-primary)] border-[color:var(--border-color)] hover:bg-[color:var(--bg-hover)]"
                   }`}
                 />
               </button>

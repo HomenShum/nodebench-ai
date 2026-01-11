@@ -321,10 +321,10 @@ function BriefingSectionInner({
 
   if (!executiveBrief || !actI || !actII || !actIII) {
     return (
-      <div className={`${className} p-8 text-center text-gray-500 border border-gray-200 rounded-xl bg-white`}>
-        <Clock className="w-8 h-8 mx-auto mb-3 text-gray-300" />
+      <div className={`${className} p-8 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-xl bg-[color:var(--bg-primary)]`}>
+        <Clock className="w-8 h-8 mx-auto mb-3 text-[color:var(--text-secondary)]" />
         <p className="text-sm font-medium">No briefing available yet</p>
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-[color:var(--text-secondary)] mt-1">
           The morning brief will be generated at 6:00 AM UTC
         </p>
       </div>
@@ -360,8 +360,8 @@ function BriefingSectionInner({
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-3xl font-serif font-bold text-gray-900 italic tracking-tight">{briefingTitle}</h2>
-          <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mt-1">
+          <h2 className="text-3xl font-serif font-bold text-[color:var(--text-primary)] italic tracking-tight">{briefingTitle}</h2>
+          <p className="text-sm font-medium text-[color:var(--text-secondary)] uppercase tracking-widest mt-1">
             {briefingDateString
               ? `${formatBriefDate(briefingDateString)}${isBriefToday ? "" : " (latest available)"}`
               : "Latest Synthesis"}
@@ -377,16 +377,16 @@ function BriefingSectionInner({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-10">
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Briefing Snapshot</p>
-            <p className="text-base font-serif font-bold text-gray-900">Act coverage</p>
+            <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Act coverage</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {briefingStats.map((stat) => (
               <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
                 <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
-                <div className="text-2xl font-serif font-semibold text-gray-900">{stat.value}</div>
+                <div className="text-2xl font-serif font-semibold text-[color:var(--text-primary)]">{stat.value}</div>
                 <div className="text-[10px] text-stone-400">{stat.hint}</div>
               </div>
             ))}
@@ -399,10 +399,10 @@ function BriefingSectionInner({
           )}
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Primary Sources</p>
-            <p className="text-base font-serif font-bold text-gray-900">Signal ledger</p>
+            <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Signal ledger</p>
           </div>
           <div className="space-y-3">
             {topSources.length > 0 ? (
@@ -418,10 +418,10 @@ function BriefingSectionInner({
           </div>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Act Focus</p>
-            <p className="text-base font-serif font-bold text-gray-900">Narrative spine</p>
+            <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Narrative spine</p>
           </div>
           <div className="space-y-3 text-xs text-stone-600">
             <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
@@ -441,11 +441,11 @@ function BriefingSectionInner({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-12">
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Quality Metrics</p>
-              <p className="text-base font-serif font-bold text-gray-900">Coverage integrity</p>
+              <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Coverage integrity</p>
             </div>
             {onAskAI && (
               <button
@@ -461,7 +461,7 @@ function BriefingSectionInner({
             {qualityStats.map((stat) => (
               <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
                 <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
-                <div className="text-2xl font-serif font-semibold text-gray-900">{stat.value}</div>
+                <div className="text-2xl font-serif font-semibold text-[color:var(--text-primary)]">{stat.value}</div>
                 <div className="text-[10px] text-stone-400">{stat.hint}</div>
               </div>
             ))}
@@ -489,11 +489,11 @@ function BriefingSectionInner({
           </div>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Trend Tags</p>
-              <p className="text-base font-serif font-bold text-gray-900">Active focus</p>
+              <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Active focus</p>
             </div>
             {onAskAI && (
               <button
@@ -529,11 +529,11 @@ function BriefingSectionInner({
           )}
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Provenance Log</p>
-              <p className="text-base font-serif font-bold text-gray-900">Retrieval transparency</p>
+              <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Retrieval transparency</p>
             </div>
             {onAskAI && (
               <button
@@ -591,11 +591,11 @@ function BriefingSectionInner({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-12">
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4 xl:col-span-2">
+        <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4 xl:col-span-2">
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Ledger</p>
-              <p className="text-base font-serif font-bold text-gray-900">Act II inventory</p>
+              <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Act II inventory</p>
             </div>
             {onAskAI && (
               <button
@@ -646,10 +646,10 @@ function BriefingSectionInner({
           </div>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Deep Agent Launchpad</p>
-            <p className="text-base font-serif font-bold text-gray-900">Runbook shortcuts</p>
+            <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Runbook shortcuts</p>
           </div>
           <div className="space-y-2">
             {agentLaunchpad.map((item) => (
@@ -689,10 +689,10 @@ function BriefingSectionInner({
 
       {(coverageItems.length > 0 || coverageRollup?.overallSummary) && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-12">
-          <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+          <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Coverage Rollup</p>
-              <p className="text-base font-serif font-bold text-gray-900">Map-reduced synthesis</p>
+              <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Map-reduced synthesis</p>
             </div>
             <div className="text-sm text-stone-700 leading-relaxed">
               {coverageRollup?.overallSummary
@@ -713,11 +713,11 @@ function BriefingSectionInner({
             )}
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4 xl:col-span-2">
+          <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-5 space-y-4 xl:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Full Coverage</p>
-                <p className="text-base font-serif font-bold text-gray-900">All article summaries</p>
+                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">All article summaries</p>
               </div>
               {coverageItems.length > 12 && (
                 <button
@@ -903,7 +903,7 @@ function ActIIContent({
   return (
     <div className="space-y-4">
       {signals.length === 0 ? (
-        <div className="p-12 text-center text-gray-400 border border-gray-100 rounded-2xl bg-white shadow-sm italic">
+        <div className="p-12 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-2xl bg-[color:var(--bg-primary)] shadow-sm italic">
           <p className="text-sm">No distinct signals detected in this cycle.</p>
         </div>
       ) : (
@@ -989,12 +989,12 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
   return (
     <div className="space-y-4">
       {actions.length === 0 ? (
-        <div className="p-12 text-center text-gray-400 border border-gray-100 rounded-2xl bg-white shadow-sm italic">
+        <div className="p-12 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-2xl bg-[color:var(--bg-primary)] shadow-sm italic">
           <p className="text-sm">Strategic landscape is currently stable.</p>
         </div>
       ) : (
         actions.map((action: any, idx: number) => (
-          <div key={idx} className="p-8 border border-gray-100 rounded-2xl bg-white shadow-sm hover:shadow-xl transition-all border-l-4 border-l-gray-900">
+          <div key={idx} className="p-8 border border-[color:var(--border-color)] rounded-2xl bg-[color:var(--bg-primary)] shadow-sm hover:shadow-xl transition-all border-l-4 border-l-gray-900">
             <div className="flex items-start gap-6">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${action.priority === 'high' ? 'bg-red-600 text-white' :
                 action.priority === 'medium' ? 'bg-amber-500 text-white' :
@@ -1004,16 +1004,16 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${action.priority === 'high' ? 'text-red-500' : 'text-gray-400'
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${action.priority === 'high' ? 'text-red-500' : 'text-[color:var(--text-secondary)]'
                     }`}>
                     {action.priority || 'Standard'} Priority
                   </span>
-                  {action.deadline && <span className="text-[10px] font-medium text-gray-300">- {action.deadline}</span>}
+                  {action.deadline && <span className="text-[10px] font-medium text-[color:var(--text-secondary)]">- {action.deadline}</span>}
                 </div>
-                <h4 className="text-3xl font-serif font-bold text-gray-900 mb-4 tracking-tight italic leading-tight">
+                <h4 className="text-3xl font-serif font-bold text-[color:var(--text-primary)] mb-4 tracking-tight italic leading-tight">
                   <CrossLinkedText text={action.title || action.headline} onAskAI={onAskAI} />
                 </h4>
-                <div className="text-base text-gray-600 font-medium leading-relaxed mb-6">
+                <div className="text-base text-[color:var(--text-primary)] font-medium leading-relaxed mb-6">
                   <CrossLinkedText text={action.description || action.rationale} onAskAI={onAskAI} />
                 </div>
                 <SignalMomentumMini keyword={action.title || action.headline || "signal"} />

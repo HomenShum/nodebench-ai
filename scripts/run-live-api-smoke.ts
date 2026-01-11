@@ -33,6 +33,8 @@ async function main() {
 
   const includeLinkup = process.argv.includes("--include-linkup");
   const linkupQuery = getArg("--linkup-query");
+  const includeSwarm = process.argv.includes("--include-swarm");
+  const swarmModel = getArg("--swarm-model");
   const noPublicApiChecks = process.argv.includes("--no-public-api-checks");
   const requireMcpChecks = process.argv.includes("--require-mcp");
   const tryLocalhostDefaults = process.argv.includes("--try-localhost-mcp");
@@ -45,6 +47,8 @@ async function main() {
     tryLocalhostDefaults: tryLocalhostDefaults || undefined,
     includeLinkup: includeLinkup || undefined,
     linkupQuery: linkupQuery || undefined,
+    includeSwarm: includeSwarm || undefined,
+    swarmModel: swarmModel || undefined,
   });
 
   // Never print secrets; only print the structured status.

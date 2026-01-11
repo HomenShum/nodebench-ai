@@ -11,16 +11,11 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
+import { getLanguageModelSafe } from "../../../mcp_tools/models/modelResolver";
 
-// Helper to get the appropriate language model based on model name
-// Supports: OpenAI (gpt-*), Anthropic (claude-*), Google (gemini-*)
 function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) return anthropic(modelName);
-  if (modelName.startsWith("gemini-")) return google(modelName);
-  return openai.chat(modelName);
+  return getLanguageModelSafe(modelName);
 }
 
 // Import document-specific tools
@@ -133,4 +128,3 @@ Always structure responses with:
     stopWhen: stepCountIs(10),
   });
 }
-

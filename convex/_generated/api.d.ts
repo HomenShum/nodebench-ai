@@ -34,6 +34,7 @@ import type * as domains_agents_adapters_vercel_vercelAiSdkAdapter from "../doma
 import type * as domains_agents_agentChat from "../domains/agents/agentChat.js";
 import type * as domains_agents_agentChatActions from "../domains/agents/agentChatActions.js";
 import type * as domains_agents_agentDelegations from "../domains/agents/agentDelegations.js";
+import type * as domains_agents_agentHubQueries from "../domains/agents/agentHubQueries.js";
 import type * as domains_agents_agentInitializer from "../domains/agents/agentInitializer.js";
 import type * as domains_agents_agentMemory from "../domains/agents/agentMemory.js";
 import type * as domains_agents_agentPlanning from "../domains/agents/agentPlanning.js";
@@ -519,6 +520,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/agentChat": typeof domains_agents_agentChat;
   "domains/agents/agentChatActions": typeof domains_agents_agentChatActions;
   "domains/agents/agentDelegations": typeof domains_agents_agentDelegations;
+  "domains/agents/agentHubQueries": typeof domains_agents_agentHubQueries;
   "domains/agents/agentInitializer": typeof domains_agents_agentInitializer;
   "domains/agents/agentMemory": typeof domains_agents_agentMemory;
   "domains/agents/agentPlanning": typeof domains_agents_agentPlanning;

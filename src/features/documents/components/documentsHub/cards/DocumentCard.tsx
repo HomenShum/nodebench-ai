@@ -67,10 +67,10 @@ const AI_STATUS_CONFIG = {
     label: 'Processing',
   },
   raw: {
-    dot: 'bg-gray-300',
-    bg: 'bg-gray-50',
-    border: 'border-gray-200',
-    text: 'text-gray-500',
+    dot: 'bg-[var(--text-muted)]',
+    bg: 'bg-[var(--bg-secondary)]',
+    border: 'border-[var(--border-color)]',
+    text: 'text-[var(--text-secondary)]',
     label: 'Raw',
   },
 } as const;
@@ -172,7 +172,7 @@ function VisualGlimpse({
       return renderWithEmptyState(<ImageFallback />);
     }
     return renderWithEmptyState(
-      <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden group/img">
+      <div className="w-full h-full bg-[var(--bg-hover)] rounded-lg overflow-hidden group/img">
         <img
           src={imageUrl}
           alt={doc.title}
@@ -188,7 +188,7 @@ function VisualGlimpse({
   if (typeGuess === 'video') {
     const videoUrl = doc.mediaUrl;
     return renderWithEmptyState(
-      <div className="w-full h-full bg-gray-900 rounded-lg overflow-hidden relative group/vid">
+      <div className="w-full h-full bg-[var(--bg-primary)] rounded-lg overflow-hidden relative group/vid">
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 pointer-events-none" />
 
@@ -222,7 +222,7 @@ function VisualGlimpse({
   // Cover image for non-media documents
   if (doc.coverImage && !hasImageError) {
     return renderWithEmptyState(
-      <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+      <div className="w-full h-full bg-[var(--bg-hover)] rounded-lg overflow-hidden">
         <img
           src={doc.coverImage}
           alt=""
@@ -238,7 +238,7 @@ function VisualGlimpse({
   // Only show spreadsheet preview if we have a csvUrl (actual file with storage)
   if ((typeGuess === 'csv' || typeGuess === 'excel') && doc.csvUrl) {
     return renderWithEmptyState(
-      <div className="w-full h-full rounded-lg overflow-hidden border border-gray-100">
+      <div className="w-full h-full rounded-lg overflow-hidden border border-[var(--border-color)]">
         <SpreadsheetPreview
           url={doc.csvUrl}
           content={doc.contentPreview}
@@ -257,7 +257,7 @@ function VisualGlimpse({
         <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
           {/* Red margin line */}
           <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
-          <p className="text-[10px] text-gray-600 leading-relaxed line-clamp-4 ml-4 italic">
+          <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed line-clamp-4 ml-4 italic">
             {doc.contentPreview}
           </p>
         </div>
@@ -279,7 +279,7 @@ function VisualGlimpse({
         <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
           {/* Red margin line */}
           <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
-          <p className="text-[10px] text-gray-600 leading-relaxed line-clamp-4 ml-4 italic">
+          <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed line-clamp-4 ml-4 italic">
             {doc.contentPreview}
           </p>
         </div>
@@ -296,8 +296,8 @@ function VisualGlimpse({
   if (['pdf', 'text', 'document'].includes(typeGuess)) {
     if (doc.contentPreview) {
       return renderWithEmptyState(
-        <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-lg p-2.5 overflow-hidden">
-          <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-4">
+        <div className="w-full h-full bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-primary)] rounded-lg p-2.5 overflow-hidden">
+          <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed line-clamp-4">
             {doc.contentPreview}
           </p>
         </div>
@@ -328,7 +328,7 @@ function VisualGlimpse({
 
   // Default: Soft gradient with faint icon
   return renderWithEmptyState(
-    <div className={`w-full h-full rounded-lg flex items-center justify-center bg-gradient-to-br ${theme.gradient || 'from-gray-50 to-gray-100/50'}`}>
+    <div className={`w-full h-full rounded-lg flex items-center justify-center bg-gradient-to-br ${theme.gradient || 'from-[var(--bg-secondary)] to-[var(--bg-hover)]/50'}`}>
       <FileTypeIcon type={typeGuess} className="h-8 w-8 opacity-20" />
     </div>
   );
@@ -474,21 +474,21 @@ export function DocumentCard({
       {/* Card Container */}
       <div
         className={`
-          bg-white rounded-xl border p-3 h-52
+          bg-[var(--bg-primary)] rounded-xl border p-3 h-52
           flex flex-col transition-all duration-200 ease-out cursor-pointer relative overflow-hidden
           shadow-sm hover:shadow-md hover:-translate-y-0.5
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2
           ${isDragging ? "opacity-90 scale-[1.02] shadow-lg ring-2 ring-blue-400" : ""}
           ${isSelected
             ? "ring-1 ring-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.1)] bg-blue-50/30 border-blue-200"
-            : "border-gray-100 hover:border-gray-200"
+            : "border-[var(--border-color)] hover:border-[var(--border-color)]"
           }
         `}
       >
         {/* Draggable grip indicator (top-left on hover) */}
         {draggableToAgent && (
           <div className="absolute top-1.5 left-1.5 z-10 opacity-0 group-hover:opacity-50 transition-opacity">
-            <GripVertical className="w-3 h-3 text-gray-400" />
+            <GripVertical className="w-3 h-3 text-[var(--text-muted)]" />
           </div>
         )}
 
@@ -500,7 +500,7 @@ export function DocumentCard({
           <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer ${
             isSelected
               ? 'bg-blue-500 border-blue-500'
-              : 'bg-white border-gray-300 hover:border-blue-400'
+              : 'bg-[var(--bg-primary)] border-[var(--border-color)] hover:border-blue-400'
           }`}>
             {isSelected && (
               <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -525,7 +525,7 @@ export function DocumentCard({
 
           {/* Title (2-line max, bold) */}
           <div className="flex-1 min-w-0 pt-0.5">
-            <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 min-h-[2.5rem]" title={doc.title}>
+            <h3 className="font-semibold text-[var(--text-primary)] text-sm leading-snug line-clamp-2 min-h-[2.5rem]" title={doc.title}>
               {doc.title}
             </h3>
           </div>
@@ -534,8 +534,8 @@ export function DocumentCard({
         {/* 2. BODY: Visual Glimpse with Hover Overlay */}
         <div className="flex-1 min-h-0 mb-2 relative">
           <div
-            className={`w-full h-full rounded-lg border overflow-hidden bg-gray-50/50 ${
-              isEmpty ? 'border-dashed border-amber-200' : 'border-gray-100'
+            className={`w-full h-full rounded-lg border overflow-hidden bg-[var(--bg-secondary)] ${
+              isEmpty ? 'border-dashed border-amber-200' : 'border-[var(--border-color)]'
             } ${isMedia && onOpenMedia ? 'cursor-pointer' : ''}`}
             onClick={isMedia && onOpenMedia ? handleGlimpseClick : undefined}
           >
@@ -555,18 +555,18 @@ export function DocumentCard({
               className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 bg-black/20 backdrop-blur-[1px] cursor-pointer"
               onClick={handleGlimpseClick}
             >
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 text-gray-900 text-xs font-medium rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-primary)]/90 text-[var(--text-primary)] text-xs font-medium rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
                 <Play className="w-3 h-3" />
                 {typeGuess === 'video' ? 'Play' : 'View'}
               </div>
             </div>
           ) : onChatWithFile ? (
             // Non-media files: Show "Ask AI" overlay
-            <div className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white/50 backdrop-blur-[2px]">
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[var(--bg-primary)]/50 backdrop-blur-[2px]">
               <button
                 type="button"
                 onClick={handleChatClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:bg-black hover:scale-105"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-medium rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:opacity-90 hover:scale-105"
               >
                 <Sparkles className="w-3 h-3 text-purple-300" />
                 Ask AI
@@ -585,7 +585,7 @@ export function DocumentCard({
                 topic: 'bg-blue-50 text-blue-600 border-blue-100',
                 community: 'bg-green-50 text-green-600 border-green-100',
                 relationship: 'bg-orange-50 text-orange-600 border-orange-100',
-                keyword: 'bg-gray-50 text-gray-600 border-gray-200',
+                keyword: 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]',
               };
               const colorClass = kindColors[tag.kind || 'keyword'] || kindColors.keyword;
               return (
@@ -599,22 +599,22 @@ export function DocumentCard({
               );
             })}
             {persistedTags.length > 3 && (
-              <span className="text-[8px] text-gray-400 whitespace-nowrap">+{persistedTags.length - 3}</span>
+              <span className="text-[8px] text-[var(--text-muted)] whitespace-nowrap">+{persistedTags.length - 3}</span>
             )}
           </div>
         )}
 
         {/* 3. FOOTER: Minimalist Metadata + Status Dot */}
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-50">
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border-color)]">
           {/* Left: Type & Size */}
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-400 min-w-0">
+          <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)] min-w-0">
             <span className="font-semibold uppercase tracking-wider">
               {typeGuess === 'nbdoc' ? 'DOC' : typeGuess}
             </span>
             {formatFileSize(doc.fileSize) && (
               <>
                 <span>•</span>
-                <span className="text-gray-500 font-medium">{formatFileSize(doc.fileSize)}</span>
+                <span className="text-[var(--text-secondary)] font-medium">{formatFileSize(doc.fileSize)}</span>
               </>
             )}
             {timeAgo && (
@@ -639,7 +639,7 @@ export function DocumentCard({
               </div>
             ) : (
               <div className="flex items-center gap-1" title="Not indexed yet">
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]" />
               </div>
             )}
           </div>
@@ -653,7 +653,7 @@ export function DocumentCard({
               e.stopPropagation();
               onOpenMiniEditor?.(doc._id, e.currentTarget as HTMLElement);
             }}
-            className="w-6 h-6 rounded-md flex items-center justify-center bg-white/90 hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors shadow-sm border border-gray-200"
+            className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)]/90 hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shadow-sm border border-[var(--border-color)]"
             title="Quick edit"
           >
             <Edit3 className="h-3 w-3" />
@@ -664,7 +664,7 @@ export function DocumentCard({
             className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm border ${
               (doc as any).isFavorite
                 ? "bg-amber-50 border-amber-200 text-amber-600"
-                : "bg-white/90 border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-amber-500"
+                : "bg-[var(--bg-primary)]/90 border-[var(--border-color)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-amber-500"
             }`}
             title={(doc as any).isFavorite ? "Unpin" : "Pin"}
           >
@@ -673,7 +673,7 @@ export function DocumentCard({
           <button
             type="button"
             onClick={handleDeleteClick}
-            className="w-6 h-6 rounded-md flex items-center justify-center bg-white/90 hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors shadow-sm border border-gray-200"
+            className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)]/90 hover:bg-red-50 text-[var(--text-secondary)] hover:text-red-500 transition-colors shadow-sm border border-[var(--border-color)]"
             title="Delete"
           >
             <Trash2 className="h-3 w-3" />

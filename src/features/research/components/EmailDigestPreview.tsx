@@ -121,7 +121,7 @@ const getItemColors = (type: DigestItem["type"]) => {
     case "update":
       return "bg-green-50 text-green-600";
     default:
-      return "bg-gray-50 text-gray-600";
+      return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]";
   }
 };
 
@@ -132,7 +132,7 @@ const getSentimentColor = (sentiment?: DigestTopic["sentiment"]) => {
     case "negative":
       return "text-red-600";
     default:
-      return "text-gray-600";
+      return "text-[color:var(--text-primary)]";
   }
 };
 
@@ -146,7 +146,7 @@ const getStatusBadge = (status: EmailDigest["status"]) => {
       return { icon: AlertCircle, text: "Failed", color: "bg-red-50 text-red-600" };
     case "draft":
     default:
-      return { icon: Mail, text: "Draft", color: "bg-gray-50 text-gray-600" };
+      return { icon: Mail, text: "Draft", color: "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]" };
   }
 };
 
@@ -163,10 +163,10 @@ const TopicChip: React.FC<TopicChipProps> = ({ topic, onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-tertiary)] transition-colors"
   >
-    <Hash className="w-3 h-3 text-gray-400" />
-    <span className="text-sm font-medium text-gray-700">{topic.hashtag.replace("#", "")}</span>
+    <Hash className="w-3 h-3 text-[color:var(--text-secondary)]" />
+    <span className="text-sm font-medium text-[color:var(--text-primary)]">{topic.hashtag.replace("#", "")}</span>
     <span className={`text-xs ${getSentimentColor(topic.sentiment)}`}>
       {topic.itemCount}
     </span>
@@ -191,16 +191,16 @@ const DigestItemCard: React.FC<DigestItemCardProps> = ({ item, onClick }) => {
       type="button"
       onClick={onClick}
       whileHover={{ scale: 1.01 }}
-      className="w-full text-left p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all"
+      className="w-full text-left p-4 rounded-lg border border-[color:var(--border-color)] hover:border-[color:var(--border-color)] hover:shadow-sm transition-all"
     >
       <div className="flex items-start gap-3">
         <span className={`p-2 rounded-lg ${colors}`}>
           <Icon className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 line-clamp-1">{item.title}</h4>
-          <p className="text-sm text-gray-600 line-clamp-2 mt-1">{item.summary}</p>
-          <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+          <h4 className="font-medium text-[color:var(--text-primary)] line-clamp-1">{item.title}</h4>
+          <p className="text-sm text-[color:var(--text-primary)] line-clamp-2 mt-1">{item.summary}</p>
+          <div className="flex items-center gap-2 mt-2 text-xs text-[color:var(--text-secondary)]">
             <span>{item.source}</span>
             <span>•</span>
             <span>{new Date(item.publishedAt).toLocaleDateString()}</span>
@@ -212,7 +212,7 @@ const DigestItemCard: React.FC<DigestItemCardProps> = ({ item, onClick }) => {
             )}
           </div>
         </div>
-        <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+        <ChevronRight className="w-4 h-4 text-[color:var(--border-color)] flex-shrink-0" />
       </div>
     </motion.button>
   );
@@ -243,17 +243,17 @@ export const EmailDigestPreview: React.FC<EmailDigestPreviewProps> = ({
   const StatusIcon = statusBadge.icon;
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm ${className}`}>
+    <div className={`bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)] shadow-sm ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-6 border-b border-[color:var(--border-color)]">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-50">
               <Mail className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Daily Digest</h2>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">Daily Digest</h2>
+              <div className="flex items-center gap-2 text-sm text-[color:var(--text-secondary)]">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>{new Date(digest.date).toLocaleDateString("en-US", {
                   weekday: "long",
@@ -294,32 +294,32 @@ export const EmailDigestPreview: React.FC<EmailDigestPreviewProps> = ({
 
         {/* Metrics */}
         {digest.metrics && (
-          <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[color:var(--border-color)]">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{digest.metrics.totalItems}</div>
-              <div className="text-xs text-gray-500">Items</div>
+              <div className="text-2xl font-bold text-[color:var(--text-primary)]">{digest.metrics.totalItems}</div>
+              <div className="text-xs text-[color:var(--text-secondary)]">Items</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">{digest.metrics.newAlerts}</div>
-              <div className="text-xs text-gray-500">Alerts</div>
+              <div className="text-xs text-[color:var(--text-secondary)]">Alerts</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{digest.metrics.topMovers}</div>
-              <div className="text-xs text-gray-500">Movers</div>
+              <div className="text-xs text-[color:var(--text-secondary)]">Movers</div>
             </div>
           </div>
         )}
       </div>
 
       {/* Executive Summary */}
-      <div className="p-6 border-b border-gray-100 bg-gray-50">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Executive Summary</h3>
-        <p className="text-sm text-gray-600 leading-relaxed">{digest.executiveSummary}</p>
+      <div className="p-6 border-b border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]">
+        <h3 className="text-sm font-medium text-[color:var(--text-primary)] mb-2">Executive Summary</h3>
+        <p className="text-sm text-[color:var(--text-primary)] leading-relaxed">{digest.executiveSummary}</p>
       </div>
 
       {/* Topics */}
-      <div className="p-6 border-b border-gray-100">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Your Topics</h3>
+      <div className="p-6 border-b border-[color:var(--border-color)]">
+        <h3 className="text-sm font-medium text-[color:var(--text-primary)] mb-3">Your Topics</h3>
         <div className="flex flex-wrap gap-2">
           {digest.topics.map((topic) => (
             <TopicChip
@@ -333,7 +333,7 @@ export const EmailDigestPreview: React.FC<EmailDigestPreviewProps> = ({
 
       {/* Items */}
       <div className="p-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">
+        <h3 className="text-sm font-medium text-[color:var(--text-primary)] mb-3">
           Today's Items ({digest.items.length})
         </h3>
         <div className="space-y-2">
@@ -346,7 +346,7 @@ export const EmailDigestPreview: React.FC<EmailDigestPreviewProps> = ({
           ))}
           {digest.items.length > 5 && (
             <div className="text-center py-2">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-[color:var(--text-secondary)]">
                 +{digest.items.length - 5} more items
               </span>
             </div>
@@ -356,7 +356,7 @@ export const EmailDigestPreview: React.FC<EmailDigestPreviewProps> = ({
 
       {/* Footer */}
       {(digest.scheduledAt || digest.sentAt) && (
-        <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 text-xs text-gray-400">
+        <div className="px-6 py-3 border-t border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] text-xs text-[color:var(--text-secondary)]">
           {digest.sentAt ? (
             <span>Sent at {new Date(digest.sentAt).toLocaleString()}</span>
           ) : digest.scheduledAt ? (

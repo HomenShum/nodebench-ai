@@ -43,11 +43,11 @@ interface AgentTasksTabProps {
 }
 
 const statusConfig: Record<AgentTaskStatus, { icon: React.ReactNode; color: string; bgColor: string; label: string }> = {
-  pending: { 
-    icon: <Circle className="w-3.5 h-3.5" />, 
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-100',
-    label: 'Pending' 
+  pending: {
+    icon: <Circle className="w-3.5 h-3.5" />,
+    color: 'text-[var(--text-muted)]',
+    bgColor: 'bg-[var(--bg-hover)]',
+    label: 'Pending'
   },
   running: { 
     icon: <Clock className="w-3.5 h-3.5 animate-pulse" />, 
@@ -107,7 +107,7 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
     <div 
       className={cn(
         "group flex items-start gap-2 p-2 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors",
-        depth > 0 && "ml-4 border-l-2 border-gray-200 pl-3"
+        depth > 0 && "ml-4 border-l-2 border-[var(--border-color)] pl-3"
       )}
     >
       {/* Status indicator */}
@@ -120,7 +120,7 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
         <div className="flex items-center gap-2">
           <span className={cn(
             "text-xs font-medium",
-            task.status === 'complete' ? "text-gray-500" : "text-gray-800"
+            task.status === 'complete' ? "text-[var(--text-secondary)]" : "text-[var(--text-primary)]"
           )}>
             {task.name}
           </span>
@@ -135,7 +135,7 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
         
         {/* Description if present */}
         {task.description && (
-          <p className="text-[10px] text-gray-500 mt-0.5 line-clamp-2">
+          <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 line-clamp-2">
             {task.description}
           </p>
         )}
@@ -145,13 +145,13 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
           {/* Progress bar for running tasks */}
           {task.status === 'running' && task.progress > 0 && (
             <div className="flex items-center gap-1.5">
-              <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-16 h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-blue-500 rounded-full transition-all"
                   style={{ width: `${task.progress * 100}%` }}
                 />
               </div>
-              <span className="text-[9px] text-gray-500">
+              <span className="text-[9px] text-[var(--text-secondary)]">
                 {Math.round(task.progress * 100)}%
               </span>
             </div>
@@ -159,14 +159,14 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
           
           {/* Duration */}
           {task.elapsedMs && (
-            <span className="text-[9px] text-gray-400">
+            <span className="text-[9px] text-[var(--text-muted)]">
               {formatDuration(task.elapsedMs)}
             </span>
           )}
-          
+
           {/* Token usage */}
           {(task.inputTokens || task.outputTokens) && (
-            <span className="text-[9px] text-gray-400">
+            <span className="text-[9px] text-[var(--text-muted)]">
               {task.inputTokens || 0}→{task.outputTokens || 0} tokens
             </span>
           )}
@@ -174,7 +174,7 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
       </div>
       
       {/* Expand indicator for tasks with children */}
-      <ChevronRight className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
     </div>
   );
 }
@@ -204,10 +204,10 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Bot className="w-4 h-4 text-purple-500" />
-            <span className="text-sm font-medium text-gray-800">Agent Workflow</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">Agent Workflow</span>
           </div>
           {totalTasks > 0 && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-[var(--text-secondary)]">
               {completedTasks}/{totalTasks} complete
             </span>
           )}
@@ -223,7 +223,7 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
               </span>
             )}
             {tasksByStatus.pending > 0 && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded-full">
+              <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-full">
                 {tasksByStatus.pending} pending
               </span>
             )}
@@ -241,21 +241,21 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
       <div className="flex-1 overflow-y-auto p-3">
         {!agentThreadId ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Bot className="w-10 h-10 text-gray-300 mb-3" />
-            <p className="text-sm text-gray-500">No active thread</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <Bot className="w-10 h-10 text-[var(--text-muted)] mb-3" />
+            <p className="text-sm text-[var(--text-secondary)]">No active thread</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">
               Start a Deep Agent conversation to see orchestration tasks
             </p>
           </div>
         ) : !agentTasks ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+            <Loader2 className="w-5 h-5 text-[var(--text-muted)] animate-spin" />
           </div>
         ) : agentTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <GitBranch className="w-8 h-8 text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500">No agent tasks yet</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <GitBranch className="w-8 h-8 text-[var(--text-muted)] mb-2" />
+            <p className="text-sm text-[var(--text-secondary)]">No agent tasks yet</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">
               Tasks will appear here as the agent works
             </p>
           </div>

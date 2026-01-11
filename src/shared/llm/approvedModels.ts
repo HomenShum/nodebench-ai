@@ -1,37 +1,25 @@
 /**
- * 2025 Approved Models - SINGLE SOURCE OF TRUTH
+ * Approved Models - UI & frontend single source of truth
  *
- * This module defines the 9 approved LLM models for NodeBench.
- * All UI components and backend logic should import from here.
- *
- * @see convex/domains/agents/MODEL_CONSOLIDATION_PLAN.md
+ * NOTE: Backend model resolution lives in `convex/domains/agents/mcp_tools/models/modelResolver.ts`.
+ * This file defines the models exposed in the UI model pickers.
  */
 
-// ═══════════════════════════════════════════════════════════════════════════
-// THE 9 APPROVED MODELS
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * The 9 approved model aliases - ONLY these are allowed in UI and user-facing code
- */
 export const APPROVED_MODELS = [
-  "gpt-5.2",           // OpenAI flagship (Dec 11, 2025)
-  "gpt-5-mini",        // OpenAI efficient reasoning (Aug 7, 2025)
-  "gpt-5-nano",        // OpenAI ultra-efficient (Aug 7, 2025)
-  "claude-opus-4.5",   // Anthropic flagship
+  "gpt-5.2", // OpenAI flagship
+  "gpt-5-mini", // OpenAI efficient reasoning
+  "gpt-5-nano", // OpenAI ultra-efficient
+  "claude-opus-4.5", // Anthropic flagship
   "claude-sonnet-4.5", // Anthropic balanced
-  "claude-haiku-4.5",  // Anthropic fast (DEFAULT)
-  "gemini-3-pro",      // Google flagship
-  "gemini-3-flash",    // Google fast (Dec 17, 2025) - frontier intelligence built for speed
+  "claude-haiku-4.5", // Anthropic fast
+  "gemini-3-pro", // Google flagship
+  "gemini-3-flash", // Google fast (DEFAULT)
+  "mimo-v2-flash-free", // OpenRouter free-tier
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 
-export type Provider = "openai" | "anthropic" | "google";
-
-// ═══════════════════════════════════════════════════════════════════════════
-// MODEL METADATA FOR UI
-// ═══════════════════════════════════════════════════════════════════════════
+export type Provider = "openai" | "anthropic" | "google" | "openrouter";
 
 export interface ModelUIInfo {
   id: ApprovedModel;
@@ -40,18 +28,16 @@ export interface ModelUIInfo {
   description: string;
   tier: "fast" | "balanced" | "powerful";
   contextWindow: string;
-  icon: string; // Emoji for quick visual
+  icon: string; // Simple emoji/icon for quick visual
+  isFree?: boolean;
 }
 
-/**
- * UI-friendly model information for dropdowns and selectors
- */
 export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
   "gpt-5.2": {
     id: "gpt-5.2",
     name: "GPT-5.2",
     provider: "openai",
-    description: "Latest flagship (Dec 2025)",
+    description: "Latest flagship",
     tier: "powerful",
     contextWindow: "256K",
     icon: "🟢",
@@ -114,46 +100,44 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     id: "gemini-3-flash",
     name: "Gemini 3 Flash",
     provider: "google",
-    description: "Frontier intelligence, fast (Dec 2025)",
+    description: "Frontier intelligence, fast (DEFAULT)",
     tier: "fast",
     contextWindow: "1M",
     icon: "🔵",
   },
+  "mimo-v2-flash-free": {
+    id: "mimo-v2-flash-free",
+    name: "MiMo V2 Flash (Free)",
+    provider: "openrouter",
+    description: "OpenRouter free-tier fast model",
+    tier: "fast",
+    contextWindow: "32K",
+    icon: "🟣",
+    isFree: true,
+  },
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
+export const DEFAULT_MODEL: ApprovedModel = "gemini-3-flash";
 
-export const DEFAULT_MODEL: ApprovedModel = "claude-haiku-4.5";
-
-/**
- * Check if a string is a valid approved model
- */
 export function isApprovedModel(model: string): model is ApprovedModel {
   return (APPROVED_MODELS as readonly string[]).includes(model);
 }
 
-/**
- * Get all models for a specific provider
- */
 export function getModelsByProvider(provider: Provider): ApprovedModel[] {
   return APPROVED_MODELS.filter((m) => MODEL_UI_INFO[m].provider === provider);
 }
 
-/**
- * Get all models as UI-friendly array (for dropdowns)
- */
 export function getModelUIList(): ModelUIInfo[] {
   return APPROVED_MODELS.map((m) => MODEL_UI_INFO[m]);
 }
 
-/**
- * Provider colors for UI consistency
- */
-export const PROVIDER_COLORS = {
+export const PROVIDER_COLORS: Record<
+  Provider,
+  { bg: string; border: string; text: string; icon: string }
+> = {
   openai: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", icon: "🟢" },
   anthropic: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700", icon: "🟠" },
   google: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "🔵" },
-} as const;
+  openrouter: { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", icon: "🟣" },
+};
 

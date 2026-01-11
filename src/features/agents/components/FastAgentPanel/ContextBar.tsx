@@ -49,7 +49,7 @@ export function ContextBar({
             case 'preference':
                 return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
             default:
-                return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+                return 'bg-[var(--bg-hover)] text-[var(--text-secondary)] dark:bg-[var(--bg-secondary)] dark:text-[var(--text-muted)]';
         }
     };
 

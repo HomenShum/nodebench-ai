@@ -353,7 +353,7 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
 
                 <h3 className="text-2xl font-serif font-bold italic mb-4 tracking-tight">{title}</h3>
                 <p className={`text-sm font-serif leading-relaxed mb-10
-          ${isDark ? 'text-gray-400' : 'text-stone-500'}
+          ${isDark ? 'text-slate-400' : 'text-stone-500'}
         `}>
                     {desc}
                 </p>

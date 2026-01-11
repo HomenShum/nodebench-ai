@@ -24,7 +24,7 @@ interface CollapsibleAgentProgressProps {
 
 /**
  * CollapsibleAgentProgress - Wraps agent process details in an expandable section
- * 
+ *
  * This component separates the "polished answer" from the "agent process" for better UX.
  * Users see a clean answer by default, with the option to expand and view detailed agent steps.
  */
@@ -53,9 +53,9 @@ export function CollapsibleAgentProgress({
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg",
-          "border border-gray-200 bg-gray-50 hover:bg-gray-100",
+          "border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]",
           "transition-colors text-left group",
-          isExpanded && "bg-gray-100"
+          isExpanded && "bg-[var(--bg-hover)]"
         )}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -74,17 +74,17 @@ export function CollapsibleAgentProgress({
           {/* Label */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-[var(--text-primary)]">
                 {isStreaming ? 'Agent Working...' : 'Agent Progress'}
               </span>
               {stepCount > 0 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[var(--text-secondary)]">
                   {stepCount} {stepCount === 1 ? 'step' : 'steps'}
                 </span>
               )}
             </div>
             {!isExpanded && (
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-[var(--text-secondary)] truncate">
                 Click to view detailed agent actions and tool executions
               </p>
             )}
@@ -93,9 +93,9 @@ export function CollapsibleAgentProgress({
           {/* Expand/collapse icon */}
           <div className="flex-shrink-0">
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
+              <ChevronDown className="h-4 w-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
+              <ChevronRight className="h-4 w-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
             )}
           </div>
         </div>
@@ -119,7 +119,7 @@ export function CollapsibleAgentProgress({
 
           {/* Tool execution timeline */}
           {toolParts.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-3">
+            <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-3">
               <StepTimeline
                 steps={toolPartsToTimelineSteps(toolParts)}
                 isStreaming={isStreaming}
@@ -135,4 +135,3 @@ export function CollapsibleAgentProgress({
     </div>
   );
 }
-

@@ -35,8 +35,8 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
     <div
       id={citationNumber ? `profile-${citationNumber}` : undefined}
       className={cn(
-        "group rounded-lg border border-gray-200 hover:border-gray-300",
-        "transition-all duration-200 hover:shadow-md bg-white overflow-hidden scroll-mt-4",
+        "group rounded-lg border border-[var(--border-color)] hover:border-[var(--border-color)]",
+        "transition-all duration-200 hover:shadow-md bg-[var(--bg-primary)] overflow-hidden scroll-mt-4",
         className
       )}
     >
@@ -47,7 +47,7 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
             <img
               src={profile.imageUrl}
               alt={profile.name}
-              className="w-12 h-12 rounded-full object-cover bg-gray-100"
+              className="w-12 h-12 rounded-full object-cover bg-[var(--bg-hover)]"
               loading="lazy"
             />
           ) : (
@@ -61,7 +61,7 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
         <div className="flex-1 min-w-0">
           {/* Name and citation */}
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-semibold text-sm text-gray-900 line-clamp-1">
+            <h3 className="font-semibold text-sm text-[var(--text-primary)] line-clamp-1">
               {profile.name}
             </h3>
             {citationNumber !== undefined && (
@@ -74,21 +74,21 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
           {/* Metadata */}
           <div className="space-y-1 mb-2">
             {profile.profession && (
-              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
                 <Briefcase className="h-3 w-3 flex-shrink-0" />
                 <span className="line-clamp-1">{profile.profession}</span>
               </div>
             )}
-            
+
             {profile.organization && (
-              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
                 <Building2 className="h-3 w-3 flex-shrink-0" />
                 <span className="line-clamp-1">{profile.organization}</span>
               </div>
             )}
-            
+
             {profile.location && (
-              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
                 <MapPin className="h-3 w-3 flex-shrink-0" />
                 <span className="line-clamp-1">{profile.location}</span>
               </div>
@@ -97,7 +97,7 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
 
           {/* Description */}
           {profile.description && (
-            <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+            <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-2">
               {profile.description}
             </p>
           )}
@@ -120,7 +120,7 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
             {hasAdditionalInfo && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-700"
+                className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 {isExpanded ? (
                   <>
@@ -141,8 +141,8 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
 
       {/* Expandable additional info */}
       {hasAdditionalInfo && isExpanded && (
-        <div className="px-3 pb-3 pt-0 border-t border-gray-100">
-          <p className="text-xs text-gray-600 mt-2">
+        <div className="px-3 pb-3 pt-0 border-t border-[var(--border-color)]">
+          <p className="text-xs text-[var(--text-secondary)] mt-2">
             {profile.additionalInfo}
           </p>
         </div>
@@ -179,14 +179,14 @@ export function ProfileGrid({
     <div className={cn("mb-4", className)}>
       {/* Section header */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="h-px flex-1 bg-gray-200"></div>
-        <h3 className="text-sm font-semibold text-gray-700">
+        <div className="h-px flex-1 bg-[var(--border-color)]"></div>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
           {title}
-          <span className="text-xs font-normal text-gray-500 ml-2">
+          <span className="text-xs font-normal text-[var(--text-secondary)] ml-2">
             ({showAll ? profiles.length : Math.min(profiles.length, INITIAL_DISPLAY_COUNT)}{hasMore && !showAll ? `/${profiles.length}` : ''})
           </span>
         </h3>
-        <div className="h-px flex-1 bg-gray-200"></div>
+        <div className="h-px flex-1 bg-[var(--border-color)]"></div>
       </div>
 
       {/* Responsive grid */}
@@ -205,7 +205,7 @@ export function ProfileGrid({
         <div className="flex justify-center mt-3">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)] transition-colors"
           >
             {showAll ? (
               <>

@@ -77,7 +77,14 @@
       "Bash(CONVEX_URL=https://formal-shepherd-851.convex.cloud timeout 60 npx tsx:*)",
       "Bash(CONVEX_URL=https://agile-caribou-964.convex.cloud timeout 60 npx convex run:*)",
       "Bash(cd D:VSCode Projectscafecorner_nodebenchnodebench_ai4nodebench-ai)",
-      "Bash(timeout 120 npx tsc:*)"
+      "Bash(timeout 120 npx tsc:*)",
+      "Bash(timeout 30 npm run dev)",
+      "Bash(timeout 10 node:*)",
+      "Bash(timeout 120 npx convex dev:*)",
+      "Bash(timeout 90 npx convex deploy:*)",
+      "Bash(timeout 120 npx convex deploy:*)",
+      "Bash(timeout 180 npx convex deploy:*)",
+      "Bash(timeout 120 npm run build:*)"
     ],
     "deny": [],
     "ask": []

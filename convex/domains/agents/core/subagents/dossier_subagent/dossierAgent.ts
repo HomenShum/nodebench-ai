@@ -11,10 +11,8 @@
  */
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
+import { getLanguageModelSafe } from "../../../mcp_tools/models/modelResolver";
 
 // Import dossier-specific tools
 import {
@@ -25,13 +23,6 @@ import {
   updateNarrativeSection,
 } from "./tools";
 
-// Helper to get the appropriate language model based on model name
-function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) return anthropic(modelName);
-  if (modelName.startsWith("gemini-")) return google(modelName);
-  return openai.chat(modelName);
-}
-
 /**
  * Create a Dossier Interaction Agent instance
  * 
@@ -41,7 +32,7 @@ function getLanguageModel(modelName: string) {
 export function createDossierAgent(model: string) {
   return new Agent(components.agent, {
     name: "DossierAgent",
-    languageModel: getLanguageModel(model),
+    languageModel: getLanguageModelSafe(model),
     instructions: `You are a specialized dossier interaction agent for NodeBench AI.
 
 ## Core Responsibilities
@@ -110,4 +101,3 @@ You help users interact with their Morning Dossier - a cinematic, scrollytelling
     stopWhen: stepCountIs(6),
   });
 }
-

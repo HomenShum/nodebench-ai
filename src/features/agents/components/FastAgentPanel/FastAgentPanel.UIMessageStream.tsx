@@ -271,16 +271,16 @@ export function UIMessageStream({
       style={{ maxHeight: '100%' }}
     >
       {messages.length === 0 ? (
-        <div className="flex items-center justify-center h-full text-gray-500">
+        <div className="flex items-center justify-center h-full text-[var(--text-secondary)]">
           <p>No messages yet. Start a conversation!</p>
         </div>
       ) : groupedMessages.length === 0 ? (
-        <div className="text-gray-500 text-center p-4">
+        <div className="text-[var(--text-secondary)] text-center p-4">
           <p>No messages to display. Check console for filtering details.</p>
           <p className="text-xs mt-2">Raw messages: {messages.length}, Filtered: {filteredMessages.length}, Grouped: {groupedMessages.length}</p>
           <details className="text-xs mt-4 text-left">
             <summary>Debug Info</summary>
-            <pre className="bg-gray-100 p-2 rounded mt-2 overflow-auto max-h-40 text-xs">
+            <pre className="bg-[var(--bg-hover)] p-2 rounded mt-2 overflow-auto max-h-40 text-xs">
               {JSON.stringify({
                 messagesCount: messages.length,
                 filteredCount: filteredMessages.length,
@@ -436,7 +436,7 @@ export function UIMessageStream({
               return (
                 <div className="flex flex-col gap-2">
                   <TypingIndicator message={`Waiting for available agent to handle ${intent}...`} />
-                  <div className="text-xs text-gray-400 pl-12 animate-pulse">
+                  <div className="text-xs text-[var(--text-muted)] pl-12 animate-pulse">
                     Position in queue: 1 (Estimated wait: &lt; 5s)
                   </div>
                 </div>

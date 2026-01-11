@@ -31,27 +31,27 @@ export const ProposalOverlay: React.FC<ProposalOverlayProps> = ({
   }, [proposal, editor]);
 
   return (
-    <div className="absolute inset-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm overflow-auto">
+    <div className="absolute inset-0 z-50 bg-[color:var(--bg-primary)]/95 dark:bg-[color:var(--bg-primary)]/95 backdrop-blur-sm overflow-auto">
       <div className="p-4 max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[color:var(--border-color)] dark:border-[color:var(--border-color)]">
           <Sparkles className="w-5 h-5 text-purple-500" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-lg font-semibold text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)]">
             AI Proposal
           </h3>
-          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+          <span className="text-sm text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)] ml-2">
             {proposal.message}
           </span>
         </div>
 
         {/* Diff View */}
-        <div className="font-mono text-sm bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-4">
+        <div className="font-mono text-sm bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded-lg border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] overflow-hidden mb-4">
           {diffLines.map((line, idx) => (
             <div
               key={idx}
               className={`px-4 py-1 ${getDiffLineClass(line.type)}`}
             >
-              <span className="inline-block w-6 text-gray-400 select-none">
+              <span className="inline-block w-6 text-[color:var(--text-secondary)] select-none">
                 {line.type === 'del' ? '-' : line.type === 'add' ? '+' : ' '}
               </span>
               <span>{line.line}</span>
@@ -70,7 +70,7 @@ export const ProposalOverlay: React.FC<ProposalOverlayProps> = ({
           </button>
           <button
             onClick={onReject}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[color:var(--bg-tertiary)] hover:bg-[color:var(--bg-hover)] dark:bg-[color:var(--bg-tertiary)] dark:hover:bg-[color:var(--bg-hover)] text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)] rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />
             Reject
@@ -88,7 +88,7 @@ function getDiffLineClass(type: 'eq' | 'del' | 'add'): string {
     case 'add':
       return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200';
     default:
-      return 'text-gray-700 dark:text-gray-300';
+      return 'text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)]';
   }
 }
 

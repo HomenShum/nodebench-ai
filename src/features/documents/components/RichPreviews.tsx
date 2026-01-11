@@ -167,14 +167,14 @@ export function SpreadsheetPreview({
     const rows = displayData.slice(1, 6);
 
     return (
-      <div className="w-full h-full bg-white flex flex-col overflow-hidden text-[6px] font-mono leading-none select-none relative">
+      <div className="w-full h-full bg-[var(--bg-primary)] flex flex-col overflow-hidden text-[6px] font-mono leading-none select-none relative">
         {/* Header Row */}
-        <div className="flex bg-gradient-to-b from-gray-100 to-gray-50 border-b border-gray-200 sticky top-0">
-          <div className="w-4 shrink-0 border-r border-gray-200 bg-gray-100" />
+        <div className="flex bg-gradient-to-b from-[var(--bg-hover)] to-[var(--bg-secondary)] border-b border-[var(--border-color)] sticky top-0">
+          <div className="w-4 shrink-0 border-r border-[var(--border-color)] bg-[var(--bg-hover)]" />
           {headers.slice(0, 4).map((header, i) => (
             <div
               key={i}
-              className="flex-1 border-r border-gray-200 px-0.5 py-0.5 font-bold text-gray-600 truncate uppercase tracking-tighter text-center"
+              className="flex-1 border-r border-[var(--border-color)] px-0.5 py-0.5 font-bold text-[var(--text-secondary)] truncate uppercase tracking-tighter text-center"
             >
               {header || `Col${i+1}`}
             </div>
@@ -186,15 +186,15 @@ export function SpreadsheetPreview({
           {rows.map((row, rIndex) => (
             <div
               key={rIndex}
-              className="flex border-b border-gray-100 hover:bg-blue-50/30"
+              className="flex border-b border-[var(--border-color)] hover:bg-blue-50/30"
             >
-              <div className="w-4 shrink-0 border-r border-gray-200 bg-gray-50 text-gray-400 flex items-center justify-center font-semibold text-[5px]">
+              <div className="w-4 shrink-0 border-r border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-muted)] flex items-center justify-center font-semibold text-[5px]">
                 {rIndex + 1}
               </div>
               {row.slice(0, 4).map((cell, cIndex) => (
                 <div
                   key={cIndex}
-                  className="flex-1 border-r border-gray-100 px-0.5 py-0.5 text-gray-700 truncate"
+                  className="flex-1 border-r border-[var(--border-color)] px-0.5 py-0.5 text-[var(--text-primary)] truncate"
                 >
                   {cell}
                 </div>
@@ -204,44 +204,44 @@ export function SpreadsheetPreview({
         </div>
 
         {/* Fade hint for more content */}
-        <div className="absolute bottom-0 inset-x-0 h-3 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 inset-x-0 h-3 bg-gradient-to-t from-[var(--bg-primary)] to-transparent pointer-events-none" />
       </div>
     );
   }
 
   // ABSTRACT FALLBACK - When no real data available
   return (
-    <div className="w-full h-full bg-white p-1.5 flex flex-col gap-0 border-t border-l border-gray-100 overflow-hidden">
+    <div className="w-full h-full bg-[var(--bg-primary)] p-1.5 flex flex-col gap-0 border-t border-l border-[var(--border-color)] overflow-hidden">
       {/* Header Row */}
       <div className="flex w-full shrink-0">
-        <div className="w-5 h-3.5 bg-gray-50 border-r border-b border-gray-200 flex items-center justify-center">
-          <span className="text-[5px] text-gray-400">#</span>
+        <div className="w-5 h-3.5 bg-[var(--bg-secondary)] border-r border-b border-[var(--border-color)] flex items-center justify-center">
+          <span className="text-[5px] text-[var(--text-muted)]">#</span>
         </div>
         {["A", "B", "C", "D"].map((col) => (
           <div
             key={col}
-            className="flex-1 h-3.5 bg-gray-50 border-r border-b border-gray-200 flex items-center justify-center"
+            className="flex-1 h-3.5 bg-[var(--bg-secondary)] border-r border-b border-[var(--border-color)] flex items-center justify-center"
           >
-            <span className="text-[6px] font-medium text-gray-400">{col}</span>
+            <span className="text-[6px] font-medium text-[var(--text-muted)]">{col}</span>
           </div>
         ))}
       </div>
       {/* Data Rows */}
       {[1, 2, 3, 4, 5].map((row) => (
         <div key={row} className="flex w-full shrink-0">
-          <div className="w-5 h-3.5 bg-gray-50 border-r border-b border-gray-100 flex items-center justify-center">
-            <span className="text-[5px] text-gray-400">{row}</span>
+          <div className="w-5 h-3.5 bg-[var(--bg-secondary)] border-r border-b border-[var(--border-color)] flex items-center justify-center">
+            <span className="text-[5px] text-[var(--text-muted)]">{row}</span>
           </div>
-          <div className="flex-1 h-3.5 border-r border-b border-gray-100 p-0.5 flex items-center">
+          <div className="flex-1 h-3.5 border-r border-b border-[var(--border-color)] p-0.5 flex items-center">
             <div className={`h-1.5 bg-emerald-100 rounded-[1px] ${row === 1 ? "w-4/5" : row % 2 === 0 ? "w-1/2" : "w-2/3"}`} />
           </div>
-          <div className="flex-1 h-3.5 border-r border-b border-gray-100 p-0.5 flex items-center">
+          <div className="flex-1 h-3.5 border-r border-b border-[var(--border-color)] p-0.5 flex items-center">
             <div className={`h-1.5 bg-blue-50 rounded-[1px] ${row === 1 ? "w-3/5" : "w-1/3"}`} />
           </div>
-          <div className="flex-1 h-3.5 border-r border-b border-gray-100 p-0.5 flex items-center">
-            <div className={`h-1.5 bg-gray-100 rounded-[1px] ${row % 2 === 0 ? "w-full" : "w-4/5"}`} />
+          <div className="flex-1 h-3.5 border-r border-b border-[var(--border-color)] p-0.5 flex items-center">
+            <div className={`h-1.5 bg-[var(--bg-hover)] rounded-[1px] ${row % 2 === 0 ? "w-full" : "w-4/5"}`} />
           </div>
-          <div className="flex-1 h-3.5 border-b border-gray-100 p-0.5 flex items-center">
+          <div className="flex-1 h-3.5 border-b border-[var(--border-color)] p-0.5 flex items-center">
             <div className={`h-1.5 bg-amber-50 rounded-[1px] ${row === 3 ? "w-full" : "w-2/5"}`} />
           </div>
         </div>
@@ -292,17 +292,17 @@ export function CodePreview() {
 // ============================================================================
 export function MarkdownPreview({ hasContent = false }: { hasContent?: boolean }) {
   return (
-    <div className="w-full h-full bg-white p-2.5 flex flex-col gap-1.5 overflow-hidden">
+    <div className="w-full h-full bg-[var(--bg-primary)] p-2.5 flex flex-col gap-1.5 overflow-hidden">
       {/* H1 Title */}
-      <div className="w-3/4 h-2 bg-gray-800 rounded-[1px]" />
+      <div className="w-3/4 h-2 bg-[var(--text-primary)] rounded-[1px]" />
       {/* Paragraph lines */}
-      <div className="mt-1 w-full h-1 bg-gray-200 rounded-[1px]" />
-      <div className="w-5/6 h-1 bg-gray-200 rounded-[1px]" />
-      <div className="w-full h-1 bg-gray-200 rounded-[1px]" />
-      <div className="w-1/2 h-1 bg-gray-200 rounded-[1px]" />
+      <div className="mt-1 w-full h-1 bg-[var(--border-color)] rounded-[1px]" />
+      <div className="w-5/6 h-1 bg-[var(--border-color)] rounded-[1px]" />
+      <div className="w-full h-1 bg-[var(--border-color)] rounded-[1px]" />
+      <div className="w-1/2 h-1 bg-[var(--border-color)] rounded-[1px]" />
       {/* Second paragraph */}
-      <div className="mt-1 w-full h-1 bg-gray-100 rounded-[1px]" />
-      <div className="w-4/5 h-1 bg-gray-100 rounded-[1px]" />
+      <div className="mt-1 w-full h-1 bg-[var(--bg-hover)] rounded-[1px]" />
+      <div className="w-4/5 h-1 bg-[var(--bg-hover)] rounded-[1px]" />
     </div>
   );
 }
@@ -321,11 +321,11 @@ export function NotePreview() {
 
       {/* Content with lines */}
       <div className="ml-5 mt-2 flex flex-col gap-1.5">
-        <div className="w-4/5 h-1.5 bg-gray-600/20 rounded-[1px]" />
-        <div className="w-full h-1 bg-gray-500/10 rounded-[1px]" />
-        <div className="w-3/4 h-1 bg-gray-500/10 rounded-[1px]" />
-        <div className="w-5/6 h-1 bg-gray-500/10 rounded-[1px]" />
-        <div className="w-1/2 h-1 bg-gray-500/10 rounded-[1px]" />
+        <div className="w-4/5 h-1.5 bg-[var(--text-secondary)]/20 rounded-[1px]" />
+        <div className="w-full h-1 bg-[var(--text-secondary)]/10 rounded-[1px]" />
+        <div className="w-3/4 h-1 bg-[var(--text-secondary)]/10 rounded-[1px]" />
+        <div className="w-5/6 h-1 bg-[var(--text-secondary)]/10 rounded-[1px]" />
+        <div className="w-1/2 h-1 bg-[var(--text-secondary)]/10 rounded-[1px]" />
       </div>
 
       {/* Ruled lines across the paper */}
@@ -358,8 +358,8 @@ export function EmptyStateOverlay({ variant = "empty" }: { variant?: "empty" | "
     unknown: {
       icon: FileQuestion,
       label: "Unknown",
-      color: "text-gray-400",
-      bg: "bg-gray-50/90",
+      color: "text-[var(--text-muted)]",
+      bg: "bg-[var(--bg-secondary)]/90",
     },
   };
   const { icon: Icon, label, color, bg } = config[variant];
@@ -367,7 +367,7 @@ export function EmptyStateOverlay({ variant = "empty" }: { variant?: "empty" | "
   return (
     <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center ${bg} backdrop-blur-[1px]`}>
       <Icon className={`w-5 h-5 ${color} mb-1`} />
-      <span className="text-[9px] font-medium text-gray-500 uppercase tracking-wide">{label}</span>
+      <span className="text-[9px] font-medium text-[var(--text-secondary)] uppercase tracking-wide">{label}</span>
     </div>
   );
 }
@@ -377,10 +377,10 @@ export function EmptyStateOverlay({ variant = "empty" }: { variant?: "empty" | "
 // ============================================================================
 export function ImageFallback() {
   return (
-    <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg">
+    <div className="w-full h-full flex items-center justify-center bg-[var(--bg-hover)] rounded-lg">
       <div className="flex flex-col items-center gap-1">
-        <ImageOff className="w-6 h-6 text-gray-300" />
-        <span className="text-[8px] text-gray-400">Image unavailable</span>
+        <ImageOff className="w-6 h-6 text-[var(--text-muted)]" />
+        <span className="text-[8px] text-[var(--text-muted)]">Image unavailable</span>
       </div>
     </div>
   );

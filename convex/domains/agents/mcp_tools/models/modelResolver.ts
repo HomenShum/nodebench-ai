@@ -14,10 +14,9 @@
  * @updated January 8, 2026 - Changed default from claude-haiku-4.5 to gemini-3-flash
  */
 
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI, openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -34,7 +33,19 @@ function getOpenRouterProvider() {
     console.warn("[modelResolver] OPENROUTER_API_KEY not set, OpenRouter models unavailable");
     return null;
   }
-  return createOpenRouter({ apiKey });
+
+  // Use OpenRouter's OpenAI-compatible API. This avoids provider-specific metadata
+  // shape mismatches in downstream storage/validators.
+  const baseURL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
+  const headers: Record<string, string> = {};
+  if (process.env.OPENROUTER_HTTP_REFERER) headers["HTTP-Referer"] = process.env.OPENROUTER_HTTP_REFERER;
+  if (process.env.OPENROUTER_X_TITLE) headers["X-Title"] = process.env.OPENROUTER_X_TITLE;
+
+  return createOpenAI({
+    apiKey,
+    baseURL,
+    headers: Object.keys(headers).length ? headers : undefined,
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -70,6 +81,8 @@ export const APPROVED_MODELS = [
   "qwen3-235b",        // Qwen3 235B - latest Qwen $0.18/M
   "minimax-m2.1",      // MiniMax M2.1 - agentic workflows $0.28/M
   "mistral-large",     // Mistral Large 2411 - function calling $2/M
+  // OpenRouter free-tier models (require OPENROUTER_API_KEY; $0 pricing tier)
+  "mimo-v2-flash-free", // Xiaomi MiMo V2 Flash (free)
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
@@ -231,6 +244,13 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
     pricing: { inputPerMillion: 2.00, outputPerMillion: 6.00 },
   },
+  "mimo-v2-flash-free": {
+    alias: "mimo-v2-flash-free",
+    provider: "openrouter",
+    sdkId: "xiaomi/mimo-v2-flash:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 32_768 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
 };
 
 /**
@@ -262,6 +282,11 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "gemini-flash": "gemini-3-flash",
   "gemini-pro": "gemini-3-pro",
   "gemini": "gemini-3-flash",
+
+  // OpenRouter free-tier model IDs (accept common user-provided forms)
+  "xiaomi/mimo-v2-flash:free": "mimo-v2-flash-free",
+  "openrouter/xiaomi/mimo-v2-flash:free": "mimo-v2-flash-free",
+  "https://openrouter.ai/xiaomi/mimo-v2-flash:free": "mimo-v2-flash-free",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

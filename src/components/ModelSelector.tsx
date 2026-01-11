@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { ChevronDown, Sparkles, Zap, Brain, Check } from "lucide-react";
+import { ChevronDown, Sparkles, Zap, Brain, Check, Gift } from "lucide-react";
 
 // Import from SINGLE SOURCE OF TRUTH
 import {
@@ -32,7 +32,7 @@ interface ModelSelectorProps {
   compact?: boolean;
 }
 
-type ProviderFilter = "all" | "openai" | "anthropic" | "google";
+type ProviderFilter = "all" | "openai" | "anthropic" | "google" | "openrouter";
 
 export const ModelSelector: React.FC<ModelSelectorProps> = ({
   value,
@@ -88,7 +88,10 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                   >
                     <span className="text-sm">{style.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">{model.name}</div>
+                      <div className="text-sm font-medium text-gray-900 truncate flex items-center gap-1.5">
+                        <span>{model.name}</span>
+                        {model.isFree && <Gift className="h-3.5 w-3.5 text-violet-500" />}
+                      </div>
                       <div className="text-xs text-gray-500">{model.description}</div>
                     </div>
                     <Icon className="h-3.5 w-3.5 text-gray-400" />
@@ -107,7 +110,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     <div className={`space-y-3 ${className}`}>
       {/* Provider Filter */}
       <div className="flex gap-2">
-        {(["all", "openai", "anthropic", "google"] as const).map((provider) => (
+        {(["all", "openai", "anthropic", "google", "openrouter"] as const).map((provider) => (
           <button
             type="button"
             key={provider}
@@ -118,7 +121,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {provider === "all" ? "All" : provider === "google" ? "Google" : provider.charAt(0).toUpperCase() + provider.slice(1)}
+            {provider === "all"
+              ? "All"
+              : provider === "google"
+                ? "Google"
+                : provider === "openrouter"
+                  ? "OpenRouter"
+                  : provider.charAt(0).toUpperCase() + provider.slice(1)}
           </button>
         ))}
       </div>
@@ -143,12 +152,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm">{style.icon}</span>
-                    <span className="font-medium text-gray-900 text-sm">{model.name}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">{model.description}</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">{style.icon}</span>
+                  <span className="font-medium text-gray-900 text-sm">{model.name}</span>
+                  {model.isFree && <Gift className="h-3.5 w-3.5 text-violet-500" />}
                 </div>
+                <p className="text-xs text-gray-500 mt-0.5">{model.description}</p>
+              </div>
                 <div className="flex items-center gap-1">
                   <Icon className="h-4 w-4 text-gray-400" />
                   {isSelected && <Check className="h-4 w-4 text-indigo-600" />}

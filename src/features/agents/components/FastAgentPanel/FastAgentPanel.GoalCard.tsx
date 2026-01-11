@@ -49,7 +49,7 @@ export function GoalCard({
   };
 
   return (
-    <div className="mb-4 p-4 border border-gray-200 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
+    <div className="mb-4 p-4 border border-[var(--border-color)] rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
         <div className={cn(
@@ -59,18 +59,18 @@ export function GoalCard({
           <Target className="h-4 w-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
             🎯 Goal
           </h3>
-          <p className="text-sm text-gray-700 leading-relaxed">{goal}</p>
+          <p className="text-sm text-[var(--text-primary)] leading-relaxed">{goal}</p>
         </div>
       </div>
 
       {/* Task Status Boxes */}
       {tasks.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="mt-3 pt-3 border-t border-[var(--border-color)]">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-gray-600">Tasks:</span>
+            <span className="text-xs font-medium text-[var(--text-secondary)]">Tasks:</span>
             {tasks.map((task, idx) => (
               <div
                 key={task.id || idx}
@@ -79,8 +79,8 @@ export function GoalCard({
                   "cursor-default",
                   task.status === 'failed' && "bg-red-500 text-white",
                   task.status === 'success' && "bg-green-500 text-white",
-                  task.status === 'active' && "bg-yellow-500 text-gray-900 animate-pulse",
-                  task.status === 'queued' && "bg-gray-300 text-gray-600 opacity-50"
+                  task.status === 'active' && "bg-yellow-500 text-[var(--text-primary)] animate-pulse",
+                  task.status === 'queued' && "bg-[var(--border-color)] text-[var(--text-secondary)] opacity-50"
                 )}
                 title={`${task.name}: ${task.status}`}
               >
@@ -91,7 +91,7 @@ export function GoalCard({
                 
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full mb-2 hidden group-hover:block z-10 whitespace-nowrap">
-                  <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg">
+                  <div className="bg-[var(--bg-primary)] text-[var(--text-primary)] text-xs px-2 py-1 rounded shadow-lg">
                     {task.name}
                   </div>
                 </div>
@@ -99,7 +99,7 @@ export function GoalCard({
             ))}
             
             {/* Stats */}
-            <div className="flex items-center gap-3 ml-2 text-xs text-gray-600">
+            <div className="flex items-center gap-3 ml-2 text-xs text-[var(--text-secondary)]">
               {elapsedSeconds !== undefined && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
@@ -117,7 +117,7 @@ export function GoalCard({
 
           {/* Status summary text */}
           {getStatusSummary() && (
-            <p className="text-xs text-gray-600 mt-2">
+            <p className="text-xs text-[var(--text-secondary)] mt-2">
               Status: {getStatusSummary()}
             </p>
           )}

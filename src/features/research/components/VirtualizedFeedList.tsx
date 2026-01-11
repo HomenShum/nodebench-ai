@@ -103,7 +103,7 @@ export function VirtualizedFeedList({
   // Empty state
   if (items.length === 0) {
     return (
-      <div className={`flex items-center justify-center py-12 text-gray-500 ${className}`}>
+      <div className={`flex items-center justify-center py-12 text-[color:var(--text-secondary)] ${className}`}>
         <p className="text-sm">No items to display</p>
       </div>
     );
@@ -188,7 +188,7 @@ export function VirtualizedFeedGrid({
   // Empty state
   if (items.length === 0) {
     return (
-      <div className={`flex items-center justify-center py-12 text-gray-500 ${className}`}>
+      <div className={`flex items-center justify-center py-12 text-[color:var(--text-secondary)] ${className}`}>
         <p className="text-sm">No items to display</p>
       </div>
     );

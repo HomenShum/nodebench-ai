@@ -42,6 +42,8 @@ param(
   [ValidateSet("live", "tunnel")]
   [string]$Mode = "live",
   [string]$LinkupQuery = "DISCO Pharmaceuticals seed funding December 2025",
+  [switch]$IncludeSwarm,
+  [string]$SwarmModel = "claude-haiku-4.5",
   [switch]$SkipLinkup,
   [switch]$SkipPersona,
   [switch]$SkipDailyBrief,
@@ -379,6 +381,9 @@ if ($Mode -eq "live") {
   if (-not $SkipLinkup) {
     $smokeArgs += @("--include-linkup","--linkup-query",$LinkupQuery)
   }
+  if ($IncludeSwarm) {
+    $smokeArgs += @("--include-swarm","--swarm-model",$SwarmModel)
+  }
   $smokeOut = (& npx @smokeArgs 2>&1) -join "`n"
   $smokeExit = $LASTEXITCODE
   $smokeOut | Set-Content -Encoding utf8 $smokeRawPath
@@ -542,6 +547,9 @@ if ($Mode -eq "live") {
     $args = @("tsx","scripts/run-live-api-smoke.ts","--require-mcp")
     if (-not $SkipLinkup) {
       $args += @("--include-linkup","--linkup-query",$LinkupQuery)
+    }
+    if ($IncludeSwarm) {
+      $args += @("--include-swarm","--swarm-model",$SwarmModel)
     }
     $out = (& npx @args 2>&1) -join "`n"
     $exit = $LASTEXITCODE

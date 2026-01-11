@@ -64,8 +64,8 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group block rounded-lg border border-gray-200 hover:border-gray-300",
-        "transition-all duration-200 hover:shadow-md bg-white overflow-hidden scroll-mt-4",
+        "group block rounded-lg border border-[var(--border-color)] hover:border-[var(--border-color)]",
+        "transition-all duration-200 hover:shadow-md bg-[var(--bg-primary)] overflow-hidden scroll-mt-4",
         className
       )}
     >
@@ -76,18 +76,18 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
             <img
               src={previewImage}
               alt=""
-              className="w-16 h-16 rounded object-cover bg-gray-100"
+              className="w-16 h-16 rounded object-cover bg-[var(--bg-hover)]"
               loading="lazy"
             />
           ) : (
             <div className={cn(
               "w-16 h-16 rounded flex items-center justify-center",
-              isSEC ? "bg-blue-50" : "bg-gray-50"
+              isSEC ? "bg-blue-50" : "bg-[var(--bg-secondary)]"
             )}>
               {isSEC ? (
                 <FileText className="h-8 w-8 text-blue-600" />
               ) : (
-                <Globe className="h-8 w-8 text-gray-400" />
+                <Globe className="h-8 w-8 text-[var(--text-muted)]" />
               )}
             </div>
           )}
@@ -96,7 +96,7 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
         {/* Content */}
         <div className="flex-1 min-w-0">
           {/* Title */}
-          <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">
+          <h3 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">
             {title}
           </h3>
 
@@ -110,7 +110,7 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
                 loading="lazy"
               />
             )}
-            <span className="text-xs text-gray-600 font-medium">
+            <span className="text-xs text-[var(--text-secondary)] font-medium">
               {domain}
             </span>
             {isSEC && (
@@ -122,7 +122,7 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
 
           {/* Description */}
           {description && (
-            <p className="text-xs text-gray-500 line-clamp-2">
+            <p className="text-xs text-[var(--text-secondary)] line-clamp-2">
               {description}
             </p>
           )}
@@ -139,7 +139,7 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
 
         {/* External link indicator */}
         <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <ExternalLink className="h-4 w-4 text-gray-400" />
+          <ExternalLink className="h-4 w-4 text-[var(--text-muted)]" />
         </div>
       </div>
     </a>
@@ -168,15 +168,15 @@ export function SourceGrid({ sources, title = "Sources", showCitations = false }
     <div className="mb-4">
       {/* Section header */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="h-px flex-1 bg-gray-200"></div>
-        <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-          <FileText className="h-4 w-4 text-gray-600" />
+        <div className="h-px flex-1 bg-[var(--border-color)]"></div>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <FileText className="h-4 w-4 text-[var(--text-secondary)]" />
           {title}
-          <span className="text-xs font-normal text-gray-500">
+          <span className="text-xs font-normal text-[var(--text-secondary)]">
             ({showAll ? sources.length : Math.min(sources.length, INITIAL_DISPLAY_COUNT)}{hasMore && !showAll ? `/${sources.length}` : ''})
           </span>
         </h3>
-        <div className="h-px flex-1 bg-gray-200"></div>
+        <div className="h-px flex-1 bg-[var(--border-color)]"></div>
       </div>
 
       {/* Grid layout */}
@@ -195,7 +195,7 @@ export function SourceGrid({ sources, title = "Sources", showCitations = false }
         <div className="flex justify-center mt-3">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)] transition-colors"
           >
             {showAll ? (
               <>

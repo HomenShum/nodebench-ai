@@ -66,7 +66,29 @@ export const getPendingHumanRequests = query({
 export const getAllPendingRequests = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getSafeUserId(ctx);
+    // Return empty array if not authenticated (don't throw)
+    const rawUserId = await getAuthUserId(ctx);
+    if (!rawUserId) {
+      return [];
+    }
+
+    // Handle malformed user IDs with pipe characters
+    let userId: Id<"users">;
+    if (typeof rawUserId === "string" && rawUserId.includes("|")) {
+      const userIdPart = rawUserId.split("|")[0];
+      if (!userIdPart || userIdPart.length < 10) {
+        return [];
+      }
+      userId = userIdPart as Id<"users">;
+    } else {
+      userId = rawUserId as Id<"users">;
+    }
+
+    // Verify user exists
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      return [];
+    }
 
     // Get all pending requests for this user
     return await ctx.db

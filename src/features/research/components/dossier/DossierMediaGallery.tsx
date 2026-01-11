@@ -231,7 +231,7 @@ function VideoCard({ video, onClick }: VideoCardProps) {
       style={{ willChange: 'transform, box-shadow' }}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-video bg-gray-100">
+      <div className="relative aspect-video bg-[color:var(--bg-secondary)]">
         <img
           src={video.thumbnail}
           alt={video.caption || 'Video'}
@@ -285,7 +285,7 @@ function ImageThumbnail({ image, onClick }: ImageThumbnailProps) {
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-            <ImageIcon className="h-5 w-5 text-gray-800" />
+            <ImageIcon className="h-5 w-5 text-[color:var(--text-primary)]" />
           </div>
         </div>
       </div>
@@ -412,7 +412,7 @@ function VideoPlayerModal({ video, onClose }: VideoPlayerModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/75" onClick={onClose} />
-      <div className="relative bg-white rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <div className="relative bg-[color:var(--bg-primary)] rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
           <h3 className="font-semibold text-[var(--text-primary)]">

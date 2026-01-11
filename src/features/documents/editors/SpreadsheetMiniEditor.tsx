@@ -460,10 +460,10 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           {/* Footer with Keyboard Shortcuts */}
           <div className="flex-shrink-0 px-6 py-3 bg-[var(--bg-secondary)]/50 border-t border-[var(--border-color)] flex items-center justify-between">
             <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
-              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm font-mono text-[10px]">Esc</kbd>Close</span>
-              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm font-mono text-[10px]">⌘S</kbd>Save changes</span>
+              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded shadow-sm font-mono text-[10px]">Esc</kbd>Close</span>
+              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded shadow-sm font-mono text-[10px]">⌘S</kbd>Save changes</span>
             </div>
-            <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-lg ${saveHint === "unsaved" && !isSaving ? "bg-gray-900 text-white hover:bg-black shadow-gray-200" : "bg-gray-200 text-gray-500 cursor-not-allowed shadow-none"}`}>Save Changes</button>
+            <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-lg ${saveHint === "unsaved" && !isSaving ? "bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 shadow-[var(--border-color)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] cursor-not-allowed shadow-none"}`}>Save Changes</button>
           </div>
         </div>
       </div>

@@ -34,7 +34,7 @@ export function WorkflowMetricsBar({
   compact = false,
 }: WorkflowMetricsBarProps) {
   const { sourcesExplored, toolsUsed, agentsCalled, totalDurationMs, editsCount } = metrics;
-  
+
   const uniqueTools = [...new Set(toolsUsed)];
   const uniqueAgents = [...new Set(agentsCalled)];
 
@@ -47,24 +47,24 @@ export function WorkflowMetricsBar({
 
   if (compact) {
     return (
-      <div className={cn("flex items-center gap-3 text-xs text-gray-500", className)}>
+      <div className={cn("flex items-center gap-3 text-xs text-[var(--text-secondary)]", className)}>
         <span className="flex items-center gap-1">
           <FileText className="w-3 h-3" />
           {sourcesExplored} sources
         </span>
-        <span className="text-gray-300">|</span>
+        <span className="text-[var(--text-muted)]">|</span>
         <span className="flex items-center gap-1">
           <Wrench className="w-3 h-3" />
           {uniqueTools.length} tools
         </span>
-        <span className="text-gray-300">|</span>
+        <span className="text-[var(--text-muted)]">|</span>
         <span className="flex items-center gap-1">
           <Users className="w-3 h-3" />
           {uniqueAgents.length} agents
         </span>
         {totalDurationMs && (
           <>
-            <span className="text-gray-300">|</span>
+            <span className="text-[var(--text-muted)]">|</span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {formatDuration(totalDurationMs)}
@@ -77,7 +77,7 @@ export function WorkflowMetricsBar({
 
   return (
     <div className={cn(
-      "flex items-center gap-4 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg",
+      "flex items-center gap-4 px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg",
       className
     )}>
       {/* Sources */}
@@ -150,7 +150,7 @@ const colorClasses = {
   purple: 'bg-purple-50 text-purple-700 border-purple-200',
   green: 'bg-green-50 text-green-700 border-green-200',
   amber: 'bg-amber-50 text-amber-700 border-amber-200',
-  gray: 'bg-gray-100 text-gray-600 border-gray-200',
+  gray: 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]',
 };
 
 function MetricPill({ icon, value, label, color, tooltip }: MetricPillProps) {
@@ -183,7 +183,7 @@ export function InlineMetrics({
   const uniqueAgents = [...new Set(metrics.agentsCalled)];
 
   return (
-    <div className={cn("flex items-center gap-1 text-xs text-gray-500", className)}>
+    <div className={cn("flex items-center gap-1 text-xs text-[var(--text-secondary)]", className)}>
       <span>{metrics.sourcesExplored} sources</span>
       <span>•</span>
       <span>{uniqueTools.length} tools</span>

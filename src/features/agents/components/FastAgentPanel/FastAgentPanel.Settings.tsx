@@ -233,15 +233,15 @@ export function Settings({
           </p>
 
           {/* Saved Preferences */}
-          <div className="setting-group-vertical mt-6 pt-6 border-t border-gray-200">
+          <div className="setting-group-vertical mt-6 pt-6 border-t border-[var(--border-color)]">
             <div className="setting-label mb-2">
               <Sparkles className="h-4 w-4" />
               <span>Saved Preferences</span>
             </div>
             {!savedPreferences ? (
-              <p className="text-xs text-gray-500">Loading preferences...</p>
+              <p className="text-xs text-[var(--text-secondary)]">Loading preferences...</p>
             ) : savedPreferences.length === 0 ? (
-              <p className="text-xs text-gray-500">No preferences saved yet. Teach the agent how you like responses.</p>
+              <p className="text-xs text-[var(--text-secondary)]">No preferences saved yet. Teach the agent how you like responses.</p>
             ) : (
               <div className="space-y-2">
                 {savedPreferences.map((pref) => {
@@ -249,7 +249,7 @@ export function Settings({
                   return (
                     <div
                       key={pref._id}
-                      className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-800 space-y-1"
+                      className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-2 text-xs text-[var(--text-primary)] space-y-1"
                     >
                       {isEditing ? (
                         <>
@@ -261,13 +261,13 @@ export function Settings({
                           />
                           <div className="flex gap-2 text-[11px]">
                             <button
-                              className="px-2 py-1 bg-gray-900 text-white rounded"
+                              className="px-2 py-1 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded"
                               onClick={() => saveEditing(pref._id as Id<"userTeachings">)}
                             >
                               Save
                             </button>
                             <button
-                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded"
+                              className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded"
                               onClick={() => setEditingId(null)}
                             >
                               Cancel
@@ -277,7 +277,7 @@ export function Settings({
                       ) : (
                         <>
                           <div>{pref.content}</div>
-                          <div className="flex gap-2 text-[11px] text-gray-500">
+                          <div className="flex gap-2 text-[11px] text-[var(--text-secondary)]">
                             <button onClick={() => startEditing(pref)}>Edit</button>
                             <button onClick={() => handleDelete(pref._id as Id<"userTeachings">)}>Delete</button>
                           </div>
@@ -297,9 +297,9 @@ export function Settings({
               <span>Learned Skills</span>
             </div>
             {!savedSkills ? (
-              <p className="text-xs text-gray-500">Loading skills...</p>
+              <p className="text-xs text-[var(--text-secondary)]">Loading skills...</p>
             ) : savedSkills.length === 0 ? (
-              <p className="text-xs text-gray-500">No custom skills yet. Teach a workflow in chat to see it here.</p>
+              <p className="text-xs text-[var(--text-secondary)]">No custom skills yet. Teach a workflow in chat to see it here.</p>
             ) : (
               <div className="space-y-2">
                 {savedSkills.map((skill) => {
@@ -307,7 +307,7 @@ export function Settings({
                   return (
                     <div
                       key={skill._id}
-                      className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 space-y-1"
+                      className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-2 space-y-1"
                     >
                       {isEditing ? (
                         <>
@@ -325,13 +325,13 @@ export function Settings({
                           />
                           <div className="flex gap-2 text-[11px]">
                             <button
-                              className="px-2 py-1 bg-gray-900 text-white rounded"
+                              className="px-2 py-1 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded"
                               onClick={() => saveEditing(skill._id as Id<"userTeachings">)}
                             >
                               Save
                             </button>
                             <button
-                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded"
+                              className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded"
                               onClick={() => setEditingId(null)}
                             >
                               Cancel
@@ -340,13 +340,13 @@ export function Settings({
                         </>
                       ) : (
                         <>
-                          <div className="text-xs font-semibold text-gray-800">
+                          <div className="text-xs font-semibold text-[var(--text-primary)]">
                             {skill.key || skill.category || "Custom skill"}
                           </div>
-                          <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          <div className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">
                             {skill.content}
                           </div>
-                          <div className="flex gap-2 text-[11px] text-gray-500">
+                          <div className="flex gap-2 text-[11px] text-[var(--text-secondary)]">
                             <button onClick={() => {
                               setDraftKey(skill.key || skill.category || "");
                               setDraftContent(skill.content || "");
@@ -364,7 +364,7 @@ export function Settings({
           </div>
 
           {/* Usage Dashboard */}
-          <div className="setting-group-vertical mt-6 pt-6 border-t border-gray-200">
+          <div className="setting-group-vertical mt-6 pt-6 border-t border-[var(--border-color)]">
             <div className="setting-label mb-3">
               <BarChart3 className="h-4 w-4" />
               <span>Usage & Limits</span>

@@ -89,13 +89,13 @@ function FeedSectionInner({
       <div className="flex flex-wrap items-center gap-3 mb-4">
         {/* Search Input */}
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--text-secondary)]" />
           <input
             type="text"
             placeholder="Search feed..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-[color:var(--border-color)] rounded-lg bg-[color:var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
           />
         </div>
 
@@ -108,7 +108,7 @@ function FeedSectionInner({
               className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
                 selectedCategory === cat.id
                   ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]'
               }`}
             >
               {cat.icon} {cat.label}
@@ -121,7 +121,7 @@ function FeedSectionInner({
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="appearance-none pl-3 pr-8 py-2 text-xs font-medium border border-gray-200 rounded-lg bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="appearance-none pl-3 pr-8 py-2 text-xs font-medium border border-[color:var(--border-color)] rounded-lg bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             {sourceFilters.map((filter) => (
               <option key={filter.id} value={filter.id}>
@@ -129,14 +129,14 @@ function FeedSectionInner({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--text-secondary)] pointer-events-none" />
         </div>
       </div>
 
       {/* Feed Grid */}
       {tabFilteredItems.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <Filter className="w-8 h-8 mx-auto mb-3 text-gray-300" />
+        <div className="text-center py-12 text-[color:var(--text-secondary)]">
+          <Filter className="w-8 h-8 mx-auto mb-3 text-[color:var(--text-secondary)]" />
           <p className="text-sm">No items match your filters</p>
           <button
             onClick={() => {
@@ -164,7 +164,7 @@ function FeedSectionInner({
 
       {/* Item count */}
       <div className="mt-4 text-center">
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-[color:var(--text-secondary)]">
           Showing {tabFilteredItems.length} of {feedItems.length} items
         </p>
       </div>

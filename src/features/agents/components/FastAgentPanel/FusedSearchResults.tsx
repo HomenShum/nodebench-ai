@@ -131,7 +131,7 @@ function SourceBadge({ source, count, active, onClick }: {
       className={cn(
         "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
         "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
-        active ? config.color : "bg-gray-100 text-gray-400 border-gray-200 opacity-50"
+        active ? config.color : "bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] opacity-50"
       )}
     >
       <Icon className="w-3.5 h-3.5" aria-hidden="true" />
@@ -200,7 +200,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
       target="_blank"
       rel="noopener noreferrer"
       aria-label={ariaLabel}
-      className="group block p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+      className="group block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--border-color)] hover:shadow-md transition-all bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
     >
       <div className="flex items-start gap-3">
         {/* Source icon */}
@@ -210,7 +210,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-600">{result.title}</h4>
+            <h4 className="text-sm font-medium text-[var(--text-primary)] truncate group-hover:text-blue-600">{result.title}</h4>
             {citationNumber !== undefined && (
               <span
                 className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-semibold"
@@ -220,8 +220,8 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-600 line-clamp-2">{result.snippet}</p>
-          <div className="flex items-center gap-3 mt-2 text-[10px] text-gray-400">
+          <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{result.snippet}</p>
+          <div className="flex items-center gap-3 mt-2 text-[10px] text-[var(--text-muted)]">
             <span className={cn("px-1.5 py-0.5 rounded", config.color)}>{config.label}</span>
             {result.publishedAt && (
               <span className="flex items-center gap-1">
@@ -232,7 +232,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
             {result.fusedRank && <span aria-label={`Fusion rank ${result.fusedRank}`}>Rank #{result.fusedRank}</span>}
           </div>
         </div>
-        <ExternalLink className="w-4 h-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0" aria-hidden="true" />
+        <ExternalLink className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] flex-shrink-0" aria-hidden="true" />
       </div>
     </a>
   );
@@ -304,8 +304,8 @@ export function FusedSearchResults({
       {/* Header with timing */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">
+          <Filter className="w-4 h-4 text-[var(--text-secondary)]" />
+          <span className="text-sm font-medium text-[var(--text-primary)]">
             {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''}
           </span>
           {activeSources.size < sourcesQueried.length && (
@@ -315,7 +315,7 @@ export function FusedSearchResults({
           )}
         </div>
         {totalTimeMs && (
-          <span className="text-xs text-gray-400 flex items-center gap-1">
+          <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
             <Clock className="w-3 h-3" /> {(totalTimeMs / 1000).toFixed(1)}s
           </span>
         )}

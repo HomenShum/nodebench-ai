@@ -59,11 +59,11 @@ const statusConfig: Record<EditStatus, { icon: React.ReactNode; color: string; b
     bgColor: 'bg-red-50',
     label: 'Failed' 
   },
-  cancelled: { 
-    icon: <X className="w-3.5 h-3.5" />, 
-    color: 'text-gray-500', 
-    bgColor: 'bg-gray-50',
-    label: 'Cancelled' 
+  cancelled: {
+    icon: <X className="w-3.5 h-3.5" />,
+    color: 'text-[var(--text-secondary)]',
+    bgColor: 'bg-[var(--bg-secondary)]',
+    label: 'Cancelled'
   },
   stale: { 
     icon: <AlertTriangle className="w-3.5 h-3.5" />, 
@@ -140,9 +140,9 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
   if (!activeThreadId) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[var(--bg-primary)]">
-        <FileEdit className="w-8 h-8 text-gray-300 mb-2" />
-        <p className="text-sm text-gray-500">No active thread</p>
-        <p className="text-xs text-gray-400 mt-1">Start a conversation to see document edits</p>
+        <FileEdit className="w-8 h-8 text-[var(--text-muted)] mb-2" />
+        <p className="text-sm text-[var(--text-secondary)]">No active thread</p>
+        <p className="text-xs text-[var(--text-muted)] mt-1">Start a conversation to see document edits</p>
       </div>
     );
   }
@@ -173,7 +173,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                 "px-2 py-1 text-[10px] font-medium rounded transition-colors flex items-center gap-1",
                 filter === f.key
                   ? "bg-blue-100 text-blue-700"
-                  : "text-gray-500 hover:bg-gray-100"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
               )}
             >
               {f.label}
@@ -189,13 +189,13 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
       <div className="flex-1 overflow-y-auto p-3">
         {!edits ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+            <Loader2 className="w-5 h-5 text-[var(--text-muted)] animate-spin" />
           </div>
         ) : filteredEdits?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="w-8 h-8 text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500">No edits found</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <FileText className="w-8 h-8 text-[var(--text-muted)] mb-2" />
+            <p className="text-sm text-[var(--text-secondary)]">No edits found</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">
               {filter === 'all' 
                 ? 'Document edits will appear here when the agent makes changes'
                 : `No ${filter} edits`}
@@ -213,7 +213,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                   className={cn(
                     "rounded-lg border transition-all",
                     config.bgColor,
-                    "border-gray-200"
+                    "border-[var(--border-color)]"
                   )}
                 >
                   {/* Edit header */}
@@ -227,10 +227,10 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                           {config.icon}
                         </span>
                         <div className="min-w-0">
-                          <div className="text-xs font-medium text-gray-800 truncate">
+                          <div className="text-xs font-medium text-[var(--text-primary)] truncate">
                             {edit.operation.sectionHint || 'Document Edit'}
                           </div>
-                          <div className="text-[10px] text-gray-500 mt-0.5">
+                          <div className="text-[10px] text-[var(--text-secondary)] mt-0.5">
                             {new Date(edit.createdAt).toLocaleTimeString()}
                           </div>
                         </div>
@@ -253,16 +253,16 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
 
                   {/* Expanded diff view */}
                   {isExpanded && (
-                    <div className="px-3 pb-3 border-t border-gray-200/50">
+                    <div className="px-3 pb-3 border-t border-[var(--border-color)]/50">
                       <div className="mt-2 space-y-2">
                         <div>
-                          <div className="text-[10px] font-medium text-gray-500 mb-1">Search:</div>
+                          <div className="text-[10px] font-medium text-[var(--text-secondary)] mb-1">Search:</div>
                           <pre className="p-2 bg-red-50 border border-red-200 rounded text-[10px] text-red-800 overflow-x-auto whitespace-pre-wrap">
                             {edit.operation.search}
                           </pre>
                         </div>
                         <div>
-                          <div className="text-[10px] font-medium text-gray-500 mb-1">Replace:</div>
+                          <div className="text-[10px] font-medium text-[var(--text-secondary)] mb-1">Replace:</div>
                           <pre className="p-2 bg-emerald-50 border border-emerald-200 rounded text-[10px] text-emerald-800 overflow-x-auto whitespace-pre-wrap">
                             {edit.operation.replace}
                           </pre>
@@ -281,7 +281,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                           </button>
                           <button
                             onClick={() => handleReject(edit)}
-                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-[var(--text-secondary)] hover:bg-[var(--text-primary)] text-white text-xs font-medium rounded transition-colors"
                           >
                             <X className="w-3 h-3" />
                             Reject

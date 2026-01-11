@@ -11,16 +11,8 @@
 
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 import { components } from "../../../../../_generated/api";
-
-// Helper to get the appropriate language model based on model name
-function getLanguageModel(modelName: string) {
-  if (modelName.startsWith("claude-")) return anthropic(modelName);
-  if (modelName.startsWith("gemini-")) return google(modelName);
-  return openai.chat(modelName);
-}
+import { getLanguageModelSafe } from "../../../mcp_tools/models/modelResolver";
 
 // Import OpenBB-specific tools
 import {
@@ -64,7 +56,7 @@ import {
 export function createOpenBBAgent(model: string) {
   return new Agent(components.agent, {
     name: "OpenBBAgent",
-    languageModel: getLanguageModel(model),
+    languageModel: getLanguageModelSafe(model),
     instructions: `You are a specialized financial data and market research agent for NodeBench AI, powered by OpenBB Platform.
 
 ## Core Responsibilities
@@ -196,7 +188,7 @@ Always structure responses with:
 export function createOpenBBAgentWithMetaTools(model: string) {
   return new Agent(components.agent, {
     name: "OpenBBAgent",
-    languageModel: getLanguageModel(model),
+    languageModel: getLanguageModelSafe(model),
     textEmbeddingModel: openai.embedding("text-embedding-3-small"),
     instructions: `You are a specialized financial data and market research agent for NodeBench AI, powered by OpenBB Platform.
 
@@ -276,4 +268,3 @@ Always structure responses with:
     stopWhen: stepCountIs(15),
   });
 }
-

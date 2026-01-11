@@ -42,7 +42,7 @@ export function WhatChangedStrip({
 
             {/* Separator */}
             {newSources > 0 && updates > 0 && (
-                <span className="text-gray-300">•</span>
+                <span className="text-[color:var(--border-color)]">•</span>
             )}
 
             {/* Updates */}
@@ -59,7 +59,7 @@ export function WhatChangedStrip({
 
             {/* Separator */}
             {(newSources > 0 || updates > 0) && contradictions > 0 && (
-                <span className="text-gray-300">•</span>
+                <span className="text-[color:var(--border-color)]">•</span>
             )}
 
             {/* Contradictions */}
@@ -79,7 +79,7 @@ export function WhatChangedStrip({
 
             {/* Last Updated */}
             {lastUpdated && (
-                <span className="text-[10px] text-gray-500">
+                <span className="text-[10px] text-[color:var(--text-secondary)]">
                     {formatTimeAgo(lastUpdated)}
                 </span>
             )}
@@ -88,7 +88,7 @@ export function WhatChangedStrip({
             {onViewDiff && (
                 <button
                     onClick={onViewDiff}
-                    className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-[color:var(--text-primary)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg border border-[color:var(--border-color)] transition-colors"
                 >
                     <Eye className="w-3 h-3" />
                     View diff

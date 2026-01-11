@@ -39,10 +39,10 @@ interface TasksTabProps {
 }
 
 const statusConfig: Record<TaskStatus, { icon: React.ReactNode; color: string; label: string }> = {
-  todo: { 
-    icon: <Circle className="w-3.5 h-3.5" />, 
-    color: 'text-gray-400', 
-    label: 'To Do' 
+  todo: {
+    icon: <Circle className="w-3.5 h-3.5" />,
+    color: 'text-[var(--text-muted)]',
+    label: 'To Do'
   },
   in_progress: { 
     icon: <Clock className="w-3.5 h-3.5" />, 
@@ -62,7 +62,7 @@ const statusConfig: Record<TaskStatus, { icon: React.ReactNode; color: string; l
 };
 
 const priorityColors: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-600',
+  low: 'bg-[var(--bg-hover)] text-[var(--text-secondary)]',
   medium: 'bg-blue-100 text-blue-700',
   high: 'bg-amber-100 text-amber-700',
   urgent: 'bg-red-100 text-red-700',
@@ -161,8 +161,8 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
               className={cn(
                 "flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-colors",
                 scope === 'thread'
-                  ? "bg-white shadow-sm text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-[var(--bg-primary)] shadow-sm text-blue-600"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
               <MessageSquare className="w-3 h-3" />
@@ -173,8 +173,8 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
               className={cn(
                 "flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-colors",
                 scope === 'global'
-                  ? "bg-white shadow-sm text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-[var(--bg-primary)] shadow-sm text-blue-600"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
               <Globe className="w-3 h-3" />
@@ -194,7 +194,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
           <button
             type="submit"
             disabled={isCreating || !newTaskTitle.trim()}
-            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:bg-[var(--text-muted)] text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1"
           >
             {isCreating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
             Add
@@ -212,7 +212,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
                 "px-2 py-1 text-[10px] font-medium rounded transition-colors",
                 filter === f.key
                   ? "bg-blue-100 text-blue-700"
-                  : "text-gray-500 hover:bg-gray-100"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
               )}
             >
               {f.label}
@@ -226,13 +226,13 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
       <div className="flex-1 overflow-y-auto p-3">
         {!tasks ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+            <Loader2 className="w-5 h-5 text-[var(--text-muted)] animate-spin" />
           </div>
         ) : filteredTasks?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <ListTodo className="w-8 h-8 text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500">No tasks found</p>
-            <p className="text-xs text-gray-400 mt-1">Create a task above to get started</p>
+            <ListTodo className="w-8 h-8 text-[var(--text-muted)] mb-2" />
+            <p className="text-sm text-[var(--text-secondary)]">No tasks found</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Create a task above to get started</p>
           </div>
         ) : (
           <div className="space-y-1">
@@ -253,8 +253,8 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
                   
                   <div className="flex-1 min-w-0">
                     <div className={cn(
-                      "text-xs font-medium text-gray-800",
-                      task.status === 'done' && "line-through text-gray-400"
+                      "text-xs font-medium text-[var(--text-primary)]",
+                      task.status === 'done' && "line-through text-[var(--text-muted)]"
                     )}>
                       {task.title}
                     </div>
@@ -269,7 +269,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
                         </span>
                       )}
                       {task.dueDate && (
-                        <span className="flex items-center gap-1 text-[10px] text-gray-400">
+                        <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
                           <Calendar className="w-3 h-3" />
                           {new Date(task.dueDate).toLocaleDateString()}
                         </span>

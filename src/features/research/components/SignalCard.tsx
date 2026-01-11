@@ -72,7 +72,7 @@ export function SignalCard({
 
   return (
     <div
-      className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden
+      className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-xl overflow-hidden
                  hover:border-indigo-200 hover:shadow-sm transition-all duration-200"
     >
       {/* Left Accent Border */}
@@ -110,13 +110,13 @@ export function SignalCard({
           </div>
 
           {/* Headline */}
-          <h3 className="text-base font-semibold text-gray-900 leading-snug group-hover:text-indigo-700 transition-colors">
+          <h3 className="text-base font-semibold text-[color:var(--text-primary)] leading-snug group-hover:text-indigo-700 transition-colors">
             {signal.headline}
           </h3>
 
           {/* Meta Row */}
           <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1">
+            <span className="text-[10px] font-medium text-[color:var(--text-secondary)] uppercase tracking-wide flex items-center gap-1">
               <LinkIcon className="w-3 h-3" />
               {evidenceCount} source{evidenceCount !== 1 ? "s" : ""}
             </span>
@@ -129,7 +129,7 @@ export function SignalCard({
         </div>
 
         {/* Expand Toggle */}
-        <div className="flex-shrink-0 text-gray-400 group-hover:text-indigo-500 transition-colors">
+        <div className="flex-shrink-0 text-[color:var(--text-secondary)] group-hover:text-indigo-500 transition-colors">
           {isExpanded ? (
             <ChevronUp className="w-5 h-5" />
           ) : (
@@ -148,7 +148,7 @@ export function SignalCard({
 
           {/* Synthesis Prose */}
           <div className="prose prose-sm prose-slate max-w-none">
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-[color:var(--text-primary)] leading-relaxed">
               {signal.synthesis}
             </p>
           </div>
@@ -174,7 +174,7 @@ interface SignalListProps {
 export function SignalList({ signals, onSignalClick, className = "" }: SignalListProps) {
   if (!signals || signals.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-[color:var(--text-secondary)]">
         <Lightbulb className="w-8 h-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No signals available yet.</p>
       </div>

@@ -36,11 +36,18 @@ import { FusedSearchResults, type FusedResult, type SourceError, type SearchSour
 import { InteractiveSpanParser } from '@/features/research/components/InteractiveSpanParser';
 import type { EntityHoverData } from '@/features/research/components/EntityHoverPreview';
 import {
-  CITATION_REGEX,
-  ENTITY_REGEX,
+  addCitation,
+  addEntity,
+  createCitationLibrary,
+  createEntityLibrary,
+  getOrderedCitations,
+  parseCitations,
+  parseEntities,
   type CitationLibrary,
   type EntityLibrary
 } from '@/features/research/types/index';
+import type { CitationType } from '@/features/research/types/citationSchema';
+import type { EntityType } from '@/features/research/types/entitySchema';
 
 interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
@@ -531,6 +538,54 @@ function isFusionSearchTool(toolName: string | undefined): boolean {
     toolName.includes('fusion') && toolName.includes('Search');
 }
 
+function SourcesCitedDropdown({ library }: { library: CitationLibrary }) {
+  const citations = getOrderedCitations(library);
+  if (citations.length === 0) return null;
+
+  return (
+    <details className="mt-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]/50 dark:bg-[var(--bg-secondary)] dark:border-[var(--border-color)]">
+      <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center justify-between">
+        <span>Sources cited ({citations.length})</span>
+        <ChevronDown className="h-4 w-4 text-[var(--text-muted)]" />
+      </summary>
+      <div className="px-3 pb-3 pt-1 space-y-2">
+        {citations.map((c) => (
+          <div key={c.id} className="flex gap-2">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-semibold">
+              {c.number}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                {c.url ? (
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-blue-600 hover:underline truncate"
+                    title={c.label}
+                  >
+                    {c.label}
+                  </a>
+                ) : (
+                  <span className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate" title={c.label}>
+                    {c.label}
+                  </span>
+                )}
+                <span className="text-[10px] px-1.5 py-0.5 rounded border bg-blue-50 text-blue-600 border-blue-200">
+                  {c.type}
+                </span>
+              </div>
+              <div className="text-[11px] text-[var(--text-secondary)] dark:text-[var(--text-muted)] line-clamp-2">
+                {c.fullText}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 /**
  * Valid search sources for validation.
  */
@@ -840,11 +895,11 @@ function ToolStep({
         <>
           {/* Vertical line */}
           {!isLast && (
-            <div className="absolute left-[11px] top-6 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
+            <div className="absolute left-[11px] top-6 bottom-0 w-0.5 bg-[var(--border-color)] dark:bg-[var(--border-color)]" />
           )}
           {/* Status circle on the line */}
           <div className={cn(
-            "absolute left-1 top-2.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white dark:bg-gray-900 z-10",
+            "absolute left-1 top-2.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-[var(--bg-primary)] dark:bg-[var(--bg-primary)] z-10",
             isActive && "border-blue-500 animate-pulse",
             isComplete && "border-green-500 bg-green-500",
             isError && "border-red-500 bg-red-500"
@@ -1037,7 +1092,7 @@ export function FastAgentUIMessageBubble({
           copyText += `\n${toolName}:\n`;
 
           // Try to extract URLs from output
-          const output = (part as ToolUIPart).output;
+          const output = (part as any).output ?? (part as any).result;
           if (output && typeof output === 'object' && 'value' in output) {
             const value = (output as any).value;
             if (typeof value === 'string') {
@@ -1077,6 +1132,100 @@ export function FastAgentUIMessageBubble({
     p.type === 'file'
   );
 
+  // Build citation + entity libraries for inline hover parsing (from tool results + final text tokens)
+  const { citedCitationLibrary, entityLibrary } = useMemo(() => {
+    if (isUser) return { citedCitationLibrary: undefined, entityLibrary: undefined };
+
+    // Build a master library from fusion search results (tool outputs embed structured payload markers)
+    let masterCitationLibrary = createCitationLibrary();
+    const seenCitationIds = new Set<string>();
+
+    const toolResultParts = message.parts.filter((p: any) => p.type === 'tool-result');
+    for (const part of toolResultParts) {
+      const toolName = (part as any).toolName as string | undefined;
+      if (!isFusionSearchTool(toolName)) continue;
+
+      const toolOutput = (part as any).output ?? (part as any).result;
+      const parsed = parseFusionSearchOutput(toolOutput, toolName);
+      if (!parsed.isValid) continue;
+
+      for (const r of parsed.results) {
+        if (!r.id || seenCitationIds.has(r.id)) continue;
+        seenCitationIds.add(r.id);
+
+        masterCitationLibrary = addCitation(masterCitationLibrary, {
+          id: r.id,
+          type: 'source',
+          label: (r.title || r.id).slice(0, 120),
+          fullText: [r.title, r.snippet].filter(Boolean).join(' — ').slice(0, 500),
+          url: r.url,
+          author: r.source,
+          publishedAt: r.publishedAt,
+          accessedAt: new Date().toISOString(),
+        });
+      }
+    }
+
+    // Build the "cited" library in order of appearance in the final text, so markers are [1], [2], ...
+    const citationTokens = parseCitations(visibleText || message.text || '');
+    const citeOrder: string[] = [];
+    const citeTokenById = new Map<string, typeof citationTokens[number]>();
+    for (const token of citationTokens) {
+      if (!citeTokenById.has(token.id)) citeTokenById.set(token.id, token);
+      if (!citeOrder.includes(token.id)) citeOrder.push(token.id);
+    }
+
+    let citedCitationLibrary: CitationLibrary | undefined;
+    if (citeOrder.length > 0) {
+      citedCitationLibrary = createCitationLibrary();
+      for (const id of citeOrder) {
+        const token = citeTokenById.get(id);
+        const base = masterCitationLibrary.citations[id];
+        const tokenType = (token?.type as CitationType | undefined) ?? undefined;
+        const type = tokenType ?? base?.type ?? 'source';
+
+        citedCitationLibrary = addCitation(citedCitationLibrary, {
+          id,
+          type,
+          label: token?.label || base?.label || id,
+          fullText: base?.fullText || token?.label || id,
+          url: base?.url,
+          author: base?.author,
+          publishedAt: base?.publishedAt,
+          accessedAt: base?.accessedAt,
+        });
+      }
+    }
+
+    // Build entity library from entity tokens in final text (enables hover popovers via EntityLink)
+    let entityLibrary: EntityLibrary | undefined;
+    const entityTokens = parseEntities(visibleText || message.text || '');
+    if (entityTokens.length > 0) {
+      entityLibrary = createEntityLibrary();
+      const seenEntityIds = new Set<string>();
+      for (const token of entityTokens) {
+        if (seenEntityIds.has(token.id)) continue;
+        seenEntityIds.add(token.id);
+
+        const type = (token.type as EntityType | undefined) ?? 'topic';
+        const name = token.displayName || token.id;
+        const enrichment = entityEnrichment?.[token.id] || entityEnrichment?.[name];
+
+        entityLibrary = addEntity(entityLibrary, {
+          id: token.id,
+          name,
+          type,
+          description: enrichment?.summary,
+          dossierId: enrichment?.dossierId,
+          url: enrichment?.url,
+          avatarUrl: enrichment?.avatarUrl,
+        });
+      }
+    }
+
+    return { citedCitationLibrary, entityLibrary };
+  }, [entityEnrichment, isUser, message.parts, message.text, visibleText]);
+
   // Extract media from BOTH tool results AND final text
   const extractedMedia = useMemo(() => {
     if (isUser) return { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] };
@@ -1088,7 +1237,7 @@ export function FastAgentUIMessageBubble({
 
     // Combine media from all tool results
     const toolMedia = toolResultParts.reduce((acc, part) => {
-      const resultText = String(part.result || '');
+      const resultText = String((part as any).output ?? (part as any).result ?? '');
       const media = extractMediaFromText(resultText);
 
       return {
@@ -1120,7 +1269,7 @@ export function FastAgentUIMessageBubble({
 
     // Combine documents from all tool results
     const documents = toolResultParts.reduce((acc, part) => {
-      const resultText = String(part.result || '');
+      const resultText = String((part as any).output ?? (part as any).result ?? '');
       const docs = extractDocumentActions(resultText);
       return [...acc, ...docs];
     }, [] as any[]);
@@ -1138,7 +1287,7 @@ export function FastAgentUIMessageBubble({
     const toolResultParts = message.parts.filter((p): p is any => p.type === 'tool-result');
 
     for (const part of toolResultParts) {
-      const resultText = String(part.result || '');
+      const resultText = String((part as any).output ?? (part as any).result ?? '');
       // Look for arbitrage tool outputs
       if (part.toolName?.includes('arbitrage') ||
         part.toolName?.includes('contradiction') ||
@@ -1166,12 +1315,6 @@ export function FastAgentUIMessageBubble({
     cleaned = cleaned.replace(/\{\{fact:[^}]+\}\}/g, '');
     return cleaned;
   }, [visibleText]);
-
-  // Phase All: Detect if text contains citations or entities for enhanced parsing
-  const hasInteractiveTokens = useMemo(() => {
-    const text = cleanedText || visibleText || '';
-    return CITATION_REGEX.test(text) || ENTITY_REGEX.test(text);
-  }, [cleanedText, visibleText]);
 
   return (
     <div className={cn(
@@ -1300,7 +1443,8 @@ export function FastAgentUIMessageBubble({
               // ═══════════════════════════════════════════════════════════════
               if (isFusionSearchTool(toolName) && part.type === 'tool-result') {
                 // Pass toolName for structured observability logging
-                const parsed = parseFusionSearchOutput((part as ToolUIPart).output, toolName);
+                const toolOutput = (part as any).output ?? (part as any).result;
+                const parsed = parseFusionSearchOutput(toolOutput, toolName);
                 if (parsed.isValid && parsed.results.length > 0) {
                   return (
                     <div key={idx} className="my-3 w-full">
@@ -1433,7 +1577,7 @@ export function FastAgentUIMessageBubble({
           const isAudio = mimeType.startsWith('audio/');
 
           return (
-            <div key={idx} className="rounded-xl overflow-hidden border border-gray-200 shadow-sm mb-2">
+            <div key={idx} className="rounded-xl overflow-hidden border border-[var(--border-color)] shadow-sm mb-2">
               {isImage ? (
                 <SafeImage
                   src={fileUrl}
@@ -1443,7 +1587,7 @@ export function FastAgentUIMessageBubble({
               ) : isText ? (
                 <FileTextPreview fileUrl={fileUrl} fileName={fileName} />
               ) : (
-                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white flex items-center gap-3 group hover:from-blue-50 hover:to-white transition-colors">
+                <div className="px-4 py-3 bg-gradient-to-r from-[var(--bg-secondary)] to-[var(--bg-primary)] flex items-center gap-3 group hover:from-blue-50 hover:to-[var(--bg-primary)] transition-colors">
                   <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
                     <ImageIcon className="h-5 w-5" />
                   </div>
@@ -1452,11 +1596,11 @@ export function FastAgentUIMessageBubble({
                       href={fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors block truncate"
+                      className="text-sm font-medium text-[var(--text-primary)] hover:text-blue-600 transition-colors block truncate"
                     >
                       {fileName}
                     </a>
-                    <p className="text-xs text-gray-500 mt-0.5">File Attachment</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">File Attachment</p>
                   </div>
                 </div>
               )}
@@ -1478,7 +1622,7 @@ export function FastAgentUIMessageBubble({
           >
             {/* Show placeholder while streaming and no text yet */}
             {!isUser && message.status === 'streaming' && !cleanedText && !visibleText ? (
-              <div className="flex items-center gap-2 text-gray-500 italic">
+              <div className="flex items-center gap-2 text-[var(--text-secondary)] italic">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Generating answer...</span>
               </div>
@@ -1513,7 +1657,7 @@ export function FastAgentUIMessageBubble({
                     ) : (
                       <code className={cn(
                         "px-1 py-0.5 rounded text-xs font-mono",
-                        isUser ? "bg-blue-700/50 text-white" : "bg-gray-100 text-gray-800"
+                        isUser ? "bg-blue-700/50 text-white" : "bg-[var(--bg-hover)] text-[var(--text-primary)]"
                       )} {...props}>
                         {children}
                       </code>
@@ -1531,11 +1675,13 @@ export function FastAgentUIMessageBubble({
 
                     // If text contains {{cite:...}} or @@entity:...@@ tokens, use InteractiveSpanParser
                     // Pass entityEnrichment for rich hover previews with adaptive profile data
-                    if (CITATION_REGEX.test(textContent) || ENTITY_REGEX.test(textContent)) {
+                    if (parseCitations(textContent).length > 0 || parseEntities(textContent).length > 0) {
                       return (
                         <p className="mb-2">
                           <InteractiveSpanParser
                             text={textContent}
+                            citations={citedCitationLibrary}
+                            entities={entityLibrary}
                             entityEnrichment={entityEnrichment}
                           />
                         </p>
@@ -1553,10 +1699,15 @@ export function FastAgentUIMessageBubble({
           </div>
         ) : null}
 
+        {/* "Sources cited" dropdown (derived from inline citation tokens) */}
+        {!isUser && citedCitationLibrary && message.status !== 'streaming' && (
+          <SourcesCitedDropdown library={citedCitationLibrary} />
+        )}
+
         {/* Status indicator and actions */}
         <div className="flex items-center gap-2 mt-1">
           {message.status === 'streaming' && (
-            <div className="text-xs text-gray-400 flex items-center gap-1">
+            <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               Streaming...
             </div>
@@ -1569,7 +1720,7 @@ export function FastAgentUIMessageBubble({
               <button
                 type="button"
                 onClick={() => { void handleCopy(); }}
-                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1 transition-colors"
                 title="Copy response"
               >
                 {copied ? (
@@ -1585,7 +1736,7 @@ export function FastAgentUIMessageBubble({
                   type="button"
                   onClick={handleRegenerate}
                   disabled={isRegenerating}
-                  className="text-xs text-gray-400 hover:text-gray-600 disabled:text-gray-300 flex items-center gap-1 transition-colors"
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:text-[var(--text-muted)] flex items-center gap-1 transition-colors"
                   title="Regenerate response"
                 >
                   <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
@@ -1606,7 +1757,7 @@ export function FastAgentUIMessageBubble({
                     <button
                       type="button"
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-0.5"
+                      className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-2 py-0.5"
                     >
                       Cancel
                     </button>
@@ -1615,7 +1766,7 @@ export function FastAgentUIMessageBubble({
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="text-xs text-gray-400 hover:text-red-600 flex items-center gap-1 transition-colors"
+                    className="text-xs text-[var(--text-muted)] hover:text-red-600 flex items-center gap-1 transition-colors"
                     title="Delete message"
                   >
                     <Trash2 className="h-3 w-3" />

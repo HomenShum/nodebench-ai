@@ -115,31 +115,6 @@ export function PromptEnhancer({
     api.domains.agents.promptEnhancer.enhancePrompt
   );
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+P or Cmd+P to trigger enhancement
-      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
-        e.preventDefault();
-        handleEnhance();
-      }
-
-      // Escape to close preview
-      if (e.key === "Escape" && showPreview) {
-        handleReject();
-      }
-
-      // Enter to accept (when preview is shown)
-      if (e.key === "Enter" && showPreview && !e.shiftKey) {
-        e.preventDefault();
-        handleAccept();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showPreview, preview]);
-
   const handleEnhance = useCallback(async () => {
     if (!value.trim() || disabled || isEnhancing) return;
 
@@ -183,6 +158,31 @@ export function PromptEnhancer({
     setPreview(null);
     setShowPreview(false);
   }, []);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+P or Cmd+P to trigger enhancement
+      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+        e.preventDefault();
+        handleEnhance();
+      }
+
+      // Escape to close preview
+      if (e.key === "Escape" && showPreview) {
+        handleReject();
+      }
+
+      // Enter to accept (when preview is shown)
+      if (e.key === "Enter" && showPreview && !e.shiftKey) {
+        e.preventDefault();
+        handleAccept();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleAccept, handleEnhance, handleReject, showPreview]);
 
   const toggleSection = useCallback((section: string) => {
     setExpandedSections((prev) => {

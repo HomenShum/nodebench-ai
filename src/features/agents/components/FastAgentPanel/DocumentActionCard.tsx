@@ -72,16 +72,16 @@ export function DocumentActionCard({ document, className, onDocumentSelect }: Do
       {/* Content */}
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center gap-2 mb-1">
-          <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
-          <h3 className="text-sm font-semibold text-gray-900 truncate">
+          <FileText className="h-4 w-4 text-[var(--text-secondary)] flex-shrink-0" />
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">
             {document.title}
           </h3>
         </div>
-        
-        <p className="text-xs text-gray-600 mb-2">
+
+        <p className="text-xs text-[var(--text-secondary)] mb-2">
           {isCreated ? 'Document created' : 'Document updated'}
           {document.updatedFields && document.updatedFields.length > 0 && (
-            <span className="text-gray-500">
+            <span className="text-[var(--text-secondary)]">
               {' '}• {document.updatedFields.join(', ')}
             </span>
           )}
@@ -107,7 +107,7 @@ export function DocumentActionCard({ document, className, onDocumentSelect }: Do
 
       {/* Arrow icon */}
       <div className="flex-shrink-0">
-        <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+        <ExternalLink className="h-4 w-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]" />
       </div>
     </button>
   );
@@ -130,11 +130,11 @@ export function DocumentActionGrid({ documents, title = "Documents", className, 
     <div className={cn("space-y-3", className)}>
       {/* Header */}
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-gray-600" />
-        <h3 className="text-sm font-semibold text-gray-700">
+        <FileText className="h-4 w-4 text-[var(--text-secondary)]" />
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
           {title}
         </h3>
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-[var(--text-secondary)]">
           ({documents.length})
         </span>
       </div>
@@ -158,11 +158,11 @@ export function DocumentActionGrid({ documents, title = "Documents", className, 
  */
 export function extractDocumentActions(text: string): DocumentAction[] {
   const documents: DocumentAction[] = [];
-  
+
   // Match all DOCUMENT_ACTION_DATA markers
   const regex = /<!-- DOCUMENT_ACTION_DATA\n([\s\S]*?)\n-->/g;
   let match;
-  
+
   while ((match = regex.exec(text)) !== null) {
     try {
       const data = JSON.parse(match[1]);
@@ -173,7 +173,7 @@ export function extractDocumentActions(text: string): DocumentAction[] {
       console.error('[extractDocumentActions] Failed to parse document action data:', error);
     }
   }
-  
+
   return documents;
 }
 
@@ -183,4 +183,3 @@ export function extractDocumentActions(text: string): DocumentAction[] {
 export function removeDocumentActionMarkers(text: string): string {
   return text.replace(/<!-- DOCUMENT_ACTION_DATA\n[\s\S]*?\n-->\n*/g, '');
 }
-

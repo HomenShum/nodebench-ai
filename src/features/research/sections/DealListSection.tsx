@@ -121,9 +121,9 @@ function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
 
   return (
     <div className={className}>
-      <div className="mb-3 flex items-center justify-between text-[11px] text-gray-500">
+      <div className="mb-3 flex items-center justify-between text-[11px] text-[color:var(--text-secondary)]">
         <div className="flex items-center gap-2">
-          <span className="uppercase tracking-widest font-semibold text-gray-400">Live Deal Flow</span>
+          <span className="uppercase tracking-widest font-semibold text-[color:var(--text-secondary)]">Live Deal Flow</span>
           {isRefreshing && <span className="text-emerald-600">Refreshing…</span>}
           {!isRefreshing && cachedDeals?.length ? <span className="text-emerald-600">Synced</span> : null}
         </div>
@@ -136,7 +136,7 @@ function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
               .catch((err) => setError(err?.message ?? "Failed to refresh deal flow."))
               .finally(() => setIsRefreshing(false));
           }}
-          className="flex items-center gap-1 text-gray-400 hover:text-gray-700"
+          className="flex items-center gap-1 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
         >
           <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
           Refresh

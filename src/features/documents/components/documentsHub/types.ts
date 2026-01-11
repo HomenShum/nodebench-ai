@@ -167,4 +167,4 @@ export function toTaskPriority(
 // ============================================================================
 
 /** Shared section header class for consistent typography */
-export const SECTION_HEADER_CLASS = "text-base font-semibold text-gray-500";
+export const SECTION_HEADER_CLASS = "text-base font-semibold text-[var(--text-secondary)]";

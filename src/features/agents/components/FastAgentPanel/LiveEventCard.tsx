@@ -120,11 +120,11 @@ function getStatusStyles(status: LiveEventStatus) {
     case 'pending':
     default:
       return {
-        bg: 'bg-gray-50 dark:bg-gray-800/50',
-        border: 'border-gray-200 dark:border-gray-700',
-        text: 'text-gray-600 dark:text-gray-400',
-        icon: 'text-gray-400',
-        dot: 'bg-gray-400',
+        bg: 'bg-[var(--bg-secondary)] dark:bg-gray-800/50',
+        border: 'border-[var(--border-color)] dark:border-[var(--border-color)]',
+        text: 'text-[var(--text-secondary)] dark:text-[var(--text-secondary)]',
+        icon: 'text-[var(--text-muted)]',
+        dot: 'bg-[var(--text-muted)]',
       };
   }
 }
@@ -164,15 +164,15 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
         <>
           {/* Vertical line */}
           {!isLast && (
-            <div className="absolute left-[9px] top-5 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
+            <div className="absolute left-[9px] top-5 bottom-0 w-0.5 bg-[var(--border-color)] dark:bg-[var(--border-color)]" />
           )}
           {/* Status dot */}
           <div className={cn(
-            "absolute left-1 top-2 w-4 h-4 rounded-full border-2 flex items-center justify-center bg-white dark:bg-gray-900 z-10",
+            "absolute left-1 top-2 w-4 h-4 rounded-full border-2 flex items-center justify-center bg-[var(--bg-primary)] dark:bg-gray-900 z-10",
             event.status === 'running' && "border-blue-500 animate-pulse",
             event.status === 'success' && "border-green-500",
             event.status === 'error' && "border-red-500",
-            event.status === 'pending' && "border-gray-400"
+            event.status === 'pending' && "border-[var(--text-muted)]"
           )}>
             <div className={cn("w-1.5 h-1.5 rounded-full", styles.dot)} />
           </div>
@@ -215,7 +215,7 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
               {event.title}
             </div>
             {event.toolName && (
-              <div className="text-[10px] font-mono text-gray-500 dark:text-gray-400 truncate">
+              <div className="text-[10px] font-mono text-[var(--text-secondary)] dark:text-[var(--text-secondary)] truncate">
                 {event.toolName}
               </div>
             )}
@@ -224,7 +224,7 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
           {/* Status badge / Duration */}
           <div className="flex-shrink-0 flex items-center gap-1.5">
             {event.duration !== undefined && event.status === 'success' && (
-              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+              <span className="text-[10px] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
                 {formatDuration(event.duration)}
               </span>
             )}
@@ -238,13 +238,13 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
 
         {/* Details (if any) */}
         {event.details && (
-          <div className="mt-1.5 text-[10px] text-gray-600 dark:text-gray-400 line-clamp-2">
+          <div className="mt-1.5 text-[10px] text-[var(--text-secondary)] dark:text-[var(--text-secondary)] line-clamp-2">
             {event.details}
           </div>
         )}
 
         {/* Timestamp */}
-        <div className="mt-1 text-[9px] text-gray-400 dark:text-gray-500">
+        <div className="mt-1 text-[9px] text-[var(--text-muted)] dark:text-[var(--text-muted)]">
           {formatTimestamp(event.timestamp)}
         </div>
       </div>

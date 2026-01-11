@@ -196,12 +196,12 @@ const getEntityColors = (type: ExtendedEntityType) => {
       };
     default:
       return {
-        text: "text-gray-700",
-        bg: "bg-gray-50",
-        border: "border-gray-200",
-        icon: "text-gray-500",
-        badge: "bg-gray-100 text-gray-700",
-        ring: "ring-gray-500/20",
+        text: "text-[color:var(--text-primary)]",
+        bg: "bg-[color:var(--bg-secondary)]",
+        border: "border-[color:var(--border-color)]",
+        icon: "text-[color:var(--text-secondary)]",
+        badge: "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]",
+        ring: "ring-[color:var(--border-color)]",
       };
   }
 };
@@ -210,7 +210,7 @@ const getEntityColors = (type: ExtendedEntityType) => {
  * Get freshness indicator color
  */
 const getFreshnessColor = (days: number | undefined) => {
-  if (days === undefined) return "text-gray-400";
+  if (days === undefined) return "text-[color:var(--text-secondary)]";
   if (days <= 7) return "text-green-500";
   if (days <= 14) return "text-yellow-500";
   return "text-red-500";
@@ -226,9 +226,9 @@ const getCredibilityColor = (credibility: string) => {
     case "medium":
       return "bg-yellow-100 text-yellow-700";
     case "low":
-      return "bg-gray-100 text-gray-600";
+      return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]";
     default:
-      return "bg-gray-100 text-gray-600";
+      return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]";
   }
 };
 
@@ -288,7 +288,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           className={`
             absolute left-0 top-full z-50
             w-80 p-4
-            rounded-xl border border-gray-200 bg-white shadow-2xl
+            rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-2xl
             ring-1 ${colors.ring}
             ${className}
           `}
@@ -308,7 +308,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-900 text-sm truncate">
+                <span className="font-semibold text-[color:var(--text-primary)] text-sm truncate">
                   {data.name}
                 </span>
                 {data.freshness && (
@@ -326,7 +326,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                   {formatEntityType(data.type)}
                 </span>
                 {data.funding?.stage && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] font-medium">
                     {data.funding.stage}
                   </span>
                 )}
@@ -335,19 +335,19 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           </div>
 
           {/* Summary */}
-          <p className="text-sm text-gray-600 leading-relaxed mb-3 line-clamp-3">
+          <p className="text-sm text-[color:var(--text-primary)] leading-relaxed mb-3 line-clamp-3">
             {data.summary}
           </p>
 
           {/* Key Facts */}
           {data.keyFacts && data.keyFacts.length > 0 && (
             <div className="mb-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)] mb-1.5">
                 Key Facts
               </div>
               <ul className="space-y-1">
                 {data.keyFacts.slice(0, 3).map((fact, idx) => (
-                  <li key={idx} className="flex items-start gap-1.5 text-xs text-gray-700">
+                  <li key={idx} className="flex items-start gap-1.5 text-xs text-[color:var(--text-primary)]">
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
                     <span className="line-clamp-2">{fact}</span>
                   </li>
@@ -375,8 +375,8 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           {data.circleOfInfluence && (data.circleOfInfluence.tier1?.length > 0 || data.circleOfInfluence.tier2?.length > 0) && (
             <div className="mb-3">
               <div className="flex items-center gap-1 mb-1.5">
-                <Users className="w-3 h-3 text-gray-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                <Users className="w-3 h-3 text-[color:var(--text-secondary)]" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">
                   Network
                 </span>
               </div>
@@ -434,7 +434,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           {/* Sources */}
           {data.sources && data.sources.length > 0 && (
             <div className="mb-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)] mb-1.5">
                 Sources
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -454,7 +454,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+          <div className="flex items-center gap-2 pt-2 border-t border-[color:var(--border-color)]">
             {data.dossierId ? (
               <button
                 type="button"
@@ -491,7 +491,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                   e.stopPropagation();
                   onExternalClick?.(data.url!);
                 }}
-                className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-1 px-2 py-1.5 text-xs text-[color:var(--text-primary)] bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
                 <span className="truncate max-w-[80px]">
@@ -510,21 +510,21 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
  * Loading state for the preview
  */
 export const EntityHoverPreviewSkeleton: React.FC = () => (
-  <div className="w-80 p-4 rounded-xl border border-gray-200 bg-white shadow-2xl">
+  <div className="w-80 p-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-2xl">
     <div className="flex items-start gap-3 mb-3">
-      <div className="w-10 h-10 rounded-lg bg-gray-100 animate-pulse" />
+      <div className="w-10 h-10 rounded-lg bg-[color:var(--bg-secondary)] animate-pulse" />
       <div className="flex-1">
-        <div className="h-4 w-24 bg-gray-100 rounded animate-pulse mb-1.5" />
-        <div className="h-3 w-16 bg-gray-100 rounded animate-pulse" />
+        <div className="h-4 w-24 bg-[color:var(--bg-secondary)] rounded animate-pulse mb-1.5" />
+        <div className="h-3 w-16 bg-[color:var(--bg-secondary)] rounded animate-pulse" />
       </div>
     </div>
     <div className="space-y-2 mb-3">
-      <div className="h-3 bg-gray-100 rounded animate-pulse" />
-      <div className="h-3 bg-gray-100 rounded animate-pulse w-4/5" />
+      <div className="h-3 bg-[color:var(--bg-secondary)] rounded animate-pulse" />
+      <div className="h-3 bg-[color:var(--bg-secondary)] rounded animate-pulse w-4/5" />
     </div>
     <div className="flex items-center gap-2">
-      <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
-      <span className="text-xs text-gray-400">Loading enrichment...</span>
+      <Loader2 className="w-4 h-4 text-[color:var(--text-secondary)] animate-spin" />
+      <span className="text-xs text-[color:var(--text-secondary)]">Loading enrichment...</span>
     </div>
   </div>
 );

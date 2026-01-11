@@ -46,8 +46,9 @@ export function MessageBubble({
         const parsed: any = JSON.parse(trimmed);
         const extracted = parsed?.finalResponse ?? parsed?.response ?? parsed?.message;
         if (typeof extracted === 'string' && extracted.trim().length > 0) return extracted;
-      } catch {
-        // JSON parsing failed, continue with raw content
+      } catch (err) {
+        void err;
+        return raw as string;
       }
     }
     return raw as string;
@@ -100,7 +101,7 @@ export function MessageBubble({
             <>
               <ReactMarkdown
                 components={{
-                  code({ node, inline, className, children, ...props }) {
+                  code({ inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
                     return !inline && match ? (
                       <SyntaxHighlighter

@@ -5,9 +5,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { X, Zap, Settings, Plus, Radio, Save, PanelLeftClose, PanelLeft, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen, LogIn, Share2 } from 'lucide-react';
+import { X, Plus, Radio, Bot, Loader2, ChevronDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen, LogIn, Share2, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUIMessages, type UIMessagesQuery } from '@convex-dev/agent/react';
+import { useUIMessages } from '@convex-dev/agent/react';
 
 import './FastAgentPanel.animations.css';
 import { FastAgentThreadList } from './FastAgentPanel.ThreadList';
@@ -26,6 +26,10 @@ import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
 import { ParallelTaskTimeline } from './FastAgentPanel.ParallelTaskTimeline';
 import { EditsTab } from './FastAgentPanel.EditsTab';
 import { BriefTab } from './FastAgentPanel.BriefTab';
+// ThreadTabBar removed - functionality consolidated into simplified header
+import { SwarmLanesView } from './SwarmLanesView';
+import { SwarmQuickActions } from './SwarmQuickActions';
+import { useSwarmByThread, useSwarmActions, parseSpawnCommand, isSpawnCommand } from '@/hooks/useSwarm';
 import { MemoryStatusHeader, type PlanItem } from './MemoryStatusHeader';
 import { ContextBar, type ContextConstraint } from './ContextBar';
 import { LiveAgentLanes } from '@/features/agents/views/LiveAgentLanes';
@@ -148,11 +152,19 @@ export function FastAgentPanel({
   const [dossierBriefId, setDossierBriefId] = useState<string | null>(null);
 
   // Chat mode: 'agent' (non-streaming) or 'agent-streaming' (with streaming output)
+  // Note: Anonymous users MUST use agent-streaming mode (agent mode requires authentication)
   const [chatMode, setChatMode] = useState<'agent' | 'agent-streaming'>(() => {
     // Load from localStorage
     const saved = localStorage.getItem('fastAgentPanel.chatMode');
     return (saved === 'agent-streaming' || saved === 'agent') ? saved : 'agent-streaming';
   });
+
+  // Force anonymous users to agent-streaming mode (agent mode requires auth)
+  useEffect(() => {
+    if (!isAuthenticated && chatMode === 'agent') {
+      setChatMode('agent-streaming');
+    }
+  }, [isAuthenticated, chatMode]);
 
   // Settings
   const [fastMode, setFastMode] = useState(true);
@@ -175,6 +187,10 @@ export function FastAgentPanel({
 
   // Skills Panel state
   const [showSkillsPanel, setShowSkillsPanel] = useState(false);
+
+  // Overflow menu state (for secondary actions)
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
+  const overflowMenuRef = useRef<HTMLDivElement>(null);
 
   // File attachment state
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
@@ -246,9 +262,14 @@ export function FastAgentPanel({
   const [disclosureEvents, setDisclosureEvents] = useState<DisclosureEvent[]>([]);
   const [showDisclosureTrace, setShowDisclosureTrace] = useState(false);
 
-  // Tab state - MUST be declared before any conditional logic or loops
-  const [activeTab, setActiveTab] = useState<'thread' | 'artifacts' | 'tasks' | 'brief' | 'edits'>('thread');
+  // Tab state - simplified to just Chat and Sources
+  const [activeTab, setActiveTab] = useState<'chat' | 'sources'>('chat');
   const [isThreadDropdownOpen, setIsThreadDropdownOpen] = useState(false);
+
+  // Swarm hooks - for parallel agent orchestration
+  const { swarm, tasks: swarmTasks, isActive: isSwarmActive } = useSwarmByThread(activeThreadId || undefined);
+  const { spawnSwarm } = useSwarmActions();
+
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -406,32 +427,40 @@ export function FastAgentPanel({
   const deleteAgentThread = useMutation(api.domains.agents.agentChat.deleteThread);
 
   // Agent Streaming mode: Using agent component's native streaming
+  // Note: Anonymous users can also use streaming mode with their sessionId
   const streamingThreadsPagination = usePaginatedQuery(
     api.domains.agents.fastAgentPanelStreaming.listThreads,
-    isAuthenticated && chatMode === "agent-streaming" ? {} : "skip",
+    chatMode === "agent-streaming" ? {} : "skip",
     { initialNumItems: 20 }
   );
+  const requestStreamCancel = useMutation(api.domains.agents.fastAgentPanelStreaming.requestStreamCancel);
 
   // Get the agent thread ID for streaming mode
+  // Pass anonymousSessionId for anonymous users to validate ownership
   const streamingThread = useQuery(
     api.domains.agents.fastAgentPanelStreaming.getThreadByStreamId,
     activeThreadId && chatMode === 'agent-streaming'
-      ? { threadId: activeThreadId as Id<"chatThreadsStream"> }
+      ? {
+        threadId: activeThreadId as Id<"chatThreadsStream">,
+        anonymousSessionId: anonymousSession.sessionId ?? undefined,
+      }
       : "skip"
   );
 
   // Use useUIMessages hook for streaming messages with delta support
   // This hook expects the threadId to be the Agent component's threadId (string), not our chatThreadsStream ID
+  // Pass anonymousSessionId for anonymous users to validate access
   const { results: streamingMessages, status: _streamingStatus, error: streamError } = useUIMessages(
     api.domains.agents.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
     streamingThread?.agentThreadId && chatMode === 'agent-streaming'
       ? {
         threadId: streamingThread.agentThreadId,
+        anonymousSessionId: anonymousSession.sessionId ?? undefined,
       }
       : "skip",
     {
       initialNumItems: 100,
-      stream: true,  // ✅ CRITICAL: Enable streaming deltas!
+      stream: true,  // CRITICAL: Enable streaming deltas.
     }
   );
 
@@ -446,14 +475,39 @@ export function FastAgentPanel({
     }
   }, [streamError]);
 
-  // Debug: Log when streaming messages update
-  useEffect(() => {
-    if (chatMode === 'agent-streaming') {
-      if (streamingMessages && streamingMessages.length > 0) {
-        // console.log('[FastAgentPanel] Messages updated:', streamingMessages.length, 'messages');
-      }
+  const isGenerating = useMemo(() => {
+    if (chatMode !== "agent-streaming") return false;
+    if (!streamingMessages || streamingMessages.length === 0) return false;
+    return streamingMessages.some(
+      (m: any) => m?.role === "assistant" && (m?.status === "streaming" || m?.status === "pending")
+    );
+  }, [chatMode, streamingMessages]);
+
+  const isBusy = isStreaming || isGenerating;
+
+  const handleStopStreaming = useCallback(async () => {
+    if (chatMode !== "agent-streaming") {
+      setIsStreaming(false);
+      return;
     }
-  }, [streamingMessages, chatMode]);
+    if (!activeThreadId) {
+      setIsStreaming(false);
+      return;
+    }
+    if (!isAuthenticated) {
+      toast.info("Sign in to cancel generation.");
+      return;
+    }
+
+    try {
+      await requestStreamCancel({ threadId: activeThreadId as Id<"chatThreadsStream"> });
+    } catch (err) {
+      console.error("[FastAgentPanel] Failed to cancel stream:", err);
+      toast.error("Failed to cancel");
+    } finally {
+      setIsStreaming(false);
+    }
+  }, [activeThreadId, chatMode, isAuthenticated, requestStreamCancel]);
 
   // Live Events - extracted from streaming messages (must be after streamingMessages definition)
   const liveEvents = useMemo<LiveEvent[]>(() => {
@@ -679,7 +733,7 @@ export function FastAgentPanel({
 
   const handleSendMessage = useCallback(async (content?: string) => {
     const text = (content ?? input).trim();
-    if (!text || isStreaming) return;
+    if (!text || isBusy) return;
 
     // Check if anonymous user has exceeded their daily limit
     if (anonymousSession.isAnonymous && !anonymousSession.canSendMessage) {
@@ -892,10 +946,11 @@ export function FastAgentPanel({
     }
   }, [
     input,
-    isStreaming,
+    isBusy,
     activeThreadId,
     fastMode,
     selectedModel,
+    arbitrageEnabled,
     chatMode,
     selectedDocumentIds,
     contextDocuments,
@@ -916,7 +971,7 @@ export function FastAgentPanel({
     if (!isOpen) return;
     if (!pendingAutoSend) return;
     if (chatMode !== "agent-streaming") return;
-    if (isStreaming) return;
+    if (isBusy) return;
 
     const { message, requestId } = pendingAutoSend;
     if (openOptions?.requestId && openOptions.requestId !== requestId) return;
@@ -924,7 +979,7 @@ export function FastAgentPanel({
     handleSendMessage(message);
     setPendingAutoSend(null);
     onOptionsConsumed?.();
-  }, [isOpen, pendingAutoSend, chatMode, isStreaming, openOptions?.requestId, handleSendMessage, onOptionsConsumed]);
+  }, [isOpen, pendingAutoSend, chatMode, isBusy, openOptions?.requestId, handleSendMessage, onOptionsConsumed]);
 
   // No client heuristics; coordinator-only routing
 
@@ -1272,256 +1327,203 @@ export function FastAgentPanel({
         />
       )}
 
-      <div className={`fast-agent-panel ${variant === 'sidebar' ? 'sidebar-mode' : ''} bg-white border-l border-gray-200`}>
-        {/* Header */}
-        <div className="fast-agent-panel-header border-b border-gray-200 bg-white">
-          <div className="flex flex-col gap-4 w-full">
-            {/* Top Row: Thread Selector & New Button */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsThreadDropdownOpen(!isThreadDropdownOpen)}
-                  className="flex items-center gap-2 px-2 py-1.5 -ml-2 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors text-left max-w-[200px]"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                      {activeThreadId
-                        ? threads?.find(t => t._id === activeThreadId)?.title || 'Untitled Thread'
-                        : 'New Chat'}
-                    </div>
-                    <div className="text-[10px] text-[var(--text-secondary)] flex items-center gap-1.5">
-                      <div className={`w-1.5 h-1.5 rounded-full ${isStreaming ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
-                      {isStreaming ? 'Thinking...' : 'Ready'}
-                    </div>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isThreadDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
+      <div className={`fast-agent-panel ${variant === 'sidebar' ? 'sidebar-mode' : ''} bg-[var(--bg-primary)] border-l border-[var(--border-color)]`}>
+        {/* Simplified Header - Single Row */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+          {/* Status dot + Title */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isStreaming || isSwarmActive ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
+            <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+              {isSwarmActive ? `Swarm ${swarmTasks.filter(t => t.status === 'completed').length}/${swarmTasks.length}` :
+               isStreaming ? 'Thinking...' : 'Chat'}
+            </span>
+          </div>
 
-                {/* Thread Dropdown */}
-                {isThreadDropdownOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setIsThreadDropdownOpen(false)}
-                    />
-                    <div className="absolute top-full left-0 mt-1 w-64 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg z-50 py-1 max-h-[300px] overflow-y-auto">
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Primary Actions */}
+          <div className="flex items-center gap-1">
+            {/* New Chat */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveThreadId(null);
+                setInput('');
+                setAttachedFiles([]);
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              title="New chat (⌘1)"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">New</span>
+            </button>
+
+            {/* Overflow Menu */}
+            <div className="relative" ref={overflowMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowOverflowMenu(!showOverflowMenu)}
+                className={`p-1.5 rounded-md transition-colors ${showOverflowMenu ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'}`}
+                title="More options"
+              >
+                <MoreHorizontal className="w-4 h-4 text-[var(--text-muted)]" />
+              </button>
+
+              {/* Overflow Dropdown */}
+              {showOverflowMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowOverflowMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-lg z-50 py-1">
+                    {/* Live Events */}
+                    <button
+                      type="button"
+                      onClick={() => { setShowEventsPanel(!showEventsPanel); setShowOverflowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-secondary)] text-left"
+                    >
+                      <Activity className={`w-3.5 h-3.5 ${isStreaming ? 'text-blue-500' : ''}`} />
+                      <span>Live Events</span>
+                      {liveEvents.filter(e => e.status === 'running').length > 0 && (
+                        <span className="ml-auto px-1.5 py-0.5 text-[9px] bg-blue-500 text-white rounded-full">
+                          {liveEvents.filter(e => e.status === 'running').length}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Skills */}
+                    <button
+                      type="button"
+                      onClick={() => { setShowSkillsPanel(true); setShowOverflowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-secondary)] text-left"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Skills</span>
+                    </button>
+
+                    {/* Signals */}
+                    <button
+                      type="button"
+                      onClick={() => { window.location.hash = '#signals'; setShowOverflowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-secondary)] text-left"
+                    >
+                      <Radio className="w-3.5 h-3.5" />
+                      <span>Signals</span>
+                    </button>
+
+                    {/* Share (only if authenticated and has thread) */}
+                    {isAuthenticated && activeThreadId && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setActiveThreadId(null);
-                          setInput('');
-                          setAttachedFiles([]);
-                          setIsThreadDropdownOpen(false);
+                        onClick={async () => {
+                          setShowOverflowMenu(false);
+                          try {
+                            const threadTitle = threads.find((t) => t._id === activeThreadId)?.title || 'Agent Thread Summary';
+                            const recentMsgs = (streamingMessages ?? [])
+                              .filter((m) => m.role === 'assistant' && m.content)
+                              .slice(-3)
+                              .map((m) => typeof m.content === 'string' ? m.content : JSON.stringify(m.content))
+                              .join('\n\n---\n\n');
+                            if (!recentMsgs.trim()) {
+                              toast.error('No assistant messages to share');
+                              return;
+                            }
+                            await appendToSignalsLog({
+                              kind: 'note',
+                              title: threadTitle,
+                              markdown: recentMsgs.slice(0, 10000),
+                              agentThreadId: activeThreadId,
+                              tags: ['agent', 'shared'],
+                            });
+                            toast.success('Shared to Signals');
+                          } catch (err: any) {
+                            toast.error(err?.message || 'Failed to share');
+                          }
                         }}
-                        className="w-full px-3 py-2 text-left text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] flex items-center gap-2"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-secondary)] text-left"
                       >
-                        <div className="w-6 h-6 rounded bg-[var(--bg-secondary)] flex items-center justify-center">
-                          <Plus className="w-3.5 h-3.5" />
-                        </div>
-                        New Chat
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>Share to Signals</span>
                       </button>
+                    )}
 
-                      <div className="my-1 border-t border-[var(--border-color)]" />
+                    <div className="border-t border-[var(--border-color)] my-1" />
 
-                      <div className="px-3 py-1 text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
-                        Recent
-                      </div>
-
-                      {threads?.map((thread) => (
-                        <button
-                          type="button"
-                          key={thread._id}
-                          onClick={() => {
-                            setActiveThreadId(thread._id);
-                            setIsThreadDropdownOpen(false);
-                          }}
-                          className={`w-full px-3 py-2 text-left text-xs hover:bg-[var(--bg-secondary)] flex items-center gap-2 ${activeThreadId === thread._id ? 'bg-[var(--bg-secondary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
-                            }`}
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span className="truncate">{thread.title || 'Untitled Thread'}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Dossier Mode Indicator - shows when synced with a dossier */}
-                <DossierModeIndicator compact />
-
-                {/* Live Events toggle */}
-                <button
-                  type="button"
-                  onClick={() => setShowEventsPanel(!showEventsPanel)}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${showEventsPanel
-                    ? 'bg-blue-50 border-blue-200 text-blue-700'
-                    : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
-                    }`}
-                  title="Toggle Live Events Panel"
-                >
-                  <Activity className={`w-3.5 h-3.5 ${isStreaming ? 'animate-pulse text-blue-500' : ''}`} />
-                  Live
-                  {liveEvents.filter(e => e.status === 'running').length > 0 && (
-                    <span className="px-1 py-0.5 text-[10px] bg-blue-500 text-white rounded-full">
-                      {liveEvents.filter(e => e.status === 'running').length}
-                    </span>
-                  )}
-                </button>
-
-                {/* Skills button with popover */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowSkillsPanel(!showSkillsPanel)}
-                    className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${showSkillsPanel
-                      ? 'bg-blue-50 border-blue-200 text-blue-700'
-                      : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]'
-                      }`}
-                    title="Browse Skills"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    Skills
-                  </button>
-
-                  {/* Skills Popover */}
-                  {showSkillsPanel && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setShowSkillsPanel(false)}
-                      />
-                      <SkillsPanel
-                        onClose={() => setShowSkillsPanel(false)}
-                        onSelectSkill={(skillName, description) => {
-                          const skillPrompt = `Use the "${skillName}" skill: ${description}`;
-                          setInput((prev) => prev ? `${prev}\n\n${skillPrompt}` : skillPrompt);
-                          toast.success(`Skill "${skillName}" added to your message`);
-                        }}
-                      />
-                    </>
-                  )}
-                </div>
-
-                {/* Public signals log quick-link */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      window.location.hash = '#signals';
-                      toast.success('Opened Signals');
-                    } catch {
-                      // ignore
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]"
-                  title="Open public Signals log (#signals)"
-                >
-                  <Radio className="w-3.5 h-3.5" />
-                  Signals
-                </button>
-
-                {/* Share current thread summary to Signals log */}
-                {isAuthenticated && activeThreadId && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        // Get the thread title or use a default
-                        const threadTitle = threads.find((t) => t._id === activeThreadId)?.title || 'Agent Thread Summary';
-
-                        // Collect the last few messages as a summary
-                        const recentMsgs = (streamingMessages ?? [])
-                          .filter((m) => m.role === 'assistant' && m.content)
-                          .slice(-3)
-                          .map((m) => typeof m.content === 'string' ? m.content : JSON.stringify(m.content))
-                          .join('\n\n---\n\n');
-
-                        if (!recentMsgs.trim()) {
-                          toast.error('No assistant messages to share');
-                          return;
-                        }
-
-                        await appendToSignalsLog({
-                          kind: 'note',
-                          title: threadTitle,
-                          markdown: recentMsgs.slice(0, 10000), // Cap at 10k chars
-                          agentThreadId: activeThreadId,
-                          tags: ['agent', 'shared'],
-                        });
-                        toast.success('Shared to Signals');
-                      } catch (err: any) {
-                        toast.error(err?.message || 'Failed to share to Signals');
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]"
-                    title="Share thread summary to public Signals log"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                    Share
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveThreadId(null);
-                    setInput('');
-                    setAttachedFiles([]);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-xs font-medium rounded-md border border-[var(--border-color)] transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  New
-                </button>
-
-                {/* Minimize button */}
-                <button
-                  type="button"
-                  onClick={() => setIsMinimized(true)}
-                  className="p-1.5 hover:bg-[var(--bg-hover)] rounded-md transition-colors"
-                  title="Minimize panel"
-                >
-                  <Minimize2 className="w-4 h-4 text-[var(--text-muted)]" />
-                </button>
-
-                {/* Close button */}
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors"
-                  title="Close panel"
-                >
-                  <X className="w-4 h-4 text-[var(--text-muted)] hover:text-red-600" />
-                </button>
-              </div>
+                    {/* Minimize */}
+                    <button
+                      type="button"
+                      onClick={() => { setIsMinimized(true); setShowOverflowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-secondary)] text-left"
+                    >
+                      <Minimize2 className="w-3.5 h-3.5" />
+                      <span>Minimize</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Bottom Row: Tabs */}
-            <div className="flex p-1 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
-              {(['thread', 'explore', 'artifacts', 'tasks', 'brief', 'edits'] as const).map((tab) => (
-                <button
-                  type="button"
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === tab
-                    ? 'bg-[var(--bg-primary)] text-[var(--accent-primary)] shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                    }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
+            {/* Dossier indicator (compact) */}
+            <DossierModeIndicator compact />
+
+            {/* Close */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors"
+              title="Close panel"
+            >
+              <X className="w-4 h-4 text-[var(--text-muted)] hover:text-red-600" />
+            </button>
           </div>
         </div>
 
+        {/* Tab Bar - Minimal 2 tabs */}
+        <div className="flex items-center px-3 border-b border-[var(--border-color)]">
+          {([
+            { id: 'chat', label: 'Chat' },
+            { id: 'sources', label: 'Sources' },
+          ] as const).map((tab) => (
+            <button
+              type="button"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-2 text-xs font-medium border-b-2 transition-all -mb-px ${activeTab === tab.id
+                ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
+                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Swarm Lanes View - Shows when thread has active swarm */}
+        {activeThreadId && isSwarmActive && (
+          <SwarmLanesView
+            threadId={activeThreadId}
+            compact={true}
+          />
+        )}
+
+        {/* Skills Popover */}
+        {showSkillsPanel && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setShowSkillsPanel(false)} />
+            <SkillsPanel
+              onClose={() => setShowSkillsPanel(false)}
+              onSelectSkill={(skillName, description) => {
+                const skillPrompt = `Use the "${skillName}" skill: ${description}`;
+                setInput((prev) => prev ? `${prev}\n\n${skillPrompt}` : skillPrompt);
+                toast.success(`Skill "${skillName}" added to your message`);
+              }}
+            />
+          </>
+        )}
+
         {/* Content Area */}
         <div className="fast-agent-panel-content bg-[var(--bg-primary)]">
-          {/* Left Sidebar (Thread List) - Only show on thread tab when sidebar is toggled */}
-          <div className={`panel-sidebar ${showSidebar && activeTab === 'thread' ? 'visible' : ''} border-r border-[var(--border-color)] bg-[var(--bg-secondary)]`}>
+          {/* Left Sidebar (Thread List) - Only show on chat tab when sidebar is toggled */}
+          <div className={`panel-sidebar ${showSidebar && activeTab === 'chat' ? 'visible' : ''} border-r border-[var(--border-color)] bg-[var(--bg-secondary)]`}>
             <FastAgentThreadList
               threads={threads}
               activeThreadId={activeThreadId}
@@ -1534,46 +1536,17 @@ export function FastAgentPanel({
             />
           </div>
 
-          {/* Main Chat Area */}
+          {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] relative">
-            {activeTab === 'explore' ? (
-              <div className="flex-1 p-4 overflow-y-auto">
-                {streamingThread?.agentThreadId ? (
-                  <ParallelTaskTimeline
-                    agentThreadId={streamingThread.agentThreadId}
-                    className="h-full"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-[var(--text-secondary)]">
-                    <div className="text-sm">Start a conversation to see parallel exploration</div>
-                    <div className="text-xs mt-1 text-[var(--text-tertiary)]">
-                      Complex queries are decomposed into parallel branches
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === 'artifacts' ? (
+            {activeTab === 'sources' ? (
               <ArtifactsTab
                 media={aggregatedMedia}
                 documents={aggregatedDocumentActions}
                 hasThread={Boolean(activeThreadId)}
                 onDocumentSelect={handleDocumentSelect}
               />
-            ) : activeTab === 'tasks' ? (
-              <AgentTasksTab agentThreadId={streamingThread?.agentThreadId || null} />
-            ) : activeTab === 'brief' ? (
-              <BriefTab />
-            ) : activeTab === 'edits' ? (
-              <EditsTab activeThreadId={streamingThread?.agentThreadId || null} />
             ) : (
               <div className="flex-1 flex flex-col min-h-0">
-                {/* Memory Status Header (Plan Progress) */}
-                <MemoryStatusHeader
-                  planItems={planItems}
-                  currentFocus={agentPlans?.[0]?.goal}
-                  isLoading={agentPlans === undefined}
-                />
-
                 {/* Live Events Section - Inline collapsible */}
                 {showEventsPanel && liveEvents.length > 0 && (
                   <div className="flex-shrink-0 border-b border-[var(--border-color)] max-h-48 overflow-y-auto">
@@ -1647,16 +1620,46 @@ export function FastAgentPanel({
                     />
                   )}
 
-                  {/* Welcome / Empty State */}
+                  {/* Empty State - Branding + Quick Actions */}
                   {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[var(--text-secondary)]">
-                      <div className="w-12 h-12 bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center mb-4">
-                        <Bot className="w-6 h-6 text-[var(--text-muted)]" />
+                    <div className="flex-1 flex flex-col overflow-y-auto">
+                      {/* Hero Section */}
+                      <div className="flex flex-col items-center justify-center pt-8 pb-6 px-4">
+                        {/* Big Robot Icon */}
+                        <div className="w-16 h-16 rounded-2xl bg-[var(--text-primary)] flex items-center justify-center mb-4">
+                          <Bot className="w-9 h-9 text-[var(--bg-primary)]" />
+                        </div>
+
+                        {/* Title */}
+                        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">
+                          Nodebench AI
+                        </h2>
+
+                        {/* Marketing Tagline */}
+                        <p className="text-sm text-[var(--text-muted)] text-center max-w-xs">
+                          Your intelligent research assistant. Search, analyze, and discover insights across documents, filings, and media.
+                        </p>
                       </div>
-                      <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">Nodebench AI</h3>
-                      <p className="text-xs text-[var(--text-muted)] max-w-[200px]">
-                        Ready to help with your coding tasks.
-                      </p>
+
+                      {/* Swarm Quick Actions */}
+                      <SwarmQuickActions
+                        onSpawn={async (query, agents) => {
+                          try {
+                            toast.info(`Spawning swarm with ${agents.length} agents...`);
+                            const result = await spawnSwarm({
+                              query,
+                              agents,
+                              model: selectedModel,
+                            });
+                            setActiveThreadId(result.threadId);
+                            toast.success(`Swarm created with ${result.taskCount} agents`);
+                          } catch (error: any) {
+                            console.error('[FastAgentPanel] Swarm spawn failed:', error);
+                            toast.error(error.message || 'Failed to spawn swarm');
+                          }
+                        }}
+                        className="flex-1"
+                      />
                     </div>
                   )}
 
@@ -1688,7 +1691,7 @@ export function FastAgentPanel({
                   )}
 
                   {/* Streaming Indicator */}
-                  {isStreaming && (
+                  {isBusy && (
                     <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] px-4 animate-pulse">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       <span>Thinking...</span>
@@ -1737,18 +1740,13 @@ export function FastAgentPanel({
             )}
 
             {/* Input Area */}
-            <div className="p-4 bg-[var(--bg-primary)]/80 backdrop-blur-sm border-t border-[var(--border-color)]">
-              {/* Context Bar - Shows active constraints */}
-              <ContextBar
-                constraints={contextConstraints}
-                onEditConstraints={() => toast.info('Edit constraints modal (coming soon)')}
-              />
+            <div className="p-3 border-t border-[var(--border-color)]">
               <FastAgentInputBar
                 input={input}
                 setInput={setInput}
                 onSend={() => handleSendMessage(input)}
-                isStreaming={isStreaming}
-                onStop={() => setIsStreaming(false)}
+                isStreaming={isBusy}
+                onStop={handleStopStreaming}
                 selectedModel={selectedModel}
                 onSelectModel={setSelectedModel}
                 attachedFiles={attachedFiles}
@@ -1761,6 +1759,22 @@ export function FastAgentPanel({
                 contextCalendarEvents={contextCalendarEvents}
                 onAddCalendarEvent={handleAddCalendarEvent}
                 onRemoveCalendarEvent={handleRemoveCalendarEvent}
+                onSpawn={async (query, agents) => {
+                  try {
+                    toast.info(`Spawning swarm with ${agents.length} agents...`);
+                    const result = await spawnSwarm({
+                      query,
+                      agents,
+                      model: selectedModel,
+                    });
+                    // Switch to the new swarm thread
+                    setActiveThreadId(result.threadId);
+                    toast.success(`Swarm created with ${result.taskCount} agents`);
+                  } catch (error: any) {
+                    console.error('[FastAgentPanel] Swarm spawn failed:', error);
+                    toast.error(error.message || 'Failed to spawn swarm');
+                  }
+                }}
               />
             </div>
           </div>

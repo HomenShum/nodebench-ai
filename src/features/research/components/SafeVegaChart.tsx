@@ -141,14 +141,14 @@ const FallbackChart: React.FC<FallbackChartProps> = ({ data, intent }) => {
                 width={barWidth}
                 height={barHeight}
                 fill="currentColor"
-                className="text-gray-900"
+                className="text-[color:var(--text-primary)]"
                 rx={2}
               />
               <text
                 x={x + barWidth / 2}
                 y={height - 6}
                 textAnchor="middle"
-                className="text-[8px] fill-gray-500"
+                className="text-[8px] fill-[color:var(--text-secondary)]"
               >
                 {String(d.topic || d.label || d.category || i + 1).slice(0, 6)}
               </text>
@@ -177,7 +177,7 @@ const FallbackChart: React.FC<FallbackChartProps> = ({ data, intent }) => {
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
-          className="text-gray-900"
+          className="text-[color:var(--text-primary)]"
         />
         {data.map((d, i) => {
           const value = Number(d.value || d.count || 0);
@@ -190,7 +190,7 @@ const FallbackChart: React.FC<FallbackChartProps> = ({ data, intent }) => {
               cy={y}
               r={3}
               fill="currentColor"
-              className="text-gray-900"
+              className="text-[color:var(--text-primary)]"
             />
           );
         })}
@@ -200,7 +200,7 @@ const FallbackChart: React.FC<FallbackChartProps> = ({ data, intent }) => {
 
   // Generic placeholder
   return (
-    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+    <div className="flex items-center justify-center h-full text-[color:var(--text-secondary)] text-sm">
       <span>Chart preview not available</span>
     </div>
   );
@@ -357,15 +357,15 @@ export const SafeVegaChart: React.FC<SafeVegaChartProps> = ({
   }
 
   return (
-    <div className={`rounded-lg border border-gray-200 bg-white overflow-hidden ${className}`}>
+    <div className={`rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] overflow-hidden ${className}`}>
       {showHeader && (
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex items-center gap-2 text-gray-600">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]/50">
+          <div className="flex items-center gap-2 text-[color:var(--text-primary)]">
             {INTENT_ICONS[artifact.intent]}
             <span className="text-xs font-medium">{INTENT_LABELS[artifact.intent]}</span>
           </div>
           {artifact.rationale && (
-            <span className="text-xs text-gray-400 truncate max-w-[200px]" title={artifact.rationale}>
+            <span className="text-xs text-[color:var(--text-secondary)] truncate max-w-[200px]" title={artifact.rationale}>
               {artifact.rationale}
             </span>
           )}

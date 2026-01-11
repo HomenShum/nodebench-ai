@@ -427,7 +427,7 @@ function ResearchHubContent(props: ResearchHubProps) {
               <span className="text-2xl font-serif">N</span>
             </div>
             <div>
-              <div className="text-2xl font-serif font-bold tracking-tight text-gray-900 italic leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
+              <div className="text-2xl font-serif font-bold tracking-tight text-[color:var(--text-primary)] italic leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
               <div className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em] mt-1 ml-0.5 opacity-60">Archive Dossier 2027</div>
             </div>
           </div>

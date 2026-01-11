@@ -73,7 +73,7 @@ export function renderThinkingStep(step: any, index: number): React.ReactNode {
       case 'result':
         return 'bg-green-50 border-green-200 text-green-900';
       default:
-        return 'bg-gray-50 border-gray-200 text-gray-900';
+        return 'bg-[color:var(--bg-secondary)] border-[color:var(--border-color)] text-[color:var(--text-primary)]';
     }
   };
 

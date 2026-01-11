@@ -57,10 +57,10 @@ export function RichMediaSection({ media, showCitations = false }: RichMediaSect
         {hasToolMedia && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
                 📎 All Media Found by Agent
               </h3>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-[var(--text-secondary)]">
                 ({toolMedia.images.length} images, {toolMedia.youtubeVideos.length} videos, {toolMedia.webSources.length + toolMedia.secDocuments.length} sources, {toolMedia.profiles.length} profiles)
               </span>
             </div>
@@ -72,10 +72,10 @@ export function RichMediaSection({ media, showCitations = false }: RichMediaSect
         {hasUniqueTextMedia && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
                 💬 Referenced in Final Answer
               </h3>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-[var(--text-secondary)]">
                 (Subset mentioned by agent)
               </span>
             </div>
@@ -136,22 +136,22 @@ function RichMediaContent({ media, showCitations }: { media: ExtractedMedia; sho
         <div className="mb-4">
           {/* Section header */}
           <div className="flex items-center gap-2 mb-3">
-            <h3 className="text-sm font-semibold text-gray-700">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
               Images
-              <span className="text-xs font-normal text-gray-500 ml-2">({images.length})</span>
+              <span className="text-xs font-normal text-[var(--text-secondary)] ml-2">({images.length})</span>
             </h3>
           </div>
 
           {/* Horizontal scrolling carousel */}
           <div className="relative">
-            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ scrollbarWidth: 'thin' }}>
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-[var(--border-color)] scrollbar-track-[var(--bg-hover)]" style={{ scrollbarWidth: 'thin' }}>
               {images.map((img, idx) => (
                 <a
                   key={idx}
                   href={img.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 snap-start group relative rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 transition-all hover:shadow-lg"
+                  className="flex-shrink-0 snap-start group relative rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-blue-400 transition-all hover:shadow-lg"
                   title={img.alt}
                 >
                   <img
@@ -169,7 +169,7 @@ function RichMediaContent({ media, showCitations }: { media: ExtractedMedia; sho
             </div>
             {/* Scroll hint */}
             {images.length > 3 && (
-              <div className="text-xs text-gray-400 text-center mt-1">
+              <div className="text-xs text-[var(--text-muted)] text-center mt-1">
                 ← Scroll to see all {images.length} images →
               </div>
             )}

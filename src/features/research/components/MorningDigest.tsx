@@ -701,7 +701,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     switch (relevance) {
       case 'high': return 'bg-purple-50 text-purple-700 border border-purple-100';
       case 'medium': return 'bg-blue-50 text-blue-700 border border-blue-100';
-      default: return 'bg-gray-50 text-gray-700 border border-gray-100';
+      default: return 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border border-[color:var(--border-color)]';
     }
   };
 
@@ -715,16 +715,16 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   ];
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white/40 backdrop-blur-xl shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50/50">
+    <div className="rounded-2xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)]/40 backdrop-blur-xl shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-[color:var(--bg-secondary)]/50">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-xl bg-gray-900 text-white flex items-center justify-center shadow-lg transform -rotate-1 transition-transform hover:rotate-0">
+          <div className="h-12 w-12 rounded-xl bg-[color:var(--text-primary)] text-white flex items-center justify-center shadow-lg transform -rotate-1 transition-transform hover:rotate-0">
             <Sparkles className="w-5 h-5" />
           </div>
           <div className="text-left">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-0.5">Overnight Signal</p>
-            <p className="text-2xl font-serif font-bold text-gray-900 leading-tight">Hi {userName}, here's the pulse.</p>
-            <p className="text-[11px] font-medium text-gray-400 mt-0.5">{lastUpdatedText}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--text-secondary)] mb-0.5">Overnight Signal</p>
+            <p className="text-2xl font-serif font-bold text-[color:var(--text-primary)] leading-tight">Hi {userName}, here's the pulse.</p>
+            <p className="text-[11px] font-medium text-[color:var(--text-secondary)] mt-0.5">{lastUpdatedText}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -733,7 +733,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               {digestStats.map((stat) => (
                 <span
                   key={stat.id}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${stat.sentiment ? getSentimentColor(stat.sentiment) : 'bg-gray-50/50 border border-gray-100 text-gray-500'
+                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${stat.sentiment ? getSentimentColor(stat.sentiment) : 'bg-[color:var(--bg-secondary)]/50 border border-[color:var(--border-color)] text-[color:var(--text-secondary)]'
                     }`}
                 >
                   {stat.label}: {stat.value}
@@ -741,11 +741,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               ))}
             </div>
           )}
-          <div className="flex items-center gap-1.5 ml-2 pl-4 border-l border-gray-100">
+          <div className="flex items-center gap-1.5 ml-2 pl-4 border-l border-[color:var(--border-color)]">
             <button
               type="button"
               onClick={handleRefresh}
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100/50 transition-all active:scale-95"
+              className="p-2 rounded-lg text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]/50 transition-all active:scale-95"
               title="Refresh digest"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -753,7 +753,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100/50 transition-all active:scale-95"
+              className="p-2 rounded-lg text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]/50 transition-all active:scale-95"
               title={isExpanded ? 'Collapse' : 'Expand'}
             >
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -774,7 +774,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <span className={`w-2 h-2 rounded-none transform rotate-45 ${primarySentiment === 'bullish' ? 'bg-emerald-700' : 'bg-stone-500'}`} />
                   Digest Overview
                 </p>
-                <div className="text-xl font-serif font-medium text-gray-900 leading-relaxed italic">
+                <div className="text-xl font-serif font-medium text-[color:var(--text-primary)] leading-relaxed italic">
                   "<InteractiveSpanParser
                     text={fullSummary}
                     citations={citationLibrary}
@@ -792,13 +792,13 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Briefing Snapshot</p>
-                <p className="text-base font-serif font-bold text-gray-900">Coverage density</p>
+                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Coverage density</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {densityStats.map((stat) => (
                   <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
                     <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
-                    <div className="text-2xl font-serif font-semibold text-gray-900">{stat.value}</div>
+                    <div className="text-2xl font-serif font-semibold text-[color:var(--text-primary)]">{stat.value}</div>
                     <div className="text-[10px] text-stone-400">{stat.hint}</div>
                   </div>
                 ))}
@@ -849,7 +849,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Highlights</p>
-                <p className="text-base font-serif font-bold text-gray-900">What moved overnight</p>
+                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">What moved overnight</p>
               </div>
               <div className="space-y-3">
                 {signalHighlights.length > 0 ? (
@@ -881,7 +881,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           </button>
                         )}
                       </div>
-                      <div className="text-sm text-gray-700 mt-2">{item.text}</div>
+                      <div className="text-sm text-[color:var(--text-primary)] mt-2">{item.text}</div>
                     </div>
                   ))
                 ) : (
@@ -893,7 +893,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Source Mix</p>
-                <p className="text-base font-serif font-bold text-gray-900">Where the signals came from</p>
+                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Where the signals came from</p>
               </div>
               <div className="space-y-3">
                 {topSources.length > 0 ? (
@@ -923,7 +923,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Mix</p>
-                  <p className="text-base font-serif font-bold text-gray-900">Distribution by channel</p>
+                  <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Distribution by channel</p>
                 </div>
                 <button
                   type="button"
@@ -962,7 +962,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Tag Radar</p>
-                  <p className="text-base font-serif font-bold text-gray-900">What is clustering</p>
+                  <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">What is clustering</p>
                 </div>
                 <button
                   type="button"
@@ -997,7 +997,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Freshness & Heat</p>
-                  <p className="text-base font-serif font-bold text-gray-900">Recency metrics</p>
+                  <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Recency metrics</p>
                 </div>
                 <button
                   type="button"
@@ -1010,28 +1010,28 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
                   <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Latest</div>
-                  <div className="text-xl font-serif font-semibold text-gray-900">
+                  <div className="text-xl font-serif font-semibold text-[color:var(--text-primary)]">
                     {latestAgeHours !== null ? `${latestAgeHours}h` : 'N/A'}
                   </div>
                   <div className="text-[10px] text-stone-400">age of newest item</div>
                 </div>
                 <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
                   <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Window</div>
-                  <div className="text-xl font-serif font-semibold text-gray-900">
+                  <div className="text-xl font-serif font-semibold text-[color:var(--text-primary)]">
                     {freshnessStats.windowHours !== null ? `${freshnessStats.windowHours}h` : 'N/A'}
                   </div>
                   <div className="text-[10px] text-stone-400">coverage span</div>
                 </div>
                 <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
                   <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Avg Heat Score</div>
-                  <div className="text-xl font-serif font-semibold text-gray-900">
+                  <div className="text-xl font-serif font-semibold text-[color:var(--text-primary)]">
                     {avgHeatValue !== null ? `${avgHeatValue} pts` : 'N/A'}
                   </div>
                   <div className="text-[10px] text-stone-400">avg engagement score</div>
                 </div>
                 <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
                   <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Top Source</div>
-                  <div className="text-xl font-serif font-semibold text-gray-900">
+                  <div className="text-xl font-serif font-semibold text-[color:var(--text-primary)]">
                     {sourceConcentration !== null ? `${sourceConcentration}%` : 'N/A'}
                   </div>
                   <div className="text-[10px] text-stone-400">share of coverage</div>
@@ -1046,7 +1046,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Ledger</p>
-                  <p className="text-base font-serif font-bold text-gray-900">Section density</p>
+                  <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Section density</p>
                 </div>
                 <button
                   type="button"
@@ -1063,7 +1063,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 flex flex-wrap items-center justify-between gap-3"
                   >
                     <div>
-                      <div className="text-sm font-semibold text-gray-800">{row.title}</div>
+                      <div className="text-sm font-semibold text-[color:var(--text-primary)]">{row.title}</div>
                       <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{row.total} nodes</div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -1076,7 +1076,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
                         Med {row.medium}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-gray-50 text-gray-700 border border-gray-100">
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border border-[color:var(--border-color)]">
                         Low {row.low}
                       </span>
                     </div>
@@ -1088,7 +1088,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Deep Agent Launchpad</p>
-                <p className="text-base font-serif font-bold text-gray-900">Runbook shortcuts</p>
+                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Runbook shortcuts</p>
               </div>
               <div className="space-y-2">
                 {agentLaunchpad.map((item) => (
@@ -1136,7 +1136,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       {React.cloneElement(section.icon as React.ReactElement, { className: "w-5 h-5", strokeWidth: 2 })}
                     </div>
                     <div className="text-left">
-                      <p className="text-base font-serif font-bold text-gray-900">{section.title}</p>
+                      <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">{section.title}</p>
                       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{section.items.length} Nodes</p>
                     </div>
                   </div>
@@ -1150,7 +1150,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                 </div>
 
                 {expandedSections.has(section.id) && (
-                  <div className="divide-y divide-gray-50">
+                  <div className="divide-y divide-[color:var(--bg-secondary)]">
                     {section.items.slice(0, 4).map((item, idx) => (
                       <div
                         key={idx}
@@ -1162,11 +1162,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           event.preventDefault();
                           onItemClick?.(item);
                         }}
-                        className="w-full text-left px-4 py-3.5 flex items-start justify-between gap-4 hover:bg-white transition-colors group"
+                        className="w-full text-left px-4 py-3.5 flex items-start justify-between gap-4 hover:bg-[color:var(--bg-primary)] transition-colors group"
                       >
                         <div className="flex items-start gap-3">
-                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-gray-200 group-hover:bg-blue-400 transition-colors" />
-                          <div className="text-sm font-medium text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors">
+                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--bg-tertiary)] group-hover:bg-blue-400 transition-colors" />
+                          <div className="text-sm font-medium text-[color:var(--text-primary)] leading-relaxed group-hover:text-[color:var(--text-primary)] transition-colors">
                             <CrossLinkedText
                               text={item.text}
                               entities={entityLibrary.entities}
@@ -1183,7 +1183,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                                 event.stopPropagation();
                                 onEntityClick?.(item.linkedEntity, "company");
                               }}
-                              className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold font-mono text-gray-500 bg-gray-50 border border-gray-100 uppercase tracking-tighter hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                              className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold font-mono text-[color:var(--text-secondary)] bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] uppercase tracking-tighter hover:text-emerald-900 hover:border-emerald-900 transition-colors"
                             >
                               {item.linkedEntity}
                             </button>
@@ -1204,17 +1204,17 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Give me a quick brief for this morning", relevance: 'high', linkedEntity: 'morning brief' })}
-              className="flex items-center justify-center gap-2 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3 text-xs font-bold text-gray-800 hover:bg-white hover:shadow-md transition-all active:translate-y-0.5"
+              className="flex items-center justify-center gap-2 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]/50 px-4 py-3 text-xs font-bold text-[color:var(--text-primary)] hover:bg-[color:var(--bg-primary)] hover:shadow-md transition-all active:translate-y-0.5"
             >
-              <Sparkles className="w-4 h-4 text-gray-700" />
+              <Sparkles className="w-4 h-4 text-[color:var(--text-primary)]" />
               Strategic Brief
             </button>
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Prepare the full market report for me", relevance: 'medium', linkedEntity: 'market report' })}
-              className="flex items-center justify-center gap-2 rounded-xl border border-gray-100 bg-white px-4 py-3 text-xs font-bold text-gray-800 hover:bg-gray-50/50 hover:shadow-md transition-all active:translate-y-0.5"
+              className="flex items-center justify-center gap-2 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] px-4 py-3 text-xs font-bold text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]/50 hover:shadow-md transition-all active:translate-y-0.5"
             >
-              <Newspaper className="w-4 h-4 text-gray-700" />
+              <Newspaper className="w-4 h-4 text-[color:var(--text-primary)]" />
               Full Dossier
             </button>
           </div>

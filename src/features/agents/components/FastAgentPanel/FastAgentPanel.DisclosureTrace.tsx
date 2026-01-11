@@ -143,7 +143,7 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
     case "memory.query":
       return <Brain className="w-3.5 h-3.5 text-purple-400" />;
     default:
-      return <Clock className="w-3.5 h-3.5 text-gray-400" />;
+      return <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />;
   }
 }
 
@@ -498,19 +498,19 @@ export function DisclosureTrace({
                       "px-1 rounded text-[10px] font-mono",
                       stats.invariantStatus.A === "pass" ? "bg-emerald-500/20 text-emerald-400" :
                       stats.invariantStatus.A === "fail" ? "bg-red-500/20 text-red-400" :
-                      "bg-gray-500/20 text-gray-400"
+                      "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                     )}>A</span>
                     <span className={cn(
                       "px-1 rounded text-[10px] font-mono",
                       stats.invariantStatus.C === "pass" ? "bg-emerald-500/20 text-emerald-400" :
                       stats.invariantStatus.C === "fail" ? "bg-red-500/20 text-red-400" :
-                      "bg-gray-500/20 text-gray-400"
+                      "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                     )}>C</span>
                     <span className={cn(
                       "px-1 rounded text-[10px] font-mono",
                       stats.invariantStatus.D === "pass" ? "bg-emerald-500/20 text-emerald-400" :
                       stats.invariantStatus.D === "fail" ? "bg-red-500/20 text-red-400" :
-                      "bg-gray-500/20 text-gray-400"
+                      "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                     )}>D</span>
                   </span>
                 )}
@@ -530,7 +530,7 @@ export function DisclosureTrace({
                         "px-1.5 py-0.5 rounded text-[10px]",
                         u.action === "create" ? "bg-emerald-500/20 text-emerald-400" :
                         u.action === "update" ? "bg-blue-500/20 text-blue-400" :
-                        "bg-gray-500/20 text-gray-400"
+                        "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                       )}
                     >
                       {u.entityId} (+{u.factsAdded})

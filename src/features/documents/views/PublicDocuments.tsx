@@ -16,7 +16,7 @@ export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
   if (publicDocuments === undefined) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--text-primary)]"></div>
       </div>
     );
   }
@@ -34,11 +34,11 @@ export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
 
         {publicDocuments.length === 0 ? (
           <div className="text-center py-12">
-            <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <Globe className="h-12 w-12 text-[var(--text-muted)] mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">
               No public documents yet
             </h3>
-            <p className="text-gray-600">
+            <p className="text-[var(--text-secondary)]">
               Be the first to share a document with the community!
             </p>
           </div>

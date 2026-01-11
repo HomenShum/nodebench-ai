@@ -64,15 +64,15 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
   const filteredPresets = PRESETS.filter((p) => p.persona === activePersona);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+    <div className="rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-lg bg-gray-900 text-white flex items-center justify-center shadow-sm">
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-gray-500">Day Starter</p>
-            <p className="text-sm font-semibold text-gray-900">Choose a preset</p>
+            <p className="text-[11px] font-semibold uppercase text-[color:var(--text-secondary)]">Day Starter</p>
+            <p className="text-sm font-semibold text-[color:var(--text-primary)]">Choose a preset</p>
           </div>
         </div>
         <div className="flex gap-1">
@@ -84,7 +84,7 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
               className={`px-2 py-1 rounded-full text-[11px] font-semibold border ${
                 activePersona === persona
                   ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                  : "bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] border-[color:var(--border-color)] hover:bg-[color:var(--bg-hover)]"
               }`}
             >
               {persona}
@@ -92,16 +92,16 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
           ))}
         </div>
       </div>
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-[color:var(--border-color)]">
         {filteredPresets.map((preset) => (
           <div key={preset.id} className="p-4">
             <div className="flex items-start gap-3">
               <div className="mt-0.5">
-                <UserCircle className="w-4 h-4 text-gray-500" />
+                <UserCircle className="w-4 h-4 text-[color:var(--text-secondary)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900">{preset.title}</p>
-                <p className="text-[12px] text-gray-600 leading-relaxed">{preset.subtitle}</p>
+                <p className="text-sm font-semibold text-[color:var(--text-primary)]">{preset.title}</p>
+                <p className="text-[12px] text-[color:var(--text-primary)] leading-relaxed">{preset.subtitle}</p>
                 {isGuest && preset.persona !== "general" && (
                   <p className="text-[11px] text-amber-600 mt-1">Sign in for full investor/FDA/patent detail.</p>
                 )}
@@ -119,7 +119,7 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
               <button
                 type="button"
                 onClick={() => navigator.clipboard?.writeText?.(preset.prompt)}
-                className="text-[12px] text-gray-500 hover:text-gray-800"
+                className="text-[12px] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
               >
                 Copy prompt
               </button>

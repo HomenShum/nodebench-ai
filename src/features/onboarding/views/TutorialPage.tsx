@@ -423,7 +423,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
           </div>
 
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
+            <div className="bg-[color:var(--bg-primary)] rounded-xl shadow-sm border border-[color:var(--border-color)] h-[600px] flex flex-col">
               <div className="p-4 border-b border-[var(--border-color)] flex items-center gap-3">
                 <div className="w-10 h-10 bg-[var(--accent-primary)]/15 rounded-full flex items-center justify-center">
                   <Bot className="h-5 w-5 text-blue-600" />
@@ -466,7 +466,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                               {message.documentCreated && (
                                 <div className="mt-2 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-center gap-2">
                                   <FileText className="h-4 w-4 text-blue-600" />
-                                  <span className="text-sm text-gray-700">Document created:</span>
+                                  <span className="text-sm text-[color:var(--text-primary)]">Document created:</span>
                                   <button
                                     onClick={() => onDocumentSelect(message.documentCreated!.id)}
                                     className="font-semibold text-sm text-blue-600 hover:underline"
@@ -482,7 +482,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                     case 'system':
                       return (
                         <div key={message.id} className="flex justify-center">
-                          <div className="text-center text-xs text-gray-500 p-2 bg-gray-100 rounded-full">
+                          <div className="text-center text-xs text-[color:var(--text-secondary)] p-2 bg-[color:var(--bg-secondary)] rounded-full">
                             {message.content}
                           </div>
                         </div>
@@ -495,7 +495,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                             <Terminal className="h-3 w-3" />
                             <span>Tool Output: {toolName || 'Unknown Tool'}</span>
                           </div>
-                          <pre className="text-xs bg-gray-800 text-white p-2 rounded-md overflow-x-auto"><code>{output}</code></pre>
+                          <pre className="text-xs bg-gray-900 text-white p-2 rounded-md overflow-x-auto"><code>{output}</code></pre>
                         </div>
                       );
                     }
@@ -506,7 +506,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="p-3 border-t border-gray-100">
+              <div className="p-3 border-t border-[color:var(--border-color)]">
                 <div className="flex flex-wrap gap-2 mb-3">
                   <button
                     onClick={() => void handleQuickAction("How do I create my first document?")}

@@ -330,7 +330,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       case 'pdf':
         return <FileText className="h-8 w-8 text-red-500" />;
       case 'text':
-        return <FileText className="h-8 w-8 text-gray-500" />;
+        return <FileText className="h-8 w-8 text-[var(--text-secondary)]" />;
       case 'code':
         return <Code2 className="h-8 w-8 text-blue-500" />;
       default:

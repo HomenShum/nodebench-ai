@@ -450,7 +450,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     };
 
     return (
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm relative h-[calc(100vh-280px)] min-h-[600px] flex flex-col">
+      <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-sm relative h-[calc(100vh-280px)] min-h-[600px] flex flex-col">
         {/* Day header */}
         <div
           className="grid px-2 py-1 bg-[var(--bg-secondary)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-secondary)]/80 border-b border-[var(--border-color)] text-xs text-[var(--text-secondary)]"
@@ -471,7 +471,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               <div className="font-medium text-[var(--text-primary)]">
                 {d.toLocaleDateString("en-US", { weekday: "short" })}
               </div>
-              <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs mt-1 ${d.toDateString() === now.toDateString() ? "bg-blue-600 text-white" : "text-gray-700"}`}>
+              <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs mt-1 ${d.toDateString() === now.toDateString() ? "bg-blue-600 text-white" : "text-[var(--text-primary)]"}`}>
                 {d.getDate()}
               </div>
             </div>
@@ -480,12 +480,12 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
 
         {/* All-day strip */}
         {allDayRows.length > 0 && (
-          <div className={`relative ${collapseEmpty ? 'grid grid-cols-7' : 'grid grid-cols-8'} border-b border-gray-200 bg-white`}
+          <div className={`relative ${collapseEmpty ? 'grid grid-cols-7' : 'grid grid-cols-8'} border-b border-[var(--border-color)] bg-[var(--bg-primary)]`}
             style={{ gridTemplateRows: `repeat(${allDayRows.length}, 1.75rem)` }}
           >
             {!collapseEmpty && (
               <div
-                className="text-[10px] pr-2 flex items-center justify-end border-r border-gray-100"
+                className="text-[10px] pr-2 flex items-center justify-end border-r border-[var(--border-color)]"
                 style={{ gridRow: `1 / span ${allDayRows.length}` }}
                 title="All-day or multi-day events appear in this strip"
                 aria-label="All-day events strip"
@@ -498,7 +498,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
             {weekDaysToUse.map((d, idx) => (
               <div
                 key={`alldaycell-${idx}`}
-                className="relative border-l border-gray-100"
+                className="relative border-l border-[var(--border-color)]"
                 style={{ gridRow: `1 / span ${allDayRows.length}` }}
                 role="gridcell"
                 tabIndex={0}
@@ -583,7 +583,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           }
                           setEditingId(null);
                         }}
-                        className="w-full text-[11px] bg-white/70 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-amber-300"
+                        className="w-full text-[11px] bg-[var(--bg-primary)]/70 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-amber-300"
                       />
                     ) : (
                       <>
@@ -615,7 +615,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
           {!collapseEmpty && (
             <div className="relative">
               {renderedHours.map((h) => (
-                <div key={h} style={{ height: hourHeightLocal }} className="text-[10px] text-gray-400 pr-2 pl-2 flex items-start justify-end">
+                <div key={h} style={{ height: hourHeightLocal }} className="text-[10px] text-[var(--text-muted)] pr-2 pl-2 flex items-start justify-end">
                   {hourLabel(h)}
                 </div>
               ))}
@@ -801,7 +801,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               <div
                 key={dayIdx}
                 ref={(el) => { dayRefs.current[dayIdx] = el; }}
-                className="relative border-l border-gray-100 cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 overflow-hidden"
+                className="relative border-l border-[var(--border-color)] cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 overflow-hidden"
                 style={{ height: collapseEmpty ? totalDisplayHeight : hourHeightLocal * (showWorkHoursOnly ? (visibleEndHour - visibleStartHour) : 24) }}
                 role="gridcell"
                 tabIndex={0}
@@ -900,7 +900,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 )}
                 {/* Hour lines (disabled in collapsed mode) */}
                 {!collapseEmpty && renderedHours.map((h) => (
-                  <div key={h} style={{ height: hourHeightLocal }} className="relative border-b border-gray-100 transition-colors hover:bg-blue-50/30" />
+                  <div key={h} style={{ height: hourHeightLocal }} className="relative border-b border-[var(--border-color)] transition-colors hover:bg-blue-50/30" />
                 ))}
 
                 {/* Hovered slot highlight (15-min granularity) - off in collapsed mode */}
@@ -993,7 +993,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                       style={{ top: prefixHeights[i], height: segDisplayPx[i] }}
                     >
                       <button
-                        className="text-[10px] px-2 py-0.5 rounded border border-gray-200 bg-white/80 shadow-sm hover:bg-gray-50"
+                        className="text-[10px] px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)]/80 shadow-sm hover:bg-[var(--bg-hover)]"
                         onClick={(ev) => { ev.stopPropagation(); setExpandedGaps((prev) => {
                           const set = new Set(prev[dayIdx] ?? []);
                           if (set.has(i)) set.delete(i); else set.add(i);
@@ -1172,10 +1172,10 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
           <div className="flex items-center justify-center py-12">
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--border-color)]"></div>
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent absolute inset-0"></div>
               </div>
-              <p className="text-sm text-gray-600 font-medium">
+              <p className="text-sm text-[var(--text-secondary)] font-medium">
                 {isCreating ? 'Creating your calendar...' : 'Loading calendar...'}
               </p>
             </div>
@@ -1192,7 +1192,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               presets={
                 <>
-                  <span className="text-xs text-gray-500 mr-2">Presets:</span>
+                  <span className="text-xs text-[var(--text-secondary)] mr-2">Presets:</span>
                   <PresetChip onClick={() => void addMockEvents('sprint')}>Sprint Week</PresetChip>
                   <PresetChip onClick={() => void addMockEvents('meetings')}>Meetings Day</PresetChip>
                   <PresetChip onClick={() => void addMockEvents('personal')}>Personal</PresetChip>
