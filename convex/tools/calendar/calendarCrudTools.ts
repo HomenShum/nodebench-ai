@@ -91,8 +91,8 @@ export const deleteEvent = createTool({
   },
 });
 
-export const listEvents = createTool({
-  description: `List events in a date range.`,
+export const listEventsInRange = createTool({
+  description: `List events in a date range (ISO start/end).`,
   args: z.object({
     start: z.string().describe("ISO datetime start"),
     end: z.string().describe("ISO datetime end"),
@@ -126,6 +126,5 @@ export const calendarCrudTools = {
   createEvent,
   updateEvent,
   deleteEvent,
-  listEvents,
+  listEventsInRange,
 };
-

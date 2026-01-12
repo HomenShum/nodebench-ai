@@ -207,4 +207,183 @@ crons.interval(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTONOMOUS AGENT ECOSYSTEM - Deep Agents 3.0
+// Zero-Human-Input Continuous Intelligence Platform
+// ═══════════════════════════════════════════════════════════════════════════
+
+// --- Signal Ingestion ---
+// Ingest signals from all configured sources (RSS feeds, etc.) every 5 minutes
+crons.interval(
+  "autonomous signal ingestion",
+  { minutes: 5 },
+  internal.domains.signals.signalIngester.tickSignalIngestion,
+  {}
+);
+
+// Process pending signals every minute
+crons.interval(
+  "autonomous signal processing",
+  { minutes: 1 },
+  internal.domains.signals.signalProcessor.tickSignalProcessing,
+  {}
+);
+
+// --- Research Queue ---
+// Run autonomous research loop every minute
+// Dequeues highest priority tasks and executes research swarms
+crons.interval(
+  "autonomous research loop",
+  { minutes: 1 },
+  internal.domains.research.autonomousResearcher.tickAutonomousResearch,
+  {}
+);
+
+// --- Publishing Pipeline ---
+// Process publishing tasks (format and deliver to channels)
+crons.interval(
+  "autonomous publishing",
+  { minutes: 1 },
+  internal.domains.publishing.publishingOrchestrator.tickPublishing,
+  {}
+);
+
+// Process delivery queue (retry failed deliveries)
+crons.interval(
+  "autonomous delivery queue",
+  { minutes: 1 },
+  internal.domains.publishing.deliveryQueue.tickDeliveryQueue,
+  {}
+);
+
+// --- Entity Lifecycle ---
+// Update entity decay scores hourly
+crons.interval(
+  "entity decay hourly update",
+  { hours: 1 },
+  internal.domains.entities.decayManager.tickDecayUpdate,
+  {}
+);
+
+// Daily decay check and stale entity re-research queuing
+// Runs at midnight UTC to identify and queue stale entities
+crons.daily(
+  "entity decay daily check",
+  { hourUTC: 0, minuteUTC: 0 },
+  internal.domains.entities.decayManager.checkAndQueueStale,
+  {}
+);
+
+// --- Cleanup Jobs ---
+// Cleanup old research tasks weekly (completed/failed > 7 days)
+crons.weekly(
+  "cleanup old research tasks",
+  { dayOfWeek: "sunday", hourUTC: 4, minuteUTC: 0 },
+  internal.domains.research.researchQueue.cleanupOldTasks,
+  {}
+);
+
+// Cleanup expired signals weekly
+crons.weekly(
+  "cleanup expired signals",
+  { dayOfWeek: "sunday", hourUTC: 4, minuteUTC: 15 },
+  internal.domains.signals.signalIngester.cleanupExpiredSignals,
+  {}
+);
+
+// Cleanup old delivery jobs weekly
+crons.weekly(
+  "cleanup old delivery jobs",
+  { dayOfWeek: "sunday", hourUTC: 4, minuteUTC: 30 },
+  internal.domains.publishing.deliveryQueue.cleanupOldJobs,
+  {}
+);
+
+// --- Self-Questioning & Validation (Phase 3) ---
+// Auto-resolve low-severity contradictions daily
+crons.daily(
+  "auto-resolve contradictions",
+  { hourUTC: 5, minuteUTC: 0 },
+  internal.domains.validation.contradictionDetector.autoResolveContradictions,
+  { limit: 100 }
+);
+
+// --- Persona-Driven Autonomy (Phase 6) ---
+// Run all-persona autonomous research every 30 minutes
+crons.interval(
+  "persona autonomous research",
+  { minutes: 30 },
+  internal.domains.personas.personaAutonomousAgent.tickAllPersonas,
+  {}
+);
+
+// Reset persona budgets daily at midnight UTC
+crons.daily(
+  "reset persona budgets",
+  { hourUTC: 0, minuteUTC: 5 },
+  internal.domains.personas.personaAutonomousAgent.initializeAllBudgets,
+  {}
+);
+
+// --- Self-Healing & Observability (Phase 7) ---
+// Run health checks every 5 minutes
+crons.interval(
+  "system health check",
+  { minutes: 5 },
+  internal.domains.observability.healthMonitor.tickHealthCheck,
+  {}
+);
+
+// Run self-healing every 15 minutes
+crons.interval(
+  "autonomous self-healing",
+  { minutes: 15 },
+  internal.domains.observability.selfHealer.tickSelfHealing,
+  {}
+);
+
+// Generate health report daily
+crons.daily(
+  "generate health report",
+  { hourUTC: 7, minuteUTC: 0 },
+  internal.domains.observability.healthMonitor.generateHealthReport,
+  { hours: 24 }
+);
+
+// Cleanup old health checks weekly (keep 7 days)
+crons.weekly(
+  "cleanup old health checks",
+  { dayOfWeek: "sunday", hourUTC: 4, minuteUTC: 45 },
+  internal.domains.observability.healthMonitor.cleanupOldHealthChecks,
+  {}
+);
+
+// Cleanup old healing actions weekly (keep 30 days)
+crons.weekly(
+  "cleanup old healing actions",
+  { dayOfWeek: "sunday", hourUTC: 5, minuteUTC: 0 },
+  internal.domains.observability.selfHealer.cleanupOldHealingActions,
+  {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FREE MODEL DISCOVERY & EVALUATION - Zero-cost autonomous operations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Discover and evaluate free models hourly
+crons.interval(
+  "free model discovery and evaluation",
+  { hours: 1 },
+  internal.domains.models.freeModelDiscovery.tickModelDiscovery,
+  {}
+);
+
+// Cleanup old autonomous model usage weekly (keep 7 days)
+crons.weekly(
+  "cleanup autonomous model usage",
+  { dayOfWeek: "sunday", hourUTC: 5, minuteUTC: 15 },
+  internal.domains.models.autonomousModelResolver.cleanupOldUsageRecords,
+  {}
+);
+
 export default crons;

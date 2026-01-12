@@ -6,6 +6,76 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ## Changelog
 
+### v0.3.0 (January 11, 2026)
+
+**🤖 Autonomous Agent Ecosystem - Deep Agents 3.0**
+
+Zero-human-input continuous intelligence platform with free model support.
+
+**🆓 Free Model Discovery & Selection**
+- Automatic discovery of **26+ free models** from OpenRouter
+- Performance-based ranking with live evaluation (math, reasoning, summarization, extraction)
+- Automatic fallback chain: Discovered Free → Known Free → Paid Models
+- **$0/month** for background autonomous operations
+
+**Top Discovered Free Models:**
+| Rank | Model | Context | Score | Latency |
+|------|-------|---------|-------|---------|
+| 1 | Venice Dolphin Mistral 24B | 32K | 99 | 199ms |
+| 2 | AllenAI Molmo2 8B | 37K | 98 | 328ms |
+| 3 | Mistral Devstral 2512 | 262K | 98 | 336ms |
+| 4 | NVIDIA Nemotron 30B | 256K | 97 | 456ms |
+| 5 | Xiaomi MiMo-V2-Flash | 262K | 70 | 11.5s |
+
+**📡 Signal Ingestion Pipeline**
+- RSS/Atom feed ingestion (TechCrunch, Hacker News, ArXiv, Reddit)
+- Entity extraction and enrichment from signals
+- Priority scoring based on relevance and freshness
+
+**🔬 Autonomous Research Loop**
+- Priority queue with automatic task scheduling
+- Multi-persona research swarms (JPM_STARTUP_BANKER, CTO_TECH_LEAD, etc.)
+- Self-questioning validation with quality scoring
+- Automatic retry handling with exponential backoff
+
+**📤 Publishing Pipeline**
+- Multi-channel delivery (UI, ntfy push notifications, email-ready)
+- Urgency classification and formatting
+- Delivery queue with retry logic
+
+**🌡️ Entity Lifecycle Management**
+- Decay scoring for entity freshness tracking
+- Automatic re-research queuing for stale entities
+- Watchlist priority boosting
+
+**🩺 Self-Healing & Observability**
+- Health monitoring every 5 minutes
+- Automatic self-healing every 15 minutes
+- Daily health reports
+- Contradiction detection and auto-resolution
+
+**📁 New Files:**
+- `convex/domains/models/` - Free model discovery, resolver, live evaluation
+- `convex/domains/research/` - Autonomous researcher, research queue
+- `convex/domains/signals/` - Signal ingestion and processing
+- `convex/domains/publishing/` - Publishing orchestrator, delivery queue
+- `convex/domains/entities/` - Entity lifecycle, decay manager
+- `convex/domains/personas/` - Persona-driven autonomy
+- `convex/domains/observability/` - Health monitor, self-healer
+- `convex/domains/validation/` - Contradiction detector
+- `convex/config/autonomousConfig.ts` - Central configuration
+
+**⏰ Active Cron Jobs:**
+- Signal ingestion: Every 5 minutes
+- Signal processing: Every 1 minute
+- Research execution: Every 1 minute
+- Publishing: Every 1 minute
+- Entity decay: Hourly
+- Free model discovery: Hourly
+- Self-healing: Every 15 minutes
+
+---
+
 ### v0.2.0 (January 11, 2026)
 
 **🎨 Complete Dark Mode & Theming Overhaul**
@@ -98,7 +168,8 @@ A comprehensive AI-powered document management and research platform with multi-
 - 📑 **Deal & Move Rail** - Overnight moves, deal list, and watchlist flyouts with dates, sources, FDA/patent/paper context
 - 📊 **Deal Radar** - Banker Morning Routine support with filterable deal table, sector/stage filters, and banker score algorithm  
 - 📧 **Email Intelligence Pipeline** - Gmail parsing, entity extraction, dossier + PRD composer workflows with scheduled sweeps and scrollytelling dossier UI
-
+- 🤖 **Autonomous Agent Ecosystem** - Zero-human-input continuous intelligence with free model discovery, signal ingestion, research queues, and multi-channel publishing
+- 🆓 **Free Model Support** - Automatic discovery and ranking of 26+ free OpenRouter models with intelligent fallback to paid models
 
 ---
 

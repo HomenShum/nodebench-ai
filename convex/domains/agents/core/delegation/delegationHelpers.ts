@@ -107,7 +107,21 @@ export function formatDelegationResult(
  * @returns Array of tool names used
  */
 export function extractToolNames(result: any): string[] {
-  if (!result.steps) return [];
+  const tools = new Set<string>();
+
+  const maybeToolCalls: any[] | undefined =
+    Array.isArray(result?.toolCalls) ? result.toolCalls :
+      Array.isArray(result?.toolcalls) ? result.toolcalls :
+        undefined;
+
+  if (maybeToolCalls) {
+    for (const call of maybeToolCalls) {
+      if (call?.toolName && typeof call.toolName === "string") tools.add(call.toolName);
+      if (call?.name && typeof call.name === "string") tools.add(call.name);
+    }
+  }
+
+  if (!Array.isArray(result?.steps)) return Array.from(tools);
 
   const toolCalls: any[] = [];
   for (const step of result.steps) {
@@ -116,6 +130,11 @@ export function extractToolNames(result: any): string[] {
     }
   }
 
-  return toolCalls.map((call: any) => call.toolName);
+  for (const call of toolCalls) {
+    if (call?.toolName && typeof call.toolName === "string") tools.add(call.toolName);
+    if (call?.name && typeof call.name === "string") tools.add(call.name);
+  }
+
+  return Array.from(tools);
 }
 

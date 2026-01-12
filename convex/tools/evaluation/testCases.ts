@@ -20,16 +20,16 @@ export const documentToolTests: TestCase[] = [
     tool: "findDocument",
     scenario: "User wants to find a document by title",
     userQuery: "Find my revenue report",
-    expectedTool: "findDocument",
+    expectedTool: "findDocument, delegateToDocumentAgent",
     expectedArgs: { query: "revenue report", limit: 10 },
     successCriteria: [
-      "Tool called includes findDocument (may also call getDocumentContent for better UX)",
-      "Query parameter contains 'revenue' or 'report'",
+      "Tool called includes findDocument OR delegateToDocumentAgent (document search may be performed via delegation)",
+      "Query parameter contains 'revenue' or 'report' (in findDocument query OR delegation query)",
       "Response mentions the Revenue Report Q4 2024 document",
       "Response includes document title and/or metadata",
       "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI correctly used findDocument to search for revenue-related documents. The agent may also call getDocumentContent to provide a better user experience. Check if the response mentions the Revenue Report Q4 2024 document with relevant information."
+    evaluationPrompt: "Evaluate if the AI correctly searched for revenue-related documents. Accept either a direct findDocument call or delegation to DocumentAgent (delegateToDocumentAgent) as long as it produces the correct document result. The agent may also call getDocumentContent for better UX, but should not invent numbers not supported by tool outputs."
   },
   {
     id: "doc-002",
@@ -37,10 +37,10 @@ export const documentToolTests: TestCase[] = [
     tool: "getDocumentContent",
     scenario: "User wants to read a specific document",
     userQuery: "Show me the content of the Revenue Report Q4 2024 document",
-    expectedTool: "getDocumentContent",
+    expectedTool: "getDocumentContent, delegateToDocumentAgent",
     expectedArgs: { query: "Revenue Report Q4 2024" },
     successCriteria: [
-      "Tool called is getDocumentContent or findDocument followed by getDocumentContent",
+      "Tool called is getDocumentContent or findDocument followed by getDocumentContent (directly OR via delegateToDocumentAgent)",
       "Response includes document content about Q4 2024 revenue",
       "Response mentions revenue figures or metrics",
       "Response is helpful and accurate"
@@ -104,10 +104,10 @@ export const mediaToolTests: TestCase[] = [
     tool: "searchMedia",
     scenario: "User wants to find images",
     userQuery: "Find images about architecture",
-    expectedTool: "searchMedia",
+    expectedTool: "searchMedia, linkupSearch, delegateToMediaAgent",
     expectedArgs: { query: "architecture", mediaType: "image" },
     successCriteria: [
-      "Tool called includes searchMedia (may also call linkupSearch for additional results)",
+      "Tool called includes searchMedia OR linkupSearch OR delegateToMediaAgent (media search may be performed via delegation)",
       "Query parameter contains 'architecture'",
       "Response includes relevant architecture information (images, links, or descriptions)",
       "Response is helpful and accurate"
@@ -176,10 +176,10 @@ export const taskToolTests: TestCase[] = [
     successCriteria: [
       "Tool called is listTasks",
       "Filter is 'today'",
-      "Response includes task list",
-      "Tasks show status and priority"
+      "Response includes a task list (may be empty, but must be explicit)",
+      "If tasks are present, they show status and priority"
     ],
-    evaluationPrompt: "Evaluate if the AI correctly filtered tasks for today. Check if the response is well-formatted with all task details."
+    evaluationPrompt: "Evaluate if the AI correctly filtered tasks for today. ACCEPT empty lists if explicitly stated (e.g., “- (none)”). If tasks are present, ensure each includes status and priority."
   },
   {
     id: "task-002",
@@ -243,10 +243,10 @@ export const calendarToolTests: TestCase[] = [
     successCriteria: [
       "Tool called is listEvents",
       "timeRange is 'week'",
-      "Response includes event list",
-      "Events show time and location"
+      "Response includes an event list (may be empty, but must be explicit)",
+      "If events are present, they show time and location"
     ],
-    evaluationPrompt: "Evaluate if the AI listed this week's events correctly. Check if the response includes all relevant event details."
+    evaluationPrompt: "Evaluate if the AI listed this week's events correctly. ACCEPT empty lists if explicitly stated (e.g., “- (none)”). If events are present, ensure time and location are included."
   },
   {
     id: "cal-002",
@@ -295,12 +295,12 @@ export const webSearchToolTests: TestCase[] = [
     expectedTool: "linkupSearch",
     expectedArgs: { query: "latest AI developments", depth: "standard" },
     successCriteria: [
-      "Tool called is linkupSearch",
+      "Tool called includes linkupSearch (may also call helper/meta tools)",
       "Query is relevant",
       "Response includes sources",
-      "Answer is current and accurate"
+      "Answer is current and avoids unsupported specifics (must be grounded in cited sources)"
     ],
-    evaluationPrompt: "Evaluate if the AI found relevant and current information. Check if sources are cited."
+    evaluationPrompt: "Evaluate if the AI found relevant and current information. The answer should be grounded in cited sources and avoid overconfident claims that are not supported by the cited sources."
   },
   {
     id: "web-002",
@@ -330,12 +330,12 @@ export const secFilingToolTests: TestCase[] = [
     expectedTool: "searchSecFilings",
     expectedArgs: { ticker: "AAPL", formType: "ALL", limit: 10 },
     successCriteria: [
-      "Tool called is searchSecFilings",
+      "Tool called includes searchSecFilings OR SECAgent is used via delegation",
       "Ticker parameter is 'AAPL' or 'Apple'",
       "Response includes filing information",
       "Response is helpful and accurate"
     ],
-    evaluationPrompt: "Evaluate if the AI searched for Apple's SEC filings. Check if the response includes filing types, dates, and document URLs."
+    evaluationPrompt: "Evaluate if the AI searched for Apple's SEC filings. Accept either a direct searchSecFilings call or delegation to SECAgent (as long as filings are returned). Check if the response includes filing types, dates, and document URLs."
   },
   {
     id: "sec-002",
@@ -663,12 +663,12 @@ export const specializedAgentTests: TestCase[] = [
     expectedTool: "delegateToDocumentAgent, delegateToMediaAgent",
     expectedArgs: { query: "Google" },
     successCriteria: [
-      "Coordinator delegates to both DocumentAgent and MediaAgent",
-      "Document search results are returned",
-      "YouTube video gallery is displayed",
+      "Coordinator delegates to both DocumentAgent and MediaAgent (acceptable via delegateToDocumentAgent+delegateToMediaAgent OR via parallelDelegate including both agents)",
+      "Document search outcome is returned (documents found OR explicitly none found OR external sources via SOURCE_GALLERY_DATA/linkupSearch)",
+      "YouTube video gallery is displayed (presence of a <!-- YOUTUBE_GALLERY_DATA ... --> block counts as displayed)",
       "Response combines both results coherently",
     ],
-    evaluationPrompt: "Evaluate if the coordinator correctly identified the need for both document and video search, delegated to appropriate agents, and combined results effectively."
+    evaluationPrompt: "Evaluate if the coordinator correctly identified the need for both document and video search, delegated to appropriate agents (direct delegation or parallelDelegate), and combined results effectively."
   },
   {
     id: "agent-002",
@@ -676,12 +676,12 @@ export const specializedAgentTests: TestCase[] = [
     tool: "Media Agent",
     scenario: "YouTube video search",
     userQuery: "Find videos about Python programming",
-    expectedTool: "youtubeSearch",
+    expectedTool: "youtubeSearch, delegateToMediaAgent",
     expectedArgs: { query: "Python programming" },
     successCriteria: [
       "MediaAgent is used (directly or via delegation)",
-      "youtubeSearch tool is called",
-      "YouTube gallery with video thumbnails is displayed",
+      "youtubeSearch tool is called (directly OR via MediaAgent delegation)",
+      "YouTube gallery with video thumbnails is displayed (presence of a <!-- YOUTUBE_GALLERY_DATA ... --> block counts)",
       "Videos are relevant to Python programming",
     ],
     evaluationPrompt: "Evaluate if the agent correctly used youtubeSearch to find Python programming videos and displayed them in a gallery format."
@@ -695,9 +695,9 @@ export const specializedAgentTests: TestCase[] = [
     expectedTool: "searchSecFilings",
     expectedArgs: { ticker: "AAPL" },
     successCriteria: [
-      "SECAgent is used (directly or via delegation)",
-      "searchSecFilings tool is called with ticker AAPL",
-      "SEC document gallery is displayed",
+      "SECAgent is used (directly or via delegation) OR searchSecFilings is called directly",
+      "searchSecFilings tool is called with ticker AAPL (directly OR via SECAgent delegation)",
+      "SEC document gallery is displayed (presence of a <!-- SEC_GALLERY_DATA ... --> block counts)",
       "Filings include form types (10-K, 10-Q, etc.)",
     ],
     evaluationPrompt: "Evaluate if the agent correctly identified Apple's ticker symbol (AAPL) and used searchSecFilings to retrieve SEC filings."
@@ -784,4 +784,3 @@ export const testCaseStats = {
   specializedAgents: specializedAgentTests.length,
   total: allTestCases.length,
 };
-

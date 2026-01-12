@@ -68,7 +68,6 @@ import {
 // Import direct-access tools (for simple operations)
 import { linkupSearch } from "../../../tools/media/linkupSearch";
 import { fusionSearch, quickSearch } from "../../../tools/search";
-import { youtubeSearch } from "../../../tools/media/youtubeSearch";
 // Data access tools for calendar/tasks/folder operations
 import { listTasks, createTask, updateTask, listEvents, createEvent, getFolderContents } from "../../../tools/integration/dataAccessTools";
 const ENABLE_DATA_ACCESS_TOOLS = true;
@@ -361,7 +360,6 @@ export const createCoordinatorAgent = (
     linkupSearch,
     fusionSearch,
     quickSearch,
-    youtubeSearch,
     externalOrchestratorTool,
     ...dataAccessTools,
 

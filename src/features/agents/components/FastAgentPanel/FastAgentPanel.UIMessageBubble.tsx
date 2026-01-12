@@ -48,6 +48,7 @@ import {
 } from '@/features/research/types/index';
 import type { CitationType } from '@/features/research/types/citationSchema';
 import type { EntityType } from '@/features/research/types/entitySchema';
+import { makeWebSourceCitationId } from '../../../../../shared/citations/webSourceCitations';
 
 interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
@@ -1161,6 +1162,34 @@ export function FastAgentUIMessageBubble({
           url: r.url,
           author: r.source,
           publishedAt: r.publishedAt,
+          accessedAt: new Date().toISOString(),
+        });
+      }
+    }
+
+    // Also ingest Linkup (and other) SOURCE_GALLERY_DATA blocks into the citation library
+    // so inline `{{cite:websrc_xxx}}` tokens can resolve to a Sources cited dropdown + hover previews.
+    for (const part of toolResultParts) {
+      const toolOutput = (part as any).output ?? (part as any).result;
+      const outputText = typeof toolOutput === 'string' ? toolOutput : JSON.stringify(toolOutput ?? '', null, 2);
+
+      if (!outputText.includes('SOURCE_GALLERY_DATA')) continue;
+
+      const media = extractMediaFromText(outputText);
+      for (const s of media.webSources) {
+        const url = String(s.url ?? '').trim();
+        if (!url) continue;
+        const id = makeWebSourceCitationId(url);
+        if (seenCitationIds.has(id)) continue;
+        seenCitationIds.add(id);
+
+        masterCitationLibrary = addCitation(masterCitationLibrary, {
+          id,
+          type: 'source',
+          label: (s.title || url).slice(0, 120),
+          fullText: [s.title, s.description].filter(Boolean).join(' — ').slice(0, 500),
+          url,
+          author: s.domain,
           accessedAt: new Date().toISOString(),
         });
       }

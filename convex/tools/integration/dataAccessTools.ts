@@ -65,8 +65,10 @@ export const listTasks = createTool({
     // Limit results
     const limitedTasks = tasks.slice(0, args.limit);
     
+    const header = `Tasks (filter=${args.filter}, status=${args.status}, priority=${args.priority})`;
+
     if (limitedTasks.length === 0) {
-      return `No tasks found matching your criteria.`;
+      return `${header}\n\n- (none)\n\nTotal matching tasks: 0`;
     }
     
     // Format tasks for display
@@ -83,9 +85,7 @@ export const listTasks = createTool({
    ${task.description ? `Description: ${task.description.substring(0, 100)}...` : ''}`;
     }).join('\n\n');
     
-    return `Found ${limitedTasks.length} task(s):\n\n${formattedTasks}
-
-Total matching tasks: ${tasks.length}`;
+    return `${header}\n\nFound ${limitedTasks.length} task(s):\n\n${formattedTasks}\n\nTotal matching tasks: ${tasks.length}`;
   },
 });
 
@@ -254,8 +254,10 @@ export const listEvents = createTool({
       events = events.filter((event: any) => event.status === args.status);
     }
     
+    const header = `Events (timeRange=${args.timeRange}${args.startDate ? `, startDate=${args.startDate}` : ""}${args.endDate ? `, endDate=${args.endDate}` : ""}, status=${args.status})`;
+
     if (events.length === 0) {
-      return `No events found for ${args.timeRange}.`;
+      return `${header}\n\n- (none)`;
     }
     
     // Format events
@@ -273,7 +275,7 @@ export const listEvents = createTool({
    Status: ${event.status || 'confirmed'}`;
     }).join('\n\n');
     
-    return `Found ${events.length} event(s) for ${args.timeRange}:\n\n${formattedEvents}`;
+    return `${header}\n\nFound ${events.length} event(s):\n\n${formattedEvents}`;
   },
 });
 

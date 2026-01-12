@@ -4764,4 +4764,591 @@ export default defineSchema({
     .index("by_status", ["status", "createdAt"])
     .index("by_expiry", ["expiresAt"]),
 
+  /* ================================================================== */
+  /* AUTONOMOUS AGENT ECOSYSTEM - Deep Agents 3.0                       */
+  /* Implements zero-human-input continuous intelligence platform        */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* SIGNALS - Ingested signals from feeds, webhooks, mentions          */
+  /* ------------------------------------------------------------------ */
+  signals: defineTable({
+    // Signal source metadata
+    source: v.string(),                          // "cron" | "rss" | "webhook" | "event" | "mention"
+    sourceType: v.string(),                      // Specific source identifier (e.g., "hackernews", "arxiv")
+    sourceUrl: v.optional(v.string()),           // URL if applicable (RSS feed, webhook endpoint)
+
+    // Content
+    rawContent: v.string(),                      // Raw signal content
+    title: v.optional(v.string()),               // Signal title if available
+    contentHash: v.string(),                     // SHA-256 hash for deduplication
+
+    // Processing status
+    processedAt: v.optional(v.number()),         // When signal was processed
+    processingStatus: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("processed"),
+      v.literal("failed"),
+      v.literal("skipped"),                      // Skipped due to deduplication
+    ),
+
+    // Extracted information
+    extractedEntities: v.optional(v.array(v.string())), // NER extracted entities
+    suggestedPersonas: v.optional(v.array(v.string())), // Persona IDs relevant to this signal
+
+    // Urgency classification
+    urgency: v.optional(v.union(
+      v.literal("critical"),                     // Immediate action required
+      v.literal("high"),                         // Same-day attention
+      v.literal("medium"),                       // This week
+      v.literal("low"),                          // When convenient
+    )),
+
+    // Research depth estimation
+    estimatedResearchDepth: v.optional(v.union(
+      v.literal("shallow"),                      // Quick lookup
+      v.literal("standard"),                     // Normal research
+      v.literal("deep"),                         // Comprehensive analysis
+    )),
+
+    // Error tracking
+    errorMessage: v.optional(v.string()),
+    retryCount: v.optional(v.number()),
+
+    // Timestamps
+    createdAt: v.number(),
+    expiresAt: v.optional(v.number()),           // TTL for cleanup
+  })
+    .index("by_processed", ["processedAt"])
+    .index("by_status", ["processingStatus"])
+    .index("by_source", ["source", "createdAt"])
+    .index("by_contentHash", ["contentHash"])
+    .index("by_urgency", ["urgency", "createdAt"])
+    .index("by_expires", ["expiresAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RESEARCH TASKS - Priority queue for autonomous research            */
+  /* ------------------------------------------------------------------ */
+  researchTasks: defineTable({
+    // Entity identification
+    entityId: v.string(),                        // Entity to research
+    entityType: v.optional(v.string()),          // "company" | "person" | "topic" | "product" | "event"
+    entityName: v.optional(v.string()),          // Human-readable name
+
+    // Persona configuration
+    personas: v.array(v.string()),               // Persona IDs to apply
+    primaryPersona: v.optional(v.string()),      // Lead persona for this research
+
+    // Priority calculation
+    priority: v.number(),                        // 0-100, higher = more urgent
+    priorityFactors: v.optional(v.object({
+      urgencyBoost: v.optional(v.number()),      // From signal urgency
+      stalenessBoost: v.optional(v.number()),    // From entity decay
+      watchlistBoost: v.optional(v.number()),    // From user watchlists
+      trendingBoost: v.optional(v.number()),     // From engagement spike
+    })),
+
+    // Status tracking
+    status: v.union(
+      v.literal("queued"),                       // Waiting for execution
+      v.literal("researching"),                  // Active research underway
+      v.literal("validating"),                   // Self-question validation
+      v.literal("publishing"),                   // Queued for delivery
+      v.literal("completed"),                    // Successfully finished
+      v.literal("failed"),                       // Terminal failure
+      v.literal("cancelled"),                    // User/system cancelled
+    ),
+
+    // Execution tracking
+    swarmId: v.optional(v.string()),             // Associated swarm if running
+    qualityScore: v.optional(v.number()),        // 0-100 from validation
+    validationPassed: v.optional(v.boolean()),   // Did it pass self-question?
+    validationIssues: v.optional(v.array(v.object({
+      type: v.string(),                          // "factual" | "freshness" | "completeness" | "grounding" | "contradiction"
+      severity: v.string(),                      // "blocker" | "warning" | "info"
+      description: v.string(),
+    }))),
+
+    // Source tracking
+    signalId: v.optional(v.id("signals")),       // Signal that triggered this task
+    triggeredBy: v.optional(v.union(
+      v.literal("signal"),                       // From signal ingestion
+      v.literal("decay"),                        // From staleness detection
+      v.literal("watchlist"),                    // From user watchlist
+      v.literal("enrichment"),                   // From enrichment prioritizer
+      v.literal("manual"),                       // Manual trigger
+    )),
+
+    // Retry handling
+    retryCount: v.number(),
+    maxRetries: v.optional(v.number()),          // Default: 3
+    lastError: v.optional(v.string()),
+
+    // Cost tracking
+    tokensUsed: v.optional(v.number()),
+    costUsd: v.optional(v.number()),
+
+    // Timestamps
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+  })
+    .index("by_status_priority", ["status", "priority"])
+    .index("by_entity", ["entityId"])
+    .index("by_status", ["status"])
+    .index("by_signal", ["signalId"])
+    .index("by_created", ["createdAt"])
+    .index("by_persona", ["primaryPersona", "status"]),
+
+  /* ------------------------------------------------------------------ */
+  /* PUBLISHING TASKS - Multi-channel delivery workflow                 */
+  /* ------------------------------------------------------------------ */
+  publishingTasks: defineTable({
+    // Source reference
+    researchTaskId: v.id("researchTasks"),
+    entityId: v.string(),
+    entityName: v.optional(v.string()),
+
+    // Content
+    content: v.object({
+      raw: v.string(),                           // Full research output
+      summary: v.string(),                       // Executive summary
+      keyFacts: v.array(v.object({
+        label: v.string(),
+        value: v.string(),
+        category: v.optional(v.string()),        // "funding" | "contact" | "news" | "metric"
+        confidence: v.optional(v.number()),
+      })),
+      nextActions: v.array(v.string()),          // Recommended actions
+      persona: v.string(),                       // Persona that generated this
+    }),
+
+    // Channel configuration
+    channels: v.array(v.object({
+      channel: v.string(),                       // "ui" | "ntfy" | "email" | "sms" | "slack" | "rss"
+      enabled: v.boolean(),
+      format: v.string(),                        // "full" | "summary" | "alert" | "digest"
+      urgency: v.optional(v.string()),
+      recipients: v.optional(v.array(v.string())), // For targeted channels
+      scheduledFor: v.optional(v.number()),      // Scheduled delivery time
+    })),
+
+    // Status
+    status: v.union(
+      v.literal("pending"),                      // Awaiting formatting
+      v.literal("formatting"),                   // Generating channel-specific formats
+      v.literal("delivering"),                   // Sending to channels
+      v.literal("completed"),                    // All deliveries done
+      v.literal("partial"),                      // Some channels failed
+      v.literal("failed"),                       // All channels failed
+    ),
+
+    // Delivery results
+    deliveryResults: v.optional(v.array(v.object({
+      channel: v.string(),
+      success: v.boolean(),
+      deliveredAt: v.optional(v.number()),
+      messageId: v.optional(v.string()),         // External message ID
+      error: v.optional(v.string()),
+      retryCount: v.optional(v.number()),
+    }))),
+
+    // Timestamps
+    createdAt: v.number(),
+    formattedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_status", ["status"])
+    .index("by_research_task", ["researchTaskId"])
+    .index("by_entity", ["entityId"])
+    .index("by_created", ["createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ENTITY STATES - Comprehensive entity lifecycle tracking            */
+  /* ------------------------------------------------------------------ */
+  entityStates: defineTable({
+    // Identity
+    entityId: v.string(),                        // Canonical entity identifier
+    canonicalName: v.string(),                   // Primary display name
+    aliases: v.optional(v.array(v.string())),    // Alternative names
+    entityType: v.string(),                      // "company" | "person" | "topic" | "product" | "event"
+
+    // Freshness tracking
+    freshness: v.object({
+      lastUpdated: v.number(),                   // Last successful research
+      lastChecked: v.optional(v.number()),       // Last staleness check
+      staleDays: v.number(),                     // Days since last update
+      decayScore: v.number(),                    // 0-1, lower = more stale
+      decayHalfLifeDays: v.optional(v.number()), // Entity-specific half-life
+    }),
+
+    // Completeness tracking
+    completeness: v.object({
+      score: v.number(),                         // 0-100
+      missingFields: v.array(v.string()),        // Fields still needed
+      enrichmentOpportunities: v.array(v.string()), // Suggested enrichments
+      lastAssessed: v.number(),
+    }),
+
+    // Quality tracking
+    quality: v.object({
+      overallScore: v.number(),                  // 0-100
+      personaScores: v.optional(v.any()),        // Record<PersonaId, number>
+      sourceCount: v.number(),                   // Number of unique sources
+      contradictionCount: v.number(),            // Unresolved contradictions
+      lastValidated: v.number(),
+    }),
+
+    // Engagement tracking
+    engagement: v.object({
+      viewCount: v.number(),
+      watchlistCount: v.number(),
+      lastViewed: v.optional(v.number()),
+      trendingScore: v.optional(v.number()),     // Engagement velocity
+    }),
+
+    // Research history
+    researchHistory: v.optional(v.array(v.object({
+      taskId: v.id("researchTasks"),
+      completedAt: v.number(),
+      qualityScore: v.number(),
+      personas: v.array(v.string()),
+    }))),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_entity", ["entityId"])
+    .index("by_decay", ["freshness.decayScore"])
+    .index("by_completeness", ["completeness.score"])
+    .index("by_quality", ["quality.overallScore"])
+    .index("by_type", ["entityType"])
+    .index("by_updated", ["updatedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ENGAGEMENT EVENTS - User interaction tracking for optimization     */
+  /* ------------------------------------------------------------------ */
+  engagementEvents: defineTable({
+    // User identification
+    userId: v.id("users"),
+
+    // Event context
+    channel: v.string(),                         // "ui" | "ntfy" | "email" | "sms" | "slack"
+    eventType: v.string(),                       // "delivered" | "opened" | "clicked" | "dismissed" | "shared"
+
+    // Content reference
+    entityId: v.optional(v.string()),
+    publishingTaskId: v.optional(v.id("publishingTasks")),
+    contentType: v.optional(v.string()),         // "research" | "digest" | "alert"
+
+    // Event metadata
+    metadata: v.optional(v.object({
+      clickTarget: v.optional(v.string()),       // What was clicked
+      timeToOpen: v.optional(v.number()),        // Ms from delivery to open
+      deviceType: v.optional(v.string()),        // "mobile" | "desktop"
+      source: v.optional(v.string()),            // Tracking source
+    })),
+
+    // Timestamps
+    timestamp: v.number(),
+  })
+    .index("by_user_time", ["userId", "timestamp"])
+    .index("by_channel", ["channel", "timestamp"])
+    .index("by_entity", ["entityId", "timestamp"])
+    .index("by_type", ["eventType", "timestamp"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CONTRADICTIONS - Cross-source conflict tracking and resolution     */
+  /* ------------------------------------------------------------------ */
+  contradictions: defineTable({
+    // Entity context
+    entityId: v.string(),
+
+    // Conflicting facts
+    factA: v.object({
+      claim: v.string(),
+      source: v.string(),
+      sourceUrl: v.optional(v.string()),
+      confidence: v.number(),                    // 0-1
+      timestamp: v.optional(v.number()),         // When fact was discovered
+    }),
+    factB: v.object({
+      claim: v.string(),
+      source: v.string(),
+      sourceUrl: v.optional(v.string()),
+      confidence: v.number(),
+      timestamp: v.optional(v.number()),
+    }),
+
+    // Classification
+    nature: v.union(
+      v.literal("direct"),                       // Direct logical contradiction
+      v.literal("temporal"),                     // Time-based conflict (old vs new)
+      v.literal("numerical"),                    // Conflicting numbers
+      v.literal("semantic"),                     // Meaning-based conflict
+    ),
+    severity: v.union(
+      v.literal("critical"),                     // Major data integrity issue
+      v.literal("high"),                         // Important to resolve
+      v.literal("medium"),                       // Should be resolved
+      v.literal("low"),                          // Minor discrepancy
+    ),
+
+    // Resolution
+    resolution: v.optional(v.object({
+      winner: v.string(),                        // "A" | "B" | "neither" | "merged"
+      reason: v.string(),
+      resolvedBy: v.optional(v.string()),        // "auto" | "human" | persona ID
+      resolvedAt: v.number(),
+      mergedClaim: v.optional(v.string()),       // If merged into new claim
+    })),
+
+    // Tracking
+    detectedAt: v.number(),
+    detectedBy: v.optional(v.string()),          // Which agent/process detected
+  })
+    .index("by_entity", ["entityId"])
+    .index("by_unresolved", ["entityId", "resolution"])
+    .index("by_severity", ["severity", "detectedAt"])
+    .index("by_detected", ["detectedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* HEALTH CHECKS - System component monitoring                        */
+  /* ------------------------------------------------------------------ */
+  healthChecks: defineTable({
+    // Component identification
+    component: v.string(),                       // "signalIngester" | "researchQueue" | etc.
+
+    // Health status
+    status: v.union(
+      v.literal("healthy"),
+      v.literal("degraded"),
+      v.literal("down"),
+    ),
+
+    // Metrics
+    latencyP50: v.number(),                      // 50th percentile latency (ms)
+    latencyP99: v.number(),                      // 99th percentile latency (ms)
+    errorRate: v.number(),                       // 0-1
+    throughput: v.optional(v.number()),          // Operations per minute
+
+    // Queue metrics (if applicable)
+    queueDepth: v.optional(v.number()),
+    oldestItemAge: v.optional(v.number()),       // Age in ms of oldest queued item
+
+    // Resource metrics
+    memoryUsage: v.optional(v.number()),         // MB
+    cpuUsage: v.optional(v.number()),            // 0-1
+
+    // Error details
+    recentErrors: v.optional(v.array(v.object({
+      timestamp: v.number(),
+      message: v.string(),
+      count: v.number(),
+    }))),
+
+    // Check metadata
+    checkedAt: v.number(),
+    windowMinutes: v.number(),                   // Time window for metrics
+  })
+    .index("by_component", ["component", "checkedAt"])
+    .index("by_status", ["status", "checkedAt"])
+    .index("by_checked", ["checkedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* HEALING ACTIONS - Self-healing execution log                       */
+  /* ------------------------------------------------------------------ */
+  healingActions: defineTable({
+    // Target component
+    component: v.string(),
+    issue: v.string(),                           // Issue identifier
+
+    // Action taken
+    action: v.string(),                          // "restart" | "scale" | "fallback" | "isolate" | "alert"
+    reason: v.string(),
+    automated: v.boolean(),                      // Was this automatic or manual?
+
+    // Execution
+    status: v.union(
+      v.literal("pending"),
+      v.literal("executing"),
+      v.literal("success"),
+      v.literal("failed"),
+      v.literal("skipped"),
+    ),
+    executedAt: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+
+    // Impact tracking
+    impactMetrics: v.optional(v.object({
+      preActionHealth: v.string(),
+      postActionHealth: v.optional(v.string()),
+      recoveryTimeMs: v.optional(v.number()),
+    })),
+
+    // Timestamps
+    createdAt: v.number(),
+  })
+    .index("by_component", ["component", "createdAt"])
+    .index("by_status", ["status", "createdAt"])
+    .index("by_action", ["action", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* PERSONA BUDGETS - Per-persona resource consumption tracking        */
+  /* ------------------------------------------------------------------ */
+  personaBudgets: defineTable({
+    // Persona identification
+    personaId: v.string(),
+
+    // Time period
+    period: v.string(),                          // "daily" | "weekly" | "monthly"
+    periodStart: v.number(),                     // Start of period
+    periodEnd: v.number(),                       // End of period
+
+    // Usage tracking
+    tokensUsed: v.number(),
+    costUsd: v.number(),
+    researchCount: v.number(),                   // Number of research tasks
+    publishCount: v.number(),                    // Number of publications
+
+    // Budget limits
+    tokenLimit: v.number(),
+    costLimit: v.number(),
+
+    // Status
+    exhausted: v.boolean(),                      // Has budget been exhausted?
+    exhaustedAt: v.optional(v.number()),         // When budget was exhausted
+
+    // Timestamps
+    updatedAt: v.number(),
+  })
+    .index("by_persona_period", ["personaId", "period", "periodStart"])
+    .index("by_exhausted", ["exhausted", "periodEnd"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DELIVERY QUEUE - Low-level delivery job tracking                   */
+  /* ------------------------------------------------------------------ */
+  deliveryJobs: defineTable({
+    // Channel targeting
+    channel: v.string(),                         // "ntfy" | "email" | "sms" | "slack" | "rss"
+    recipient: v.optional(v.string()),           // Target recipient
+
+    // Payload
+    payload: v.any(),                            // Channel-specific payload
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("sending"),
+      v.literal("delivered"),
+      v.literal("failed"),
+      v.literal("retrying"),
+    ),
+
+    // Retry handling
+    attempts: v.number(),
+    maxAttempts: v.number(),                     // Default: 5
+    lastError: v.optional(v.string()),
+    nextRetryAt: v.optional(v.number()),
+
+    // External references
+    publishingTaskId: v.optional(v.id("publishingTasks")),
+    externalMessageId: v.optional(v.string()),   // ID from delivery provider
+
+    // Timestamps
+    createdAt: v.number(),
+    deliveredAt: v.optional(v.number()),
+  })
+    .index("by_status", ["status"])
+    .index("by_retry", ["status", "nextRetryAt"])
+    .index("by_channel", ["channel", "status"])
+    .index("by_publishing_task", ["publishingTaskId"]),
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * FREE MODEL DISCOVERY & EVALUATION
+   * Deep Agents 3.0 - Autonomous model selection for zero-cost operations
+   * ══════════════════════════════════════════════════════════════════════ */
+
+  /* ------------------------------------------------------------------ */
+  /* FREE MODELS - Discovered free models from OpenRouter               */
+  /* ------------------------------------------------------------------ */
+  freeModels: defineTable({
+    // Identity
+    openRouterId: v.string(),                    // e.g., "xiaomi/mimo-v2-flash:free"
+    name: v.string(),                            // Human-readable name
+    contextLength: v.number(),                   // Max context window
+
+    // Capabilities (refined by evaluation)
+    capabilities: v.object({
+      toolUse: v.boolean(),
+      streaming: v.boolean(),
+      structuredOutputs: v.boolean(),
+      vision: v.boolean(),
+    }),
+
+    // Performance metrics (rolling averages)
+    performanceScore: v.number(),                // 0-100 composite score
+    reliabilityScore: v.number(),                // 0-100 based on success rate
+    latencyAvgMs: v.number(),                    // Average response time
+
+    // Evaluation tracking
+    lastEvaluated: v.number(),                   // Last evaluation timestamp
+    evaluationCount: v.number(),                 // Total evaluations run
+    successCount: v.number(),                    // Successful evaluations
+    failureCount: v.number(),                    // Failed evaluations
+
+    // Status
+    isActive: v.boolean(),                       // Meets reliability threshold
+    rank: v.number(),                            // 1 = best, higher = worse
+  })
+    .index("by_openRouterId", ["openRouterId"])
+    .index("by_rank", ["rank"])
+    .index("by_active_rank", ["isActive", "rank"])
+    .index("by_performance", ["performanceScore"]),
+
+  /* ------------------------------------------------------------------ */
+  /* FREE MODEL EVALUATIONS - Evaluation history for each model         */
+  /* ------------------------------------------------------------------ */
+  freeModelEvaluations: defineTable({
+    modelId: v.id("freeModels"),
+    success: v.boolean(),
+    latencyMs: v.number(),
+    responseQuality: v.optional(v.number()),     // 0-100
+    toolCallSuccess: v.optional(v.boolean()),
+    error: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_model", ["modelId", "timestamp"])
+    .index("by_timestamp", ["timestamp"]),
+
+  /* ------------------------------------------------------------------ */
+  /* FREE MODEL METADATA - System-level discovery tracking              */
+  /* ------------------------------------------------------------------ */
+  freeModelMeta: defineTable({
+    key: v.string(),                             // "lastDiscovery" | "lastRankingUpdate"
+    value: v.number(),                           // Timestamp value
+  }),
+
+  /* ------------------------------------------------------------------ */
+  /* AUTONOMOUS MODEL USAGE - Usage tracking for autonomous operations  */
+  /* ------------------------------------------------------------------ */
+  autonomousModelUsage: defineTable({
+    modelId: v.string(),                         // Model identifier used
+    taskType: v.string(),                        // "research" | "synthesis" | "publishing" etc.
+    success: v.boolean(),
+    latencyMs: v.number(),
+    inputTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+    cost: v.number(),                            // Cost in USD (0 for free models)
+    error: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_model", ["modelId", "timestamp"])
+    .index("by_taskType", ["taskType", "timestamp"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_success", ["success", "timestamp"]),
+
 });

@@ -60,6 +60,7 @@ export function createDocumentAgent(model: string) {
 1. **Document Search & Retrieval**
    - Use findDocument to search for documents by title, content, or metadata
    - Always call getDocumentContent when user wants to read/see/open content
+   - When the user asks to read/show content, include a short verbatim excerpt from the retrieved content (quote the exact text) so the answer is self-verifiable
    - Provide clear sources and document IDs in responses
 
 2. **Multi-Document Analysis**
@@ -98,6 +99,8 @@ Always structure responses with:
 - **Details**: Specific information with sources
 - **Sources**: Document IDs, titles, and relevant metadata
 - **Next Steps**: Suggestions for further exploration (if applicable)
+
+For read/show-content requests, add a **Content Excerpt** section with 5–20 lines copied verbatim from the retrieved document content (keep it under ~3000 characters).
 
 ## Best Practices
 

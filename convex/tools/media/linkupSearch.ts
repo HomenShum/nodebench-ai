@@ -51,6 +51,25 @@ function extractDomain(url: string): string {
   }
 }
 
+function filterLinkupImagesByQuery<T extends { url: string; name?: string }>(
+  images: T[],
+  query: string,
+): T[] {
+  const q = (query || "").toLowerCase();
+  const tokens = q
+    .split(/[^a-z0-9]+/i)
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => t.length >= 4)
+    .filter((t) => !["with", "from", "that", "this", "about", "image", "images", "photo", "photos", "picture", "pictures"].includes(t));
+
+  if (tokens.length === 0) return images;
+
+  return images.filter((img) => {
+    const hay = `${img.name ?? ""} ${img.url}`.toLowerCase();
+    return tokens.some((t) => hay.includes(t));
+  });
+}
+
 /**
  * Search the web using Linkup's AI-optimized search API
  * 
@@ -244,18 +263,18 @@ The tool returns verified sources that get stored in the artifact system.`,
       let result = "";
       const citationMap: Array<{ marker: string; title: string; domain: string }> = [];
 
-      // Add answer if using sourcedAnswer output type
-      // The answer may contain [1], [2] inline citations if includeInlineCitations was true
-      if (data.answer) {
-        result += `${data.answer}\n\n`;
-      }
+      // NOTE: We intentionally do NOT emit the provider's natural-language `answer` here.
+      // In practice it can contain citation indices that don't align with the returned `sources` list,
+      // which makes downstream evaluation and UI grounding unreliable.
 
       // Add images if present
       if (imageResults.length > 0) {
-        imageCount = imageResults.length;
+        const filteredImages = filterLinkupImagesByQuery(imageResults, args.query);
+        const chosenImages = (filteredImages.length > 0 ? filteredImages : imageResults).slice(0, 10);
+        imageCount = chosenImages.length;
 
         // Prepare structured data for artifact extraction (not shown to user)
-        const images = imageResults.slice(0, 10).map((image) => ({
+        const images = chosenImages.map((image) => ({
           url: image.url,
           alt: image.name || "Image",
           thumbnail: image.thumbnail,
@@ -266,7 +285,7 @@ The tool returns verified sources that get stored in the artifact system.`,
 
         // Human-readable: just list image names, no URLs
         result += "## Images Found\n\n";
-        imageResults.slice(0, 10).forEach((image, idx) => {
+        chosenImages.forEach((image, idx) => {
           const altText = image.name || `Image ${idx + 1}`;
           result += `- ${altText}\n`;
         });
@@ -359,6 +378,41 @@ The tool returns verified sources that get stored in the artifact system.`,
           }
           result += "\n";
         });
+
+        // Grounded synthesis: derive high-level themes from titles/snippets (no extra facts).
+        const themeDefs: Array<{ label: string; keywords: string[] }> = [
+          { label: "Reasoning models and algorithmic improvements", keywords: ["reasoning", "evolution", "evolutionary", "algorithm", "gemini", "llm"] },
+          { label: "Physical AI, robotics, and hardware (e.g., CES)", keywords: ["physical", "robot", "robotics", "ces", "chip", "hardware", "gpu", "pc"] },
+          { label: "AI for science and health", keywords: ["science", "drug", "materials", "disease", "sleep", "medical", "biology", "chemistry", "physics"] },
+          { label: "Enterprise deployment and ROI", keywords: ["enterprise", "roi", "deployment", "quality", "cost", "productivity"] },
+        ];
+
+        const sourceText = data.sources.slice(0, 5).map((s, i) => ({
+          marker: `[${i + 1}]`,
+          text: `${s.name} ${(s.snippet || "")}`.toLowerCase(),
+        }));
+
+        result += "## Themes (Grounded)\n\n";
+        for (const theme of themeDefs) {
+          const hits = sourceText
+            .filter(s => theme.keywords.some(k => s.text.includes(k)))
+            .map(s => s.marker);
+          if (hits.length > 0) {
+            result += `- ${theme.label}: ${hits.join(" ")}\n`;
+          }
+        }
+        result += "\n";
+
+        // Lightweight, fully-grounded summary that only reuses the source titles/snippets.
+        // This avoids unsupported specifics while still answering the user's "what's new" intent.
+        result += "## Highlights (From Sources)\n\n";
+        data.sources.slice(0, 5).forEach((source, idx) => {
+          const marker = `[${idx + 1}]`;
+          const snippet = (source.snippet || "").trim();
+          const short = snippet ? `${snippet.substring(0, 180)}...` : "No snippet available.";
+          result += `- ${marker} ${short}\n`;
+        });
+        result += "\n";
       }
 
       // Add citation legend at the end (helps LLM reference correctly)

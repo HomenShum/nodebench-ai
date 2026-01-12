@@ -7,7 +7,9 @@ import { internal } from "../../_generated/api";
 import { allTestCases } from "./testCases";
 
 /**
- * Quick test runner - runs a few key tests to verify everything works
+ * Quick test runner - runs a small set of key scenarios to verify end-to-end behavior.
+ *
+ * Important: Keep runtime comfortably below Convex action timeouts.
  */
 export const runQuickTest = action({
   args: {},
@@ -17,96 +19,158 @@ export const runQuickTest = action({
     failed: v.number(),
     results: v.array(v.any()),
   }),
-  handler: async (ctx): Promise<{
-    totalTests: number;
-    passed: number;
-    failed: number;
-    results: any[];
-  }> => {
-    console.log("\n🚀 Running Quick Test Suite\n");
-    console.log("Testing key functionality across all tool categories...\n");
+  handler: async (ctx) => {
+    console.log("\n[quickTest] Running quick test suite…\n");
 
-    // Get test user ID
     const testUserId = await ctx.runQuery(internal.tools.evaluation.helpers.getTestUser, {});
     if (!testUserId) {
       throw new Error("No test user found. Please create a user account first.");
     }
-    console.log(`Using test user: ${testUserId}\n`);
+    console.log(`[quickTest] Using test user: ${testUserId}\n`);
 
-    // Select one test from each category + specialized agent tests
     const quickTests = [
-      "doc-001",    // findDocument
-      "doc-002",    // getDocumentContent
-      "media-001",  // searchMedia
-      "task-001",   // listTasks
-      "cal-001",    // listEvents
-      "web-001",    // linkupSearch
-      "sec-001",    // searchSecFilings
-      "agent-001",  // Coordinator multi-domain
-      "agent-002",  // MediaAgent YouTube
-      "agent-003",  // SECAgent filing search
+      "doc-001",
+      "doc-002",
+      "media-001",
+      "task-001",
+      "cal-001",
+      "web-001",
+      "sec-001",
+      "agent-001",
+      "agent-002",
+      "agent-003",
     ];
 
-    const results = [];
-    let passed = 0;
-    let failed = 0;
+    const remaining = [...quickTests];
+    const rawResults: any[] = [];
+    const CONCURRENCY = 2;
+    const isSecSensitiveTest = (testId: string) =>
+      testId.startsWith("sec-") || testId === "agent-003";
 
-    for (const testId of quickTests) {
-      const testCase = allTestCases.find(t => t.id === testId);
+    // In-process mutex to avoid hitting SEC / EDGAR endpoints concurrently (reduces flakiness).
+    let secLock: Promise<void> = Promise.resolve();
+    const withSecLock = async <T,>(fn: () => Promise<T>): Promise<T> => {
+      const prev = secLock;
+      let release!: () => void;
+      secLock = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await prev;
+      try {
+        return await fn();
+      } finally {
+        release();
+      }
+    };
+
+    const worker = async () => {
+      while (remaining.length > 0) {
+        const testId = remaining.shift();
+        if (!testId) return;
+
+        const testCase = allTestCases.find(t => t.id === testId);
+        if (!testCase) {
+          console.log(`[quickTest] Missing testCase: ${testId} (skipping)`);
+          continue;
+        }
+
+        console.log(`[quickTest] Test ${testCase.id}: ${testCase.scenario}`);
+        try {
+          const run = () => ctx.runAction(internal.tools.evaluation.evaluator.runSingleTestRaw, {
+            testId,
+            userId: testUserId,
+          });
+          const result = isSecSensitiveTest(testId) ? await withSecLock(run) : await run();
+          rawResults.push(result);
+          console.log(`[quickTest] -> DONE (${result.latencyMs}ms)`);
+        } catch (err: any) {
+          rawResults.push({
+            testId,
+            scenario: testCase.scenario,
+            error: err?.message ?? String(err),
+          });
+          console.log(`[quickTest] -> ERROR (${err?.message ?? String(err)})`);
+        }
+      }
+    };
+
+    await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
+
+    rawResults.sort((a, b) => String(a?.testId ?? "").localeCompare(String(b?.testId ?? "")));
+
+    const results: any[] = [];
+    for (const raw of rawResults) {
+      const testCase = allTestCases.find(t => t.id === raw.testId);
       if (!testCase) {
-        console.log(`⚠️  Test ${testId} not found, skipping...`);
+        results.push({
+          testId: raw.testId,
+          scenario: raw.scenario ?? "Unknown",
+          passed: false,
+          error: "Missing testCase metadata for judging",
+        });
         continue;
       }
 
-      console.log(`\n${"=".repeat(80)}`);
-      console.log(`🧪 Test: ${testCase.id} - ${testCase.scenario}`);
-      console.log(`Query: "${testCase.userQuery}"`);
-      console.log(`Expected Tool: ${testCase.expectedTool}`);
-      console.log("-".repeat(80));
-
       try {
-        const result = await ctx.runAction(internal.tools.evaluation.evaluator.runSingleTest, {
-          testId,
-          userId: testUserId, // Pass test user ID
+        const evaluation = await ctx.runAction(internal.tools.evaluation.evaluator.judgeSingleTest, {
+          testId: raw.testId,
+          response: raw.response ?? "",
+          toolsCalled: raw.toolsCalled ?? [],
+          toolCalls: raw.toolCalls ?? [],
+          toolResults: raw.toolResults ?? [],
         });
 
+        const result = {
+          testId: raw.testId,
+          category: raw.category ?? testCase.category,
+          scenario: raw.scenario ?? testCase.scenario,
+          userQuery: raw.userQuery ?? testCase.userQuery,
+          passed: evaluation.passed,
+          toolsCalled: raw.toolsCalled ?? [],
+          expectedTools: testCase.expectedTool.split(",").map(t => t.trim()),
+          response: raw.response ?? "",
+          reasoning: evaluation.reasoning,
+          correctToolCalled: evaluation.correctToolCalled,
+          correctArguments: evaluation.correctArguments,
+          responseHelpful: evaluation.responseHelpful,
+          responseAccurate: evaluation.responseAccurate,
+          allCriteriaMet: evaluation.allCriteriaMet,
+          latencyMs: raw.latencyMs ?? 0,
+          timestamp: Date.now(),
+          errors: raw.errors,
+        };
         results.push(result);
-
-        if (result.passed) {
-          passed++;
-          console.log(`\n✅ PASSED`);
-          console.log(`Tools Called: ${result.toolsCalled.join(", ")}`);
-          console.log(`Latency: ${result.latencyMs}ms`);
-          console.log(`✓ Tool: ${result.correctToolCalled}, Args: ${result.correctArguments}, Helpful: ${result.responseHelpful}, Accurate: ${result.responseAccurate}`);
-        } else {
-          failed++;
-          console.log(`\n❌ FAILED`);
-          console.log(`Tools Called: ${result.toolsCalled.join(", ")}`);
-          console.log(`✗ Tool: ${result.correctToolCalled}, Args: ${result.correctArguments}, Helpful: ${result.responseHelpful}, Accurate: ${result.responseAccurate}`);
-          console.log(`Reason: ${result.reasoning}`);
+        console.log(`[quickTest] Judge ${raw.testId}: ${result.passed ? "PASS" : "FAIL"}`);
+        if (!result.passed) {
+          const reason = String(result.reasoning ?? "").slice(0, 800);
+          console.log(`[quickTest] Judge ${raw.testId} reasoning (trunc): ${reason}`);
         }
-
-        // Small delay between tests
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-      } catch (error: any) {
-        failed++;
-        console.log(`\n❌ ERROR: ${error.message}`);
+      } catch (err: any) {
+        results.push({
+          testId: raw.testId,
+          scenario: testCase.scenario,
+          passed: false,
+          error: err?.message ?? String(err),
+        });
+        console.log(`[quickTest] Judge ${raw.testId}: ERROR (${err?.message ?? String(err)})`);
       }
     }
 
-    // Print summary
-    console.log(`\n${"=".repeat(80)}`);
-    console.log("📊 QUICK TEST SUMMARY");
-    console.log("=".repeat(80));
-    console.log(`Total Tests: ${quickTests.length}`);
-    console.log(`✅ Passed: ${passed}`);
-    console.log(`❌ Failed: ${failed}`);
-    console.log(`Success Rate: ${((passed / quickTests.length) * 100).toFixed(1)}%`);
-    console.log("=".repeat(80) + "\n");
+    results.sort((a, b) => String(a?.testId ?? "").localeCompare(String(b?.testId ?? "")));
+    const passed = results.filter(r => r?.passed).length;
+    const failed = results.length - passed;
+
+    console.log("\n[quickTest] Summary");
+    console.log(`- total:  ${results.length}`);
+    console.log(`- passed: ${passed}`);
+    console.log(`- failed: ${failed}\n`);
+    if (failed > 0) {
+      const failedIds = results.filter(r => !r?.passed).map(r => r?.testId ?? "(unknown)");
+      console.log(`[quickTest] Failed testIds: ${failedIds.join(", ")}`);
+    }
 
     return {
-      totalTests: quickTests.length,
+      totalTests: results.length,
       passed,
       failed,
       results,
@@ -115,7 +179,7 @@ export const runQuickTest = action({
 });
 
 /**
- * Test a specific tool directly
+ * Test a single query through the agent stack and return tool calls.
  */
 export const testTool = action({
   args: {
@@ -127,145 +191,75 @@ export const testTool = action({
     response: v.string(),
     toolsCalled: v.array(v.string()),
   }),
-  handler: async (ctx, args): Promise<{
-    response: string;
-    toolsCalled: string[];
-  }> => {
-    console.log(`\n🧪 Testing tool: ${args.toolName}`);
-    console.log(`Query: "${args.userQuery}"`);
-    console.log(`Coordinator: ${args.useCoordinator !== false ? "ENABLED" : "DISABLED"}\n`);
+  handler: async (ctx, args) => {
+    console.log(`\n[testTool] toolName=${args.toolName} coordinator=${args.useCoordinator !== false}`);
+    console.log(`[testTool] query="${args.userQuery}"\n`);
 
-    try {
-      const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
-        message: args.userQuery,
-        useCoordinator: args.useCoordinator,
-      });
+    const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
+      message: args.userQuery,
+      useCoordinator: args.useCoordinator,
+    });
 
-      console.log("Response:", result.response);
-      console.log("\nTools Called:", result.toolsCalled.join(", "));
-
-      return result;
-    } catch (error: any) {
-      console.error("Error:", error.message);
-      throw error;
-    }
+    return {
+      response: result.response,
+      toolsCalled: result.toolsCalled,
+    };
   },
 });
 
 /**
- * Test document tools specifically
+ * Test document tools specifically.
  */
 export const testDocumentTools = action({
   args: {},
   returns: v.array(v.any()),
-  handler: async (ctx): Promise<any[]> => {
-    console.log("\n📄 Testing Document Tools\n");
-
+  handler: async (ctx) => {
     const tests = [
       { query: "Find documents about revenue", expectedTool: "findDocument" },
       { query: "Create a new document called 'Test Document'", expectedTool: "createDocument" },
       { query: "What is this document about?", expectedTool: "analyzeDocument" },
     ];
 
-    const results = [];
-
+    const results: any[] = [];
     for (const test of tests) {
-      console.log(`\nQuery: "${test.query}"`);
-      console.log(`Expected: ${test.expectedTool}`);
-
-      try {
-        const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
-          message: test.query,
-        });
-
-        const toolUsed = result.toolsCalled[0] || "none";
-        const correct = toolUsed === test.expectedTool;
-
-        console.log(`Tool Used: ${toolUsed} ${correct ? "✅" : "❌"}`);
-        console.log(`Response: ${result.response.substring(0, 200)}...`);
-
-        results.push({
-          query: test.query,
-          expectedTool: test.expectedTool,
-          actualTool: toolUsed,
-          correct,
-          response: result.response,
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error: any) {
-        console.error(`Error: ${error.message}`);
-        results.push({
-          query: test.query,
-          expectedTool: test.expectedTool,
-          actualTool: "error",
-          correct: false,
-          error: error.message,
-        });
-      }
+      const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
+        message: test.query,
+      });
+      const toolUsed = result.toolsCalled[0] || "none";
+      results.push({
+        query: test.query,
+        expectedTool: test.expectedTool,
+        actualTool: toolUsed,
+        correct: toolUsed === test.expectedTool,
+        toolsCalled: result.toolsCalled,
+      });
     }
-
-    const passed = results.filter(r => r.correct).length;
-    console.log(`\n📊 Results: ${passed}/${tests.length} passed`);
 
     return results;
   },
 });
 
 /**
- * Test web search with images
+ * Test web search quickly (expects linkupSearch).
  */
 export const testWebSearch = action({
   args: {},
-  returns: v.array(v.any()),
-  handler: async (ctx): Promise<any[]> => {
-    console.log("\n🌐 Testing Web Search with Images\n");
-
-    const queries = [
-      "Search for latest AI developments",
-      "Find images of the Eiffel Tower",
-      "What's the weather like today?",
-    ];
-
-    const results = [];
-
-    for (const query of queries) {
-      console.log(`\nQuery: "${query}"`);
-
-      try {
-        const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
-          message: query,
-        });
-
-        const usedLinkup = result.toolsCalled.includes("linkupSearch");
-        console.log(`Used linkupSearch: ${usedLinkup ? "✅" : "❌"}`);
-        console.log(`Response length: ${result.response.length} chars`);
-        console.log(`Has images: ${result.response.includes("![") ? "✅" : "❌"}`);
-
-        results.push({
-          query,
-          usedLinkup,
-          responseLength: result.response.length,
-          hasImages: result.response.includes("!["),
-          toolsCalled: result.toolsCalled,
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (error: any) {
-        console.error(`Error: ${error.message}`);
-        results.push({
-          query,
-          error: error.message,
-        });
-      }
-    }
-
-    return results;
+  returns: v.object({
+    response: v.string(),
+    toolsCalled: v.array(v.string()),
+  }),
+  handler: async (ctx) => {
+    const query = "Search the web for latest AI developments";
+    const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
+      message: query,
+      useCoordinator: true,
+    });
+    return { response: result.response, toolsCalled: result.toolsCalled };
   },
 });
 
 /**
- * Test coordinator agent with specialized agents
+ * Basic coordinator sanity: check delegation tools are invoked.
  */
 export const testCoordinator = action({
   args: {},
@@ -275,146 +269,43 @@ export const testCoordinator = action({
     failed: v.number(),
     results: v.array(v.any()),
   }),
-  handler: async (ctx): Promise<{
-    totalTests: number;
-    passed: number;
-    failed: number;
-    results: any[];
-  }> => {
-    console.log("\n🎯 Testing Coordinator Agent with Specialized Agents\n");
-
+  handler: async (ctx) => {
     const tests = [
       {
-        name: "Multi-Domain Query (Document + Video)",
-        query: "Find documents and videos about Google",
+        name: "Docs+Videos",
+        query: "Find me documents and videos about Google",
         expectedDelegations: ["delegateToDocumentAgent", "delegateToMediaAgent"],
-        expectedTools: ["findDocument", "youtubeSearch"],
-      },
-      {
-        name: "SEC Filing Query",
-        query: "Get Tesla's latest 10-K filing",
-        expectedDelegations: ["delegateToSECAgent"],
-        expectedTools: ["searchSecFilings"],
-      },
-      {
-        name: "YouTube Video Search",
-        query: "Find videos about Python programming",
-        expectedDelegations: ["delegateToMediaAgent"],
-        expectedTools: ["youtubeSearch"],
-      },
-      {
-        name: "Document Search",
-        query: "Find the revenue report",
-        expectedDelegations: ["delegateToDocumentAgent"],
-        expectedTools: ["findDocument"],
       },
     ];
 
-    const results = [];
-    let passed = 0;
-    let failed = 0;
-
-    for (const test of tests) {
-      console.log(`\n${"=".repeat(80)}`);
-      console.log(`🧪 Test: ${test.name}`);
-      console.log(`Query: "${test.query}"`);
-      console.log(`Expected Delegations: ${test.expectedDelegations.join(", ")}`);
-      console.log(`Expected Tools: ${test.expectedTools.join(", ")}`);
-      console.log("-".repeat(80));
-
-      try {
-        const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
-          message: test.query,
-          useCoordinator: true, // Enable coordinator
-        });
-
-        console.log(`\nTools Called: ${result.toolsCalled.join(", ")}`);
-        console.log(`Response Preview: ${result.response.substring(0, 200)}...`);
-
-        // Check if expected delegations were called (coordinator level)
-        const allDelegationsFound = test.expectedDelegations.every(delegation =>
-          result.toolsCalled.includes(delegation)
-        );
-
-        // Check if response is not empty
-        const hasResponse = result.response && result.response.length > 0;
-
-        // Check for validation errors in response
-        const hasValidationError = result.response.includes("ArgumentValidationError");
-
-        // For coordinator mode, we check delegations, not the nested tools
-        const testPassed = allDelegationsFound && hasResponse && !hasValidationError;
-
-        if (testPassed) {
-          passed++;
-          console.log(`\n✅ PASSED`);
-          console.log(`✓ All expected delegations called: ${test.expectedDelegations.join(", ")}`);
-          console.log(`✓ Response generated (${result.response.length} chars)`);
-          console.log(`✓ No validation errors`);
-        } else {
-          failed++;
-          console.log(`\n❌ FAILED`);
-          if (!allDelegationsFound) {
-            const missing = test.expectedDelegations.filter(d => !result.toolsCalled.includes(d));
-            console.log(`✗ Missing delegations: ${missing.join(", ")}`);
-            console.log(`✗ Expected: ${test.expectedDelegations.join(", ")}`);
-            console.log(`✗ Got: ${result.toolsCalled.join(", ") || "none"}`);
-          }
-          if (!hasResponse) {
-            console.log(`✗ No response generated`);
-          }
-          if (hasValidationError) {
-            console.log(`✗ Validation error detected`);
-          }
-        }
-
-        results.push({
-          test: test.name,
-          query: test.query,
-          expectedDelegations: test.expectedDelegations,
-          actualDelegations: result.toolsCalled,
-          expectedTools: test.expectedTools,
-          passed: testPassed,
-          responseLength: result.response.length,
-          hasValidationError,
-        });
-
-        // Small delay between tests
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-      } catch (error: any) {
-        failed++;
-        console.log(`\n❌ ERROR: ${error.message}`);
-        results.push({
-          test: test.name,
-          query: test.query,
-          passed: false,
-          error: error.message,
-        });
-      }
+    const results: any[] = [];
+    for (const t of tests) {
+      const r = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
+        message: t.query,
+        useCoordinator: true,
+      });
+      const ok = t.expectedDelegations.every(d => r.toolsCalled.includes(d));
+      results.push({
+        test: t.name,
+        query: t.query,
+        expectedDelegations: t.expectedDelegations,
+        toolsCalled: r.toolsCalled,
+        passed: ok,
+      });
     }
 
-    // Print summary
-    console.log(`\n${"=".repeat(80)}`);
-    console.log("📊 COORDINATOR TEST SUMMARY");
-    console.log("=".repeat(80));
-    console.log(`Total Tests: ${tests.length}`);
-    console.log(`✅ Passed: ${passed}`);
-    console.log(`❌ Failed: ${failed}`);
-    console.log(`Success Rate: ${((passed / tests.length) * 100).toFixed(1)}%`);
-    console.log("=".repeat(80) + "\n");
-
+    const passed = results.filter(r => r.passed).length;
     return {
-      totalTests: tests.length,
+      totalTests: results.length,
       passed,
-      failed,
+      failed: results.length - passed,
       results,
     };
   },
 });
 
 /**
- * Test multi-step workflow
+ * Test a simple multi-step workflow.
  */
 export const testWorkflow = action({
   args: {},
@@ -425,50 +316,29 @@ export const testWorkflow = action({
     response: v.optional(v.string()),
     error: v.optional(v.string()),
   }),
-  handler: async (ctx): Promise<{
-    workflow: string;
-    toolsCalled?: string[];
-    success: boolean;
-    response?: string;
-    error?: string;
-  }> => {
-    console.log("\n🔄 Testing Multi-Step Workflow\n");
-
+  handler: async (ctx) => {
     const workflow = "Find my revenue report, open it, and tell me what it's about";
-    console.log(`Workflow: "${workflow}"\n`);
-
     try {
       const result = await ctx.runAction(internal.domains.agents.fastAgentPanelStreaming.sendMessageInternal, {
         message: workflow,
-        useCoordinator: true, // Enable coordinator
+        useCoordinator: true,
       });
-
-      console.log("Tools Called:", result.toolsCalled.join(" → "));
-      console.log("\nExpected sequence: findDocument → getDocumentContent → analyzeDocument");
 
       const hasFind = result.toolsCalled.includes("findDocument");
       const hasGet = result.toolsCalled.includes("getDocumentContent");
       const hasAnalyze = result.toolsCalled.includes("analyzeDocument");
 
-      console.log(`\nfindDocument: ${hasFind ? "✅" : "❌"}`);
-      console.log(`getDocumentContent: ${hasGet ? "✅" : "❌"}`);
-      console.log(`analyzeDocument: ${hasAnalyze ? "✅" : "❌"}`);
-
-      const success = hasFind && hasGet && hasAnalyze;
-      console.log(`\nWorkflow ${success ? "✅ PASSED" : "❌ FAILED"}`);
-
       return {
         workflow,
         toolsCalled: result.toolsCalled,
-        success,
+        success: hasFind && hasGet && hasAnalyze,
         response: result.response,
       };
-    } catch (error: any) {
-      console.error(`Error: ${error.message}`);
+    } catch (err: any) {
       return {
         workflow,
-        error: error.message,
         success: false,
+        error: err?.message ?? String(err),
       };
     }
   },

@@ -41,6 +41,7 @@ window.addEventListener('message', async (message) => {
     alias: [
       { find: "@features", replacement: path.resolve(__dirname, "./src/features").replace(/\\/g, "/") },
       { find: "@shared", replacement: path.resolve(__dirname, "./src/shared").replace(/\\/g, "/") },
+      { find: "shared", replacement: path.resolve(__dirname, "./shared").replace(/\\/g, "/") },
       { find: /^@\//, replacement: `${path.resolve(__dirname, "./src").replace(/\\/g, "/")}/` },
     ],
   },
