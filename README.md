@@ -6,6 +6,46 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ## Changelog
 
+### v0.3.1 (January 12, 2026)
+
+**🎨 Executive Synthesis Visual Overhaul**
+
+Complete redesign of the Executive Synthesis (MorningDigest) component with premium black/beige aesthetic.
+
+**Design System Updates:**
+- Replaced green/teal accent colors with warm black/beige/amber palette
+- Premium glassmorphism cards with subtle shadow hierarchies
+- Animated gradient accent bar (stone-800 → amber-700 → stone-600)
+- Warm beige background (#faf9f6) with stone-based dark mode
+
+**Component Enhancements:**
+| Section | Improvements |
+|---------|-------------|
+| Header | Animated icon with glow effect, LIVE badge with pulse, gradient username |
+| Stats Grid | Hover animations, arrow indicators, hint text, staggered delays |
+| Executive Summary | Glassmorphism card, decorative orb, verified badge |
+| Signals | Color-coded labels (Market/Risk/Topic), entity quick-links |
+| Sources | Visual bar indicators showing relative counts |
+| Tags/Entities | Hover effects, arrow-on-hover for entity buttons |
+| Quick Actions | Premium gradient buttons with shimmer animation |
+| Digest Sections | Sentiment-based icons, relevance bullets with glow |
+| CTAs | Primary dark button with amber shimmer, secondary outlined |
+
+**Color Palette:**
+- Primary: Stone-800 to Stone-950 (black tones)
+- Accent: Amber-600/700 (warm gold)
+- Background: #faf9f6 (warm beige) / Stone-900 (dark mode)
+- Bullish: Amber (gold tones instead of green)
+- Bearish: Rose (unchanged)
+
+**FREE-FIRST Model Strategy:**
+- Default model: `devstral-2-free` (100% pass rate, fastest free)
+- Fallback chain: devstral-2-free → mimo-v2-flash-free → gemini-3-flash → gpt-5-nano → claude-haiku-4.5
+- `executeWithModelFallback()` function with retry + jitter
+- AgentCommandBar now uses shared APPROVED_MODELS with Gift icon for free models
+
+---
+
 ### v0.3.0 (January 11, 2026)
 
 **🤖 Autonomous Agent Ecosystem - Deep Agents 3.0**

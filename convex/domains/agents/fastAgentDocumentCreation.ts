@@ -13,7 +13,7 @@ import { action, internalAction, internalMutation, internalQuery } from "../../_
 import { v } from "convex/values";
 import { api, internal, components } from "../../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import {
   markdownToTipTap,
   extractTextFromTipTap,
@@ -118,7 +118,7 @@ export const findByCreationKey = internalQuery({
     const row = await ctx.db
       .query("documents")
       .withIndex("by_creation_key", q => q.eq("creationKey", creationKey))
-      .first();
+      .first() as Doc<"documents"> | null;
     return row?._id;
   }
 });
@@ -415,7 +415,7 @@ export const markDocumentHasContent = internalMutation({
       const existing = await ctx.db
         .query("userPreferences")
         .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .first();
+        .first() as Doc<"userPreferences"> | null;
 
       const key = `doc.hasContent.${args.documentId}`;
       const newAgentsPrefs = { ...(existing?.agentsPrefs || {}), [key]: "1" };

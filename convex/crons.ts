@@ -191,6 +191,51 @@ crons.daily(
   {}
 );
 
+// Post daily digest to LinkedIn at 6:15 AM UTC (15 min after digest generation)
+// Uses fact-checked findings + digest summary, formatted for professional audience
+crons.daily(
+  "post daily digest to LinkedIn",
+  { hourUTC: 6, minuteUTC: 15 },
+  internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
+  { persona: "GENERAL", model: "mimo-v2-flash-free" }
+);
+
+// Post daily funding tracker to LinkedIn at 12:00 PM UTC (separate from main digest)
+// Dedicated post for startup funding news, ranked by amount
+crons.daily(
+  "post daily funding to LinkedIn",
+  { hourUTC: 12, minuteUTC: 0 },
+  internal.workflows.dailyLinkedInPost.postDailyFundingToLinkedIn,
+  { hoursBack: 24 }
+);
+
+// Post VC Deal Flow Memo to LinkedIn at 9:00 AM UTC
+// Investment-focused content for VCs and investors
+crons.daily(
+  "post VC deal flow memo to LinkedIn",
+  { hourUTC: 9, minuteUTC: 0 },
+  internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
+  { persona: "VC_INVESTOR", model: "mimo-v2-flash-free" }
+);
+
+// Post Tech Radar to LinkedIn at 3:00 PM UTC
+// Engineering intelligence for CTOs and developers
+crons.daily(
+  "post tech radar to LinkedIn",
+  { hourUTC: 15, minuteUTC: 0 },
+  internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
+  { persona: "TECH_BUILDER", model: "mimo-v2-flash-free" }
+);
+
+// Post Startup Funding Brief to LinkedIn at 10:00 AM UTC
+// Detailed company profiles with founders, products, investors
+crons.daily(
+  "post startup funding brief to LinkedIn",
+  { hourUTC: 10, minuteUTC: 0 },
+  internal.workflows.dailyLinkedInPost.postStartupFundingBrief,
+  { hoursBack: 48, maxProfiles: 5 }
+);
+
 // Advance Daily Brief domain memory tasks every 15 minutes
 crons.interval(
   "advance daily brief tasks",

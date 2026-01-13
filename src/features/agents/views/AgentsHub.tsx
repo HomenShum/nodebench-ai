@@ -21,6 +21,8 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  DollarSign,
+  Cpu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
@@ -36,6 +38,8 @@ import { AgentCommandBar, type AgentMode, type ApprovedModel } from "../componen
 import { HumanApprovalQueue } from "../components/HumanApprovalQueue";
 import { AgentSidebar } from "../components/AgentSidebar";
 import { SwarmLanesView } from "../components/FastAgentPanel/SwarmLanesView";
+import { AutonomousOperationsPanel } from "../components/AutonomousOperationsPanel";
+import { FreeModelRankingsPanel } from "../components/FreeModelRankingsPanel";
 
 // Hooks
 import { useSwarmActions } from "@/hooks/useSwarm";
@@ -58,11 +62,15 @@ interface AgentStatusData {
 
 function QuickStatsBar() {
   const stats = useQuery(api.domains.agents.agentHubQueries.getAgentStats);
+  const costMetrics = useQuery(
+    api.domains.agents.agentHubQueries.getCostSavingsMetrics,
+    { windowHours: 24 }
+  );
 
   if (!stats) {
     return (
-      <div className="grid grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+        {[...Array(6)].map((_, i) => (
           <div
             key={i}
             className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-4 animate-pulse"
@@ -100,10 +108,22 @@ function QuickStatsBar() {
       icon: Sparkles,
       color: "text-purple-600",
     },
+    {
+      value: costMetrics?.freeRunsToday ?? 0,
+      label: "Free Runs Today",
+      icon: Cpu,
+      color: "text-cyan-600",
+    },
+    {
+      value: costMetrics ? `$${costMetrics.dollarsSaved.toFixed(2)}` : "$0.00",
+      label: "Cost Saved (24h)",
+      icon: DollarSign,
+      color: "text-green-600",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {statItems.map((item) => {
         const Icon = item.icon;
         return (
@@ -329,6 +349,11 @@ export function AgentsHub() {
               <AgentCommandBar onSubmit={handleCommandSubmit} />
             </div>
 
+            {/* Autonomous Operations Status */}
+            <div className="mb-6">
+              <AutonomousOperationsPanel />
+            </div>
+
             {/* Active Swarms */}
             <div className="mb-6">
               <ActiveSwarmsSection />
@@ -345,6 +370,11 @@ export function AgentsHub() {
               <AgentGrid />
             </div>
 
+            {/* Free Model Rankings */}
+            <div className="mb-6">
+              <FreeModelRankingsPanel />
+            </div>
+
             {/* Human Approval Queue */}
             <div className="mb-6">
               <HumanApprovalQueue />
@@ -355,13 +385,13 @@ export function AgentsHub() {
               <div className="flex items-center gap-3 mb-2">
                 <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
                 <h3 className="font-semibold text-[var(--text-primary)]">
-                  More Capabilities Coming Soon
+                  Autonomous Research System LIVE
                 </h3>
               </div>
               <p className="text-sm text-[var(--text-secondary)]">
-                We're building advanced orchestration patterns, agent templates,
-                and enhanced memory systems. Stay tuned for planning mode,
-                multi-step workflows, and team collaboration features.
+                The autonomous research loop is now operational. Free OpenRouter models
+                handle background signal ingestion, processing, and publishing at $0/month.
+                Premium models are reserved for user-initiated deep research.
               </p>
             </div>
           </div>

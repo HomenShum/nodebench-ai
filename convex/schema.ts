@@ -575,11 +575,25 @@ const instagramPosts = defineTable({
     v.literal("error")
   ),
   errorMessage: v.optional(v.string()),
+  // Fact-check verification results
+  verificationResults: v.optional(v.array(v.object({
+    claim: v.string(),
+    status: v.string(),                             // "verified", "partially_verified", "unverified", "false"
+    explanation: v.string(),
+    sources: v.array(v.object({
+      name: v.string(),
+      url: v.optional(v.string()),
+      credibility: v.string(),                      // "high", "medium", "low"
+    })),
+    confidence: v.number(),                         // 0-1
+  }))),
+  verifiedAt: v.optional(v.number()),               // When verification completed
 })
   .index("by_user", ["userId"])
   .index("by_url", ["postUrl"])
   .index("by_shortcode", ["shortcode"])
-  .index("by_status", ["status"]);
+  .index("by_status", ["status"])
+  .index("by_verified", ["verifiedAt"]);
 
 
 /* ------------------------------------------------------------------ */
@@ -1054,6 +1068,23 @@ const notionAccounts = defineTable({
   workspaceName: v.optional(v.string()),
   botId: v.optional(v.string()),
   accessToken: v.string(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_provider", ["userId", "provider"]);
+
+const linkedinAccounts = defineTable({
+  userId: v.id("users"),
+  provider: v.literal("linkedin"),
+  personUrn: v.optional(v.string()),         // urn:li:person:{id}
+  displayName: v.optional(v.string()),
+  email: v.optional(v.string()),
+  profilePictureUrl: v.optional(v.string()),
+  accessToken: v.string(),
+  refreshToken: v.optional(v.string()),
+  scope: v.optional(v.string()),             // e.g., "w_member_social openid email"
+  expiresAt: v.optional(v.number()),         // ms since epoch
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -1958,6 +1989,7 @@ const digestCache = defineTable({
   usage: v.object({
     inputTokens: v.number(),
     outputTokens: v.number(),
+    model: v.optional(v.string()),
   }),
   feedItemCount: v.number(),
   // Metadata
@@ -2024,6 +2056,7 @@ export default defineSchema({
   slackAccounts,
   githubAccounts,
   notionAccounts,
+  linkedinAccounts,
   userApiKeys,
   dailyUsage,
   subscriptions,

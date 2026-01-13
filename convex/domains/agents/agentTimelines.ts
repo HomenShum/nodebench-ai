@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 /**
  * Utility function to safely extract and validate user ID from authentication
@@ -71,7 +71,7 @@ export const getByDocumentId = query({
     const timeline = await ctx.db
       .query("agentTimelines")
       .filter((q) => q.eq(q.field("documentId"), args.documentId))
-      .first();
+      .first() as Doc<"agentTimelines"> | null;
 
     if (!timeline) {
       return null;
@@ -109,7 +109,7 @@ export const getByTimelineId = query({
   args: { timelineId: v.id("agentTimelines") },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const timeline = await ctx.db.get(args.timelineId);
+    const timeline = await ctx.db.get(args.timelineId) as Doc<"agentTimelines"> | null;
 
     if (!timeline) {
       return null;
@@ -153,7 +153,7 @@ export const createForDocument = mutation({
     const userId = await getSafeUserId(ctx);
 
     // Verify document exists and user has access
-    const document = await ctx.db.get(args.documentId);
+    const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!document) {
       throw new Error("Document not found");
     }
@@ -195,7 +195,7 @@ export const ensureForThread = mutation({
     const existing = await ctx.db
       .query("agentTimelines")
       .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", args.agentThreadId))
-      .first();
+      .first() as Doc<"agentTimelines"> | null;
 
     if (existing) {
       if (existing.createdBy !== userId) {
@@ -270,7 +270,7 @@ export const applyPlan = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const timeline = await ctx.db.get(args.timelineId);
+    const timeline = await ctx.db.get(args.timelineId) as Doc<"agentTimelines"> | null;
 
     if (!timeline) {
       throw new Error("Timeline not found");

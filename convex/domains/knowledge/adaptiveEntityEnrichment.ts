@@ -16,7 +16,7 @@ import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
 import { api, internal } from "../../_generated/api";
 import { generateText } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { getLanguageModelSafe, DEFAULT_MODEL } from "../agents/mcp_tools/models/modelResolver";
 
 // ═══════════════════════════════════════════════════════════════════
 // FLEXIBLE SCHEMA TYPES
@@ -279,18 +279,15 @@ OUTPUT FORMAT (JSON):
 
 /**
  * Generate text using the LLM with JSON response format
+ * Uses centralized model resolver for consistent model selection
  */
 async function generateLLMText(prompt: string, maxOutputTokens: number = 2000): Promise<string> {
-  const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-  });
-
-  const model = google("gemini-2.0-flash-exp");
+  const model = getLanguageModelSafe(DEFAULT_MODEL);
 
   const result = await generateText({
     model,
     prompt,
-    maxOutputTokens,
+    maxTokens: maxOutputTokens,
   });
 
   return result.text;

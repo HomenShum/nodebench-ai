@@ -4,6 +4,7 @@ import { api } from '../../../../convex/_generated/api';
 import {
   Sparkles,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   TrendingUp,
   AlertTriangle,
@@ -11,7 +12,13 @@ import {
   Building2,
   RefreshCw,
   Zap,
-  Target
+  Target,
+  Activity,
+  BarChart3,
+  Globe2,
+  ArrowUpRight,
+  Clock,
+  Shield,
 } from 'lucide-react';
 import { CrossLinkedText } from './CrossLinkedText';
 import { InteractiveSpanParser } from './InteractiveSpanParser';
@@ -135,6 +142,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   // Fetch real digest data from Convex
   // Query is in separate file (morningDigestQueries) due to Convex Node.js restrictions
   const digestData = useQuery(api.domains.ai.morningDigestQueries.getDigestData);
+
+  // Fetch live feed items for accurate source counts
+  const liveFeed = useQuery(api.feed.get, { limit: 100 });
 
   // Check for cached summary first (avoids LLM call on every mount)
   const cachedSummary = useQuery(api.domains.ai.morningDigestQueries.getCachedDigestSummary);
@@ -567,20 +577,27 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   const topSources = useMemo(() => {
     const counts = new Map<string, number>();
-    const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
     const addSource = (source?: string) => {
       const key = source || 'Unknown';
       counts.set(key, (counts.get(key) ?? 0) + 1);
     };
-    (dataToUse?.marketMovers ?? []).forEach((item) => addSource(item.source));
-    (dataToUse?.watchlistRelevant ?? []).forEach((item) => addSource(item.source));
-    (dataToUse?.riskAlerts ?? []).forEach((item) => addSource(item.source));
+    // Use live feed data for accurate source counts
+    if (liveFeed?.length) {
+      liveFeed.forEach((item: any) => addSource(item.source));
+    } else {
+      // Fallback to digest data if live feed not loaded
+      const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
+      (dataToUse?.marketMovers ?? []).forEach((item) => addSource(item.source));
+      (dataToUse?.watchlistRelevant ?? []).forEach((item) => addSource(item.source));
+      (dataToUse?.riskAlerts ?? []).forEach((item) => addSource(item.source));
+    }
     return Array.from(counts.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [digestData, isUsingSampleData, sampleDigestData]);
+      .slice(0, 8); // Show more sources
+  }, [liveFeed, digestData, isUsingSampleData, sampleDigestData]);
 
+  const totalSourceCount = topSources.reduce((sum, s) => sum + s.count, 0);
   const maxSourceCount = topSources[0]?.count ?? 1;
 
   const digestItems = useMemo(() => {
@@ -715,37 +732,71 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   ];
 
   return (
-    <div className="rounded-2xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)]/40 backdrop-blur-xl shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-5 border-b border-[color:var(--bg-secondary)]/50">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-xl bg-[color:var(--text-primary)] text-white flex items-center justify-center shadow-lg transform -rotate-1 transition-transform hover:rotate-0">
-            <Sparkles className="w-5 h-5" />
+    <div className="relative rounded-2xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-[#faf9f6] via-[#faf9f6] to-stone-100/50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-800/50 backdrop-blur-xl shadow-xl shadow-stone-900/5 dark:shadow-black/30 overflow-hidden">
+      {/* Elegant gradient accent bar - warm black/amber */}
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-stone-800 via-amber-700 to-stone-600 opacity-90" />
+
+      {/* Premium glass header */}
+      <div className="relative flex items-center justify-between px-6 py-6 border-b border-stone-200/50 dark:border-stone-700/50 bg-gradient-to-r from-transparent via-stone-100/30 dark:via-stone-800/30 to-transparent">
+        <div className="flex items-center gap-5">
+          {/* Animated icon container - black/beige */}
+          <div className="relative group">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-stone-700 to-stone-900 blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
+            <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-950 text-amber-100 flex items-center justify-center shadow-lg shadow-stone-900/25 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-stone-900/30">
+              <Sparkles className="w-6 h-6" />
+            </div>
           </div>
           <div className="text-left">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--text-secondary)] mb-0.5">Overnight Signal</p>
-            <p className="text-2xl font-serif font-bold text-[color:var(--text-primary)] leading-tight">Hi {userName}, here's the pulse.</p>
-            <p className="text-[11px] font-medium text-[color:var(--text-secondary)] mt-0.5">{lastUpdatedText}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-600 dark:text-stone-400">Executive Synthesis</p>
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                <Activity className="w-2.5 h-2.5 text-amber-600 animate-pulse" />
+                <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400">LIVE</span>
+              </span>
+            </div>
+            <p className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-100 leading-tight tracking-tight">
+              Good morning, <span className="text-stone-700 dark:text-amber-200">{userName}</span>
+            </p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <Clock className="w-3 h-3 text-stone-400" />
+              <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">{lastUpdatedText}</p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {digestStats.length > 0 && (
             <div className="hidden md:flex items-center gap-2">
-              {digestStats.map((stat) => (
-                <span
+              {digestStats.map((stat, idx) => (
+                <div
                   key={stat.id}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${stat.sentiment ? getSentimentColor(stat.sentiment) : 'bg-[color:var(--bg-secondary)]/50 border border-[color:var(--border-color)] text-[color:var(--text-secondary)]'
-                    }`}
+                  className={`group relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 cursor-default ${
+                    stat.sentiment === 'bullish'
+                      ? 'bg-gradient-to-r from-stone-100 to-amber-50 dark:from-stone-800 dark:to-amber-900/20 border border-amber-300/50 dark:border-amber-600/30 hover:border-amber-400'
+                      : stat.sentiment === 'bearish'
+                      ? 'bg-gradient-to-r from-stone-100 to-rose-50 dark:from-stone-800 dark:to-rose-900/20 border border-rose-300/50 dark:border-rose-600/30 hover:border-rose-400'
+                      : 'bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 hover:border-stone-400'
+                  }`}
+                  style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  {stat.label}: {stat.value}
-                </span>
+                  <span className={`text-lg font-bold ${
+                    stat.sentiment === 'bullish' ? 'text-amber-700 dark:text-amber-400'
+                    : stat.sentiment === 'bearish' ? 'text-rose-700 dark:text-rose-400'
+                    : 'text-stone-800 dark:text-stone-200'
+                  }`}>
+                    {stat.value}
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                    {stat.label}
+                  </span>
+                </div>
               ))}
             </div>
           )}
-          <div className="flex items-center gap-1.5 ml-2 pl-4 border-l border-[color:var(--border-color)]">
+          <div className="flex items-center gap-1 ml-3 pl-4 border-l border-stone-200/50 dark:border-stone-700/50">
             <button
               type="button"
               onClick={handleRefresh}
-              className="p-2 rounded-lg text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]/50 transition-all active:scale-95"
+              className="p-2.5 rounded-xl text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-stone-700/50 transition-all duration-200 active:scale-95"
               title="Refresh digest"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -753,7 +804,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 rounded-lg text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]/50 transition-all active:scale-95"
+              className="p-2.5 rounded-xl text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-stone-700/50 transition-all duration-200 active:scale-95"
               title={isExpanded ? 'Collapse' : 'Expand'}
             >
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -763,410 +814,295 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       </div>
 
       {isExpanded && (
-        <div className="px-6 pb-6 space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="relative overflow-hidden rounded-none border-l-4 border-emerald-900 bg-[#f2f1ed] p-8 mt-4">
-            <div className="absolute top-0 right-0 p-4 opacity-5">
-              <Zap className="w-24 h-24 text-stone-900" />
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="flex-1 relative z-10">
-                <p className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-none transform rotate-45 ${primarySentiment === 'bullish' ? 'bg-emerald-700' : 'bg-stone-500'}`} />
-                  Digest Overview
-                </p>
-                <div className="text-xl font-serif font-medium text-[color:var(--text-primary)] leading-relaxed italic">
-                  "<InteractiveSpanParser
-                    text={fullSummary}
-                    citations={citationLibrary}
-                    entities={entityLibrary}
-                    entityEnrichment={entityEnrichment}
-                    onCitationClick={(citation) => onItemClick?.({ text: `Tell me more about: ${citation.fullText}`, relevance: 'high' })}
-                    onEntityClick={(entity) => onItemClick?.({ text: `Deep dive on ${entity.name}`, relevance: 'high', linkedEntity: entity.name })}
-                  />"
+        <div className="px-6 pb-6 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
+          {/* Executive Summary - Premium glassmorphism card */}
+          <div className="relative mt-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-[#faf9f6] to-stone-100/50 dark:from-stone-900 dark:to-stone-800/50 p-5 shadow-lg shadow-stone-900/5 dark:shadow-black/20 overflow-hidden">
+            {/* Decorative gradient orb - warm beige/amber */}
+            <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-amber-200/30 to-stone-300/20 dark:from-amber-900/20 dark:to-stone-700/20 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-stone-200/50 to-amber-100/30 dark:from-stone-700/50 dark:to-amber-900/20 border border-stone-300/50 dark:border-stone-600/50">
+                    <BarChart3 className="w-4 h-4 text-stone-700 dark:text-stone-300" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">AI Intelligence Brief</span>
+                    <p className="text-[9px] text-stone-500 dark:text-stone-500 mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
+                  </div>
                 </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
+                  <Shield className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                  <span className="text-[9px] font-medium text-stone-600 dark:text-stone-400">Verified</span>
+                </div>
+              </div>
+              <div className="text-[15px] font-serif text-stone-800 dark:text-stone-200 leading-relaxed tracking-[-0.01em]">
+                <InteractiveSpanParser
+                  text={fullSummary}
+                  citations={citationLibrary}
+                  entities={entityLibrary}
+                  entityEnrichment={entityEnrichment}
+                  onCitationClick={(citation) => onItemClick?.({ text: `Tell me more about: ${citation.fullText}`, relevance: 'high' })}
+                  onEntityClick={(entity) => onItemClick?.({ text: `Deep dive on ${entity.name}`, relevance: 'high', linkedEntity: entity.name })}
+                />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Briefing Snapshot</p>
-                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Coverage density</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {densityStats.map((stat) => (
-                  <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
-                    <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
-                    <div className="text-2xl font-serif font-semibold text-[color:var(--text-primary)]">{stat.value}</div>
-                    <div className="text-[10px] text-stone-400">{stat.hint}</div>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Topic focus</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {topicFocusTags.length > 0 ? (
-                    topicFocusTags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 text-[10px] font-bold uppercase tracking-tight border border-stone-200 bg-white text-stone-600"
-                      >
-                        {tag}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-[10px] text-stone-400">No topics tracked yet.</span>
+          {/* At-a-glance Stats - Enhanced with warm gradients */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {densityStats.slice(0, 4).map((stat, idx) => (
+              <div
+                key={stat.label}
+                className="group relative rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 hover:bg-gradient-to-br hover:from-[#faf9f6] hover:to-stone-100/50 dark:hover:from-stone-900 dark:hover:to-stone-800/50 px-4 py-3 transition-all duration-300 hover:shadow-lg hover:shadow-stone-900/5 hover:scale-[1.02] hover:border-stone-400/50 dark:hover:border-stone-600 cursor-default"
+                style={{ animationDelay: `${idx * 50}ms` }}
+              >
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold text-stone-800 dark:text-stone-100 leading-none">{stat.value}</span>
+                  {stat.value > 0 && (
+                    <ArrowUpRight className="w-3 h-3 text-amber-600 dark:text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
-                {isTopicFocusTrending && (
-                  <div className="mt-2 text-[9px] text-stone-400 uppercase tracking-widest">
-                    Trending tags (not tracked yet)
-                  </div>
-                )}
+                <div className="mt-1.5 text-[10px] font-semibold text-stone-600 dark:text-stone-400 uppercase tracking-widest">{stat.label}</div>
+                <div className="mt-0.5 text-[9px] text-stone-500 dark:text-stone-500">{stat.hint}</div>
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Entities detected</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {topEntities.length > 0 ? (
-                    topEntities.map((entity) => (
-                      <button
-                        key={entity}
-                        type="button"
-                        onClick={() => onEntityClick?.(entity, "company")}
-                        className="px-2 py-1 text-[10px] font-semibold border border-stone-200 bg-[#faf9f6] text-stone-600 hover:border-emerald-900 hover:text-emerald-900 transition-colors"
-                      >
-                        {entity}
-                      </button>
-                    ))
-                  ) : (
-                    <span className="text-[10px] text-stone-400">No entities detected.</span>
-                  )}
-                </div>
-              </div>
-            </div>
+            ))}
+          </div>
 
-            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Highlights</p>
-                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">What moved overnight</p>
-              </div>
-              <div className="space-y-3">
-                {signalHighlights.length > 0 ? (
-                  signalHighlights.map((item, idx) => (
+          {/* Two-column compact layout - Enhanced */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Left: Signals + Sources */}
+            <div className="space-y-4">
+              {/* Top Signals - Premium card */}
+              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-100/50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-700/30">
+                      <Zap className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                    </div>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Top Signals</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-500">{signalHighlights.length} items</span>
+                </div>
+                <div className="space-y-2">
+                  {signalHighlights.slice(0, 3).map((item, idx) => (
                     <div
                       key={`${item.label}-${idx}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity })}
-                      onKeyDown={(event) => {
-                        if (event.key !== "Enter" && event.key !== " ") return;
-                        event.preventDefault();
-                        onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity });
-                      }}
-                      className="w-full text-left rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 hover:bg-white transition-colors"
+                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-stone-200 dark:hover:border-stone-700 hover:bg-stone-100/50 dark:hover:bg-stone-800/50 transition-all duration-200"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-900">{item.label}</span>
-                        {item.linkedEntity && (
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onEntityClick?.(item.linkedEntity, "company");
-                            }}
-                            className="text-[10px] font-mono text-stone-400 uppercase tracking-tight hover:text-emerald-900 transition-colors"
-                          >
-                            {item.linkedEntity}
-                          </button>
-                        )}
-                      </div>
-                      <div className="text-sm text-[color:var(--text-primary)] mt-2">{item.text}</div>
+                      <button
+                        type="button"
+                        onClick={() => onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity })}
+                        className="flex items-start gap-3 flex-1 text-left"
+                      >
+                        <span className={`shrink-0 px-2 py-1 text-[9px] font-bold uppercase tracking-wide rounded-md ${
+                          item.label === 'Market' ? 'bg-stone-200/50 dark:bg-stone-700/50 text-stone-700 dark:text-stone-300 border border-stone-300/50 dark:border-stone-600/50'
+                          : item.label === 'Risk' ? 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-700/30'
+                          : 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
+                        }`}>
+                          {item.label}
+                        </span>
+                        <span className="text-sm text-stone-700 dark:text-stone-300 leading-snug line-clamp-2 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-colors">{item.text}</span>
+                      </button>
+                      {item.linkedEntity && (
+                        <button
+                          type="button"
+                          onClick={() => onEntityClick?.(item.linkedEntity, "company")}
+                          className="shrink-0 px-2 py-1 text-[9px] font-mono font-medium text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 bg-stone-100 dark:bg-stone-800 rounded-md border border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 transition-all"
+                          title={`Open entity: ${item.linkedEntity}`}
+                        >
+                          {item.linkedEntity}
+                        </button>
+                      )}
                     </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-stone-400">No highlights available yet.</div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Source Mix</p>
-                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Where the signals came from</p>
-              </div>
-              <div className="space-y-3">
-                {topSources.length > 0 ? (
-                  topSources.map((source) => (
-                    <div key={source.name} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
-                      <div className="flex items-center justify-between text-xs font-semibold text-stone-600">
-                        <span>{source.name}</span>
-                        <span>{source.count}</span>
-                      </div>
-                      <div className="mt-2 h-1.5 w-full rounded-full bg-white">
-                        <div
-                          className="h-full rounded-full bg-emerald-900"
-                          style={{ width: `${Math.max(8, (source.count / maxSourceCount) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-stone-400">No sources tracked yet.</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Mix</p>
-                  <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Distribution by channel</p>
+                  ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onItemClick?.({ text: 'Analyze the signal mix and recommend watchlist adjustments.', relevance: 'high' })}
-                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
-                >
-                  Ask agent
-                </button>
               </div>
-              <div className="space-y-3">
-                {signalMix.length > 0 ? (
-                  signalMix.map((entry) => (
-                    <div key={entry.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
-                      <div className="flex items-center justify-between text-xs font-semibold text-stone-600">
-                        <span>{entry.label}</span>
-                        <span>{entry.count} ({entry.pct}%)</span>
-                      </div>
-                      <div className="mt-2 h-1.5 w-full rounded-full bg-white">
-                        <div
-                          className={`h-full rounded-full ${entry.tone}`}
-                          style={{ width: `${Math.max(8, entry.pct)}%` }}
-                        />
-                      </div>
+
+              {/* Sources - Enhanced with visual bars */}
+              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-stone-200/50 dark:bg-stone-700/50 border border-stone-300/50 dark:border-stone-600/50">
+                      <Globe2 className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
                     </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-stone-400">No signals tracked yet.</div>
-                )}
-              </div>
-              <div className="text-[10px] text-stone-400 uppercase tracking-widest">
-                Total {digestTotals.totalSignals + digestTotals.priorityCount} nodes
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Sources</span>
+                  </div>
+                  <span className="text-[10px] text-stone-500">{totalSourceCount} items</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {topSources.slice(0, 6).map((source, idx) => (
+                    <div
+                      key={source.name}
+                      className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 transition-all duration-200"
+                    >
+                      {/* Visual bar indicator - warm amber */}
+                      <div
+                        className="absolute left-0 bottom-0 h-0.5 bg-gradient-to-r from-stone-600 to-amber-600 rounded-b-lg transition-all duration-300"
+                        style={{ width: `${(source.count / maxSourceCount) * 100}%` }}
+                      />
+                      <span className="text-[11px] font-medium text-stone-700 dark:text-stone-300">{source.name}</span>
+                      <span className="text-[10px] font-bold text-stone-800 dark:text-stone-200">{source.count}</span>
+                    </div>
+                  ))}
+                  {topSources.length > 6 && (
+                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-stone-100/30 dark:bg-stone-800/30 text-[10px] text-stone-500">
+                      +{topSources.length - 6} more
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Tag Radar</p>
-                  <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">What is clustering</p>
+            {/* Right: Tags + Entities + Actions */}
+            <div className="space-y-4">
+              {/* Tags - Enhanced with hover effects */}
+              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-stone-200/50 dark:bg-stone-700/50 border border-stone-300/50 dark:border-stone-600/50">
+                      <TrendingUp className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
+                    </div>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Trending</span>
+                  </div>
+                  <span className="text-[10px] text-stone-500">{digestItems.length} signals</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onItemClick?.({ text: 'Summarize the top tags and highlight emerging topics.', relevance: 'high' })}
-                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
-                >
-                  Ask agent
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {tagRadar.length > 0 ? (
-                  tagRadar.map((tag) => (
+                <div className="flex flex-wrap gap-2">
+                  {tagRadar.slice(0, 6).map((tag, idx) => (
                     <button
                       key={tag.tag}
                       type="button"
                       onClick={() => onItemClick?.({ text: `Track #${tag.tag} and summarize the latest movement.`, relevance: 'medium', linkedEntity: tag.tag })}
-                      className="px-3 py-1 text-[10px] font-bold uppercase tracking-tight border border-stone-200 bg-white text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                      className="group px-3 py-1.5 text-[11px] font-medium border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:border-stone-400 dark:hover:border-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-all duration-200"
                     >
-                      #{tag.tag} <span className="text-stone-400">({tag.count})</span>
+                      <span className="text-amber-700 dark:text-amber-400">#</span>{tag.tag}
+                      <span className="ml-1.5 text-stone-500 group-hover:text-stone-600 dark:group-hover:text-stone-400">({tag.count})</span>
                     </button>
-                  ))
-                ) : (
-                  <span className="text-[10px] text-stone-400">No tags detected yet.</span>
-                )}
+                  ))}
+                </div>
               </div>
-              <div className="text-[10px] text-stone-400 uppercase tracking-widest">
-                {digestItems.length} signals scanned
-              </div>
-            </div>
 
-            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Freshness & Heat</p>
-                  <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Recency metrics</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onItemClick?.({ text: 'Assess freshness and heat across today\'s signals.', relevance: 'high' })}
-                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
-                >
-                  Ask agent
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Latest</div>
-                  <div className="text-xl font-serif font-semibold text-[color:var(--text-primary)]">
-                    {latestAgeHours !== null ? `${latestAgeHours}h` : 'N/A'}
+              {/* Entities - Enhanced with better visual treatment */}
+              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-lg bg-stone-200/50 dark:bg-stone-700/50 border border-stone-300/50 dark:border-stone-600/50">
+                    <Building2 className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
                   </div>
-                  <div className="text-[10px] text-stone-400">age of newest item</div>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Key Entities</span>
                 </div>
-                <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Window</div>
-                  <div className="text-xl font-serif font-semibold text-[color:var(--text-primary)]">
-                    {freshnessStats.windowHours !== null ? `${freshnessStats.windowHours}h` : 'N/A'}
-                  </div>
-                  <div className="text-[10px] text-stone-400">coverage span</div>
-                </div>
-                <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Avg Heat Score</div>
-                  <div className="text-xl font-serif font-semibold text-[color:var(--text-primary)]">
-                    {avgHeatValue !== null ? `${avgHeatValue} pts` : 'N/A'}
-                  </div>
-                  <div className="text-[10px] text-stone-400">avg engagement score</div>
-                </div>
-                <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Top Source</div>
-                  <div className="text-xl font-serif font-semibold text-[color:var(--text-primary)]">
-                    {sourceConcentration !== null ? `${sourceConcentration}%` : 'N/A'}
-                  </div>
-                  <div className="text-[10px] text-stone-400">share of coverage</div>
+                <div className="flex flex-wrap gap-2">
+                  {topEntities.slice(0, 6).map((entity, idx) => (
+                    <button
+                      key={entity}
+                      type="button"
+                      onClick={() => onEntityClick?.(entity, "company")}
+                      className="group px-3 py-1.5 text-[11px] font-semibold border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-[#faf9f6] to-stone-100/50 dark:from-stone-900 dark:to-stone-800/50 text-stone-700 dark:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500 hover:text-stone-900 dark:hover:text-stone-100 rounded-lg transition-all duration-200 hover:shadow-sm"
+                    >
+                      {entity}
+                      <ArrowUpRight className="inline-block ml-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="text-[10px] text-stone-400 uppercase tracking-widest">{lastUpdatedText}</div>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4 xl:col-span-2">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signal Ledger</p>
-                  <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Section density</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onItemClick?.({ text: 'Summarize the signal ledger and surface anomalies.', relevance: 'high' })}
-                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-stone-200 text-stone-500 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
-                >
-                  Ask agent
-                </button>
-              </div>
-              <div className="space-y-2">
-                {digestSectionRows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 flex flex-wrap items-center justify-between gap-3"
-                  >
-                    <div>
-                      <div className="text-sm font-semibold text-[color:var(--text-primary)]">{row.title}</div>
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{row.total} nodes</div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${getSentimentColor(row.sentiment)}`}>
-                        {row.sentiment}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-purple-50 text-purple-700 border border-purple-100">
-                        High {row.high}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
-                        Med {row.medium}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border border-[color:var(--border-color)]">
-                        Low {row.low}
-                      </span>
-                    </div>
+              {/* Agent Shortcuts - Premium CTA buttons */}
+              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-[#faf9f6] to-amber-50/30 dark:from-stone-900 dark:to-amber-900/10 p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-lg bg-stone-800/10 dark:bg-stone-200/10 border border-stone-300/50 dark:border-stone-600/50">
+                    <Zap className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300" />
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-none border border-stone-200 bg-white/70 p-5 space-y-4">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Deep Agent Launchpad</p>
-                <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Runbook shortcuts</p>
-              </div>
-              <div className="space-y-2">
-                {agentLaunchpad.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => onItemClick?.({ text: item.prompt, relevance: 'high' })}
-                    className="w-full text-left rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 text-xs font-semibold text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              <div className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 text-xs text-stone-500">
-                Agent-ready prompts are routed to the deep agent stack for synthesis, verification, and follow-up execution.
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Quick Actions</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {agentLaunchpad.slice(0, 3).map((item, idx) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => onItemClick?.({ text: item.prompt, relevance: 'high' })}
+                      className="group flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold border border-stone-300 dark:border-stone-600 bg-gradient-to-r from-stone-100 to-amber-50/50 dark:from-stone-800 dark:to-amber-900/20 text-stone-700 dark:text-stone-300 hover:from-stone-200 hover:to-amber-100/50 dark:hover:from-stone-700 dark:hover:to-amber-800/30 hover:border-stone-400 dark:hover:border-stone-500 rounded-lg transition-all duration-200"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {item.label.replace('Deep agent: ', '')}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Sources Section - Phase 1 Citation Provenance */}
-          {citationLibrary.order.length > 0 && (
-            <FootnotesSection
-              library={citationLibrary}
-              title="Sources"
-              showBackLinks={false}
-            />
-          )}
-
-          {/* Sample Data Banner */}
+          {/* Sample Data Banner - Enhanced */}
           {isUsingSampleData && digestSections.length > 0 && (
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              <p className="text-xs text-amber-700">
-                <span className="font-medium">Sample Intelligence Feed</span> - Connect data sources or track hashtags to see real-time signals.
-              </p>
+            <div className="p-4 bg-gradient-to-r from-stone-100 to-amber-50/50 dark:from-stone-800 dark:to-amber-900/20 border border-stone-200 dark:border-stone-700 rounded-xl flex items-center gap-4">
+              <div className="p-2 rounded-lg bg-stone-200/50 dark:bg-stone-700/50">
+                <Sparkles className="w-4 h-4 text-stone-600 dark:text-stone-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">Sample Intelligence Feed</p>
+                <p className="text-xs text-stone-500 dark:text-stone-500 mt-0.5">Connect data sources or track hashtags to see real-time signals.</p>
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
-            {digestSections.map((section, sIdx) => (
-              <div key={section.id} className="rounded-none border border-stone-200 bg-[#faf9f6] hover:bg-white transition-all duration-500 group" style={{ animationDelay: `${sIdx * 0.1}s` }}>
-                <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
+          {/* Digest Sections Grid - Premium cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {digestSections.map((section, sectionIdx) => (
+              <div
+                key={section.id}
+                className="group rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 hover:shadow-lg hover:shadow-stone-900/5 dark:hover:shadow-black/20 transition-all duration-300 overflow-hidden"
+                style={{ animationDelay: `${sectionIdx * 100}ms` }}
+              >
+                {/* Section Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-stone-200/50 dark:border-stone-700/50 bg-gradient-to-r from-transparent via-stone-100/30 dark:via-stone-800/30 to-transparent">
                   <div className="flex items-center gap-4">
-                    <div className={`h-10 w-10 flex items-center justify-center text-emerald-900 transition-transform`}>
+                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                      section.sentiment === 'bullish' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
+                      : section.sentiment === 'bearish' ? 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-700/30'
+                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700'
+                    }`}>
                       {React.cloneElement(section.icon as React.ReactElement, { className: "w-5 h-5", strokeWidth: 2 })}
                     </div>
                     <div className="text-left">
-                      <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">{section.title}</p>
-                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{section.items.length} Nodes</p>
+                      <p className="text-base font-serif font-bold text-stone-800 dark:text-stone-200">{section.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-widest">{section.items.length} signals</span>
+                        {section.sentiment !== 'neutral' && (
+                          <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded ${
+                            section.sentiment === 'bullish' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
+                            : 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400'
+                          }`}>
+                            {section.sentiment}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => toggleSection(section.id)}
-                    className="p-2 text-stone-400 hover:text-emerald-900 transition-all"
+                    className="p-2.5 rounded-xl text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-stone-700/50 transition-all duration-200"
                   >
                     {expandedSections.has(section.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                 </div>
 
+                {/* Section Items */}
                 {expandedSections.has(section.id) && (
-                  <div className="divide-y divide-[color:var(--bg-secondary)]">
+                  <div className="divide-y divide-stone-200/50 dark:divide-stone-700/50">
                     {section.items.slice(0, 4).map((item, idx) => (
                       <div
                         key={idx}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => onItemClick?.(item)}
-                        onKeyDown={(event) => {
-                          if (event.key !== "Enter" && event.key !== " ") return;
-                          event.preventDefault();
-                          onItemClick?.(item);
-                        }}
-                        className="w-full text-left px-4 py-3.5 flex items-start justify-between gap-4 hover:bg-[color:var(--bg-primary)] transition-colors group"
+                        className="group/item px-5 py-4 flex items-start justify-between gap-4 hover:bg-stone-100/50 dark:hover:bg-stone-800/50 transition-all duration-200"
                       >
-                        <div className="flex items-start gap-3">
-                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--bg-tertiary)] group-hover:bg-blue-400 transition-colors" />
-                          <div className="text-sm font-medium text-[color:var(--text-primary)] leading-relaxed group-hover:text-[color:var(--text-primary)] transition-colors">
+                        <div
+                          onClick={() => onItemClick?.(item)}
+                          className="flex items-start gap-3 flex-1 cursor-pointer"
+                        >
+                          <span className={`mt-2 h-2 w-2 rounded-full transition-all duration-300 ${
+                            item.relevance === 'high' ? 'bg-stone-700 dark:bg-stone-300 shadow-sm shadow-stone-500/50'
+                            : item.relevance === 'medium' ? 'bg-amber-600 dark:bg-amber-400 shadow-sm shadow-amber-500/50'
+                            : 'bg-stone-400 dark:bg-stone-600'
+                          } group-hover/item:scale-125`} />
+                          <div className="text-sm font-medium text-stone-700 dark:text-stone-300 leading-relaxed group-hover/item:text-stone-900 dark:group-hover/item:text-stone-100 transition-colors">
                             <CrossLinkedText
                               text={item.text}
                               entities={entityLibrary.entities}
@@ -1179,16 +1115,26 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           {item.linkedEntity && (
                             <button
                               type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onEntityClick?.(item.linkedEntity, "company");
-                              }}
-                              className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold font-mono text-[color:var(--text-secondary)] bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] uppercase tracking-tighter hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                              onClick={() => onEntityClick?.(item.linkedEntity, "company")}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold font-mono text-stone-500 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 uppercase tracking-tight hover:text-stone-800 dark:hover:text-stone-200 hover:border-stone-400 dark:hover:border-stone-500 transition-all"
+                              title={`Open entity: ${item.linkedEntity}`}
                             >
                               {item.linkedEntity}
                             </button>
                           )}
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${getRelevanceIndicator(item.relevance)}`}>
+                          <button
+                            type="button"
+                            onClick={() => onItemClick?.(item)}
+                            className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-stone-700/50 transition-all"
+                            title="Open signal"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide ${
+                            item.relevance === 'high' ? 'bg-stone-200/50 dark:bg-stone-700/50 text-stone-700 dark:text-stone-300 border border-stone-300/50 dark:border-stone-600/50'
+                            : item.relevance === 'medium' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
+                            : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-stone-700'
+                          }`}>
                             {item.relevance === 'high' ? 'Priority' : item.relevance === 'medium' ? 'Watch' : 'FYI'}
                           </span>
                         </div>
@@ -1200,22 +1146,25 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          {/* Action Buttons - Premium CTAs */}
+          <div className="grid grid-cols-2 gap-4 pt-2">
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Give me a quick brief for this morning", relevance: 'high', linkedEntity: 'morning brief' })}
-              className="flex items-center justify-center gap-2 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]/50 px-4 py-3 text-xs font-bold text-[color:var(--text-primary)] hover:bg-[color:var(--bg-primary)] hover:shadow-md transition-all active:translate-y-0.5"
+              className="group relative flex items-center justify-center gap-3 rounded-xl border border-stone-300 dark:border-stone-600 bg-gradient-to-r from-stone-800 to-stone-900 dark:from-stone-700 dark:to-stone-800 px-5 py-4 text-sm font-bold text-[#faf9f6] hover:from-stone-700 hover:to-stone-800 dark:hover:from-stone-600 dark:hover:to-stone-700 hover:shadow-lg hover:shadow-stone-900/20 transition-all duration-300 active:scale-[0.98] overflow-hidden"
             >
-              <Sparkles className="w-4 h-4 text-[color:var(--text-primary)]" />
-              Strategic Brief
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/10 to-amber-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              <Sparkles className="w-5 h-5" />
+              <span>Strategic Brief</span>
             </button>
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Prepare the full market report for me", relevance: 'medium', linkedEntity: 'market report' })}
-              className="flex items-center justify-center gap-2 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] px-4 py-3 text-xs font-bold text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]/50 hover:shadow-md transition-all active:translate-y-0.5"
+              className="group relative flex items-center justify-center gap-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 px-5 py-4 text-sm font-bold text-stone-700 dark:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 hover:shadow-lg hover:shadow-stone-900/5 transition-all duration-300 active:scale-[0.98] overflow-hidden"
             >
-              <Newspaper className="w-4 h-4 text-[color:var(--text-primary)]" />
-              Full Dossier
+              <div className="absolute inset-0 bg-gradient-to-r from-stone-400/0 via-stone-400/10 to-stone-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              <Newspaper className="w-5 h-5" />
+              <span>Full Dossier</span>
             </button>
           </div>
         </div>

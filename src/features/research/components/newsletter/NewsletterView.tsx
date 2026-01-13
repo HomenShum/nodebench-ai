@@ -9,6 +9,7 @@ import { parseMarkdownToDossier } from '../../utils/newsletterParser';
 import { NewsletterSectionBlock, DigestHero, type NewsletterSection, type NewsletterMediaItem } from './NewsletterComponents';
 import { EvidenceDrawer, type EvidenceSource } from './EvidenceDrawer';
 import { TrendingUp, Users, Briefcase, AlertTriangle, Lightbulb, FileText, Target, DollarSign, ShieldAlert, HelpCircle, Link2, Sparkles, Loader2, RefreshCw } from 'lucide-react';
+import { DEFAULT_MODEL } from "@shared/llm/approvedModels";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ICON MAPPING
@@ -190,7 +191,7 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
         try {
             const result = await generateWithAgent({
                 prompt: `Generate a comprehensive dossier for "${topic}" with verification. Include executive summary, market landscape, funding signals, competitive analysis, and risk flags. Use receipts-first research approach.`,
-                model: 'gpt-4o',
+                model: DEFAULT_MODEL,
             });
             
             if (result && onRefresh) {

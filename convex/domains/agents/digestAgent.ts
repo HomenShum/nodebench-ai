@@ -13,7 +13,7 @@
 import { v } from "convex/values";
 import { internalAction, action, internalMutation, internalQuery, query } from "../../_generated/server";
 import { api, internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import { components } from "../../_generated/api";
 import { z } from "zod";
@@ -99,6 +99,32 @@ export type AgentDigestOutput = {
     // Enhanced fields for hover preview
     keyFacts?: string[];
     sources?: Array<{ name: string; url?: string }>;
+  }>;
+
+  // Fact-Check Findings (from Instagram/social media verification)
+  factCheckFindings?: Array<{
+    claim: string;
+    status: "verified" | "partially_verified" | "unverified" | "false";
+    explanation: string;
+    source?: string;
+    sourceUrl?: string;
+    confidence: number;
+  }>;
+
+  // Funding Rounds (startups that fundraised today)
+  fundingRounds?: Array<{
+    rank: number;
+    companyName: string;
+    roundType: string;
+    amountRaw: string;
+    amountUsd?: number;
+    leadInvestors: string[];
+    sector?: string;
+    productDescription?: string;
+    founderBackground?: string;
+    sourceUrl?: string;
+    announcedAt: number;
+    confidence: number;
   }>;
 
   // Metadata
@@ -1231,12 +1257,27 @@ export function formatDigestForNtfy(
   }
   const entityLength = entityLines.join("\n").length;
 
+  // Fact-Check Findings (if any verified claims)
+  const factCheckLines: string[] = [];
+  if (digest.factCheckFindings && digest.factCheckFindings.length > 0 && remainingBudget > 300) {
+    factCheckLines.push("**Fact Checks**");
+    for (const finding of digest.factCheckFindings.slice(0, 3)) {
+      const icon = finding.status === "verified" ? "✅" :
+                   finding.status === "false" ? "❌" :
+                   finding.status === "partially_verified" ? "⚠️" : "❓";
+      const sourceText = finding.source ? ` - Source: ${finding.source.slice(0, 30)}` : "";
+      factCheckLines.push(`${icon} ${finding.claim.slice(0, 80)}${sourceText}`);
+    }
+    factCheckLines.push("");
+  }
+  const factCheckLength = factCheckLines.join("\n").length;
+
   // Act II: The Signal (highest priority variable section)
   const actIILines: string[] = [];
   actIILines.push("**ACT II: The Signal**");
 
   // Calculate how much space we have for signals
-  const actIIBudget = remainingBudget - entityLength;
+  const actIIBudget = remainingBudget - entityLength - factCheckLength;
   let signalBudgetUsed = actIILines.join("\n").length;
   const avgSignalSize = 250; // Approximate chars per signal entry
   const maxSignals = Math.max(1, Math.min(5, Math.floor(actIIBudget / avgSignalSize)));
@@ -1264,11 +1305,14 @@ export function formatDigestForNtfy(
   actIILines.push("");
 
   // Assemble final body in correct order
+  const contentLength = fixedLength + actIILines.join("\n").length;
   const finalLines = [
     ...headerLines,
     ...actILines,
     ...actIILines,
-    ...(entityLength > 0 && entityLength + fixedLength + actIILines.join("\n").length < maxLength - 100 ? entityLines : []),
+    // Include fact-checks if space permits (higher priority than entity spotlight)
+    ...(factCheckLength > 0 && contentLength + factCheckLength < maxLength - 150 ? factCheckLines : []),
+    ...(entityLength > 0 && contentLength + factCheckLength + entityLength < maxLength - 100 ? entityLines : []),
     ...actIIILines,
     ...footerLines,
   ];
@@ -1667,6 +1711,14 @@ export const cacheDigest = internalMutation({
         keyInsight: v.string(),
         fundingStage: v.optional(v.string()),
       }))),
+      factCheckFindings: v.optional(v.array(v.object({
+        claim: v.string(),
+        status: v.string(),
+        explanation: v.string(),
+        source: v.optional(v.string()),
+        sourceUrl: v.optional(v.string()),
+        confidence: v.number(),
+      }))),
       storyCount: v.number(),
       topSources: v.array(v.string()),
       topCategories: v.array(v.string()),
@@ -1679,6 +1731,7 @@ export const cacheDigest = internalMutation({
     usage: v.object({
       inputTokens: v.number(),
       outputTokens: v.number(),
+      model: v.optional(v.string()),
     }),
     feedItemCount: v.number(),
     ttlHours: v.optional(v.number()),
@@ -1693,7 +1746,7 @@ export const cacheDigest = internalMutation({
       .withIndex("by_date_persona", (q) =>
         q.eq("dateString", args.dateString).eq("persona", args.persona)
       )
-      .first();
+      .first() as Doc<"digestCache"> | null;
 
     if (existing) {
       // Update existing entry
@@ -1741,7 +1794,7 @@ export const getCachedDigest = internalQuery({
       .withIndex("by_date_persona", (q) =>
         q.eq("dateString", args.dateString).eq("persona", persona)
       )
-      .first();
+      .first() as Doc<"digestCache"> | null;
 
     if (!cached) return null;
 
@@ -1804,7 +1857,7 @@ export const getLatestDigestWithEntities = query({
         q.eq("dateString", dateString).eq("persona", persona)
       )
       .order("desc")
-      .first();
+      .first() as Doc<"digestCache"> | null;
 
     if (!cached) {
       return null;
@@ -1821,7 +1874,7 @@ export const getLatestDigestWithEntities = query({
         const profile = await ctx.db
           .query("adaptiveEntityProfiles")
           .withIndex("by_name", (q) => q.eq("entityName", name))
-          .first();
+          .first() as Doc<"adaptiveEntityProfiles"> | null;
         if (profile?.profile) {
           adaptiveProfiles[name] = profile.profile;
         }
@@ -2071,6 +2124,152 @@ export const triggerDigestGeneration = action({
       digest: result.digest,
       entityCount: result.digest?.entitySpotlight?.length || 0,
       error: result.error,
+    };
+  },
+});
+
+/**
+ * Generate a digest with fact-check findings included.
+ * This action fetches verified claims from Instagram verification and injects them into the digest.
+ */
+export const generateDigestWithFactChecks = internalAction({
+  args: {
+    persona: v.optional(v.string()),
+    model: v.optional(v.string()),
+    hoursBack: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const persona = args.persona || "GENERAL";
+    const model = args.model || "mimo-v2-flash-free"; // Use free model by default
+    const hoursBack = args.hoursBack || 24;
+
+    console.log(`[digestAgent] Generating digest with fact-checks for persona=${persona}, model=${model}`);
+
+    // 1. Fetch feed items
+    const feedItems = await ctx.runAction(internal.domains.agents.digestAgent.getFeedItemsForDigest, {
+      hoursBack,
+      limit: 50,
+    });
+
+    if (!feedItems || feedItems.length === 0) {
+      return {
+        success: false,
+        error: "No feed items available",
+        digest: null,
+        factCheckCount: 0,
+      };
+    }
+
+    // 2. Fetch today's verified claims
+    let factCheckFindings: NonNullable<AgentDigestOutput["factCheckFindings"]> = [];
+    try {
+      const verifiedClaims = await ctx.runAction(
+        internal.domains.verification.instagramClaimVerification.getTodaysVerifiedClaims,
+        {}
+      );
+      factCheckFindings = verifiedClaims.map((claim: any) => ({
+        claim: claim.claim,
+        status: claim.status as "verified" | "partially_verified" | "unverified" | "false",
+        explanation: claim.explanation,
+        source: claim.source,
+        sourceUrl: claim.sourceUrl,
+        confidence: claim.confidence,
+      }));
+      console.log(`[digestAgent] Found ${factCheckFindings.length} verified claims`);
+    } catch (e) {
+      console.warn("[digestAgent] Failed to fetch verified claims:", e instanceof Error ? e.message : String(e));
+    }
+
+    // 2b. Fetch today's funding rounds
+    let fundingRounds: AgentDigestOutput["fundingRounds"] = [];
+    try {
+      const fundingData = await ctx.runQuery(
+        internal.domains.enrichment.fundingQueries.getFundingDigestSections,
+        { lookbackHours: hoursBack }
+      );
+
+      // Combine all funding events and rank by amount
+      const allFunding = [
+        ...fundingData.seed,
+        ...fundingData.seriesA,
+        ...fundingData.other,
+      ];
+
+      // Sort by amount (largest first) and assign ranks
+      const sortedFunding = allFunding
+        .filter((f: any) => f.amountUsd && f.amountUsd > 0)
+        .sort((a: any, b: any) => (b.amountUsd || 0) - (a.amountUsd || 0));
+
+      fundingRounds = sortedFunding.slice(0, 10).map((f: any, index: number) => ({
+        rank: index + 1,
+        companyName: f.companyName,
+        roundType: f.roundType,
+        amountRaw: f.amountRaw,
+        amountUsd: f.amountUsd,
+        leadInvestors: f.leadInvestors || [],
+        sector: f.sector,
+        productDescription: undefined, // Will be enriched if available
+        founderBackground: undefined, // Will be enriched if available
+        sourceUrl: undefined, // Will be added from sources
+        announcedAt: Date.now(),
+        confidence: f.confidence || 0.5,
+      }));
+
+      console.log(`[digestAgent] Found ${fundingRounds.length} funding rounds`);
+    } catch (e) {
+      console.warn("[digestAgent] Failed to fetch funding rounds:", e instanceof Error ? e.message : String(e));
+    }
+
+    // 3. Generate digest
+    const result = await ctx.runAction(internal.domains.agents.digestAgent.generateAgentDigest, {
+      feedItems,
+      persona,
+      model,
+      outputMode: "structured",
+      useCache: false, // Don't cache since we're adding fact-checks
+    });
+
+    if (result.error || !result.digest) {
+      return {
+        success: false,
+        error: result.error || "Failed to generate digest",
+        digest: null,
+        factCheckCount: 0,
+      };
+    }
+
+    // 4. Inject fact-checks and funding rounds into digest
+    const digestWithFactChecks: AgentDigestOutput = {
+      ...result.digest,
+      factCheckFindings: factCheckFindings.length > 0 ? factCheckFindings : undefined,
+      fundingRounds: fundingRounds.length > 0 ? fundingRounds : undefined,
+    };
+
+    // 5. Format for ntfy
+    const ntfyPayload = formatDigestForNtfy(digestWithFactChecks);
+
+    // 6. Cache the result with fact-checks
+    const dateString = new Date().toISOString().split("T")[0];
+    await ctx.runMutation(internal.domains.agents.digestAgent.cacheDigest, {
+      dateString,
+      persona,
+      model,
+      rawText: result.rawText,
+      digest: digestWithFactChecks,
+      ntfyPayload,
+      usage: result.usage,
+      feedItemCount: feedItems.length,
+      ttlHours: 24,
+    });
+
+    console.log(`[digestAgent] Digest with ${factCheckFindings.length} fact-checks generated successfully`);
+
+    return {
+      success: true,
+      digest: digestWithFactChecks,
+      ntfyPayload,
+      factCheckCount: factCheckFindings.length,
+      usage: result.usage,
     };
   },
 });

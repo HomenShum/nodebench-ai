@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
-import { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 // Id not needed in this module
 import { createBlockJson, detectNodeType, extractPlainText, coerceToBlockJson } from "../../lib/markdown";
@@ -92,7 +92,7 @@ export const appendMessage = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const doc = await ctx.db.get(threadDocumentId);
+    const doc = await ctx.db.get(threadDocumentId) as Doc<"documents"> | null;
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 

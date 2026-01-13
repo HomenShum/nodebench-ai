@@ -25,6 +25,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DEFAULT_MODEL, MODEL_UI_INFO } from "@shared/llm/approvedModels";
 
 // ============================================================================
 // Types & Constants
@@ -295,7 +296,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
           <div className="text-xs text-[var(--text-muted)]">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="font-medium">Model:</span> claude-3-5-sonnet
+                <span className="font-medium">Model:</span> {MODEL_UI_INFO[DEFAULT_MODEL].name}
               </div>
               <div>
                 <span className="font-medium">Memory:</span> 2.4k tokens

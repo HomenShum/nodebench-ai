@@ -32,7 +32,7 @@ import { internalQuery, internalMutation, internalAction, action, mutation, quer
 import { paginationOptsValidator } from "convex/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal, components } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import { searchAvailableSkills } from "../../tools/meta/skillDiscovery";
 import { lookupGroundTruthEntity } from "../../tools/evaluation/groundTruthLookupTool";
 import { linkupSearch } from "../../tools/media/linkupSearch";
@@ -118,6 +118,15 @@ import {
   searchFundingEvents,
   detectFundingFromFeeds,
 } from "../../tools/financial/fundingDetectionTools";
+import {
+  ingestInstagramPost,
+  listInstagramPosts
+} from "../../tools/social/instagramTools";
+import {
+  postToLinkedIn,
+  checkLinkedInStatus,
+  disconnectLinkedIn
+} from "../../tools/social/linkedinTools";
 import { searchFiles } from "../../tools/document/geminiFileSearch";
 
 function extractWebSourcesFromText(raw: string): WebSourceLike[] {
@@ -481,9 +490,9 @@ async function buildLocalContextPreamble(ctx: any, clientContext?: ClientContext
       : null;
   const tz = tzFromClient ?? tzFromServer;
 
-  let snapshot: unknown = null;
+  let snapshot: Doc<"dashboardSnapshots"> | null = null;
   try {
-    snapshot = await ctx.runQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot, {});
+    snapshot = await ctx.runQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot, {}) as Doc<"dashboardSnapshots"> | null;
   } catch {
     snapshot = null;
   }
@@ -1066,6 +1075,15 @@ Always provide clear, helpful responses and confirm actions you take.`,
     createHashtagDossier,
     getOrCreateHashtagDossier,
 
+    // Social / Instagram tools
+    ingestInstagramPost,
+    listInstagramPosts,
+
+    // Social / LinkedIn tools
+    postToLinkedIn,
+    checkLinkedInStatus,
+    disconnectLinkedIn,
+
     // Funding research tools
     searchTodaysFunding,
     enrichFounderInfo,
@@ -1215,7 +1233,7 @@ export const listThreads = query({
             .query("chatMessagesStream")
             .withIndex("by_thread", (q) => q.eq("threadId", thread._id))
             .order("desc")
-            .first();
+            .first() as Doc<"chatMessagesStream"> | null;
 
           let lastMessage = lastStreamMessage?.content?.slice(0, 100) ?? "";
           let lastMessageAt = lastStreamMessage?.updatedAt ?? thread.updatedAt;
@@ -1271,7 +1289,7 @@ export const getThread = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) return null;
 
     return thread;
@@ -1290,7 +1308,7 @@ export const getThreadByStreamId = query({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
 
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread) {
       console.log("[getThreadByStreamId] Thread not found:", args.threadId);
       return null;
@@ -1320,7 +1338,7 @@ export const getThreadByStreamId = query({
         .query("agentRuns")
         .withIndex("by_threadId", (q) => q.eq("threadId", thread.agentThreadId))
         .order("desc")
-        .first()
+        .first() as Doc<"agentRuns"> | null
       : null;
 
     console.log("[getThreadByStreamId] Returning thread with agentThreadId:", thread.agentThreadId);
@@ -1355,7 +1373,7 @@ export const getAnonymousUsage = query({
       .withIndex("by_session_date", (q: any) =>
         q.eq("sessionId", args.sessionId).eq("date", today)
       )
-      .first();
+      .first() as Doc<"anonymousUsageDaily"> | null;
 
     const used = existingUsage?.requests ?? 0;
     const remaining = Math.max(0, ANONYMOUS_DAILY_LIMIT - used);
@@ -1382,7 +1400,7 @@ export const getAnonymousThreadMessages = query({
   },
   handler: async (ctx, args) => {
     // Verify the thread belongs to this anonymous session
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.anonymousSessionId !== args.sessionId) {
       return [];
     }
@@ -1702,7 +1720,7 @@ export const updateThreadTitle = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) {
       throw new Error("Thread not found or unauthorized");
     }
@@ -1806,7 +1824,7 @@ export const deleteThread = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) {
       throw new Error("Thread not found or unauthorized");
     }
@@ -1848,7 +1866,7 @@ export const deleteMessage = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) {
       throw new Error("Thread not found or unauthorized");
     }
@@ -1857,6 +1875,7 @@ export const deleteMessage = mutation({
       throw new Error("Thread does not have an associated agent thread");
     }
 
+    const threadAgentId = thread.agentThreadId;
     console.log(`[deleteMessage] Deleting message: ${args.messageId}`);
 
     // Helper to delete agent message safely (verifies thread)
@@ -1865,7 +1884,7 @@ export const deleteMessage = mutation({
         const [agentMsg] = await ctx.runQuery(components.agent.messages.getMessagesByIds, {
           messageIds: [agentMessageId],
         });
-        if (agentMsg && agentMsg.threadId === thread.agentThreadId) {
+        if (agentMsg && agentMsg.threadId === threadAgentId) {
           await ctx.runMutation(components.agent.messages.deleteByIds, {
             messageIds: [agentMessageId],
           });
@@ -2814,14 +2833,14 @@ export const streamAsync = internalAction({
           evaluationMode
             ? {}
             : {
-                // Enable real-time streaming to clients
-                // According to Convex Agent docs, this CAN be used with tool execution
-                // The deltas are saved to DB and clients can subscribe via syncStreams
-                saveStreamDeltas: {
-                  chunking: "word", // Stream word by word for smooth UX
-                  throttleMs: 100, // Throttle writes to reduce DB load
-                },
+              // Enable real-time streaming to clients
+              // According to Convex Agent docs, this CAN be used with tool execution
+              // The deltas are saved to DB and clients can subscribe via syncStreams
+              saveStreamDeltas: {
+                chunking: "word", // Stream word by word for smooth UX
+                throttleMs: 100, // Throttle writes to reduce DB load
               },
+            },
         );
       } catch (e: any) {
         const name = e?.name || "";

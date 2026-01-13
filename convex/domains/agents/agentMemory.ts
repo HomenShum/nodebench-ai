@@ -24,6 +24,7 @@
 
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
+import type { Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -48,7 +49,7 @@ export const writeMemory = mutation({
         const existing = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", args.key))
-            .first();
+            .first() as Doc<"agentMemory"> | null;
 
         if (existing) {
             // Update existing entry
@@ -159,7 +160,7 @@ export const deleteMemory = mutation({
         const memory = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", args.key))
-            .first();
+            .first() as Doc<"agentMemory"> | null;
 
         if (!memory) {
             throw new Error("Memory entry not found");
@@ -195,7 +196,7 @@ export const writeMemoryAsService = mutation({
         const existing = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", args.userId).eq("key", args.key))
-            .first();
+            .first() as Doc<"agentMemory"> | null;
 
         if (existing) {
             await ctx.db.patch(existing._id, {
@@ -279,7 +280,7 @@ export const deleteMemoryAsService = mutation({
         const memory = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", args.userId).eq("key", args.key))
-            .first();
+            .first() as Doc<"agentMemory"> | null;
 
         if (memory) {
             await ctx.db.delete(memory._id);
@@ -601,7 +602,7 @@ export const storeStrategyRefinement = mutation({
         const existing = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", key))
-            .first();
+            .first() as Doc<"agentMemory"> | null;
 
         const content = JSON.stringify({
             value: args.newValue,

@@ -312,9 +312,13 @@ async function getUserId(
   ctx: any,
   identity: any
 ): Promise<Id<"users"> | null> {
+  /* 
+   * FALLBACK: "by_email" index missing in some environments. 
+   * Using filter() instead for compatibility.
+   */
   const user = await ctx.db
     .query("users")
-    .withIndex("by_email", (q: any) => q.eq("email", identity.email))
+    .filter((q: any) => q.eq(q.field("email"), identity.email))
     .first();
 
   return user?._id || null;
@@ -330,7 +334,11 @@ export const getUserByEmail = query({
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      /*
+       * FALLBACK: "by_email" index missing in some environments.
+       * Using filter() instead for compatibility.
+       */
+      .filter((q) => q.eq(q.field("email"), args.email))
       .first();
 
     return user;

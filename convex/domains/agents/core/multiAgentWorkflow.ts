@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
-import type { Id } from "../../../_generated/dataModel";
+import type { Id, Doc } from "../../../_generated/dataModel";
 
 /**
  * Workflow metrics type for tracking sources, tools, and agents
@@ -184,7 +184,7 @@ export const runWorkflow = internalAction({
 export const getAgentThreadId = internalQuery({
     args: { threadId: v.id("chatThreadsStream") },
     handler: async (ctx, args) => {
-        const thread = await ctx.db.get(args.threadId);
+        const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
         return thread ? { agentThreadId: thread.agentThreadId } : null;
     }
 });
@@ -203,7 +203,7 @@ export const updateWorkflowProgress = internalMutation({
     },
     handler: async (ctx, args) => {
         // Get existing progress to merge metrics
-        const thread = await ctx.db.get(args.threadId);
+        const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
         const existingProgress = (thread?.workflowProgress) || {};
         const existingMetrics = existingProgress.metrics || {
             sourcesExplored: 0,
@@ -243,7 +243,7 @@ export const incrementWorkflowMetrics = internalMutation({
         agentName: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const thread = await ctx.db.get(args.threadId);
+        const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
         if (!thread) return;
 
         const existingProgress = (thread.workflowProgress) || {};

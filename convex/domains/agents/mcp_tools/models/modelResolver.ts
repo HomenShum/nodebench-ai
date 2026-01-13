@@ -81,15 +81,41 @@ export const APPROVED_MODELS = [
   "qwen3-235b",        // Qwen3 235B - latest Qwen $0.18/M
   "minimax-m2.1",      // MiniMax M2.1 - agentic workflows $0.28/M
   "mistral-large",     // Mistral Large 2411 - function calling $2/M
-  // OpenRouter free-tier models (require OPENROUTER_API_KEY; $0 pricing tier)
-  "mimo-v2-flash-free", // Xiaomi MiMo V2 Flash (free)
+  // OpenRouter free-tier models (require OPENROUTER_API_KEY; $0 pricing tier - Jan 2026)
+  "mimo-v2-flash-free", // Xiaomi MiMo V2 Flash - 309B MoE, #1 SWE-bench
+  "devstral-2-free", // Mistral Devstral 2 - 123B agentic coding
+  "deepseek-r1-free", // DeepSeek R1 - reasoning model
+  "llama-4-maverick-free", // Meta Llama 4 Maverick - latest flagship
+  "llama-4-scout-free", // Meta Llama 4 Scout - efficient
+  "glm-4.5-air-free", // GLM 4.5 Air - agent-focused
+  "kat-coder-pro-free", // KAT-Coder-Pro V1 - 73.4% SWE-bench
+  "deepseek-chimera-free", // DeepSeek-TNG-R1T2-Chimera - 671B MoE
+  "grok-4-fast-free", // X.AI Grok 4 Fast
+  "venice-dolphin-free", // Venice Dolphin Mistral 24B
+  "nemotron-free", // NVIDIA Nemotron 70B
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 
-// Default model: gemini-3-flash (100% pass rate, fastest at 16.1s avg, $0.10/M input)
-// Fallback chain: google → anthropic → openai
-export const DEFAULT_MODEL: ApprovedModel = "gemini-3-flash";
+// Default model: devstral-2-free (PROVEN: 100% pass rate, 70s avg, FREE)
+// FREE-FIRST STRATEGY: Try free models first, fall back to paid if needed
+// Proven free models: devstral-2-free (fastest), mimo-v2-flash-free (reliable)
+// Paid fallback chain: gemini-3-flash → claude-haiku-4.5 → gpt-5-nano
+export const DEFAULT_MODEL: ApprovedModel = "devstral-2-free";
+
+// Fallback model when free model fails
+export const FALLBACK_MODEL: ApprovedModel = "gemini-3-flash";
+
+// Model priority order for FREE-FIRST strategy
+export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
+  // PROVEN FREE (100% pass rate in eval)
+  "devstral-2-free",      // Fastest free: 70s avg
+  "mimo-v2-flash-free",   // Reliable free: 83s avg
+  // CHEAP PAID (fallback)
+  "gemini-3-flash",       // $0.50/M input, fast
+  "gpt-5-nano",           // $0.10/M input, efficient
+  "claude-haiku-4.5",     // $1.00/M input, reliable
+];
 
 /**
  * Check if a string is a valid approved model
@@ -244,11 +270,88 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
     pricing: { inputPerMillion: 2.00, outputPerMillion: 6.00 },
   },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OPENROUTER FREE-TIER MODELS - Evaluated Jan 2026
+  // PROVEN WORKING (100% pass rate on core eval suite):
+  //   - mimo-v2-flash-free: 152s avg, reliable
+  //   - devstral-2-free: 70s avg, fastest free model
+  // OTHER FREE MODELS: Available but may have capacity/rate limit issues
+  // ═══════════════════════════════════════════════════════════════════════════
   "mimo-v2-flash-free": {
     alias: "mimo-v2-flash-free",
     provider: "openrouter",
-    sdkId: "xiaomi/mimo-v2-flash:free",
+    sdkId: "xiaomi/mimo-v2-flash:free",  // PROVEN: 100% pass, 152s avg
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 262_144 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "devstral-2-free": {
+    alias: "devstral-2-free",
+    provider: "openrouter",
+    sdkId: "mistralai/devstral-2512:free",  // PROVEN: 100% pass, 70s avg (FASTEST)
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 262_144 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "deepseek-r1-free": {
+    alias: "deepseek-r1-free",
+    provider: "openrouter",
+    sdkId: "deepseek/deepseek-r1:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 163_840 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "llama-4-maverick-free": {
+    alias: "llama-4-maverick-free",
+    provider: "openrouter",
+    sdkId: "meta-llama/llama-4-maverick:free",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 131_072 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "llama-4-scout-free": {
+    alias: "llama-4-scout-free",
+    provider: "openrouter",
+    sdkId: "meta-llama/llama-4-scout:free",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 131_072 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "glm-4.5-air-free": {
+    alias: "glm-4.5-air-free",
+    provider: "openrouter",
+    sdkId: "z-ai/glm-4.5-air:free",  // Fixed: z-ai not zhipu
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 128_000 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "kat-coder-pro-free": {
+    alias: "kat-coder-pro-free",
+    provider: "openrouter",
+    sdkId: "kwaipilot/kat-coder-pro:free",  // Note: deprecating Jan 13, 2026
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 256_000 },  // Fixed: 256K context
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "deepseek-chimera-free": {
+    alias: "deepseek-chimera-free",
+    provider: "openrouter",
+    sdkId: "tngtech/deepseek-r1t2-chimera:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 163_840 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "grok-4-fast-free": {
+    alias: "grok-4-fast-free",
+    provider: "openrouter",
+    sdkId: "x-ai/grok-4-fast:free",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 2_000_000 },  // Fixed: 2M context, multimodal
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "venice-dolphin-free": {
+    alias: "venice-dolphin-free",
+    provider: "openrouter",
+    sdkId: "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 32_768 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "nemotron-free": {
+    alias: "nemotron-free",
+    provider: "openrouter",
+    sdkId: "nvidia/llama-3.1-nemotron-ultra-253b-v1:free",  // Fixed: use Ultra 253B (actually exists)
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 131_072 },
     pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
   },
 };
@@ -283,10 +386,50 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "gemini-pro": "gemini-3-pro",
   "gemini": "gemini-3-flash",
 
-  // OpenRouter free-tier model IDs (accept common user-provided forms)
+  // OpenRouter free-tier model IDs (accept common user-provided forms - Jan 2026)
   "xiaomi/mimo-v2-flash:free": "mimo-v2-flash-free",
-  "openrouter/xiaomi/mimo-v2-flash:free": "mimo-v2-flash-free",
-  "https://openrouter.ai/xiaomi/mimo-v2-flash:free": "mimo-v2-flash-free",
+  "mimo": "mimo-v2-flash-free",
+  "mimo-v2": "mimo-v2-flash-free",
+  // Devstral 2 (latest)
+  "mistralai/devstral-2:free": "devstral-2-free",
+  "devstral-2": "devstral-2-free",
+  "devstral": "devstral-2-free",
+  // DeepSeek R1 Free
+  "deepseek/deepseek-r1:free": "deepseek-r1-free",
+  "deepseek-r1": "deepseek-r1-free",
+  // Llama 4 Maverick
+  "meta-llama/llama-4-maverick:free": "llama-4-maverick-free",
+  "llama-4-maverick": "llama-4-maverick-free",
+  "llama-4": "llama-4-maverick-free",
+  // Llama 4 Scout
+  "meta-llama/llama-4-scout:free": "llama-4-scout-free",
+  "llama-4-scout": "llama-4-scout-free",
+  // GLM 4.5 Air
+  "zhipu/glm-4.5-air:free": "glm-4.5-air-free",  // Legacy alias
+  "z-ai/glm-4.5-air:free": "glm-4.5-air-free",
+  "glm-4.5-air": "glm-4.5-air-free",
+  "glm": "glm-4.5-air-free",
+  // KAT-Coder-Pro
+  "kwaipilot/kat-coder-pro:free": "kat-coder-pro-free",
+  "kat-coder": "kat-coder-pro-free",
+  "kat-coder-pro": "kat-coder-pro-free",
+  // DeepSeek Chimera
+  "tngtech/deepseek-r1t2-chimera:free": "deepseek-chimera-free",
+  "deepseek-chimera": "deepseek-chimera-free",
+  "chimera": "deepseek-chimera-free",
+  // Grok 4 Fast
+  "x-ai/grok-4-fast:free": "grok-4-fast-free",
+  "grok-4-fast": "grok-4-fast-free",
+  "grok-4": "grok-4-fast-free",
+  "grok": "grok-4-fast-free",
+  // Venice Dolphin (legacy)
+  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": "venice-dolphin-free",
+  "venice-dolphin": "venice-dolphin-free",
+  "dolphin-mistral": "venice-dolphin-free",
+  // Nemotron (legacy)
+  "nvidia/llama-3.1-nemotron-70b-instruct:free": "nemotron-free",
+  "nemotron": "nemotron-free",
+  "nemotron-70b": "nemotron-free",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -526,4 +669,179 @@ export function formatCost(cost: number): string {
     return `$${(cost * 100).toFixed(4)}¢`;
   }
   return `$${cost.toFixed(4)}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FREE-FIRST MODEL SELECTION WITH AUTOMATIC FALLBACK
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Retry configuration for transient errors (429/503)
+ */
+export const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelayMs: 1000,
+  maxJitterMs: 500,
+  retryableStatuses: [429, 502, 503, 504] as const,
+} as const;
+
+/**
+ * Check if a model is a free OpenRouter model
+ */
+export function isFreeModel(model: ApprovedModel): boolean {
+  return MODEL_SPECS[model].pricing.inputPerMillion === 0 &&
+         MODEL_SPECS[model].pricing.outputPerMillion === 0;
+}
+
+/**
+ * Get all free models from the approved list
+ */
+export function getFreeModels(): ApprovedModel[] {
+  return APPROVED_MODELS.filter((model) => isFreeModel(model));
+}
+
+/**
+ * Get the next model in the priority fallback chain
+ * Returns null if no more models available
+ */
+export function getNextFallbackModel(currentModel: ApprovedModel): ApprovedModel | null {
+  const currentIndex = MODEL_PRIORITY_ORDER.indexOf(currentModel);
+  if (currentIndex === -1 || currentIndex >= MODEL_PRIORITY_ORDER.length - 1) {
+    return null;
+  }
+  return MODEL_PRIORITY_ORDER[currentIndex + 1];
+}
+
+/**
+ * Get a language model with automatic fallback to next in priority chain
+ * Use this when you want FREE-FIRST behavior with paid fallback
+ */
+export function getLanguageModelWithFallback(preferredModel?: ApprovedModel): {
+  model: LanguageModel;
+  modelId: ApprovedModel;
+  isFree: boolean;
+  fallbackChain: ApprovedModel[];
+} {
+  const modelId = preferredModel ?? DEFAULT_MODEL;
+  const spec = MODEL_SPECS[modelId];
+
+  return {
+    model: buildLanguageModel(spec),
+    modelId,
+    isFree: isFreeModel(modelId),
+    fallbackChain: MODEL_PRIORITY_ORDER.slice(MODEL_PRIORITY_ORDER.indexOf(modelId) + 1),
+  };
+}
+
+/**
+ * Execute a model call with automatic fallback on failure
+ * This is the recommended way to call models with FREE-FIRST strategy
+ *
+ * @param fn - Async function that takes a LanguageModel and returns a result
+ * @param options - Optional configuration
+ * @returns The result from the first successful model call
+ */
+export async function executeWithModelFallback<T>(
+  fn: (model: LanguageModel, modelId: ApprovedModel) => Promise<T>,
+  options?: {
+    startModel?: ApprovedModel;
+    maxRetries?: number;
+    onFallback?: (fromModel: ApprovedModel, toModel: ApprovedModel, error: Error) => void;
+  }
+): Promise<{ result: T; modelUsed: ApprovedModel; isFree: boolean; fallbacksUsed: number }> {
+  const { startModel = DEFAULT_MODEL, maxRetries = RETRY_CONFIG.maxRetries, onFallback } = options ?? {};
+
+  let currentModel = startModel;
+  let fallbacksUsed = 0;
+  let lastError: Error | null = null;
+
+  // Get the starting index in priority order
+  let modelIndex = MODEL_PRIORITY_ORDER.indexOf(currentModel);
+  if (modelIndex === -1) {
+    // Model not in priority order, start from beginning
+    modelIndex = 0;
+    currentModel = MODEL_PRIORITY_ORDER[0];
+  }
+
+  while (modelIndex < MODEL_PRIORITY_ORDER.length) {
+    currentModel = MODEL_PRIORITY_ORDER[modelIndex];
+    const spec = MODEL_SPECS[currentModel];
+
+    // Try with retries for transient errors
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const model = buildLanguageModel(spec);
+        const result = await fn(model, currentModel);
+
+        return {
+          result,
+          modelUsed: currentModel,
+          isFree: isFreeModel(currentModel),
+          fallbacksUsed,
+        };
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        // Check if this is a retryable error
+        const isRetryable = RETRY_CONFIG.retryableStatuses.some(
+          (status) => lastError?.message.includes(String(status))
+        );
+
+        if (isRetryable && attempt < maxRetries) {
+          // Exponential backoff with jitter
+          const delay = RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt) +
+                        Math.random() * RETRY_CONFIG.maxJitterMs;
+          console.log(
+            `[modelResolver] ${currentModel} retryable error, attempt ${attempt + 1}/${maxRetries + 1} after ${Math.round(delay)}ms`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // Non-retryable or max retries exceeded, move to next model
+        break;
+      }
+    }
+
+    // Move to next model in fallback chain
+    const nextIndex = modelIndex + 1;
+    if (nextIndex < MODEL_PRIORITY_ORDER.length) {
+      const nextModel = MODEL_PRIORITY_ORDER[nextIndex];
+      console.log(`[modelResolver] ${currentModel} failed, falling back to ${nextModel}`);
+
+      if (onFallback) {
+        onFallback(currentModel, nextModel, lastError!);
+      }
+
+      fallbacksUsed++;
+    }
+
+    modelIndex++;
+  }
+
+  throw new Error(
+    `All models in fallback chain failed. Last error: ${lastError?.message}`
+  );
+}
+
+/**
+ * Get the best available free model based on proven performance
+ * Returns devstral-2-free as primary (fastest), mimo-v2-flash-free as backup
+ */
+export function getBestFreeModel(): ApprovedModel {
+  // Proven models from evaluation (Jan 2026)
+  // devstral-2-free: 100% pass, 70s avg (FASTEST)
+  // mimo-v2-flash-free: 100% pass, 83s avg
+  return "devstral-2-free";
+}
+
+/**
+ * Get the fallback chain starting from a given model
+ */
+export function getFallbackChain(startModel: ApprovedModel = DEFAULT_MODEL): ApprovedModel[] {
+  const startIndex = MODEL_PRIORITY_ORDER.indexOf(startModel);
+  if (startIndex === -1) {
+    return [...MODEL_PRIORITY_ORDER];
+  }
+  return MODEL_PRIORITY_ORDER.slice(startIndex);
 }

@@ -785,10 +785,10 @@ import { internalAction } from "./_generated/server";
 export const ingestHackerNewsInternal = internalAction({
   args: {},
   handler: async (ctx) => {
-    // Same logic as ingestHackerNews but as internal action
+    // INCREASED: Fetch top 50 stories (up from 15) for comprehensive coverage
     try {
       const topStoriesRes = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json");
-      const topIds: number[] = (await topStoriesRes.json()).slice(0, 15);
+      const topIds: number[] = (await topStoriesRes.json()).slice(0, 50); // 50 stories for all personas
       const feedItems: Array<any> = [];
       const storyPromises = topIds.map(async (id) => {
         const storyRes = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
@@ -798,17 +798,23 @@ export const ingestHackerNewsInternal = internalAction({
       for (const story of stories) {
         if (!story || !story.title) continue;
         const title = story.title || "";
-        const isRelevant = /AI|LLM|GPT|Model|Infra|Data|SaaS|Funding|Startup|YC|Launch|API|Agent|Vector|RAG|Cloud/i.test(title);
-        if (isRelevant) {
-          const isSignal = /funding|raise|series|valuation|\$\d+/i.test(title);
+        // Expanded relevance filter for all personas (banker, VC, CTO, academic, pharma, quant, journalist)
+        const isRelevant = /AI|LLM|GPT|Model|Infra|Data|SaaS|Funding|Startup|YC|Launch|API|Agent|Vector|RAG|Cloud|biotech|pharma|series [A-Z]|valuation|IPO|acquisition|M&A|security|CVE|research|paper|FDA|clinical|market|trading|quant|crypto|blockchain|fintech|enterprise/i.test(title);
+        // Ingest all HN stories that meet minimum score threshold for better coverage
+        if (isRelevant || (story.score && story.score > 100)) {
+          const isSignal = /funding|raise|series|valuation|\$\d+|acquisition|IPO|M&A/i.test(title);
+          const isBiotech = /biotech|pharma|clinical|FDA|therapeutics|drug/i.test(title);
+          const isResearch = /paper|research|study|arxiv|journal/i.test(title);
+          const isFinance = /market|trading|crypto|fintech|banking/i.test(title);
           feedItems.push({
             sourceId: `hn-${story.id}`,
             type: isSignal ? "signal" : "news",
+            category: isBiotech ? "research" : isResearch ? "research" : isFinance ? "finance" : "tech",
             title: story.title,
             summary: `Trending on Hacker News with ${story.score || 0} points and ${story.descendants || 0} comments.`,
             url: story.url || `https://news.ycombinator.com/item?id=${story.id}`,
             source: "YCombinator",
-            tags: isSignal ? ["Trending", "Funding"] : ["Trending", "Tech"],
+            tags: isSignal ? ["Trending", "Funding"] : isBiotech ? ["Trending", "Biotech"] : ["Trending", "Tech"],
             metrics: [
               { label: "Points", value: (story.score || 0).toString(), trend: "up" as const },
               { label: "Comments", value: (story.descendants || 0).toString() }
@@ -832,8 +838,10 @@ export const ingestArXivInternal = internalAction({
   args: {},
   handler: async (ctx) => {
     try {
-      const categories = "cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL";
-      const arxivUrl = `http://export.arxiv.org/api/query?search_query=${categories}&sortBy=submittedDate&sortOrder=descending&max_results=25`;
+      // EXPANDED: More categories for all personas (AI, ML, NLP, quant-fin, bio, economics)
+      const categories = "cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:q-fin.TR+OR+cat:q-fin.PM+OR+cat:q-bio.QM+OR+cat:econ.GN";
+      // INCREASED: 75 papers (up from 25) for comprehensive research coverage
+      const arxivUrl = `http://export.arxiv.org/api/query?search_query=${categories}&sortBy=submittedDate&sortOrder=descending&max_results=75`;
       const response = await fetch(arxivUrl);
       const xmlText = await response.text();
       const feedItems: Array<any> = [];
@@ -853,24 +861,27 @@ export const ingestArXivInternal = internalAction({
         const publishedMatch = publishedRegex.exec(entry);
         if (!titleMatch || !idMatch) continue;
         const title = titleMatch[1].trim().replace(/\s+/g, ' ');
-        const summary = summaryMatch ? summaryMatch[1].trim().replace(/\s+/g, ' ').slice(0, 300) + '...' : '';
+        const summary = summaryMatch ? summaryMatch[1].trim().replace(/\s+/g, ' ').slice(0, 400) + '...' : '';
         const arxivId = idMatch[1].split('/').pop() || '';
         const published = publishedMatch ? publishedMatch[1] : new Date().toISOString();
-        const isRelevant = /LLM|GPT|transformer|agent|RAG|retrieval|language model|reasoning|multimodal|vision|diffusion|embedding/i.test(title + summary);
-        if (isRelevant) {
-          feedItems.push({
-            sourceId: `arxiv-${arxivId}`,
-            type: "dossier",
-            title: title,
-            summary: summary,
-            url: `https://arxiv.org/abs/${arxivId}`,
-            source: "ArXiv",
-            tags: ["Research", "AI", "ML"],
-            metrics: [],
-            publishedAt: published,
-            score: 50 + Math.floor(Math.random() * 50)
-          });
-        }
+        // Expanded relevance for all personas
+        const isAI = /LLM|GPT|transformer|agent|RAG|retrieval|language model|reasoning|multimodal|vision|diffusion|embedding|neural|deep learning/i.test(title + summary);
+        const isQuant = /trading|portfolio|risk|market|financial|quantitative|option|derivative|volatility/i.test(title + summary);
+        const isBio = /drug|protein|genome|clinical|medical|therapeutic|biomarker/i.test(title + summary);
+        // Ingest all papers from expanded categories
+        feedItems.push({
+          sourceId: `arxiv-${arxivId}`,
+          type: "dossier",
+          category: isQuant ? "finance" : isBio ? "research" : "research",
+          title: title,
+          summary: summary,
+          url: `https://arxiv.org/abs/${arxivId}`,
+          source: "ArXiv",
+          tags: isQuant ? ["Research", "Quant", "Finance"] : isBio ? ["Research", "Bio", "Medical"] : ["Research", "AI", "ML"],
+          metrics: [],
+          publishedAt: published,
+          score: 50 + Math.floor(Math.random() * 50)
+        });
       }
       if (feedItems.length > 0) {
         await ctx.runMutation(internal.feed.saveItems, { items: feedItems });
@@ -886,14 +897,47 @@ export const ingestRedditInternal = internalAction({
   args: {},
   handler: async (ctx) => {
     try {
-      const subreddits = ['technology', 'MachineLearning', 'startups'];
+      // EXPANDED: 15 subreddits covering all personas (up from 3)
+      // Banker/VC: startups, venturecapital, fintech
+      // CTO: programming, devops, netsec
+      // Academic: MachineLearning, LocalLLaMA, singularity
+      // Pharma: biotech, pharma
+      // Quant/Macro: investing, wallstreetbets, economics
+      // Journalist: technology, futurology
+      const subreddits = [
+        // Tech & AI (CTO, Academic)
+        'MachineLearning', 'LocalLLaMA', 'singularity', 'artificial',
+        // Startups & Funding (Banker, VC, Corp Dev)
+        'startups', 'venturecapital', 'fintech', 'Entrepreneur',
+        // Finance & Macro (Quant, LP, Macro)
+        'investing', 'stocks', 'economics', 'CryptoCurrency',
+        // Biotech & Pharma (Pharma BD)
+        'biotech', 'pharma',
+        // General Tech (Journalist)
+        'technology', 'programming', 'netsec'
+      ];
       const feedItems: Array<any> = [];
       let totalChecked = 0;
+
+      // Process subreddits with small delay to avoid rate limiting
       for (const subreddit of subreddits) {
         try {
-          const url = `https://www.reddit.com/r/${subreddit}/hot.json?limit=10`;
-          const response = await fetch(url, { headers: { 'User-Agent': 'NodeBench/1.0' } });
-          if (!response.ok) continue;
+          // Add small delay between requests to avoid rate limiting (500ms)
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // INCREASED: 25 posts per subreddit (up from 10)
+          const url = `https://www.reddit.com/r/${subreddit}/hot.json?limit=25`;
+          const response = await fetch(url, {
+            headers: {
+              'User-Agent': 'NodeBench:v1.0 (by /u/nodebench_research)',
+              'Accept': 'application/json'
+            },
+            signal: AbortSignal.timeout(10000)
+          });
+          if (!response.ok) {
+            console.log(`[Reddit] Subreddit ${subreddit} returned ${response.status}`);
+            continue;
+          }
           const data = await response.json();
           const posts = data.data?.children || [];
           for (const post of posts) {
@@ -901,14 +945,19 @@ export const ingestRedditInternal = internalAction({
             const p = post.data;
             if (!p || p.stickied || p.over_18) continue;
             const title = p.title || '';
-            const isRelevant = /AI|ML|LLM|GPT|startup|funding|tech/i.test(title);
-            if (isRelevant && p.score > 50) {
-              const isSignal = /funding|raise|series|\$\d+/i.test(title);
+            // Lower score threshold for niche subreddits, accept more content
+            const minScore = ['biotech', 'pharma', 'venturecapital', 'fintech'].includes(subreddit) ? 10 : 25;
+            if (p.score >= minScore) {
+              const isSignal = /funding|raise|series|\$\d+|acquisition|IPO|M&A/i.test(title);
+              const isBiotech = ['biotech', 'pharma'].includes(subreddit);
+              const isFinance = ['investing', 'stocks', 'economics', 'CryptoCurrency'].includes(subreddit);
+              const isAI = ['MachineLearning', 'LocalLLaMA', 'singularity', 'artificial'].includes(subreddit);
               feedItems.push({
                 sourceId: `reddit-${p.id}`,
                 type: isSignal ? "signal" : "news",
+                category: isBiotech ? "research" : isFinance ? "finance" : isAI ? "ai_ml" : "tech",
                 title: title.slice(0, 200),
-                summary: `Discussion on r/${p.subreddit} with ${p.num_comments} comments.`,
+                summary: p.selftext ? p.selftext.slice(0, 250) + '...' : `Discussion on r/${p.subreddit} with ${p.num_comments} comments.`,
                 url: `https://www.reddit.com${p.permalink}`,
                 source: `r/${p.subreddit}`,
                 tags: ['Reddit', p.subreddit],
@@ -937,73 +986,139 @@ export const ingestRSSInternal = internalAction({
   args: {},
   handler: async (ctx) => {
     try {
-      // Enhanced feed list with funding-focused sources
-      // Matches the defaultFeeds in ingestRSSFeed for consistency
+      // MASSIVELY EXPANDED: 25+ feeds covering ALL personas
+      // Each feed has priority (1=highest) for scoring
       const feeds = [
-        // Primary funding sources
-        { url: 'https://techcrunch.com/category/venture/feed/', source: 'TechCrunch Venture', tags: ['Funding', 'Startups', 'VC'] },
-        { url: 'https://techcrunch.com/category/startups/feed/', source: 'TechCrunch Startups', tags: ['Startups', 'Funding'] },
-        { url: 'https://venturebeat.com/category/deals/feed/', source: 'VentureBeat Deals', tags: ['Funding', 'Deals', 'M&A'] },
+        // ═══════════════════════════════════════════════════════════════
+        // BANKER / VC / CORP DEV - Funding & Deals (Priority 1)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://techcrunch.com/category/venture/feed/', source: 'TechCrunch Venture', tags: ['Funding', 'VC'], priority: 1, category: 'startups' },
+        { url: 'https://techcrunch.com/category/startups/feed/', source: 'TechCrunch Startups', tags: ['Startups', 'Funding'], priority: 1, category: 'startups' },
+        { url: 'https://venturebeat.com/category/deals/feed/', source: 'VentureBeat Deals', tags: ['Funding', 'M&A'], priority: 1, category: 'startups' },
+        { url: 'https://www.crunchbase.com/v4/data/feed/news', source: 'Crunchbase News', tags: ['Funding', 'Startups'], priority: 1, category: 'startups' },
+        { url: 'https://news.crunchbase.com/feed/', source: 'Crunchbase Blog', tags: ['Funding', 'Data'], priority: 2, category: 'startups' },
 
-        // Biotech/pharma funding (for DISCO/Ambros-type entities)
-        { url: 'https://www.fiercebiotech.com/rss/xml', source: 'FierceBiotech', tags: ['Biotech', 'Funding', 'Pharma'] },
-        { url: 'https://www.biopharmadive.com/feeds/news/', source: 'BioPharma Dive', tags: ['Biotech', 'Pharma', 'Clinical'] },
+        // ═══════════════════════════════════════════════════════════════
+        // PHARMA BD - Biotech & Life Sciences (Priority 1)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://www.fiercebiotech.com/rss/xml', source: 'FierceBiotech', tags: ['Biotech', 'Pharma'], priority: 1, category: 'research' },
+        { url: 'https://www.biopharmadive.com/feeds/news/', source: 'BioPharma Dive', tags: ['Pharma', 'Clinical'], priority: 1, category: 'research' },
+        { url: 'https://www.fiercepharma.com/rss/xml', source: 'FiercePharma', tags: ['Pharma', 'FDA'], priority: 1, category: 'research' },
+        { url: 'https://endpts.com/feed/', source: 'Endpoints News', tags: ['Biotech', 'Clinical'], priority: 1, category: 'research' },
+        { url: 'https://www.statnews.com/feed/', source: 'STAT News', tags: ['Health', 'Pharma'], priority: 1, category: 'research' },
 
-        // General tech (lower priority)
-        { url: 'https://techcrunch.com/feed/', source: 'TechCrunch', tags: ['Tech', 'Startups'] },
+        // ═══════════════════════════════════════════════════════════════
+        // QUANT PM / MACRO STRATEGIST - Finance & Markets (Priority 1)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://feeds.bloomberg.com/markets/news.rss', source: 'Bloomberg Markets', tags: ['Markets', 'Finance'], priority: 1, category: 'finance' },
+        { url: 'https://www.ft.com/?format=rss', source: 'Financial Times', tags: ['Finance', 'Macro'], priority: 1, category: 'finance' },
+        { url: 'https://feeds.reuters.com/reuters/businessNews', source: 'Reuters Business', tags: ['Business', 'Markets'], priority: 1, category: 'finance' },
+        { url: 'https://www.wsj.com/xml/rss/3_7014.xml', source: 'WSJ Markets', tags: ['Markets', 'Finance'], priority: 1, category: 'finance' },
+        { url: 'https://feeds.marketwatch.com/marketwatch/topstories/', source: 'MarketWatch', tags: ['Markets', 'Trading'], priority: 2, category: 'finance' },
+
+        // ═══════════════════════════════════════════════════════════════
+        // CTO / TECH LEAD - Security & DevOps (Priority 1)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://www.bleepingcomputer.com/feed/', source: 'BleepingComputer', tags: ['Security', 'CVE'], priority: 1, category: 'tech' },
+        { url: 'https://feeds.feedburner.com/TheHackersNews', source: 'The Hacker News', tags: ['Security', 'Cyber'], priority: 1, category: 'tech' },
+        { url: 'https://www.darkreading.com/rss.xml', source: 'Dark Reading', tags: ['Security', 'Enterprise'], priority: 1, category: 'tech' },
+        { url: 'https://www.infoworld.com/index.rss', source: 'InfoWorld', tags: ['DevOps', 'Cloud'], priority: 2, category: 'tech' },
+
+        // ═══════════════════════════════════════════════════════════════
+        // ACADEMIC R&D - Research & Papers (Priority 1)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://www.nature.com/nature.rss', source: 'Nature', tags: ['Research', 'Science'], priority: 1, category: 'research' },
+        { url: 'https://www.sciencemag.org/rss/news_current.xml', source: 'Science Magazine', tags: ['Research', 'Science'], priority: 1, category: 'research' },
+        { url: 'https://www.technologyreview.com/feed/', source: 'MIT Tech Review', tags: ['Research', 'AI'], priority: 1, category: 'research' },
+
+        // ═══════════════════════════════════════════════════════════════
+        // JOURNALIST - General Tech & AI News (Priority 2)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://techcrunch.com/feed/', source: 'TechCrunch', tags: ['Tech', 'News'], priority: 2, category: 'tech' },
+        { url: 'https://www.theverge.com/rss/index.xml', source: 'The Verge', tags: ['Tech', 'Products'], priority: 2, category: 'tech' },
+        { url: 'https://feeds.arstechnica.com/arstechnica/technology-lab', source: 'Ars Technica', tags: ['Tech', 'Deep Dive'], priority: 2, category: 'tech' },
+        { url: 'https://www.wired.com/feed/rss', source: 'Wired', tags: ['Tech', 'Culture'], priority: 2, category: 'tech' },
+        { url: 'https://venturebeat.com/category/ai/feed/', source: 'VentureBeat AI', tags: ['AI', 'Enterprise'], priority: 1, category: 'ai_ml' },
+
+        // ═══════════════════════════════════════════════════════════════
+        // AI-SPECIFIC - LLMs, Agents, ML (Priority 1)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://openai.com/blog/rss.xml', source: 'OpenAI Blog', tags: ['AI', 'LLM'], priority: 1, category: 'ai_ml' },
+        { url: 'https://www.anthropic.com/rss.xml', source: 'Anthropic', tags: ['AI', 'Safety'], priority: 1, category: 'ai_ml' },
+        { url: 'https://blog.google/technology/ai/rss', source: 'Google AI Blog', tags: ['AI', 'Research'], priority: 1, category: 'ai_ml' },
+        { url: 'https://huggingface.co/blog/feed.xml', source: 'Hugging Face', tags: ['AI', 'Open Source'], priority: 1, category: 'ai_ml' },
       ];
+
       const feedItems: Array<any> = [];
       let totalChecked = 0;
+
       for (const feed of feeds) {
         try {
-          const response = await fetch(feed.url, { headers: { 'User-Agent': 'NodeBench/1.0 (Research Feed Aggregator)' } });
+          const response = await fetch(feed.url, {
+            headers: { 'User-Agent': 'NodeBench/1.0 (Research Feed Aggregator)' },
+            signal: AbortSignal.timeout(10000) // 10s timeout per feed
+          });
           if (!response.ok) continue;
           const xmlText = await response.text();
           const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+          const entryRegex = /<entry>([\s\S]*?)<\/entry>/g; // Atom feeds
           const titleRegex = /<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/;
-          const linkRegex = /<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/;
-          const pubDateRegex = /<pubDate>([\s\S]*?)<\/pubDate>/;
+          const linkRegex = /<link[^>]*(?:href="([^"]+)"|>([^<]+)<)/;
+          const descRegex = /<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/;
+          const pubDateRegex = /<pubDate>([\s\S]*?)<\/pubDate>|<updated>([\s\S]*?)<\/updated>/;
+
+          // Try RSS items first, then Atom entries
           let match;
           let itemCount = 0;
-          // Increase limit to 10 for funding-focused feeds
-          const maxItems = feed.tags.includes('Funding') ? 10 : 5;
-          while ((match = itemRegex.exec(xmlText)) !== null && itemCount < maxItems) {
+          // INCREASED: 20 items per priority-1 feed, 10 per priority-2
+          const maxItems = feed.priority === 1 ? 20 : 10;
+
+          const regex = xmlText.includes('<entry>') ? entryRegex : itemRegex;
+
+          while ((match = regex.exec(xmlText)) !== null && itemCount < maxItems) {
             totalChecked++;
             itemCount++;
             const item = match[1];
             const titleMatch = titleRegex.exec(item);
             const linkMatch = linkRegex.exec(item);
+            const descMatch = descRegex.exec(item);
             const pubDateMatch = pubDateRegex.exec(item);
+
             if (!titleMatch || !linkMatch) continue;
-            const title = titleMatch[1].trim().replace(/<[^>]+>/g, '');
-            const link = linkMatch[1].trim();
-            // Use current time for publishedAt to ensure items appear in dashboard (within 7-day window)
-            // This makes RSS items fresh and prioritized in the daily brief
-            const pubDate = new Date().toISOString();
-            // Enhanced relevance filter for funding/company news
-            const isRelevant = /AI|startup|funding|raises|series [A-Z]|seed|venture|million|billion|biotech|pharma|clinical|therapeutics|FDA/i.test(title);
-            if (isRelevant) {
-              const sourcePrefix = feed.source.replace(/\s+/g, '-').toLowerCase();
-              feedItems.push({
-                sourceId: `rss-${sourcePrefix}-${Date.now()}-${itemCount}`,
-                type: "news",
-                title: title.slice(0, 200),
-                summary: `Article from ${feed.source}`,
-                url: link,
-                source: feed.source,
-                tags: feed.tags,
-                metrics: [],
-                publishedAt: pubDate,
-                // Higher scores for funding-focused feeds
-                score: feed.tags.includes('Funding') ? 50 + Math.floor(Math.random() * 40) : 30 + Math.floor(Math.random() * 40)
-              });
-            }
+
+            const title = titleMatch[1].trim().replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+            const link = (linkMatch[1] || linkMatch[2] || '').trim();
+            const description = descMatch ? descMatch[1].trim().replace(/<[^>]+>/g, '').slice(0, 300) : '';
+            const pubDate = pubDateMatch ? (pubDateMatch[1] || pubDateMatch[2]) : new Date().toISOString();
+
+            // Minimal relevance filter - trust the source curation
+            const isSignal = /funding|raise|series [A-Z]|seed|\$\d+[MB]|acquisition|IPO|M&A|partnership/i.test(title);
+
+            const sourcePrefix = feed.source.replace(/\s+/g, '-').toLowerCase().slice(0, 20);
+            feedItems.push({
+              sourceId: `rss-${sourcePrefix}-${Date.now()}-${itemCount}`,
+              type: isSignal ? "signal" : "news",
+              category: feed.category || "tech",
+              title: title.slice(0, 200),
+              summary: description || `Article from ${feed.source}`,
+              url: link,
+              source: feed.source,
+              tags: feed.tags,
+              metrics: [],
+              publishedAt: new Date(pubDate).toISOString() || new Date().toISOString(),
+              // Priority-based scoring
+              score: feed.priority === 1 ? 60 + Math.floor(Math.random() * 30) : 40 + Math.floor(Math.random() * 30)
+            });
           }
-        } catch {}
+        } catch (err) {
+          // Silently skip failed feeds
+        }
       }
+
       if (feedItems.length > 0) {
         await ctx.runMutation(internal.feed.saveItems, { items: feedItems });
       }
+      console.log(`[ingestRSSInternal] Ingested ${feedItems.length} items from ${feeds.length} feeds`);
       return { status: "success", ingested: feedItems.length, checked: totalChecked };
     } catch (error) {
       return { status: "error", message: String(error), ingested: 0, checked: 0 };

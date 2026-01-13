@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Newspaper, Zap, TrendingUp, Briefcase, LayoutGrid, Layers } from "lucide-react";
 import { formatBriefDate, isBriefDateToday } from "@/lib/briefDate";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -23,6 +23,17 @@ import { NotificationActivityPanel } from "@/components/NotificationActivityPane
 import { FeedReaderModal, type ReaderItem } from "@/features/research/components/FeedReaderModal";
 import { EntityContextDrawer } from "@/features/research/components/EntityContextDrawer";
 import { DealRadar } from "@/features/research/components/DealRadar";
+import { cn } from "@/lib/utils";
+
+// Tab definitions for the main content sections
+type ContentTab = 'overview' | 'signals' | 'briefing' | 'deals';
+
+const CONTENT_TABS: Array<{ id: ContentTab; label: string; icon: React.ElementType; description: string }> = [
+  { id: 'overview', label: 'Overview', icon: LayoutGrid, description: 'Digest + Personal Pulse' },
+  { id: 'signals', label: 'Signals', icon: Zap, description: 'Live Signal Stream' },
+  { id: 'briefing', label: 'Briefing', icon: Layers, description: 'Deep Institutional Analysis' },
+  { id: 'deals', label: 'Deals', icon: Briefcase, description: 'Deal Radar & Funding' },
+];
 
 export interface ResearchHubProps {
   onDocumentSelect?: (documentId: string) => void;
@@ -55,6 +66,7 @@ function ResearchHubContent(props: ResearchHubProps) {
   const [readerItem, setReaderItem] = useState<ReaderItem | null>(null);
   const [activeEntity, setActiveEntity] = useState<{ name: string; type: "company" | "person" } | null>(null);
   const seededAuditRef = useRef(false);
+  const [activeTab, setActiveTab] = useState<ContentTab>('overview');
 
   // Fetch all brief data (Global + Personal)
   const {
@@ -434,6 +446,7 @@ function ResearchHubContent(props: ResearchHubProps) {
 
           {onGoHome && (
             <button
+              type="button"
               onClick={onGoHome}
               className="flex items-center gap-2 text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] hover:text-emerald-900 transition-colors"
             >
@@ -449,6 +462,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <>
                   {availableDates.slice(0, 3).map((date: string) => (
                     <button
+                      type="button"
                       key={date}
                       onClick={() => setSelectedDate(date)}
                       className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
@@ -461,6 +475,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                   ))}
                   <div className="w-[1px] h-3 bg-stone-300 mx-1" />
                   <button
+                    type="button"
                     onClick={() => setSelectedDate(undefined)}
                     className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-emerald-950 text-white" : "text-stone-400"}`}
                   >
@@ -531,108 +546,136 @@ function ResearchHubContent(props: ResearchHubProps) {
           className="mx-auto max-w-[1600px] px-16 pt-8"
         />
 
-        <div className="max-w-[1600px] mx-auto flex items-start">
+        <div className="max-w-[1600px] mx-auto flex items-start gap-4">
 
-          {/* LEFT: THE PAPER (Scrolls with the main container) */}
-          <div className="flex-1 pl-16 pr-12 py-16 space-y-28 pb-32">
+          {/* LEFT: MAIN CONTENT WITH TABS */}
+          <div className="flex-1 pl-6 md:pl-10 pr-4 md:pr-6 py-4 pb-16">
 
-            {/* 1. EXECUTIVE SYNTHESIS (ACT I) */}
-            <section
-              ref={actIRef}
-              data-act-id="actI"
-              className="animate-in fade-in duration-700"
-            >
-              <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                <div className="flex items-center gap-4">
-                  <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Executive Synthesis</h3>
-                  {selectedDate && (
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[9px] font-black uppercase tracking-widest border border-amber-900/10">Archive View</span>
-                  )}
+            {/* TAB NAVIGATION */}
+            <nav className="flex items-center gap-1 mb-4 p-1 bg-stone-100/50 rounded-lg border border-stone-200 w-fit">
+              {CONTENT_TABS.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all',
+                      activeTab === tab.id
+                        ? 'bg-white text-emerald-900 shadow-sm border border-stone-200'
+                        : 'text-stone-500 hover:text-stone-700 hover:bg-stone-100'
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* TAB CONTENT */}
+            <div className="space-y-6">
+
+              {/* OVERVIEW TAB: Digest + Personal Pulse */}
+              {activeTab === 'overview' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  {/* Executive Synthesis */}
+                  <section ref={actIRef} data-act-id="actI">
+                    <div className="mb-3 flex items-center justify-between border-b border-stone-200 pb-2">
+                      <div className="flex items-center gap-3">
+                        <Newspaper className="w-4 h-4 text-emerald-800" />
+                        <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.3em]">Executive Synthesis</h3>
+                        {selectedDate && (
+                          <span className="px-1.5 py-0.5 bg-amber-100 text-amber-900 text-[9px] font-bold uppercase tracking-wider border border-amber-900/10 rounded">Archive</span>
+                        )}
+                      </div>
+                      <div className={cn('w-1.5 h-1.5 rounded-full animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-emerald-600')} />
+                    </div>
+                    <DigestSection
+                      onItemClick={handleDigestItemClick}
+                      onEntityClick={handleEntityOpen}
+                    />
+                  </section>
+
+                  {/* Personal Pulse */}
+                  <section className="pt-2">
+                    <PersonalPulse
+                      personalizedContext={personalizedContext}
+                      tasksToday={tasksToday || []}
+                      recentDocs={recentDocs || []}
+                      onDocumentSelect={props.onDocumentSelect}
+                    />
+                  </section>
                 </div>
-                <div className={`w-2 h-2 rounded-full ${selectedDate ? 'bg-amber-500' : 'bg-emerald-900'} animate-pulse`} />
-              </div>
-              <DigestSection
-                onItemClick={handleDigestItemClick}
-                onEntityClick={handleEntityOpen}
-              />
-            </section>
+              )}
 
-            {/* PERSONALIZED OVERLAY SECTION */}
-            <section className="animate-in fade-in duration-700 delay-75">
-              <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Personal Pulse</h3>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest">Local_Context_Active</span>
-                </div>
-              </div>
-              <PersonalPulse
-                personalizedContext={personalizedContext}
-                tasksToday={tasksToday || []}
-                recentDocs={recentDocs || []}
-                onDocumentSelect={props.onDocumentSelect}
-              />
-            </section>
+              {/* SIGNALS TAB: Live Signal Stream */}
+              {activeTab === 'signals' && (
+                <section ref={actIIIRef} data-act-id="actIII" className="animate-in fade-in duration-300">
+                  <div className="mb-3 flex items-center justify-between border-b border-stone-200 pb-2">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-4 h-4 text-orange-600" />
+                      <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.3em]">Live Signal Stream</h3>
+                    </div>
+                    <div className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold uppercase tracking-wider rounded">Real-time</div>
+                  </div>
+                  <div className="bg-stone-50/50 p-4 border border-stone-200/60 rounded-lg">
+                    <FeedSection
+                      onItemClick={handleFeedItemClick}
+                      onOpenWithAgent={handleFeedOpenWithAgent}
+                    />
+                  </div>
+                </section>
+              )}
 
-            {/* 2. THE BRIEFING (ACT II) */}
-            <section
-              ref={actIIRef}
-              data-act-id="actII"
-              className="animate-in fade-in duration-700 delay-100"
-            >
-              <div className="mb-14 flex items-center justify-between border-b border-stone-200 pb-4">
-                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Institutional Briefing</h3>
-                <span className="text-[10px] font-serif italic text-stone-400">Deep Analysis</span>
-              </div>
-              <BriefingSection
-                onActChange={(act) => {
-                  setActiveAct(act as any);
-                  // Logic for internal act changes within BriefingSection could still update focus
-                  updateFocus({ briefId: (briefMemory as any)?._id || "morning_brief_latest", currentAct: act as any });
-                }}
-                onAskAI={handleAskAI}
-                onOpenReader={handleOpenReader}
-              />
-            </section>
+              {/* BRIEFING TAB: Institutional Briefing */}
+              {activeTab === 'briefing' && (
+                <section ref={actIIRef} data-act-id="actII" className="animate-in fade-in duration-300">
+                  <div className="mb-3 flex items-center justify-between border-b border-stone-200 pb-2">
+                    <div className="flex items-center gap-3">
+                      <Layers className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.3em]">Institutional Briefing</h3>
+                    </div>
+                    <span className="text-[10px] font-medium italic text-stone-400">Deep Analysis</span>
+                  </div>
+                  <BriefingSection
+                    onActChange={(act) => {
+                      setActiveAct(act as any);
+                      updateFocus({ briefId: (briefMemory as any)?._id || "morning_brief_latest", currentAct: act as any });
+                    }}
+                    onAskAI={handleAskAI}
+                    onOpenReader={handleOpenReader}
+                  />
+                </section>
+              )}
 
-            {/* 3. SIGNAL STREAM (ACT III) */}
-            <section
-              ref={actIIIRef}
-              data-act-id="actIII"
-              className="animate-in fade-in duration-700 delay-200"
-            >
-              <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Live Signal Stream</h3>
-                <div className="px-2 py-0.5 bg-emerald-50 text-emerald-900 border border-emerald-900/10 text-[9px] font-black uppercase tracking-widest">Real-time Nodes</div>
-              </div>
-              <div className="bg-[#f2f1ed]/30 p-10 border border-stone-200/60">
-                <FeedSection
-                  onItemClick={handleFeedItemClick}
-                  onOpenWithAgent={handleFeedOpenWithAgent}
-                />
-              </div>
-            </section>
-
-            {/* 4. DEAL RADAR */}
-            <section className="animate-in fade-in duration-700 delay-300 pb-32">
-              <div className="mb-10 flex items-center justify-between border-b border-stone-200 pb-4">
-                <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.4em]">Deal Radar</h3>
-                <div className="px-2 py-0.5 bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest">JPM_BANKER</div>
-              </div>
-              <DealRadar
-                onDealClick={(dealId, companyName) => {
-                  setActiveEntity({ name: companyName, type: "company" });
-                }}
-              />
-            </section>
+              {/* DEALS TAB: Deal Radar */}
+              {activeTab === 'deals' && (
+                <section className="animate-in fade-in duration-300 pb-8">
+                  <div className="mb-3 flex items-center justify-between border-b border-stone-200 pb-2">
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="w-4 h-4 text-emerald-700" />
+                      <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.3em]">Deal Radar</h3>
+                    </div>
+                    <div className="px-1.5 py-0.5 bg-gray-900 text-white text-[9px] font-bold uppercase tracking-wider rounded">JPM</div>
+                  </div>
+                  <DealRadar
+                    onDealClick={(dealId, companyName) => {
+                      setActiveEntity({ name: companyName, type: "company" });
+                    }}
+                  />
+                </section>
+              )}
+            </div>
           </div>
 
-          {/* RIGHT: THE HUD (Sticky to the main scroll container) */}
-          <aside className="w-[450px] shrink-0 sticky top-0 h-fit p-12 pr-16 hidden xl:block">
-            {/* Gradient separator fallback */}
-            <div className="absolute left-0 top-12 bottom-12 w-px bg-gradient-to-b from-stone-200/0 via-stone-200 to-stone-200/0" />
+          {/* RIGHT: COMPACT HUD SIDEBAR */}
+          <aside className="w-[340px] shrink-0 sticky top-0 h-fit py-4 pr-6 hidden xl:block">
+            {/* Gradient separator */}
+            <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-stone-200/0 via-stone-200 to-stone-200/0" />
 
-            <div className="space-y-12">
+            <div className="space-y-4 pl-4">
               {phasedDashboardMetrics ? (
                 <ActAwareDashboard
                   activeAct={activeAct}
@@ -646,15 +689,14 @@ function ResearchHubContent(props: ResearchHubProps) {
                   onEvidenceClick={handleEvidenceOpen}
                 />
               ) : (
-                // Fallback while loading
                 <DashboardSection activeAct={activeAct} />
               )}
               <NotificationActivityPanel
                 mode="topic"
                 variant="hub"
-                title="Morning Digest Log"
-                subtitle="Global ntfy channel: nodebench"
-                limit={5}
+                title="Activity Log"
+                subtitle="nodebench"
+                limit={4}
               />
             </div>
           </aside>

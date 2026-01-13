@@ -3,6 +3,7 @@
 
 import { internalQuery } from "../../../_generated/server";
 import { v } from "convex/values";
+import type { Doc } from "../../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -50,7 +51,7 @@ export const getCachedContextPack = internalQuery({
       .withIndex("by_thread_hash", q =>
         q.eq("threadId", args.threadId).eq("docSetHash", args.docSetHash)
       )
-      .first();
+      .first() as Doc<"contextPacks"> | null;
 
     if (!cached) return null;
 

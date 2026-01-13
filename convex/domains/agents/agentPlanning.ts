@@ -7,7 +7,14 @@
 
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
+import type { Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+// Step type for type inference
+type PlanStep = {
+    description: string;
+    status?: "pending" | "in_progress" | "completed";
+};
 
 
 /**
@@ -35,7 +42,7 @@ export const createPlan = mutation({
         const now = Date.now();
 
         // Normalize steps to ensure all have a status
-        const normalizedSteps = args.steps.map(step => ({
+        const normalizedSteps = args.steps.map((step: PlanStep) => ({
             description: step.description,
             status: step.status || "pending" as const,
         }));
@@ -72,7 +79,7 @@ export const updatePlanStep = mutation({
             throw new Error("Authentication required");
         }
 
-        const plan = await ctx.db.get(args.planId);
+        const plan = await ctx.db.get(args.planId) as Doc<"agentPlans"> | null;
         if (!plan) {
             throw new Error("Plan not found");
         }
@@ -132,7 +139,7 @@ export const getPlan = query({
             return null;
         }
 
-        const plan = await ctx.db.get(args.planId);
+        const plan = await ctx.db.get(args.planId) as Doc<"agentPlans"> | null;
         if (!plan || plan.userId !== userId) {
             return null;
         }
@@ -196,7 +203,7 @@ export const deletePlan = mutation({
             throw new Error("Authentication required");
         }
 
-        const plan = await ctx.db.get(args.planId);
+        const plan = await ctx.db.get(args.planId) as Doc<"agentPlans"> | null;
         if (!plan) {
             throw new Error("Plan not found");
         }
@@ -234,7 +241,7 @@ export const createPlanAsService = mutation({
         }
 
         const now = Date.now();
-        const normalizedSteps = args.steps.map(step => ({
+        const normalizedSteps = args.steps.map((step: PlanStep) => ({
             description: step.description,
             status: step.status || "pending" as const,
         }));
@@ -272,7 +279,7 @@ export const updatePlanStepAsService = mutation({
             throw new Error("Unauthorized: Invalid MCP secret");
         }
 
-        const plan = await ctx.db.get(args.planId);
+        const plan = await ctx.db.get(args.planId) as Doc<"agentPlans"> | null;
         if (!plan) throw new Error("Plan not found");
         if (plan.userId !== args.userId) throw new Error("Access denied");
 
@@ -309,7 +316,7 @@ export const getPlanAsService = query({
         if (args.secret !== "nodebench_dev_secret") {
             throw new Error("Unauthorized: Invalid MCP secret");
         }
-        const plan = await ctx.db.get(args.planId);
+        const plan = await ctx.db.get(args.planId) as Doc<"agentPlans"> | null;
         if (!plan || plan.userId !== args.userId) return null;
         return plan;
     },

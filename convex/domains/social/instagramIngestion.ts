@@ -149,6 +149,18 @@ export const getPostByUrl = query({
     },
 });
 
+/**
+ * List all posts (internal, for verification system).
+ * Returns all posts without authentication check.
+ */
+export const listAllPosts = query({
+    args: {},
+    returns: v.array(v.any()),
+    handler: async (ctx) => {
+        return await ctx.db.query("instagramPosts").collect();
+    },
+});
+
 export const createPendingPost = internalMutation({
     args: {
         userId: v.id("users"),
@@ -223,7 +235,25 @@ export const processPost = internalAction({
                         });
                     }
                 } else {
-                    console.error("Gemini transcription failed:", result.error);
+                    // Handle Gemini failure - check if it's a configuration issue
+                    const errorMsg = result.error || "Video transcription failed";
+                    console.error(`[InstagramIngestion] Gemini transcription failed: ${errorMsg}`);
+
+                    // If it's an API key issue, fail fast with clear message
+                    if (errorMsg.includes("API key not configured")) {
+                        await ctx.runMutation(internal.domains.social.instagramIngestion.updatePostError, {
+                            postId: args.postId,
+                            errorMessage: "Gemini API key not configured. Please add GEMINI_API_KEY to your environment variables.",
+                        });
+                        return null;
+                    }
+
+                    // For other errors, store the warning but continue (may still extract claims from caption)
+                    await ctx.runMutation(internal.domains.social.instagramIngestion.updatePostStatusWithWarning, {
+                        postId: args.postId,
+                        status: "analyzing",
+                        warning: `Video transcription failed: ${errorMsg}`,
+                    });
                 }
             }
 
@@ -265,7 +295,19 @@ export const processPost = internalAction({
                         });
                     }
                 } else {
-                    console.warn(`[InstagramIngestion] Image analysis failed: ${imageResult.error}`);
+                    // Handle Gemini failure for image analysis
+                    const errorMsg = imageResult.error || "Image analysis failed";
+                    console.warn(`[InstagramIngestion] Image analysis failed: ${errorMsg}`);
+
+                    // If it's an API key issue, fail fast with clear message
+                    if (errorMsg.includes("API key not configured")) {
+                        await ctx.runMutation(internal.domains.social.instagramIngestion.updatePostError, {
+                            postId: args.postId,
+                            errorMessage: "Gemini API key not configured. Please add GEMINI_API_KEY to your environment variables.",
+                        });
+                        return null;
+                    }
+                    // For other errors, continue but note the warning
                 }
             }
 
@@ -291,6 +333,18 @@ export const processPost = internalAction({
                 postId: args.postId,
                 status: "completed",
             });
+
+            // Step 6: Schedule fact verification for extracted claims (async)
+            const finalPost = await ctx.runQuery(internal.domains.social.instagramIngestion.getPost, {
+                postId: args.postId,
+            });
+            if (finalPost?.extractedClaims && finalPost.extractedClaims.length > 0) {
+                console.log(`[InstagramIngestion] Scheduling verification for ${finalPost.extractedClaims.length} claims`);
+                await ctx.scheduler.runAfter(0, internal.domains.verification.instagramClaimVerification.verifyInstagramClaims, {
+                    postId: args.postId,
+                    claims: finalPost.extractedClaims,
+                });
+            }
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -355,6 +409,28 @@ export const updatePostStatus = internalMutation({
     returns: v.null(),
     handler: async (ctx, args): Promise<null> => {
         await ctx.db.patch(args.postId, { status: args.status });
+        return null;
+    },
+});
+
+export const updatePostStatusWithWarning = internalMutation({
+    args: {
+        postId: v.id("instagramPosts"),
+        status: v.union(
+            v.literal("pending"),
+            v.literal("transcribing"),
+            v.literal("analyzing"),
+            v.literal("completed"),
+            v.literal("error")
+        ),
+        warning: v.string(),
+    },
+    returns: v.null(),
+    handler: async (ctx, args): Promise<null> => {
+        await ctx.db.patch(args.postId, {
+            status: args.status,
+            errorMessage: args.warning,
+        });
         return null;
     },
 });

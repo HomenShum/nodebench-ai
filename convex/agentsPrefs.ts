@@ -6,7 +6,7 @@
  */
 import { v } from "convex/values";
 import { mutation, query, internalQuery } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import type { Id, Doc } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -51,7 +51,7 @@ export const getAgentsPrefs = query({
     const preferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     return preferences?.agentsPrefs ?? {};
   },
@@ -74,7 +74,7 @@ export const setAgentsPrefs = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     const now = Date.now();
     const newAgentsPrefs = { ...(existing?.agentsPrefs || {}), ...args.prefs };
@@ -109,7 +109,7 @@ export const getAgentsPrefsByUserId = internalQuery({
     const preferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     return preferences?.agentsPrefs ?? {};
   },

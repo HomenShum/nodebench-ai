@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, query } from "../../../_generated/server";
+import type { Doc } from "../../../_generated/dataModel";
 
 const CIRCUIT_OPEN_FAILURES = 5;
 
@@ -66,7 +67,7 @@ export const recordToolFailure = internalMutation({
     const existing = await ctx.db
       .query("toolHealth")
       .withIndex("by_toolName", (q) => q.eq("toolName", args.toolName))
-      .first();
+      .first() as Doc<"toolHealth"> | null;
 
     const now = nowMs();
     if (!existing) {

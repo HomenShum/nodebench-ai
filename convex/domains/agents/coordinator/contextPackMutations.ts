@@ -3,6 +3,7 @@
 
 import { internalMutation } from "../../../_generated/server";
 import { v } from "convex/values";
+import type { Doc } from "../../../_generated/dataModel";
 
 /**
  * Store a context pack in the cache
@@ -20,7 +21,7 @@ export const storeContextPack = internalMutation({
       .withIndex("by_thread_hash", q =>
         q.eq("threadId", pack.threadId).eq("docSetHash", pack.docSetHash)
       )
-      .first();
+      .first() as Doc<"contextPacks"> | null;
 
     if (existing) {
       // Update existing

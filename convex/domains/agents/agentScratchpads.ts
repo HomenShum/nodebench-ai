@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
+import type { Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -14,7 +15,7 @@ export const getByAgentThread = query({
     const existing = await ctx.db
       .query("agentScratchpads")
       .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", args.agentThreadId))
-      .first();
+      .first() as Doc<"agentScratchpads"> | null;
 
     if (!existing || existing.userId !== userId) return null;
     return existing;
@@ -37,7 +38,7 @@ export const saveScratchpad = mutation({
     const existing = await ctx.db
       .query("agentScratchpads")
       .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", args.agentThreadId))
-      .first();
+      .first() as Doc<"agentScratchpads"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {

@@ -1,15 +1,14 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    CheckCircle2,
-    Clock,
     FileText,
-    Tag,
     Calendar,
     ChevronRight,
-    ArrowRight,
-    Sparkles
+    Sparkles,
+    Zap
 } from 'lucide-react';
+import { CompactSignalCard } from './CompactSignalCard';
+import { cn } from '@/lib/utils';
 
 interface PersonalPulseProps {
     personalizedContext: any;
@@ -18,134 +17,249 @@ interface PersonalPulseProps {
     onDocumentSelect?: (id: string) => void;
 }
 
+// Compact status pill
+function StatusPill({ isLive, count, total, freshness }: { isLive: boolean; count: number; total: number; freshness: string }) {
+    return (
+        <div className={cn(
+            'inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold',
+            isLive ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+        )}>
+            <span className={cn('w-1.5 h-1.5 rounded-full', isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500')} />
+            {isLive ? `${count}/${total} signals` : 'Waiting'}
+            <span className="text-stone-400">•</span>
+            <span className="text-stone-500">{freshness}</span>
+        </div>
+    );
+}
+
+// Source badge grid
+function SourceBadges({ sources }: { sources: Array<{ name: string; count: number }> }) {
+    if (sources.length === 0) return null;
+    return (
+        <div className="flex flex-wrap gap-1">
+            {sources.slice(0, 6).map(({ name, count }) => (
+                <span key={name} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-stone-100 rounded text-[9px] text-stone-600">
+                    {name} <span className="text-stone-400">({count})</span>
+                </span>
+            ))}
+            {sources.length > 6 && (
+                <span className="px-1.5 py-0.5 text-[9px] text-stone-400">+{sources.length - 6}</span>
+            )}
+        </div>
+    );
+}
+
 export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onDocumentSelect }: PersonalPulseProps) {
+    const [showAllSignals, setShowAllSignals] = useState(false);
+    const [contextTab, setContextTab] = useState<'tasks' | 'docs'>('tasks');
     const passingFeatures = personalizedContext?.passingFeatures || [];
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8">
+    // Extract data
+    const isLiveData = personalizedContext?.isLiveData === true;
+    const hasFeatures = passingFeatures.length > 0;
+    const freshestAge = personalizedContext?.freshestAgeHours;
+    const totalSignals = personalizedContext?.totalFreshSignals ?? 0;
+    const freshSignalsData = personalizedContext?.freshSignals;
+    const sourceStats = freshSignalsData?.sourceStats || {};
+    const totalAvailable = freshSignalsData?.totalAvailable ?? 0;
 
-            {/* 1. PERSONAL INTELLIGENCE OVERLAY */}
-            <div className="space-y-8">
-                <div className="flex items-center gap-3">
-                    <Sparkles className="w-4 h-4 text-emerald-900" />
-                    <h4 className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em]">Personal Intelligence Overlay</h4>
+    // Freshness label (compact)
+    const freshnessLabel = freshestAge != null
+        ? freshestAge < 1 ? 'now' : freshestAge < 24 ? `${freshestAge}h` : 'today'
+        : 'live';
+
+    // Source diversity - sorted by count
+    const sources = Object.entries(sourceStats)
+        .map(([name, count]) => ({ name, count: count as number }))
+        .sort((a, b) => b.count - a.count);
+
+    // Display features with fallback
+    // INCREASED: Show 10 signals by default, 20 when expanded for better space usage
+    const displayFeatures = hasFeatures ? passingFeatures : [];
+    const visibleCount = showAllSignals ? 20 : 10;
+
+    // Determine if workspace context has content
+    const hasWorkspaceContent = tasksToday.length > 0 || recentDocs.length > 0;
+
+    return (
+        <div className={cn(
+            'grid grid-cols-1 gap-4',
+            hasWorkspaceContent ? 'lg:grid-cols-12' : 'lg:grid-cols-1'
+        )}>
+            {/* LEFT: SIGNAL FEED */}
+            <div className={cn(
+                'bg-white border border-stone-200 rounded-lg overflow-hidden',
+                hasWorkspaceContent ? 'lg:col-span-8' : 'lg:col-span-full'
+            )}>
+                {/* Header */}
+                <div className="px-4 py-3 bg-gradient-to-r from-emerald-50 to-stone-50 border-b border-stone-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-emerald-600" />
+                        <div>
+                            <div className="text-[11px] font-bold text-stone-700 uppercase tracking-wide">Your Signal Feed</div>
+                            <div className="text-[10px] text-stone-500">Latest headlines from your tracked sources</div>
+                        </div>
+                    </div>
+                    <StatusPill isLive={isLiveData && hasFeatures} count={totalSignals} total={totalAvailable} freshness={freshnessLabel} />
                 </div>
 
-                {(() => {
-                    // Use sample features if none exist
-                    const displayFeatures = passingFeatures.length > 0 ? passingFeatures : [
-                        {
-                            id: 'R1',
-                            name: 'Agent Reliability Trends',
-                            resultMarkdown: 'Long-horizon agent benchmarks show significant improvements in task completion rates. Claude Opus 4.5 demonstrates 50% success rate on tasks requiring nearly 5 hours of sustained execution.',
-                        },
-                        {
-                            id: 'P1',
-                            name: 'Research Paper Highlights',
-                            resultMarkdown: 'Universal Reasoning Models achieve new benchmarks on ARC-AGI through recurrent computation patterns. This suggests a path toward more sample-efficient reasoning systems.',
-                        },
-                        {
-                            id: 'D1',
-                            name: 'Your Document Connections',
-                            resultMarkdown: 'Track hashtags like #ai-agents, #reasoning, or #multimodal to receive personalized intelligence overlays connecting your documents to daily signals.',
-                        },
-                    ];
-                    const isUsingSample = passingFeatures.length === 0;
+                {/* Source badges */}
+                {sources.length > 0 && (
+                    <div className="px-4 py-2 border-b border-stone-100 bg-stone-50/50">
+                        <SourceBadges sources={sources} />
+                    </div>
+                )}
 
-                    return (
-                        <div className="space-y-6">
-                            {isUsingSample && (
-                                <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg mb-4">
-                                    <p className="text-[10px] font-medium text-amber-700">
-                                        <Sparkles className="w-3 h-3 inline mr-1" />
-                                        Sample overlay — track hashtags to personalize
-                                    </p>
-                                </div>
-                            )}
-                            {displayFeatures.slice(0, 3).map((feature: any, idx: number) => (
-                                <motion.div
-                                    key={feature.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: idx * 0.1 }}
-                                    className="p-6 bg-white border border-stone-200 shadow-sm relative overflow-hidden group hover:border-emerald-900/40 transition-colors"
-                                >
-                                    <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-50/30 rounded-full blur-2xl -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Signal list - expanded with summaries for richer content */}
+                <div className={cn(
+                    'divide-y divide-stone-100 overflow-y-auto transition-all',
+                    showAllSignals ? 'max-h-[680px]' : 'max-h-[520px]'
+                )}>
+                    {displayFeatures.length > 0 ? (
+                        displayFeatures.slice(0, visibleCount).map((feature: any, idx: number) => {
+                            // Parse the actual title from resultMarkdown (format: "**Title** — Summary" or just "Title")
+                            const markdown = feature.resultMarkdown || '';
+                            const boldMatch = markdown.match(/\*\*(.+?)\*\*/);
+                            const actualTitle = boldMatch ? boldMatch[1] : markdown.slice(0, 120);
 
-                                    <div className="flex items-start gap-4">
-                                        <div className="mt-1 w-6 h-6 shrink-0 flex items-center justify-center bg-stone-100 text-stone-500 rounded-none text-[10px] font-bold">
-                                            {feature.id}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="text-[11px] font-black text-stone-400 uppercase tracking-widest leading-tight">
-                                                {feature.name}
-                                            </div>
-                                            <div className="text-sm font-serif leading-relaxed text-stone-800 line-clamp-3">
-                                                {feature.resultMarkdown?.replace(/#+ /g, '') || "Analyzing relevance..."}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+                            // Extract source label from feature.name (format: "📰 News • 2h ago")
+                            const nameParts = (feature.name || '').split(' • ');
+                            const sourceLabel = nameParts[0]?.replace(/^[^\w]+/, '').trim() || feature.source || 'Signal';
+
+                            // Get summary directly from feature or parse from markdown
+                            const summary = feature.summary || (markdown.includes(' — ') ? markdown.split(' — ')[1] : undefined);
+
+                            return (
+                                <CompactSignalCard
+                                    key={feature.id || idx}
+                                    title={actualTitle}
+                                    source={sourceLabel}
+                                    category={feature.category}
+                                    url={feature.url}
+                                    publishedAt={feature.timestamp ? new Date(feature.timestamp) : feature.publishedAt}
+                                    score={feature.score}
+                                    summary={summary}
+                                    showSummary={true}
+                                />
+                            );
+                        })
+                    ) : (
+                        <div className="p-6 text-center">
+                            <Sparkles className="w-5 h-5 text-stone-300 mx-auto mb-2" />
+                            <p className="text-xs text-stone-400">No signals yet. Ingestors run every 1–6 hours.</p>
                         </div>
-                    );
-                })()}
+                    )}
+                </div>
+
+                {/* Footer */}
+                {totalSignals > 6 && (
+                    <button
+                        type="button"
+                        onClick={() => setShowAllSignals(!showAllSignals)}
+                        className="w-full py-2.5 text-[11px] font-medium text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 border-t border-stone-100 transition-colors flex items-center justify-center gap-1"
+                    >
+                        {showAllSignals ? 'Show less' : `+${totalSignals - 6} more signals`}
+                        <ChevronRight className={cn('w-3 h-3 transition-transform', showAllSignals && 'rotate-90')} />
+                    </button>
+                )}
             </div>
 
-            {/* 2. WORKSPACE CONTEXT (Tasks & Docs) */}
-            <div className="space-y-8">
-                <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-emerald-900" />
-                    <h4 className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.3em]">Institutional Agenda</h4>
-                </div>
-
-                <div className="space-y-6">
-                    {/* Recent Tasks */}
-                    <div className="space-y-3">
-                        <div className="text-[9px] font-black text-stone-400 uppercase tracking-[0.2em] mb-4">Today's Deliverables</div>
-                        {tasksToday && tasksToday.length > 0 ? (
-                            tasksToday.slice(0, 3).map((task: any) => (
-                                <div key={task._id} className="flex items-center justify-between p-3 bg-stone-100/50 border border-transparent hover:border-stone-200 transition-colors cursor-pointer group">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-2 h-2 rounded-full ${task.status === 'done' ? 'bg-emerald-500' : 'bg-stone-300'}`} />
-                                        <span className="text-xs font-serif font-medium text-stone-700">{task.title}</span>
-                                    </div>
-                                    <ChevronRight className="w-3 h-3 text-stone-300 group-hover:text-stone-500 transition-colors" />
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-[10px] font-serif italic text-stone-400">No immediate actions tracked for today.</div>
-                        )}
+            {/* RIGHT: WORKSPACE CONTEXT (TABBED) - Only show if there's content */}
+            {hasWorkspaceContent && (
+                <div className="lg:col-span-4 bg-white border border-stone-200 rounded-lg overflow-hidden">
+                    <div className="px-4 py-3 bg-gradient-to-r from-stone-50 to-white border-b border-stone-100">
+                        <div className="flex items-center justify-between">
+                            <div className="text-[11px] font-bold text-stone-700 uppercase tracking-wide">Your Context</div>
+                            <div className="text-[10px] text-stone-500">Quick access</div>
+                        </div>
+                        <div className="mt-2 inline-flex rounded-lg border border-stone-200 bg-white p-1">
+                            <button
+                                type="button"
+                                onClick={() => setContextTab('tasks')}
+                                className={cn(
+                                    'px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors flex items-center gap-1.5',
+                                    contextTab === 'tasks' ? 'bg-blue-50 text-blue-700' : 'text-stone-600 hover:bg-stone-50'
+                                )}
+                            >
+                                <Calendar className="w-3.5 h-3.5" />
+                                Today
+                                {tasksToday.length > 0 && (
+                                    <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-bold">
+                                        {tasksToday.length}
+                                    </span>
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setContextTab('docs')}
+                                className={cn(
+                                    'px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors flex items-center gap-1.5',
+                                    contextTab === 'docs' ? 'bg-violet-50 text-violet-700' : 'text-stone-600 hover:bg-stone-50'
+                                )}
+                            >
+                                <FileText className="w-3.5 h-3.5" />
+                                Recent
+                                {recentDocs.length > 0 && (
+                                    <span className="ml-1 px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-[9px] font-bold">
+                                        {recentDocs.length}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Recent Documents */}
-                    <div className="space-y-3 pt-4">
-                        <div className="text-[9px] font-black text-stone-400 uppercase tracking-[0.2em] mb-4">Recent From Library</div>
-                        {recentDocs && recentDocs.length > 0 ? (
-                            recentDocs.slice(0, 3).map((doc: any) => (
-                                <div
-                                    key={doc._id}
-                                    onClick={() => onDocumentSelect?.(doc._id)}
-                                    className="flex items-center gap-4 p-3 hover:bg-stone-100 transition-colors cursor-pointer group"
-                                >
-                                    <FileText className="w-4 h-4 text-stone-400 group-hover:text-emerald-900 transition-colors" />
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-serif font-bold text-stone-800">{doc.title}</span>
-                                        <span className="text-[9px] font-mono text-stone-400 uppercase tracking-tighter">
-                                            Updated {doc.updatedAt && !isNaN(new Date(doc.updatedAt).getTime())
+                    <AnimatePresence mode="wait">
+                        {contextTab === 'tasks' ? (
+                            <motion.div
+                                key="tasks"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -6 }}
+                                transition={{ duration: 0.18 }}
+                                className="divide-y divide-stone-100"
+                            >
+                                {tasksToday.slice(0, 6).map((task: any) => (
+                                    <div key={task._id} className="px-4 py-2.5 flex items-center gap-2 hover:bg-stone-50">
+                                        <div className={cn(
+                                            'w-1.5 h-1.5 rounded-full shrink-0',
+                                            task.status === 'done' ? 'bg-emerald-500' : 'bg-stone-300'
+                                        )} />
+                                        <span className="text-[12px] text-stone-700 truncate flex-1">{task.title}</span>
+                                    </div>
+                                ))}
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="docs"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -6 }}
+                                transition={{ duration: 0.18 }}
+                                className="divide-y divide-stone-100"
+                            >
+                                {recentDocs.slice(0, 6).map((doc: any) => (
+                                    <button
+                                        type="button"
+                                        key={doc._id}
+                                        onClick={() => onDocumentSelect?.(doc._id)}
+                                        className="w-full text-left px-4 py-2.5 hover:bg-stone-50 group"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-[12px] text-stone-700 truncate flex-1">{doc.title}</div>
+                                            <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-stone-500 shrink-0" />
+                                        </div>
+                                        <div className="text-[9px] text-stone-400 mt-0.5">
+                                            {doc.updatedAt && !isNaN(new Date(doc.updatedAt).getTime())
                                                 ? new Date(doc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                                 : 'recently'}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-[10px] font-serif italic text-stone-400">Quiet in the workspace recently.</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </motion.div>
                         )}
-                    </div>
+                    </AnimatePresence>
                 </div>
-            </div>
-
+            )}
         </div>
     );
 }

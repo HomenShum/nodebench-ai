@@ -74,7 +74,19 @@ export const modelPricing: Record<string, ModelPricing> = {
   "qwen3-235b": { inputPer1M: 0.18, outputPer1M: 0.54, contextWindow: 131072 },
   "minimax-m2.1": { inputPer1M: 0.28, outputPer1M: 1.20, contextWindow: 196608 },
   "mistral-large": { inputPer1M: 2.00, outputPer1M: 6.00, contextWindow: 131072 },
-  "mimo-v2-flash-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 32768 },
+
+  // OpenRouter Free-Tier Models ($0 pricing - auto-discovered Jan 2026)
+  "mimo-v2-flash-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 262144 },
+  "devstral-2-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 262144 },
+  "deepseek-r1-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 163840 },
+  "llama-4-maverick-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
+  "llama-4-scout-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
+  "glm-4.5-air-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
+  "kat-coder-pro-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
+  "deepseek-chimera-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 163840 },
+  "grok-4-fast-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
+  "venice-dolphin-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 32768 },
+  "nemotron-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

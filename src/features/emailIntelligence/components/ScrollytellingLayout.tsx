@@ -6,6 +6,7 @@ import SmartLink from "./SmartLink";
 import DeepDiveAccordion from "./DeepDiveAccordion";
 import dossierStream from "../content/dossierStream.json";
 import { Sparkles, Loader2, Shield } from "lucide-react";
+import { DEFAULT_MODEL } from "@shared/llm/approvedModels";
 
 // Define a proper type to avoid JSON inference issues
 export interface ScrollySection {
@@ -162,7 +163,7 @@ export const ScrollytellingLayout: React.FC<Props> = ({ data }) => {
 
       const result = await analyzeWithAgent({
         prompt: `Analyze this email intelligence dossier using receipts-first research. Verify key claims, identify contradictions between sources, and rank source quality:\n\n${contentSummary.slice(0, 4000)}`,
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
       });
       
       setAnalysisResult(typeof result === 'string' ? result : JSON.stringify(result, null, 2));

@@ -5,7 +5,7 @@
  */
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "../../_generated/server";
-import { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import { internal } from "../../_generated/api";
 
 // Job type union for validation
@@ -144,13 +144,13 @@ export const updateJobStatus = internalMutation({
     outputPayload: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const job = await ctx.db.get(args.jobId);
+    const job = await ctx.db.get(args.jobId) as Doc<"enrichmentJobs"> | null;
     if (!job) {
       throw new Error(`Job not found: ${args.jobId}`);
     }
 
     const now = Date.now();
-    const updates: Partial<typeof job> = {
+    const updates: Partial<Doc<"enrichmentJobs">> = {
       status: args.status,
     };
 

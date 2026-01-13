@@ -158,6 +158,19 @@ export const getEntityContext = query({
 });
 
 /**
+ * Get entity context by ID (internal use)
+ * Used for enriching funding events with entity data
+ */
+export const getEntityContextById = internalQuery({
+  args: {
+    entityId: v.id("entityContexts"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.entityId);
+  },
+});
+
+/**
  * Get entity context by name only - tries company first, then person
  * Used by EntityProfilePage when type is unknown
  */

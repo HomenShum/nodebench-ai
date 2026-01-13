@@ -17,23 +17,25 @@ import {
   Search,
   Sparkles,
   Command,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseSpawnCommand, isSpawnCommand } from "@/hooks/useSwarm";
+
+// Import from SINGLE SOURCE OF TRUTH
+import {
+  APPROVED_MODELS,
+  MODEL_UI_INFO,
+  DEFAULT_MODEL,
+  type ApprovedModel,
+} from "@shared/llm/approvedModels";
 
 // ============================================================================
 // Types & Constants
 // ============================================================================
 
 export type AgentMode = "quick" | "research" | "deep";
-export type ApprovedModel =
-  | "claude-3-5-sonnet-latest"
-  | "claude-3-5-haiku-latest"
-  | "claude-sonnet-4-20250514"
-  | "gpt-4o"
-  | "gpt-4o-mini"
-  | "o3-mini"
-  | "gemini-2.0-flash";
+export type { ApprovedModel };
 
 const MODE_CONFIG: Record<AgentMode, { label: string; description: string; icon: React.ElementType }> = {
   quick: {
@@ -53,15 +55,16 @@ const MODE_CONFIG: Record<AgentMode, { label: string; description: string; icon:
   },
 };
 
-const MODEL_OPTIONS: { value: ApprovedModel; label: string; provider: string }[] = [
-  { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4", provider: "Anthropic" },
-  { value: "claude-3-5-sonnet-latest", label: "Claude 3.5 Sonnet", provider: "Anthropic" },
-  { value: "claude-3-5-haiku-latest", label: "Claude 3.5 Haiku", provider: "Anthropic" },
-  { value: "gpt-4o", label: "GPT-4o", provider: "OpenAI" },
-  { value: "gpt-4o-mini", label: "GPT-4o Mini", provider: "OpenAI" },
-  { value: "o3-mini", label: "o3-mini", provider: "OpenAI" },
-  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "Google" },
-];
+// Build MODEL_OPTIONS from shared APPROVED_MODELS (SINGLE SOURCE OF TRUTH)
+const MODEL_OPTIONS = APPROVED_MODELS.map((modelId) => {
+  const info = MODEL_UI_INFO[modelId];
+  return {
+    value: modelId,
+    label: info.name,
+    provider: info.provider.charAt(0).toUpperCase() + info.provider.slice(1),
+    isFree: info.isFree ?? false,
+  };
+});
 
 const QUICK_ACTIONS = [
   { label: "Research", command: "/spawn", agents: ["doc", "media", "sec"], icon: Search },
@@ -181,12 +184,13 @@ const ModelSelector = memo(function ModelSelector({
           isOpen && "bg-[var(--bg-hover)]"
         )}
       >
-        <span className="max-w-[100px] truncate">{selected.label}</span>
+        <span className="max-w-[120px] truncate">{selected.label}</span>
+        {selected.isFree && <Gift className="w-3 h-3 text-violet-500" />}
         <ChevronDown className={cn("w-3 h-3 transition-transform", isOpen && "rotate-180")} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 z-50 min-w-[200px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg overflow-hidden max-h-[280px] overflow-y-auto">
+        <div className="absolute top-full right-0 mt-1 z-50 min-w-[220px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg overflow-hidden max-h-[320px] overflow-y-auto">
           {MODEL_OPTIONS.map((m) => (
             <button
               key={m.value}
@@ -201,7 +205,10 @@ const ModelSelector = memo(function ModelSelector({
                 model === m.value && "bg-[var(--accent-primary-bg)]"
               )}
             >
-              <div className="text-xs font-medium text-[var(--text-primary)]">{m.label}</div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-[var(--text-primary)]">{m.label}</span>
+                {m.isFree && <Gift className="w-3 h-3 text-violet-500" />}
+              </div>
               <div className="text-[10px] text-[var(--text-muted)]">{m.provider}</div>
             </button>
           ))}
@@ -223,7 +230,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
 }: AgentCommandBarProps) {
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<AgentMode>("quick");
-  const [model, setModel] = useState<ApprovedModel>("claude-sonnet-4-20250514");
+  const [model, setModel] = useState<ApprovedModel>(DEFAULT_MODEL);
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [showHint, setShowHint] = useState(false);

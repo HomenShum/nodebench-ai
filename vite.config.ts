@@ -62,8 +62,18 @@ window.addEventListener('message', async (message) => {
   },
   build: {
     chunkSizeWarningLimit: 1200,
+    // Enable minification optimizations
+    minify: 'esbuild',
+    // Target modern browsers for smaller output
+    target: 'es2020',
+    // Optimize CSS
+    cssMinify: true,
     rollupOptions: {
       output: {
+        // Use content hashing for better caching
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks(id) {
           if (!id.includes("node_modules")) {
             return undefined;
@@ -71,6 +81,7 @@ window.addEventListener('message', async (message) => {
 
           const normalizedId = id.replace(/\\/g, "/");
 
+          // Core React - keep separate for maximum caching
           if (
             normalizedId.includes("/node_modules/react/") ||
             normalizedId.includes("/node_modules/react-dom/")
@@ -78,6 +89,12 @@ window.addEventListener('message', async (message) => {
             return "react-vendor";
           }
 
+          // Scheduler (React dependency) - separate for caching
+          if (normalizedId.includes("/node_modules/scheduler/")) {
+            return "react-vendor";
+          }
+
+          // Convex SDK - frequently used, separate chunk
           if (
             normalizedId.includes("/node_modules/convex/") ||
             normalizedId.includes("/node_modules/@convex-dev/")
@@ -85,25 +102,36 @@ window.addEventListener('message', async (message) => {
             return "convex-vendor";
           }
 
+          // AI SDKs - split into smaller chunks
+          if (normalizedId.includes("/node_modules/@anthropic-ai/")) {
+            return "ai-anthropic-vendor";
+          }
+          if (normalizedId.includes("/node_modules/openai/")) {
+            return "ai-openai-vendor";
+          }
+          if (normalizedId.includes("/node_modules/@google/")) {
+            return "ai-google-vendor";
+          }
           if (
             normalizedId.includes("/node_modules/ai/") ||
-            normalizedId.includes("/node_modules/@ai-sdk/") ||
-            normalizedId.includes("/node_modules/openai/") ||
-            normalizedId.includes("/node_modules/@google/") ||
-            normalizedId.includes("/node_modules/@anthropic-ai/")
+            normalizedId.includes("/node_modules/@ai-sdk/")
           ) {
             return "ai-vendor";
           }
 
+          // Charts - separate Vega (larger) from Recharts (smaller)
           if (
             normalizedId.includes("/node_modules/vega/") ||
             normalizedId.includes("/node_modules/vega-lite/") ||
-            normalizedId.includes("/node_modules/vega-embed/") ||
-            normalizedId.includes("/node_modules/recharts/")
+            normalizedId.includes("/node_modules/vega-embed/")
           ) {
-            return "chart-vendor";
+            return "vega-vendor";
+          }
+          if (normalizedId.includes("/node_modules/recharts/")) {
+            return "recharts-vendor";
           }
 
+          // Editor core
           if (
             normalizedId.includes("/node_modules/@tiptap/") ||
             normalizedId.includes("/node_modules/@blocknote/")
@@ -111,6 +139,7 @@ window.addEventListener('message', async (message) => {
             return "editor-core-vendor";
           }
 
+          // ProseMirror
           if (
             normalizedId.includes("/node_modules/prosemirror-") ||
             normalizedId.includes("/node_modules/prosemirror/")
@@ -118,6 +147,7 @@ window.addEventListener('message', async (message) => {
             return "prosemirror-vendor";
           }
 
+          // Markdown processing
           if (
             normalizedId.includes("/node_modules/micromark") ||
             normalizedId.includes("/node_modules/mdast-") ||
@@ -132,6 +162,7 @@ window.addEventListener('message', async (message) => {
             return "markdown-vendor";
           }
 
+          // Syntax highlighting - lazy loaded, separate chunk
           if (
             normalizedId.includes("/node_modules/prismjs/") ||
             normalizedId.includes("/node_modules/refractor/") ||
@@ -140,15 +171,23 @@ window.addEventListener('message', async (message) => {
             return "syntax-vendor";
           }
 
+          // Data grid components
           if (
             normalizedId.includes("/node_modules/ag-grid-") ||
-            normalizedId.includes("/node_modules/react-data-grid/") ||
+            normalizedId.includes("/node_modules/react-data-grid/")
+          ) {
+            return "data-grid-vendor";
+          }
+
+          // Virtualization (used in multiple places)
+          if (
             normalizedId.includes("/node_modules/react-virtualized-auto-sizer/") ||
             normalizedId.includes("/node_modules/react-window/")
           ) {
-            return "data-vendor";
+            return "virtualization-vendor";
           }
 
+          // Spreadsheet - lazy loaded feature
           if (
             normalizedId.includes("/node_modules/react-spreadsheet/") ||
             normalizedId.includes("/node_modules/xlsx/") ||
@@ -160,6 +199,7 @@ window.addEventListener('message', async (message) => {
             return "spreadsheet-vendor";
           }
 
+          // Emoji picker - lazy loaded
           if (
             normalizedId.includes("/node_modules/emoji-mart/") ||
             normalizedId.includes("/node_modules/emoji-mart-data/")
@@ -167,10 +207,12 @@ window.addEventListener('message', async (message) => {
             return "emoji-vendor";
           }
 
+          // HTML parsing
           if (normalizedId.includes("/node_modules/parse5/")) {
             return "html-vendor";
           }
 
+          // Collaboration (Yjs)
           if (
             normalizedId.includes("/node_modules/yjs/") ||
             normalizedId.includes("/node_modules/y-protocols/") ||
@@ -179,19 +221,48 @@ window.addEventListener('message', async (message) => {
             return "collab-vendor";
           }
 
+          // React Flow
           if (normalizedId.includes("/node_modules/reactflow/")) {
             return "flow-vendor";
           }
 
+          // DnD Kit
+          if (normalizedId.includes("/node_modules/@dnd-kit/")) {
+            return "dnd-vendor";
+          }
+
+          // Framer Motion - animation library
+          if (normalizedId.includes("/node_modules/framer-motion/")) {
+            return "animation-vendor";
+          }
+
+          // UI libraries (smaller, frequently used)
           if (
             normalizedId.includes("/node_modules/@mantine/") ||
-            normalizedId.includes("/node_modules/lucide-react/") ||
-            normalizedId.includes("/node_modules/framer-motion/") ||
             normalizedId.includes("/node_modules/sonner/")
           ) {
             return "ui-vendor";
           }
 
+          // Icons - frequently used
+          if (normalizedId.includes("/node_modules/lucide-react/")) {
+            return "icons-vendor";
+          }
+
+          // Zod validation
+          if (normalizedId.includes("/node_modules/zod/")) {
+            return "validation-vendor";
+          }
+
+          // Date/time utilities
+          if (
+            normalizedId.includes("/node_modules/date-fns/") ||
+            normalizedId.includes("/node_modules/dayjs/")
+          ) {
+            return "date-vendor";
+          }
+
+          // Catch-all vendor chunk for remaining dependencies
           return "vendor";
         },
       },
