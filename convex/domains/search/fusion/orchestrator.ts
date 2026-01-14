@@ -37,7 +37,13 @@ import type {
   SearchMode,
 } from "./types";
 import {
+  // FREE-FIRST adapters (prioritized)
+  braveAdapter,
+  serperAdapter,
+  tavilyAdapter,
+  // Paid fallback
   linkupAdapter,
+  // Specialized adapters
   secAdapter,
   createRagAdapter,
   createDocumentAdapter,
@@ -57,11 +63,25 @@ import {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Default sources per mode */
+/**
+ * FREE-FIRST STRATEGY: Prioritize free-tier sources before paid.
+ * This maximizes the ~7,500 free searches/month across providers.
+ */
+const FREE_FIRST_WEB_SOURCES: SearchSource[] = [
+  "brave",    // 2,000/month FREE
+  "serper",   // 2,500/month FREE
+  "tavily",   // 1,000/month FREE
+  "linkup",   // Pay per use (fallback)
+];
+
+/** Default sources per mode (FREE-FIRST strategy) */
 const MODE_SOURCES: Record<SearchMode, SearchSource[]> = {
-  fast: ["linkup"],
-  balanced: ["linkup", "rag", "documents", "news"],
-  comprehensive: ["linkup", "sec", "rag", "documents", "youtube", "arxiv", "news"],
+  // Fast: Use first available FREE source
+  fast: ["brave", "serper", "tavily", "linkup"],
+  // Balanced: Free web sources + internal sources
+  balanced: ["brave", "serper", "tavily", "rag", "documents", "news"],
+  // Comprehensive: All sources including paid fallback
+  comprehensive: ["brave", "serper", "tavily", "linkup", "sec", "rag", "documents", "youtube", "arxiv", "news"],
 };
 
 /** Default limits per mode */
@@ -73,6 +93,81 @@ const MODE_LIMITS: Record<SearchMode, { perSource: number; total: number }> = {
 
 /** RRF constant (k) - higher values give more weight to lower-ranked results */
 const RRF_K = 60;
+
+/**
+ * Hybrid fusion weight (alpha).
+ * finalScore = alpha * rrfScore + (1 - alpha) * normalizedScore
+ * - Higher alpha = more weight on position-based RRF
+ * - Lower alpha = more weight on provider confidence scores
+ * Default 0.6 balances position importance with semantic relevance.
+ */
+const HYBRID_ALPHA = 0.6;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCORE NORMALIZATION (Pre-Fusion)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Normalize scores within each source to percentile ranks.
+ * This addresses the baseline finding that providers normalize scores
+ * differently (all clustering in 0.014-0.019 range).
+ *
+ * Algorithm:
+ * 1. Group results by source
+ * 2. For each source, convert scores to percentile within that source
+ * 3. Result: scores normalized to 0-1 range consistently across providers
+ *
+ * This preserves semantic relevance signals that RRF alone would discard.
+ */
+function normalizeScoresPerSource(results: SearchResult[]): SearchResult[] {
+  // Group by source
+  const bySource = new Map<string, SearchResult[]>();
+  for (const result of results) {
+    const sourceResults = bySource.get(result.source) || [];
+    sourceResults.push(result);
+    bySource.set(result.source, sourceResults);
+  }
+
+  // Normalize within each source
+  const normalized: SearchResult[] = [];
+  for (const [source, sourceResults] of bySource) {
+    if (sourceResults.length === 0) continue;
+
+    // Get min/max scores for this source
+    const scores = sourceResults.map(r => r.score);
+    const minScore = Math.min(...scores);
+    const maxScore = Math.max(...scores);
+    const range = maxScore - minScore;
+
+    // Normalize each result
+    for (const result of sourceResults) {
+      let normalizedScore: number;
+      if (range === 0) {
+        // All same score - use middle value
+        normalizedScore = 0.5;
+      } else {
+        // Min-max normalization to 0-1 range
+        normalizedScore = (result.score - minScore) / range;
+      }
+
+      normalized.push({
+        ...result,
+        // Store original score in metadata for debugging
+        metadata: {
+          ...result.metadata,
+          originalScore: result.score,
+          normalizedScore,
+        },
+        // Replace score with normalized value
+        score: normalizedScore,
+      });
+    }
+
+    console.log(`[normalizeScores] ${source}: ${sourceResults.length} results, score range ${minScore.toFixed(4)}-${maxScore.toFixed(4)} → 0-1`);
+  }
+
+  return normalized;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ORCHESTRATOR CLASS
@@ -86,7 +181,16 @@ export class SearchOrchestrator {
     this.ctx = ctx;
     // Use string keys to avoid type narrowing issues
     this.adapters = new Map<string, SearchSourceAdapter>();
-    this.adapters.set("linkup", linkupAdapter);
+
+    // FREE-FIRST: Register free-tier adapters first (priority order)
+    this.adapters.set("brave", braveAdapter);     // 2,000/month FREE
+    this.adapters.set("serper", serperAdapter);   // 2,500/month FREE
+    this.adapters.set("tavily", tavilyAdapter);   // 1,000/month FREE
+
+    // Paid fallback
+    this.adapters.set("linkup", linkupAdapter);   // Pay per use
+
+    // Specialized adapters
     this.adapters.set("sec", secAdapter);
     this.adapters.set("rag", createRagAdapter(ctx));
     this.adapters.set("documents", createDocumentAdapter(ctx));
@@ -134,8 +238,12 @@ export class SearchOrchestrator {
     // Filter to available sources
     const availableSources = sources.filter(source => {
       const adapter = this.adapters.get(source);
-      return adapter?.isAvailable();
+      const isAvailable = adapter?.isAvailable();
+      console.log(`[SearchOrchestrator] Source ${source}: adapter=${!!adapter}, isAvailable=${isAvailable}`);
+      return isAvailable;
     });
+
+    console.log(`[SearchOrchestrator] Available sources: ${availableSources.join(",")}`);
 
     if (availableSources.length === 0) {
       console.warn("[SearchOrchestrator] No sources available");
@@ -188,9 +296,19 @@ export class SearchOrchestrator {
     allResults = applySourceBoosts(allResults, request.query);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 4: RRF Fusion
+    // STEP 3.5: Score Normalization (Pre-Fusion) - NEW
     // ═══════════════════════════════════════════════════════════════════════
-    let fusedResults = this.applyRRF(allResults, request.maxTotal || limits.total);
+    // Normalize scores per-source to 0-1 range for fair hybrid fusion.
+    // This addresses the baseline finding that providers use different
+    // score scales (all clustering 0.014-0.019 with minimal variance).
+    allResults = normalizeScoresPerSource(allResults);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 4: Hybrid RRF + Score Fusion - ENHANCED
+    // ═══════════════════════════════════════════════════════════════════════
+    // Uses hybrid formula: finalScore = α*RRF + (1-α)*normalizedScore
+    // This preserves semantic relevance signals that pure RRF would discard.
+    let fusedResults = this.applyHybridRRF(allResults, request.maxTotal || limits.total);
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 5: Deduplication BEFORE reranking (COST OPTIMIZATION)
@@ -276,16 +394,115 @@ export class SearchOrchestrator {
   }
   
   /**
-   * Apply Reciprocal Rank Fusion to merge results from multiple sources.
+   * Apply Hybrid RRF + Score Fusion to merge results from multiple sources.
+   *
+   * ENHANCEMENT (Jan 2026): Baseline evaluation revealed that pure RRF
+   * discards semantic relevance signals because provider scores all cluster
+   * in a narrow range (0.014-0.019). Hybrid fusion preserves these signals.
+   *
+   * Formula: finalScore = α * rrfScore + (1 - α) * avgNormalizedScore
+   * Where α = HYBRID_ALPHA (default 0.6)
+   *
+   * Benefits:
+   * - High-confidence results from any provider get boosted
+   * - Position-based ranking from RRF still dominates
+   * - Semantic relevance signals are preserved, not discarded
+   */
+  private applyHybridRRF(results: SearchResult[], maxTotal: number): SearchResult[] {
+    // Group by unique identifier (URL or documentId)
+    const scoreMap = new Map<string, {
+      result: SearchResult;
+      rrfScore: number;
+      normalizedScores: number[];
+      sourceCount: number;
+    }>();
+
+    for (const result of results) {
+      const key = result.url || result.documentId || result.id;
+      const rrfContribution = 1 / (RRF_K + result.originalRank);
+
+      const existing = scoreMap.get(key);
+      if (existing) {
+        // Merge: add RRF scores, accumulate normalized scores
+        existing.rrfScore += rrfContribution;
+        existing.normalizedScores.push(result.score);
+        existing.sourceCount++;
+        // Keep result with higher original score (from metadata)
+        const existingOriginal = (existing.result.metadata?.originalScore as number) ?? 0;
+        const newOriginal = (result.metadata?.originalScore as number) ?? 0;
+        if (newOriginal > existingOriginal) {
+          existing.result = result;
+        }
+      } else {
+        scoreMap.set(key, {
+          result,
+          rrfScore: rrfContribution,
+          normalizedScores: [result.score],
+          sourceCount: 1,
+        });
+      }
+    }
+
+    // Calculate hybrid scores
+    const hybridResults: Array<{ result: SearchResult; hybridScore: number; rrfScore: number; avgNormScore: number }> = [];
+
+    for (const [_key, data] of scoreMap) {
+      // Average normalized score across sources
+      const avgNormScore = data.normalizedScores.reduce((a, b) => a + b, 0) / data.normalizedScores.length;
+
+      // Normalize RRF score to 0-1 range for fair combination
+      // Max possible RRF score is approx sourceCount / RRF_K (when all rank 1)
+      const maxRRF = data.sourceCount / RRF_K;
+      const normalizedRRF = maxRRF > 0 ? Math.min(data.rrfScore / maxRRF, 1) : data.rrfScore;
+
+      // Hybrid formula
+      const hybridScore = HYBRID_ALPHA * normalizedRRF + (1 - HYBRID_ALPHA) * avgNormScore;
+
+      hybridResults.push({
+        result: data.result,
+        hybridScore,
+        rrfScore: normalizedRRF,
+        avgNormScore,
+      });
+    }
+
+    // Sort by hybrid score and assign fused ranks
+    hybridResults.sort((a, b) => b.hybridScore - a.hybridScore);
+    const topResults = hybridResults.slice(0, maxTotal);
+
+    console.log(`[applyHybridRRF] Fused ${scoreMap.size} unique results → top ${topResults.length}`);
+    if (topResults.length > 0) {
+      const top3 = topResults.slice(0, 3).map(r =>
+        `${r.result.title.slice(0, 30)}... (hybrid=${r.hybridScore.toFixed(3)}, rrf=${r.rrfScore.toFixed(3)}, norm=${r.avgNormScore.toFixed(3)})`
+      );
+      console.log(`[applyHybridRRF] Top 3: ${top3.join(' | ')}`);
+    }
+
+    return topResults.map((item, index) => ({
+      ...item.result,
+      fusedRank: index + 1,
+      score: item.hybridScore,
+      metadata: {
+        ...item.result.metadata,
+        hybridRRFScore: item.rrfScore,
+        hybridNormScore: item.avgNormScore,
+        hybridAlpha: HYBRID_ALPHA,
+      },
+    }));
+  }
+
+  /**
+   * Legacy pure RRF (kept for reference/comparison)
+   * @deprecated Use applyHybridRRF instead
    */
   private applyRRF(results: SearchResult[], maxTotal: number): SearchResult[] {
     // Group by unique identifier (URL or documentId)
     const scoreMap = new Map<string, { result: SearchResult; rrfScore: number }>();
-    
+
     for (const result of results) {
       const key = result.url || result.documentId || result.id;
       const rrfContribution = 1 / (RRF_K + result.originalRank);
-      
+
       const existing = scoreMap.get(key);
       if (existing) {
         // Merge: add RRF scores, keep result with higher original score
@@ -297,12 +514,12 @@ export class SearchOrchestrator {
         scoreMap.set(key, { result, rrfScore: rrfContribution });
       }
     }
-    
+
     // Sort by RRF score and assign fused ranks
     const sorted = Array.from(scoreMap.values())
       .sort((a, b) => b.rrfScore - a.rrfScore)
       .slice(0, maxTotal);
-    
+
     return sorted.map((item, index) => ({
       ...item.result,
       fusedRank: index + 1,

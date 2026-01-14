@@ -94,6 +94,45 @@ crons.interval(
   { maxEmails: 10 }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Email Management System - Full thread management, categorization & reports
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Sync and process new emails every 30 minutes
+// Fetches threads from Gmail, analyzes & categorizes using AI agent
+crons.interval(
+  "email sync and process",
+  { minutes: 30 },
+  internal.domains.agents.emailAgent.processNewEmailsCron,
+  {}
+);
+
+// Generate and deliver daily email reports at 10:00 PM UTC (end of business day)
+// Creates nested groupings by category, sends via email and/or ntfy
+crons.daily(
+  "daily email report",
+  { hourUTC: 22, minuteUTC: 0 },
+  internal.domains.integrations.email.dailyEmailReport.runDailyEmailReportCron,
+  {}
+);
+
+// Detect urgent emails and send alerts every 15 minutes
+// Identifies emails needing immediate attention based on AI priority or keywords
+crons.interval(
+  "urgent email alerts",
+  { minutes: 15 },
+  internal.domains.agents.emailAgent.urgentEmailAlertsCron,
+  {}
+);
+
+// Renew Gmail push notification watches daily (watches expire after ~7 days)
+crons.daily(
+  "renew Gmail watches",
+  { hourUTC: 1, minuteUTC: 0 },
+  internal.domains.integrations.email.emailWebhook.renewGmailWatchesCron,
+  {}
+);
+
 crons.interval(
   "gcal sync primary calendar",
   { hours: 1 },
@@ -177,6 +216,28 @@ crons.interval("ingest Reddit ML feed", { hours: 4 }, internal.feed.ingestReddit
 
 // Ingest RSS feeds every 2 hours (TechCrunch, etc.)
 crons.interval("ingest RSS tech feeds", { hours: 2 }, internal.feed.ingestRSSInternal, {});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Funding Detection Pipeline - Auto-detect funding from feeds, enrich, dedupe
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Scan feed items for funding announcements every 30 minutes
+// Runs after feed ingestion to detect new funding events
+crons.interval(
+  "detect funding from feeds",
+  { minutes: 30 },
+  internal.domains.enrichment.fundingDetection.detectFundingCandidates,
+  { lookbackHours: 6, minConfidence: 0.3, limit: 50 }
+);
+
+// Process enrichment queue every 5 minutes
+// Handles funding_detection, entity_promotion, verification jobs
+crons.interval(
+  "process enrichment queue",
+  { minutes: 5 },
+  internal.domains.enrichment.enrichmentWorker.startBatchProcessing,
+  { limit: 10 }
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Daily Morning Brief - Automated dashboard metrics and digest generation
@@ -428,6 +489,38 @@ crons.weekly(
   "cleanup autonomous model usage",
   { dayOfWeek: "sunday", hourUTC: 5, minuteUTC: 15 },
   internal.domains.models.autonomousModelResolver.cleanupOldUsageRecords,
+  {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCHEDULED PDF REPORTS - Automated funding report generation
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Weekly funding report - Every Monday at 8:00 AM UTC
+// Generates PDF with AI insights and distributes to Discord/ntfy
+crons.weekly(
+  "generate weekly funding PDF report",
+  { dayOfWeek: "monday", hourUTC: 8, minuteUTC: 0 },
+  internal.workflows.scheduledPDFReports.runWeeklyReportCron,
+  {}
+);
+
+// Monthly funding report - 1st of each month at 9:00 AM UTC
+// Full distribution including LinkedIn
+crons.monthly(
+  "generate monthly funding PDF report",
+  { day: 1, hourUTC: 9, minuteUTC: 0 },
+  internal.workflows.scheduledPDFReports.runMonthlyReportCron,
+  {}
+);
+
+// Quarterly funding report - 1st of quarter (Jan, Apr, Jul, Oct) at 10:00 AM UTC
+// Comprehensive JPMorgan-style executive summary
+// Note: Using monthly cron with day filter since Convex doesn't have quarterly cron
+crons.monthly(
+  "generate quarterly funding PDF report",
+  { day: 1, hourUTC: 10, minuteUTC: 0 },
+  internal.workflows.scheduledPDFReports.runQuarterlyReportCron,
   {}
 );
 

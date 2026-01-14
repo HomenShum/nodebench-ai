@@ -10,6 +10,16 @@ import {
   dossierEnrichment,
 } from "./domains/dossier/schema";
 
+// Email schema imports
+import {
+  emailLabels,
+  emailThreads,
+  emailMessages,
+  emailDailyReports,
+  emailProcessingQueue,
+  emailSyncState,
+} from "./schema/emailSchema";
+
 /* ------------------------------------------------------------------ */
 /* 1.  DOCUMENTS  –  page/board/post level metadata                    */
 /* ------------------------------------------------------------------ */
@@ -267,6 +277,35 @@ export const smsUsageDaily = defineTable({
   .index("by_user", ["userId"])
   .index("by_user_date", ["userId", "date"])
   .index("by_date", ["date"]);
+
+/* ------------------------------------------------------------------ */
+/* 7b. TELEGRAM USERS - Telegram bot user preferences                 */
+/* ------------------------------------------------------------------ */
+export const telegramUsers = defineTable({
+  telegramChatId: v.string(),           // Telegram chat ID (unique per user)
+  telegramUsername: v.optional(v.string()),
+  firstName: v.optional(v.string()),
+  notificationsEnabled: v.boolean(),
+  createdAt: v.number(),
+  lastActiveAt: v.number(),
+})
+  .index("by_chat_id", ["telegramChatId"])
+  .index("by_last_active", ["lastActiveAt"]);
+
+/* ------------------------------------------------------------------ */
+/* 7c. TELEGRAM MESSAGES - Message log for audit/context              */
+/* ------------------------------------------------------------------ */
+export const telegramMessages = defineTable({
+  telegramChatId: v.string(),
+  messageText: v.string(),
+  messageType: v.string(),              // "incoming" | "outgoing"
+  messageId: v.optional(v.number()),    // Telegram message ID
+  agentResponse: v.optional(v.string()),
+  timestamp: v.number(),
+})
+  .index("by_chat_id", ["telegramChatId"])
+  .index("by_timestamp", ["timestamp"])
+  .index("by_chat_timestamp", ["telegramChatId", "timestamp"]);
 
 /* ------------------------------------------------------------------ */
 /* 8.  VECTOR CACHE  (optional)                                        */
@@ -1092,6 +1131,52 @@ const linkedinAccounts = defineTable({
   .index("by_user_provider", ["userId", "provider"]);
 
 /* ------------------------------------------------------------------ */
+/* LINKEDIN FUNDING POSTS - Track posted companies for deduplication  */
+/* Enables referencing previous posts and progression tracking        */
+/* ------------------------------------------------------------------ */
+const linkedinFundingPosts = defineTable({
+  // Company identification (normalized to lowercase for dedup)
+  companyNameNormalized: v.string(),         // Lowercase, trimmed company name
+  companyName: v.string(),                   // Original display name
+
+  // Funding round info (at time of posting)
+  roundType: v.string(),                     // "seed", "series-a", etc.
+  amountRaw: v.string(),                     // "$50M"
+  amountUsd: v.optional(v.number()),         // Normalized USD
+
+  // Sector categorization for filtering
+  sector: v.optional(v.string()),            // "HealthTech", "AI/ML", etc.
+  sectorCategory: v.optional(v.string()),    // "healthcare", "technology", etc.
+
+  // Post details
+  postUrn: v.string(),                       // LinkedIn post URN
+  postUrl: v.string(),                       // Full URL to post
+  postPart: v.optional(v.number()),          // Which part of multi-part post (1, 2, 3)
+  totalParts: v.optional(v.number()),        // Total parts in series
+
+  // Reference to previous posts for same company (progression tracking)
+  previousPostId: v.optional(v.id("linkedinFundingPosts")),
+  progressionType: v.optional(v.union(
+    v.literal("new"),                        // First mention
+    v.literal("update"),                     // Same round, updated info
+    v.literal("next-round")                  // Company raised new round
+  )),
+
+  // Timestamps
+  postedAt: v.number(),
+  fundingEventId: v.optional(v.id("fundingEvents")),
+})
+  .index("by_company", ["companyNameNormalized"])
+  .index("by_company_round", ["companyNameNormalized", "roundType"])
+  .index("by_postedAt", ["postedAt"])
+  .index("by_sector", ["sectorCategory", "postedAt"])
+  .index("by_roundType", ["roundType", "postedAt"])
+  .searchIndex("search_company", {
+    searchField: "companyName",
+    filterFields: ["roundType", "sectorCategory"],
+  });
+
+/* ------------------------------------------------------------------ */
 /* API KEYS - Per-user API keys for providers                        */
 /* ------------------------------------------------------------------ */
 const userApiKeys = defineTable({
@@ -1838,6 +1923,41 @@ const searchEvaluations = defineTable({
   .index("by_judge_model", ["judgeModel"]);
 
 /* ------------------------------------------------------------------ */
+/* CROSS-PROVIDER SEARCH EVALUATION - Consistency across providers     */
+/* ------------------------------------------------------------------ */
+/**
+ * Individual query evaluation results across multiple providers.
+ * Measures consistency, overlap, and score normalization.
+ */
+const searchCrossProviderEvals = defineTable({
+  evalId: v.string(),                       // Unique evaluation ID
+  evalVersion: v.string(),                  // Evaluation harness version
+  query: v.string(),                        // Search query
+  category: v.string(),                     // Category (funding, tech_news, company, etc.)
+  timestamp: v.number(),                    // When evaluated
+  providerResults: v.string(),              // JSON: per-provider results
+  metrics: v.string(),                      // JSON: cross-provider metrics
+})
+  .index("by_eval_id", ["evalId"])
+  .index("by_category", ["category"])
+  .index("by_timestamp", ["timestamp"]);
+
+/**
+ * Baseline snapshots for A/B comparison of search refinements.
+ * Aggregates metrics across multiple query evaluations.
+ */
+const searchBaselineSnapshots = defineTable({
+  snapshotId: v.string(),                   // Unique snapshot ID
+  snapshotVersion: v.string(),              // Evaluation harness version
+  createdAt: v.number(),                    // When created
+  queryCount: v.number(),                   // Number of queries evaluated
+  aggregateMetrics: v.string(),             // JSON: aggregate metrics
+  evaluationIds: v.array(v.string()),       // Individual evaluation IDs
+})
+  .index("by_snapshot_id", ["snapshotId"])
+  .index("by_created", ["createdAt"]);
+
+/* ------------------------------------------------------------------ */
 /* AGENT EVALUATION RUNS - Boolean-based agent response evaluation     */
 /* ------------------------------------------------------------------ */
 /**
@@ -2057,6 +2177,7 @@ export default defineSchema({
   githubAccounts,
   notionAccounts,
   linkedinAccounts,
+  linkedinFundingPosts,
   userApiKeys,
   dailyUsage,
   subscriptions,
@@ -2076,6 +2197,8 @@ export default defineSchema({
   repoScoutCache,
   strategyMetricsCache,
   searchEvaluations,
+  searchCrossProviderEvals,
+  searchBaselineSnapshots,
   evaluationRuns,
   evaluation_scenarios,
   digestCache,
@@ -2408,6 +2531,16 @@ export default defineSchema({
   dossierFocusState,
   dossierAnnotations,
   dossierEnrichment,
+
+  /* ------------------------------------------------------------------ */
+  /* EMAIL MANAGEMENT - Full email thread/message management system     */
+  /* ------------------------------------------------------------------ */
+  emailLabels,
+  emailThreads,
+  emailMessages,
+  emailDailyReports,
+  emailProcessingQueue,
+  emailSyncState,
 
   /* ------------------------------------------------------------------ */
   /* EMAIL EVENTS - Audit log for all email sends via agent tools       */
@@ -4456,6 +4589,22 @@ export default defineSchema({
     .index("by_source_success", ["source", "success"]),
 
   /* ------------------------------------------------------------------ */
+  /* SEARCH QUOTA USAGE - FREE-FIRST tracking per provider               */
+  /* ------------------------------------------------------------------ */
+  searchQuotaUsage: defineTable({
+    provider: v.string(),           // "brave" | "serper" | "tavily" | "exa" | "linkup"
+    monthKey: v.string(),           // "2026-01" format for monthly reset
+    usedQueries: v.number(),        // Count of queries used this month
+    successfulQueries: v.optional(v.number()),
+    failedQueries: v.optional(v.number()),
+    lastUsedAt: v.optional(v.number()),
+    totalResponseTimeMs: v.optional(v.number()),
+  })
+    .index("by_provider", ["provider"])
+    .index("by_provider_month", ["provider", "monthKey"])
+    .index("by_month", ["monthKey"]),
+
+  /* ------------------------------------------------------------------ */
   /* SEARCH FUSION CACHE - TTL-based cache for fusion search results     */
   /* ------------------------------------------------------------------ */
   searchFusionCache: defineTable({
@@ -5383,5 +5532,44 @@ export default defineSchema({
     .index("by_taskType", ["taskType", "timestamp"])
     .index("by_timestamp", ["timestamp"])
     .index("by_success", ["success", "timestamp"]),
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * DISCORD INTEGRATION
+   * Bot-based messaging for slash commands and notifications
+   * ══════════════════════════════════════════════════════════════════════ */
+
+  /* ------------------------------------------------------------------ */
+  /* DISCORD USERS - Registered Discord users for notifications         */
+  /* ------------------------------------------------------------------ */
+  discordUsers: defineTable({
+    discordUserId: v.string(),              // Discord user ID (snowflake)
+    discordUsername: v.string(),
+    discordGuildId: v.optional(v.string()), // Server/guild ID
+    discordChannelId: v.optional(v.string()), // Preferred channel
+    notificationsEnabled: v.boolean(),
+    createdAt: v.number(),
+    lastActiveAt: v.number(),
+  })
+    .index("by_user_id", ["discordUserId"])
+    .index("by_guild", ["discordGuildId"])
+    .index("by_last_active", ["lastActiveAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DISCORD INTERACTIONS - Interaction log for audit/context           */
+  /* ------------------------------------------------------------------ */
+  discordInteractions: defineTable({
+    discordUserId: v.string(),
+    discordUsername: v.string(),
+    guildId: v.optional(v.string()),
+    channelId: v.optional(v.string()),
+    interactionType: v.string(),            // "slash_command" | "button_click" | "modal_submit"
+    commandName: v.optional(v.string()),
+    commandOptions: v.optional(v.any()),
+    agentResponse: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_user_id", ["discordUserId"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_guild_timestamp", ["guildId", "timestamp"]),
 
 });

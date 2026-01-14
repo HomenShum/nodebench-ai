@@ -14,8 +14,12 @@ import type { Id } from "../../../_generated/dataModel";
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Available search sources */
-export type SearchSource = 
-  | "linkup"      // External web search via LinkUp API
+export type SearchSource =
+  | "linkup"      // External web search via LinkUp API (pay per use)
+  | "brave"       // Brave Search API (2,000 free/month)
+  | "serper"      // Serper Google SERP (2,500 free/month)
+  | "tavily"      // Tavily AI-native search (1,000 free/month)
+  | "exa"         // Exa AI neural search (2,000 one-time)
   | "sec"         // SEC EDGAR filings
   | "rag"         // Internal RAG (vector + keyword)
   | "documents"   // Direct document search

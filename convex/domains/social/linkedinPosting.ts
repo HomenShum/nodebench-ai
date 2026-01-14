@@ -305,19 +305,30 @@ async function postToLinkedIn(
 ): Promise<LinkedInPostResult> {
   // Clean text - LinkedIn has restrictions on certain characters
   // Important: Normalize newlines and remove problematic Unicode
-  // CRITICAL: Pipe character | and box drawing chars cause LinkedIn to truncate posts!
+  // CRITICAL: Many Unicode characters cause LinkedIn to TRUNCATE posts silently!
+  // CRITICAL: Parentheses () cause truncation - replace with brackets []!
   const cleanText = text
     .replace(/\r\n/g, '\n')           // Normalize Windows line endings
     .replace(/\r/g, '\n')             // Normalize old Mac line endings
     .replace(/\|/g, '-')              // CRITICAL: Pipe breaks LinkedIn posts!
     .replace(/[\u2500-\u257F]/g, '-') // Box drawing characters (━, ─, │, etc.)
-    .replace(/[\u2018\u2019]/g, "'")  // Smart quotes to regular
-    .replace(/[\u201C\u201D]/g, '"')  // Smart double quotes
-    .replace(/[\u2013\u2014]/g, '-')  // En/em dashes to regular
+    .replace(/[\u2018\u2019\u0060\u00B4\u2032\u2035]/g, "'")  // All quote variants to regular
+    .replace(/[\u201C\u201D\u00AB\u00BB\u2033\u2036]/g, '"')  // All double quote variants
+    .replace(/[\u2013\u2014\u2015\u2212]/g, '-')  // All dash variants to regular
     .replace(/[\u2026]/g, '...')      // Ellipsis to dots
-    .replace(/[\u00A0]/g, ' ')        // Non-breaking space to regular space
-    .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width characters
+    .replace(/[\u00A0\u2007\u202F\u2060]/g, ' ')  // All special spaces
+    .replace(/[\u200B-\u200F\u2028-\u202E\uFEFF]/g, '') // Zero-width and direction chars
+    .replace(/[\uFF08\u0028\(]/g, '[')  // CRITICAL: ALL parentheses to brackets!
+    .replace(/[\uFF09\u0029\)]/g, ']')  // LinkedIn truncates at parentheses!
+    .replace(/[\uFF3B]/g, '[')        // Fullwidth left bracket
+    .replace(/[\uFF3D]/g, ']')        // Fullwidth right bracket
+    .replace(/[\u2039\u203A]/g, "'")  // Single angle quotes
+    .replace(/[\u2329\u232A\u27E8\u27E9]/g, '') // Angle brackets - remove
+    .replace(/[\u0000-\u0009\u000B-\u001F\u007F-\u009F]/g, '') // Control chars EXCEPT newline (\u000A)
+    .replace(/[^\x20-\x7E\n\u00C0-\u024F\u1E00-\u1EFF#@$%&*[\]{}:;.,!?'"\/\\+=<>~^-]/g, ' ') // Keep safe chars (no parens!)
+    .replace(/ +/g, ' ')              // Collapse multiple spaces
     .replace(/-{3,}/g, '---')         // Collapse multiple dashes to 3
+    .replace(/\n{3,}/g, '\n\n')       // Max 2 consecutive newlines
     .trim()
     .substring(0, 3000);  // LinkedIn max is 3000 chars
 

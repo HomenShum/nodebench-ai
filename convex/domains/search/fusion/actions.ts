@@ -28,7 +28,13 @@ const searchModeValidator = v.union(
 );
 
 const searchSourceValidator = v.union(
+  // FREE-FIRST web sources
+  v.literal("brave"),
+  v.literal("serper"),
+  v.literal("tavily"),
+  // Paid fallback
   v.literal("linkup"),
+  // Specialized sources
   v.literal("sec"),
   v.literal("rag"),
   v.literal("documents"),

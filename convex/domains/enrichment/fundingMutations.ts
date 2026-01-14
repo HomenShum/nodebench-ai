@@ -276,6 +276,106 @@ export const searchFundingByCompany = query({
 });
 
 /**
+ * Bulk seed funding events (for historical data import).
+ * Public mutation for CLI usage.
+ */
+export const bulkSeedFundingEvents = mutation({
+  args: {
+    events: v.array(v.object({
+      companyName: v.string(),
+      roundType: roundTypeValidator,
+      amountRaw: v.string(),
+      amountUsd: v.optional(v.number()),
+      announcedAt: v.number(),
+      leadInvestors: v.array(v.string()),
+      coInvestors: v.optional(v.array(v.string())),
+      sourceUrls: v.array(v.string()),
+      sourceNames: v.array(v.string()),
+      confidence: v.number(),
+      sector: v.optional(v.string()),
+      location: v.optional(v.string()),
+      description: v.optional(v.string()),
+      valuation: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const inserted: string[] = [];
+    const updated: string[] = [];
+
+    for (const event of args.events) {
+      // Check for existing
+      const existing = await ctx.db
+        .query("fundingEvents")
+        .withIndex("by_company", (q) =>
+          q.eq("companyName", event.companyName).eq("roundType", event.roundType)
+        )
+        .first();
+
+      if (existing) {
+        // Delete existing and recreate to ensure fresh data (including correct timestamps)
+        await ctx.db.delete(existing._id);
+        // Insert new record
+        await ctx.db.insert("fundingEvents", {
+          companyName: event.companyName,
+          companyId: undefined,
+          roundType: event.roundType,
+          amountRaw: event.amountRaw,
+          amountUsd: event.amountUsd,
+          announcedAt: event.announcedAt, // Use the new timestamp directly
+          leadInvestors: event.leadInvestors,
+          coInvestors: event.coInvestors,
+          sourceUrls: [...new Set([...existing.sourceUrls, ...event.sourceUrls])],
+          sourceNames: [...new Set([...existing.sourceNames, ...event.sourceNames])],
+          confidence: event.confidence,
+          verificationStatus: existing.sourceUrls.length > 1 ? "multi-source" : "single-source",
+          sector: event.sector || existing.sector,
+          location: event.location || existing.location,
+          description: event.description || existing.description,
+          valuation: event.valuation || existing.valuation,
+          useOfProceeds: undefined,
+          ttlDays: 365,
+          createdAt: now,
+          updatedAt: now,
+          feedItemIds: existing.feedItemIds || [],
+          factIds: existing.factIds || [],
+        });
+        updated.push(event.companyName);
+      } else {
+        // Create new
+        await ctx.db.insert("fundingEvents", {
+          companyName: event.companyName,
+          companyId: undefined,
+          roundType: event.roundType,
+          amountRaw: event.amountRaw,
+          amountUsd: event.amountUsd,
+          announcedAt: event.announcedAt,
+          leadInvestors: event.leadInvestors,
+          coInvestors: event.coInvestors,
+          sourceUrls: event.sourceUrls,
+          sourceNames: event.sourceNames,
+          confidence: event.confidence,
+          verificationStatus: event.sourceUrls.length > 1 ? "multi-source" : "single-source",
+          sector: event.sector,
+          location: event.location,
+          description: event.description,
+          valuation: event.valuation,
+          useOfProceeds: undefined,
+          ttlDays: 365, // Historical data kept for 1 year
+          createdAt: now,
+          updatedAt: now,
+          feedItemIds: [],
+          factIds: [],
+        });
+        inserted.push(event.companyName);
+      }
+    }
+
+    return { inserted, updated, totalProcessed: args.events.length };
+  },
+});
+
+/**
  * Clean up old funding events (called by cron).
  */
 export const cleanupOldFundingEvents = internalMutation({
@@ -300,5 +400,35 @@ export const cleanupOldFundingEvents = internalMutation({
     }
 
     return { deleted: oldEvents.length };
+  },
+});
+
+/**
+ * Delete a funding event by ID.
+ */
+export const deleteFundingEvent = mutation({
+  args: {
+    fundingEventId: v.id("fundingEvents"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.fundingEventId);
+    return { success: true };
+  },
+});
+
+/**
+ * Patch a funding event's announcedAt timestamp.
+ */
+export const patchFundingEventTimestamp = mutation({
+  args: {
+    fundingEventId: v.id("fundingEvents"),
+    announcedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.fundingEventId, {
+      announcedAt: args.announcedAt,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
   },
 });

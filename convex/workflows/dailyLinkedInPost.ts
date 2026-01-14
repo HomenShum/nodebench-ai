@@ -31,7 +31,7 @@ import type { AgentDigestOutput } from "../domains/agents/digestAgent";
  * - Key signals with nested details
  * - Action items as numbered list
  * - Entities to watch with links
- * - Footer with hashtag# format
+ * - Footer with # format
  */
 function formatDigestForLinkedIn(
   digest: AgentDigestOutput,
@@ -130,10 +130,10 @@ function formatDigestForLinkedIn(
     parts.push("");
   }
 
-  // Footer with hashtag# format (LinkedIn-friendly)
+  // Footer with # format (LinkedIn-friendly)
   parts.push("---");
   parts.push("Powered by NodeBench AI - Autonomous Intelligence Platform");
-  parts.push("hashtag#AI hashtag#TechIntelligence hashtag#DailyBrief hashtag#FactCheck hashtag#NodeBenchAI");
+  parts.push("#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI");
 
   let content = parts.join("\n");
 
@@ -170,7 +170,7 @@ function formatDigestForLinkedIn(
     }
 
     shortParts.push("---");
-    shortParts.push("NodeBench AI | hashtag#AI hashtag#TechIntelligence");
+    shortParts.push("NodeBench AI | #AI #TechIntelligence");
 
     content = shortParts.join("\n");
   }
@@ -387,10 +387,10 @@ function formatFundingForLinkedIn(
     parts.push("");
   }
 
-  // Footer with hashtag# format
+  // Footer with # format
   parts.push("---");
   parts.push("Powered by NodeBench AI - Startup Intelligence Platform");
-  parts.push("hashtag#Startups hashtag#Funding hashtag#VentureCapital hashtag#AI hashtag#SeedRound hashtag#SeriesA");
+  parts.push("#Startups #Funding #VentureCapital #AI #SeedRound #SeriesA");
 
   return parts.join("\n");
 }
@@ -532,7 +532,7 @@ const LINKEDIN_PERSONAS = {
     id: "VC_INVESTOR",
     name: "VC/Investor Focus",
     description: "Funding-focused content for venture capital and investor audience",
-    hashtags: "hashtag#VentureCapital hashtag#Startups hashtag#FundingNews hashtag#AngelInvesting hashtag#SeriesA hashtag#SeedFunding",
+    hashtags: "#VentureCapital #Startups #FundingNews #AngelInvesting #SeriesA #SeedFunding",
     focusSections: ["fundingRounds", "entitySpotlight", "actionItems"],
     formatPrefix: "VC Intelligence Brief",
   },
@@ -541,7 +541,7 @@ const LINKEDIN_PERSONAS = {
     id: "TECH_BUILDER",
     name: "Tech Builder Focus",
     description: "Technical deep-dives for CTOs, engineers, and developers",
-    hashtags: "hashtag#TechNews hashtag#AI hashtag#MachineLearning hashtag#DevOps hashtag#Engineering hashtag#OpenSource",
+    hashtags: "#TechNews #AI #MachineLearning #DevOps #Engineering #OpenSource",
     focusSections: ["signals", "leadStory", "actionItems"],
     formatPrefix: "Tech Intelligence Brief",
   },
@@ -550,7 +550,7 @@ const LINKEDIN_PERSONAS = {
     id: "GENERAL",
     name: "General Business",
     description: "Balanced content for founders, executives, and business professionals",
-    hashtags: "hashtag#AI hashtag#TechIntelligence hashtag#DailyBrief hashtag#FactCheck hashtag#NodeBenchAI",
+    hashtags: "#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI",
     focusSections: ["leadStory", "signals", "actionItems", "entitySpotlight"],
     formatPrefix: "Daily Intelligence Brief",
   },
@@ -640,7 +640,7 @@ function formatDigestForPersona(
 
     parts.push(`---`);
     parts.push(`NodeBench AI - VC Intelligence Platform`);
-    parts.push(`hashtag#VentureCapital hashtag#Startups hashtag#DealFlow hashtag#SeriesA hashtag#SeedFunding hashtag#AngelInvesting`);
+    parts.push(`#VentureCapital #Startups #DealFlow #SeriesA #SeedFunding #AngelInvesting`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -709,7 +709,7 @@ function formatDigestForPersona(
 
     parts.push(`---`);
     parts.push(`NodeBench AI - Engineering Intelligence`);
-    parts.push(`hashtag#Engineering hashtag#DevOps hashtag#Architecture hashtag#OpenSource hashtag#AI hashtag#TechStack`);
+    parts.push(`#Engineering #DevOps #Architecture #OpenSource #AI #TechStack`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -775,7 +775,7 @@ function formatDigestForPersona(
 
     parts.push(`---`);
     parts.push(`Powered by NodeBench AI - Autonomous Intelligence Platform`);
-    parts.push(`hashtag#AI hashtag#TechIntelligence hashtag#DailyBrief hashtag#FactCheck hashtag#NodeBenchAI`);
+    parts.push(`#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI`);
   }
 
   let content = parts.join("\n");
@@ -968,86 +968,226 @@ interface FundingProfile {
 }
 
 /**
+ * Sanitize text for LinkedIn posting.
+ * Removes invisible characters, normalizes Unicode, and keeps only safe chars.
+ * CRITICAL: AI-generated content often contains invisible Unicode that breaks LinkedIn!
+ * CRITICAL: Parentheses cause LinkedIn to truncate posts - replace with brackets!
+ */
+function sanitizeForLinkedIn(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Control characters
+    .replace(/[\u200B-\u200F\u2028-\u202E\uFEFF]/g, '') // Zero-width and direction
+    .replace(/[\u00A0\u2007\u202F\u2060]/g, ' ') // Special spaces
+    .replace(/[\u2018\u2019\u0060\u00B4\u2032\u2035]/g, "'") // Quote variants
+    .replace(/[\u201C\u201D\u00AB\u00BB\u2033\u2036]/g, '"') // Double quote variants
+    .replace(/[\u2013\u2014\u2015\u2212]/g, '-') // Dash variants
+    .replace(/[\uFF08\u0028\(]/g, '[') // ALL parentheses to brackets - LinkedIn truncates at ()!
+    .replace(/[\uFF09\u0029\)]/g, ']')
+    .replace(/[\u2026]/g, '...') // Ellipsis
+    .replace(/[^\x20-\x7E\n\u00C0-\u024F\u1E00-\u1EFF\[\]]/g, '') // Keep only safe chars + brackets
+    .replace(/ +/g, ' ') // Collapse spaces
+    .trim();
+}
+
+/**
  * Format a detailed Startup Funding Brief for LinkedIn.
  * Each company gets a full profile with background info.
+ */
+/**
+ * Format a DETAILED company profile (full info - ~600-800 chars each)
+ * Includes founders, backgrounds, investor notes for banker-grade intel
+ */
+function formatCompanyDetailed(
+  p: FundingProfile,
+  index: number
+): string {
+  const roundLabel = p.roundType.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  const lines: string[] = [];
+
+  lines.push(`${index}. ${p.companyName.toUpperCase()}`);
+  lines.push(`${roundLabel} - ${p.amount}`);
+  lines.push(`Announced: ${p.announcedDate}`);
+
+  // Sector
+  const sector = sanitizeForLinkedIn(p.sector);
+  if (sector && sector !== "N/A") {
+    lines.push(`Sector: ${sector}`);
+  }
+
+  // Product - full description
+  const product = sanitizeForLinkedIn(p.product);
+  if (product && product !== "N/A") {
+    lines.push(`Product: ${product}`);
+  }
+
+  // Founders with backgrounds
+  const founders = sanitizeForLinkedIn(p.founders);
+  if (founders && founders !== "N/A") {
+    lines.push(`Founders: ${founders}`);
+    const foundersBackground = sanitizeForLinkedIn(p.foundersBackground || "");
+    if (foundersBackground && foundersBackground !== "N/A") {
+      lines.push(`Background: ${foundersBackground}`);
+    }
+  }
+
+  // Investors with notes
+  if (p.investors.length > 0) {
+    const investorList = p.investors.slice(0, 5).map(inv => sanitizeForLinkedIn(inv)).join(", ");
+    lines.push(`Investors: ${investorList}`);
+    const investorBackground = sanitizeForLinkedIn(p.investorBackground || "");
+    if (investorBackground && investorBackground !== "N/A") {
+      lines.push(`Investor Notes: ${investorBackground}`);
+    }
+  }
+
+  // Website
+  if (p.website && p.website !== "N/A") {
+    lines.push(`Website: ${p.website}`);
+  }
+
+  // Source URL
+  if (p.sourceUrl) {
+    lines.push(`Source: ${p.sourceUrl}`);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Format multi-part LinkedIn posts with DETAILED company profiles
+ * Returns array of posts, each under 2800 chars (safe margin)
+ * With ~700 chars per detailed profile, expect ~3-4 companies per post
+ *
+ * INCLUDES: Link to full funding brief on the app for additional companies
+ */
+function formatStartupFundingBriefMultiPart(
+  profiles: FundingProfile[],
+  dateString: string,
+  totalEventsAvailable?: number
+): string[] {
+  const MAX_POST_LENGTH = 2800; // Safe margin under 3000
+  const posts: string[] = [];
+
+  // App URL for full funding brief (uses hash-based navigation)
+  const APP_URL = "https://nodebench-ai.vercel.app/#funding";
+
+  const header = `STARTUP FUNDING BRIEF\n${dateString} - NodeBench AI`;
+
+  // Show if there are more events than we're displaying
+  const moreEventsNote = totalEventsAvailable && totalEventsAvailable > profiles.length
+    ? `\n\nSee all ${totalEventsAvailable} funding rounds: ${APP_URL}`
+    : `\n\nFull funding brief: ${APP_URL}`;
+
+  const footer = `${moreEventsNote}\n\nNodeBench AI - Startup Intelligence\n#Startups #Funding #VentureCapital #AI #TechNews`;
+
+  let currentPost = header + `\n[1/?] Latest Funding Rounds\n`;
+  let partNumber = 1;
+  let profileIndex = 1;
+
+  for (const profile of profiles) {
+    // Use DETAILED format - full founders, backgrounds, investor notes
+    const companySection = formatCompanyDetailed(profile, profileIndex);
+    const sectionWithSpacing = "\n\n" + companySection;
+
+    // Check if adding this section would exceed limit
+    if (currentPost.length + sectionWithSpacing.length + footer.length > MAX_POST_LENGTH) {
+      // Finish current post
+      currentPost += footer;
+      posts.push(currentPost);
+
+      // Start new post
+      partNumber++;
+      currentPost = `${header}\n[${partNumber}/?] Continued\n` + "\n" + companySection;
+    } else {
+      currentPost += sectionWithSpacing;
+    }
+    profileIndex++;
+  }
+
+  // Add final post
+  currentPost += footer;
+  posts.push(currentPost);
+
+  // Update part numbers now that we know total count
+  const totalParts = posts.length;
+  for (let i = 0; i < posts.length; i++) {
+    posts[i] = posts[i].replace(`[${i + 1}/?]`, `[${i + 1}/${totalParts}]`);
+  }
+
+  return posts;
+}
+
+/**
+ * Original single-post formatter (for reference/fallback)
  */
 function formatStartupFundingBrief(
   profiles: FundingProfile[],
   dateString: string
 ): string {
-  const parts: string[] = [];
+  // Build content with explicit double newlines for LinkedIn paragraph breaks
+  const sections: string[] = [];
 
-  parts.push(`STARTUP FUNDING BRIEF`);
-  parts.push(`${dateString} - NodeBench AI`);
-  parts.push(`Latest Funding Rounds`);
-  parts.push("");
+  // Header
+  sections.push(`STARTUP FUNDING BRIEF\n${dateString} - NodeBench AI\nLatest Funding Rounds`);
 
   for (let i = 0; i < profiles.length; i++) {
     const p = profiles[i];
     const roundLabel = p.roundType.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
-    parts.push(`---`);
-    parts.push(`${i + 1}. ${p.companyName.toUpperCase()}`);
-    parts.push(`Round: ${roundLabel} - ${p.amount}`);
-    parts.push(`   Announced: ${p.announcedDate}`);
+    // Sanitize all AI-enriched content
+    const sector = sanitizeForLinkedIn(p.sector);
+    const product = sanitizeForLinkedIn(p.product);
+    const founders = sanitizeForLinkedIn(p.founders);
+    const foundersBackground = sanitizeForLinkedIn(p.foundersBackground || "");
+    const investorBackground = sanitizeForLinkedIn(p.investorBackground || "");
 
-    // Verification badge
-    const badge = p.verificationStatus === "verified" ? "[VERIFIED]" :
-                  p.verificationStatus === "multi-source" ? "[MULTI-SOURCE]" : "";
-    if (badge) {
-      parts.push(`   ${badge}`);
+    // Build company section
+    const companyLines: string[] = [];
+    companyLines.push(`${i + 1}. ${p.companyName.toUpperCase()}`);
+    companyLines.push(`${roundLabel} - ${p.amount}`);
+    companyLines.push(`Announced: ${p.announcedDate}`);
+
+    if (sector && sector !== "N/A") {
+      companyLines.push(`Sector: ${sector}`);
     }
-    parts.push("");
-
-    parts.push(`   SECTOR: ${p.sector}`);
-    if (p.product && p.product !== "N/A") {
-      parts.push(`   PRODUCT: ${p.product}`);
+    if (product && product !== "N/A") {
+      companyLines.push(`Product: ${product}`);
     }
-    parts.push("");
-
-    // Founders with background
-    if (p.founders && p.founders !== "N/A") {
-      parts.push(`   FOUNDERS: ${p.founders}`);
-      if (p.foundersBackground && p.foundersBackground !== "N/A") {
-        parts.push(`   Background: ${p.foundersBackground}`);
+    if (founders && founders !== "N/A") {
+      companyLines.push(`Founders: ${founders}`);
+      if (foundersBackground && foundersBackground !== "N/A") {
+        companyLines.push(`Background: ${foundersBackground}`);
       }
-      parts.push("");
     }
-
-    // Investors with background
     if (p.investors.length > 0) {
-      parts.push(`   INVESTORS:`);
-      for (const investor of p.investors.slice(0, 5)) {
-        parts.push(`   - ${investor}`);
+      const investorList = p.investors.slice(0, 5).map(inv => sanitizeForLinkedIn(inv)).join(", ");
+      companyLines.push(`Investors: ${investorList}`);
+      if (investorBackground && investorBackground !== "N/A") {
+        companyLines.push(`Investor Notes: ${investorBackground}`);
       }
-      if (p.investorBackground && p.investorBackground !== "N/A") {
-        parts.push(`   Investor Notes: ${p.investorBackground}`);
-      }
-      parts.push("");
     }
-
-    // Links section
-    parts.push(`   LINKS:`);
     if (p.website && p.website !== "N/A") {
-      parts.push(`   Website: ${p.website}`);
+      companyLines.push(`Website: ${p.website}`);
     }
     if (p.sourceUrl) {
-      parts.push(`   Source: ${p.sourceUrl}`);
+      companyLines.push(`Source: ${p.sourceUrl}`);
     }
-    parts.push(`   Crunchbase: ${p.crunchbaseUrl}`);
-    parts.push(`   News: ${p.newsUrl}`);
-    parts.push("");
+
+    sections.push(companyLines.join("\n"));
   }
 
-  parts.push(`---`);
-  parts.push(`NodeBench AI - Startup Intelligence`);
-  parts.push(`#Startups #Funding #VentureCapital #AI #TechNews #Founders`);
+  // Footer with hashtags on separate line
+  sections.push(`NodeBench AI - Startup Intelligence`);
+  sections.push(`#Startups #Funding #VentureCapital #AI #TechNews #Founders`);
 
-  return parts.join("\n");
+  // Join sections with double newlines for LinkedIn paragraph breaks
+  return sections.join("\n\n");
 }
 
 /**
  * Enrich a company profile by fetching source article and extracting details via LLM.
+ * CRITICAL: Also extracts the ACTUAL company name from source content to fix "Unknown Company" issues.
  */
 async function enrichCompanyProfile(
   ctx: any,
@@ -1055,12 +1195,17 @@ async function enrichCompanyProfile(
   sourceUrl: string,
   existingData: Partial<FundingProfile>
 ): Promise<Partial<FundingProfile>> {
-  // Skip if we already have good data
-  if (existingData.founders !== "N/A" && existingData.product !== "N/A") {
+  // Skip if we already have good data (but still run if company name looks generic)
+  const hasGoodData = existingData.founders !== "N/A" && existingData.product !== "N/A";
+  const hasGenericName = companyName.toLowerCase().includes("unknown") ||
+    companyName.toLowerCase() === "company" ||
+    companyName.length < 3;
+
+  if (hasGoodData && !hasGenericName) {
     return existingData;
   }
 
-  console.log(`[enrichCompanyProfile] Enriching ${companyName} from ${sourceUrl}`);
+  console.log(`[enrichCompanyProfile] Enriching ${companyName} from ${sourceUrl} (genericName=${hasGenericName})`);
 
   try {
     // Fetch the source article content with JS rendering
@@ -1097,27 +1242,46 @@ async function enrichCompanyProfile(
       return existingData;
     }
 
-    // Build the extraction prompt - use article content + ask LLM to fill gaps from knowledge
-    const extractionPrompt = `You are researching the company "${companyName}" for an investor briefing.
+    // Build the extraction prompt - VC/Banking standard taxonomy
+    // CRITICAL: Include companyName extraction to fix "Unknown Company" issues
+    const extractionPrompt = `You are a senior associate at a top-tier investment bank preparing a deal memo.
+The original company name detected was: "${companyName}" - this may be INCORRECT or generic.
 
-${articleContent.length > 200 ? `Here is recent news about them:\n${articleContent.substring(0, 8000)}\n\n` : ""}
+${articleContent.length > 200 ? `SOURCE MATERIAL:\n${articleContent.substring(0, 8000)}\n\n` : ""}
 
-Based on this information AND your knowledge, provide accurate details about ${companyName}.
-Return ONLY valid JSON with these fields:
+CRITICAL: Extract the ACTUAL company name from the source material. Look for:
+- Company name in headlines (e.g., "XYZ Raises $50M")
+- Company name mentioned with funding amount
+- Website domain name (e.g., if website is xyz.com, company is likely "XYZ")
+- Press release "about" sections
+
+Return ONLY valid JSON:
 
 {
-  "product": "What the company builds/sells - be specific (1-2 sentences)",
-  "sector": "Industry sector (e.g., 'Biotech - Alzheimer's Research', 'AI Infrastructure', 'Developer Tools')",
-  "founders": "Founder names with titles if known (e.g., 'John Smith (CEO), Jane Doe (CTO)')",
-  "foundersBackground": "Founder backgrounds - previous companies, education (e.g., 'Ex-Pfizer, Harvard MD')",
-  "investors": ["Lead investor 1", "Investor 2", "Investor 3"],
-  "investorBackground": "Notable info about lead investors",
-  "website": "Company website URL (format: https://example.com)",
-  "roundType": "Funding round (seed, series-a, series-b, growth, private-placement, etc.)"
+  "companyName": "The CORRECT company name - extract from source, not the generic name provided. Must be a real company name, not 'Unknown Company'",
+  "product": "Core value proposition and technology stack - be specific (1-2 sentences, use precise technical terms)",
+  "sector": "Use STANDARD VC TAXONOMY:
+    - AI/ML: Foundation Models, MLOps, AI Infrastructure, Vertical AI, AI Agents, Computer Vision, NLP
+    - Enterprise SaaS: DevTools, Security, Data Infrastructure, Collaboration, Analytics, HRTech, LegalTech
+    - FinTech: Payments, Lending, InsurTech, WealthTech, Banking Infrastructure, Crypto/Web3
+    - HealthTech: Biotech, MedTech, Digital Health, Drug Discovery, Diagnostics, Clinical Trials
+    - Consumer: Marketplace, Social, Gaming, E-commerce, EdTech, Creator Economy
+    - DeepTech: Robotics, Semiconductors, Quantum, Climate Tech, Space Tech, Defense Tech
+    - Infra: Cloud, Storage, Networking, Compute
+    Format: 'Category - Subcategory' (e.g., 'AI/ML - Foundation Models', 'FinTech - Payments')",
+  "founders": "Name (Title) - Format exactly as: 'John Smith (CEO), Jane Doe (CTO)'",
+  "foundersBackground": "Prior exits, notable employers (FAANG, unicorns), education (Stanford/MIT/Harvard). Format: 'Ex-Google DeepMind, Stanford PhD; Ex-Stripe, MIT'",
+  "investors": ["Lead investor first, then notable participants - max 5"],
+  "investorBackground": "Investor track record: prior portfolio companies, fund thesis, AUM if known",
+  "website": "https://company.com format",
+  "roundType": "Exact round: pre-seed, seed, series-a, series-b, series-c, series-d, growth, bridge, extension, PIPE"
 }
 
-IMPORTANT: If you genuinely don't know something, use "Unknown" - don't make up false information.
-But DO use your knowledge to fill in details you're confident about.`;
+RULES:
+- ALWAYS extract the real company name from the source - NEVER return "Unknown Company"
+- Use "Unknown" only for genuinely unknown data fields, NOT for company name
+- Use your knowledge for publicly available information
+- Be precise - bankers verify everything`;
 
     // Direct OpenRouter API call using free model (MiMo V2 Flash - excellent for research)
     console.log(`[enrichCompanyProfile] Calling OpenRouter API for ${companyName}...`);
@@ -1160,8 +1324,19 @@ But DO use your knowledge to fill in details you're confident about.`;
       const extracted = JSON.parse(jsonMatch[0]);
       console.log(`[enrichCompanyProfile] Extracted data for ${companyName}:`, Object.keys(extracted));
 
+      // CRITICAL: Update company name if we found a better one
+      let newCompanyName = existingData.companyName;
+      if (extracted.companyName &&
+          extracted.companyName !== "Unknown" &&
+          extracted.companyName !== "Unknown Company" &&
+          extracted.companyName.length > 2) {
+        newCompanyName = extracted.companyName;
+        console.log(`[enrichCompanyProfile] Corrected company name: "${companyName}" -> "${newCompanyName}"`);
+      }
+
       return {
         ...existingData,
+        companyName: newCompanyName,
         product: extracted.product !== "Unknown" ? extracted.product : existingData.product,
         sector: extracted.sector !== "Unknown" ? extracted.sector : existingData.sector,
         founders: extracted.founders !== "Unknown" ? extracted.founders : existingData.founders,
@@ -1183,6 +1358,11 @@ But DO use your knowledge to fill in details you're confident about.`;
  * Post a detailed Startup Funding Brief to LinkedIn.
  * Pulls LIVE data from fundingEvents + entityContexts tables.
  * Uses AI enrichment to research missing company details.
+ *
+ * EXPANDED FEATURES:
+ * - Deduplication: Skips companies already posted within lookbackDays
+ * - Sector filtering: Can focus on specific sectors (healthcare, fintech, etc.)
+ * - Progression tracking: Notes when a company raises a new round
  */
 export const postStartupFundingBrief = internalAction({
   args: {
@@ -1190,17 +1370,34 @@ export const postStartupFundingBrief = internalAction({
     hoursBack: v.optional(v.number()),
     maxProfiles: v.optional(v.number()),
     roundTypes: v.optional(v.array(v.string())),
+    sectorCategories: v.optional(v.array(v.string())), // NEW: Filter by sector
     enableEnrichment: v.optional(v.boolean()),
+    skipDeduplication: v.optional(v.boolean()), // NEW: Bypass dedup check
+    deduplicationDays: v.optional(v.number()), // NEW: Lookback window for dedup
   },
   handler: async (ctx, args) => {
     const dryRun = args.dryRun ?? false;
     const hoursBack = args.hoursBack ?? 48;
-    const maxProfiles = args.maxProfiles ?? 5;
-    const enableEnrichment = args.enableEnrichment ?? true; // Enable AI enrichment by default
-    const roundTypes = args.roundTypes ?? ["seed", "pre-seed", "series-a", "series-b", "series-c", "unknown"];
+    const maxProfiles = args.maxProfiles ?? 10; // Increased default from 5 to 10
+    const enableEnrichment = args.enableEnrichment ?? true;
+    const skipDeduplication = args.skipDeduplication ?? false;
+    const deduplicationDays = args.deduplicationDays ?? 14; // Default: skip if posted within 14 days
+
+    // EXPANDED: Include all major round types by default
+    const roundTypes = args.roundTypes ?? [
+      "pre-seed", "seed", "series-a", "series-b", "series-c", "series-d-plus",
+      "growth", "debt", "unknown"
+    ];
+
+    // NEW: Sector category filter (optional)
+    const sectorCategories = args.sectorCategories; // undefined = all sectors
     const dateString = new Date().toISOString().split("T")[0];
 
-    console.log(`[startupFundingBrief] Starting funding brief generation (hoursBack=${hoursBack}, max=${maxProfiles}, enrich=${enableEnrichment})`);
+    console.log(`[startupFundingBrief] Starting funding brief generation`);
+    console.log(`  - hoursBack=${hoursBack}, max=${maxProfiles}, enrich=${enableEnrichment}`);
+    console.log(`  - roundTypes=${roundTypes.join(",")}`);
+    console.log(`  - sectorCategories=${sectorCategories?.join(",") ?? "all"}`);
+    console.log(`  - dedup=${!skipDeduplication}, dedup window=${deduplicationDays} days`);
 
     // Step 1: Fetch funding events from the database
     let fundingEvents: any[] = [];
@@ -1220,11 +1417,56 @@ export const postStartupFundingBrief = internalAction({
       fundingEvents = [];
     }
 
+    // Step 1.5: Batch check for previously posted companies (deduplication)
+    let previouslyPosted: Record<string, {
+      previousPostUrl: string;
+      previousRoundType: string;
+      previousAmountRaw: string;
+      postedAt: number;
+    } | null> = {};
+
+    if (!skipDeduplication && fundingEvents.length > 0) {
+      try {
+        previouslyPosted = await ctx.runQuery(
+          internal.domains.social.linkedinFundingPosts.batchCheckCompaniesPosted,
+          {
+            companyNames: fundingEvents.map(e => e.companyName),
+            lookbackDays: deduplicationDays,
+          }
+        );
+        const postedCount = Object.values(previouslyPosted).filter(v => v !== null).length;
+        console.log(`[startupFundingBrief] Dedup check: ${postedCount}/${fundingEvents.length} companies already posted`);
+      } catch (e) {
+        console.warn(`[startupFundingBrief] Dedup check failed, proceeding without:`, e);
+      }
+    }
+
     // Step 2: Enrich with entity context data + AI enrichment
     const fundingProfiles: FundingProfile[] = [];
+    const skippedDuplicates: string[] = [];
+    const progressions: { company: string; previousUrl: string; previousRound: string }[] = [];
 
     for (const event of fundingEvents) {
       if (fundingProfiles.length >= maxProfiles) break;
+
+      // DEDUPLICATION CHECK: Skip if already posted (same round)
+      const prevPost = previouslyPosted[event.companyName];
+      if (prevPost && !skipDeduplication) {
+        // Check if this is the same round (duplicate) or a new round (progression)
+        if (prevPost.previousRoundType === event.roundType) {
+          console.log(`[startupFundingBrief] Skipping ${event.companyName} - already posted ${event.roundType} on ${new Date(prevPost.postedAt).toLocaleDateString()}`);
+          skippedDuplicates.push(`${event.companyName} [${event.roundType}] -> ${prevPost.previousPostUrl}`);
+          continue;
+        } else {
+          // This is a progression (new round since last post)
+          console.log(`[startupFundingBrief] Progression: ${event.companyName} from ${prevPost.previousRoundType} to ${event.roundType}`);
+          progressions.push({
+            company: event.companyName,
+            previousUrl: prevPost.previousPostUrl,
+            previousRound: prevPost.previousRoundType,
+          });
+        }
+      }
 
       // Try to get entity context for richer data
       let entityData: any = null;
@@ -1240,6 +1482,27 @@ export const postStartupFundingBrief = internalAction({
       }
 
       const crm = entityData?.crmFields;
+
+      // Check sector filter (if specified)
+      const eventSector = crm?.industry || event.sector || "";
+      if (sectorCategories && sectorCategories.length > 0) {
+        const sectorLower = eventSector.toLowerCase();
+        const matchesSector = sectorCategories.some(cat => {
+          if (cat === "healthcare" && (sectorLower.includes("health") || sectorLower.includes("bio") || sectorLower.includes("med"))) return true;
+          if (cat === "fintech" && (sectorLower.includes("fin") || sectorLower.includes("payment") || sectorLower.includes("bank"))) return true;
+          if (cat === "ai_ml" && (sectorLower.includes("ai") || sectorLower.includes("ml") || sectorLower.includes("machine"))) return true;
+          if (cat === "enterprise" && (sectorLower.includes("saas") || sectorLower.includes("enterprise") || sectorLower.includes("b2b"))) return true;
+          if (cat === "consumer" && (sectorLower.includes("consumer") || sectorLower.includes("commerce") || sectorLower.includes("retail"))) return true;
+          if (cat === "deeptech" && (sectorLower.includes("deep") || sectorLower.includes("robot") || sectorLower.includes("quantum"))) return true;
+          if (cat === "climate" && (sectorLower.includes("climate") || sectorLower.includes("energy") || sectorLower.includes("clean"))) return true;
+          if (cat === "technology") return true; // Match all tech
+          return false;
+        });
+        if (!matchesSector) {
+          console.log(`[startupFundingBrief] Skipping ${event.companyName} - sector "${eventSector}" doesn't match ${sectorCategories.join(",")}`);
+          continue;
+        }
+      }
 
       // Build initial profile
       let profile: FundingProfile = {
@@ -1302,17 +1565,22 @@ export const postStartupFundingBrief = internalAction({
       };
     }
 
-    // Format the LinkedIn post
-    const linkedInContent = formatStartupFundingBrief(fundingProfiles, dateString);
-    console.log(`[startupFundingBrief] Formatted content (${linkedInContent.length} chars)`);
+    // Format the LinkedIn posts (multi-part if needed)
+    // Pass total events count to show link to app for full list
+    const totalEventsAvailable = fundingEvents.length;
+    const linkedInPosts = formatStartupFundingBriefMultiPart(fundingProfiles, dateString, totalEventsAvailable);
+    const totalContent = linkedInPosts.join("\n\n---\n\n");
+    console.log(`[startupFundingBrief] Formatted ${linkedInPosts.length} posts (${linkedInPosts.map(p => p.length).join(", ")} chars each)`);
 
     if (dryRun) {
-      console.log(`[startupFundingBrief] DRY RUN:\n${linkedInContent}`);
+      console.log(`[startupFundingBrief] DRY RUN - ${linkedInPosts.length} posts:`);
+      linkedInPosts.forEach((p, i) => console.log(`\n--- Post ${i + 1} ---\n${p}`));
       return {
         success: true,
         posted: false,
         dryRun: true,
-        content: linkedInContent,
+        content: totalContent,
+        postCount: linkedInPosts.length,
         profileCount: fundingProfiles.length,
         profiles: fundingProfiles.map(p => ({
           name: p.companyName,
@@ -1324,41 +1592,78 @@ export const postStartupFundingBrief = internalAction({
       };
     }
 
-    // Post to LinkedIn
-    let postResult;
-    try {
-      postResult = await ctx.runAction(
-        internal.domains.social.linkedinPosting.createTextPost,
-        { text: linkedInContent }
-      );
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      console.error(`[startupFundingBrief] Failed to post:`, errorMsg);
-      return {
-        success: false,
-        error: errorMsg,
-        posted: false,
-        content: linkedInContent,
-      };
+    // Post each part to LinkedIn with delay between posts
+    const postUrls: string[] = [];
+    const errors: string[] = [];
+
+    for (let i = 0; i < linkedInPosts.length; i++) {
+      // Add 30 second delay between posts (LinkedIn rate limit)
+      if (i > 0) {
+        console.log(`[startupFundingBrief] Waiting 30s before posting part ${i + 1}...`);
+        await new Promise(resolve => setTimeout(resolve, 30000));
+      }
+
+      try {
+        const postResult = await ctx.runAction(
+          internal.domains.social.linkedinPosting.createTextPost,
+          { text: linkedInPosts[i] }
+        );
+
+        if (postResult.success && postResult.postUrl) {
+          postUrls.push(postResult.postUrl);
+          console.log(`[startupFundingBrief] Posted part ${i + 1}/${linkedInPosts.length}: ${postResult.postUrl}`);
+        } else {
+          errors.push(`Part ${i + 1}: ${postResult.error || "Unknown error"}`);
+          console.error(`[startupFundingBrief] Failed to post part ${i + 1}:`, postResult.error);
+        }
+      } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : String(e);
+        errors.push(`Part ${i + 1}: ${errorMsg}`);
+        console.error(`[startupFundingBrief] Exception posting part ${i + 1}:`, errorMsg);
+      }
     }
 
-    if (!postResult.success) {
-      return {
-        success: false,
-        error: postResult.error,
-        posted: false,
-        content: linkedInContent,
-      };
-    }
+    const allPosted = postUrls.length === linkedInPosts.length;
+    console.log(`[startupFundingBrief] Posted ${postUrls.length}/${linkedInPosts.length} parts`);
 
-    console.log(`[startupFundingBrief] Posted to LinkedIn: ${postResult.postUrl}`);
+    // Step 5: Record posted companies for deduplication tracking
+    if (postUrls.length > 0) {
+      try {
+        // Prepare the batch record request
+        const companiesForRecording = fundingProfiles.map(profile => ({
+          companyName: profile.companyName,
+          roundType: profile.roundType,
+          amountRaw: profile.amount,
+          sector: profile.sector,
+          postUrn: postUrls[0].split("/").pop() || postUrls[0], // Extract URN from URL
+          postUrl: postUrls[0], // Link to first post (they're related)
+          postPart: 1,
+          totalParts: postUrls.length,
+        }));
+
+        await ctx.runMutation(
+          internal.domains.social.linkedinFundingPosts.batchRecordPostedCompanies,
+          { companies: companiesForRecording }
+        );
+        console.log(`[startupFundingBrief] Recorded ${companiesForRecording.length} companies for deduplication`);
+      } catch (e) {
+        console.warn(`[startupFundingBrief] Failed to record companies for dedup:`, e);
+        // Don't fail the whole operation if recording fails
+      }
+    }
 
     return {
-      success: true,
-      posted: true,
-      postUrl: postResult.postUrl,
-      content: linkedInContent,
+      success: allPosted,
+      posted: postUrls.length > 0,
+      postUrl: postUrls[0], // First post URL
+      postUrls: postUrls,
+      postCount: linkedInPosts.length,
+      postedCount: postUrls.length,
+      content: totalContent,
       profileCount: fundingProfiles.length,
+      skippedDuplicates: skippedDuplicates.length > 0 ? skippedDuplicates : undefined,
+      progressions: progressions.length > 0 ? progressions : undefined,
+      errors: errors.length > 0 ? errors : undefined,
     };
   },
 });

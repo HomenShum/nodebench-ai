@@ -69,6 +69,11 @@ const EntityProfilePage = lazy(() =>
     default: mod.EntityProfilePage,
   })),
 );
+const FundingBriefView = lazy(() =>
+  import("@/features/research/views/FundingBriefView").then((mod) => ({
+    default: mod.FundingBriefView,
+  })),
+);
 
 const viewFallback = (
   <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
@@ -86,7 +91,7 @@ interface MainLayoutProps {
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowResearchHub }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals' | 'benchmarks' | 'entity'>('research');
+  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals' | 'benchmarks' | 'entity' | 'funding'>('research');
   // Entity name for entity profile page (extracted from hash)
   const [entityName, setEntityName] = useState<string | null>(null);
   const [isGridMode, setIsGridMode] = useState(false);
@@ -583,6 +588,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           setCurrentView('footnotes');
         } else if (h.startsWith('#benchmarks') || h.startsWith('#eval')) {
           setCurrentView('benchmarks');
+        } else if (h.startsWith('#funding') || h.startsWith('#funding-brief')) {
+          setCurrentView('funding');
         } else if (h.startsWith('#entity/') || h.startsWith('#entity%2f')) {
           // Extract entity name from hash (preserve original case)
           const match = rawHash.match(/^#entity[\/](.+)$/i);
@@ -694,9 +701,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                             ? 'Signals'
                             : currentView === 'benchmarks'
                               ? 'Model Benchmarks'
-                              : currentView === 'entity'
-                                ? `Entity: ${entityName || 'Profile'}`
-                                : selectedDocumentId
+                              : currentView === 'funding'
+                                ? 'Funding Brief'
+                                : currentView === 'entity'
+                                  ? `Entity: ${entityName || 'Profile'}`
+                                  : selectedDocumentId
                                   ? 'My Documents'
                                   : 'My Workspace'}
               </h1>
@@ -832,6 +841,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <div className="h-full overflow-auto p-6 bg-gray-50">
                   <ModelEvalDashboard />
                 </div>
+              ) : currentView === 'funding' ? (
+                <FundingBriefView />
               ) : currentView === 'entity' && entityName ? (
                 <EntityProfilePage
                   entityName={entityName}

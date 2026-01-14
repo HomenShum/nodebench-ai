@@ -677,3 +677,251 @@ export const getTopicNotificationStats = query({
     };
   },
 });
+
+// ------------------------------------------------------------------
+// Enhanced Actionable Notification (with quick-reply buttons)
+// ------------------------------------------------------------------
+
+/**
+ * ntfy action types:
+ * - "view": Open URL in browser
+ * - "http": POST/PUT to URL
+ * - "broadcast": Send Android broadcast intent
+ */
+export type NtfyActionType = "view" | "http" | "broadcast";
+
+export const sendActionableNotification = action({
+  args: {
+    topic: v.optional(v.string()),
+    title: v.string(),
+    body: v.string(),
+    priority: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4), v.literal(5))),
+    tags: v.optional(v.array(v.string())),
+    click: v.optional(v.string()),
+    actions: v.array(v.object({
+      action: v.string(),  // "view", "http", or "broadcast"
+      label: v.string(),   // Button text
+      url: v.string(),     // URL to open or POST to
+      method: v.optional(v.string()),  // For http: "POST", "PUT", etc.
+      headers: v.optional(v.any()),    // For http: custom headers
+      body: v.optional(v.string()),    // For http: request body
+      clear: v.optional(v.boolean()),  // Dismiss notification after action
+    })),
+    userId: v.optional(v.id("users")),
+    eventType: v.optional(v.string()),
+  },
+  returns: v.object({
+    sent: v.boolean(),
+    messageId: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const topic = args.topic || NTFY_DEFAULT_TOPIC;
+
+    try {
+      const response = await sendNtfyNotification({
+        topic,
+        message: args.body,
+        title: args.title,
+        priority: args.priority,
+        tags: args.tags,
+        click: args.click,
+        actions: args.actions.map((a) => ({
+          action: a.action,
+          label: a.label,
+          url: a.url,
+          ...(a.method && { method: a.method }),
+          ...(a.headers && { headers: a.headers }),
+          ...(a.body && { body: a.body }),
+          ...(a.clear && { clear: a.clear }),
+        })),
+      });
+
+      // Log the notification
+      await ctx.runMutation(internal.domains.integrations.ntfy.logNotification, {
+        topic,
+        body: args.body,
+        status: response.event || "sent",
+        messageId: response.id,
+        eventType: args.eventType || "actionable_notification",
+        userId: args.userId,
+      });
+
+      console.log(`[ntfy] Actionable notification sent to ${topic}`);
+      return { sent: true, messageId: response.id };
+    } catch (err: any) {
+      console.error(`[ntfy] sendActionableNotification error:`, err);
+      return { sent: false, error: err?.message || String(err) };
+    }
+  },
+});
+
+// ------------------------------------------------------------------
+// Digest with Action Buttons
+// ------------------------------------------------------------------
+
+/**
+ * Send a digest notification with "Tell me more" buttons.
+ * Each button opens a deep link to the web app or triggers a webhook.
+ */
+export const sendDigestWithActions = action({
+  args: {
+    topic: v.optional(v.string()),
+    title: v.string(),
+    items: v.array(v.object({
+      headline: v.string(),
+      summary: v.string(),
+      actionUrl: v.optional(v.string()),
+      actionLabel: v.optional(v.string()),
+    })),
+    userId: v.optional(v.id("users")),
+    appBaseUrl: v.optional(v.string()),
+  },
+  returns: v.object({
+    sent: v.boolean(),
+    messageId: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const topic = args.topic || NTFY_DEFAULT_TOPIC;
+    const baseUrl = args.appBaseUrl || "https://nodebench.ai";
+
+    // Build markdown body
+    let body = "";
+    for (let i = 0; i < args.items.length && i < 5; i++) {
+      const item = args.items[i];
+      body += `**${i + 1}. ${item.headline}**\n${item.summary}\n\n`;
+    }
+
+    if (args.items.length > 5) {
+      body += `_...and ${args.items.length - 5} more_\n`;
+    }
+
+    // Build action buttons (max 3 for ntfy)
+    const actions = args.items.slice(0, 3).map((item, i) => ({
+      action: "view" as const,
+      label: item.actionLabel || `More on #${i + 1}`,
+      url: item.actionUrl || `${baseUrl}/digest`,
+    }));
+
+    try {
+      const response = await sendNtfyNotification({
+        topic,
+        message: body,
+        title: args.title,
+        priority: 3,
+        tags: ["newspaper", "star"],
+        click: `${baseUrl}/digest`,
+        actions,
+        markdown: true,
+      });
+
+      // Log the notification
+      await ctx.runMutation(internal.domains.integrations.ntfy.logNotification, {
+        topic,
+        body,
+        status: response.event || "sent",
+        messageId: response.id,
+        eventType: "digest_with_actions",
+        userId: args.userId,
+      });
+
+      console.log(`[ntfy] Digest with actions sent to ${topic}`);
+      return { sent: true, messageId: response.id };
+    } catch (err: any) {
+      console.error(`[ntfy] sendDigestWithActions error:`, err);
+      return { sent: false, error: err?.message || String(err) };
+    }
+  },
+});
+
+// ------------------------------------------------------------------
+// Breaking Alert with Priority
+// ------------------------------------------------------------------
+
+/**
+ * Send a high-priority breaking alert.
+ * Used for urgent funding news, critical updates, etc.
+ */
+export const sendBreakingAlert = action({
+  args: {
+    topic: v.optional(v.string()),
+    title: v.string(),
+    body: v.string(),
+    sourceUrl: v.optional(v.string()),
+    entityName: v.optional(v.string()),
+    alertType: v.optional(v.union(
+      v.literal("funding"),
+      v.literal("acquisition"),
+      v.literal("ipo"),
+      v.literal("breaking_news"),
+      v.literal("system_alert")
+    )),
+    userId: v.optional(v.id("users")),
+  },
+  returns: v.object({
+    sent: v.boolean(),
+    messageId: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const topic = args.topic || NTFY_DEFAULT_TOPIC;
+
+    // Select emoji/tag based on alert type
+    const tagMap: Record<string, string[]> = {
+      funding: ["moneybag", "chart_with_upwards_trend"],
+      acquisition: ["handshake", "building"],
+      ipo: ["rocket", "stock_chart"],
+      breaking_news: ["rotating_light", "newspaper"],
+      system_alert: ["warning", "gear"],
+    };
+
+    const tags = tagMap[args.alertType || "breaking_news"] || ["bell"];
+
+    // Build actions
+    const actions = [];
+    if (args.sourceUrl) {
+      actions.push({
+        action: "view" as const,
+        label: "View Source",
+        url: args.sourceUrl,
+      });
+    }
+    if (args.entityName) {
+      actions.push({
+        action: "view" as const,
+        label: `Research ${args.entityName}`,
+        url: `https://nodebench.ai/search?q=${encodeURIComponent(args.entityName)}`,
+      });
+    }
+
+    try {
+      const response = await sendNtfyNotification({
+        topic,
+        message: args.body,
+        title: `🚨 ${args.title}`,
+        priority: 5, // Max priority for breaking alerts
+        tags,
+        click: args.sourceUrl,
+        actions: actions.length > 0 ? actions : undefined,
+        markdown: true,
+      });
+
+      // Log the notification
+      await ctx.runMutation(internal.domains.integrations.ntfy.logNotification, {
+        topic,
+        body: args.body,
+        status: response.event || "sent",
+        messageId: response.id,
+        eventType: `breaking_${args.alertType || "alert"}`,
+        userId: args.userId,
+      });
+
+      console.log(`[ntfy] Breaking alert sent to ${topic}: ${args.title}`);
+      return { sent: true, messageId: response.id };
+    } catch (err: any) {
+      console.error(`[ntfy] sendBreakingAlert error:`, err);
+      return { sent: false, error: err?.message || String(err) };
+    }
+  },
+});

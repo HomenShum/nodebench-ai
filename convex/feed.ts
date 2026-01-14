@@ -999,6 +999,24 @@ export const ingestRSSInternal = internalAction({
         { url: 'https://news.crunchbase.com/feed/', source: 'Crunchbase Blog', tags: ['Funding', 'Data'], priority: 2, category: 'startups' },
 
         // ═══════════════════════════════════════════════════════════════
+        // PRESS RELEASE WIRES - Direct Funding Announcements (Priority 1)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://www.businesswire.com/rss/home/?rss=G1QFDERJXkJeEF9cWA==', source: 'BusinessWire Funding', tags: ['Press Release', 'Funding'], priority: 1, category: 'startups' },
+        { url: 'https://www.prnewswire.com/rss/business-technology-latest-news.rss', source: 'PR Newswire Tech', tags: ['Press Release', 'Tech'], priority: 1, category: 'startups' },
+        { url: 'https://www.globenewswire.com/RssFeed/subjectcode/25-Financing%20Agreements/feedTitle/GlobeNewswire%20-%20Financing%20Agreements', source: 'GlobeNewswire Financing', tags: ['Press Release', 'Financing'], priority: 1, category: 'startups' },
+
+        // ═══════════════════════════════════════════════════════════════
+        // PREMIUM BUSINESS NEWS - Deals & M&A (Priority 1)
+        // ═══════════════════════════════════════════════════════════════
+        { url: 'https://fortune.com/feed/fortune-feeds/?id=3230629', source: 'Fortune Venture', tags: ['Fortune', 'VC'], priority: 1, category: 'startups' },
+        { url: 'https://www.forbes.com/business/feed/', source: 'Forbes Business', tags: ['Forbes', 'Business'], priority: 1, category: 'finance' },
+        { url: 'https://www.forbes.com/entrepreneurs/feed/', source: 'Forbes Entrepreneurs', tags: ['Forbes', 'Startups'], priority: 1, category: 'startups' },
+        { url: 'https://www.axios.com/pro/deal-feed.rss', source: 'Axios Pro Deals', tags: ['Axios', 'Deals'], priority: 1, category: 'startups' },
+        { url: 'https://siliconangle.com/feed/', source: 'SiliconAngle', tags: ['Enterprise', 'Cloud'], priority: 1, category: 'tech' },
+        { url: 'https://www.inc.com/rss/', source: 'Inc.com', tags: ['Startups', 'Growth'], priority: 2, category: 'startups' },
+        { url: 'https://seekingalpha.com/feed.xml', source: 'Seeking Alpha', tags: ['Markets', 'Analysis'], priority: 2, category: 'finance' },
+
+        // ═══════════════════════════════════════════════════════════════
         // PHARMA BD - Biotech & Life Sciences (Priority 1)
         // ═══════════════════════════════════════════════════════════════
         { url: 'https://www.fiercebiotech.com/rss/xml', source: 'FierceBiotech', tags: ['Biotech', 'Pharma'], priority: 1, category: 'research' },

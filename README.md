@@ -6,6 +6,52 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ## Changelog
 
+### v0.3.2 (January 14, 2026)
+
+**📄 PDF Report Generation Enhancements**
+
+Major upgrade to automated PDF report generation with AI insights and visual charts.
+
+**Phase 1: AI Insights Integration**
+- New `pdfInsights.ts` - AI-powered insights generator using FREE-FIRST model strategy
+- JPMorgan-style market analysis with sector trends, top investors, momentum signals
+- Automatic fallback chain for reliable generation
+- Loading UI with sparkle animation during AI analysis
+
+**Phase 2: Scheduled Cron Jobs**
+| Report Type | Schedule | Distribution |
+|-------------|----------|--------------|
+| Weekly | Monday 8:00 AM UTC | Discord, ntfy |
+| Monthly | 1st of month 9:00 AM UTC | Discord, LinkedIn, ntfy |
+| Quarterly | 1st of quarter 10:00 AM UTC | Discord, LinkedIn, ntfy |
+
+- Quarterly filter logic: Only runs in Jan/Apr/Jul/Oct
+- Reports auto-saved to Documents Hub with metadata tags
+
+**Phase 3: Visual Charts via QuickChart.io**
+- Sector pie chart (doughnut) - Top 6 sectors by funding
+- Funding bar chart (horizontal) - Deal count by round type
+- Professional JPMorgan-inspired navy blue color palette
+- Fallback to placeholder if chart API fails
+
+**Phase 4: Multi-Channel Distribution**
+- Discord: Rich embeds with deal count and total raised
+- LinkedIn: Summary post with AI insights excerpt + hashtags
+- ntfy: Push notification with chart emoji tags
+
+**New Files:**
+- `convex/domains/documents/pdfInsights.ts` - AI insights generator
+- `convex/domains/documents/reportDocuments.ts` - Report document storage
+- `convex/workflows/scheduledPDFReports.ts` - Scheduled report workflow
+- `src/lib/pdf/` - PDF generation utilities (pdfGenerator, templates, types)
+
+**Modified Files:**
+- `convex/crons.ts` - Added 3 new cron jobs for PDF reports
+- `convex/domains/enrichment/fundingQueries.ts` - Added `getFundingForScheduledReport`
+- `src/features/research/views/FundingBriefView.tsx` - AI insights integration in UI
+
+---
+
 ### v0.3.1 (January 12, 2026)
 
 **🎨 Executive Synthesis Visual Overhaul**
