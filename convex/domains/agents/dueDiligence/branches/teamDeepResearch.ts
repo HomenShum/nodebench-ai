@@ -1,7 +1,7 @@
 /**
- * teamDeepResearch.ts - DIAGNOSTIC VERSION
+ * teamDeepResearch.ts - DIAGNOSTIC VERSION WITH INTENTIONAL ERROR
  *
- * This is a simplified diagnostic version to verify the function is being called.
+ * This version throws an intentional error to verify the function is being called.
  */
 
 "use node";
@@ -25,79 +25,18 @@ interface BranchResult {
 }
 
 // ============================================================================
-// Main Execution - DIAGNOSTIC VERSION
+// Main Execution - DIAGNOSTIC VERSION WITH INTENTIONAL ERROR
 // ============================================================================
 
 /**
  * Execute team/founders deep research branch - DIAGNOSTIC VERSION
- * Returns hardcoded data to verify the function is being called
+ * THROWS INTENTIONAL ERROR TO VERIFY FUNCTION IS CALLED
  */
 export async function executeTeamFoundersBranch(
   ctx: any,
   entityName: string,
   entityType: string
 ): Promise<BranchResult> {
-  // DIAGNOSTIC: Return hardcoded data to verify function is called
-  console.log(`[DD-TeamResearch-DIAGNOSTIC] Called for ${entityName}`);
-
-  const dummyFounder: TeamMemberProfile = {
-    id: "diagnostic-founder-001",
-    name: "DIAGNOSTIC_FOUNDER",
-    currentRole: `CEO of ${entityName} (HARDCODED TEST DATA)`,
-    currentCompany: entityName,
-    linkedinUrl: undefined,
-    careerTimeline: [],
-    boardSeats: [],
-    advisoryRoles: [],
-    patents: [],
-    education: [],
-    conflictFlags: [],
-    networkConnections: {
-      coFounders: [],
-      investorRelationships: [],
-      boardNetworkOverlap: [],
-    },
-    trackRecord: {
-      successfulExits: 99,
-      failedVentures: 0,
-      pivots: 0,
-      yearsExperience: 99,
-      domainExpertise: ["DIAGNOSTIC"],
-    },
-    redFlags: [],
-    highlights: ["DIAGNOSTIC MODE ACTIVE - This data is hardcoded"],
-    sources: [],
-    verificationStatus: "unverified",
-  };
-
-  const findings: TeamFoundersFindings = {
-    founders: [dummyFounder],
-    executives: [],
-    boardMembers: [],
-    teamSize: 1,
-    averageExperience: 99,
-    hasSerialFounders: true,
-    hasVCBackedFounders: true,
-    teamStrengths: ["DIAGNOSTIC_MODE_ACTIVE"],
-    teamGaps: [],
-    keyPersonRisk: [],
-    founderMarketFit: "HARDCODED_TEST - Function is being called correctly",
-    trackRecordSummary: `DIAGNOSTIC: executeTeamFoundersBranch was called for ${entityName}`,
-  };
-
-  const sources: DDSource[] = [{
-    sourceType: "other" as SourceType,
-    title: "DIAGNOSTIC_SOURCE",
-    accessedAt: Date.now(),
-    reliability: "inferred" as SourceReliability,
-    section: "team_discovery",
-  }];
-
-  console.log(`[DD-TeamResearch-DIAGNOSTIC] Returning hardcoded data for ${entityName}`);
-
-  return {
-    findings,
-    sources,
-    confidence: 0.99,
-  };
+  // DIAGNOSTIC: Throw error to verify this function is actually called
+  throw new Error(`DIAGNOSTIC_ERROR_2026_01_14_1752: executeTeamFoundersBranch was called for ${entityName}. If you see this error, the function IS being called.`);
 }
