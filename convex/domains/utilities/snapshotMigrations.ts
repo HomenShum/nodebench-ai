@@ -1,6 +1,6 @@
 import { internalMutation, mutation } from "../../_generated/server";
 import { v } from "convex/values";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import { internal, components } from "../../_generated/api";
 import { ProsemirrorSync } from "@convex-dev/prosemirror-sync";
 
@@ -132,7 +132,7 @@ export const normalizeSnapshot = internalMutation({
   args: { snapshotId: v.id("documentSnapshots") },
   returns: v.null(),
   handler: async (ctx, { snapshotId }) => {
-    const snap = await ctx.db.get(snapshotId);
+    const snap = await ctx.db.get(snapshotId) as Doc<"documentSnapshots"> | null;
     if (!snap) return null;
     try {
       const parsed = JSON.parse(snap.content);
@@ -153,7 +153,7 @@ export const normalizeAllSnapshots = mutation({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
-    const snapshots = await ctx.db.query("documentSnapshots").collect();
+    const snapshots = await ctx.db.query("documentSnapshots").collect() as Doc<"documentSnapshots">[];
     for (const s of snapshots) {
       await ctx.scheduler.runAfter(0, internal.domains.utilities.snapshotMigrations.normalizeSnapshot, {
         snapshotId: s._id as Id<"documentSnapshots">,
@@ -233,7 +233,7 @@ export const migrateSnapshotToBlockNote = internalMutation({
   args: { snapshotId: v.id("documentSnapshots") },
   returns: v.null(),
   handler: async (ctx, { snapshotId }) => {
-    const snap = await ctx.db.get(snapshotId);
+    const snap = await ctx.db.get(snapshotId) as Doc<"documentSnapshots"> | null;
     if (!snap) return null;
     try {
       const parsed = JSON.parse(snap.content);
@@ -255,7 +255,7 @@ export const migrateAllSnapshotsToBlockNote = mutation({
   args: {},
   returns: v.object({ count: v.number() }),
   handler: async (ctx) => {
-    const snapshots = await ctx.db.query("documentSnapshots").collect();
+    const snapshots = await ctx.db.query("documentSnapshots").collect() as Doc<"documentSnapshots">[];
     let count = 0;
     for (const s of snapshots) {
       // Check if snapshot contains taskItem or taskList
@@ -403,7 +403,7 @@ export const migrateEditorJSToProseMirror = internalMutation({
     errors: v.array(v.string()),
   }),
   handler: async (ctx) => {
-    const documents = await ctx.db.query("documents").collect();
+    const documents = await ctx.db.query("documents").collect() as Doc<"documents">[];
     let processed = 0;
     let converted = 0;
     const errors: string[] = [];
@@ -446,7 +446,7 @@ export const seedProseMirrorFromDocuments = internalMutation({
   }),
   handler: async (ctx) => {
 
-    const documents = await ctx.db.query("documents").collect();
+    const documents = await ctx.db.query("documents").collect() as Doc<"documents">[];
     let processed = 0;
     let seeded = 0;
     let skipped = 0;

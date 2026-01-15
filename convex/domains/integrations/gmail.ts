@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "../../_generated/api";
 import { getLlmModel } from "../../../shared/llm/modelCatalog";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 
 /**
  * Internal query to get user preferences for Gmail ingestion
@@ -21,7 +21,7 @@ export const getUserPreferencesForGmail = internalQuery({
     const prefs = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
     if (!prefs) return null;
     return {
       gmailIngestEnabled: prefs.gmailIngestEnabled,
@@ -65,9 +65,9 @@ export const upsertEventFromGmail = internalMutation({
       .withIndex("by_user_start", (q) =>
         q.eq("userId", userId).gte("startTime", startTime - window).lte("startTime", startTime + window)
       )
-      .collect();
+      .collect() as Doc<"events">[];
 
-    const existing = candidates.find((e) => (e.meta)?.hash === hash || e.sourceId === sourceId);
+    const existing = candidates.find((e: Doc<"events">) => (e.meta as { hash?: string } | undefined)?.hash === hash || e.sourceId === sourceId);
 
     const ingestionConf = (confidence >= 0.7 ? "high" : confidence >= 0.4 ? "med" : "low");
     const baseEvent = {
@@ -164,7 +164,7 @@ export const getConnection = query({
     const account = await ctx.db
       .query("googleAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"googleAccounts"> | null;
     if (!account) return { connected: false };
     return {
       connected: true,
@@ -186,7 +186,7 @@ export const updateProfile = internalMutation({
     const existing = await ctx.db
       .query("googleAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"googleAccounts"> | null;
     if (!existing) return null;
     await ctx.db.patch(existing._id, {
       email: args.email ?? existing.email,
@@ -219,7 +219,7 @@ export const saveTokens = internalMutation({
     const existing = await ctx.db
       .query("googleAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"googleAccounts"> | null;
 
     const now = Date.now();
     if (existing) {
@@ -268,7 +268,7 @@ export const updateTokens = internalMutation({
     const existing = await ctx.db
       .query("googleAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"googleAccounts"> | null;
 
     if (!existing) throw new Error("No Google account connected");
 
@@ -308,7 +308,7 @@ export const getAccount = internalQuery({
     const account = await ctx.db
       .query("googleAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"googleAccounts"> | null;
     if (!account) return null;
     return {
       email: account.email,

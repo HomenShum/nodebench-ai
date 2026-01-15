@@ -54,7 +54,7 @@ export interface QueueStats {
 export const getTask = internalQuery({
   args: { taskId: v.id("researchTasks") },
   handler: async (ctx, { taskId }): Promise<Doc<"researchTasks"> | null> => {
-    return await ctx.db.get(taskId);
+    return await ctx.db.get(taskId) as Doc<"researchTasks"> | null;
   },
 });
 
@@ -68,7 +68,7 @@ export const dequeueNext = internalQuery({
     const queuedTasks = await ctx.db
       .query("researchTasks")
       .withIndex("by_status", (q) => q.eq("status", "queued"))
-      .collect();
+      .collect() as Doc<"researchTasks">[];
 
     if (queuedTasks.length === 0) {
       return null;
@@ -100,7 +100,7 @@ export const getQueuedByPersona = internalQuery({
       .withIndex("by_persona", (q) =>
         q.eq("primaryPersona", personaId).eq("status", "queued")
       )
-      .take(limit);
+      .take(limit) as Doc<"researchTasks">[];
   },
 });
 
@@ -131,7 +131,7 @@ export const getTasksByEntity = internalQuery({
       query = query.filter((q) => q.eq(q.field("status"), status));
     }
 
-    return await query.collect();
+    return await query.collect() as Doc<"researchTasks">[];
   },
 });
 
@@ -144,11 +144,11 @@ export const getActiveTasks = internalQuery({
     const tasks = await ctx.db
       .query("researchTasks")
       .order("desc")
-      .collect();
+      .collect() as Doc<"researchTasks">[];
 
     return tasks
       .filter(
-        (t) =>
+        (t: Doc<"researchTasks">) =>
           t.status === "researching" ||
           t.status === "validating" ||
           t.status === "publishing"
@@ -166,10 +166,10 @@ export const getRetryableTasks = internalQuery({
     const failedTasks = await ctx.db
       .query("researchTasks")
       .withIndex("by_status", (q) => q.eq("status", "failed"))
-      .take(limit * 2);
+      .take(limit * 2) as Doc<"researchTasks">[];
 
     return failedTasks
-      .filter((t) => t.retryCount < (t.maxRetries || RESEARCH_CONFIG.maxRetries))
+      .filter((t: Doc<"researchTasks">) => t.retryCount < (t.maxRetries || RESEARCH_CONFIG.maxRetries))
       .slice(0, limit);
   },
 });
@@ -180,7 +180,7 @@ export const getRetryableTasks = internalQuery({
 export const getQueueStats = internalQuery({
   args: {},
   handler: async (ctx): Promise<QueueStats> => {
-    const allTasks = await ctx.db.query("researchTasks").collect();
+    const allTasks = await ctx.db.query("researchTasks").collect() as Doc<"researchTasks">[];
 
     const stats: QueueStats = {
       queued: 0,
@@ -238,7 +238,7 @@ export const getQueueStats = internalQuery({
 export const getPublicQueueStats = query({
   args: {},
   handler: async (ctx): Promise<QueueStats> => {
-    const allTasks = await ctx.db.query("researchTasks").collect();
+    const allTasks = await ctx.db.query("researchTasks").collect() as Doc<"researchTasks">[];
 
     const stats: QueueStats = {
       queued: 0,
@@ -376,7 +376,7 @@ export const updateStatus = internalMutation({
   },
   handler: async (ctx, args): Promise<void> => {
     const { taskId, status, ...updates } = args;
-    const task = await ctx.db.get(taskId);
+    const task = await ctx.db.get(taskId) as Doc<"researchTasks"> | null;
     if (!task) return;
 
     const patchData: Partial<Doc<"researchTasks">> = {
@@ -417,7 +417,7 @@ export const markForRetry = internalMutation({
     error: v.string(),
   },
   handler: async (ctx, { taskId, error }): Promise<boolean> => {
-    const task = await ctx.db.get(taskId);
+    const task = await ctx.db.get(taskId) as Doc<"researchTasks"> | null;
     if (!task) return false;
 
     const maxRetries = task.maxRetries || RESEARCH_CONFIG.maxRetries;
@@ -480,7 +480,7 @@ export const updatePriority = internalMutation({
 export const cancelTask = internalMutation({
   args: { taskId: v.id("researchTasks") },
   handler: async (ctx, { taskId }): Promise<void> => {
-    const task = await ctx.db.get(taskId);
+    const task = await ctx.db.get(taskId) as Doc<"researchTasks"> | null;
     if (!task) return;
 
     // Only cancel if not already completed
@@ -517,7 +517,7 @@ export const cleanupOldTasks = internalMutation({
           q.lt(q.field("completedAt"), cutoff)
         )
       )
-      .take(limit);
+      .take(limit) as Doc<"researchTasks">[];
 
     for (const task of oldTasks) {
       await ctx.db.delete(task._id);
@@ -543,7 +543,7 @@ export const boostStalePriorities = internalMutation({
         .query("researchTasks")
         .withIndex("by_entity", (q) => q.eq("entityId", entityId))
         .filter((q) => q.eq(q.field("status"), "queued"))
-        .collect();
+        .collect() as Doc<"researchTasks">[];
 
       for (const task of tasks) {
         const newPriority = Math.min(task.priority + boost, 100);

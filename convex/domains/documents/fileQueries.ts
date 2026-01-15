@@ -1,6 +1,7 @@
 // convex/fileQueries.ts
 import { v } from "convex/values";
 import { internalQuery, internalMutation } from "../../_generated/server";
+import type { Doc, Id } from "../../_generated/dataModel";
 
 // Query to get a file with security check
 export const getFileForAnalysis = internalQuery({
@@ -9,7 +10,7 @@ export const getFileForAnalysis = internalQuery({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const file = await ctx.db.get(args.fileId);
+    const file = await ctx.db.get(args.fileId) as Doc<"files"> | null;
     if (!file || file.userId !== args.userId) {
       return null;
     }
@@ -28,8 +29,8 @@ export const createUrlRecord = internalMutation({
       .query("urlAnalyses")
       .withIndex("by_url", (q) => q.eq("url", args.url))
       .filter((q) => q.eq(q.field("userId"), args.userId))
-      .first();
-      
+      .first() as Doc<"urlAnalyses"> | null;
+
     if (existingRecord) {
       return existingRecord._id;
     }
@@ -56,14 +57,14 @@ export const findUrlRecord = internalQuery({
   handler: async (ctx, args) => {
     const record = await ctx.db
       .query("files")
-      .filter((q) => 
+      .filter((q) =>
         q.and(
           q.eq(q.field("fileName"), args.url),
           q.eq(q.field("fileType"), "url")
         )
       )
-      .first();
-      
+      .first() as Doc<"files"> | null;
+
     return record?._id || null;
   },
 });
@@ -81,11 +82,11 @@ export const saveFileAnalysisResults = internalMutation({
   },
   handler: async (ctx, args) => {
     // Verify ownership
-    const file = await ctx.db.get(args.fileId);
+    const file = await ctx.db.get(args.fileId) as Doc<"files"> | null;
     if (!file || file.userId !== args.userId) {
       throw new Error("File not found or unauthorized");
     }
-    
+
     // Update the file record with analysis results
     await ctx.db.patch(args.fileId, {
       analysis: args.analysis,
@@ -94,15 +95,15 @@ export const saveFileAnalysisResults = internalMutation({
       processingTime: args.processingTime,
       analyzedAt: args.createdAt,
     });
-    
+
     // If this is a URL analysis, also update the urlAnalyses table
     if (file.fileType === "url") {
       const urlAnalysis = await ctx.db
         .query("urlAnalyses")
         .withIndex("by_url", (q) => q.eq("url", file.fileName))
         .filter((q) => q.eq(q.field("userId"), args.userId))
-        .first();
-        
+        .first() as Doc<"urlAnalyses"> | null;
+
       if (urlAnalysis) {
         await ctx.db.patch(urlAnalysis._id, {
           analysis: args.analysis,
@@ -134,11 +135,11 @@ export const saveFileAnalysisError = internalMutation({
   },
   handler: async (ctx, args) => {
     // Verify ownership
-    const file = await ctx.db.get(args.fileId);
+    const file = await ctx.db.get(args.fileId) as Doc<"files"> | null;
     if (!file || file.userId !== args.userId) {
       return; // Silently fail for error logging
     }
-    
+
     // Store error in the file record
     await ctx.db.patch(args.fileId, {
       analysis: `Error: ${args.error}`,
@@ -178,7 +179,7 @@ export const upsertUrlAnalysisForUser = internalMutation({
       .query("urlAnalyses")
       .withIndex("by_url", (q) => q.eq("url", args.url))
       .filter((q) => q.eq(q.field("userId"), args.userId))
-      .first();
+      .first() as Doc<"urlAnalyses"> | null;
 
     const analyzedAt = Date.now();
     if (existing) {

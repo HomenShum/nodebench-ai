@@ -1,6 +1,6 @@
 import { internalMutation, mutation } from "../../_generated/server";
 import { v } from "convex/values";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 import { internal } from "../../_generated/api";
 import { coerceToBlockJson, detectNodeType, createBlockJson, extractPlainText } from "../../lib/markdown";
 
@@ -15,7 +15,7 @@ export const migrateDocument = internalMutation({
   args: { docId: v.id("documents") },
   returns: v.null(),
   handler: async (ctx, { docId }) => {
-    const doc = await ctx.db.get(docId);
+    const doc = await ctx.db.get(docId) as Doc<"documents"> | null;
     if (!doc || !doc.content) return null;
 
     const pmJSON = JSON.parse(doc.content);
@@ -102,7 +102,7 @@ export const migrateAllDocs = mutation({
   handler: async (ctx) => {
     const docs = await ctx.db
       .query("documents")
-      .collect();
+      .collect() as Doc<"documents">[];
     for (const doc of docs) {
       if (doc.content && !doc.rootNodeId) {
         // Call the above mutation via scheduler to avoid bursting the 500kb and time limits.

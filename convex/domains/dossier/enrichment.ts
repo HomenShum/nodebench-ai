@@ -8,6 +8,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Doc } from "../../_generated/dataModel";
 
 const entitySchema = v.object({
   name: v.string(),
@@ -60,7 +61,7 @@ export const getEnrichment = query({
       .withIndex("by_brief_dataIndex", (q) =>
         q.eq("briefId", args.briefId).eq("dataIndex", args.dataIndex)
       )
-      .first();
+      .first() as Doc<"dossierEnrichment"> | null;
 
     // Check if expired
     if (enrichment && enrichment.expiresAt && enrichment.expiresAt < Date.now()) {
@@ -116,7 +117,7 @@ export const addEnrichment = mutation({
       .withIndex("by_brief_dataIndex", (q) =>
         q.eq("briefId", args.briefId).eq("dataIndex", args.dataIndex)
       )
-      .first();
+      .first() as Doc<"dossierEnrichment"> | null;
 
     const now = Date.now();
 
@@ -158,7 +159,7 @@ export const addEnrichmentInternal = internalMutation({
       .withIndex("by_brief_dataIndex", (q) =>
         q.eq("briefId", args.briefId).eq("dataIndex", args.dataIndex)
       )
-      .first();
+      .first() as Doc<"dossierEnrichment"> | null;
 
     if (existing && existing.userId === userId) {
       await ctx.db.patch(existing._id, {
@@ -218,7 +219,7 @@ export const getEnrichmentInternal = internalQuery({
       .withIndex("by_brief_dataIndex", (q) =>
         q.eq("briefId", args.briefId).eq("dataIndex", args.dataIndex)
       )
-      .first();
+      .first() as Doc<"dossierEnrichment"> | null;
 
     // Check if expired
     if (enrichment && enrichment.expiresAt && enrichment.expiresAt < Date.now()) {

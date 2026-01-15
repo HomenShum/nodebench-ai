@@ -7,6 +7,7 @@
 
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VALIDATION QUERY
@@ -15,13 +16,13 @@ import { internalMutation, internalQuery } from "../../_generated/server";
 export const validateToolsHaveEmbeddings = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const allTools = await ctx.db.query("toolRegistry").collect();
+    const allTools = await ctx.db.query("toolRegistry").collect() as Doc<"toolRegistry">[];
     const withEmbeddings = allTools.filter(
-      (t) => t.embedding && t.embedding.length === 1536
+      (t: Doc<"toolRegistry">) => t.embedding && t.embedding.length === 1536
     );
     const withoutEmbeddings = allTools
-      .filter((t) => !t.embedding || t.embedding.length !== 1536)
-      .map((t) => t.toolName);
+      .filter((t: Doc<"toolRegistry">) => !t.embedding || t.embedding.length !== 1536)
+      .map((t: Doc<"toolRegistry">) => t.toolName);
     // Build category counts
     const categoryMap = new Map<string, number>();
     for (const t of allTools) {
@@ -56,7 +57,7 @@ export const upsertTool = internalMutation({
     const existing = await ctx.db
       .query("toolRegistry")
       .withIndex("by_toolName", (q) => q.eq("toolName", args.toolName))
-      .first();
+      .first() as Doc<"toolRegistry"> | null;
     const data = {
       toolName: args.toolName,
       description: args.description,
@@ -93,7 +94,7 @@ export const updateToolEmbedding = internalMutation({
     const tool = await ctx.db
       .query("toolRegistry")
       .withIndex("by_toolName", (q) => q.eq("toolName", args.toolName))
-      .first();
+      .first() as Doc<"toolRegistry"> | null;
     if (tool) {
       await ctx.db.patch(tool._id, { embedding: args.embedding });
       return true;
@@ -112,11 +113,11 @@ export const getToolDetails = internalQuery({
   },
   handler: async (ctx, args) => {
     const results = await Promise.all(
-      args.toolNames.map(async (toolName: any) => {
+      args.toolNames.map(async (toolName: string) => {
         const tool = await ctx.db
           .query("toolRegistry")
           .withIndex("by_toolName", (q) => q.eq("toolName", toolName))
-          .first();
+          .first() as Doc<"toolRegistry"> | null;
         if (!tool) return null;
         return {
           toolName: tool.toolName,
@@ -143,7 +144,7 @@ export const listCategories = internalQuery({
     const tools = await ctx.db
       .query("toolRegistry")
       .withIndex("by_enabled", (q) => q.eq("isEnabled", true))
-      .collect();
+      .collect() as Doc<"toolRegistry">[];
     const categoryMap = new Map<string, { name: string; count: number; tools: string[] }>();
     for (const tool of tools) {
       const existing = categoryMap.get(tool.category);

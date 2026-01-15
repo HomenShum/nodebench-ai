@@ -57,7 +57,7 @@ export const listForDocument = query({
   returns: v.array(TagDocValidator),
   handler: async (ctx, { documentId }) => {
     const userId = await getAuthUserId(ctx);
-    const doc = await ctx.db.get(documentId);
+    const doc = await ctx.db.get(documentId) as Doc<"documents"> | null;
     if (!doc) return [];
     if (!doc.isPublic && doc.createdBy !== userId) return [];
 
@@ -68,7 +68,7 @@ export const listForDocument = query({
       .collect();
     const results: Array<{ _id: Id<"tags">; name: string; kind?: string; importance?: number }> = [];
     for (const ref of refs) {
-      const tag = await ctx.db.get(ref.tagId);
+      const tag = await ctx.db.get(ref.tagId) as Doc<"tags"> | null;
       if (tag)
         results.push({
           _id: tag._id,
@@ -100,7 +100,7 @@ export const getPreviewByName = query({
     const tag = await ctx.db
       .query("tags")
       .withIndex("by_name", (q) => q.eq("name", nm))
-      .first();
+      .first() as Doc<"tags"> | null;
 
     if (!tag) {
       return { name: nm, kind: canonicalizeKind(undefined, nm), count: 0, topDocuments: [] };
@@ -118,7 +118,7 @@ export const getPreviewByName = query({
     for await (const ref of refs) {
       if (ref.targetType !== "documents") continue;
       const docId = ref.targetId as unknown as Id<"documents">;
-      const doc = await ctx.db.get(docId);
+      const doc = await ctx.db.get(docId) as Doc<"documents"> | null;
       if (!doc) continue;
       const accessible = doc.isPublic || (userId ? doc.createdBy === userId : false);
       if (!accessible) continue;
@@ -183,7 +183,7 @@ export const addTagsToDocument = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const doc = await ctx.db.get(documentId);
+    const doc = await ctx.db.get(documentId) as Doc<"documents"> | null;
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 
@@ -210,7 +210,7 @@ export const addTagsToDocument = mutation({
       const existing = await ctx.db
         .query("tags")
         .withIndex("by_name", (q) => q.eq("name", t.name))
-        .first();
+        .first() as Doc<"tags"> | null;
       let tagId: Id<"tags">;
       if (existing) {
         tagId = existing._id;
@@ -259,7 +259,7 @@ export const addTagsToDocument = mutation({
       .collect();
     const out: Array<{ _id: Id<"tags">; name: string; kind?: string; importance?: number }> = [];
     for (const ref of updated) {
-      const tag = await ctx.db.get(ref.tagId);
+      const tag = await ctx.db.get(ref.tagId) as Doc<"tags"> | null;
       if (tag)
         out.push({
           _id: tag._id,
@@ -283,7 +283,7 @@ export const removeTagFromDocument = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const doc = await ctx.db.get(documentId);
+    const doc = await ctx.db.get(documentId) as Doc<"documents"> | null;
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 
@@ -292,7 +292,7 @@ export const removeTagFromDocument = mutation({
       .query("tagRefs")
       .withIndex("by_target", (q) => q.eq("targetId", String(documentId)).eq("targetType", "documents"))
       .filter((q) => q.eq(q.field("tagId"), tagId))
-      .first();
+      .first() as Doc<"tagRefs"> | null;
     if (ref) {
       await ctx.db.delete(ref._id);
     }
@@ -304,7 +304,7 @@ export const removeTagFromDocument = mutation({
       .collect();
     const out: Array<{ _id: Id<"tags">; name: string; kind?: string; importance?: number }> = [];
     for (const r of updated) {
-      const tag = await ctx.db.get(r.tagId);
+      const tag = await ctx.db.get(r.tagId) as Doc<"tags"> | null;
       if (tag)
         out.push({
           _id: tag._id,
@@ -324,11 +324,11 @@ export const updateTagKind = mutation({
   handler: async (ctx, { documentId, tagId, kind }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    const doc = await ctx.db.get(documentId);
+    const doc = await ctx.db.get(documentId) as Doc<"documents"> | null;
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 
-    const tag = await ctx.db.get(tagId);
+    const tag = await ctx.db.get(tagId) as Doc<"tags"> | null;
     if (!tag) throw new Error("Tag not found");
 
     const canonical = canonicalizeKind(kind, tag.name) || kind;
@@ -341,7 +341,7 @@ export const updateTagKind = mutation({
       .collect();
     const out: Array<{ _id: Id<"tags">; name: string; kind?: string; importance?: number }> = [];
     for (const r of updated) {
-      const t = await ctx.db.get(r.tagId);
+      const t = await ctx.db.get(r.tagId) as Doc<"tags"> | null;
       if (t)
         out.push({
           _id: t._id,
@@ -359,7 +359,7 @@ export const getDocumentText = internalQuery({
   args: { documentId: v.id("documents"), maxChars: v.optional(v.number()) },
   returns: v.string(),
   handler: async (ctx, { documentId, maxChars = 8000 }) => {
-    const doc = await ctx.db.get(documentId);
+    const doc = await ctx.db.get(documentId) as Doc<"documents"> | null;
     if (!doc) return "";
 
     const pieces: string[] = [doc.title];

@@ -238,9 +238,14 @@ export const getPersonaDashboards = query({
 
     for (const budget of budgets) {
       const personaId = budget.personaId as PersonaId;
-      const config = PERSONA_CONFIG[personaId];
 
-      if (!config) continue;
+      // Verify this is a valid persona ID from the config
+      if (!PERSONA_CONFIG.personaIds.includes(personaId)) continue;
+
+      // Get persona name by formatting the ID (e.g., "JPM_STARTUP_BANKER" -> "JPM Startup Banker")
+      const personaName = personaId.split('_').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ');
 
       // Get research tasks for this persona
       const tasks = await ctx.db
@@ -270,7 +275,7 @@ export const getPersonaDashboards = query({
 
       dashboards.push({
         personaId,
-        personaName: config.name,
+        personaName,
         budget: {
           daily: budget.dailyBudget,
           remaining: budget.remainingBudget,

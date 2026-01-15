@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 export const getRepoScout = query({
   args: {
@@ -9,7 +10,7 @@ export const getRepoScout = query({
     return await ctx.db
       .query("repoScoutCache")
       .withIndex("by_signal_key", (q) => q.eq("signalKey", args.signalKey))
-      .first();
+      .first() as Doc<"repoScoutCache"> | null;
   },
 });
 

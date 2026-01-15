@@ -181,7 +181,7 @@ export const getFilesBasicPublic = query({
     }
     const results: Doc<"files">[] = [];
     for (const id of fileIds) {
-      const f = await ctx.db.get(id);
+      const f = await ctx.db.get(id) as Doc<"files"> | null;
       if (f && f.userId === identity.subject) {
         results.push(f);
       }

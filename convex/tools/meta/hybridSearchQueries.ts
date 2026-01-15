@@ -7,6 +7,7 @@
 
 import { v } from "convex/values";
 import { query, internalQuery, internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -63,7 +64,7 @@ export const getCachedSearchResults = internalQuery({
     const cached = await ctx.db
       .query("toolSearchCache")
       .withIndex("by_hash", (q) => q.eq("queryHash", queryHash))
-      .first();
+      .first() as Doc<"toolSearchCache"> | null;
 
     if (!cached) {
       return { hit: false };
@@ -102,7 +103,7 @@ export const setCachedSearchResults = internalMutation({
     const existing = await ctx.db
       .query("toolSearchCache")
       .withIndex("by_hash", (q) => q.eq("queryHash", queryHash))
-      .first();
+      .first() as Doc<"toolSearchCache"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -282,7 +283,7 @@ export const getToolByIdInternal = internalQuery({
     toolId: v.id("toolRegistry"),
   },
   handler: async (ctx, args) => {
-    const doc = await ctx.db.get(args.toolId);
+    const doc = await ctx.db.get(args.toolId) as Doc<"toolRegistry"> | null;
     if (!doc) return null;
     return {
       toolName: doc.toolName,
@@ -320,7 +321,7 @@ export const recordToolUsage = internalMutation({
     const tool = await ctx.db
       .query("toolRegistry")
       .withIndex("by_toolName", (q) => q.eq("toolName", args.toolName))
-      .first();
+      .first() as Doc<"toolRegistry"> | null;
 
     if (tool) {
       await ctx.db.patch(tool._id, {

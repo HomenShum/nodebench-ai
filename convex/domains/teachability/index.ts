@@ -25,8 +25,8 @@ export const listUserTeachings = query({
       .take(limit * 3);
 
     const filtered = docs
-      .filter((d) => d.status === "active")
-      .filter((d) => !args.type || d.type === args.type);
+      .filter((d: Doc<"userTeachings">) => d.status === "active")
+      .filter((d: Doc<"userTeachings">) => !args.type || d.type === args.type);
 
     return filtered
       .sort((a, b) => {
@@ -48,7 +48,7 @@ export const updateTeaching = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const teaching = await ctx.db.get(args.teachingId);
+    const teaching = await ctx.db.get(args.teachingId) as Doc<"userTeachings"> | null;
     if (!teaching || teaching.userId !== userId) {
       throw new Error("Teaching not found");
     }
@@ -74,7 +74,7 @@ export const deleteTeaching = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const teaching = await ctx.db.get(args.teachingId);
+    const teaching = await ctx.db.get(args.teachingId) as Doc<"userTeachings"> | null;
     if (!teaching || teaching.userId !== userId) {
       throw new Error("Teaching not found");
     }

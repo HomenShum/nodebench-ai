@@ -19,7 +19,7 @@ import { httpAction } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "../../../_generated/server";
-import type { Id } from "../../../_generated/dataModel";
+import type { Doc, Id } from "../../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // WEBHOOK HANDLER
@@ -110,7 +110,7 @@ export const getUserByEmail = internalQuery({
     const account = await ctx.db
       .query("googleAccounts")
       .filter(q => q.eq(q.field("email"), args.email))
-      .first();
+      .first() as Doc<"googleAccounts"> | null;
 
     if (!account) return null;
 
@@ -142,7 +142,7 @@ export const queueEmailProcessing = internalMutation({
           q.gt(q.field("createdAt"), Date.now() - 5 * 60 * 1000) // 5 minute window
         )
       )
-      .first();
+      .first() as Doc<"emailProcessingQueue"> | null;
 
     if (recentJobs) {
       console.log(`[emailWebhook] Skipping duplicate job for user ${args.userId}`);
@@ -287,7 +287,7 @@ export const updateWatchExpiration = internalMutation({
     const syncState = await ctx.db
       .query("emailSyncState")
       .withIndex("by_user", q => q.eq("userId", args.userId))
-      .first();
+      .first() as Doc<"emailSyncState"> | null;
 
     const expirationMs = parseInt(args.expiration);
 

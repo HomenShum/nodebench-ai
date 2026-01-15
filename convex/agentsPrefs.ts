@@ -48,10 +48,10 @@ export const getAgentsPrefs = query({
       return undefined;
     }
 
-    const preferences = await ctx.db
+    const preferences: Doc<"userPreferences"> | null = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first() as Doc<"userPreferences"> | null;
+      .first();
 
     return preferences?.agentsPrefs ?? {};
   },
@@ -71,10 +71,10 @@ export const setAgentsPrefs = mutation({
       throw new Error("Not authenticated");
     }
 
-    const existing = await ctx.db
+    const existing: Doc<"userPreferences"> | null = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first() as Doc<"userPreferences"> | null;
+      .first();
 
     const now = Date.now();
     const newAgentsPrefs = { ...(existing?.agentsPrefs || {}), ...args.prefs };
@@ -106,10 +106,10 @@ export const getAgentsPrefsByUserId = internalQuery({
     userId: v.id("users"),
   },
   handler: async (ctx, args): Promise<Record<string, string>> => {
-    const preferences = await ctx.db
+    const preferences: Doc<"userPreferences"> | null = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .first() as Doc<"userPreferences"> | null;
+      .first();
 
     return preferences?.agentsPrefs ?? {};
   },

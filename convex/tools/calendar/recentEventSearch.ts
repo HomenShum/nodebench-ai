@@ -2,6 +2,7 @@
 // Recent event search and disambiguation with LLM validation
 
 import { internalAction, internalQuery, internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 import { v } from "convex/values";
 import { generateText } from "ai";
 
@@ -296,7 +297,7 @@ export const getConfirmedEvent = internalQuery({
       .withIndex("by_thread_and_query", (q: any) =>
         q.eq("threadId", args.threadId).eq("eventQuery", args.eventQuery.toLowerCase())
       )
-      .first();
+      .first() as Doc<"confirmedEvents"> | null;
 
     if (!confirmed) return null;
 
@@ -333,7 +334,7 @@ export const confirmEvent = internalMutation({
       .withIndex("by_thread_and_query", (q: any) =>
         q.eq("threadId", args.threadId).eq("eventQuery", args.eventQuery.toLowerCase())
       )
-      .first();
+      .first() as Doc<"confirmedEvents"> | null;
 
     if (existing) {
       // Update existing confirmation

@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { query, action } from "../../../_generated/server";
+import { Doc } from "../../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ------------------------------------------------------------------
@@ -31,16 +32,16 @@ export const getEmailStats = query({
     const syncState = await ctx.db
       .query("emailSyncState")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"emailSyncState"> | null;
 
     // Get thread stats
     const threads = await ctx.db
       .query("emailThreads")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect();
+      .collect() as Doc<"emailThreads">[];
 
-    const unreadCount = threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
-    const actionRequiredCount = threads.filter((t) => t.aiActionRequired).length;
+    const unreadCount = threads.reduce((sum: number, t: Doc<"emailThreads">) => sum + (t.unreadCount || 0), 0);
+    const actionRequiredCount = threads.filter((t: Doc<"emailThreads">) => t.aiActionRequired).length;
 
     // Group by category
     const categoryMap = new Map<string, number>();
@@ -84,23 +85,23 @@ export const getInboxThreads = query({
       .query("emailThreads")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
-      .take(args.limit || 50);
+      .take(args.limit || 50) as Doc<"emailThreads">[];
 
     // Apply filters based on filter type
     if (args.filter === "unread") {
-      threads = threads.filter((t) => (t.unreadCount || 0) > 0);
+      threads = threads.filter((t: Doc<"emailThreads">) => (t.unreadCount || 0) > 0);
     } else if (args.filter === "starred") {
-      threads = threads.filter((t) => t.isStarred);
+      threads = threads.filter((t: Doc<"emailThreads">) => t.isStarred);
     } else if (args.filter === "action_required") {
-      threads = threads.filter((t) => t.aiActionRequired);
+      threads = threads.filter((t: Doc<"emailThreads">) => t.aiActionRequired);
     }
 
     // Apply category filter
     if (args.category) {
-      threads = threads.filter((t) => t.aiCategory === args.category);
+      threads = threads.filter((t: Doc<"emailThreads">) => t.aiCategory === args.category);
     }
 
-    return threads.map((t) => ({
+    return threads.map((t: Doc<"emailThreads">) => ({
       _id: t._id,
       subject: t.subject,
       snippet: t.snippet,
@@ -130,14 +131,14 @@ export const getThreadDetail = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"emailThreads"> | null;
     if (!thread || thread.userId !== userId) return null;
 
     const messages = await ctx.db
       .query("emailMessages")
       .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
       .order("asc")
-      .collect();
+      .collect() as Doc<"emailMessages">[];
 
     return {
       _id: thread._id,
@@ -148,7 +149,7 @@ export const getThreadDetail = query({
       aiSummary: thread.aiSummary,
       aiActionRequired: thread.aiActionRequired,
       aiActionSuggestion: thread.aiActionSuggestion,
-      messages: messages.map((m) => ({
+      messages: messages.map((m: Doc<"emailMessages">) => ({
         _id: m._id,
         from: m.from,
         to: m.to,
@@ -180,7 +181,7 @@ export const getLatestDailyReport = query({
       .query("emailDailyReports")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
-      .first();
+      .first() as Doc<"emailDailyReports"> | null;
 
     if (!report) return null;
 
@@ -192,10 +193,10 @@ export const getLatestDailyReport = query({
       totalUnread: report.totalUnread,
       totalSent: report.totalSent,
       actionItemsCount: report.totalActionRequired,
-      groupedEmails: report.groupedEmails,
-      actionItems: report.actionItems,
+      groupedEmails: report.groupings,
+      actionItems: report.suggestedActions,
       deliveredVia: report.deliveredVia,
-      generatedAt: report.generatedAt,
+      generatedAt: report.createdAt,
     };
   },
 });
@@ -215,9 +216,9 @@ export const getDailyReports = query({
       .query("emailDailyReports")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
-      .take(args.limit || 7);
+      .take(args.limit || 7) as Doc<"emailDailyReports">[];
 
-    return reports.map((r) => ({
+    return reports.map((r: Doc<"emailDailyReports">) => ({
       _id: r._id,
       date: r.date,
       totalReceived: r.totalReceived,
@@ -243,7 +244,7 @@ export const getDailyReportDetail = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
-    const report = await ctx.db.get(args.reportId);
+    const report = await ctx.db.get(args.reportId) as Doc<"emailDailyReports"> | null;
     if (!report || report.userId !== userId) return null;
 
     return {
@@ -254,10 +255,10 @@ export const getDailyReportDetail = query({
       totalUnread: report.totalUnread,
       totalSent: report.totalSent,
       actionItemsCount: report.totalActionRequired,
-      groupedEmails: report.groupedEmails,
-      actionItems: report.actionItems,
+      groupedEmails: report.groupings,
+      actionItems: report.suggestedActions,
       deliveredVia: report.deliveredVia,
-      generatedAt: report.generatedAt,
+      generatedAt: report.createdAt,
     };
   },
 });
@@ -285,9 +286,9 @@ export const getUrgentEmails = query({
         )
       )
       .order("desc")
-      .take(10);
+      .take(10) as Doc<"emailThreads">[];
 
-    return threads.filter((t) => (t.unreadCount || 0) > 0).map((t) => ({
+    return threads.filter((t: Doc<"emailThreads">) => (t.unreadCount || 0) > 0).map((t: Doc<"emailThreads">) => ({
       _id: t._id,
       subject: t.subject,
       from: t.participants?.[0] || "Unknown",

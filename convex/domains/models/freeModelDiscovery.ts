@@ -13,6 +13,7 @@ import {
   internalQuery,
 } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -466,7 +467,7 @@ export const getFreeModelFallbackChain = internalQuery({
 export const getFreeModel = internalQuery({
   args: { id: v.id("freeModels") },
   handler: async (ctx, { id }) => {
-    return ctx.db.get(id);
+    return await ctx.db.get(id) as Doc<"freeModels"> | null;
   },
 });
 
@@ -476,10 +477,10 @@ export const getFreeModel = internalQuery({
 export const getFreeModelByOpenRouterId = internalQuery({
   args: { openRouterId: v.string() },
   handler: async (ctx, { openRouterId }) => {
-    return ctx.db
+    return await ctx.db
       .query("freeModels")
       .withIndex("by_openRouterId", (q) => q.eq("openRouterId", openRouterId))
-      .unique();
+      .unique() as Doc<"freeModels"> | null;
   },
 });
 
@@ -489,11 +490,11 @@ export const getFreeModelByOpenRouterId = internalQuery({
 export const getActiveFreeModels = internalQuery({
   args: {},
   handler: async (ctx) => {
-    return ctx.db
+    return await ctx.db
       .query("freeModels")
       .withIndex("by_rank")
       .filter((q) => q.eq(q.field("isActive"), true))
-      .collect();
+      .collect() as Doc<"freeModels">[];
   },
 });
 
@@ -504,10 +505,10 @@ export const getModelsNeedingEvaluation = internalQuery({
   args: { intervalMs: v.number() },
   handler: async (ctx, { intervalMs }) => {
     const cutoff = Date.now() - intervalMs;
-    const models = await ctx.db.query("freeModels").collect();
+    const models = await ctx.db.query("freeModels").collect() as Doc<"freeModels">[];
 
     return models.filter(
-      (m) => m.isActive && (!m.lastEvaluated || m.lastEvaluated < cutoff)
+      (m: Doc<"freeModels">) => m.isActive && (!m.lastEvaluated || m.lastEvaluated < cutoff)
     );
   },
 });
@@ -521,7 +522,7 @@ export const getLastDiscoveryTime = internalQuery({
     const meta = await ctx.db
       .query("freeModelMeta")
       .filter((q) => q.eq(q.field("key"), "lastDiscovery"))
-      .unique();
+      .unique() as Doc<"freeModelMeta"> | null;
 
     return meta?.value ?? null;
   },
@@ -550,7 +551,7 @@ export const upsertFreeModel = internalMutation({
     const existing = await ctx.db
       .query("freeModels")
       .withIndex("by_openRouterId", (q) => q.eq("openRouterId", args.openRouterId))
-      .unique();
+      .unique() as Doc<"freeModels"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -592,7 +593,7 @@ export const recordEvaluation = internalMutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const model = await ctx.db.get(args.modelId);
+    const model = await ctx.db.get(args.modelId) as Doc<"freeModels"> | null;
     if (!model) return;
 
     const newEvalCount = model.evaluationCount + 1;
@@ -664,10 +665,10 @@ export const updateModelRankings = internalMutation({
     const models = await ctx.db
       .query("freeModels")
       .filter((q) => q.eq(q.field("isActive"), true))
-      .collect();
+      .collect() as Doc<"freeModels">[];
 
     // Sort by performance score (descending)
-    const sorted = models.sort((a, b) => b.performanceScore - a.performanceScore);
+    const sorted = models.sort((a: Doc<"freeModels">, b: Doc<"freeModels">) => b.performanceScore - a.performanceScore);
 
     // Update ranks
     for (let i = 0; i < sorted.length; i++) {
@@ -678,7 +679,7 @@ export const updateModelRankings = internalMutation({
     const meta = await ctx.db
       .query("freeModelMeta")
       .filter((q) => q.eq(q.field("key"), "lastRankingUpdate"))
-      .unique();
+      .unique() as Doc<"freeModelMeta"> | null;
 
     if (meta) {
       await ctx.db.patch(meta._id, { value: Date.now() });
@@ -700,7 +701,7 @@ export const updateDiscoveryTime = internalMutation({
     const meta = await ctx.db
       .query("freeModelMeta")
       .filter((q) => q.eq(q.field("key"), "lastDiscovery"))
-      .unique();
+      .unique() as Doc<"freeModelMeta"> | null;
 
     if (meta) {
       await ctx.db.patch(meta._id, { value: Date.now() });

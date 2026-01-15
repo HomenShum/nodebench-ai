@@ -8,6 +8,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Doc } from "../../_generated/dataModel";
 
 /**
  * Get current focus state for a brief
@@ -45,7 +46,7 @@ export const getFocusState = query({
     return ctx.db
       .query("dossierFocusState")
       .withIndex("by_user_brief", (q) => q.eq("userId", userId).eq("briefId", args.briefId))
-      .first();
+      .first() as Doc<"dossierFocusState"> | null;
   },
 });
 
@@ -75,7 +76,7 @@ export const updateFocus = mutation({
     const existing = await ctx.db
       .query("dossierFocusState")
       .withIndex("by_user_brief", (q) => q.eq("userId", userId).eq("briefId", args.briefId))
-      .first();
+      .first() as Doc<"dossierFocusState"> | null;
 
     const now = Date.now();
 
@@ -116,7 +117,7 @@ export const clearFocus = mutation({
     const existing = await ctx.db
       .query("dossierFocusState")
       .withIndex("by_user_brief", (q) => q.eq("userId", userId).eq("briefId", args.briefId))
-      .first();
+      .first() as Doc<"dossierFocusState"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -152,7 +153,7 @@ export const updateFocusInternal = internalMutation({
     const existing = await ctx.db
       .query("dossierFocusState")
       .withIndex("by_user_brief", (q) => q.eq("userId", userId).eq("briefId", args.briefId))
-      .first();
+      .first() as Doc<"dossierFocusState"> | null;
 
     const now = Date.now();
 
@@ -208,6 +209,6 @@ export const getFocusStateInternal = internalQuery({
     return ctx.db
       .query("dossierFocusState")
       .withIndex("by_user_brief", (q) => q.eq("userId", args.userId).eq("briefId", args.briefId))
-      .first();
+      .first() as Doc<"dossierFocusState"> | null;
   },
 });

@@ -4,6 +4,7 @@
 import { internalAction, internalQuery, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { generateText } from "ai";
+import { Doc } from "../../_generated/dataModel";
 
 // Import centralized model resolver (2025 consolidated - 7 models only)
 import { getLanguageModelSafe, DEFAULT_MODEL } from "../../domains/agents/mcp_tools/models";
@@ -82,7 +83,7 @@ export const searchCompanies = internalAction({
         ticker: string;
         cik_str: string | number;
       }
-      const companies = Object.values(data);
+      const companies = Object.values(data) as SecCompany[];
 
       const searchTerm = args.companyName.toLowerCase();
       const matches: Array<{ cik: string; name: string; ticker?: string }> = [];
@@ -216,7 +217,7 @@ export const getConfirmedCompany = internalQuery({
       .withIndex("by_thread_and_name", (q: any) =>
         q.eq("threadId", args.threadId).eq("companyName", args.companyName.toLowerCase())
       )
-      .first();
+      .first() as Doc<"confirmedCompanies"> | null;
 
     if (!confirmed) return null;
 
@@ -249,7 +250,7 @@ export const confirmCompany = internalMutation({
       .withIndex("by_thread_and_name", (q: any) =>
         q.eq("threadId", args.threadId).eq("companyName", args.companyName.toLowerCase())
       )
-      .first();
+      .first() as Doc<"confirmedCompanies"> | null;
 
     if (existing) {
       // Update existing confirmation

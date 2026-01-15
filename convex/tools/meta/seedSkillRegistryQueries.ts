@@ -7,6 +7,7 @@
 
 import { v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SEEDING MUTATIONS
@@ -34,7 +35,7 @@ export const upsertSkill = internalMutation({
     const existing = await ctx.db
       .query("skills")
       .withIndex("by_name", (q) => q.eq("name", args.name))
-      .first();
+      .first() as Doc<"skills"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {

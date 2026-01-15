@@ -53,11 +53,11 @@ export const getEntitiesForDecayUpdate = internalQuery({
     const entities = await ctx.db
       .query("entityStates")
       .order("asc")
-      .take(limit * 2);
+      .take(limit * 2) as Doc<"entityStates">[];
 
     return entities
       .filter(
-        (e) => !e.freshness.lastChecked || e.freshness.lastChecked < oneHourAgo
+        (e: Doc<"entityStates">) => !e.freshness.lastChecked || e.freshness.lastChecked < oneHourAgo
       )
       .slice(0, limit);
   },
@@ -75,11 +75,11 @@ export const getEntitiesForReresearch = internalQuery({
     const entities = await ctx.db
       .query("entityStates")
       .order("asc")
-      .take(limit * 3);
+      .take(limit * 3) as Doc<"entityStates">[];
 
     // Filter for stale entities that aren't already queued
     const staleEntities = entities.filter(
-      (e) => e.freshness.decayScore < decayThreshold
+      (e: Doc<"entityStates">) => e.freshness.decayScore < decayThreshold
     );
 
     // Check which ones already have queued research tasks
@@ -97,7 +97,7 @@ export const getEntitiesForReresearch = internalQuery({
             q.eq(q.field("status"), "researching")
           )
         )
-        .first();
+        .first() as Doc<"researchTasks"> | null;
 
       if (!existingTask) {
         result.push(entity);
@@ -127,7 +127,7 @@ export const batchUpdateDecayScores = internalMutation({
       const entity = await ctx.db
         .query("entityStates")
         .withIndex("by_entity", (q) => q.eq("entityId", entityId))
-        .first();
+        .first() as Doc<"entityStates"> | null;
 
       if (!entity) continue;
 
@@ -224,7 +224,7 @@ export const processDecayUpdates = internalAction({
       return 0;
     }
 
-    const entityIds = entities.map((e) => e.entityId);
+    const entityIds = entities.map((e: Doc<"entityStates">) => e.entityId);
     const updated = await ctx.runMutation(
       internal.domains.entities.decayManager.batchUpdateDecayScores,
       { entityIds }

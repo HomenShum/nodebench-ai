@@ -197,7 +197,11 @@ export const refreshModelComparison = action({
       420,
     );
 
-    const parsed = tryParseJson(raw) ?? {};
+    const parsed = (tryParseJson(raw) ?? {}) as {
+      summary?: string;
+      recommendation?: string;
+      rows?: Array<{ model?: string; performance?: string; notes?: string; reliabilityScore?: number }>;
+    };
     const perfRows = Array.isArray(parsed.rows) ? parsed.rows : [];
     const perfMap = new Map<string, { performance?: string; notes?: string; reliabilityScore?: number }>();
     perfRows.forEach((entry: any) => {

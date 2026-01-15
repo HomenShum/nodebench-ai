@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { action, mutation, query } from "../../_generated/server";
 import { getAuthUserId, getAuthSessionId, invalidateSessions } from "@convex-dev/auth/server";
+import type { Doc } from "../../_generated/dataModel";
 
 export const listSessions = query({
   args: {},
@@ -74,7 +75,7 @@ export const signOutSession = mutation({
     const userId = await getAuthUserId(ctx);
     if (userId === null) throw new Error("Not authenticated");
     // Verify the session belongs to the user and is not the current session
-    const session = await ctx.db.get(sessionId);
+    const session = await ctx.db.get(sessionId) as Doc<"authSessions"> | null;
     if (!session) return null;
     if (session.userId !== userId) throw new Error("Forbidden");
     const currentSessionId = await getAuthSessionId(ctx);

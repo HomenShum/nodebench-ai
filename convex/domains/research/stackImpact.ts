@@ -14,6 +14,18 @@ import {
   getModelWithFailover,
 } from "../../../shared/llm/modelCatalog";
 
+type ReaderContentResult = {
+  ok?: boolean;
+  cached?: boolean;
+  url?: string;
+  content?: string;
+  excerpt?: string;
+  contentBytes?: number;
+  isTruncated?: boolean;
+  sourceMatrix?: Array<{ title?: string; url?: string; domain?: string; snippet?: string }>;
+  analyzedAt?: number;
+} | null;
+
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
 async function generateWithProvider(
@@ -293,16 +305,16 @@ export const refreshStackImpact = action({
       }
     }
 
-    const reader = args.url
+    const reader = (args.url
       ? await ctx.runAction(api.domains.research.readerContent.getReaderContent, {
           url: args.url,
           title: args.title,
         })
-      : null;
+      : null) as ReaderContentResult;
     const context = [
       args.summary,
-      (reader)?.excerpt,
-      (reader)?.content,
+      reader?.excerpt,
+      reader?.content,
     ]
       .filter(Boolean)
       .join("\n\n")
@@ -327,17 +339,17 @@ export const refreshStackImpact = action({
       520,
     );
 
-    const parsed = tryParseJson(raw) ?? {};
+    const parsed = (tryParseJson(raw) ?? {}) as Record<string, unknown>;
     const fallbackGraph = buildFallbackGraph(args.title, args.techStack, args.summary);
     const summary = asString(parsed.summary) || buildFallbackSummary(args.title, args.techStack);
     const riskLevel = normalizeRiskLevel(parsed.riskLevel, inferRiskLevel(args.title, args.summary));
     const graph = augmentGraph(normalizeGraph(parsed.graph, fallbackGraph), args.title, args.summary, args.techStack);
     const cveId = extractCveId(args.title, args.summary, context);
     const cveUrl = cveId ? `https://nvd.nist.gov/vuln/detail/${cveId}` : undefined;
-    const sourceUrls = Array.isArray((reader)?.sourceMatrix)
-      ? (reader).sourceMatrix
-          .map((item: any) => item.url)
-          .filter(Boolean)
+    const sourceUrls = Array.isArray(reader?.sourceMatrix)
+      ? reader.sourceMatrix
+          .map((item: { url?: string }) => item.url)
+          .filter((url): url is string => Boolean(url))
           .slice(0, 6)
       : [];
     const record = {

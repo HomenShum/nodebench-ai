@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { internalMutation } from "../_generated/server";
+import { Doc } from "../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -57,7 +58,7 @@ export const acquireOrWait = internalMutation({
     const existing = await ctx.db
       .query("globalQueryLocks")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueryLocks"> | null;
 
     const now = Date.now();
 
@@ -173,7 +174,7 @@ export const releaseLock = internalMutation({
     const lock = await ctx.db
       .query("globalQueryLocks")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueryLocks"> | null;
 
     // Verify ownership: both runId AND lockNonce must match
     if (lock && lock.lockNonce === lockNonce && lock.runId === runId) {
@@ -238,7 +239,7 @@ export const getLockStatus = internalMutation({
     const lock = await ctx.db
       .query("globalQueryLocks")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueryLocks"> | null;
 
     if (!lock) {
       return { exists: false as const };
@@ -276,7 +277,7 @@ export const forceReleaseStale = internalMutation({
     const lock = await ctx.db
       .query("globalQueryLocks")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueryLocks"> | null;
 
     if (!lock) {
       return { released: false, reason: "lock_not_found" };

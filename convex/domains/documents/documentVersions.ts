@@ -1,7 +1,7 @@
 import { query, mutation, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "../../_generated/dataModel";
+import { Id, Doc } from "../../_generated/dataModel";
 import { components } from "../../_generated/api";
 
 // Create a persistent checkpoint/snapshot for a document
@@ -15,7 +15,7 @@ export const create = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 
@@ -25,7 +25,7 @@ export const create = mutation({
     });
     const safeVersion: number = typeof version === "number" ? version : 0;
 
-    const content = (doc).content ?? "";
+    const content = doc.content ?? "";
     const now = Date.now();
 
     const snapshotId: Id<"documentSnapshots"> = await ctx.db.insert("documentSnapshots", {
@@ -41,7 +41,7 @@ export const create = mutation({
     } as any);
 
     // Update counter on the document (optional)
-    const existingCount = (doc).snapshotCount ?? 0;
+    const existingCount = (doc as any).snapshotCount ?? 0;
     await ctx.db.patch(args.documentId, { snapshotCount: existingCount + 1, lastModified: now } as any);
 
     return { snapshotId, version: safeVersion };
@@ -64,10 +64,9 @@ export const listForDocument = query({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
 
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) return [];
-    const d = doc;
-    if (!d.isPublic && d.createdBy !== userId) return [];
+    if (!doc.isPublic && doc.createdBy !== userId) return [];
 
     const rows = await ctx.db
       .query("documentSnapshots")
@@ -94,18 +93,17 @@ export const restore = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const snap = await ctx.db.get(args.snapshotId);
-    const snapAny = snap;
+    const snap = await ctx.db.get(args.snapshotId) as Doc<"documentSnapshots"> | null;
     if (!snap) throw new Error("Snapshot not found");
 
-    const doc = await ctx.db.get(snapAny.documentId as Id<"documents">);
+    const doc = await ctx.db.get(snap.documentId) as Doc<"documents"> | null;
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 
-    const content = String((snap).content ?? "");
+    const content = String(snap.content ?? "");
 
     // Set the document content to the snapshot immediately for read flows
-    await ctx.db.patch(snapAny.documentId as Id<"documents">, {
+    await ctx.db.patch(snap.documentId, {
       content,
       lastModified: Date.now(),
     } as any);
@@ -114,11 +112,11 @@ export const restore = mutation({
     // Using the saved snapshot's old version can collide with an existing snapshot, so we
     // fetch the latest version and submit at latest+1.
     const latest: number | null = await ctx.runQuery(components.prosemirrorSync.lib.latestVersion, {
-      id: snapAny.documentId as unknown as string,
+      id: snap.documentId as unknown as string,
     });
     const nextVersion = (typeof latest === 'number' ? latest : 0) + 1;
     await ctx.runMutation(components.prosemirrorSync.lib.submitSnapshot, {
-      id: snapAny.documentId as unknown as string,
+      id: snap.documentId as unknown as string,
       version: nextVersion,
       content,
       pruneSnapshots: true,

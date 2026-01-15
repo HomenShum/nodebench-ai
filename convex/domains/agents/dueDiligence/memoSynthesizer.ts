@@ -233,7 +233,9 @@ function buildFundingHistory(
       verified: r.verified,
       source: r.source,
     })),
-    valuationComps: financial?.valuationComps,
+    valuationComps: financial?.valuationComps
+      ? { comparables: financial.valuationComps }
+      : undefined,
     burnRate: financial?.burnRate,
     runway: financial?.runway,
   };
@@ -640,7 +642,7 @@ function evaluatePersonaReadiness(
   readiness["EARLY_STAGE_VC"] = {
     ready: vcMissing.length === 0,
     missingFields: vcMissing.length > 0 ? vcMissing : undefined,
-    relevanceScore: team.hasSerialFounders ? 0.9 : 0.7,
+    relevanceScore: team.founders.some(f => f.trackRecord?.successfulExits > 0) ? 0.9 : 0.7,
   };
 
   // CTO Tech Lead

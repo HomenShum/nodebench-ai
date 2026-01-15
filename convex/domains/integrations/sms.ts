@@ -2,7 +2,7 @@ import { Twilio, messageValidator } from "@convex-dev/twilio";
 import { components, internal } from "../../_generated/api";
 import { action, internalAction, internalMutation, internalQuery, query } from "../../_generated/server";
 import { v } from "convex/values";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ------------------------------------------------------------------
@@ -115,14 +115,14 @@ export const handleIncomingTwilioMessage = internalMutation({
       const user = await ctx.db
         .query("users")
         .filter((q) => q.eq(q.field("phone"), from))
-        .first();
+        .first() as Doc<"users"> | null;
 
       if (user) {
         // Check if user has SMS preferences in userPreferences table
         const prefs = await ctx.db
           .query("userPreferences")
           .withIndex("by_user", (q) => q.eq("userId", user._id))
-          .first();
+          .first() as Doc<"userPreferences"> | null;
 
         if (prefs) {
           await ctx.db.patch(prefs._id, { smsNotificationsEnabled: false });
@@ -134,13 +134,13 @@ export const handleIncomingTwilioMessage = internalMutation({
       const user = await ctx.db
         .query("users")
         .filter((q) => q.eq(q.field("phone"), from))
-        .first();
+        .first() as Doc<"users"> | null;
 
       if (user) {
         const prefs = await ctx.db
           .query("userPreferences")
           .withIndex("by_user", (q) => q.eq("userId", user._id))
-          .first();
+          .first() as Doc<"userPreferences"> | null;
 
         if (prefs) {
           await ctx.db.patch(prefs._id, { smsNotificationsEnabled: true });
@@ -195,7 +195,7 @@ export const logSms = internalMutation({
       const existing = await ctx.db
         .query("smsUsageDaily")
         .withIndex("by_user_date", (q) => q.eq("userId", args.userId).eq("date", dateStr))
-        .first();
+        .first() as Doc<"smsUsageDaily"> | null;
 
       if (existing) {
         await ctx.db.patch(existing._id, {
@@ -343,7 +343,7 @@ export const getUserSmsPrefs = internalQuery({
     const prefs = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (!prefs) {
       return null;
@@ -552,7 +552,7 @@ export const getUsersWithSmsEnabled = internalQuery({
   args: {},
   handler: async (ctx) => {
     // Get all user preferences with SMS enabled
-    const allPrefs = await ctx.db.query("userPreferences").collect();
+    const allPrefs = await ctx.db.query("userPreferences").collect() as Doc<"userPreferences">[];
 
     const usersWithSms: Array<{
       userId: Id<"users">;
@@ -590,9 +590,9 @@ export const getUpcomingMeetingsForReminders = internalQuery({
     const endWindow = now + maxLookAhead;
 
     // Get all user preferences with SMS meeting reminders enabled
-    const allPrefs = await ctx.db.query("userPreferences").collect();
+    const allPrefs = await ctx.db.query("userPreferences").collect() as Doc<"userPreferences">[];
     const usersWithReminders = allPrefs.filter(
-      (p) => p.smsNotificationsEnabled && p.phoneNumber && p.smsMeetingReminder
+      (p: Doc<"userPreferences">) => p.smsNotificationsEnabled && p.phoneNumber && p.smsMeetingReminder
     );
 
     if (usersWithReminders.length === 0) {
@@ -625,7 +625,7 @@ export const getUpcomingMeetingsForReminders = internalQuery({
         .withIndex("by_user_start", (q) =>
           q.eq("userId", prefs.userId).gte("startTime", windowStart).lte("startTime", windowEnd)
         )
-        .collect();
+        .collect() as Doc<"events">[];
 
       for (const event of events) {
         // Skip cancelled events
@@ -724,11 +724,11 @@ export const getSmsUsageStats = query({
       .query("smsUsageDaily")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.gte(q.field("date"), startDateStr))
-      .collect();
+      .collect() as Doc<"smsUsageDaily">[];
 
     // Aggregate totals
     const totals = dailyStats.reduce(
-      (acc, day) => ({
+      (acc, day: Doc<"smsUsageDaily">) => ({
         totalMessages: acc.totalMessages + day.totalMessages,
         successfulMessages: acc.successfulMessages + day.successfulMessages,
         failedMessages: acc.failedMessages + day.failedMessages,
@@ -759,7 +759,7 @@ export const getSmsUsageStats = query({
           ? ((totals.successfulMessages / totals.totalMessages) * 100).toFixed(1) + "%"
           : "N/A",
       },
-      dailyBreakdown: dailyStats.map((day) => ({
+      dailyBreakdown: dailyStats.map((day: Doc<"smsUsageDaily">) => ({
         date: day.date,
         messages: day.totalMessages,
         segments: day.totalSegments,
@@ -791,9 +791,9 @@ export const getRecentSmsLogs = query({
       .query("smsLogs")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"smsLogs">[];
 
-    return logs.map((log) => ({
+    return logs.map((log: Doc<"smsLogs">) => ({
       id: log._id,
       to: log.to,
       body: log.body.length > 50 ? log.body.substring(0, 50) + "..." : log.body,
@@ -845,7 +845,7 @@ export const handleSmsOptOut = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Find user by phone number and disable SMS
-    const allPrefs = await ctx.db.query("userPreferences").collect();
+    const allPrefs = await ctx.db.query("userPreferences").collect() as Doc<"userPreferences">[];
 
     for (const prefs of allPrefs) {
       if (prefs.phoneNumber === args.phoneNumber) {
@@ -878,7 +878,7 @@ export const handleSmsOptIn = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Find user by phone number and enable SMS
-    const allPrefs = await ctx.db.query("userPreferences").collect();
+    const allPrefs = await ctx.db.query("userPreferences").collect() as Doc<"userPreferences">[];
 
     for (const prefs of allPrefs) {
       if (prefs.phoneNumber === args.phoneNumber) {
@@ -914,7 +914,7 @@ export const logIncomingSms = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Find user by phone number
-    const allPrefs = await ctx.db.query("userPreferences").collect();
+    const allPrefs = await ctx.db.query("userPreferences").collect() as Doc<"userPreferences">[];
     let userId: Id<"users"> | undefined;
 
     for (const prefs of allPrefs) {
@@ -954,10 +954,10 @@ export const updateSmsStatus = internalMutation({
     const logs = await ctx.db
       .query("smsLogs")
       .filter((q) => q.eq(q.field("messageSid"), args.messageSid))
-      .collect();
+      .collect() as Doc<"smsLogs">[];
 
     if (logs.length > 0) {
-      const log = logs[0];
+      const log = logs[0] as Doc<"smsLogs">;
       await ctx.db.patch(log._id, {
         status: args.status,
         // Could add errorCode field to schema if needed

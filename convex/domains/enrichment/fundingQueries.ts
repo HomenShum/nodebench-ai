@@ -5,7 +5,7 @@
  */
 import { v } from "convex/values";
 import { query, internalQuery } from "../../_generated/server";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 
 /**
  * Get funding events formatted for digest consumption.
@@ -80,19 +80,19 @@ export const getFundingWithEntities = query({
 
     // Fetch associated entities
     const result = await Promise.all(
-      events.map(async (event) => {
-        let entity = null;
+      events.map(async (event: Doc<"fundingEvents">) => {
+        let entity: Doc<"entityContexts"> | null = null;
         if (event.companyId) {
-          entity = await ctx.db.get(event.companyId);
+          entity = await ctx.db.get(event.companyId) as Doc<"entityContexts"> | null;
         }
         return {
           ...event,
           entity: entity
             ? {
                 id: entity._id,
-                name: entity.name,
-                type: entity.type,
-                sector: entity.sector,
+                name: entity.entityName,
+                type: entity.entityType,
+                sector: entity.crmFields?.industry,
               }
             : null,
         };
@@ -263,7 +263,7 @@ export const verifyFundingEvent = query({
     fundingEventId: v.id("fundingEvents"),
   },
   handler: async (ctx, args) => {
-    const event = await ctx.db.get(args.fundingEventId);
+    const event = await ctx.db.get(args.fundingEventId) as Doc<"fundingEvents"> | null;
     if (!event) {
       return null;
     }
@@ -330,16 +330,16 @@ export const getAllFundingForBrief = query({
 
     // Fetch associated entity data for enrichment (only for limited set)
     const enrichedEvents = await Promise.all(
-      limitedEvents.map(async (event) => {
+      limitedEvents.map(async (event: Doc<"fundingEvents">) => {
         let entityData = null;
         if (event.companyId) {
-          const entity = await ctx.db.get(event.companyId);
+          const entity = await ctx.db.get(event.companyId) as Doc<"entityContexts"> | null;
           if (entity) {
             entityData = {
-              name: entity.name,
-              type: entity.type,
-              sector: entity.sector,
-              crmFields: (entity as any).crmFields,
+              name: entity.entityName,
+              type: entity.entityType,
+              sector: entity.crmFields?.industry,
+              crmFields: entity.crmFields,
             };
           }
         }

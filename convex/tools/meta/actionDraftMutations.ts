@@ -7,7 +7,7 @@
 
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // INTERNAL MUTATIONS (for gateway use)
@@ -52,7 +52,7 @@ export const getActionDraft = internalQuery({
     draftId: v.id("actionDrafts"),
   },
   handler: async (ctx, args) => {
-    return ctx.db.get(args.draftId);
+    return await ctx.db.get(args.draftId) as Doc<"actionDrafts"> | null;
   },
 });
 
@@ -65,7 +65,7 @@ export const confirmActionDraft = internalMutation({
     executedResult: v.optional(v.string()), // JSON-stringified result
   },
   handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
-    const draft = await ctx.db.get(args.draftId);
+    const draft = await ctx.db.get(args.draftId) as Doc<"actionDrafts"> | null;
 
     if (!draft) {
       return { success: false, error: "Draft not found" };
@@ -100,7 +100,7 @@ export const denyActionDraft = internalMutation({
     reason: v.string(),
   },
   handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
-    const draft = await ctx.db.get(args.draftId);
+    const draft = await ctx.db.get(args.draftId) as Doc<"actionDrafts"> | null;
 
     if (!draft) {
       return { success: false, error: "Draft not found" };
@@ -168,7 +168,7 @@ export const listPendingDrafts = query({
 
     // Filter out expired ones
     const now = Date.now();
-    return drafts.filter((d) => d.expiresAt > now);
+    return drafts.filter((d: Doc<"actionDrafts">) => d.expiresAt > now);
   },
 });
 
@@ -184,7 +184,7 @@ export const userConfirmDraft = mutation({
     draftId: v.id("actionDrafts"),
   },
   handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
-    const draft = await ctx.db.get(args.draftId);
+    const draft = await ctx.db.get(args.draftId) as Doc<"actionDrafts"> | null;
 
     if (!draft) {
       return { success: false, error: "Draft not found" };
@@ -218,7 +218,7 @@ export const userDenyDraft = mutation({
     reason: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<{ success: boolean }> => {
-    const draft = await ctx.db.get(args.draftId);
+    const draft = await ctx.db.get(args.draftId) as Doc<"actionDrafts"> | null;
 
     if (!draft) {
       return { success: false };

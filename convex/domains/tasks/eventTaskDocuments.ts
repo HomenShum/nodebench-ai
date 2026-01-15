@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import { api } from "../../_generated/api";
 
 /**
@@ -19,7 +19,7 @@ export const getOrCreateEventDocument = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     // Get the event
-    const event = await ctx.db.get(args.eventId);
+    const event = await ctx.db.get(args.eventId) as Doc<"events"> | null;
     if (!event) throw new Error("Event not found");
     if (event.userId !== userId) throw new Error("Not authorized");
 
@@ -82,7 +82,7 @@ export const getOrCreateUserEventDocument = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     // Get the user event
-    const userEvent = await ctx.db.get(args.userEventId);
+    const userEvent = await ctx.db.get(args.userEventId) as Doc<"userEvents"> | null;
     if (!userEvent) throw new Error("User event not found");
     if (userEvent.userId !== userId) throw new Error("Not authorized");
 

@@ -3,6 +3,7 @@
 
 import { internalMutation, internalQuery } from "../_generated/server";
 import { v } from "convex/values";
+import { Doc } from "../_generated/dataModel";
 
 /**
  * Get a spreadsheet by ID
@@ -12,7 +13,7 @@ export const getSpreadsheet = internalQuery({
     spreadsheetId: v.id("spreadsheets"),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.spreadsheetId);
+    return await ctx.db.get(args.spreadsheetId) as Doc<"spreadsheets"> | null;
   },
 });
 
@@ -27,7 +28,7 @@ export const getSpreadsheetCells = internalQuery({
     return await ctx.db
       .query("sheetCells")
       .withIndex("by_sheet", q => q.eq("sheetId", args.spreadsheetId))
-      .collect();
+      .collect() as Doc<"sheetCells">[];
   },
 });
 
@@ -130,7 +131,7 @@ export const getSpreadsheetEvents = internalQuery({
       .query("spreadsheetEvents")
       .withIndex("by_spreadsheet", q => q.eq("spreadsheetId", args.spreadsheetId))
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"spreadsheetEvents">[];
   },
 });
 
@@ -160,7 +161,7 @@ export const applyCellChanges = internalMutation({
             .eq("row", change.row)
             .eq("col", change.col)
         )
-        .first();
+        .first() as Doc<"sheetCells"> | null;
 
       if (existing) {
         // Update existing cell

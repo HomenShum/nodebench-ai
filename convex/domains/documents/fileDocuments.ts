@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "../../_generated/dataModel";
+import { Id, Doc } from "../../_generated/dataModel";
 
 /**
  * Creates a file document from an uploaded file
@@ -23,7 +23,7 @@ export const createFileDocument = mutation({
     }
 
     // Get the file details
-    const file = await ctx.db.get(args.fileId);
+    const file = await ctx.db.get(args.fileId) as Doc<"files"> | null;
     if (!file) {
       throw new Error("File not found");
     }
@@ -118,7 +118,7 @@ export const getFileDocument = query({
       return null;
     }
 
-    const document = await ctx.db.get(args.documentId);
+    const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!document || document.documentType !== "file" || !document.fileId) {
       return null;
     }
@@ -128,7 +128,7 @@ export const getFileDocument = query({
       return null;
     }
 
-    const file = await ctx.db.get(document.fileId);
+    const file = await ctx.db.get(document.fileId) as Doc<"files"> | null;
     if (!file) {
       return null;
     }
@@ -199,7 +199,7 @@ export const getUserFileDocuments = query({
     const results = [];
     for (const doc of documents) {
       if (doc.fileId) {
-        const file = await ctx.db.get(doc.fileId);
+        const file = await ctx.db.get(doc.fileId) as Doc<"files"> | null;
         if (file) {
           results.push({
             _id: doc._id,

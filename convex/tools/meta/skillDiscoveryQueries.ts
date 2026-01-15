@@ -7,6 +7,7 @@
 
 import { v } from "convex/values";
 import { query, internalQuery, internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -79,7 +80,7 @@ export const getCachedSkillResults = internalQuery({
     const cached = await ctx.db
       .query("skillSearchCache")
       .withIndex("by_hash", (q) => q.eq("queryHash", queryHash))
-      .first();
+      .first() as Doc<"skillSearchCache"> | null;
 
     if (!cached) {
       return { hit: false };
@@ -118,7 +119,7 @@ export const setCachedSkillResults = internalMutation({
     const existing = await ctx.db
       .query("skillSearchCache")
       .withIndex("by_hash", (q) => q.eq("queryHash", queryHash))
-      .first();
+      .first() as Doc<"skillSearchCache"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -160,7 +161,7 @@ export const keywordSearchSkills = internalQuery({
         return category ? search.eq("category", category) : search;
       });
 
-    const descResults = await descriptionQuery.take(limit);
+    const descResults = await descriptionQuery.take(limit) as Doc<"skills">[];
 
     // Search keywords field
     const keywordsQuery = ctx.db
@@ -170,7 +171,7 @@ export const keywordSearchSkills = internalQuery({
         return category ? search.eq("category", category) : search;
       });
 
-    const keywordResults = await keywordsQuery.take(limit);
+    const keywordResults = await keywordsQuery.take(limit) as Doc<"skills">[];
 
     // Merge and deduplicate results
     const seen = new Set<string>();
@@ -234,7 +235,7 @@ export const getSkillByName = query({
     const skill = await ctx.db
       .query("skills")
       .withIndex("by_name", (q) => q.eq("name", args.name))
-      .first();
+      .first() as Doc<"skills"> | null;
 
     if (!skill) return null;
 
@@ -264,7 +265,7 @@ export const getSkillByNameInternal = internalQuery({
     const skill = await ctx.db
       .query("skills")
       .withIndex("by_name", (q) => q.eq("name", args.name))
-      .first();
+      .first() as Doc<"skills"> | null;
 
     if (!skill) return null;
 
@@ -291,7 +292,7 @@ export const getSkillByIdInternal = internalQuery({
     skillId: v.id("skills"),
   },
   handler: async (ctx, args) => {
-    const doc = await ctx.db.get(args.skillId);
+    const doc = await ctx.db.get(args.skillId) as Doc<"skills"> | null;
     if (!doc) return null;
     return {
       skillName: doc.name,
@@ -316,7 +317,7 @@ export const listSkillCategories = internalQuery({
     const allSkills = await ctx.db
       .query("skills")
       .withIndex("by_enabled", (q) => q.eq("isEnabled", true))
-      .collect();
+      .collect() as Doc<"skills">[];
 
     // Group by category
     const categoryMap = new Map<string, { name: string; skills: string[] }>();
@@ -366,9 +367,9 @@ export const listAllSkills = query({
         .withIndex("by_enabled", (q) => q.eq("isEnabled", true));
     }
 
-    const skills = await query.take(limit);
+    const skills = await query.take(limit) as Doc<"skills">[];
 
-    return skills.map((skill) => ({
+    return skills.map((skill: Doc<"skills">) => ({
       name: skill.name,
       description: skill.description,
       category: skill.category,
@@ -407,7 +408,7 @@ export const recordSkillUsage = internalMutation({
     const skill = await ctx.db
       .query("skills")
       .withIndex("by_name", (q) => q.eq("name", args.skillName))
-      .first();
+      .first() as Doc<"skills"> | null;
 
     if (skill) {
       await ctx.db.patch(skill._id, {

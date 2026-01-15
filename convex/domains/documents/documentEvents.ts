@@ -6,7 +6,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import { api } from "../../_generated/api";
 import { parseDocumentMetadata } from "./documentMetadataParser";
 
@@ -102,7 +102,7 @@ export const updateEvent = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 
@@ -173,7 +173,7 @@ export const deleteEvent = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) throw new Error("Document not found");
     if (doc.createdBy !== userId) throw new Error("Unauthorized");
 

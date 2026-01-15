@@ -1,6 +1,7 @@
 import { query, mutation, internalQuery, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { Doc } from "../../_generated/dataModel";
 
 export const getApiKeyStatus = query({
   args: { provider: v.string() },
@@ -17,7 +18,7 @@ export const getApiKeyStatus = query({
       .withIndex("by_user_provider", (q) =>
         q.eq("userId", userId).eq("provider", provider)
       )
-      .first();
+      .first() as Doc<"userApiKeys"> | null;
     return {
       provider,
       hasKey: Boolean(rec?.encryptedApiKey && rec.encryptedApiKey.length > 0),
@@ -40,7 +41,7 @@ export const getEncryptedApiKeyPublic = query({
     const rec = await ctx.db
       .query("userApiKeys")
       .withIndex("by_user_provider", (q) => q.eq("userId", userId).eq("provider", provider))
-      .first();
+      .first() as Doc<"userApiKeys"> | null;
     if (!rec || !rec.encryptedApiKey) return null;
     return { encryptedApiKey: rec.encryptedApiKey, createdAt: rec.createdAt };
   },
@@ -68,7 +69,7 @@ export const listApiKeyFormats = query({
       const rec = await ctx.db
         .query("userApiKeys")
         .withIndex("by_user_provider", (q) => q.eq("userId", userId).eq("provider", provider))
-        .first();
+        .first() as Doc<"userApiKeys"> | null;
       const encrypted = rec?.encryptedApiKey ?? "";
       const hasKey = encrypted.length > 0;
       const isLegacy = hasKey ? !encrypted.startsWith("v2:") : false;
@@ -88,7 +89,7 @@ export const saveEncryptedApiKeyPublic = mutation({
     const existing = await ctx.db
       .query("userApiKeys")
       .withIndex("by_user_provider", (q) => q.eq("userId", userId).eq("provider", provider))
-      .first();
+      .first() as Doc<"userApiKeys"> | null;
     const now = Date.now();
     if (existing) {
       await ctx.db.patch(existing._id, { encryptedApiKey, updatedAt: now });
@@ -117,7 +118,7 @@ export const listApiKeyStatuses = query({
         .withIndex("by_user_provider", (q) =>
           q.eq("userId", userId).eq("provider", provider)
         )
-        .first();
+        .first() as Doc<"userApiKeys"> | null;
       results.push({ provider, hasKey: Boolean(rec?.encryptedApiKey && rec.encryptedApiKey.length > 0), createdAt: rec?.createdAt });
     }
     return results;
@@ -151,7 +152,7 @@ export const deleteApiKey = mutation({
       .withIndex("by_user_provider", (q) =>
         q.eq("userId", userId).eq("provider", provider)
       )
-      .first();
+      .first() as Doc<"userApiKeys"> | null;
 
     if (existing) {
       await ctx.db.delete(existing._id);
@@ -170,7 +171,7 @@ export const getEncryptedApiKey = internalQuery({
     const rec = await ctx.db
       .query("userApiKeys")
       .withIndex("by_user_provider", (q) => q.eq("userId", userId).eq("provider", provider))
-      .first();
+      .first() as Doc<"userApiKeys"> | null;
     if (!rec || !rec.encryptedApiKey) return null;
     return { encryptedApiKey: rec.encryptedApiKey, createdAt: rec.createdAt };
   },
@@ -186,7 +187,7 @@ export const saveEncryptedApiKey = internalMutation({
     const existing = await ctx.db
       .query("userApiKeys")
       .withIndex("by_user_provider", (q) => q.eq("userId", userId).eq("provider", provider))
-      .first();
+      .first() as Doc<"userApiKeys"> | null;
     const now = Date.now();
     if (existing) {
       await ctx.db.patch(existing._id, { encryptedApiKey, updatedAt: now });

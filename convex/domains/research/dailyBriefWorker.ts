@@ -371,7 +371,7 @@ async function executeFeature(
   }
 
   if (feature.type === "graph_extraction") {
-    const parsed = tryParseJson(text);
+    const parsed = tryParseJson(text) as { nodes?: unknown[] } | null;
     if (!parsed || !Array.isArray(parsed.nodes)) {
       const items = Array.isArray(feature.sourceRefs?.items)
         ? feature.sourceRefs.items
@@ -463,7 +463,12 @@ export const summarizeCoverageRollup = internalAction({
       console.warn("[dailyBriefWorker] coverage rollup failed:", err?.message || err);
     }
 
-    const parsed = tryParseJson(responseText);
+    const parsed = tryParseJson(responseText) as {
+      overall_summary?: string;
+      overallSummary?: string;
+      source_summaries?: Array<{ source?: string; count?: number; summary?: string }>;
+      themes?: string[];
+    } | null;
     if (parsed && typeof parsed === "object") {
       const overallSummary =
         typeof parsed.overall_summary === "string"
@@ -473,15 +478,15 @@ export const summarizeCoverageRollup = internalAction({
             : null;
       const sourceSummaries = Array.isArray(parsed.source_summaries)
         ? parsed.source_summaries
-            .filter((entry: any) => entry && entry.source && entry.summary)
-            .map((entry: any) => ({
+            .filter((entry: { source?: string; summary?: string }) => entry && entry.source && entry.summary)
+            .map((entry: { source?: string; count?: number; summary?: string }) => ({
               source: String(entry.source),
               count: typeof entry.count === "number" ? entry.count : (bySource.get(String(entry.source)) ?? 0),
               summary: String(entry.summary),
             }))
         : [];
       const themes = Array.isArray(parsed.themes)
-        ? parsed.themes.filter((theme: any) => typeof theme === "string")
+        ? parsed.themes.filter((theme: string) => typeof theme === "string")
         : [];
 
       if (overallSummary) {

@@ -7,6 +7,7 @@
 
 import { query, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // EVALUATION RUN TRACKING MUTATIONS
@@ -61,12 +62,12 @@ export const updateEvalRun = internalMutation({
     }),
   },
   handler: async (ctx, args) => {
-    const run = await ctx.db.get(args.runId);
+    const run = await ctx.db.get(args.runId) as Doc<"evaluationRuns"> | null;
     if (!run) return;
 
     const results = [...(run.results || []), args.result];
     const completedQueries = results.length;
-    const passedQueries = results.filter(r => r.passed).length;
+    const passedQueries = results.filter((r: { passed: boolean }) => r.passed).length;
     const failedQueries = completedQueries - passedQueries;
 
     await ctx.db.patch(args.runId, {
@@ -115,7 +116,7 @@ export const getEvalRunStatus = query({
     runId: v.id("evaluationRuns"),
   },
   handler: async (ctx, args) => {
-    const run = await ctx.db.get(args.runId);
+    const run = await ctx.db.get(args.runId) as Doc<"evaluationRuns"> | null;
     if (!run) return null;
 
     return {
@@ -145,9 +146,9 @@ export const getRecentEvalRuns = query({
     const runs = await ctx.db
       .query("evaluationRuns")
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"evaluationRuns">[];
 
-    return runs.map(run => ({
+    return runs.map((run: Doc<"evaluationRuns">) => ({
       _id: run._id,
       status: run.status,
       mode: run.mode,

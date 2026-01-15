@@ -11,7 +11,7 @@ import {
   internalAction
 } from "../../_generated/server";
 import { internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // QUERIES
@@ -33,10 +33,10 @@ export const getGraphBySource = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("knowledgeGraphs")
-      .withIndex("by_source", (q) => 
+      .withIndex("by_source", (q) =>
         q.eq("sourceType", args.sourceType).eq("sourceId", args.sourceId)
       )
-      .first();
+      .first() as Doc<"knowledgeGraphs"> | null;
   },
 });
 
@@ -48,7 +48,7 @@ export const getGraphById = query({
     graphId: v.id("knowledgeGraphs"),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.graphId);
+    return await ctx.db.get(args.graphId) as Doc<"knowledgeGraphs"> | null;
   },
 });
 
@@ -63,7 +63,7 @@ export const getGraphClaims = query({
     return await ctx.db
       .query("graphClaims")
       .withIndex("by_graph", (q) => q.eq("graphId", args.graphId))
-      .collect();
+      .collect() as Doc<"graphClaims">[];
   },
 });
 
@@ -78,7 +78,7 @@ export const getGraphEdges = query({
     return await ctx.db
       .query("graphEdges")
       .withIndex("by_graph", (q) => q.eq("graphId", args.graphId))
-      .collect();
+      .collect() as Doc<"graphEdges">[];
   },
 });
 
@@ -103,12 +103,12 @@ export const listUserGraphs = query({
     const graphs = await ctx.db
       .query("knowledgeGraphs")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
+      .collect() as Doc<"knowledgeGraphs">[];
 
     if (args.sourceType) {
-      return graphs.filter(g => g.sourceType === args.sourceType);
+      return graphs.filter((g: Doc<"knowledgeGraphs">) => g.sourceType === args.sourceType);
     }
-    
+
     return graphs;
   },
 });
@@ -124,7 +124,7 @@ export const getGraphsByCluster = query({
     return await ctx.db
       .query("knowledgeGraphs")
       .withIndex("by_cluster", (q) => q.eq("clusterId", args.clusterId))
-      .collect();
+      .collect() as Doc<"knowledgeGraphs">[];
   },
 });
 
@@ -139,9 +139,9 @@ export const getOddOneOutGraphs = query({
     const graphs = await ctx.db
       .query("knowledgeGraphs")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
-    
-    return graphs.filter(g => g.isOddOneOut === true);
+      .collect() as Doc<"knowledgeGraphs">[];
+
+    return graphs.filter((g: Doc<"knowledgeGraphs">) => g.isOddOneOut === true);
   },
 });
 
@@ -156,7 +156,7 @@ export const getClusterById = query({
     return await ctx.db
       .query("graphClusters")
       .withIndex("by_clusterId", (q) => q.eq("clusterId", args.clusterId))
-      .first();
+      .first() as Doc<"graphClusters"> | null;
   },
 });
 
@@ -171,7 +171,7 @@ export const listUserClusters = query({
     return await ctx.db
       .query("graphClusters")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
+      .collect() as Doc<"graphClusters">[];
   },
 });
 
@@ -223,18 +223,18 @@ export const createGraph = internalMutation({
     // Check if graph already exists for this source
     const existing = await ctx.db
       .query("knowledgeGraphs")
-      .withIndex("by_source", (q) => 
+      .withIndex("by_source", (q) =>
         q.eq("sourceType", args.sourceType).eq("sourceId", args.sourceId)
       )
-      .first();
+      .first() as Doc<"knowledgeGraphs"> | null;
 
     if (existing) {
       // Delete existing claims and edges
       const existingClaims = await ctx.db
         .query("graphClaims")
         .withIndex("by_graph", (q) => q.eq("graphId", existing._id))
-        .collect();
-      
+        .collect() as Doc<"graphClaims">[];
+
       for (const claim of existingClaims) {
         await ctx.db.delete(claim._id);
       }
@@ -242,8 +242,8 @@ export const createGraph = internalMutation({
       const existingEdges = await ctx.db
         .query("graphEdges")
         .withIndex("by_graph", (q) => q.eq("graphId", existing._id))
-        .collect();
-      
+        .collect() as Doc<"graphEdges">[];
+
       for (const edge of existingEdges) {
         await ctx.db.delete(edge._id);
       }
@@ -424,7 +424,7 @@ export const upsertCluster = internalMutation({
     const existing = await ctx.db
       .query("graphClusters")
       .withIndex("by_clusterId", (q) => q.eq("clusterId", args.clusterId))
-      .first();
+      .first() as Doc<"graphClusters"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -474,8 +474,8 @@ export const deleteGraph = mutation({
     const claims = await ctx.db
       .query("graphClaims")
       .withIndex("by_graph", (q) => q.eq("graphId", args.graphId))
-      .collect();
-    
+      .collect() as Doc<"graphClaims">[];
+
     for (const claim of claims) {
       await ctx.db.delete(claim._id);
     }
@@ -484,8 +484,8 @@ export const deleteGraph = mutation({
     const edges = await ctx.db
       .query("graphEdges")
       .withIndex("by_graph", (q) => q.eq("graphId", args.graphId))
-      .collect();
-    
+      .collect() as Doc<"graphEdges">[];
+
     for (const edge of edges) {
       await ctx.db.delete(edge._id);
     }
@@ -677,7 +677,7 @@ export const computeWLSignature = internalAction({
 export const getClaimById = internalQuery({
   args: { claimId: v.id("graphClaims") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.claimId);
+    return await ctx.db.get(args.claimId) as Doc<"graphClaims"> | null;
   },
 });
 
@@ -687,7 +687,7 @@ export const getGraphClaimsInternal = internalQuery({
     return await ctx.db
       .query("graphClaims")
       .withIndex("by_graph", (q) => q.eq("graphId", args.graphId))
-      .collect();
+      .collect() as Doc<"graphClaims">[];
   },
 });
 
@@ -697,6 +697,6 @@ export const getGraphEdgesInternal = internalQuery({
     return await ctx.db
       .query("graphEdges")
       .withIndex("by_graph", (q) => q.eq("graphId", args.graphId))
-      .collect();
+      .collect() as Doc<"graphEdges">[];
   },
 });

@@ -161,7 +161,7 @@ export const getPendingSignals = internalQuery({
       .query("signals")
       .withIndex("by_status", (q) => q.eq("processingStatus", "pending"))
       .order("asc")
-      .take(limit);
+      .take(limit) as Doc<"signals">[];
   },
 });
 
@@ -183,7 +183,7 @@ export const getSignalsBySource = internalQuery({
       query = query.filter((q) => q.gt(q.field("createdAt"), since));
     }
 
-    return await query.order("desc").take(limit);
+    return await query.order("desc").take(limit) as Doc<"signals">[];
   },
 });
 
@@ -272,7 +272,7 @@ export const markSignalForRetry = internalMutation({
     error: v.string(),
   },
   handler: async (ctx, { signalId, error }): Promise<void> => {
-    const signal = await ctx.db.get(signalId);
+    const signal = await ctx.db.get(signalId) as Doc<"signals"> | null;
     if (!signal) return;
 
     const retryCount = (signal.retryCount ?? 0) + 1;
@@ -305,7 +305,7 @@ export const cleanupExpiredSignals = internalMutation({
       .query("signals")
       .withIndex("by_expires")
       .filter((q) => q.lt(q.field("expiresAt"), now))
-      .take(100);
+      .take(100) as Doc<"signals">[];
 
     for (const signal of expiredSignals) {
       await ctx.db.delete(signal._id);
@@ -555,7 +555,7 @@ export const getRecentFeedItems = internalQuery({
       .query("feedItems")
       .order("desc")
       .filter((q) => q.gt(q.field("_creationTime"), cutoff))
-      .take(limit);
+      .take(limit) as Doc<"feedItems">[];
   },
 });
 

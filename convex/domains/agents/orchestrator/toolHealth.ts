@@ -18,7 +18,7 @@ export const recordToolSuccess = internalMutation({
     const existing = await ctx.db
       .query("toolHealth")
       .withIndex("by_toolName", (q) => q.eq("toolName", args.toolName))
-      .first();
+      .first() as Doc<"toolHealth"> | null;
 
     const now = nowMs();
     if (!existing) {
@@ -168,7 +168,7 @@ export const resetCircuitBreaker = internalMutation({
     const existing = await ctx.db
       .query("toolHealth")
       .withIndex("by_toolName", (q) => q.eq("toolName", args.toolName))
-      .first();
+      .first() as Doc<"toolHealth"> | null;
 
     if (!existing) {
       return { success: false };

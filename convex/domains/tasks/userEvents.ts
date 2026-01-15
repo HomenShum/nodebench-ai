@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Helper to normalize/validate user id, consistent with folders.ts pattern
@@ -17,11 +17,11 @@ async function getSafeUserId(ctx: any): Promise<Id<"users">> {
   if (typeof rawUserId === "string" && rawUserId.includes("|")) {
     const first = rawUserId.split("|")[0];
     if (!first || first.length < 10) throw new Error("Invalid user ID format. Please sign out and in.");
-    userId = first;
+    userId = first as Id<"users">;
   } else {
-    userId = rawUserId;
+    userId = rawUserId as Id<"users">;
   }
-  const user = await ctx.db.get(userId);
+  const user = await ctx.db.get(userId) as Doc<"users"> | null;
   if (!user) throw new Error("User not found. Please sign out and sign back in.");
   return userId;
 }
@@ -40,11 +40,11 @@ async function getOptionalUserId(ctx: any): Promise<Id<"users"> | null> {
   if (typeof rawUserId === "string" && rawUserId.includes("|")) {
     const first = rawUserId.split("|")[0];
     if (!first || first.length < 10) return null;
-    userId = first;
+    userId = first as Id<"users">;
   } else {
-    userId = rawUserId;
+    userId = rawUserId as Id<"users">;
   }
-  const user = userId ? await ctx.db.get(userId) : null;
+  const user = userId ? await ctx.db.get(userId) as Doc<"users"> | null : null;
   if (!user) return null;
   return userId;
 }
@@ -117,7 +117,7 @@ export const getTitle = query({
   handler: async (ctx, args) => {
     const userId = await getOptionalUserId(ctx);
     if (!userId) return null;
-    const t = await ctx.db.get(args.userEventId);
+    const t = await ctx.db.get(args.userEventId) as Doc<"userEvents"> | null;
     if (!t || t.userId !== userId) return null;
     return { title: t.title } as { title: string };
   },
@@ -131,7 +131,7 @@ export const getTitles = query({
     if (!userId) return [] as Array<{ _id: Id<"userEvents">; title: string }>;
     const out: Array<{ _id: Id<"userEvents">; title: string }> = [];
     for (const id of args.ids) {
-      const t = await ctx.db.get(id);
+      const t = await ctx.db.get(id) as Doc<"userEvents"> | null;
       if (t && t.userId === userId) {
         out.push({ _id: id, title: t.title });
       }
@@ -160,7 +160,7 @@ export const toggleFavorite = mutation({
   returns: v.object({ isFavorite: v.boolean() }),
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const existing = await ctx.db.get(args.userEventId);
+    const existing = await ctx.db.get(args.userEventId) as Doc<"userEvents"> | null;
     if (!existing) throw new Error("User event not found");
     if (existing.userId !== userId) throw new Error("Not authorized");
 
@@ -229,7 +229,7 @@ export const updateUserEvent = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const existing = await ctx.db.get(args.userEventId);
+    const existing = await ctx.db.get(args.userEventId) as Doc<"userEvents"> | null;
     if (!existing) throw new Error("User event not found");
     if (existing.userId !== userId) throw new Error("Not authorized");
 
@@ -259,7 +259,7 @@ export const deleteUserEvent = mutation({
   args: { userEventId: v.id("userEvents") },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const existing = await ctx.db.get(args.userEventId);
+    const existing = await ctx.db.get(args.userEventId) as Doc<"userEvents"> | null;
     if (!existing) return { success: true };
     if (existing.userId !== userId) throw new Error("Not authorized");
     await ctx.db.delete(args.userEventId);
@@ -273,7 +273,7 @@ export const getUserEvent = query({
   handler: async (ctx, args) => {
     const userId = await getOptionalUserId(ctx);
     if (!userId) return null;
-    const userEvent = await ctx.db.get(args.userEventId);
+    const userEvent = await ctx.db.get(args.userEventId) as Doc<"userEvents"> | null;
     if (!userEvent || userEvent.userId !== userId) return null;
     return userEvent;
   },
@@ -404,7 +404,7 @@ export const moveUserEvent = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const existing = await ctx.db.get(args.userEventId);
+    const existing = await ctx.db.get(args.userEventId) as Doc<"userEvents"> | null;
     if (!existing) throw new Error("User event not found");
     if (existing.userId !== userId) throw new Error("Not authorized");
 
@@ -448,7 +448,7 @@ export const rebalanceOrders = mutation({
         .collect();
 
       // Sort by existing order (missing orders go last), tie-breaker by createdAt
-      rows.sort((a: any, b: any) => {
+      rows.sort((a: Doc<"userEvents">, b: Doc<"userEvents">) => {
         const ao = typeof a?.order === "number" ? a.order : Number.MAX_SAFE_INTEGER;
         const bo = typeof b?.order === "number" ? b.order : Number.MAX_SAFE_INTEGER;
         if (ao !== bo) return ao - bo;

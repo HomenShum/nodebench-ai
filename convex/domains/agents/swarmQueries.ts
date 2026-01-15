@@ -177,7 +177,7 @@ export const getSwarmWithContext = query({
     const swarm = await ctx.db
       .query("agentSwarms")
       .withIndex("by_swarm", (q) => q.eq("swarmId", args.swarmId))
-      .first();
+      .first() as Doc<"agentSwarms"> | null;
 
     if (!swarm) return null;
 
@@ -226,7 +226,7 @@ export const isThreadSwarmActive = query({
     const swarm = await ctx.db
       .query("agentSwarms")
       .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
-      .first();
+      .first() as Doc<"agentSwarms"> | null;
 
     if (!swarm) return { hasSwarm: false, isActive: false };
 
@@ -272,7 +272,7 @@ export const getThreadsWithSwarmInfo = query({
           const swarm = await ctx.db
             .query("agentSwarms")
             .withIndex("by_swarm", (q) => q.eq("swarmId", thread.swarmId!))
-            .first();
+            .first() as Doc<"agentSwarms"> | null;
 
           if (swarm) {
             const tasks = await ctx.db
@@ -319,9 +319,9 @@ async function getUserId(
   const user = await ctx.db
     .query("users")
     .filter((q: any) => q.eq(q.field("email"), identity.email))
-    .first();
+    .first() as Doc<"users"> | null;
 
-  return user?._id || null;
+  return user?._id ?? null;
 }
 
 /**
@@ -352,7 +352,7 @@ export const getAnyUserIdInternal = internalQuery({
   args: {},
   returns: v.union(v.id("users"), v.null()),
   handler: async (ctx) => {
-    const user = await ctx.db.query("users").first();
+    const user = await ctx.db.query("users").first() as Doc<"users"> | null;
     return user?._id ?? null;
   },
 });

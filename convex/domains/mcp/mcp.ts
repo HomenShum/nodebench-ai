@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, mutation, query } from "../../_generated/server";
 import { internal, api } from "../../_generated/api";
 import { discoverToolsWithSdk } from "../../lib/mcpTransport";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /* ------------------------------------------------------------------ */
@@ -31,7 +31,7 @@ export const addMcpServer = mutation({
       .query("mcpServers")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("name"), args.name))
-      .first();
+      .first() as Doc<"mcpServers"> | null;
 
     if (existing) {
       throw new Error(`MCP server with name "${args.name}" already exists`);
@@ -115,9 +115,9 @@ export const listToolHistory = query({
       .withIndex("by_user_tool_createdAt", (q) => q.eq("userId", userId).eq("toolId", toolId))
       .order("desc");
 
-    const rows = await (limit && limit > 0 ? q.take(limit) : q.take(5));
+    const rows = await (limit && limit > 0 ? q.take(limit) : q.take(5)) as Doc<"mcpToolHistory">[];
     // Strip system fields like _creationTime to match validator
-    return rows.map((r) => ({
+    return rows.map((r: Doc<"mcpToolHistory">) => ({
       _id: r._id,
       userId: r.userId,
       toolId: r.toolId,
@@ -162,9 +162,9 @@ export const listUserHistory = query({
       .withIndex("by_user_createdAt", (q) => q.eq("userId", userId))
       .order("desc");
 
-    const rows = await (limit && limit > 0 ? q.take(limit) : q.take(20));
+    const rows = await (limit && limit > 0 ? q.take(limit) : q.take(20)) as Doc<"mcpToolHistory">[];
     // Strip system fields like _creationTime to match validator
-    return rows.map((r) => ({
+    return rows.map((r: Doc<"mcpToolHistory">) => ({
       _id: r._id,
       userId: r.userId,
       toolId: r.toolId,
@@ -197,7 +197,7 @@ export const addMcpTool = mutation({
     }
 
     // Verify server exists and user owns it
-    const server = await ctx.db.get(args.serverId);
+    const server = await ctx.db.get(args.serverId) as Doc<"mcpServers"> | null;
     if (!server) {
       throw new Error("MCP server not found");
     }
@@ -211,7 +211,7 @@ export const addMcpTool = mutation({
       .query("mcpTools")
       .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
       .filter((q) => q.eq(q.field("name"), args.name))
-      .first();
+      .first() as Doc<"mcpTools"> | null;
 
     if (existing) {
       // Update existing tool
@@ -259,7 +259,7 @@ export const updateMcpServer = mutation({
       throw new Error("Authentication required");
     }
 
-    const server = await ctx.db.get(args.serverId);
+    const server = await ctx.db.get(args.serverId) as Doc<"mcpServers"> | null;
     if (!server) {
       throw new Error("MCP server not found");
     }
@@ -298,7 +298,7 @@ export const deleteMcpServer = mutation({
       throw new Error("Authentication required");
     }
 
-    const server = await ctx.db.get(args.serverId);
+    const server = await ctx.db.get(args.serverId) as Doc<"mcpServers"> | null;
     if (!server) {
       throw new Error("MCP server not found");
     }
@@ -314,7 +314,7 @@ export const deleteMcpServer = mutation({
     const tools = await ctx.db
       .query("mcpTools")
       .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
-      .collect();
+      .collect() as Doc<"mcpTools">[];
 
     for (const tool of tools) {
       await ctx.db.delete(tool._id);
@@ -324,7 +324,7 @@ export const deleteMcpServer = mutation({
     const sessions = await ctx.db
       .query("mcpSessions")
       .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
-      .collect();
+      .collect() as Doc<"mcpSessions">[];
 
     for (const session of sessions) {
       await ctx.db.delete(session._id);
@@ -359,16 +359,16 @@ export const listMcpServers = query({
       return [];
     }
 
-    const servers = await ctx.db.query("mcpServers").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
+    const servers = await ctx.db.query("mcpServers").withIndex("by_user", (q) => q.eq("userId", userId)).collect() as Doc<"mcpServers">[];
 
     // Get tool counts for each server
     const serversWithCounts = await Promise.all(
-      servers.map(async (server) => {
+      servers.map(async (server: Doc<"mcpServers">) => {
         const toolCount = await ctx.db
           .query("mcpTools")
           .withIndex("by_server", (q) => q.eq("serverId", server._id))
           .collect()
-          .then(tools => tools.length);
+          .then((tools: Doc<"mcpTools">[]) => tools.length);
 
         return {
           _id: server._id,
@@ -420,7 +420,7 @@ export const getMcpTools = query({
     let toolsQuery;
     if (args.serverId) {
       // Get tools for specific server
-      const server = await ctx.db.get(args.serverId);
+      const server = await ctx.db.get(args.serverId) as Doc<"mcpServers"> | null;
       if (!server || server.userId !== userId) {
         return [];
       }
@@ -430,30 +430,30 @@ export const getMcpTools = query({
       const userServers = await ctx.db
         .query("mcpServers")
         .withIndex("by_user", (q) => q.eq("userId", userId))
-        .collect();
-      
-      const serverIds = userServers.map(s => s._id);
+        .collect() as Doc<"mcpServers">[];
+
+      const serverIds = userServers.map((s: Doc<"mcpServers">) => s._id);
       const allTools = await Promise.all(
-        serverIds.map(serverId => 
+        serverIds.map((serverId: Id<"mcpServers">) =>
           ctx.db.query("mcpTools").withIndex("by_server", (q) => q.eq("serverId", serverId)).collect()
         )
-      );
-      
+      ) as Doc<"mcpTools">[][];
+
       const tools = allTools.flat();
       if (args.availableOnly) {
         return tools
-          .filter(tool => tool.isAvailable)
-          .map(tool => {
-            const server = userServers.find(s => s._id === tool.serverId);
+          .filter((tool: Doc<"mcpTools">) => tool.isAvailable)
+          .map((tool: Doc<"mcpTools">) => {
+            const server = userServers.find((s: Doc<"mcpServers">) => s._id === tool.serverId);
             return {
               ...tool,
               serverName: server?.name || "Unknown",
             };
           });
       }
-      
-      return tools.map(tool => {
-        const server = userServers.find(s => s._id === tool.serverId);
+
+      return tools.map((tool: Doc<"mcpTools">) => {
+        const server = userServers.find((s: Doc<"mcpServers">) => s._id === tool.serverId);
         return {
           ...tool,
           serverName: server?.name || "Unknown",
@@ -465,12 +465,12 @@ export const getMcpTools = query({
       toolsQuery = toolsQuery.filter((q) => q.eq(q.field("isAvailable"), true));
     }
 
-    const tools = await toolsQuery.collect();
-    
+    const tools = await toolsQuery.collect() as Doc<"mcpTools">[];
+
     // Add server names
     const toolsWithServerNames = await Promise.all(
-      tools.map(async (tool) => {
-        const server = await ctx.db.get(tool.serverId);
+      tools.map(async (tool: Doc<"mcpTools">) => {
+        const server = await ctx.db.get(tool.serverId) as Doc<"mcpServers"> | null;
         return {
           ...tool,
           serverName: server?.name || "Unknown",
@@ -573,7 +573,7 @@ export const getMcpServerById = query({
   },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.serverId);
+    return await ctx.db.get(args.serverId) as Doc<"mcpServers"> | null;
   },
 });
 
@@ -634,7 +634,7 @@ export const storeMcpTool = internalMutation({
       .query("mcpTools")
       .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
       .filter((q) => q.eq(q.field("name"), args.name))
-      .first();
+      .first() as Doc<"mcpTools"> | null;
 
     const now = Date.now();
 
@@ -676,7 +676,7 @@ export const incrementMcpUsage = internalMutation({
     const existing = await ctx.db
       .query("dailyUsage")
       .withIndex("by_user_provider_date", (q) => q.eq("userId", args.userId ?? undefined).eq("provider", "mcp").eq("date", args.date))
-      .first();
+      .first() as Doc<"dailyUsage"> | null;
 
     const now = Date.now();
     if (!existing) {
@@ -725,11 +725,23 @@ export const getToolByName = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const tool = await ctx.db
       .query("mcpTools")
       .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
       .filter((q) => q.eq(q.field("name"), args.name))
-      .first();
+      .first() as Doc<"mcpTools"> | null;
+    if (!tool) return null;
+    return {
+      _id: tool._id,
+      serverId: tool.serverId,
+      name: tool.name,
+      description: tool.description,
+      schema: tool.schema,
+      isAvailable: tool.isAvailable,
+      isEnabled: tool.isEnabled,
+      createdAt: tool.createdAt,
+      updatedAt: tool.updatedAt,
+    };
   },
 });
 
@@ -744,7 +756,7 @@ export const clearServerTools = internalMutation({
     const tools = await ctx.db
       .query("mcpTools")
       .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
-      .collect();
+      .collect() as Doc<"mcpTools">[];
 
     for (const tool of tools) {
       await ctx.db.delete(tool._id);
@@ -787,14 +799,15 @@ export const updateToolUsage = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const tool = await ctx.db.get(args.toolId);
-    if (!tool) return;
+    const tool = await ctx.db.get(args.toolId) as Doc<"mcpTools"> | null;
+    if (!tool) return null;
 
     await ctx.db.patch(args.toolId, {
       usageCount: (tool.usageCount || 0) + 1,
       lastUsed: Date.now(),
       updatedAt: Date.now(),
     });
+    return null;
   },
 });
 
@@ -815,13 +828,13 @@ export const updateMcpTool = mutation({
       throw new Error("Authentication required");
     }
 
-    const tool = await ctx.db.get(args.toolId);
+    const tool = await ctx.db.get(args.toolId) as Doc<"mcpTools"> | null;
     if (!tool) {
       throw new Error("Tool not found");
     }
 
     // Check if the tool belongs to a server owned by the user
-    const server = await ctx.db.get(tool.serverId);
+    const server = await ctx.db.get(tool.serverId) as Doc<"mcpServers"> | null;
     if (!server || server.userId !== userId) {
       throw new Error("Not authorized to modify this tool");
     }
@@ -832,7 +845,7 @@ export const updateMcpTool = mutation({
         .query("mcpTools")
         .withIndex("by_server", (q) => q.eq("serverId", tool.serverId))
         .filter((q) => q.eq(q.field("name"), args.name))
-        .first();
+        .first() as Doc<"mcpTools"> | null;
 
       if (existing) {
         throw new Error(`Tool with name "${args.name}" already exists on this server`);
@@ -849,6 +862,7 @@ export const updateMcpTool = mutation({
     if (args.isEnabled !== undefined) updates.isEnabled = args.isEnabled;
 
     await ctx.db.patch(args.toolId, updates);
+    return null;
   },
 });
 
@@ -866,19 +880,20 @@ export const deleteMcpTool = mutation({
       throw new Error("Authentication required");
     }
 
-    const tool = await ctx.db.get(args.toolId);
+    const tool = await ctx.db.get(args.toolId) as Doc<"mcpTools"> | null;
     if (!tool) {
       throw new Error("Tool not found");
     }
 
     // Check if the tool belongs to a server owned by the user
-    const server = await ctx.db.get(tool.serverId);
+    const server = await ctx.db.get(tool.serverId) as Doc<"mcpServers"> | null;
     if (!server || server.userId !== userId) {
       throw new Error("Not authorized to delete this tool");
     }
 
     // Delete the tool
     await ctx.db.delete(args.toolId);
+    return null;
   },
 });
 
@@ -895,7 +910,7 @@ export const updateServerStatus = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Check if the server exists before trying to update it
-    const server = await ctx.db.get(args.serverId);
+    const server = await ctx.db.get(args.serverId) as Doc<"mcpServers"> | null;
     if (!server) {
       console.warn(`[updateServerStatus] Server ${args.serverId} not found, skipping update`);
       return null;
@@ -935,7 +950,7 @@ export const markToolsUnavailable = internalMutation({
     const tools = await ctx.db
       .query("mcpTools")
       .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
-      .collect();
+      .collect() as Doc<"mcpTools">[];
 
     for (const tool of tools) {
       await ctx.db.patch(tool._id, {
@@ -957,7 +972,7 @@ export const addSampleTools = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const server = await ctx.db.get(args.serverId);
+    const server = await ctx.db.get(args.serverId) as Doc<"mcpServers"> | null;
     if (!server) return null;
 
     const now = Date.now();

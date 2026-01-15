@@ -7,6 +7,7 @@
 
 import { internalMutation, query } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Doc } from "../../_generated/dataModel";
 import { v } from "convex/values";
 
 /**
@@ -43,7 +44,7 @@ async function clearTestData(ctx: any) {
   // Get the test user (same logic as getOrCreateTestUser)
   const testUser = await ctx.db
     .query("users")
-    .first();
+    .first() as Doc<"users"> | null;
 
   if (!testUser) {
     console.log("   No test user found, skipping clear");
@@ -110,7 +111,7 @@ async function getOrCreateTestUser(ctx: any) {
   // Try to find an existing user
   const existingUser = await ctx.db
     .query("users")
-    .first();
+    .first() as Doc<"users"> | null;
 
   if (existingUser) {
     console.log(`   Using existing user: ${existingUser._id}`);
@@ -520,7 +521,7 @@ export const getTestUser = query({
     // Get the first user (same as what seeding uses)
     const user = await ctx.db
       .query("users")
-      .first();
+      .first() as Doc<"users"> | null;
 
     if (!user) return null;
 
@@ -579,7 +580,7 @@ async function seedMcpServers(ctx: any) {
       .query("mcpServers")
       .withIndex("by_user", (q: any) => q.eq("userId", testUser))
       .filter((q: any) => q.eq(q.field("name"), serverConfig.name))
-      .first();
+      .first() as Doc<"mcpServers"> | null;
 
     let serverId;
 

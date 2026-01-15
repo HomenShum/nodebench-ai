@@ -8,7 +8,7 @@ import {
   internalMutation,
   internalQuery,
 } from "../../_generated/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 
 /* ------------------------------------------------------------------ */
 /* QUERIES                                                             */
@@ -17,7 +17,7 @@ import type { Id } from "../../_generated/dataModel";
 export const getTeachingById = internalQuery({
   args: { teachingId: v.id("userTeachings") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.teachingId);
+    return await ctx.db.get(args.teachingId) as Doc<"userTeachings"> | null;
   },
 });
 
@@ -35,11 +35,11 @@ export const listTeachingsByUser = internalQuery({
     const rows = await ctx.db
       .query("userTeachings")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .take(limit * 2);
+      .take(limit * 2) as Doc<"userTeachings">[];
 
     return rows
-      .filter((t) => (!args.status || t.status === args.status))
-      .filter((t) => (!args.type || t.type === args.type))
+      .filter((t: Doc<"userTeachings">) => (!args.status || t.status === args.status))
+      .filter((t: Doc<"userTeachings">) => (!args.type || t.type === args.type))
       .slice(0, limit);
   },
 });
@@ -54,11 +54,11 @@ export const listSkillsWithTriggers = internalQuery({
     const rows = await ctx.db
       .query("userTeachings")
       .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", "skill"))
-      .take(limit * 2);
+      .take(limit * 2) as Doc<"userTeachings">[];
 
     return rows
-      .filter((r) => r.status === "active")
-      .filter((r) => Array.isArray(r.triggerPhrases) && r.triggerPhrases.length > 0)
+      .filter((r: Doc<"userTeachings">) => r.status === "active")
+      .filter((r: Doc<"userTeachings">) => Array.isArray(r.triggerPhrases) && r.triggerPhrases.length > 0)
       .slice(0, limit);
   },
 });
@@ -73,11 +73,11 @@ export const getTopPreferences = internalQuery({
     const prefs = await ctx.db
       .query("userTeachings")
       .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", "preference"))
-      .take(limit * 3);
+      .take(limit * 3) as Doc<"userTeachings">[];
 
     return prefs
-      .filter((p) => p.status === "active")
-      .sort((a, b) => (b.usageCount ?? 0) - (a.usageCount ?? 0))
+      .filter((p: Doc<"userTeachings">) => p.status === "active")
+      .sort((a: Doc<"userTeachings">, b: Doc<"userTeachings">) => (b.usageCount ?? 0) - (a.usageCount ?? 0))
       .slice(0, limit);
   },
 });
@@ -113,7 +113,7 @@ export const persistTeaching = internalMutation({
         .query("userTeachings")
         .withIndex("by_user_category", (q) =>
           q.eq("userId", args.userId).eq("category", args.category))
-        .take(50);
+        .take(50) as Doc<"userTeachings">[];
 
       for (const doc of conflicts) {
         if (doc.status === "active") {
@@ -151,7 +151,7 @@ export const recordTeachingUsage = internalMutation({
     teachingId: v.id("userTeachings"),
   },
   handler: async (ctx, args) => {
-    const doc = await ctx.db.get(args.teachingId);
+    const doc = await ctx.db.get(args.teachingId) as Doc<"userTeachings"> | null;
     if (!doc) return;
     await ctx.db.patch(args.teachingId, {
       usageCount: (doc.usageCount ?? 0) + 1,

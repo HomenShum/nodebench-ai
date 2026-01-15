@@ -13,7 +13,7 @@ import { internal, api } from "../../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { MEMORY_LIMITS } from "../../lib/memoryLimits";
 import { isMemoryEnabled } from "../../lib/featureFlags";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -79,11 +79,11 @@ export const createJob = internalMutation({
     
     const recentForTarget = await ctx.db
       .query("researchJobs")
-      .withIndex("by_target", q => 
+      .withIndex("by_target", q =>
         q.eq("targetType", args.targetType).eq("targetId", args.targetId)
       )
       .order("desc")
-      .first();
+      .first() as Doc<"researchJobs"> | null;
 
     if (recentForTarget && recentForTarget.status === "completed") {
       const hoursSince = (now - recentForTarget.createdAt) / (1000 * 60 * 60);
@@ -386,7 +386,7 @@ export const cancelJob = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const job = await ctx.db.get(jobId);
+    const job = await ctx.db.get(jobId) as Doc<"researchJobs"> | null;
     if (!job) throw new Error("Job not found");
     if (job.userId !== userId) throw new Error("Not authorized");
     if (job.status !== "pending") throw new Error("Can only cancel pending jobs");

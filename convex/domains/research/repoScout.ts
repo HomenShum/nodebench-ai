@@ -24,6 +24,11 @@ type SourceMatrixItem = {
   snippet?: string;
 };
 
+type MoatAnalysis = {
+  moatSummary?: string;
+  moatRisks?: string[];
+};
+
 async function generateWithProvider(
   modelInput: string,
   systemPrompt: string,
@@ -269,12 +274,12 @@ export const refreshRepoScout = action({
       260,
     );
 
-    const parsed = tryParseJson(raw) ?? {};
+    const parsed = (tryParseJson(raw) ?? {}) as MoatAnalysis;
     const moatSummary = typeof parsed.moatSummary === "string" && parsed.moatSummary.trim().length > 0
       ? parsed.moatSummary.trim()
       : "Open-source alternatives are accelerating, compressing switching costs and time-to-implementation.";
     const moatRisks = Array.isArray(parsed.moatRisks)
-      ? parsed.moatRisks.filter((item: any) => typeof item === "string").slice(0, 4)
+      ? parsed.moatRisks.filter((item: string) => typeof item === "string").slice(0, 4)
       : ["Rapid OSS adoption", "Growing community velocity", "Enterprise pilots compressing sales cycles"];
 
     const record = {

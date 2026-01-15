@@ -139,7 +139,7 @@ export const generatePDFInsights = action({
 
     // Calculate summary statistics
     const totalDeals = args.deals.length;
-    const totalAmountUsd = args.deals.reduce((sum, d) => sum + (d.amountUsd || 0), 0);
+    const totalAmountUsd = args.deals.reduce((sum: number, d: { amountUsd?: number }) => sum + (d.amountUsd || 0), 0);
     const totalAmountFormatted = formatCurrency(totalAmountUsd);
 
     // Aggregate by sector
@@ -168,11 +168,14 @@ export const generatePDFInsights = action({
       }
     }
 
+    // Type for deal objects
+    type Deal = typeof args.deals[0];
+
     // Prepare deals data for LLM
     const dealsText = args.deals
-      .sort((a, b) => (b.amountUsd || 0) - (a.amountUsd || 0))
+      .sort((a: Deal, b: Deal) => (b.amountUsd || 0) - (a.amountUsd || 0))
       .slice(0, 20) // Limit to top 20 for context window
-      .map((d, i) => {
+      .map((d: Deal, i: number) => {
         const investors = d.leadInvestors?.join(", ") || "Undisclosed";
         return `${i + 1}. ${d.companyName} | ${d.roundType} | ${d.amountRaw} | Sector: ${d.sector || "Unknown"} | Lead: ${investors}`;
       })
@@ -216,9 +219,9 @@ Generate the analysis now:`;
           const response = await generateText({
             model,
             prompt,
-            maxTokens: 1000,
+            maxOutputTokens: 1000,
             temperature: 0.3, // Lower temperature for factual analysis
-          });
+          } as any);
           return response.text;
         },
         {
@@ -285,8 +288,11 @@ export const generatePDFInsightsInternal = internalAction({
       };
     }
 
+    // Type for deal objects
+    type DealType = typeof args.deals[0];
+
     const totalDeals = args.deals.length;
-    const totalAmountUsd = args.deals.reduce((sum, d) => sum + (d.amountUsd || 0), 0);
+    const totalAmountUsd = args.deals.reduce((sum: number, d: DealType) => sum + (d.amountUsd || 0), 0);
     const totalAmountFormatted = formatCurrency(totalAmountUsd);
 
     // Aggregate by sector
@@ -314,9 +320,9 @@ export const generatePDFInsightsInternal = internalAction({
     }
 
     const dealsText = args.deals
-      .sort((a, b) => (b.amountUsd || 0) - (a.amountUsd || 0))
+      .sort((a: DealType, b: DealType) => (b.amountUsd || 0) - (a.amountUsd || 0))
       .slice(0, 20)
-      .map((d, i) => {
+      .map((d: DealType, i: number) => {
         const investors = d.leadInvestors?.join(", ") || "Undisclosed";
         return `${i + 1}. ${d.companyName} | ${d.roundType} | ${d.amountRaw} | Sector: ${d.sector || "Unknown"} | Lead: ${investors}`;
       })
@@ -357,9 +363,9 @@ Generate the analysis now:`;
           const response = await generateText({
             model,
             prompt,
-            maxTokens: 1000,
+            maxOutputTokens: 1000,
             temperature: 0.3,
-          });
+          } as any);
           return response.text;
         },
         {

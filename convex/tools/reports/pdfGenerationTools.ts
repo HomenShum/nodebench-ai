@@ -11,6 +11,70 @@
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { api } from "../../_generated/api";
+import { Id } from "../../_generated/dataModel";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPE DEFINITIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Funding event data returned from getAllFundingForBrief query */
+interface FundingEventData {
+  id: Id<"fundingEvents">;
+  companyName: string;
+  roundType: string;
+  amountRaw?: string;
+  amountUsd?: number;
+  leadInvestors?: string[];
+  coInvestors?: string[];
+  sector?: string;
+  location?: string;
+  description?: string;
+  valuation?: string;
+  useOfProceeds?: string;
+  confidence?: number;
+  verificationStatus?: string;
+  sourceUrls?: string[];
+  sourceNames?: string[];
+  announcedAt: number;
+  createdAt: number;
+  entityData?: {
+    name: string;
+    type: string;
+    sector?: string;
+    crmFields?: Record<string, unknown>;
+  } | null;
+}
+
+/** Simplified funding event from searchFundingByCompany */
+interface SearchFundingEventData {
+  id: Id<"fundingEvents">;
+  companyName: string;
+  roundType: string;
+  amountRaw?: string;
+  amountUsd?: number;
+  leadInvestors?: string[];
+  sector?: string;
+  confidence?: number;
+  verificationStatus?: string;
+  announcedAt?: number;
+  sourceUrls?: string[];
+  description?: string;
+  location?: string;
+}
+
+/** Transformed top deal for weekly digest */
+interface TopDealData {
+  companyName: string;
+  roundType: string;
+  amountRaw: string;
+  amountUsd?: number;
+  leadInvestors: string[];
+  sector?: string;
+  location?: string;
+  announcedAt: number;
+  confidence: number;
+  verificationStatus: string;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // QUARTERLY FUNDING REPORT TOOL
@@ -79,7 +143,7 @@ Example: "Generate a Q4 2025 funding summary report" or "Create a funding report
         });
       }
 
-      const totalAmount = fundingData.events.reduce((sum, e) => sum + (e.amountUsd || 0), 0);
+      const totalAmount = fundingData.events.reduce((sum: number, e: FundingEventData) => sum + (e.amountUsd || 0), 0);
 
       const sectorBreakdown = Array.from(sectorMap.entries())
         .map(([sector, data]) => ({
@@ -111,7 +175,7 @@ Example: "Generate a Q4 2025 funding summary report" or "Create a funding report
         .sort((a, b) => b.totalAmountUsd - a.totalAmountUsd);
 
       // Transform deals
-      const deals = fundingData.events.map((event) => ({
+      const deals = fundingData.events.map((event: FundingEventData) => ({
         companyName: event.companyName,
         roundType: event.roundType,
         amountRaw: event.amountRaw || "",
@@ -210,12 +274,12 @@ Example: "Create a dossier for OpenAI" or "Generate company report for Anthropic
 
       // Calculate total funding
       const totalFundingRaised = fundingEvents.reduce(
-        (sum: number, e: any) => sum + (e.amountUsd || 0),
+        (sum: number, e: SearchFundingEventData) => sum + (e.amountUsd || 0),
         0
       );
 
       // Transform funding history
-      const fundingHistory = fundingEvents.map((event: any) => ({
+      const fundingHistory = fundingEvents.map((event: SearchFundingEventData) => ({
         roundType: event.roundType,
         amountRaw: event.amountRaw || "",
         amountUsd: event.amountUsd,
@@ -342,10 +406,10 @@ Example: "Generate weekly digest for JPM_STARTUP_BANKER persona"`,
       })}`;
 
       // Top deals
-      const topDeals = (fundingData?.events || [])
-        .sort((a: any, b: any) => (b.amountUsd || 0) - (a.amountUsd || 0))
+      const topDeals: TopDealData[] = (fundingData?.events || [])
+        .sort((a: FundingEventData, b: FundingEventData) => (b.amountUsd || 0) - (a.amountUsd || 0))
         .slice(0, 5)
-        .map((event: any) => ({
+        .map((event: FundingEventData) => ({
           companyName: event.companyName,
           roundType: event.roundType,
           amountRaw: event.amountRaw || "",
@@ -361,7 +425,7 @@ Example: "Generate weekly digest for JPM_STARTUP_BANKER persona"`,
       // Calculate totals
       const totalDeals = fundingData?.events?.length || 0;
       const totalAmountUsd = (fundingData?.events || []).reduce(
-        (sum: number, e: any) => sum + (e.amountUsd || 0),
+        (sum: number, e: FundingEventData) => sum + (e.amountUsd || 0),
         0
       );
 
@@ -374,7 +438,7 @@ Example: "Generate weekly digest for JPM_STARTUP_BANKER persona"`,
         : "Quiet week with no significant funding announcements tracked.";
 
       // Generate top stories from top deals
-      const topStories = topDeals.slice(0, 3).map((deal: any) => ({
+      const topStories = topDeals.slice(0, 3).map((deal: TopDealData) => ({
         headline: `${deal.companyName} raises ${deal.amountRaw} in ${formatRoundType(deal.roundType)}`,
         summary: `Led by ${deal.leadInvestors.join(", ") || "undisclosed investors"}`,
         source: "Funding Intelligence",

@@ -5,6 +5,7 @@
 import { action, mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import { Doc } from "./_generated/dataModel";
 
 // ============================================================================
 // 1. PUBLIC QUERY: The "Feed" your frontend consumes
@@ -222,8 +223,8 @@ export const saveItems = internalMutation({
       const existing = await ctx.db
         .query("feedItems")
         .withIndex("by_source_id", q => q.eq("sourceId", item.sourceId))
-        .first();
-      
+        .first() as Doc<"feedItems"> | null;
+
       if (!existing) {
         await ctx.db.insert("feedItems", {
           ...item,
@@ -274,7 +275,7 @@ export const seedAuditSignals = mutation({
       const existing = await ctx.db
         .query("feedItems")
         .withIndex("by_source_id", (q) => q.eq("sourceId", seed.sourceId))
-        .first();
+        .first() as Doc<"feedItems"> | null;
       if (existing) {
         if (args.force) {
           await ctx.db.patch(existing._id, {

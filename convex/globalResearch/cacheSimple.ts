@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../_generated/server";
+import { Doc } from "../_generated/dataModel";
 import { hashSync } from "../../shared/artifacts";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -114,7 +115,7 @@ export const getCache = internalQuery({
     const cached = await ctx.db
       .query("globalQueryCache")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueryCache"> | null;
 
     if (!cached) {
       return { hit: false as const };
@@ -157,7 +158,7 @@ export const setCache = internalMutation({
     const existing = await ctx.db
       .query("globalQueryCache")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueryCache"> | null;
 
     if (existing) {
       // Update existing
@@ -193,7 +194,7 @@ export const invalidateCache = internalMutation({
     const cached = await ctx.db
       .query("globalQueryCache")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueryCache"> | null;
 
     if (cached) {
       await ctx.db.delete(cached._id);
@@ -222,7 +223,7 @@ export const cleanupExpiredCache = internalMutation({
       .query("globalQueryCache")
       .withIndex("by_completedAt")
       .order("asc")
-      .take(batchSize * 2); // Overfetch since we filter
+      .take(batchSize * 2) as Doc<"globalQueryCache">[]; // Overfetch since we filter
 
     let deleted = 0;
     for (const entry of entries) {

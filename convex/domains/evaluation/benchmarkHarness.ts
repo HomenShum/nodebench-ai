@@ -12,7 +12,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TASK MANAGEMENT
@@ -52,7 +52,7 @@ export const seedBenchmarkTask = internalMutation({
     const existing = await ctx.db
       .query("benchmarkTasks")
       .withIndex("by_taskId", (q) => q.eq("taskId", args.taskId))
-      .first();
+      .first() as Doc<"benchmarkTasks"> | null;
 
     if (existing) {
       // Update existing task
@@ -84,9 +84,9 @@ export const getTasksBySuite = internalQuery({
     const tasks = await ctx.db
       .query("benchmarkTasks")
       .withIndex("by_suite", (q) => q.eq("suite", args.suite))
-      .collect();
+      .collect() as Doc<"benchmarkTasks">[];
 
-    return tasks.filter((t) => t.isActive).sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    return tasks.filter((t: Doc<"benchmarkTasks">) => t.isActive).sort((a: Doc<"benchmarkTasks">, b: Doc<"benchmarkTasks">) => (a.priority ?? 0) - (b.priority ?? 0));
   },
 });
 
@@ -114,8 +114,8 @@ export const startBenchmarkRun = internalMutation({
     const tasks = await ctx.db
       .query("benchmarkTasks")
       .withIndex("by_suite", (q) => q.eq("suite", args.suite))
-      .collect();
-    const activeTasks = tasks.filter((t) => t.isActive);
+      .collect() as Doc<"benchmarkTasks">[];
+    const activeTasks = tasks.filter((t: Doc<"benchmarkTasks">) => t.isActive);
 
     const dbId = await ctx.db.insert("benchmarkRuns", {
       runId,
@@ -171,7 +171,7 @@ export const recordBenchmarkScore = internalMutation({
     const run = await ctx.db
       .query("benchmarkRuns")
       .withIndex("by_runId", (q) => q.eq("runId", args.runId))
-      .first();
+      .first() as Doc<"benchmarkRuns"> | null;
 
     if (run) {
       await ctx.db.patch(run._id, {
@@ -202,7 +202,7 @@ export const completeBenchmarkRun = internalMutation({
     const run = await ctx.db
       .query("benchmarkRuns")
       .withIndex("by_runId", (q) => q.eq("runId", args.runId))
-      .first();
+      .first() as Doc<"benchmarkRuns"> | null;
 
     if (!run) return null;
 
@@ -236,14 +236,14 @@ export const getBenchmarkRunResults = internalQuery({
     const run = await ctx.db
       .query("benchmarkRuns")
       .withIndex("by_runId", (q) => q.eq("runId", args.runId))
-      .first();
+      .first() as Doc<"benchmarkRuns"> | null;
 
     if (!run) return null;
 
     const scores = await ctx.db
       .query("benchmarkScores")
       .withIndex("by_run", (q) => q.eq("runId", args.runId))
-      .collect();
+      .collect() as Doc<"benchmarkScores">[];
 
     return {
       run,
@@ -270,7 +270,7 @@ export const getLatestBenchmarkRun = internalQuery({
       .query("benchmarkRuns")
       .withIndex("by_suite", (q) => q.eq("suite", args.suite))
       .order("desc")
-      .take(1);
+      .take(1) as Doc<"benchmarkRuns">[];
 
     return runs[0] ?? null;
   },
@@ -288,14 +288,14 @@ export const generateBenchmarkReport = internalQuery({
     const run = await ctx.db
       .query("benchmarkRuns")
       .withIndex("by_runId", (q) => q.eq("runId", args.runId))
-      .first();
+      .first() as Doc<"benchmarkRuns"> | null;
 
     if (!run) return "# Benchmark Run Not Found\n";
 
     const scores = await ctx.db
       .query("benchmarkScores")
       .withIndex("by_run", (q) => q.eq("runId", args.runId))
-      .collect();
+      .collect() as Doc<"benchmarkScores">[];
 
     const passRate = run.totalTasks > 0
       ? Math.round((run.passedTasks / run.totalTasks) * 100)

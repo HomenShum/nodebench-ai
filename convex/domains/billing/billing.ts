@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "../../_generated/api";
 import { polar } from "../integrations/polar";
+import type { Doc } from "../../_generated/dataModel";
 
 // Plans
 type Plan = "free" | "supporter";
@@ -41,7 +42,7 @@ export const getSubscription = query({
     const sub = await ctx.db
       .query("subscriptions")
       .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "active"))
-      .first();
+      .first() as Doc<"subscriptions"> | null;
     if (!sub) return { plan: FREE_PLAN, status: "none" as const };
     return {
       plan: (sub.plan as Plan) ?? FREE_PLAN,
@@ -212,7 +213,7 @@ export const activateSubscription = internalMutation({
     const existing = await ctx.db
       .query("subscriptions")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"subscriptions"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {

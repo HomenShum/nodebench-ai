@@ -169,7 +169,7 @@ export const getEntityState = internalQuery({
     return await ctx.db
       .query("entityStates")
       .withIndex("by_entity", (q) => q.eq("entityId", entityId))
-      .first();
+      .first() as Doc<"entityStates"> | null;
   },
 });
 
@@ -186,10 +186,10 @@ export const getStaleEntities = internalQuery({
     const entities = await ctx.db
       .query("entityStates")
       .order("asc")
-      .take(limit * 2);
+      .take(limit * 2) as Doc<"entityStates">[];
 
     return entities
-      .filter((e) => e.freshness.decayScore < decayThreshold)
+      .filter((e: Doc<"entityStates">) => e.freshness.decayScore < decayThreshold)
       .slice(0, limit);
   },
 });
@@ -203,10 +203,10 @@ export const getCriticalEntities = internalQuery({
     const entities = await ctx.db
       .query("entityStates")
       .order("asc")
-      .take(limit * 2);
+      .take(limit * 2) as Doc<"entityStates">[];
 
     return entities
-      .filter((e) => e.freshness.decayScore < DECAY_CONFIG.criticalThreshold)
+      .filter((e: Doc<"entityStates">) => e.freshness.decayScore < DECAY_CONFIG.criticalThreshold)
       .slice(0, limit);
   },
 });
@@ -223,10 +223,10 @@ export const getIncompleteEntities = internalQuery({
     const entities = await ctx.db
       .query("entityStates")
       .order("asc")
-      .take(limit * 2);
+      .take(limit * 2) as Doc<"entityStates">[];
 
     return entities
-      .filter((e) => e.completeness.score < completenessThreshold)
+      .filter((e: Doc<"entityStates">) => e.completeness.score < completenessThreshold)
       .slice(0, limit);
   },
 });
@@ -240,10 +240,10 @@ export const getContradictedEntities = internalQuery({
     const entities = await ctx.db
       .query("entityStates")
       .order("desc")
-      .take(limit * 2);
+      .take(limit * 2) as Doc<"entityStates">[];
 
     return entities
-      .filter((e) => e.quality.contradictionCount > 0)
+      .filter((e: Doc<"entityStates">) => e.quality.contradictionCount > 0)
       .slice(0, limit);
   },
 });
@@ -263,7 +263,7 @@ export const getLifecycleStats = internalQuery({
     avgQuality: number;
     byType: Record<string, number>;
   }> => {
-    const entities = await ctx.db.query("entityStates").collect();
+    const entities = await ctx.db.query("entityStates").collect() as Doc<"entityStates">[];
 
     const stats = {
       total: entities.length,
@@ -314,17 +314,17 @@ export const getLifecycleStats = internalQuery({
 export const getPublicLifecycleStats = query({
   args: {},
   handler: async (ctx) => {
-    const entities = await ctx.db.query("entityStates").collect();
+    const entities = await ctx.db.query("entityStates").collect() as Doc<"entityStates">[];
 
     return {
       total: entities.length,
-      fresh: entities.filter((e) => e.freshness.decayScore >= DECAY_CONFIG.staleThreshold).length,
+      fresh: entities.filter((e: Doc<"entityStates">) => e.freshness.decayScore >= DECAY_CONFIG.staleThreshold).length,
       stale: entities.filter(
-        (e) =>
+        (e: Doc<"entityStates">) =>
           e.freshness.decayScore < DECAY_CONFIG.staleThreshold &&
           e.freshness.decayScore >= DECAY_CONFIG.criticalThreshold
       ).length,
-      critical: entities.filter((e) => e.freshness.decayScore < DECAY_CONFIG.criticalThreshold).length,
+      critical: entities.filter((e: Doc<"entityStates">) => e.freshness.decayScore < DECAY_CONFIG.criticalThreshold).length,
     };
   },
 });
@@ -350,7 +350,7 @@ export const upsertEntityState = internalMutation({
     const existing = await ctx.db
       .query("entityStates")
       .withIndex("by_entity", (q) => q.eq("entityId", args.entityId))
-      .first();
+      .first() as Doc<"entityStates"> | null;
 
     const now = Date.now();
     const decayScore = calculateDecayScore(now, args.entityType);
@@ -419,7 +419,7 @@ export const upsertEntityState = internalMutation({
 export const updateAllDecayScores = internalMutation({
   args: {},
   handler: async (ctx): Promise<{ updated: number }> => {
-    const entities = await ctx.db.query("entityStates").collect();
+    const entities = await ctx.db.query("entityStates").collect() as Doc<"entityStates">[];
     const now = Date.now();
     let updated = 0;
 
@@ -463,7 +463,7 @@ export const updateQualityScore = internalMutation({
     const entity = await ctx.db
       .query("entityStates")
       .withIndex("by_entity", (q) => q.eq("entityId", args.entityId))
-      .first();
+      .first() as Doc<"entityStates"> | null;
 
     if (!entity) return;
 
@@ -495,7 +495,7 @@ export const recordEngagement = internalMutation({
     const entity = await ctx.db
       .query("entityStates")
       .withIndex("by_entity", (q) => q.eq("entityId", entityId))
-      .first();
+      .first() as Doc<"entityStates"> | null;
 
     if (!entity) return;
 
@@ -535,7 +535,7 @@ export const addResearchHistory = internalMutation({
     const entity = await ctx.db
       .query("entityStates")
       .withIndex("by_entity", (q) => q.eq("entityId", args.entityId))
-      .first();
+      .first() as Doc<"entityStates"> | null;
 
     if (!entity) return;
 

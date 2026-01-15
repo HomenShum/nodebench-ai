@@ -13,6 +13,7 @@ import {
   internalMutation,
 } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Doc } from "../../_generated/dataModel";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 
@@ -129,7 +130,7 @@ export const selectModelForTask = internalQuery({
         .query("freeModels")
         .withIndex("by_rank")
         .filter((q) => q.eq(q.field("isActive"), true))
-        .first();
+        .first() as Doc<"freeModels"> | null;
 
       if (bestFree) {
         // Check if it meets requirements
@@ -180,7 +181,7 @@ export const getAutonomousFallbackChain = internalQuery({
       .query("freeModels")
       .withIndex("by_rank")
       .filter((q) => q.eq(q.field("isActive"), true))
-      .take(5);
+      .take(5) as Doc<"freeModels">[];
 
     for (let i = 0; i < freeModels.length; i++) {
       chain.push({
@@ -231,7 +232,7 @@ export const getAutonomousModelStats = internalQuery({
       .query("autonomousModelUsage")
       .withIndex("by_timestamp")
       .filter((q) => q.gte(q.field("timestamp"), since))
-      .collect();
+      .collect() as Doc<"autonomousModelUsage">[];
 
     const stats = {
       totalCalls: usages.length,
@@ -336,7 +337,7 @@ export const executeWithFallback = internalAction({
                 },
                 body: JSON.stringify({
                   model: model.modelId,
-                  messages: messages.map((m) => ({ role: m.role, content: m.content })),
+                  messages: messages.map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
                   max_tokens: maxTokens,
                   temperature,
                 }),
@@ -344,7 +345,7 @@ export const executeWithFallback = internalAction({
               });
 
               // Check if this is a retryable error
-              if (!response.ok && retryableStatuses.includes(response.status as 429 | 503 | 502 | 504)) {
+              if (!response.ok && (retryableStatuses as readonly number[]).includes(response.status)) {
                 const errorText = await response.text();
                 lastRetryError = new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
 
@@ -500,7 +501,7 @@ export const cleanupOldUsageRecords = internalMutation({
       .query("autonomousModelUsage")
       .withIndex("by_timestamp")
       .filter((q) => q.lt(q.field("timestamp"), cutoff))
-      .take(500);
+      .take(500) as Doc<"autonomousModelUsage">[];
 
     for (const record of oldRecords) {
       await ctx.db.delete(record._id);

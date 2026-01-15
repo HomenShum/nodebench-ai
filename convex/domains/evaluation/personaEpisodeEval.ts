@@ -953,7 +953,7 @@ export const runPersonaEpisodeEval = action({
 
         // For tool-count budgets, exclude meta-tools (progressive disclosure) so
         // we can safely require skill/tool discovery without breaking maxToolCalls scenarios.
-        const nonMetaCallNames = callNames.filter((n) => !ALL_META_TOOLS.includes(n));
+        const nonMetaCallNames = callNames.filter((n: string) => !ALL_META_TOOLS.includes(n));
         if (typeof requirements.minToolCalls === "number") {
           extraChecks.minToolCalls = nonMetaCallNames.length >= requirements.minToolCalls;
           if (!extraChecks.minToolCalls) extraReasons.push(`minToolCalls not met: got ${nonMetaCallNames.length} expected >= ${requirements.minToolCalls}`);

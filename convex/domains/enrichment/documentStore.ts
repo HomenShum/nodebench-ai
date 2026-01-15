@@ -6,7 +6,7 @@
  */
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "../../_generated/server";
-import { Id } from "../../_generated/dataModel";
+import { Id, Doc } from "../../_generated/dataModel";
 
 /**
  * Store or update fetched document content for a feed item.
@@ -26,7 +26,7 @@ export const storeFetchedContent = internalMutation({
   handler: async (ctx, args) => {
     // If feedItem exists, update its fullContentFetched field
     if (args.feedItemId) {
-      const feedItem = await ctx.db.get(args.feedItemId);
+      const feedItem = await ctx.db.get(args.feedItemId) as Doc<"feedItems"> | null;
       if (feedItem) {
         // Store content reference in feed item metadata
         await ctx.db.patch(args.feedItemId, {
@@ -38,7 +38,7 @@ export const storeFetchedContent = internalMutation({
 
     // Create a fact for the fetched content if fundingEventId exists
     if (args.fundingEventId) {
-      const fundingEvent = await ctx.db.get(args.fundingEventId);
+      const fundingEvent = await ctx.db.get(args.fundingEventId) as Doc<"fundingEvents"> | null;
       if (fundingEvent) {
         // Link the full content to the funding event
         // Could create a fact or update the event description
@@ -115,9 +115,9 @@ export const isContentFetched = query({
 
     // Query the cache table
     const cached = await ctx.db
-      .query("queryCache")
-      .withIndex("by_key", (q) => q.eq("queryKey", cacheKey))
-      .first();
+      .query("globalQueryCache")
+      .withIndex("by_queryKey", (q) => q.eq("queryKey", cacheKey))
+      .first() as Doc<"globalQueryCache"> | null;
 
     if (cached && cached.createdAt > cutoff) {
       return {

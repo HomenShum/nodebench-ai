@@ -1,5 +1,6 @@
 import { internalMutation, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
+import { Doc } from "../../_generated/dataModel";
 
 export const createPlan = internalMutation({
   args: {
@@ -43,14 +44,14 @@ export const listPlans = internalQuery({
     const goalFilter = (args.goal ?? "").toLowerCase();
     const limit = args.limit && args.limit > 0 ? args.limit : 50;
 
-    const rows = await ctx.db.query("mcpPlans").collect();
+    const rows = await ctx.db.query("mcpPlans").collect() as Doc<"mcpPlans">[];
     const filtered = goalFilter
-      ? rows.filter((p) => (p.goal ?? "").toLowerCase().includes(goalFilter))
+      ? rows.filter((p: Doc<"mcpPlans">) => (p.goal ?? "").toLowerCase().includes(goalFilter))
       : rows;
 
-    filtered.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+    filtered.sort((a: Doc<"mcpPlans">, b: Doc<"mcpPlans">) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 
-    return filtered.slice(0, limit).map((plan) => ({
+    return filtered.slice(0, limit).map((plan: Doc<"mcpPlans">) => ({
       id: plan.planId,
       goal: plan.goal,
       steps: plan.steps,
@@ -78,7 +79,7 @@ export const getPlan = internalQuery({
     const plan = await ctx.db
       .query("mcpPlans")
       .withIndex("by_planId", (q) => q.eq("planId", args.planId))
-      .first();
+      .first() as Doc<"mcpPlans"> | null;
     if (!plan) return null;
     return {
       id: plan.planId,
@@ -106,7 +107,7 @@ export const updatePlan = internalMutation({
     const existing = await ctx.db
       .query("mcpPlans")
       .withIndex("by_planId", (q) => q.eq("planId", args.planId))
-      .first();
+      .first() as Doc<"mcpPlans"> | null;
     const now = Date.now();
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -134,7 +135,7 @@ export const deletePlan = internalMutation({
     const existing = await ctx.db
       .query("mcpPlans")
       .withIndex("by_planId", (q) => q.eq("planId", args.planId))
-      .first();
+      .first() as Doc<"mcpPlans"> | null;
     if (!existing) return false;
     await ctx.db.delete(existing._id);
     return true;

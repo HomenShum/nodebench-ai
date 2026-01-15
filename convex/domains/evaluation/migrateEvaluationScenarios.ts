@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
+import type { Doc } from "../../_generated/dataModel";
 
 /**
  * Migrate evaluation scenarios from JSON pack to database
@@ -40,7 +41,7 @@ export const migrateScenarios = mutation({
       const existing = await ctx.db
         .query("evaluation_scenarios")
         .withIndex("by_scenario_id", (q) => q.eq("scenarioId", scenario.scenarioId))
-        .first();
+        .first() as Doc<"evaluation_scenarios"> | null;
 
       if (existing) {
         // Update existing scenario

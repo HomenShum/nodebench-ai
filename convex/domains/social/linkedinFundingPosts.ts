@@ -14,6 +14,7 @@ import {
   internalQuery,
   internalMutation,
 } from "../../_generated/server";
+import type { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Helper Functions
@@ -158,7 +159,7 @@ export const batchCheckCompaniesPosted = internalQuery({
         .withIndex("by_company", (q) => q.eq("companyNameNormalized", normalized))
         .filter((q) => q.gte(q.field("postedAt"), cutoffTime))
         .order("desc")
-        .first();
+        .first() as Doc<"linkedinFundingPosts"> | null;
 
       if (previousPost) {
         results[companyName] = {

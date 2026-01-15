@@ -764,7 +764,7 @@ export const getJobByKey = internalQuery({
     return await ctx.db
       .query("artifactPersistJobs")
       .withIndex("by_run_key", q => q.eq("runId", runId).eq("idempotencyKey", idempotencyKey))
-      .first();
+      .first() as Doc<"artifactPersistJobs"> | null;
   },
 });
 
@@ -783,8 +783,8 @@ export const upsertJobStatus = internalMutation({
     const existing = await ctx.db
       .query("artifactPersistJobs")
       .withIndex("by_run_key", q => q.eq("runId", runId).eq("idempotencyKey", idempotencyKey))
-      .first();
-    
+      .first() as Doc<"artifactPersistJobs"> | null;
+
     if (existing) {
       await ctx.db.patch(existing._id, { status, attempts, updatedAt: now });
     } else {
@@ -826,8 +826,8 @@ export const incrementRunStats = internalMutation({
     const existing = await ctx.db
       .query("artifactRunStatsShards")
       .withIndex("by_run_shard", q => q.eq("runId", runId).eq("shardId", shardId))
-      .first();
-    
+      .first() as Doc<"artifactRunStatsShards"> | null;
+
     if (existing) {
       await ctx.db.patch(existing._id, {
         jobsScheduled: existing.jobsScheduled + (deltas.jobsScheduled ?? 0),
@@ -866,16 +866,16 @@ export const getRunStats = internalQuery({
     const shards = await ctx.db
       .query("artifactRunStatsShards")
       .withIndex("by_run", q => q.eq("runId", runId))
-      .collect();
-    
+      .collect() as Doc<"artifactRunStatsShards">[];
+
     return {
-      jobsScheduled: shards.reduce((sum, s) => sum + s.jobsScheduled, 0),
-      jobsDeduped: shards.reduce((sum, s) => sum + s.jobsDeduped, 0),
-      deadLetters: shards.reduce((sum, s) => sum + s.deadLetters, 0),
-      occRetries: shards.reduce((sum, s) => sum + s.occRetries, 0),
-      noopsSkipped: shards.reduce((sum, s) => sum + s.noopsSkipped, 0),
-      artifactsInserted: shards.reduce((sum, s) => sum + s.artifactsInserted, 0),
-      artifactsPatched: shards.reduce((sum, s) => sum + s.artifactsPatched, 0),
+      jobsScheduled: shards.reduce((sum: number, s: Doc<"artifactRunStatsShards">) => sum + s.jobsScheduled, 0),
+      jobsDeduped: shards.reduce((sum: number, s: Doc<"artifactRunStatsShards">) => sum + s.jobsDeduped, 0),
+      deadLetters: shards.reduce((sum: number, s: Doc<"artifactRunStatsShards">) => sum + s.deadLetters, 0),
+      occRetries: shards.reduce((sum: number, s: Doc<"artifactRunStatsShards">) => sum + s.occRetries, 0),
+      noopsSkipped: shards.reduce((sum: number, s: Doc<"artifactRunStatsShards">) => sum + s.noopsSkipped, 0),
+      artifactsInserted: shards.reduce((sum: number, s: Doc<"artifactRunStatsShards">) => sum + s.artifactsInserted, 0),
+      artifactsPatched: shards.reduce((sum: number, s: Doc<"artifactRunStatsShards">) => sum + s.artifactsPatched, 0),
       shardCount: shards.length,
     };
   },
@@ -904,11 +904,11 @@ export const cleanupArtifactJobs = internalMutation({
     const doneCutoff = now - SEVEN_DAYS_MS;
     const oldDoneJobs = await ctx.db
       .query("artifactPersistJobs")
-      .withIndex("by_status_createdAt", q => 
+      .withIndex("by_status_createdAt", q =>
         q.eq("status", "done").lt("createdAt", doneCutoff)
       )
-      .take(500); // Batch limit
-    
+      .take(500) as Doc<"artifactPersistJobs">[]; // Batch limit
+
     for (const job of oldDoneJobs) {
       await ctx.db.delete(job._id);
       deletedDone++;
@@ -918,11 +918,11 @@ export const cleanupArtifactJobs = internalMutation({
     const failedCutoff = now - FOURTEEN_DAYS_MS;
     const oldFailedJobs = await ctx.db
       .query("artifactPersistJobs")
-      .withIndex("by_status_createdAt", q => 
+      .withIndex("by_status_createdAt", q =>
         q.eq("status", "failed").lt("createdAt", failedCutoff)
       )
-      .take(500);
-    
+      .take(500) as Doc<"artifactPersistJobs">[];
+
     for (const job of oldFailedJobs) {
       await ctx.db.delete(job._id);
       deletedFailed++;
@@ -950,8 +950,8 @@ export const cleanupDeadLetters = internalMutation({
       .query("artifactDeadLetters")
       .withIndex("by_run_createdAt")
       .filter(q => q.lt(q.field("createdAt"), cutoff))
-      .take(500);
-    
+      .take(500) as Doc<"artifactDeadLetters">[];
+
     for (const dl of oldDeadLetters) {
       await ctx.db.delete(dl._id);
       deleted++;
@@ -983,11 +983,11 @@ export const linkArtifactToSection = internalMutation({
     // Check if link already exists
     const existing = await ctx.db
       .query("artifactLinks")
-      .withIndex("by_run_artifact", q => 
+      .withIndex("by_run_artifact", q =>
         q.eq("runId", runId).eq("artifactId", artifactId)
       )
-      .first();
-    
+      .first() as Doc<"artifactLinks"> | null;
+
     if (existing) {
       // Update if different section
       if (existing.sectionId !== sectionId) {

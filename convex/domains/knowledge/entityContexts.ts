@@ -5,7 +5,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import {
   evaluateMemoryQuality,
   isFactHighConfidence,
@@ -62,7 +62,7 @@ export const storeEntityContext = mutation({
       .withIndex("by_entity", (q) =>
         q.eq("entityName", args.entityName).eq("entityType", args.entityType)
       )
-      .first();
+      .first() as Doc<"entityContexts"> | null;
 
     if (existing) {
       // Update existing context
@@ -139,7 +139,7 @@ export const getEntityContext = query({
       .withIndex("by_entity", (q) =>
         q.eq("entityName", args.entityName).eq("entityType", args.entityType)
       )
-      .first();
+      .first() as Doc<"entityContexts"> | null;
 
     if (!context) {
       return null;
@@ -166,7 +166,7 @@ export const getEntityContextById = internalQuery({
     entityId: v.id("entityContexts"),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.entityId);
+    return await ctx.db.get(args.entityId) as Doc<"entityContexts"> | null;
   },
 });
 
@@ -185,7 +185,7 @@ export const getEntityContextByName = query({
       .withIndex("by_entity", (q) =>
         q.eq("entityName", args.entityName).eq("entityType", "company")
       )
-      .first();
+      .first() as Doc<"entityContexts"> | null;
 
     // Fall back to person
     if (!context) {
@@ -194,7 +194,7 @@ export const getEntityContextByName = query({
         .withIndex("by_entity", (q) =>
           q.eq("entityName", args.entityName).eq("entityType", "person")
         )
-        .first();
+        .first() as Doc<"entityContexts"> | null;
     }
 
     if (!context) {
@@ -223,16 +223,16 @@ export const updateAccessCount = mutation({
     id: v.id("entityContexts"),
   },
   handler: async (ctx, args) => {
-    const context = await ctx.db.get(args.id);
+    const context = await ctx.db.get(args.id) as Doc<"entityContexts"> | null;
     if (!context) {
       throw new Error("Entity context not found");
     }
-    
+
     await ctx.db.patch(args.id, {
       lastAccessedAt: Date.now(),
       accessCount: context.accessCount + 1,
     });
-    
+
     console.log(`[entityContexts] Cache hit for ${context.entityType}: ${context.entityName} (count: ${context.accessCount + 1})`);
   },
 });
@@ -254,24 +254,24 @@ export const listEntityContexts = query({
     const results = await ctx.db
       .query("entityContexts")
       .withIndex("by_user", (q) => q.eq("researchedBy", userId))
-      .collect();
-    
+      .collect() as Doc<"entityContexts">[];
+
     // Filter by entity type if specified
     const filtered = args.entityType
-      ? results.filter((r) => r.entityType === args.entityType)
+      ? results.filter((r: Doc<"entityContexts">) => r.entityType === args.entityType)
       : results;
-    
+
     // Sort by most recently accessed
-    const sorted = filtered.sort((a, b) => b.lastAccessedAt - a.lastAccessedAt);
-    
+    const sorted = filtered.sort((a: Doc<"entityContexts">, b: Doc<"entityContexts">) => b.lastAccessedAt - a.lastAccessedAt);
+
     // Limit results
     const limited = args.limit ? sorted.slice(0, args.limit) : sorted;
-    
+
     // Add age and stale flag
-    return limited.map((context) => {
+    return limited.map((context: Doc<"entityContexts">) => {
       const age = Date.now() - context.researchedAt;
       const isStale = age > 7 * 24 * 60 * 60 * 1000;
-      
+
       return {
         ...context,
         isStale,
@@ -301,18 +301,18 @@ export const searchEntityContexts = query({
         q.search("entityName", args.searchTerm)
           .eq("researchedBy", userId)
       )
-      .collect();
-    
+      .collect() as Doc<"entityContexts">[];
+
     // Filter by entity type if specified
     const filtered = args.entityType
-      ? results.filter((r) => r.entityType === args.entityType)
+      ? results.filter((r: Doc<"entityContexts">) => r.entityType === args.entityType)
       : results;
-    
+
     // Add age and stale flag
-    return filtered.map((context) => {
+    return filtered.map((context: Doc<"entityContexts">) => {
       const age = Date.now() - context.researchedAt;
       const isStale = age > 7 * 24 * 60 * 60 * 1000;
-      
+
       return {
         ...context,
         isStale,
@@ -334,17 +334,17 @@ export const deleteEntityContext = mutation({
     if (!userId) {
       throw new Error("Not authenticated");
     }
-    
-    const context = await ctx.db.get(args.id);
+
+    const context = await ctx.db.get(args.id) as Doc<"entityContexts"> | null;
     if (!context) {
       throw new Error("Entity context not found");
     }
-    
+
     // Only allow deletion if user owns the context
     if (context.researchedBy !== userId) {
       throw new Error("Not authorized to delete this context");
     }
-    
+
     await ctx.db.delete(args.id);
     console.log(`[entityContexts] Deleted context for ${context.entityType}: ${context.entityName}`);
   },
@@ -359,13 +359,13 @@ export const markStaleContexts = internalMutation({
   handler: async (ctx) => {
     const now = Date.now();
     const sevenDaysAgo = now - MEMORY_LIMITS.entityStaleDays * 24 * 60 * 60 * 1000;
-    
-    const contexts = await ctx.db.query("entityContexts").collect();
-    
+
+    const contexts = await ctx.db.query("entityContexts").collect() as Doc<"entityContexts">[];
+
     let markedCount = 0;
     for (const context of contexts) {
       if (context.researchedAt < sevenDaysAgo && !context.isStale) {
-        await ctx.db.patch(context._id, { 
+        await ctx.db.patch(context._id, {
           isStale: true,
           quality: context.quality ? {
             ...context.quality,
@@ -375,7 +375,7 @@ export const markStaleContexts = internalMutation({
         markedCount++;
       }
     }
-    
+
     console.log(`[entityContexts] Marked ${markedCount} contexts as stale`);
     return { markedCount };
   },
@@ -395,21 +395,21 @@ export const getEntityContextStats = query({
     const contexts = await ctx.db
       .query("entityContexts")
       .withIndex("by_user", (q) => q.eq("researchedBy", userId))
-      .collect();
-    
+      .collect() as Doc<"entityContexts">[];
+
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-    
+
     const stats = {
       total: contexts.length,
-      companies: contexts.filter((c) => c.entityType === "company").length,
-      people: contexts.filter((c) => c.entityType === "person").length,
-      fresh: contexts.filter((c) => c.researchedAt >= sevenDaysAgo).length,
-      stale: contexts.filter((c) => c.researchedAt < sevenDaysAgo).length,
-      totalCacheHits: contexts.reduce((sum, c) => sum + c.accessCount, 0),
-      mostAccessed: contexts.sort((a, b) => b.accessCount - a.accessCount).slice(0, 5),
+      companies: contexts.filter((c: Doc<"entityContexts">) => c.entityType === "company").length,
+      people: contexts.filter((c: Doc<"entityContexts">) => c.entityType === "person").length,
+      fresh: contexts.filter((c: Doc<"entityContexts">) => c.researchedAt >= sevenDaysAgo).length,
+      stale: contexts.filter((c: Doc<"entityContexts">) => c.researchedAt < sevenDaysAgo).length,
+      totalCacheHits: contexts.reduce((sum: number, c: Doc<"entityContexts">) => sum + c.accessCount, 0),
+      mostAccessed: contexts.sort((a: Doc<"entityContexts">, b: Doc<"entityContexts">) => b.accessCount - a.accessCount).slice(0, 5),
     };
-    
+
     return stats;
   },
 });
@@ -424,7 +424,7 @@ export const getEntityContextStats = query({
 export const listAllForGC = internalQuery({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("entityContexts").collect();
+    return await ctx.db.query("entityContexts").collect() as Doc<"entityContexts">[];
   },
 });
 
@@ -449,10 +449,10 @@ export const markStale = internalMutation({
     id: v.id("entityContexts"),
   },
   handler: async (ctx, args) => {
-    const entity = await ctx.db.get(args.id);
+    const entity = await ctx.db.get(args.id) as Doc<"entityContexts"> | null;
     if (!entity) return;
-    
-    await ctx.db.patch(args.id, { 
+
+    await ctx.db.patch(args.id, {
       isStale: true,
       quality: entity.quality ? {
         ...entity.quality,
@@ -485,11 +485,11 @@ export const trimFacts = internalMutation({
     maxFacts: v.number(),
   },
   handler: async (ctx, args) => {
-    const entity = await ctx.db.get(args.id);
+    const entity = await ctx.db.get(args.id) as Doc<"entityContexts"> | null;
     if (!entity || !entity.structuredFacts) return;
-    
+
     // Keep most recent facts (by timestamp), prioritize high confidence
-    const sorted = [...entity.structuredFacts].sort((a, b) => {
+    const sorted = [...entity.structuredFacts].sort((a: StructuredFact, b: StructuredFact) => {
       // High confidence first
       if (a.isHighConfidence !== b.isHighConfidence) {
         return a.isHighConfidence ? -1 : 1;
@@ -497,15 +497,15 @@ export const trimFacts = internalMutation({
       // Then by timestamp (newer first)
       return b.timestamp.localeCompare(a.timestamp);
     });
-    
+
     const trimmed = sorted.slice(0, args.maxFacts);
-    
+
     await ctx.db.patch(args.id, {
       structuredFacts: trimmed,
       factCount: trimmed.length,
       version: entity.version + 1,
     });
-    
+
     console.log(`[entityContexts] Trimmed ${entity.entityName} from ${entity.structuredFacts.length} to ${trimmed.length} facts`);
   },
 });
@@ -527,9 +527,9 @@ export const mergeFactsIntoMemory = internalMutation({
     reviewSummary: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const entity = await ctx.db.get(args.entityId);
+    const entity = await ctx.db.get(args.entityId) as Doc<"entityContexts"> | null;
     if (!entity) throw new Error("Entity not found");
-    
+
     const now = new Date().toISOString();
     const existingFacts: StructuredFact[] = entity.structuredFacts || [];
     const existingConflicts = entity.conflicts || [];
@@ -648,33 +648,33 @@ export const upgradeToDeepMemory = internalMutation({
     heuristics: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const entity = await ctx.db.get(args.entityId);
+    const entity = await ctx.db.get(args.entityId) as Doc<"entityContexts"> | null;
     if (!entity) throw new Error("Entity not found");
-    
+
     const now = new Date().toISOString();
-    
+
     // Trim to limits
     const trimmedNarratives = args.narratives
       .slice(0, MEMORY_LIMITS.maxNarrativesPerEntity)
-      .map((n: any) => ({ ...n, lastUpdated: now }));
+      .map((n: { label: string; description: string; supportingFactIds: string[]; isWellSupported: boolean }) => ({ ...n, lastUpdated: now }));
 
     const trimmedHeuristics = args.heuristics
       .slice(0, MEMORY_LIMITS.maxHeuristicsPerEntity);
 
     // Re-evaluate quality with new data
     const daysSinceResearch = (Date.now() - entity.researchedAt) / (1000 * 60 * 60 * 24);
-    const activeFacts = (entity.structuredFacts || []).filter((f: any) => !f.isOutdated);
+    const activeFacts = (entity.structuredFacts || []).filter((f: StructuredFact) => !f.isOutdated);
 
     const qualityResult = evaluateMemoryQuality({
       factCount: activeFacts.length,
       daysSinceResearch,
-      unresolvedConflictCount: (entity.conflicts || []).filter((c: any) => c.status === "unresolved").length,
+      unresolvedConflictCount: (entity.conflicts || []).filter((c: { status: string }) => c.status === "unresolved").length,
       sourceCount: entity.sources.length,
-      factConfidences: activeFacts.map((f: any) => f.isHighConfidence),
+      factConfidences: activeFacts.map((f: StructuredFact) => f.isHighConfidence),
       narrativeCount: trimmedNarratives.length,
       heuristicCount: trimmedHeuristics.length,
     });
-    
+
     await ctx.db.patch(args.entityId, {
       narratives: trimmedNarratives,
       heuristics: trimmedHeuristics,
@@ -715,7 +715,7 @@ export const getByCanonicalKey = query({
     return await ctx.db
       .query("entityContexts")
       .withIndex("by_canonicalKey", q => q.eq("canonicalKey", args.canonicalKey))
-      .first();
+      .first() as Doc<"entityContexts"> | null;
   },
 });
 
@@ -767,8 +767,8 @@ export const getEntitiesByCluster = query({
   handler: async (ctx, args) => {
     // Note: Would need an index on clusterId for efficient querying
     // For now, we'll filter in-memory
-    const entities = await ctx.db.query("entityContexts").collect();
-    return entities.filter(e => e.clusterId === args.clusterId);
+    const entities = await ctx.db.query("entityContexts").collect() as Doc<"entityContexts">[];
+    return entities.filter((e: Doc<"entityContexts">) => e.clusterId === args.clusterId);
   },
 });
 
@@ -783,8 +783,8 @@ export const getOddOneOutEntities = query({
     const entities = await ctx.db
       .query("entityContexts")
       .withIndex("by_user", q => q.eq("researchedBy", args.userId))
-      .collect();
-    
-    return entities.filter(e => e.isOddOneOut === true);
+      .collect() as Doc<"entityContexts">[];
+
+    return entities.filter((e: Doc<"entityContexts">) => e.isOddOneOut === true);
   },
 });

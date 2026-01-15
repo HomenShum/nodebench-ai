@@ -8,7 +8,7 @@
 import { action, internalAction, internalMutation, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Internal query to list non-archived documents for a user
@@ -19,7 +19,7 @@ export const listUserDocsNotArchived = internalQuery({
       .query("documents")
       .withIndex("by_user", (q) => q.eq("createdBy", userId))
       .filter((q) => q.eq(q.field("isArchived"), false))
-      .collect();
+      .collect() as Doc<"documents">[];
   },
 });
 
@@ -42,10 +42,10 @@ export const getDocumentsToIndex = internalQuery({
       .paginate({
         cursor: args.cursor || null,
         numItems: limit,
-      });
+      }) as { page: Doc<"documents">[]; isDone: boolean; continueCursor: string };
 
     return {
-      documents: results.page.map((doc: any) => ({
+      documents: results.page.map((doc: Doc<"documents">) => ({
         _id: doc._id,
         title: doc.title,
         createdBy: doc.createdBy,
@@ -241,7 +241,7 @@ export const getDocumentInfo = internalQuery({
     documentId: v.id("documents"),
   },
   handler: async (ctx, args) => {
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) return null;
 
     return {

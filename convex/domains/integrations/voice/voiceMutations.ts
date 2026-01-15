@@ -6,7 +6,7 @@
 
 import { internalMutation, internalQuery } from "../../../_generated/server";
 import { v } from "convex/values";
-import type { Id } from "../../../_generated/dataModel";
+import type { Doc, Id } from "../../../_generated/dataModel";
 
 /**
  * Create a new voice session
@@ -31,7 +31,7 @@ export const createVoiceSession = internalMutation({
     const existing = await ctx.db
       .query("voiceSessions")
       .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
-      .first();
+      .first() as Doc<"voiceSessions"> | null;
     
     if (existing) {
       // Update existing session
@@ -68,8 +68,8 @@ export const getVoiceSession = internalQuery({
     const session = await ctx.db
       .query("voiceSessions")
       .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
-      .first();
-    
+      .first() as Doc<"voiceSessions"> | null;
+
     return session;
   },
 });
@@ -87,12 +87,12 @@ export const updateVoiceSessionActivity = internalMutation({
     const session = await ctx.db
       .query("voiceSessions")
       .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
-      .first();
-    
+      .first() as Doc<"voiceSessions"> | null;
+
     if (!session) {
       throw new Error(`Voice session not found: ${args.sessionId}`);
     }
-    
+
     await ctx.db.patch(session._id, {
       lastActivityAt: Date.now(),
     });
@@ -112,8 +112,8 @@ export const deleteVoiceSession = internalMutation({
     const session = await ctx.db
       .query("voiceSessions")
       .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
-      .first();
-    
+      .first() as Doc<"voiceSessions"> | null;
+
     if (session) {
       await ctx.db.delete(session._id);
     }
@@ -131,8 +131,8 @@ export const getUserVoiceSessions = internalQuery({
     const sessions = await ctx.db
       .query("voiceSessions")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
-    
+      .collect() as Doc<"voiceSessions">[];
+
     return sessions;
   },
 });
@@ -144,17 +144,17 @@ export const cleanupStaleSessions = internalMutation({
   args: {},
   handler: async (ctx) => {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    
+
     const staleSessions = await ctx.db
       .query("voiceSessions")
       .withIndex("by_last_activity")
       .filter((q) => q.lt(q.field("lastActivityAt"), oneDayAgo))
-      .collect();
-    
+      .collect() as Doc<"voiceSessions">[];
+
     for (const session of staleSessions) {
       await ctx.db.delete(session._id);
     }
-    
+
     return { deleted: staleSessions.length };
   },
 });

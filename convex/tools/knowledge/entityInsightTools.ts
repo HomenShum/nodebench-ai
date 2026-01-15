@@ -184,7 +184,7 @@ The result includes personaHooks with explicit PASS/FAIL criteria for each perso
       // Persona Hooks Summary
       if (result.personaHooks) {
         sections.push("## Persona Quality Gates");
-        const personas = Object.entries(result.personaHooks);
+        const personas = Object.entries(result.personaHooks) as Array<[string, { passCriteria?: string[]; failTriggers?: string[] }]>;
         for (const [persona, hooks] of personas) {
           const passCount = hooks.passCriteria?.length || 0;
           const failCount = hooks.failTriggers?.length || 0;

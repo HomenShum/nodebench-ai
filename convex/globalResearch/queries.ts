@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../_generated/server";
+import { Doc } from "../_generated/dataModel";
 import { hashSync } from "../../shared/artifacts";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -164,7 +165,7 @@ export const upsertQuery = internalMutation({
     const existing = await ctx.db
       .query("globalQueries")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueries"> | null;
 
     if (existing) {
       return {
@@ -213,10 +214,10 @@ export const getByKey = internalQuery({
     queryKey: v.string(),
   },
   handler: async (ctx, { queryKey }) => {
-    return ctx.db
+    return (await ctx.db
       .query("globalQueries")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first()) as Doc<"globalQueries"> | null;
   },
 });
 
@@ -271,7 +272,7 @@ export const checkQueryExists = internalQuery({
     const existing = await ctx.db
       .query("globalQueries")
       .withIndex("by_queryKey", (q) => q.eq("queryKey", queryKey))
-      .first();
+      .first() as Doc<"globalQueries"> | null;
 
     if (existing) {
       return {

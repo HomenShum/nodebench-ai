@@ -453,12 +453,12 @@ export const analyzeDeliveryFrequency = internalAction({
     );
 
     // Calculate current frequency (messages per day)
-    const deliveredEvents = events.filter((e) => e.eventType === "delivered");
+    const deliveredEvents = events.filter((e: Doc<"engagementEvents">) => e.eventType === "delivered");
     const currentFrequency = deliveredEvents.length / 30;
 
     // Calculate engagement metrics
-    const dismissRate = events.filter((e) => e.eventType === "dismissed").length / Math.max(events.length, 1);
-    const clickRate = events.filter((e) => e.eventType === "clicked").length / Math.max(events.length, 1);
+    const dismissRate = events.filter((e: Doc<"engagementEvents">) => e.eventType === "dismissed").length / Math.max(events.length, 1);
+    const clickRate = events.filter((e: Doc<"engagementEvents">) => e.eventType === "clicked").length / Math.max(events.length, 1);
 
     // Determine recommended frequency
     let recommendedFrequency = currentFrequency;
@@ -588,7 +588,7 @@ export const generateEngagementReport = internalAction({
       { limit: 5, days }
     );
     const topPerformers = topContent.map(
-      (c) => `${c.contentId}: ${(c.metrics.clickRate * 100).toFixed(0)}% click rate via ${c.bestChannel}`
+      (c: ContentPerformance) => `${c.contentId}: ${(c.metrics.clickRate * 100).toFixed(0)}% click rate via ${c.bestChannel}`
     );
 
     // Generate summary

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 import { detectNodeType, createBlockJson, extractPlainText, coerceToBlockJson } from "../../lib/markdown";
 
 /* ------------------------------------------------------------------ */
@@ -20,7 +20,7 @@ export const by_document = query({
     const nodes = await ctx.db
       .query("nodes")
       .withIndex("by_document", (q) => q.eq("documentId", docId))
-      .collect();
+      .collect() as Doc<"nodes">[];
     return nodes;
   },
 });
@@ -28,12 +28,12 @@ export const by_document = query({
 export const searchByText = query({
   args: { docId: v.id("documents"), query: v.string() },
   handler: async (ctx, { docId, query }) => {
-    return ctx.db
+    return await ctx.db
       .query("nodes")
       .withSearchIndex("search_text", (q) =>
         q.search("text", query).eq("documentId", docId),
       )
-      .take(20);
+      .take(20) as Doc<"nodes">[];
   },
 });
 
@@ -103,7 +103,7 @@ export const update = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("unauthenticated");
 
-    const node = await ctx.db.get(nodeId);
+    const node = await ctx.db.get(nodeId) as Doc<"nodes"> | null;
     if (!node) throw new Error("not found");
     assertCanEdit(userId, node.authorId);
 
@@ -163,8 +163,8 @@ export const updateOrders = mutation({
 
     let changed = 0;
     for (const [nodeIdStr, nextOrder] of dedup) {
-      const nodeId = nodeIdStr;
-      const node = await ctx.db.get(nodeId);
+      const nodeId = nodeIdStr as Id<"nodes">;
+      const node = await ctx.db.get(nodeId) as Doc<"nodes"> | null;
       if (!node) continue;
       assertCanEdit(userId, node.authorId);
 
@@ -182,9 +182,11 @@ export const updateOrders = mutation({
       // Keep the matching child relation order in sync if it exists.
       if (node.parentId) {
         // Iterate relations to avoid relying on unsupported compound filters.
-        for await (const rel of ctx.db
+        const rels = await ctx.db
           .query("relations")
-          .withIndex("by_to", (q) => q.eq("to", nodeId))) {
+          .withIndex("by_to", (q) => q.eq("to", nodeId))
+          .collect() as Doc<"relations">[];
+        for (const rel of rels) {
           if (rel.relationTypeId === "child" && rel.from === node.parentId) {
             await ctx.db.patch(rel._id, { order: nextOrder });
             break;
@@ -205,7 +207,7 @@ export const remove = mutation({
   handler: async (ctx, { nodeId }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("unauthenticated");
-    const root = await ctx.db.get(nodeId);
+    const root = await ctx.db.get(nodeId) as Doc<"nodes"> | null;
     if (!root) throw new Error("not found");
     assertCanEdit(userId, root.authorId);
 
@@ -213,15 +215,19 @@ export const remove = mutation({
     while (stack.length) {
       const id = stack.pop()!;
       // delete relations starting from this node
-      for await (const rel of ctx.db
+      const rels = await ctx.db
         .query("relations")
-        .withIndex("by_from", (q) => q.eq("from", id))) {
+        .withIndex("by_from", (q) => q.eq("from", id))
+        .collect() as Doc<"relations">[];
+      for (const rel of rels) {
         await ctx.db.delete(rel._id);
       }
       // collect children
-      for await (const child of ctx.db
+      const children = await ctx.db
         .query("nodes")
-        .withIndex("by_parent", (q) => q.eq("parentId", id))) {
+        .withIndex("by_parent", (q) => q.eq("parentId", id))
+        .collect() as Doc<"nodes">[];
+      for (const child of children) {
         stack.push(child._id);
       }
       await ctx.db.delete(id);
@@ -243,15 +249,15 @@ export const upsertMetadataSection = internalMutation({
     const nodes = await ctx.db
       .query("nodes")
       .withIndex("by_document", (q) => q.eq("documentId", documentId))
-      .collect();
+      .collect() as Doc<"nodes">[];
 
     // Remove previous system-generated metadata nodes
-    const toDelete = nodes.filter((n: any) => n.isUserNode === false && (n.text?.includes("📊 Metadata (Auto-Generated)") || n.text?.includes("Analyzed Files")));
+    const toDelete = nodes.filter((n: Doc<"nodes">) => n.isUserNode === false && (n.text?.includes("📊 Metadata (Auto-Generated)") || n.text?.includes("Analyzed Files")));
     for (const n of toDelete) {
       await ctx.db.delete(n._id);
     }
 
-    const minOrder = nodes.length ? Math.min(...nodes.map((n: any) => n.order ?? 0)) : 0;
+    const minOrder = nodes.length ? Math.min(...nodes.map((n: Doc<"nodes">) => n.order ?? 0)) : 0;
     const orderTop = minOrder - 1000;
 
     const now = Date.now();

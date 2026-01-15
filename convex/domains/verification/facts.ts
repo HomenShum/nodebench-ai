@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { query, mutation, internalMutation, internalQuery } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -65,17 +66,17 @@ export const getFactsBySection = query({
  * Get a single fact by ID
  */
 export const getFactById = query({
-  args: { 
+  args: {
     runId: v.string(),
     factId: v.string(),
   },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("facts")
-      .withIndex("by_run_fact", (q) => 
+      .withIndex("by_run_fact", (q) =>
         q.eq("runId", args.runId).eq("factId", args.factId)
       )
-      .first();
+      .first() as Doc<"facts"> | null;
   },
 });
 
@@ -94,26 +95,26 @@ export const internalGetFactsForVerification = internalQuery({
     if (args.factIds && args.factIds.length > 0) {
       // Get specific facts
       facts = await Promise.all(
-        args.factIds.map((factId: any) =>
+        args.factIds.map((factId: string) =>
           ctx.db
             .query("facts")
             .withIndex("by_run_fact", (q) => q.eq("runId", args.runId).eq("factId", factId))
-            .first()
+            .first() as Promise<Doc<"facts"> | null>
         )
       );
-      return facts.filter(Boolean);
+      return facts.filter((f): f is Doc<"facts"> => f !== null);
     }
 
     if (args.sectionKeys && args.sectionKeys.length > 0) {
       // Get facts from specific sections
       const factLists = await Promise.all(
-        args.sectionKeys.map((sectionKey: any) =>
+        args.sectionKeys.map((sectionKey: string) =>
           ctx.db
             .query("facts")
             .withIndex("by_run_section", (q) =>
               q.eq("runId", args.runId).eq("sectionKey", sectionKey)
             )
-            .collect()
+            .collect() as Promise<Doc<"facts">[]>
         )
       );
       return factLists.flat();
@@ -149,11 +150,11 @@ export const registerFact = mutation({
     // Check if fact already exists
     const existing = await ctx.db
       .query("facts")
-      .withIndex("by_run_fact", (q) => 
+      .withIndex("by_run_fact", (q) =>
         q.eq("runId", args.runId).eq("factId", args.factId)
       )
-      .first();
-    
+      .first() as Doc<"facts"> | null;
+
     if (existing) {
       // Update claim text and artifacts
       await ctx.db.patch(existing._id, {
@@ -162,7 +163,7 @@ export const registerFact = mutation({
       });
       return { action: "updated", id: existing._id };
     }
-    
+
     // Insert new fact
     const id = await ctx.db.insert("facts", {
       runId: args.runId,
@@ -172,7 +173,7 @@ export const registerFact = mutation({
       artifactIds: args.artifactIds || [],
       createdAt: Date.now(),
     });
-    
+
     return { action: "created", id };
   },
 });
@@ -192,11 +193,11 @@ export const internalRegisterFact = internalMutation({
     // Check if fact already exists
     const existing = await ctx.db
       .query("facts")
-      .withIndex("by_run_fact", (q) => 
+      .withIndex("by_run_fact", (q) =>
         q.eq("runId", args.runId).eq("factId", args.factId)
       )
-      .first();
-    
+      .first() as Doc<"facts"> | null;
+
     if (existing) {
       await ctx.db.patch(existing._id, {
         claimText: args.claimText,
@@ -230,22 +231,22 @@ export const linkArtifactsToFact = mutation({
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
-    
+
     const fact = await ctx.db
       .query("facts")
-      .withIndex("by_run_fact", (q) => 
+      .withIndex("by_run_fact", (q) =>
         q.eq("runId", args.runId).eq("factId", args.factId)
       )
-      .first();
-    
+      .first() as Doc<"facts"> | null;
+
     if (!fact) {
       return { action: "skipped", reason: "fact not found" };
     }
-    
+
     // Merge artifact IDs (dedupe)
     const merged = [...new Set([...fact.artifactIds, ...args.artifactIds])];
     await ctx.db.patch(fact._id, { artifactIds: merged });
-    
+
     return { action: "linked", id: fact._id };
   },
 });

@@ -1,6 +1,7 @@
 import { query, mutation, internalMutation, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Doc } from "../../_generated/dataModel";
 
 /* Slack */
 export const slackGetConnection = query({
@@ -17,7 +18,7 @@ export const slackGetConnection = query({
     const existing = await ctx.db
       .query("slackAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"slackAccounts"> | null;
     if (!existing) return { connected: false };
     return {
       connected: true,
@@ -47,7 +48,7 @@ export const slackSaveTokens = internalMutation({
     const existing = await ctx.db
       .query("slackAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"slackAccounts"> | null;
 
     const now = Date.now();
     if (existing) {
@@ -95,7 +96,7 @@ export const githubGetConnection = query({
     const existing = await ctx.db
       .query("githubAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"githubAccounts"> | null;
     if (!existing) return { connected: false };
     return { connected: true, username: existing.username };
   },
@@ -116,7 +117,7 @@ export const githubSaveTokens = internalMutation({
     const existing = await ctx.db
       .query("githubAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"githubAccounts"> | null;
     const now = Date.now();
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -156,7 +157,7 @@ export const notionGetConnection = query({
     const existing = await ctx.db
       .query("notionAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"notionAccounts"> | null;
     if (!existing) return { connected: false };
     return {
       connected: true,
@@ -181,7 +182,7 @@ export const notionSaveTokens = internalMutation({
     const existing = await ctx.db
       .query("notionAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"notionAccounts"> | null;
     const now = Date.now();
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -219,7 +220,7 @@ export const disconnectIntegration = mutation({
     const existing = await ctx.db
       .query(table as any)
       .withIndex("by_user", (q: any) => q.eq("userId", userId))
-      .first();
+      .first() as { _id: Doc<"slackAccounts">["_id"] | Doc<"githubAccounts">["_id"] | Doc<"notionAccounts">["_id"] } | null;
     if (existing) {
       await ctx.db.delete(existing._id);
     }
@@ -249,7 +250,7 @@ export const getSlackAccount = internalQuery({
     const acc = await ctx.db
       .query("slackAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"slackAccounts"> | null;
     if (!acc) return null;
     return {
       accessToken: acc.accessToken,
@@ -274,7 +275,7 @@ export const updateSlackMeta = internalMutation({
     const existing = await ctx.db
       .query("slackAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"slackAccounts"> | null;
     if (!existing) return null;
     await ctx.db.patch(existing._id, {
       teamId: args.teamId ?? existing.teamId,
@@ -301,7 +302,7 @@ export const getGithubAccount = internalQuery({
     const acc = await ctx.db
       .query("githubAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"githubAccounts"> | null;
     if (!acc) return null;
     return { accessToken: acc.accessToken, username: acc.username };
   },
@@ -316,7 +317,7 @@ export const updateGithubMeta = internalMutation({
     const existing = await ctx.db
       .query("githubAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"githubAccounts"> | null;
     if (!existing) return null;
     await ctx.db.patch(existing._id, {
       username: args.username ?? existing.username,
@@ -343,7 +344,7 @@ export const getNotionAccount = internalQuery({
     const acc = await ctx.db
       .query("notionAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"notionAccounts"> | null;
     if (!acc) return null;
     return {
       accessToken: acc.accessToken,
@@ -367,7 +368,7 @@ export const updateNotionMeta = internalMutation({
     const existing = await ctx.db
       .query("notionAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"notionAccounts"> | null;
     if (!existing) return null;
     await ctx.db.patch(existing._id, {
       botId: args.botId ?? existing.botId,

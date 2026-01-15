@@ -80,11 +80,11 @@ export const resolveInterrupt = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const interrupt = await ctx.db.get(args.interruptId);
+    const interrupt = await ctx.db.get(args.interruptId) as { _id: typeof args.interruptId; status: string; allowedDecisions: string[] } | null;
     if (!interrupt) {
       throw new Error(`Interrupt ${args.interruptId} not found`);
     }
-    
+
     if (interrupt.status !== "pending") {
       throw new Error(`Interrupt ${args.interruptId} already resolved`);
     }

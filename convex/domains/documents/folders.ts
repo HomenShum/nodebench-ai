@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
-import { Id } from "../../_generated/dataModel";
+import { Id, Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -131,7 +131,7 @@ export const updateFolder = mutation({
 
     const userId = getSafeUserIdFromIdentity(identity);
 
-    const folder = await ctx.db.get(args.folderId);
+    const folder = await ctx.db.get(args.folderId) as Doc<"folders"> | null;
     if (!folder) {
       throw new Error("Folder not found");
     }
@@ -144,10 +144,10 @@ export const updateFolder = mutation({
     if (args.name && args.name !== folder.name) {
       const existingFolder = await ctx.db
         .query("folders")
-        .withIndex("by_user_name", (q) => 
+        .withIndex("by_user_name", (q) =>
           q.eq("userId", userId).eq("name", args.name)
         )
-        .first();
+        .first() as Doc<"folders"> | null;
 
       if (existingFolder && existingFolder._id !== args.folderId) {
         throw new Error("A folder with this name already exists");
@@ -177,7 +177,7 @@ export const deleteFolder = mutation({
       throw new Error("Not authenticated");
     }
 
-    const folder = await ctx.db.get(args.folderId);
+    const folder = await ctx.db.get(args.folderId) as Doc<"folders"> | null;
     if (!folder) {
       throw new Error("Folder not found");
     }
@@ -221,7 +221,7 @@ export const addDocumentToFolder = mutation({
     }
 
     // Verify document exists and user owns it
-    const document = await ctx.db.get(args.documentId);
+    const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!document) {
       throw new Error("Document not found");
     }
@@ -230,7 +230,7 @@ export const addDocumentToFolder = mutation({
     }
 
     // Verify folder exists and user owns it
-    const folder = await ctx.db.get(args.folderId);
+    const folder = await ctx.db.get(args.folderId) as Doc<"folders"> | null;
     if (!folder) {
       throw new Error("Folder not found");
     }
@@ -278,10 +278,10 @@ export const removeDocumentFromFolder = mutation({
 
     const relationship = await ctx.db
       .query("documentFolders")
-      .withIndex("by_document_folder", (q) => 
+      .withIndex("by_document_folder", (q) =>
         q.eq("documentId", args.documentId).eq("folderId", args.folderId)
       )
-      .first();
+      .first() as Doc<"documentFolders"> | null;
 
     if (!relationship) {
       return { success: true, message: "Document not in folder" };
@@ -374,7 +374,7 @@ export const getFolderWithDocuments = query({
       userId = identity.subject as Id<"users">;
     }
 
-    const folder = await ctx.db.get(args.folderId);
+    const folder = await ctx.db.get(args.folderId) as Doc<"folders"> | null;
     if (!folder) {
       throw new Error("Folder not found");
     }
@@ -392,7 +392,7 @@ export const getFolderWithDocuments = query({
     // Get the actual documents
     const documents = [];
     for (const df of documentFolders) {
-      const doc = await ctx.db.get(df.documentId);
+      const doc = await ctx.db.get(df.documentId) as Doc<"documents"> | null;
       if (doc && !doc.isArchived) {
         documents.push({
           ...doc,

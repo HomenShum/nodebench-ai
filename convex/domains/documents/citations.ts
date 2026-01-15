@@ -8,7 +8,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -43,7 +43,7 @@ export const addCitationToDocument = mutation({
         }
 
         // Verify document exists and user has access
-        const document = await ctx.db.get(args.documentId);
+        const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
         if (!document) {
             return { success: false, message: "Document not found" };
         }
@@ -52,7 +52,7 @@ export const addCitationToDocument = mutation({
         }
 
         // Verify artifact exists
-        const artifact = await ctx.db.get(args.artifactId);
+        const artifact = await ctx.db.get(args.artifactId) as Doc<"sourceArtifacts"> | null;
         if (!artifact) {
             return { success: false, message: "Source artifact not found" };
         }
@@ -105,7 +105,7 @@ export const removeCitationFromDocument = mutation({
             return { success: false, message: "Not authenticated" };
         }
 
-        const document = await ctx.db.get(args.documentId);
+        const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
         if (!document) {
             return { success: false, message: "Document not found" };
         }
@@ -146,14 +146,14 @@ export const getDocumentCitations = query({
         })
     ),
     handler: async (ctx, args) => {
-        const document = await ctx.db.get(args.documentId);
+        const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
         if (!document || !document.linkedArtifacts) {
             return [];
         }
 
         const citations = await Promise.all(
             (document.linkedArtifacts as LinkedArtifact[]).map(async (link) => {
-                const artifact = await ctx.db.get(link.artifactId);
+                const artifact = await ctx.db.get(link.artifactId) as Doc<"sourceArtifacts"> | null;
                 return {
                     citationKey: link.citationKey,
                     artifactId: link.artifactId,

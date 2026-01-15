@@ -8,7 +8,7 @@
 import { v } from "convex/values";
 import { query, internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -59,7 +59,7 @@ export const validateDocumentCitations = query({
         warnings: v.array(v.string()),
     }),
     handler: async (ctx, args): Promise<CitationValidationResult> => {
-        const document = await ctx.db.get(args.documentId);
+        const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
         if (!document) {
             return {
                 isValid: false,
@@ -184,7 +184,7 @@ export const generateCitationReport = query({
     args: { documentId: v.id("documents") },
     returns: v.string(),
     handler: async (ctx, args): Promise<string> => {
-        const document = await ctx.db.get(args.documentId);
+        const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
         if (!document) {
             return "❌ Document not found";
         }
@@ -205,7 +205,7 @@ export const generateCitationReport = query({
         ];
 
         for (const link of linkedArtifacts) {
-            const artifact = await ctx.db.get(link.artifactId);
+            const artifact = await ctx.db.get(link.artifactId) as Doc<"sourceArtifacts"> | null;
             if (artifact) {
                 lines.push(
                     `- **${link.citationKey}**: ${artifact.sourceType} - ${artifact.sourceUrl ?? "No URL"}`

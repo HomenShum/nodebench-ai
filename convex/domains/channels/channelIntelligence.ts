@@ -520,12 +520,12 @@ export const learnFromEngagement = internalAction({
 
     // Analyze by channel
     for (const channel of Object.keys(recommendations) as Channel[]) {
-      const channelEvents = events.filter((e) => e.channel === channel);
+      const channelEvents = events.filter((e: Doc<"engagementEvents">) => e.channel === channel);
       if (channelEvents.length === 0) continue;
 
-      const opened = channelEvents.filter((e) => e.eventType === "opened").length;
-      const clicked = channelEvents.filter((e) => e.eventType === "clicked").length;
-      const dismissed = channelEvents.filter((e) => e.eventType === "dismissed").length;
+      const opened = channelEvents.filter((e: Doc<"engagementEvents">) => e.eventType === "opened").length;
+      const clicked = channelEvents.filter((e: Doc<"engagementEvents">) => e.eventType === "clicked").length;
+      const dismissed = channelEvents.filter((e: Doc<"engagementEvents">) => e.eventType === "dismissed").length;
       const total = channelEvents.length;
 
       // Calculate engagement score
@@ -536,12 +536,12 @@ export const learnFromEngagement = internalAction({
 
       // Determine trend (compare first half vs second half of period)
       const midpoint = cutoff + (Date.now() - cutoff) / 2;
-      const firstHalf = channelEvents.filter((e) => e.timestamp < midpoint);
-      const secondHalf = channelEvents.filter((e) => e.timestamp >= midpoint);
+      const firstHalf = channelEvents.filter((e: Doc<"engagementEvents">) => e.timestamp < midpoint);
+      const secondHalf = channelEvents.filter((e: Doc<"engagementEvents">) => e.timestamp >= midpoint);
 
       if (firstHalf.length > 0 && secondHalf.length > 0) {
-        const firstRate = firstHalf.filter((e) => e.eventType === "clicked").length / firstHalf.length;
-        const secondRate = secondHalf.filter((e) => e.eventType === "clicked").length / secondHalf.length;
+        const firstRate = firstHalf.filter((e: Doc<"engagementEvents">) => e.eventType === "clicked").length / firstHalf.length;
+        const secondRate = secondHalf.filter((e: Doc<"engagementEvents">) => e.eventType === "clicked").length / secondHalf.length;
 
         if (secondRate > firstRate + 0.1) {
           recommendations[channel].trend = "up";

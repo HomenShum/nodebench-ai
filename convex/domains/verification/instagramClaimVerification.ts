@@ -14,7 +14,7 @@ import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { generateText } from "ai";
 import { getLanguageModel, getLanguageModelSafe } from "../agents/mcp_tools/models/modelResolver";
-import type { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -240,7 +240,7 @@ ${sourceData.sources.map((s) => `- ${s.name}: ${s.url || "no URL"}`).join("\n")}
           system: FACT_CHECK_SYSTEM_PROMPT,
           prompt: userPrompt,
           maxTokens: 500,
-        });
+        } as Parameters<typeof generateText>[0]);
 
         // 4. Parse response
         const text = response.text || "";

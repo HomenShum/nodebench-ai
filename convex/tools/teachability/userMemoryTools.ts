@@ -204,8 +204,8 @@ export const matchUserSkillTrigger = internalAction({
       const skills: UserTeaching[] = await ctx.runQuery(internal.tools.teachability.userMemoryQueries.listSkillsWithTriggers, {
         userId: args.userId,
       });
-      const hit = skills.find((skill) =>
-        (skill.triggerPhrases ?? []).some((phrase) =>
+      const hit = skills.find((skill: UserTeaching) =>
+        (skill.triggerPhrases ?? []).some((phrase: string) =>
           lowerMessage.includes(phrase.toLowerCase())
         )
       );

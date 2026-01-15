@@ -2,6 +2,7 @@
 // Recent news article search and disambiguation with LLM validation
 
 import { internalAction, internalQuery, internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 import { v } from "convex/values";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -317,7 +318,7 @@ export const getConfirmedNewsTopic = internalQuery({
       .withIndex("by_thread_and_query", (q: any) =>
         q.eq("threadId", args.threadId).eq("newsQuery", args.newsQuery.toLowerCase())
       )
-      .first();
+      .first() as Doc<"confirmedNewsTopics"> | null;
 
     if (!confirmed) return null;
 
@@ -354,7 +355,7 @@ export const confirmNewsTopic = internalMutation({
       .withIndex("by_thread_and_query", (q: any) =>
         q.eq("threadId", args.threadId).eq("newsQuery", args.newsQuery.toLowerCase())
       )
-      .first();
+      .first() as Doc<"confirmedNewsTopics"> | null;
 
     if (existing) {
       // Update existing confirmation

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 
 function assertUser(userId: string | null) {
   if (!userId) throw new Error("unauthenticated");
@@ -92,7 +92,7 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     const userId = await getAuthUserId(ctx);
     assertUser(userId);
-    const rel = await ctx.db.get(id);
+    const rel = await ctx.db.get(id) as Doc<"relations"> | null;
     if (!rel) throw new Error("not found");
     if (rel.createdBy !== userId) throw new Error("forbidden");
     await ctx.db.delete(id);

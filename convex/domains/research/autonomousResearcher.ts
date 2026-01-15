@@ -77,8 +77,8 @@ async function executeResearch(
   console.log(`[AutonomousResearcher] Using free models: ${FREE_MODEL_CONFIG.preferFreeModels}`);
 
   // Build the research prompt
-  const personaContext = task.personas
-    .map((p) => `- ${p}: Focus on relevant ${p.toLowerCase()} insights`)
+  const personaContext = (task.personas as string[])
+    .map((p: string) => `- ${p}: Focus on relevant ${p.toLowerCase()} insights`)
     .join("\n");
 
   const researchPrompt = `You are conducting research on "${task.entityName || task.entityId}".

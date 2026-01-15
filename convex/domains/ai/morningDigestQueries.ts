@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { Doc } from "../../_generated/dataModel";
 
 // TTL for cached digest summaries (4 hours)
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
@@ -22,7 +23,7 @@ export const getCachedDigestSummary = query({
         .withIndex("by_date_user", (q) =>
           q.eq("dateString", today).eq("userId", userId as any)
         )
-        .first();
+        .first() as Doc<"digestSummaryCache"> | null;
 
       if (userCache && userCache.expiresAt > Date.now()) {
         return {
@@ -38,7 +39,7 @@ export const getCachedDigestSummary = query({
       .query("digestSummaryCache")
       .withIndex("by_date", (q) => q.eq("dateString", today))
       .filter((q) => q.eq(q.field("userId"), undefined))
-      .first();
+      .first() as Doc<"digestSummaryCache"> | null;
 
     if (globalCache && globalCache.expiresAt > Date.now()) {
       return {
@@ -77,7 +78,7 @@ export const cacheDigestSummary = mutation({
         .withIndex("by_date", (q) => q.eq("dateString", today))
         .filter((q) => q.eq(q.field("userId"), undefined));
 
-    const existing = await existingQuery.first();
+    const existing = await existingQuery.first() as Doc<"digestSummaryCache"> | null;
 
     if (existing) {
       // Update existing cache entry
@@ -140,7 +141,7 @@ export const getDigestData = query({
       const prefs = await ctx.db
         .query("userPreferences")
         .withIndex("by_user", (q) => q.eq("userId", userId as any))
-        .first();
+        .first() as Doc<"userPreferences"> | null;
       trackedHashtags = prefs?.trackedHashtags ?? [];
     }
 
@@ -234,7 +235,7 @@ export const getFreshCriticalSignals = query({
       const prefs = await ctx.db
         .query("userPreferences")
         .withIndex("by_user", (q) => q.eq("userId", userId as any))
-        .first();
+        .first() as Doc<"userPreferences"> | null;
       trackedHashtags = prefs?.trackedHashtags ?? [];
     }
 
@@ -371,6 +372,98 @@ export const getFreshCriticalSignals = query({
       totalAvailable: criticalSignals.length,
       trackedHashtags,
       sourceStats,
+      lastUpdated: Date.now(),
+    };
+  },
+});
+
+/**
+ * Get encounter data for the daily digest.
+ * Aggregates encounters from Slack and email captures.
+ *
+ * @module domains/ai/morningDigestQueries
+ */
+export const getEncounterDigestData = query({
+  args: {
+    lookbackHours: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return {
+        encounters: [],
+        byCompany: {},
+        totalParticipants: 0,
+        followUpsNeeded: 0,
+        summary: null,
+      };
+    }
+
+    const lookbackMs = (args.lookbackHours ?? 24) * 60 * 60 * 1000;
+    const cutoff = Date.now() - lookbackMs;
+
+    // Get Slack encounters
+    const slackEncounters = await ctx.db
+      .query("userEvents")
+      .withIndex("by_user_sourceType", (q) =>
+        q.eq("userId", userId as any).eq("sourceType", "slack" as any)
+      )
+      .filter((q) => q.gte(q.field("createdAt"), cutoff))
+      .order("desc")
+      .take(50);
+
+    // Get email forward encounters
+    const emailEncounters = await ctx.db
+      .query("userEvents")
+      .withIndex("by_user_sourceType", (q) =>
+        q.eq("userId", userId as any).eq("sourceType", "email_forward" as any)
+      )
+      .filter((q) => q.gte(q.field("createdAt"), cutoff))
+      .order("desc")
+      .take(50);
+
+    // Combine and sort by creation time
+    const allEncounters = [...slackEncounters, ...emailEncounters]
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    // Group by company
+    const byCompany: Record<string, typeof allEncounters> = {};
+    const uniqueParticipants = new Set<string>();
+
+    for (const enc of allEncounters) {
+      const encounter = enc.encounter;
+      if (!encounter) continue;
+
+      // Track participants
+      for (const p of encounter.participants || []) {
+        uniqueParticipants.add(p.name);
+      }
+
+      // Group by company
+      for (const c of encounter.companies || []) {
+        if (!byCompany[c.name]) {
+          byCompany[c.name] = [];
+        }
+        byCompany[c.name].push(enc);
+      }
+    }
+
+    // Count follow-ups needed
+    const followUpsNeeded = allEncounters.filter(
+      (e) => e.encounter?.followUpRequested
+    ).length;
+
+    return {
+      encounters: allEncounters.map((e) => ({
+        _id: e._id,
+        title: e.title,
+        createdAt: e.createdAt,
+        sourceType: e.sourceType,
+        encounter: e.encounter,
+      })),
+      byCompany,
+      totalParticipants: uniqueParticipants.size,
+      followUpsNeeded,
       lastUpdated: Date.now(),
     };
   },

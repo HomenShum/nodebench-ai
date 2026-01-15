@@ -1897,24 +1897,20 @@ export const deleteMessage = mutation({
 
     try {
       // Try interpreting messageId as chatMessagesStream _id first
-      const streamMessage = await ctx.db.get(args.messageId);
+      const streamMessage = await ctx.db.get(args.messageId) as Doc<"chatMessagesStream"> | null;
 
       if (streamMessage) {
-        // Type guard: ensure it has expected fields
-        if (!("threadId" in streamMessage)) {
-          throw new Error("Invalid message type");
-        }
         // Verify belongs to thread
-        if ((streamMessage).threadId !== args.threadId) {
+        if (streamMessage.threadId !== args.threadId) {
           throw new Error("Message does not belong to this thread");
         }
 
         // Delete stream message
-        await ctx.db.delete((streamMessage)._id);
+        await ctx.db.delete(streamMessage._id);
         console.log(`[deleteMessage] ✅ Deleted from chatMessagesStream by _id`);
 
         // Cascade delete agent message if linked
-        const agentMessageId = (streamMessage).agentMessageId as string | undefined;
+        const agentMessageId = streamMessage.agentMessageId;
         if (agentMessageId) {
           console.log(`[deleteMessage] Deleting linked agent message: ${agentMessageId}`);
           await deleteAgentMessageIfOwned(agentMessageId);
@@ -1968,7 +1964,7 @@ export const getThreadMessages = query({
     }
 
     // Verify access
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) {
       return { page: [], continueCursor: null, isDone: true };
     }
@@ -2023,7 +2019,7 @@ export const getThreadMessagesWithStreaming = query({
       const streamThread = await ctx.db
         .query("chatThreadsStream")
         .withIndex("by_agentThreadId", (q) => q.eq("agentThreadId", args.threadId))
-        .first();
+        .first() as Doc<"chatThreadsStream"> | null;
 
       if (!streamThread || streamThread.anonymousSessionId !== args.anonymousSessionId) {
         return emptyResponse;
@@ -2077,7 +2073,7 @@ export const createUserMessage = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     // Verify access
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) {
       throw new Error("Thread not found or unauthorized");
     }
@@ -2152,10 +2148,10 @@ export const initiateAsyncStreaming = mutation({
       const today = new Date().toISOString().split("T")[0];
       const existingUsage = await ctx.db
         .query("anonymousUsageDaily")
-        .withIndex("by_session_date", (q: any) =>
-          q.eq("sessionId", args.anonymousSessionId).eq("date", today)
+        .withIndex("by_session_date", (q) =>
+          q.eq("sessionId", args.anonymousSessionId!).eq("date", today)
         )
-        .first();
+        .first() as Doc<"anonymousUsageDaily"> | null;
 
       const currentRequests = existingUsage?.requests ?? 0;
       const ANONYMOUS_DAILY_LIMIT = 5;
@@ -2198,7 +2194,7 @@ export const initiateAsyncStreaming = mutation({
 
     console.log(`[initiateAsyncStreaming:${requestId}] 🚀 Starting for thread:`, args.threadId, 'prompt:', sanitizedPrompt.substring(0, 50));
 
-    const streamingThread: any = await ctx.db.get(args.threadId);
+    const streamingThread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!streamingThread || !streamingThread.agentThreadId) {
       throw new Error("Thread not found or not linked to agent");
     }
@@ -2365,7 +2361,7 @@ export const requestStreamCancel = mutation({
   handler: async (ctx, { threadId }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    const thread = await ctx.db.get(threadId);
+    const thread = await ctx.db.get(threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) throw new Error("Thread not found or unauthorized");
     await ctx.db.patch(threadId, { cancelRequested: true, cancelRequestedAt: Date.now(), updatedAt: Date.now() });
     const controller = streamCancellationControllers.get(String(threadId));
@@ -2505,10 +2501,16 @@ export const streamAsync = internalAction({
       },
     };
 
-    // Inject plan + progress + scratchpad summary into prompt so the agent boots with memory 
+    // Inject plan + progress + scratchpad summary into prompt so the agent boots with memory
     // SKIP for anonymous users - they don't have plans/scratchpads and the empty context
     // was causing issues with the agent seeing two user messages
-    let previousCompactContext: unknown;
+    let previousCompactContext: {
+      facts?: string[];
+      constraints?: string[];
+      missing?: string[];
+      summary?: string;
+      messageId?: string;
+    } | undefined;
 
     if (isAnonymous) {
       let userPromptText: string | undefined;
@@ -2541,7 +2543,7 @@ export const streamAsync = internalAction({
       const scratchpad = await ctx.runQuery(api.domains.agents.agentScratchpads.getByAgentThread, {
         agentThreadId: args.threadId,
       });
-      previousCompactContext = scratchpad?.scratchpad?.compactContext ?? undefined;
+      previousCompactContext = (scratchpad?.scratchpad?.compactContext as typeof previousCompactContext) ?? undefined;
       const featureLines = (plan?.features ?? []).map(
         (f: any, idx: number) => `${idx + 1}. [${f.status}] ${f.name} — Test: ${f.testCriteria}`
       );
@@ -3939,7 +3941,7 @@ export const createAssistantMessage = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     // Verify access
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) {
       throw new Error("Thread not found or unauthorized");
     }
@@ -4055,7 +4057,7 @@ export const markStreamComplete = internalMutation({
     status: v.union(v.literal("complete"), v.literal("error")),
   },
   handler: async (ctx, args) => {
-    const message = await ctx.db.get(args.messageId);
+    const message = await ctx.db.get(args.messageId) as Doc<"chatMessagesStream"> | null;
     if (!message) {
       console.error(`[markStreamComplete] Message not found: ${args.messageId}`);
       return;
@@ -4142,7 +4144,7 @@ export const insertApiUsage = internalMutation({
       .withIndex("by_user_api_date", (q) =>
         q.eq("userId", args.userId as Id<"users">).eq("apiName", args.apiName).eq("date", date)
       )
-      .first();
+      .first() as { _id: Id<"apiUsageDaily">; totalCalls: number; successfulCalls: number; totalUnitsUsed: number; totalCost: number } | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -4573,7 +4575,7 @@ export const sendMessageInternal = internalAction({
             prompt,
             // CRITICAL: Add onError callback to catch errors during streaming
             // Without this, errors are silently suppressed per Vercel AI SDK docs
-            onError: ({ error }) => {
+            onError: ({ error }: { error: unknown }) => {
               console.error('[sendMessageInternal] ❌ Stream error:', error);
               console.error('[sendMessageInternal] Error name:', (error as any)?.name);
               console.error('[sendMessageInternal] Error message:', (error as any)?.message);
@@ -4606,9 +4608,9 @@ export const sendMessageInternal = internalAction({
           })(),
         ];
 
-        const nextModel = fallbackCandidates.find(
-          (m): m is ApprovedModel => Boolean(m) && !attemptedModels.includes(m),
-        );
+        const nextModel = fallbackCandidates
+          .filter((m): m is ApprovedModel => m !== null)
+          .find((m) => !attemptedModels.includes(m));
 
         if (nextModel) {
           console.warn(
@@ -4823,7 +4825,7 @@ export const sendMessageInternal = internalAction({
         { threadId },
         {
           prompt: toolForcePrompt,
-          onError: ({ error }) => {
+          onError: ({ error }: { error: unknown }) => {
             console.error('[sendMessageInternal] ❌ Forced follow-up stream error:', error);
             console.error('[sendMessageInternal] Error details:', (error as any)?.message);
           },
@@ -4922,7 +4924,7 @@ export const sendMessageInternal = internalAction({
           { threadId },
           {
             prompt: strictPrompt,
-            onError: ({ error }) => {
+            onError: ({ error }: { error: unknown }) => {
               console.error('[sendMessageInternal] ❌ Strict follow-up stream error:', error);
               console.error('[sendMessageInternal] Error details:', (error as any)?.message);
             },
@@ -5949,7 +5951,7 @@ export const submitFileQuestion = mutation({
     }
 
     // Verify thread ownership
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"chatThreadsStream"> | null;
     if (!thread || thread.userId !== userId) {
       throw new Error("Thread not found or unauthorized");
     }

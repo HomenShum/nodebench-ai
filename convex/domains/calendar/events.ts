@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalQuery } from "../../_generated/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 async function getSafeUserId(ctx: any): Promise<Id<"users">> {
@@ -105,7 +105,7 @@ export const getTitle = query({
   handler: async (ctx, args) => {
     const userId = await getOptionalUserId(ctx);
     if (!userId) return null;
-    const ev = await ctx.db.get(args.eventId);
+    const ev = await ctx.db.get(args.eventId) as Doc<"events"> | null;
     if (!ev || ev.userId !== userId) return null;
     return { title: ev.title } as { title: string };
   },
@@ -118,7 +118,7 @@ export const getTitles = query({
     if (!userId) return [] as Array<{ _id: Id<"events">; title: string }>;
     const out: Array<{ _id: Id<"events">; title: string }> = [];
     for (const id of args.ids) {
-      const ev = await ctx.db.get(id);
+      const ev = await ctx.db.get(id) as Doc<"events"> | null;
       if (ev && ev.userId === userId) {
         out.push({ _id: id, title: ev.title });
       }
@@ -155,7 +155,7 @@ export const updateEvent = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const existing = await ctx.db.get(args.eventId);
+    const existing = await ctx.db.get(args.eventId) as Doc<"events"> | null;
     if (!existing) throw new Error("Event not found");
     if (existing.userId !== userId) throw new Error("Not authorized");
 
@@ -194,7 +194,7 @@ export const deleteEvent = mutation({
   args: { eventId: v.id("events") },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const existing = await ctx.db.get(args.eventId);
+    const existing = await ctx.db.get(args.eventId) as Doc<"events"> | null;
     if (!existing) return { success: true };
     if (existing.userId !== userId) throw new Error("Not authorized");
     await ctx.db.delete(args.eventId);
@@ -207,7 +207,7 @@ export const getEvent = query({
   handler: async (ctx, args) => {
     const userId = await getOptionalUserId(ctx);
     if (!userId) return null;
-    const ev = await ctx.db.get(args.eventId);
+    const ev = await ctx.db.get(args.eventId) as Doc<"events"> | null;
     if (!ev || ev.userId !== userId) return null;
     return ev;
   },
@@ -377,7 +377,7 @@ export const confirmProposed = mutation({
   args: { eventId: v.id("events") },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const event = await ctx.db.get(args.eventId);
+    const event = await ctx.db.get(args.eventId) as Doc<"events"> | null;
     if (!event) throw new Error("Event not found");
     if (event.userId !== userId) throw new Error("Not authorized");
 
@@ -399,7 +399,7 @@ export const dismissProposed = mutation({
   args: { eventId: v.id("events") },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const event = await ctx.db.get(args.eventId);
+    const event = await ctx.db.get(args.eventId) as Doc<"events"> | null;
     if (!event) return { success: true }; // Already deleted
     if (event.userId !== userId) throw new Error("Not authorized");
 
@@ -418,7 +418,7 @@ export const linkDocument = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const event = await ctx.db.get(args.eventId);
+    const event = await ctx.db.get(args.eventId) as Doc<"events"> | null;
     if (!event) throw new Error("Event not found");
     if (event.userId !== userId) throw new Error("Not authorized");
 
@@ -497,7 +497,7 @@ export const createFromEmail = mutation({
       .withIndex("by_user_source", (q: any) =>
         q.eq("userId", userId).eq("sourceType", "gmail").eq("sourceId", args.sourceId)
       )
-      .first();
+      .first() as Doc<"events"> | null;
 
     if (existing) {
       // Update existing event

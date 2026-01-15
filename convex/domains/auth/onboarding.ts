@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, action } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 const ONBOARDING_AGENT_CONTEXT = `You are the CafeCorner Onboarding Assistant. Your job is to help new users understand the workspace, seed sample data, create documents, manage tasks, and explore AI capabilities.
 
@@ -291,9 +291,9 @@ export const ensureSeedOnLogin = mutation({
     const existingPrefs = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
-    if (existingPrefs && (existingPrefs).onboardingSeededAt) {
+    if (existingPrefs && existingPrefs.onboardingSeededAt) {
       return { seeded: false, createdDocuments: 0, createdTasks: 0 } as const;
     }
 

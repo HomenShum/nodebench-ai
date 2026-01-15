@@ -4,6 +4,26 @@ import { action } from "../../_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "../../_generated/api";
 
+// Type definitions for parsed JSON responses and snapshot data
+interface ParsedLocalContextResponse {
+  nowIso?: string;
+  timezone?: string;
+  utcDay?: string;
+  latestSnapshotDate?: string | null;
+  trendingTopics?: string[];
+  recentDiscoveries?: string[];
+  clientLocale?: string | null;
+  clientUtcOffsetMinutes?: number | null;
+  location?: string | null;
+}
+
+interface DashboardSnapshot {
+  dateString?: string;
+  sourceSummary?: {
+    topTrending?: string[];
+  };
+}
+
 function toErrString(err: unknown): string {
   if (err instanceof Error) return err.message;
   return String(err);
@@ -124,9 +144,9 @@ export const validateFastAgentLocalContext = action({
       utcOffsetMinutes: 480,
       location: "San Francisco, CA, US",
     };
-    const latestSnapshot: unknown = await (async () => {
+    const latestSnapshot = await (async (): Promise<DashboardSnapshot | null> => {
       try {
-        return await ctx.runQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot, {});
+        return await ctx.runQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot, {}) as DashboardSnapshot | null;
       } catch {
         return null;
       }
@@ -194,7 +214,7 @@ export const validateFastAgentLocalContext = action({
       if (bestText.length >= minChars && stablePolls >= 2) break;
     }
 
-    const parsed = extractJsonObject(bestText);
+    const parsed = extractJsonObject(bestText) as ParsedLocalContextResponse | null;
     const nowIso = parsed?.nowIso;
     const okNow =
       typeof nowIso === "string" && isIsoString(nowIso) && withinMinutes(nowIso, startedAt, 10);
@@ -215,7 +235,7 @@ export const validateFastAgentLocalContext = action({
     const okTrending =
       Array.isArray(parsed?.trendingTopics) &&
       (expectedTrending.length === 0 ||
-        expectedTrending.some((t: string) => parsed.trendingTopics.includes(t)));
+        expectedTrending.some((t: string) => parsed.trendingTopics!.includes(t)));
 
     const okDiscoveries = Array.isArray(parsed?.recentDiscoveries);
 

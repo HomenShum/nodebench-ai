@@ -8,6 +8,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Doc } from "../../_generated/dataModel";
 
 const annotationFields = {
   briefId: v.string(),
@@ -114,7 +115,7 @@ export const deleteAnnotation = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) return false;
 
-    const annotation = await ctx.db.get(args.annotationId);
+    const annotation = await ctx.db.get(args.annotationId) as Doc<"dossierAnnotations"> | null;
     if (!annotation || annotation.userId !== userId) return false;
 
     await ctx.db.delete(args.annotationId);
@@ -159,7 +160,7 @@ export const updateAnnotation = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) return false;
 
-    const annotation = await ctx.db.get(args.annotationId);
+    const annotation = await ctx.db.get(args.annotationId) as Doc<"dossierAnnotations"> | null;
     if (!annotation || annotation.userId !== userId) return false;
 
     const { annotationId, ...updates } = args;

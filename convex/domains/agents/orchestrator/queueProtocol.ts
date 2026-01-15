@@ -34,7 +34,7 @@ export const enqueueRun = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const run = await ctx.db.get(args.runId);
+    const run = await ctx.db.get(args.runId) as { userId: typeof userId; priority?: number; availableAt?: number } | null;
     if (!run) throw new Error("Run not found");
     if (run.userId !== userId) throw new Error("Not authorized");
 
@@ -113,7 +113,7 @@ export const heartbeatLease = internalMutation({
   },
   returns: v.object({ ok: v.boolean(), leaseExpiresAt: v.optional(v.number()) }),
   handler: async (ctx, args) => {
-    const run = await ctx.db.get(args.runId);
+    const run = await ctx.db.get(args.runId) as { leaseOwner?: string; leaseExpiresAt?: number } | null;
     if (!run) return { ok: false, leaseExpiresAt: undefined };
     if (run.leaseOwner !== args.workerId) return { ok: false, leaseExpiresAt: run.leaseExpiresAt };
 
@@ -134,7 +134,7 @@ export const completeWorkItem = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const run = await ctx.db.get(args.runId);
+    const run = await ctx.db.get(args.runId) as { leaseOwner?: string } | null;
     if (!run) throw new Error("Run not found");
     if (run.leaseOwner !== args.workerId) throw new Error("Not lease owner");
 
@@ -158,7 +158,7 @@ export const failWorkItem = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const run = await ctx.db.get(args.runId);
+    const run = await ctx.db.get(args.runId) as { leaseOwner?: string } | null;
     if (!run) throw new Error("Run not found");
     if (run.leaseOwner !== args.workerId) throw new Error("Not lease owner");
 

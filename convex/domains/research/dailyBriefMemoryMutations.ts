@@ -6,6 +6,7 @@
 
 import { v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 function stripReservedKeys(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -96,12 +97,12 @@ export const updateTaskStatus = internalMutation({
     meta: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const memory = await ctx.db.get(args.memoryId);
+    const memory = await ctx.db.get(args.memoryId) as Doc<"dailyBriefMemories"> | null;
     if (!memory) throw new Error("Memory not found");
 
     const now = Date.now();
 
-    const features = (memory.features as any[]).map((f) =>
+    const features = (memory.features as any[]).map((f: any) =>
       f.id === args.taskId
         ? {
             ...f,
@@ -146,7 +147,7 @@ export const setExecutiveBrief = internalMutation({
     record: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const memory = await ctx.db.get(args.memoryId);
+    const memory = await ctx.db.get(args.memoryId) as Doc<"dailyBriefMemories"> | null;
     if (!memory) throw new Error("Memory not found");
 
     const now = Date.now();
@@ -174,7 +175,7 @@ export const updateMemoryContext = internalMutation({
     contextPatch: v.any(),
   },
   handler: async (ctx, args) => {
-    const memory = await ctx.db.get(args.memoryId);
+    const memory = await ctx.db.get(args.memoryId) as Doc<"dailyBriefMemories"> | null;
     if (!memory) throw new Error("Memory not found");
 
     const now = Date.now();
@@ -197,12 +198,12 @@ export const appendFeatures = internalMutation({
     features: v.array(v.any()),
   },
   handler: async (ctx, args) => {
-    const memory = await ctx.db.get(args.memoryId);
+    const memory = await ctx.db.get(args.memoryId) as Doc<"dailyBriefMemories"> | null;
     if (!memory) throw new Error("Memory not found");
 
     const existing = Array.isArray(memory.features) ? (memory.features as any[]) : [];
     const existingIds = new Set(
-      existing.map((feature) => feature?.id).filter((id) => typeof id === "string"),
+      existing.map((feature: any) => feature?.id).filter((id: any) => typeof id === "string"),
     );
 
     let added = 0;

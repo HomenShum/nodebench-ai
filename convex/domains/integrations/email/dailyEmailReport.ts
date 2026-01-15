@@ -210,7 +210,7 @@ export const getSentEmailsCount = internalQuery({
 
     const sentEmails = await ctx.db
       .query("emailsSent")
-      .filter(q =>
+      .filter((q) =>
         q.and(
           q.eq(q.field("userId"), args.userId),
           q.gte(q.field("sentAt"), startOfDay),
@@ -218,7 +218,7 @@ export const getSentEmailsCount = internalQuery({
           q.eq(q.field("success"), true)
         )
       )
-      .collect();
+      .collect() as Doc<"emailsSent">[];
 
     return sentEmails.length;
   },
@@ -240,8 +240,8 @@ export const storeReport = internalMutation({
     // Check for existing report
     const existing = await ctx.db
       .query("emailDailyReports")
-      .withIndex("by_user_date", q => q.eq("userId", userId).eq("date", report.date))
-      .first();
+      .withIndex("by_user_date", (q) => q.eq("userId", userId).eq("date", report.date))
+      .first() as Doc<"emailDailyReports"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -359,7 +359,7 @@ export const getReport = internalQuery({
   },
   returns: v.union(v.null(), v.any()),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.reportId);
+    return await ctx.db.get(args.reportId) as Doc<"emailDailyReports"> | null;
   },
 });
 
@@ -712,9 +712,9 @@ export const getUsersWithGmail = internalQuery({
   handler: async (ctx) => {
     const accounts = await ctx.db
       .query("googleAccounts")
-      .collect();
+      .collect() as Doc<"googleAccounts">[];
 
-    return accounts.map(a => ({
+    return accounts.map((a: Doc<"googleAccounts">) => ({
       userId: a.userId,
       email: a.email,
     }));
@@ -733,7 +733,7 @@ export const getReportByDate = internalQuery({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("emailDailyReports")
-      .withIndex("by_user_date", q => q.eq("userId", args.userId).eq("date", args.date))
-      .first();
+      .withIndex("by_user_date", (q) => q.eq("userId", args.userId).eq("date", args.date))
+      .first() as Doc<"emailDailyReports"> | null;
   },
 });

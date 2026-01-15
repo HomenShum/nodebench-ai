@@ -3,6 +3,7 @@
 
 import { internalAction, internalQuery, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
+import { Doc } from "../../_generated/dataModel";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
@@ -263,7 +264,7 @@ export const getConfirmedPerson = internalQuery({
       .withIndex("by_thread_and_name", (q) =>
         q.eq("threadId", args.threadId).eq("personName", args.personName.toLowerCase())
       )
-      .first();
+      .first() as Doc<"confirmedPeople"> | null;
 
     if (!confirmed) return null;
 
@@ -300,7 +301,7 @@ export const confirmPerson = internalMutation({
       .withIndex("by_thread_and_name", (q) =>
         q.eq("threadId", args.threadId).eq("personName", args.personName.toLowerCase())
       )
-      .first();
+      .first() as Doc<"confirmedPeople"> | null;
 
     if (existing) {
       // Update existing confirmation

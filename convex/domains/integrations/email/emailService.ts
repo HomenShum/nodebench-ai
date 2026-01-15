@@ -14,7 +14,7 @@ import { action, internalAction, internalMutation, internalQuery, mutation, quer
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "../../../_generated/api";
-import { Id } from "../../../_generated/dataModel";
+import { Doc, Id } from "../../../_generated/dataModel";
 import { refreshAccessTokenIfNeeded } from "../gmail";
 
 // ------------------------------------------------------------------
@@ -203,7 +203,7 @@ export const fetchThreads = action({
       if (args.query) url.searchParams.set("q", args.query);
       if (args.pageToken) url.searchParams.set("pageToken", args.pageToken);
       if (args.labelIds) {
-        args.labelIds.forEach(id => url.searchParams.append("labelIds", id));
+        args.labelIds.forEach((id: string) => url.searchParams.append("labelIds", id));
       }
 
       const response = await fetch(url.toString(), {
@@ -869,8 +869,8 @@ export const getSyncState = internalQuery({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("emailSyncState")
-      .withIndex("by_user", q => q.eq("userId", args.userId))
-      .first();
+      .withIndex("by_user", (q: any) => q.eq("userId", args.userId))
+      .first() as Doc<"emailSyncState"> | null;
   },
 });
 
@@ -896,8 +896,8 @@ export const updateSyncState = internalMutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("emailSyncState")
-      .withIndex("by_user", q => q.eq("userId", args.userId))
-      .first();
+      .withIndex("by_user", (q: any) => q.eq("userId", args.userId))
+      .first() as Doc<"emailSyncState"> | null;
 
     const now = Date.now();
     const updates = {
@@ -920,8 +920,8 @@ export const updateSyncState = internalMutation({
         totalThreadsSynced: args.totalThreadsSynced ?? 0,
         totalMessagesSynced: args.totalMessagesSynced ?? 0,
         createdAt: now,
-        updatedAt: now,
         ...updates,
+        updatedAt: now,
       });
     }
 
@@ -956,8 +956,8 @@ export const upsertThread = internalMutation({
     // Check for existing thread
     const existingThread = await ctx.db
       .query("emailThreads")
-      .withIndex("by_gmail_thread", q => q.eq("userId", userId).eq("gmailThreadId", thread.id))
-      .first();
+      .withIndex("by_gmail_thread", (q: any) => q.eq("userId", userId).eq("gmailThreadId", thread.id))
+      .first() as Doc<"emailThreads"> | null;
 
     // Calculate unread count
     const unreadCount = messages.filter((m: any) => !m.isRead).length;
@@ -997,8 +997,8 @@ export const upsertThread = internalMutation({
     for (const msg of messages) {
       const existingMsg = await ctx.db
         .query("emailMessages")
-        .withIndex("by_gmail_message", q => q.eq("userId", userId).eq("gmailMessageId", msg.id))
-        .first();
+        .withIndex("by_gmail_message", (q: any) => q.eq("userId", userId).eq("gmailMessageId", msg.id))
+        .first() as Doc<"emailMessages"> | null;
 
       const msgData = {
         userId,
@@ -1061,16 +1061,16 @@ export const getThreads = query({
     let query = ctx.db.query("emailThreads");
 
     if (args.status) {
-      query = query.withIndex("by_user_status", q =>
+      query = query.withIndex("by_user_status", (q: any) =>
         q.eq("userId", userId).eq("status", args.status!)
       );
     } else {
-      query = query.withIndex("by_user", q => q.eq("userId", userId));
+      query = query.withIndex("by_user", (q: any) => q.eq("userId", userId));
     }
 
     const threads = await query
       .order("desc")
-      .take(args.limit ?? 50);
+      .take(args.limit ?? 50) as Doc<"emailThreads">[];
 
     return threads;
   },
@@ -1088,14 +1088,14 @@ export const getThreadWithMessages = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
-    const thread = await ctx.db.get(args.threadId);
+    const thread = await ctx.db.get(args.threadId) as Doc<"emailThreads"> | null;
     if (!thread || thread.userId !== userId) return null;
 
     const messages = await ctx.db
       .query("emailMessages")
-      .withIndex("by_thread", q => q.eq("threadId", args.threadId))
+      .withIndex("by_thread", (q: any) => q.eq("threadId", args.threadId))
       .order("asc")
-      .collect();
+      .collect() as Doc<"emailMessages">[];
 
     return {
       ...thread,
@@ -1133,17 +1133,17 @@ export const getEmailStats = query({
 
     const threads = await ctx.db
       .query("emailThreads")
-      .withIndex("by_user", q => q.eq("userId", userId))
-      .collect();
+      .withIndex("by_user", (q: any) => q.eq("userId", userId))
+      .collect() as Doc<"emailThreads">[];
 
-    const unreadCount = threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
-    const inboxCount = threads.filter(t => t.status === "inbox").length;
-    const archivedCount = threads.filter(t => t.status === "archived").length;
+    const unreadCount = threads.reduce((sum: number, t) => sum + (t.unreadCount || 0), 0);
+    const inboxCount = threads.filter((t) => t.status === "inbox").length;
+    const archivedCount = threads.filter((t) => t.status === "archived").length;
 
     // Group by AI category
     const categoryMap = new Map<string, number>();
     for (const thread of threads) {
-      const cat = thread.aiCategory || "Uncategorized";
+      const cat = (thread as any).aiCategory || "Uncategorized";
       categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
     }
 

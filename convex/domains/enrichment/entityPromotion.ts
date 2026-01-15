@@ -7,7 +7,7 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "../../_generated/server";
 import { internal } from "../../_generated/api";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 
 /**
  * Promote a funding event to an entity context.
@@ -262,7 +262,7 @@ export const updateEntityWithFunding = internalMutation({
     investors: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const entity = await ctx.db.get(args.entityId);
+    const entity = await ctx.db.get(args.entityId) as Doc<"entityContexts"> | null;
     if (!entity) {
       throw new Error(`Entity not found: ${args.entityId}`);
     }

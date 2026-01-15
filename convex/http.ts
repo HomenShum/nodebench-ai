@@ -6,6 +6,11 @@ import { twilioComponent, hasTwilioCreds } from "./domains/integrations/sms";
 import { telegramWebhookHandler } from "./domains/integrations/telegramAgent";
 import { discordWebhookHandler } from "./domains/integrations/discordAgent";
 import { gmailPushHandler } from "./domains/integrations/email/emailWebhook";
+import {
+  slackEventsHandler,
+  slackCommandsHandler,
+  slackInteractivityHandler,
+} from "./domains/integrations/slack/slackWebhook";
 
 const http = router;
 
@@ -34,6 +39,38 @@ http.route({
   path: "/discord/interactions",
   method: "POST",
   handler: discordWebhookHandler,
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SLACK INTEGRATION - Encounter Capture & Distribution (FREE)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Slack Events API webhook for messages and app_mention events
+// Route: /slack/events
+// Setup: Configure Event Subscriptions in Slack App settings
+http.route({
+  path: "/slack/events",
+  method: "POST",
+  handler: slackEventsHandler,
+});
+
+// Slack Slash Commands webhook
+// Route: /slack/commands
+// Setup: Create slash commands in Slack App settings pointing to this URL
+// Commands: /encounter, /research, /digest, /help
+http.route({
+  path: "/slack/commands",
+  method: "POST",
+  handler: slackCommandsHandler,
+});
+
+// Slack Interactivity webhook for button clicks and modal submissions
+// Route: /slack/interactivity
+// Setup: Configure Interactivity & Shortcuts in Slack App settings
+http.route({
+  path: "/slack/interactivity",
+  method: "POST",
+  handler: slackInteractivityHandler,
 });
 
 // Register Gmail push notification webhook for real-time email triggers

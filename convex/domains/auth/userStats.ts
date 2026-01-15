@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { Doc } from "../../_generated/dataModel";
 
 /**
  * Get user activity summary for personalized home page
@@ -36,7 +37,7 @@ export const getUserActivitySummary = query({
       };
     }
 
-    const user = await ctx.db.get(userId);
+    const user = await ctx.db.get(userId) as Doc<"users"> | null;
     const now = Date.now();
     const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
     const monthAgo = now - 30 * 24 * 60 * 60 * 1000;

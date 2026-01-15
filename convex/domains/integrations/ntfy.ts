@@ -11,7 +11,7 @@
 import { internal } from "../../_generated/api";
 import { action, internalAction, internalMutation, query } from "../../_generated/server";
 import { v } from "convex/values";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ------------------------------------------------------------------
@@ -455,7 +455,7 @@ export const handleNotificationOptOut = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Find user by topic (stored in phoneNumber field)
-    const allPrefs = await ctx.db.query("userPreferences").collect();
+    const allPrefs = await ctx.db.query("userPreferences").collect() as Doc<"userPreferences">[];
 
     for (const prefs of allPrefs) {
       if (prefs.phoneNumber === args.topic) {
@@ -488,7 +488,7 @@ export const handleNotificationOptIn = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Find user by topic (stored in phoneNumber field)
-    const allPrefs = await ctx.db.query("userPreferences").collect();
+    const allPrefs = await ctx.db.query("userPreferences").collect() as Doc<"userPreferences">[];
 
     for (const prefs of allPrefs) {
       if (prefs.phoneNumber === args.topic) {
@@ -572,7 +572,7 @@ export const getNotificationLogs = query({
       .query("smsLogs")
       .filter((q) => q.eq(q.field("userId"), userId))
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"smsLogs">[];
 
     return logs;
   },
@@ -603,16 +603,16 @@ export const getNotificationStats = query({
     const allLogs = await ctx.db
       .query("smsLogs")
       .filter((q) => q.eq(q.field("userId"), userId))
-      .collect();
+      .collect() as Doc<"smsLogs">[];
 
     const now = Date.now();
     const oneDayAgo = now - 24 * 60 * 60 * 1000;
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
     const totalSent = allLogs.length;
-    const totalCost = allLogs.reduce((sum, log) => sum + (log.estimatedCostCents || 0), 0);
-    const last24Hours = allLogs.filter((log) => log.createdAt >= oneDayAgo).length;
-    const last7Days = allLogs.filter((log) => log.createdAt >= sevenDaysAgo).length;
+    const totalCost = allLogs.reduce((sum: number, log: Doc<"smsLogs">) => sum + (log.estimatedCostCents || 0), 0);
+    const last24Hours = allLogs.filter((log: Doc<"smsLogs">) => log.createdAt >= oneDayAgo).length;
+    const last7Days = allLogs.filter((log: Doc<"smsLogs">) => log.createdAt >= sevenDaysAgo).length;
 
     return {
       totalSent,
@@ -637,7 +637,7 @@ export const getTopicNotificationLogs = query({
       .query("smsLogs")
       .filter((q) => q.eq(q.field("to"), NTFY_DEFAULT_TOPIC))
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"smsLogs">[];
 
     return logs;
   },
@@ -658,16 +658,16 @@ export const getTopicNotificationStats = query({
     const allLogs = await ctx.db
       .query("smsLogs")
       .filter((q) => q.eq(q.field("to"), NTFY_DEFAULT_TOPIC))
-      .collect();
+      .collect() as Doc<"smsLogs">[];
 
     const now = Date.now();
     const oneDayAgo = now - 24 * 60 * 60 * 1000;
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
     const totalSent = allLogs.length;
-    const totalCost = allLogs.reduce((sum, log) => sum + (log.estimatedCostCents || 0), 0);
-    const last24Hours = allLogs.filter((log) => log.createdAt >= oneDayAgo).length;
-    const last7Days = allLogs.filter((log) => log.createdAt >= sevenDaysAgo).length;
+    const totalCost = allLogs.reduce((sum: number, log: Doc<"smsLogs">) => sum + (log.estimatedCostCents || 0), 0);
+    const last24Hours = allLogs.filter((log: Doc<"smsLogs">) => log.createdAt >= oneDayAgo).length;
+    const last7Days = allLogs.filter((log: Doc<"smsLogs">) => log.createdAt >= sevenDaysAgo).length;
 
     return {
       totalSent,
@@ -726,7 +726,7 @@ export const sendActionableNotification = action({
         priority: args.priority,
         tags: args.tags,
         click: args.click,
-        actions: args.actions.map((a) => ({
+        actions: args.actions.map((a: { action: string; label: string; url: string; method?: string; headers?: any; body?: string; clear?: boolean }) => ({
           action: a.action,
           label: a.label,
           url: a.url,
@@ -798,10 +798,10 @@ export const sendDigestWithActions = action({
     }
 
     // Build action buttons (max 3 for ntfy)
-    const actions = args.items.slice(0, 3).map((item, i) => ({
+    const actions = args.items.slice(0, 3).map((item: { title: string; url?: string }, i: number) => ({
       action: "view" as const,
-      label: item.actionLabel || `More on #${i + 1}`,
-      url: item.actionUrl || `${baseUrl}/digest`,
+      label: (item as any).actionLabel || `More on #${i + 1}`,
+      url: (item as any).actionUrl || `${baseUrl}/digest`,
     }));
 
     try {

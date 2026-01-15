@@ -1876,7 +1876,7 @@ async function enrichTopEntitiesFromGraph(
       );
 
       // Extract persona readiness from personaHooks
-      const personaHooks = result.personaHooks ?? {};
+      const personaHooks: Record<string, { failTriggers?: unknown[] } | undefined> = result.personaHooks ?? {};
       const ready: string[] = [];
       const notReady: string[] = [];
       for (const [persona, hooks] of Object.entries(personaHooks)) {

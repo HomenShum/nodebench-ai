@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../../_generated/server";
+import type { Doc } from "../../_generated/dataModel";
 
 async function sha256Hex(input: string): Promise<string> {
   const bytes = new TextEncoder().encode(input);
@@ -36,7 +37,7 @@ export const findByUrlAndHash = internalQuery({
       .query("sourceArtifacts")
       .withIndex("by_sourceUrl_hash", (q) => q.eq("sourceUrl", url).eq("contentHash", args.contentHash))
       .order("desc")
-      .first();
+      .first() as Doc<"sourceArtifacts"> | null;
     if (!existing) return null;
     return { _id: existing._id, contentHash: existing.contentHash, sourceUrl: existing.sourceUrl, fetchedAt: existing.fetchedAt };
   },
@@ -82,12 +83,12 @@ export const upsertSourceArtifact = internalMutation({
       const existing = await ctx.db
         .query("sourceArtifacts")
         .withIndex("by_sourceUrl_hash", (q) => q.eq("sourceUrl", sourceUrl).eq("contentHash", computedHash))
-        .first();
+        .first() as Doc<"sourceArtifacts"> | null;
       if (existing) return { id: existing._id, created: false, contentHash: computedHash };
     }
 
     // Fallback dedupe by hash only (covers cases without a URL).
-    const byHash = await ctx.db.query("sourceArtifacts").withIndex("by_hash", (q) => q.eq("contentHash", computedHash)).first();
+    const byHash = await ctx.db.query("sourceArtifacts").withIndex("by_hash", (q) => q.eq("contentHash", computedHash)).first() as Doc<"sourceArtifacts"> | null;
     if (byHash && !sourceUrl) return { id: byHash._id, created: false, contentHash: computedHash };
 
     const id = await ctx.db.insert("sourceArtifacts", {
@@ -127,7 +128,7 @@ export const getArtifactById = internalQuery({
     })
   ),
   handler: async (ctx, args) => {
-    const artifact = await ctx.db.get(args.artifactId);
+    const artifact = await ctx.db.get(args.artifactId) as Doc<"sourceArtifacts"> | null;
     if (!artifact) return null;
     return {
       _id: artifact._id,

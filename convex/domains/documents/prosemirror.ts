@@ -1,7 +1,7 @@
 import { components } from "../../_generated/api";
 import { ProsemirrorSync } from "@convex-dev/prosemirror-sync";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { DataModel, Id } from "../../_generated/dataModel";
+import { DataModel, Id, Doc } from "../../_generated/dataModel";
 import { mutation, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { api } from "../../_generated/api";
@@ -250,7 +250,7 @@ export const {
   submitSteps,
 } = prosemirrorSync.syncApi<DataModel>({
   async checkRead(ctx, id) {
-    const document = await ctx.db.get(id);
+    const document = await ctx.db.get(id) as Doc<"documents"> | null;
     if (!document) {
       throw new Error("Document not found");
     }
@@ -265,13 +265,13 @@ export const {
     }
   },
   async checkWrite(ctx, id) {
-    const document = await ctx.db.get(id);
+    const document = await ctx.db.get(id) as Doc<"documents"> | null;
     if (!document) {
       throw new Error("Document not found");
     }
 
     // If author enabled public editing, allow writes for anyone
-    if (document.isPublic && (document).allowPublicEdit === true) return;
+    if (document.isPublic && document.allowPublicEdit === true) return;
 
     // Otherwise only allow writes to the document creator
     const userId = await getAuthUserId(ctx);
@@ -282,12 +282,12 @@ export const {
     const sanitized = sanitizeProseMirrorSnapshot(snapshot);
 
     // Avoid overwriting dossier content with ProseMirror snapshots (dossiers have special handling)
-    const document = await ctx.db.get(id);
+    const document = await ctx.db.get(id) as Doc<"documents"> | null;
     if (!document) {
       return;
     }
 
-    if (document.documentType === "dossier" || (document).dossierType === "primary") {
+    if (document.documentType === "dossier" || document.dossierType === "primary") {
       return;
     }
 
@@ -509,7 +509,7 @@ export const resetDocumentSnapshot = mutation({
       throw new Error("Not authenticated");
     }
 
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) {
       throw new Error("Document not found");
     }

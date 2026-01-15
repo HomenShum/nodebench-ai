@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../_generated/server";
+import { Doc } from "../_generated/dataModel";
 import { hashSync, canonicalizeUrl, extractHost } from "../../shared/artifacts";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -83,7 +84,7 @@ export const upsertGlobal = internalMutation({
     const existing = await ctx.db
       .query("globalArtifacts")
       .withIndex("by_artifactKey", (q) => q.eq("artifactKey", artifactKey))
-      .first();
+      .first() as Doc<"globalArtifacts"> | null;
 
     if (existing) {
       // Check if content changed
@@ -148,7 +149,7 @@ export const getByKey = internalQuery({
     return ctx.db
       .query("globalArtifacts")
       .withIndex("by_artifactKey", (q) => q.eq("artifactKey", artifactKey))
-      .first();
+      .first() as Doc<"globalArtifacts"> | null;
   },
 });
 
@@ -162,11 +163,11 @@ export const getByCanonicalUrl = internalQuery({
   handler: async (ctx, { canonicalUrl }) => {
     const normalized = canonicalizeUrl(canonicalUrl);
     const artifactKey = generateArtifactKey(normalized);
-    
+
     return ctx.db
       .query("globalArtifacts")
       .withIndex("by_artifactKey", (q) => q.eq("artifactKey", artifactKey))
-      .first();
+      .first() as Doc<"globalArtifacts"> | null;
   },
 });
 
@@ -179,14 +180,14 @@ export const getByKeys = internalQuery({
   },
   handler: async (ctx, { artifactKeys }) => {
     const results = await Promise.all(
-      artifactKeys.map((key: any) =>
+      artifactKeys.map((key: string) =>
         ctx.db
           .query("globalArtifacts")
           .withIndex("by_artifactKey", (q) => q.eq("artifactKey", key))
-          .first()
+          .first() as Promise<Doc<"globalArtifacts"> | null>
       )
     );
-    return results.filter(Boolean);
+    return results.filter((r): r is Doc<"globalArtifacts"> => r !== null);
   },
 });
 

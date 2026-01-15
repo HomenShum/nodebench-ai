@@ -94,7 +94,7 @@ export const getTaskTree = query({
       .query("parallelTaskTrees")
       .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", agentThreadId))
       .order("desc")
-      .first();
+      .first() as Doc<"parallelTaskTrees"> | null;
 
     if (!tree) return null;
 
@@ -282,7 +282,7 @@ export const updateTreeStatus = mutation({
     if (phaseProgress !== undefined) updates.phaseProgress = phaseProgress;
     if (status === "completed" || status === "failed") {
       updates.completedAt = now;
-      const tree = await ctx.db.get(treeId);
+      const tree = await ctx.db.get(treeId) as Doc<"parallelTaskTrees"> | null;
       if (tree) {
         updates.elapsedMs = now - tree.createdAt;
       }
@@ -336,7 +336,7 @@ export const createBranchTasks = mutation({
     const parent = await ctx.db
       .query("parallelTaskNodes")
       .withIndex("by_taskId", (q) => q.eq("taskId", parentTaskId))
-      .first();
+      .first() as Doc<"parallelTaskNodes"> | null;
     const depth = (parent?.depth ?? 0) + 1;
 
     for (let i = 0; i < branches.length; i++) {
@@ -374,7 +374,7 @@ export const createBranchTasks = mutation({
     }
 
     // Update tree stats
-    const tree = await ctx.db.get(treeId);
+    const tree = await ctx.db.get(treeId) as Doc<"parallelTaskTrees"> | null;
     if (tree) {
       await ctx.db.patch(treeId, {
         totalBranches: (tree.totalBranches ?? 0) + branches.length,
@@ -421,7 +421,7 @@ export const updateTaskStatus = mutation({
     const task = await ctx.db
       .query("parallelTaskNodes")
       .withIndex("by_taskId", (q) => q.eq("taskId", taskId))
-      .first();
+      .first() as Doc<"parallelTaskNodes"> | null;
 
     if (!task) return;
 
@@ -449,7 +449,7 @@ export const updateTaskStatus = mutation({
     await ctx.db.patch(task._id, updates);
 
     // Update tree branch counts
-    const tree = await ctx.db.get(task.treeId);
+    const tree = await ctx.db.get(task.treeId) as Doc<"parallelTaskTrees"> | null;
     if (tree) {
       const branchUpdates: Partial<Doc<"parallelTaskTrees">> = { updatedAt: now };
 
@@ -501,7 +501,7 @@ export const addVerificationResult = mutation({
     const task = await ctx.db
       .query("parallelTaskNodes")
       .withIndex("by_taskId", (q) => q.eq("taskId", taskId))
-      .first();
+      .first() as Doc<"parallelTaskNodes"> | null;
 
     if (!task) return;
 
@@ -558,7 +558,7 @@ export const addCrossCheck = mutation({
     const targetTask = await ctx.db
       .query("parallelTaskNodes")
       .withIndex("by_taskId", (q) => q.eq("taskId", args.targetTaskId))
-      .first();
+      .first() as Doc<"parallelTaskNodes"> | null;
 
     if (targetTask) {
       const existingCritiques = targetTask.critiques ?? [];
@@ -625,7 +625,7 @@ export const logTaskEvent = mutation({
       .query("parallelTaskEvents")
       .withIndex("by_task", (q) => q.eq("taskId", taskId))
       .order("desc")
-      .first();
+      .first() as Doc<"parallelTaskEvents"> | null;
 
     const seq = (latestEvent?.seq ?? 0) + 1;
 
@@ -662,7 +662,7 @@ export const internalUpdateTreeStatus = internalMutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const tree = await ctx.db.get(args.treeId);
+    const tree = await ctx.db.get(args.treeId) as Doc<"parallelTaskTrees"> | null;
     if (!tree) return;
 
     const updates: Partial<Doc<"parallelTaskTrees">> = {
@@ -694,7 +694,7 @@ export const internalLogEvent = internalMutation({
       .query("parallelTaskEvents")
       .withIndex("by_task", (q) => q.eq("taskId", taskId))
       .order("desc")
-      .first();
+      .first() as Doc<"parallelTaskEvents"> | null;
 
     const seq = (latestEvent?.seq ?? 0) + 1;
 

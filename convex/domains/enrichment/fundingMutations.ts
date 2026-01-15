@@ -5,7 +5,7 @@
  */
 import { v } from "convex/values";
 import { mutation, internalMutation, query, internalQuery } from "../../_generated/server";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 
 const roundTypeValidator = v.union(
   v.literal("pre-seed"),
@@ -59,7 +59,7 @@ export const createFundingEvent = internalMutation({
       .withIndex("by_company", (q) =>
         q.eq("companyName", args.companyName).eq("roundType", args.roundType)
       )
-      .first();
+      .first() as Doc<"fundingEvents"> | null;
 
     if (existing) {
       // Update existing event with new sources
@@ -140,12 +140,12 @@ export const updateVerificationStatus = internalMutation({
     newSources: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const event = await ctx.db.get(args.fundingEventId);
+    const event = await ctx.db.get(args.fundingEventId) as Doc<"fundingEvents"> | null;
     if (!event) {
       throw new Error(`Funding event not found: ${args.fundingEventId}`);
     }
 
-    const updates: Partial<typeof event> = {
+    const updates: Partial<Doc<"fundingEvents">> = {
       verificationStatus: args.verificationStatus,
       updatedAt: Date.now(),
     };
@@ -201,10 +201,10 @@ export const getRecentFundingEvents = query({
       .order("desc")
       .filter((q) => q.gte(q.field("announcedAt"), cutoff));
 
-    const events = await query.take(args.limit ?? 50);
+    const events = await query.take(args.limit ?? 50) as Doc<"fundingEvents">[];
 
     // Filter by round type and confidence
-    return events.filter((e) => {
+    return events.filter((e: Doc<"fundingEvents">) => {
       if (e.confidence < minConfidence) return false;
       if (args.roundTypes && !args.roundTypes.includes(e.roundType)) return false;
       return true;
@@ -228,15 +228,15 @@ export const getFundingForDigest = internalQuery({
       .withIndex("by_announcedAt")
       .order("desc")
       .filter((q) => q.gte(q.field("announcedAt"), cutoff))
-      .collect();
+      .collect() as Doc<"fundingEvents">[];
 
     // Group by round type
     const seedEvents = events.filter(
-      (e) => e.roundType === "seed" || e.roundType === "pre-seed"
+      (e: Doc<"fundingEvents">) => e.roundType === "seed" || e.roundType === "pre-seed"
     );
-    const seriesAEvents = events.filter((e) => e.roundType === "series-a");
+    const seriesAEvents = events.filter((e: Doc<"fundingEvents">) => e.roundType === "series-a");
     const otherEvents = events.filter(
-      (e) => !["seed", "pre-seed", "series-a"].includes(e.roundType)
+      (e: Doc<"fundingEvents">) => !["seed", "pre-seed", "series-a"].includes(e.roundType)
     );
 
     return {
@@ -256,7 +256,7 @@ export const getFundingEvent = query({
     fundingEventId: v.id("fundingEvents"),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.fundingEventId);
+    return await ctx.db.get(args.fundingEventId) as Doc<"fundingEvents"> | null;
   },
 });
 
@@ -271,7 +271,7 @@ export const searchFundingByCompany = query({
     return await ctx.db
       .query("fundingEvents")
       .withSearchIndex("search_company", (q) => q.search("companyName", args.companyName))
-      .take(10);
+      .take(10) as Doc<"fundingEvents">[];
   },
 });
 
@@ -310,7 +310,7 @@ export const bulkSeedFundingEvents = mutation({
         .withIndex("by_company", (q) =>
           q.eq("companyName", event.companyName).eq("roundType", event.roundType)
         )
-        .first();
+        .first() as Doc<"fundingEvents"> | null;
 
       if (existing) {
         // Delete existing and recreate to ensure fresh data (including correct timestamps)
@@ -393,7 +393,7 @@ export const cleanupOldFundingEvents = internalMutation({
           now
         );
       })
-      .take(50);
+      .take(50) as Doc<"fundingEvents">[];
 
     for (const event of oldEvents) {
       await ctx.db.delete(event._id);

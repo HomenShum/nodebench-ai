@@ -268,9 +268,17 @@ export const refreshPaperDetails = action({
       420,
     );
 
-    const parsed = tryParseJson(raw) ?? {};
+    interface ParsedPaperDetails {
+      title?: string;
+      methodology?: string;
+      keyFindings?: string[];
+      authors?: string[];
+      doi?: string;
+      pdfUrl?: string;
+    }
+    const parsed = (tryParseJson(raw) ?? {}) as ParsedPaperDetails;
     const keyFindings = Array.isArray(parsed.keyFindings)
-      ? parsed.keyFindings.filter((item: any) => typeof item === "string")
+      ? parsed.keyFindings.filter((item: string) => typeof item === "string")
       : [];
 
     const title =
@@ -290,7 +298,7 @@ export const refreshPaperDetails = action({
       methodology: typeof parsed.methodology === "string" ? parsed.methodology : "",
       keyFindings,
       authors: parsed.authors && Array.isArray(parsed.authors)
-        ? parsed.authors.filter((item: any) => typeof item === "string")
+        ? parsed.authors.filter((item: string) => typeof item === "string")
         : metadata?.authors ?? semanticScholar?.authors ?? [],
       citationCount: typeof semanticScholar?.citationCount === "number" ? semanticScholar.citationCount : 0,
       doi: typeof parsed.doi === "string" ? parsed.doi : semanticScholar?.doi,

@@ -94,8 +94,8 @@ export function generateDossier({
   const parsedFounders = parseMaybeJson(founderResearch) ?? {};
   const parsedInvestors = parseMaybeJson(investorResearch) ?? {};
 
-  const companyName = intelligence.entities.companies[0] || parsedCompany.companyName || "Unknown Company";
-  const domain = extractDomain(intelligence.from) || parsedCompany.domain || "unknown";
+  const companyName = intelligence.entities.companies[0] || getString(parsedCompany, "companyName") || "Unknown Company";
+  const domain = extractDomain(intelligence.from) || getString(parsedCompany, "domain") || "unknown";
 
   const fundingRounds: FundingRound[] = normalizeFundingRounds(parsedInvestors);
   const investorProfiles = normalizeInvestorProfiles(parsedInvestors);
@@ -112,28 +112,28 @@ export function generateDossier({
     company: {
       name: companyName,
       domain,
-      description: parsedCompany.description || parsedCompany.summary || intelligence.subject || "AI-generated dossier",
-      headquarters: parsedCompany.headquarters,
-      founded: parsedCompany.founded,
-      industry: parsedCompany.industry || parsedCompany.sector,
-      employeeCount: parsedCompany.employeeCount,
-      website: parsedCompany.website || (domain !== "unknown" ? `https://${domain}` : undefined),
-      productDescription: parsedCompany.productDescription || parsedCompany.product,
-      stage: parsedCompany.stage || parsedCompany.fundingStage || "Seed",
+      description: getString(parsedCompany, "description", "summary") || intelligence.subject || "AI-generated dossier",
+      headquarters: getString(parsedCompany, "headquarters"),
+      founded: getString(parsedCompany, "founded"),
+      industry: getString(parsedCompany, "industry", "sector"),
+      employeeCount: getString(parsedCompany, "employeeCount"),
+      website: getString(parsedCompany, "website") || (domain !== "unknown" ? `https://${domain}` : undefined),
+      productDescription: getString(parsedCompany, "productDescription", "product"),
+      stage: getString(parsedCompany, "stage", "fundingStage") || "Seed",
     },
     team,
     funding: {
-      totalRaised: parsedInvestors.totalRaised ?? fundingRounds[fundingRounds.length - 1]?.amount,
+      totalRaised: getString(parsedInvestors, "totalRaised") ?? fundingRounds[fundingRounds.length - 1]?.amount,
       latestRound: fundingRounds[fundingRounds.length - 1],
       rounds: fundingRounds,
       investorProfiles,
     },
     market: {
-      industry: parsedCompany.industry || parsedCompany.sector,
-      marketSize: parsedCompany.marketSize,
-      competitors: parsedCompany.competitors ?? [],
-      differentiators: parsedCompany.differentiators ?? [],
-      technicalMoat: parsedCompany.technicalMoat,
+      industry: getString(parsedCompany, "industry", "sector"),
+      marketSize: getString(parsedCompany, "marketSize"),
+      competitors: getStringArray(parsedCompany, "competitors"),
+      differentiators: getStringArray(parsedCompany, "differentiators"),
+      technicalMoat: getString(parsedCompany, "technicalMoat"),
     },
     sources,
     actionItems,
@@ -142,7 +142,7 @@ export function generateDossier({
       emailSource: intelligence.from,
       researchDurationMs,
       confidenceScore,
-      freshnessDate: parsedCompany.freshnessDate,
+      freshnessDate: getString(parsedCompany, "freshnessDate"),
     },
   };
 }
@@ -158,6 +158,22 @@ function parseMaybeJson(input: unknown): Record<string, unknown> | null {
     }
   }
   return null;
+}
+
+/** Safely extract a string value from a parsed object */
+function getString(obj: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const val = obj[key];
+    if (typeof val === "string" && val) return val;
+  }
+  return undefined;
+}
+
+/** Safely extract a string array from a parsed object */
+function getStringArray(obj: Record<string, unknown>, key: string): string[] {
+  const val = obj[key];
+  if (Array.isArray(val)) return val.filter((v): v is string => typeof v === "string");
+  return [];
 }
 
 function extractDomain(from?: string): string | undefined {

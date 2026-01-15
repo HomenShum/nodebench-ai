@@ -6,6 +6,7 @@
 
 import { v } from "convex/values";
 import { query, internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 /**
  * Query an adaptive profile by entity name
@@ -18,7 +19,7 @@ export const getAdaptiveProfile = query({
     const profile = await ctx.db
       .query("adaptiveEntityProfiles")
       .withIndex("by_name", (q) => q.eq("entityName", args.entityName))
-      .first();
+      .first() as Doc<"adaptiveEntityProfiles"> | null;
 
     return profile?.profile || null;
   },
@@ -36,9 +37,9 @@ export const listAdaptiveProfiles = query({
     const profiles = await ctx.db
       .query("adaptiveEntityProfiles")
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"adaptiveEntityProfiles">[];
 
-    return profiles.map((p) => ({
+    return profiles.map((p: Doc<"adaptiveEntityProfiles">) => ({
       entityName: p.entityName,
       entityType: p.entityType,
       completeness: p.completeness,
@@ -62,9 +63,9 @@ export const getProfilesByType = query({
     const profiles = await ctx.db
       .query("adaptiveEntityProfiles")
       .withIndex("by_type", (q) => q.eq("entityType", args.entityType))
-      .take(limit);
+      .take(limit) as Doc<"adaptiveEntityProfiles">[];
 
-    return profiles.map((p) => ({
+    return profiles.map((p: Doc<"adaptiveEntityProfiles">) => ({
       entityName: p.entityName,
       entityType: p.entityType,
       headline: p.profile?.headline,
@@ -90,7 +91,7 @@ export const getAdaptiveProfilesBatch = query({
         const profile = await ctx.db
           .query("adaptiveEntityProfiles")
           .withIndex("by_name", (q) => q.eq("entityName", name))
-          .first();
+          .first() as Doc<"adaptiveEntityProfiles"> | null;
 
         if (profile?.profile) {
           results[name] = profile.profile;
@@ -121,7 +122,7 @@ export const storeAdaptiveProfile = internalMutation({
     const existing = await ctx.db
       .query("adaptiveEntityProfiles")
       .withIndex("by_name", (q) => q.eq("entityName", args.entityName))
-      .first();
+      .first() as Doc<"adaptiveEntityProfiles"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {

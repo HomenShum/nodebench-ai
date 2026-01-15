@@ -6,6 +6,7 @@
 
 import { v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 export const createOverlay = internalMutation({
   args: {
@@ -55,7 +56,7 @@ export const updatePersonalTaskStatus = internalMutation({
     meta: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const overlay = await ctx.db.get(args.overlayId);
+    const overlay = await ctx.db.get(args.overlayId) as Doc<"dailyBriefPersonalOverlays"> | null;
     if (!overlay) throw new Error("Overlay not found");
 
     const now = Date.now();

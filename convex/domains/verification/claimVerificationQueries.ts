@@ -3,6 +3,7 @@
 
 import { v } from "convex/values";
 import { internalQuery, internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 /**
  * Internal query to get artifact for verification
@@ -18,7 +19,7 @@ export const getArtifactForVerification = internalQuery({
       .withIndex("by_run_artifact", (q) =>
         q.eq("runId", args.runId).eq("artifactId", args.artifactId)
       )
-      .first();
+      .first() as Doc<"artifacts"> | null;
   },
 });
 
@@ -51,7 +52,7 @@ export const storeVerification = internalMutation({
       .withIndex("by_run_fact_artifact", (q) =>
         q.eq("runId", args.runId).eq("factId", args.factId).eq("artifactId", args.artifactId)
       )
-      .first();
+      .first() as Doc<"claimVerifications"> | null;
 
     if (existing) {
       // Update existing verification
@@ -125,7 +126,7 @@ export const updateArtifactHealth = internalMutation({
       .withIndex("by_run_artifact", (q) =>
         q.eq("runId", args.runId).eq("artifactId", args.artifactId)
       )
-      .first();
+      .first() as Doc<"artifacts"> | null;
 
     if (artifact) {
       await ctx.db.patch(artifact._id, {

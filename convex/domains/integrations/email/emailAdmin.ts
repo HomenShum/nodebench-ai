@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { query, internalQuery, mutation } from "../../../_generated/server";
+import { Doc } from "../../../_generated/dataModel";
 
 /**
  * Find user by email (internal query for admin actions)
@@ -18,7 +19,7 @@ export const findUserByEmail = internalQuery({
     const users = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("email"), args.email))
-      .collect();
+      .collect() as Doc<"users">[];
 
     if (users.length === 0) return null;
     if (users.length === 1) return users[0];
@@ -28,7 +29,7 @@ export const findUserByEmail = internalQuery({
       const googleAccount = await ctx.db
         .query("googleAccounts")
         .withIndex("by_user", (q) => q.eq("userId", user._id))
-        .first();
+        .first() as Doc<"googleAccounts"> | null;
       if (googleAccount) {
         return user;
       }
@@ -50,14 +51,14 @@ export const findAllUsersByEmail = query({
     const users = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("email"), args.email))
-      .collect();
+      .collect() as Doc<"users">[];
 
     const results = [];
     for (const user of users) {
       const googleAccount = await ctx.db
         .query("googleAccounts")
         .withIndex("by_user", (q) => q.eq("userId", user._id))
-        .first();
+        .first() as Doc<"googleAccounts"> | null;
 
       results.push({
         userId: user._id,
@@ -84,7 +85,7 @@ export const getGoogleAccountByUserId = internalQuery({
     return await ctx.db
       .query("googleAccounts")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .first();
+      .first() as Doc<"googleAccounts"> | null;
   },
 });
 
@@ -101,7 +102,7 @@ export const getEmailStatsByEmail = query({
     const user = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("email"), args.email))
-      .first();
+      .first() as Doc<"users"> | null;
 
     if (!user) {
       return { error: "User not found", email: args.email };
@@ -111,24 +112,24 @@ export const getEmailStatsByEmail = query({
     const threads = await ctx.db
       .query("emailThreads")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .collect() as Doc<"emailThreads">[];
 
     // Get email sync state
     const syncState = await ctx.db
       .query("emailSyncState")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .first();
+      .first() as Doc<"emailSyncState"> | null;
 
     // Get daily reports
     const reports = await ctx.db
       .query("emailDailyReports")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .order("desc")
-      .take(5);
+      .take(5) as Doc<"emailDailyReports">[];
 
     // Calculate stats
-    const unreadCount = threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
-    const actionRequiredCount = threads.filter((t) => t.aiActionRequired).length;
+    const unreadCount = threads.reduce((sum: number, t: Doc<"emailThreads">) => sum + (t.unreadCount || 0), 0);
+    const actionRequiredCount = threads.filter((t: Doc<"emailThreads">) => t.aiActionRequired).length;
 
     // Group by category
     const categoryMap = new Map<string, number>();
@@ -138,8 +139,8 @@ export const getEmailStatsByEmail = query({
     }
 
     const categories = Array.from(categoryMap.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+      .map(([name, count]: [string, number]) => ({ name, count }))
+      .sort((a: { name: string; count: number }, b: { name: string; count: number }) => b.count - a.count);
 
     return {
       userId: user._id,
@@ -157,7 +158,7 @@ export const getEmailStatsByEmail = query({
         syncStatus: syncState.syncStatus,
         historyId: syncState.historyId,
       } : null,
-      recentReports: reports.map((r) => ({
+      recentReports: reports.map((r: Doc<"emailDailyReports">) => ({
         date: r.date,
         totalReceived: r.totalReceived,
         totalUnread: r.totalUnread,
@@ -165,7 +166,7 @@ export const getEmailStatsByEmail = query({
         executiveSummary: r.executiveSummary?.slice(0, 200),
         deliveredVia: r.deliveredVia,
       })),
-      sampleThreads: threads.slice(0, 10).map((t) => ({
+      sampleThreads: threads.slice(0, 10).map((t: Doc<"emailThreads">) => ({
         id: t._id,
         subject: t.subject,
         from: t.participants?.[0] || "Unknown",
@@ -187,24 +188,24 @@ export const listGmailUsers = query({
     // Find Google OAuth accounts
     const googleAccounts = await ctx.db
       .query("googleAccounts")
-      .collect();
+      .collect() as Doc<"googleAccounts">[];
 
     const results = [];
 
     for (const account of googleAccounts) {
-      const user = await ctx.db.get(account.userId);
+      const user = await ctx.db.get(account.userId) as Doc<"users"> | null;
       if (user) {
         // Get thread count
         const threads = await ctx.db
           .query("emailThreads")
           .withIndex("by_user", (q) => q.eq("userId", user._id))
-          .take(1);
+          .take(1) as Doc<"emailThreads">[];
 
         // Get sync state
         const syncState = await ctx.db
           .query("emailSyncState")
           .withIndex("by_user", (q) => q.eq("userId", user._id))
-          .first();
+          .first() as Doc<"emailSyncState"> | null;
 
         results.push({
           userId: user._id,
@@ -237,7 +238,7 @@ export const checkGoogleAccountByEmail = query({
     const user = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("email"), args.email))
-      .first();
+      .first() as Doc<"users"> | null;
 
     if (!user) {
       return { error: "User not found", email: args.email };
@@ -247,7 +248,7 @@ export const checkGoogleAccountByEmail = query({
     const googleAccount = await ctx.db
       .query("googleAccounts")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .first();
+      .first() as Doc<"googleAccounts"> | null;
 
     if (!googleAccount) {
       return {
@@ -287,7 +288,7 @@ export const getOAuthUrlForUser = query({
     const user = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("email"), args.email))
-      .first();
+      .first() as Doc<"users"> | null;
 
     if (!user) {
       return { error: "User not found" };
@@ -343,7 +344,7 @@ export const deleteExpiredGoogleAccount = mutation({
     const users = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("email"), args.email))
-      .collect();
+      .collect() as Doc<"users">[];
 
     if (users.length === 0) {
       return { success: false, error: "User not found" };
@@ -354,7 +355,7 @@ export const deleteExpiredGoogleAccount = mutation({
       const googleAccount = await ctx.db
         .query("googleAccounts")
         .withIndex("by_user", (q) => q.eq("userId", user._id))
-        .first();
+        .first() as Doc<"googleAccounts"> | null;
 
       if (googleAccount) {
         await ctx.db.delete(googleAccount._id);

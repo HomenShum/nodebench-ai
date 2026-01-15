@@ -17,6 +17,7 @@ import {
   PERSONA_CONFIG,
   BUDGET_CONFIG,
   RESEARCH_CONFIG,
+  QUALITY_CONFIG,
   type PersonaId,
 } from "../../config/autonomousConfig";
 import type { Doc, Id } from "../../_generated/dataModel";
@@ -192,17 +193,17 @@ const PERSONA_RESEARCH_STRATEGIES: Record<
 export const getPersonaContext = internalQuery({
   args: { personaId: v.string() },
   handler: async (ctx, { personaId }): Promise<PersonaResearchContext | null> => {
-    const config = PERSONA_CONFIG[personaId as PersonaId];
-    if (!config) return null;
+    // Validate personaId is in the list
+    if (!PERSONA_CONFIG.personaIds.includes(personaId as PersonaId)) return null;
 
     // Get recent research tasks for this persona
     const recentTasks = await ctx.db
       .query("researchTasks")
       .withIndex("by_persona", (q) => q.eq("primaryPersona", personaId))
       .order("desc")
-      .take(20);
+      .take(20) as Doc<"researchTasks">[];
 
-    const recentEntities = [...new Set(recentTasks.map((t) => t.entityId))].slice(0, 10);
+    const recentEntities = [...new Set(recentTasks.map((t: Doc<"researchTasks">) => t.entityId))].slice(0, 10);
 
     // Get strategy for this persona
     const strategy = PERSONA_RESEARCH_STRATEGIES[personaId as PersonaId];
@@ -212,7 +213,7 @@ export const getPersonaContext = internalQuery({
       focusAreas: strategy?.focusAreas || [],
       recentEntities,
       pendingQuestions: [], // TODO: Pull from question queue
-      qualityThreshold: config.qualityThreshold,
+      qualityThreshold: QUALITY_CONFIG.minQualityScore,
     };
   },
 });
@@ -226,7 +227,7 @@ export const getPersonaBudget = internalQuery({
     return await ctx.db
       .query("personaBudgets")
       .withIndex("by_persona", (q) => q.eq("personaId", personaId))
-      .first();
+      .first() as Doc<"personaBudgets"> | null;
   },
 });
 
@@ -236,7 +237,7 @@ export const getPersonaBudget = internalQuery({
 export const getAllPersonaBudgets = internalQuery({
   args: {},
   handler: async (ctx): Promise<Doc<"personaBudgets">[]> => {
-    return await ctx.db.query("personaBudgets").collect();
+    return await ctx.db.query("personaBudgets").collect() as Doc<"personaBudgets">[];
   },
 });
 
@@ -251,7 +252,7 @@ export const getPersonaResearchQueue = internalQuery({
       .withIndex("by_persona", (q) => q.eq("primaryPersona", personaId))
       .filter((q) => q.eq(q.field("status"), "queued"))
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"researchTasks">[];
   },
 });
 
@@ -271,9 +272,9 @@ export const initializePersonaBudget = internalMutation({
     const existing = await ctx.db
       .query("personaBudgets")
       .withIndex("by_persona", (q) => q.eq("personaId", personaId))
-      .first();
+      .first() as Doc<"personaBudgets"> | null;
 
-    const budget = dailyBudget || BUDGET_CONFIG.defaultDailyBudget;
+    const budget = dailyBudget || BUDGET_CONFIG.dailyCostLimitUsd;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -307,7 +308,7 @@ export const consumeBudget = internalMutation({
     const budget = await ctx.db
       .query("personaBudgets")
       .withIndex("by_persona", (q) => q.eq("personaId", personaId))
-      .first();
+      .first() as Doc<"personaBudgets"> | null;
 
     if (!budget) {
       console.log(`[PersonaAgent] No budget found for ${personaId}`);
@@ -402,7 +403,9 @@ export const generateResearchPlan = internalAction({
       { personaId }
     );
 
-    if (!budget || budget.remainingBudget < BUDGET_CONFIG.minTaskCost) {
+    // Use a minimum task cost of $0.01 (1 cent)
+    const minTaskCost = 0.01;
+    if (!budget || budget.remainingBudget < minTaskCost) {
       console.log(`[PersonaAgent] ${personaId} has insufficient budget`);
       return null;
     }
@@ -415,9 +418,10 @@ export const generateResearchPlan = internalAction({
 
     // Filter to entities relevant to this persona's focus areas
     const strategy = PERSONA_RESEARCH_STRATEGIES[personaId as PersonaId];
-    const relevantEntities = staleEntities
-      .filter((e) => !context.recentEntities.includes(e.entityId))
-      .map((e) => ({
+    type StaleEntity = { entityId: string; canonicalName: string; freshness: { decayScore: number } };
+    const relevantEntities = (staleEntities as StaleEntity[])
+      .filter((e: StaleEntity) => !context.recentEntities.includes(e.entityId))
+      .map((e: StaleEntity) => ({
         entityId: e.entityId,
         entityName: e.canonicalName,
         priority: 100 - Math.round(e.freshness.decayScore * 100),
@@ -427,10 +431,12 @@ export const generateResearchPlan = internalAction({
 
     // Generate research questions based on focus areas
     const researchQuestions = strategy.focusAreas.map(
-      (area) => `What are the latest developments in ${area}?`
+      (area: string) => `What are the latest developments in ${area}?`
     );
 
-    const estimatedCost = relevantEntities.length * RESEARCH_CONFIG.avgTaskCost;
+    // Estimate cost based on number of entities ($0.05 per entity)
+    const avgTaskCost = 0.05;
+    const estimatedCost = relevantEntities.length * avgTaskCost;
 
     return {
       personaId: personaId as PersonaId,
@@ -453,7 +459,8 @@ export const executePersonaResearch = internalAction({
     entityType: v.string(),
   },
   handler: async (ctx, { personaId, entityId, entityName, entityType }): Promise<PersonaResearchResult | null> => {
-    const estimatedCost = RESEARCH_CONFIG.avgTaskCost;
+    // Average cost per research task
+    const estimatedCost = 0.05;
 
     // Check and consume budget
     const budgetOk = await ctx.runMutation(
@@ -576,10 +583,12 @@ export const tickAllPersonas = internalAction({
     let totalCost = 0;
 
     for (const personaId of personas) {
-      const config = PERSONA_CONFIG[personaId];
+      // Get research cadence for persona - if "continuous", enable autonomous operation
+      const cadence = PERSONA_CONFIG.researchCadence[personaId];
 
-      // Check if persona is enabled for autonomous operation
-      if (!config.autonomousEnabled) {
+      // For simplicity, enable all personas with "continuous" or "daily" cadence
+      const isAutonomousEnabled = cadence === "continuous" || cadence === "daily";
+      if (!isAutonomousEnabled) {
         continue;
       }
 

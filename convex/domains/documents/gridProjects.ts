@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { Doc } from "../../_generated/dataModel";
 
 /**
  * Query to get all grid projects for the authenticated user
@@ -71,7 +72,7 @@ export const getGridProject = query({
       throw new Error("Not authenticated");
     }
 
-    const gridProject = await ctx.db.get(args.gridProjectId);
+    const gridProject = await ctx.db.get(args.gridProjectId) as Doc<"gridProjects"> | null;
     if (!gridProject || gridProject.createdBy !== userId) {
       return null;
     }
@@ -139,7 +140,7 @@ export const updateGridProject = mutation({
       throw new Error("Not authenticated");
     }
 
-    const gridProject = await ctx.db.get(args.gridProjectId);
+    const gridProject = await ctx.db.get(args.gridProjectId) as Doc<"gridProjects"> | null;
     if (!gridProject || gridProject.createdBy !== userId) {
       throw new Error("Grid project not found or access denied");
     }
@@ -172,7 +173,7 @@ export const archiveGridProject = mutation({
       throw new Error("Not authenticated");
     }
 
-    const gridProject = await ctx.db.get(args.gridProjectId);
+    const gridProject = await ctx.db.get(args.gridProjectId) as Doc<"gridProjects"> | null;
     if (!gridProject || gridProject.createdBy !== userId) {
       throw new Error("Grid project not found or access denied");
     }
@@ -200,7 +201,7 @@ export const deleteGridProject = mutation({
       throw new Error("Not authenticated");
     }
 
-    const gridProject = await ctx.db.get(args.gridProjectId);
+    const gridProject = await ctx.db.get(args.gridProjectId) as Doc<"gridProjects"> | null;
     if (!gridProject || gridProject.createdBy !== userId) {
       throw new Error("Grid project not found or access denied");
     }

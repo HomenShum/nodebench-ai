@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, internalMutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 export const getDealFlow = query({
   args: {
@@ -11,14 +12,14 @@ export const getDealFlow = query({
     let snapshot = await ctx.db
       .query("dealFlowCache")
       .withIndex("by_date", (q) => q.eq("dateString", dateString))
-      .first();
+      .first() as Doc<"dealFlowCache"> | null;
 
     if (!snapshot) {
       snapshot = await ctx.db
         .query("dealFlowCache")
         .withIndex("by_fetched_at")
         .order("desc")
-        .first();
+        .first() as Doc<"dealFlowCache"> | null;
     }
 
     return snapshot?.deals ?? [];
@@ -33,7 +34,7 @@ export const getDealFlowSnapshot = query({
     return await ctx.db
       .query("dealFlowCache")
       .withIndex("by_date", (q) => q.eq("dateString", args.dateString))
-      .first();
+      .first() as Doc<"dealFlowCache"> | null;
   },
 });
 

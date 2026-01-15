@@ -17,6 +17,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalQuery, internalMutation } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // QUOTA CONFIGURATION
@@ -85,7 +86,7 @@ export const getProviderUsage = query({
       .withIndex("by_provider_month", (q) =>
         q.eq("provider", provider).eq("monthKey", monthStart)
       )
-      .first();
+      .first() as Doc<"searchQuotaUsage"> | null;
 
     const quota = PROVIDER_QUOTAS[provider];
     const usedQueries = usage?.usedQueries || 0;
@@ -130,7 +131,7 @@ export const getAllProvidersUsage = query({
         .withIndex("by_provider_month", (q) =>
           q.eq("provider", provider).eq("monthKey", monthStart)
         )
-        .first();
+        .first() as Doc<"searchQuotaUsage"> | null;
 
       const quota = PROVIDER_QUOTAS[provider];
       const usedQueries = usage?.usedQueries || 0;
@@ -173,7 +174,7 @@ export const getNextFreeProvider = internalQuery({
         .withIndex("by_provider_month", (q) =>
           q.eq("provider", provider).eq("monthKey", monthStart)
         )
-        .first();
+        .first() as Doc<"searchQuotaUsage"> | null;
 
       const usedQueries = usage?.usedQueries || 0;
       const remaining = quota.monthlyLimit - usedQueries;
@@ -214,7 +215,7 @@ export const trackSearchUsage = internalMutation({
       .withIndex("by_provider_month", (q) =>
         q.eq("provider", provider).eq("monthKey", monthStart)
       )
-      .first();
+      .first() as Doc<"searchQuotaUsage"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -259,7 +260,7 @@ export const resetProviderUsage = mutation({
       .withIndex("by_provider_month", (q) =>
         q.eq("provider", provider).eq("monthKey", monthStart)
       )
-      .first();
+      .first() as Doc<"searchQuotaUsage"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -304,7 +305,7 @@ export const getProviderPriorityList = internalQuery({
         .withIndex("by_provider_month", (q) =>
           q.eq("provider", provider).eq("monthKey", monthStart)
         )
-        .first();
+        .first() as Doc<"searchQuotaUsage"> | null;
 
       const usedQueries = usage?.usedQueries || 0;
       const remaining = quota.monthlyLimit === -1 ? Infinity : quota.monthlyLimit - usedQueries;

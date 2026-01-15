@@ -46,10 +46,10 @@ export const writeMemory = mutation({
         const now = Date.now();
 
         // Check if entry already exists
-        const existing = await ctx.db
+        const existing: Doc<"agentMemory"> | null = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", args.key))
-            .first() as Doc<"agentMemory"> | null;
+            .first();
 
         if (existing) {
             // Update existing entry
@@ -157,10 +157,10 @@ export const deleteMemory = mutation({
             throw new Error("Authentication required");
         }
 
-        const memory = await ctx.db
+        const memory: Doc<"agentMemory"> | null = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", args.key))
-            .first() as Doc<"agentMemory"> | null;
+            .first();
 
         if (!memory) {
             throw new Error("Memory entry not found");
@@ -193,10 +193,10 @@ export const writeMemoryAsService = mutation({
         }
 
         const now = Date.now();
-        const existing = await ctx.db
+        const existing: Doc<"agentMemory"> | null = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", args.userId).eq("key", args.key))
-            .first() as Doc<"agentMemory"> | null;
+            .first();
 
         if (existing) {
             await ctx.db.patch(existing._id, {
@@ -277,10 +277,10 @@ export const deleteMemoryAsService = mutation({
         if (args.secret !== "nodebench_dev_secret") {
             throw new Error("Unauthorized: Invalid MCP secret");
         }
-        const memory = await ctx.db
+        const memory: Doc<"agentMemory"> | null = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", args.userId).eq("key", args.key))
-            .first() as Doc<"agentMemory"> | null;
+            .first();
 
         if (memory) {
             await ctx.db.delete(memory._id);
@@ -599,10 +599,10 @@ export const storeStrategyRefinement = mutation({
         const now = Date.now();
         const key = `strategy:${args.refinementType}:${args.key}`;
 
-        const existing = await ctx.db
+        const existing: Doc<"agentMemory"> | null = await ctx.db
             .query("agentMemory")
             .withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", key))
-            .first() as Doc<"agentMemory"> | null;
+            .first();
 
         const content = JSON.stringify({
             value: args.newValue,

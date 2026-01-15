@@ -1076,13 +1076,13 @@ async function fetchStockPrice(ctx: any, ticker: string | null | undefined) {
       { symbol: ticker, startDate, endDate },
       { toolCallId: "entityInsights" },
     );
-    const parsed = extractJsonFromText(response);
-    const data = parsed?.data ?? parsed;
+    const parsed = extractJsonFromText(response) as Record<string, unknown> | null;
+    const data = (parsed?.data ?? parsed) as unknown[];
     if (Array.isArray(data) && data.length > 0) {
-      const latest = data[data.length - 1];
+      const latest = data[data.length - 1] as { close?: number; price?: number; adj_close?: number; date?: string; timestamp?: string } | undefined;
       const price = Number(latest?.close ?? latest?.price ?? latest?.adj_close);
       if (Number.isFinite(price)) {
-        return { price, asOf: latest?.date ?? latest?.timestamp ?? null };
+        return { price, asOf: latest?.date ?? latest?.timestamp ?? undefined };
       }
     }
   } catch {
@@ -1312,7 +1312,7 @@ Use null for unknown fields. Be precise with amounts and dates.`;
         fundingPrompt,
         400,
       );
-      const fundingParsed = tryParseJson(fundingRaw);
+      const fundingParsed = tryParseJson(fundingRaw) as { stage?: string; totalRaised?: FundingAmount; lastRound?: FundingRound; bankerTakeaway?: string } | null;
       if (fundingParsed) {
         fundingData = {
           stage: asString(fundingParsed.stage) || asString(parsed.fundingStage),

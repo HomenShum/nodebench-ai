@@ -1,6 +1,7 @@
 import { query, mutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { Doc } from "../../_generated/dataModel";
 
 /**
  * Get comprehensive analytics for the Roadmap Hub
@@ -334,7 +335,7 @@ export const trackVisitor = mutation({
       .query("visitors")
       .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
       .order("desc")
-      .first();
+      .first() as Doc<"visitors"> | null;
 
     if (recentVisit && now - recentVisit._creationTime < 30 * 60 * 1000) {
       // Update last seen

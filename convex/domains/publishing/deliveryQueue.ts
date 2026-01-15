@@ -55,7 +55,7 @@ function calculateBackoff(attempts: number): number {
 export const getJob = internalQuery({
   args: { jobId: v.id("deliveryJobs") },
   handler: async (ctx, { jobId }): Promise<Doc<"deliveryJobs"> | null> => {
-    return await ctx.db.get(jobId);
+    return await ctx.db.get(jobId) as Doc<"deliveryJobs"> | null;
   },
 });
 
@@ -71,7 +71,7 @@ export const getReadyJobs = internalQuery({
     const pendingJobs = await ctx.db
       .query("deliveryJobs")
       .withIndex("by_status", (q) => q.eq("status", "pending"))
-      .take(limit);
+      .take(limit) as Doc<"deliveryJobs">[];
 
     // Get retrying jobs that are due
     const retryingJobs = await ctx.db
@@ -83,7 +83,7 @@ export const getReadyJobs = internalQuery({
           q.lte(q.field("nextRetryAt"), now)
         )
       )
-      .take(limit);
+      .take(limit) as Doc<"deliveryJobs">[];
 
     // Combine and deduplicate
     const allJobs = [...pendingJobs, ...retryingJobs];
@@ -105,7 +105,7 @@ export const getJobsByPublishingTask = internalQuery({
     return await ctx.db
       .query("deliveryJobs")
       .withIndex("by_publishing_task", (q) => q.eq("publishingTaskId", publishingTaskId))
-      .collect();
+      .collect() as Doc<"deliveryJobs">[];
   },
 });
 
@@ -122,7 +122,7 @@ export const getQueueStats = internalQuery({
     retrying: number;
     byChannel: Record<string, number>;
   }> => {
-    const allJobs = await ctx.db.query("deliveryJobs").collect();
+    const allJobs = await ctx.db.query("deliveryJobs").collect() as Doc<"deliveryJobs">[];
 
     const stats = {
       pending: 0,
@@ -189,7 +189,7 @@ export const markForRetry = internalMutation({
     error: v.string(),
   },
   handler: async (ctx, { jobId, error }): Promise<boolean> => {
-    const job = await ctx.db.get(jobId);
+    const job = await ctx.db.get(jobId) as Doc<"deliveryJobs"> | null;
     if (!job) return false;
 
     const newAttempts = job.attempts + 1;
@@ -249,7 +249,7 @@ export const cleanupOldJobs = internalMutation({
           q.lt(q.field("createdAt"), cutoff)
         )
       )
-      .take(limit);
+      .take(limit) as Doc<"deliveryJobs">[];
 
     for (const job of oldJobs) {
       await ctx.db.delete(job._id);
@@ -433,7 +433,7 @@ export const processDeliveryQueue = internalAction({
     for (let i = 0; i < readyJobs.length; i += batchSize) {
       const batch = readyJobs.slice(i, i + batchSize);
       await Promise.all(
-        batch.map(async (job) => {
+        batch.map(async (job: Doc<"deliveryJobs">) => {
           try {
             await ctx.runAction(
               internal.domains.publishing.deliveryQueue.processJob,

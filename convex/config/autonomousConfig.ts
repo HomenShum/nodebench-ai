@@ -204,6 +204,12 @@ export const ENGAGEMENT_CONFIG = {
 
   /** Engagement decay half-life (days) */
   engagementDecayDays: 7,
+
+  /** Dismiss rate threshold to reduce frequency */
+  dismissThreshold: 0.3,
+
+  /** Maximum daily messages per channel */
+  maxDailyMessages: 10,
 } as const;
 
 /* ================================================================== */

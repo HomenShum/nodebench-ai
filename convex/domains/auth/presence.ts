@@ -3,7 +3,7 @@ import { components } from "../../_generated/api";
 import { v } from "convex/values";
 import { Presence } from "@convex-dev/presence";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "../../_generated/dataModel";
+import { Id, Doc } from "../../_generated/dataModel";
 
 export const presence = new Presence(components.presence);
 
@@ -81,7 +81,7 @@ export const list = query({
       const listWithUserInfo = await Promise.all(
         presenceList.map(async (entry) => {
           try {
-            const user = await ctx.db.get(entry.userId);
+            const user = await ctx.db.get(entry.userId) as Doc<"users"> | null;
             if (!user) {
               return entry;
             }
@@ -152,7 +152,7 @@ export const listRoom = internalQuery({
       const enriched = await Promise.all(
         base.map(async (entry: { userId: string; online: boolean; lastDisconnected: number }) => {
           try {
-            const user = await ctx.db.get(entry.userId);
+            const user = await ctx.db.get(entry.userId as Id<"users">) as Doc<"users"> | null;
             if (!user) return entry;
             return { ...entry, name: user.name, image: user.image };
           } catch (e) {
@@ -196,7 +196,7 @@ export const listUser = internalQuery({
       const enriched = await Promise.all(
         base.map(async (entry: { roomId: string; online: boolean; lastDisconnected: number }) => {
           try {
-            const doc = await ctx.db.get(entry.roomId);
+            const doc = await ctx.db.get(entry.roomId as Id<"documents">) as Doc<"documents"> | null;
             if (!doc) return entry;
             return { ...entry, title: doc.title };
           } catch (e) {
@@ -230,7 +230,7 @@ export const removeRoomUser = internalMutation({
     // Allow removing self; otherwise require ownership of the document (if exists).
     if (userId !== (authUserId as unknown as string)) {
       try {
-        const doc = await ctx.db.get(roomId as Id<"documents">);
+        const doc = await ctx.db.get(roomId as Id<"documents">) as Doc<"documents"> | null;
         if (!doc || String(doc.createdBy) !== String(authUserId)) {
           throw new Error("Not authorized to remove other users from this room");
         }
@@ -253,7 +253,7 @@ export const removeRoom = internalMutation({
     }
     // Require owner of the document (if exists)
     try {
-      const doc = await ctx.db.get(roomId as Id<"documents">);
+      const doc = await ctx.db.get(roomId as Id<"documents">) as Doc<"documents"> | null;
       if (doc && String(doc.createdBy) !== String(authUserId)) {
         throw new Error("Not authorized to remove this room");
       }

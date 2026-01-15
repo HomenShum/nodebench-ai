@@ -19,6 +19,7 @@
 import { v } from "convex/values";
 import { action, internalMutation, internalQuery, query } from "../../../_generated/server";
 import { internal, api } from "../../../_generated/api";
+import { Doc } from "../../../_generated/dataModel";
 import type { SearchResult, SearchSource, SearchMode } from "./types";
 import {
   normalizeModelInput,
@@ -668,7 +669,7 @@ export const getBaseline = internalQuery({
     const snapshot = await ctx.db
       .query("searchBaselineSnapshots")
       .filter(q => q.eq(q.field("snapshotId"), args.snapshotId))
-      .first();
+      .first() as Doc<"searchBaselineSnapshots"> | null;
 
     if (!snapshot) return null;
 
@@ -691,7 +692,7 @@ export const listBaselines = query({
       .order("desc")
       .take(20);
 
-    return snapshots.map(s => ({
+    return snapshots.map((s: Doc<"searchBaselineSnapshots">) => ({
       snapshotId: s.snapshotId,
       snapshotVersion: s.snapshotVersion,
       createdAt: s.createdAt,
@@ -712,7 +713,7 @@ export const getEvaluation = internalQuery({
     const evaluation = await ctx.db
       .query("searchCrossProviderEvals")
       .filter(q => q.eq(q.field("evalId"), args.evalId))
-      .first();
+      .first() as Doc<"searchCrossProviderEvals"> | null;
 
     if (!evaluation) return null;
 
@@ -739,7 +740,7 @@ export const getRecentEvaluations = query({
       .order("desc")
       .take(limit);
 
-    return evaluations.map(e => ({
+    return evaluations.map((e: Doc<"searchCrossProviderEvals">) => ({
       evalId: e.evalId,
       query: e.query,
       category: e.category,

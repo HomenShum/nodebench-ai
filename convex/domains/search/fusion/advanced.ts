@@ -498,7 +498,7 @@ export function expandQuery(
 /**
  * Default source boost factors
  */
-const DEFAULT_SOURCE_BOOSTS: Record<SearchSource, number> = {
+const DEFAULT_SOURCE_BOOSTS: Partial<Record<SearchSource, number>> = {
   sec: 1.2,        // SEC filings are authoritative for financial queries
   arxiv: 1.15,    // Academic papers are authoritative for research
   rag: 1.1,       // Internal knowledge is contextually relevant

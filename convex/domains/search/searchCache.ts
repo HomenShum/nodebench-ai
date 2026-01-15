@@ -1,6 +1,7 @@
 // convex/searchCache.ts - Global search result caching with versioning
 import { v } from "convex/values";
 import { query, mutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 // Maximum number of versions to keep (prevent unbounded array growth)
 const MAX_VERSIONS = 30;
@@ -18,7 +19,7 @@ export const getCachedSearch = query({
         return await ctx.db
             .query("searchCache")
             .withIndex("by_prompt", (q) => q.eq("prompt", normalized))
-            .first();
+            .first() as Doc<"searchCache"> | null;
     }
 });
 
@@ -38,7 +39,7 @@ export const saveSearchResult = mutation({
         const existing = await ctx.db
             .query("searchCache")
             .withIndex("by_prompt", (q) => q.eq("prompt", normalized))
-            .first();
+            .first() as Doc<"searchCache"> | null;
 
         const today = new Date().toISOString().split('T')[0];
         const now = Date.now();
@@ -137,7 +138,7 @@ export const isCacheStale = query({
         const cached = await ctx.db
             .query("searchCache")
             .withIndex("by_prompt", (q) => q.eq("prompt", normalized))
-            .first();
+            .first() as Doc<"searchCache"> | null;
 
         if (!cached) {
             return { exists: false, isStale: false };

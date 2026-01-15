@@ -168,27 +168,27 @@ export const refreshStrategyMetrics = action({
       480,
     );
 
-    const parsed = tryParseJson(raw) ?? {};
+    const parsed = (tryParseJson(raw) ?? {}) as Record<string, unknown>;
     let metrics = Array.isArray(parsed.metrics)
-      ? parsed.metrics
-          .map((metric: any) => ({
+      ? (parsed.metrics as Array<Record<string, unknown>>)
+          .map((metric: Record<string, unknown>) => ({
             label: asString(metric.label),
             value: asString(metric.value),
             unit: asString(metric.unit),
             context: asString(metric.context),
             source: asString(metric.source),
           }))
-          .filter((metric: any) => metric.label && metric.value)
+          .filter((metric: { label: string; value: string }) => metric.label && metric.value)
       : [];
 
     let narrative = asString(parsed.narrative);
     let risks = Array.isArray(parsed.risks)
-      ? parsed.risks.filter((item: any) => typeof item === "string")
+      ? (parsed.risks as unknown[]).filter((item: unknown) => typeof item === "string") as string[]
       : [];
 
     if (!metrics.length) {
       const fallback = fallbackMetrics(args.title);
-      metrics = fallback.metrics;
+      metrics = fallback.metrics as typeof metrics;
       narrative = narrative || fallback.narrative;
       risks = risks.length ? risks : fallback.risks;
     }
@@ -202,8 +202,8 @@ export const refreshStrategyMetrics = action({
       risks,
       sources: sourceMatrix
         .slice(0, 4)
-        .map((source: any) => ({ title: source.title, url: source.url }))
-        .filter((source: any) => source.url),
+        .map((source: { title?: string; url?: string }) => ({ title: source.title, url: source.url }))
+        .filter((source: { title?: string; url?: string }) => source.url),
       fetchedAt: Date.now(),
     };
 

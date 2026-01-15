@@ -23,6 +23,7 @@
 import { v } from "convex/values";
 import { action, internalAction, mutation, query, internalMutation } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -194,8 +195,8 @@ export const sendMessageWithButtons = internalAction({
   },
   handler: async (ctx, args): Promise<{ sent: boolean; messageId?: number; error?: string }> => {
     try {
-      const inlineKeyboard = args.buttons.map((row) =>
-        row.map((btn) => ({
+      const inlineKeyboard = args.buttons.map((row: Array<{ text: string; callbackData?: string; url?: string }>) =>
+        row.map((btn: { text: string; callbackData?: string; url?: string }) => ({
           text: btn.text,
           ...(btn.callbackData && { callback_data: btn.callbackData }),
           ...(btn.url && { url: btn.url }),
@@ -383,7 +384,7 @@ export const registerTelegramUser = mutation({
     const existing = await ctx.db
       .query("telegramUsers")
       .withIndex("by_chat_id", (q) => q.eq("telegramChatId", args.telegramChatId))
-      .first();
+      .first() as Doc<"telegramUsers"> | null;
 
     if (existing) {
       // Update existing
@@ -420,7 +421,7 @@ export const getTelegramUser = query({
     return await ctx.db
       .query("telegramUsers")
       .withIndex("by_chat_id", (q) => q.eq("telegramChatId", args.telegramChatId))
-      .first();
+      .first() as Doc<"telegramUsers"> | null;
   },
 });
 
@@ -436,7 +437,7 @@ export const toggleNotifications = mutation({
     const user = await ctx.db
       .query("telegramUsers")
       .withIndex("by_chat_id", (q) => q.eq("telegramChatId", args.telegramChatId))
-      .first();
+      .first() as Doc<"telegramUsers"> | null;
 
     if (user) {
       await ctx.db.patch(user._id, {
@@ -491,7 +492,7 @@ export const getRecentMessages = query({
       .query("telegramMessages")
       .withIndex("by_chat_id", (q) => q.eq("telegramChatId", args.telegramChatId))
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"telegramMessages">[];
   },
 });
 

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Doc } from "../../_generated/dataModel";
 
 /**
  * Get active recommendations for the current user
@@ -83,7 +84,7 @@ export const dismissRecommendation = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const rec = await ctx.db.get(args.recommendationId);
+    const rec = await ctx.db.get(args.recommendationId) as Doc<"recommendations"> | null;
     if (!rec || rec.userId !== userId) {
       throw new Error("Recommendation not found");
     }
@@ -101,7 +102,7 @@ export const clickRecommendation = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const rec = await ctx.db.get(args.recommendationId);
+    const rec = await ctx.db.get(args.recommendationId) as Doc<"recommendations"> | null;
     if (!rec || rec.userId !== userId) {
       throw new Error("Recommendation not found");
     }
@@ -155,10 +156,10 @@ export const getRecommendationStats = query({
     const allRecs = await ctx.db
       .query("recommendations")
       .withIndex("by_user_created", (q) => q.eq("userId", userId))
-      .collect();
+      .collect() as Doc<"recommendations">[];
 
-    const clicked = allRecs.filter((r) => r.clicked).length;
-    const dismissed = allRecs.filter((r) => r.dismissed && !r.clicked).length;
+    const clicked = allRecs.filter((r: Doc<"recommendations">) => r.clicked).length;
+    const dismissed = allRecs.filter((r: Doc<"recommendations">) => r.dismissed && !r.clicked).length;
     const total = allRecs.length;
 
     return {

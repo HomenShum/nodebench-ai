@@ -288,7 +288,7 @@ async function generateLLMText(prompt: string, maxOutputTokens: number = 2000): 
     model,
     prompt,
     maxTokens: maxOutputTokens,
-  });
+  } as Parameters<typeof generateText>[0]);
 
   return result.text;
 }

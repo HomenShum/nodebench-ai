@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../_generated/server";
+import { Doc } from "../_generated/dataModel";
 import { hashSync } from "../../shared/artifacts";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -290,7 +291,7 @@ export const compactMentionsWindow = internalMutation({
       const existing = await ctx.db
         .query("globalMentionAgg")
         .withIndex("by_aggKey", (q) => q.eq("aggKey", aggKey))
-        .first();
+        .first() as Doc<"globalMentionAgg"> | null;
 
       if (existing) {
         // Merge with existing
@@ -397,7 +398,7 @@ export const getAggByQuery = internalQuery({
       .take(limit * 3); // Overfetch to allow filtering
 
     // Filter by date range in memory
-    const filtered = aggs.filter((a) => {
+    const filtered = aggs.filter((a: Doc<"globalMentionAgg">) => {
       if (fromDay && a.dayBucket < fromDay) return false;
       if (toDay && a.dayBucket > toDay) return false;
       return true;
@@ -432,7 +433,7 @@ export const getAggByEntity = internalQuery({
       .take(limit * 3);
 
     // Filter by date range in memory
-    const filtered = aggs.filter((a) => {
+    const filtered = aggs.filter((a: Doc<"globalMentionAgg">) => {
       if (fromDay && a.dayBucket < fromDay) return false;
       if (toDay && a.dayBucket > toDay) return false;
       return true;
@@ -457,7 +458,7 @@ export const getTopByDay = internalQuery({
       .collect();
 
     // Sort by mentionCount descending
-    aggs.sort((a, b) => b.mentionCount - a.mentionCount);
+    aggs.sort((a: Doc<"globalMentionAgg">, b: Doc<"globalMentionAgg">) => b.mentionCount - a.mentionCount);
 
     return aggs.slice(0, limit);
   },

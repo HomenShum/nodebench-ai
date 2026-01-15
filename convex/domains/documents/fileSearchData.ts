@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../../_generated/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 export const getFileSearchStoreForUser = internalQuery({
   args: { userId: v.id("users") },
@@ -28,12 +28,12 @@ export const createFileSearchStore = internalMutation({
 export const getDocumentForUpsert = internalQuery({
   args: { documentId: v.id("documents") },
   handler: async (ctx, { documentId }) => {
-    const doc = await ctx.db.get(documentId);
+    const doc = await ctx.db.get(documentId) as Doc<"documents"> | null;
     if (!doc) return null;
 
     let fileData = null;
-    if ((doc).documentType === "file" && (doc).fileId) {
-      const file = await ctx.db.get((doc).fileId as Id<"files">);
+    if (doc.documentType === "file" && doc.fileId) {
+      const file = await ctx.db.get(doc.fileId) as Doc<"files"> | null;
       if (file?.storageId) {
         fileData = {
           storageId: file.storageId,

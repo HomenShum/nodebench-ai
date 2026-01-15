@@ -1,6 +1,6 @@
 import { mutation, query } from "../../_generated/server";
 import { v } from "convex/values";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -25,7 +25,7 @@ export const getOrCreateDailyNotes = mutation({
         q.eq("createdBy", userId).eq("agendaDate", args.agendaDate)
       )
       .filter((q) => q.neq(q.field("isArchived"), true))
-      .first();
+      .first() as Doc<"documents"> | null;
 
     if (existing) {
       return existing._id;
@@ -93,7 +93,7 @@ export const getDailyNotes = query({
         q.eq("createdBy", userId).eq("agendaDate", args.agendaDate)
       )
       .filter((q) => q.neq(q.field("isArchived"), true))
-      .first();
+      .first() as Doc<"documents"> | null;
 
     return doc;
   },

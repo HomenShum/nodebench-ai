@@ -11,7 +11,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation, internalQuery } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 /**
  * Get all pending or failed edits for a document
@@ -74,7 +74,7 @@ export const reportEditResult = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const edit = await ctx.db.get(args.editId);
+    const edit = await ctx.db.get(args.editId) as Doc<"pendingDocumentEdits"> | null;
     if (!edit) throw new Error("Edit not found");
     if (edit.userId !== userId) throw new Error("Not authorized");
 
@@ -125,7 +125,7 @@ export const retryEdit = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const edit = await ctx.db.get(args.editId);
+    const edit = await ctx.db.get(args.editId) as Doc<"pendingDocumentEdits"> | null;
     if (!edit) throw new Error("Edit not found");
     if (edit.userId !== userId) throw new Error("Not authorized");
     if (edit.status !== "failed") throw new Error("Can only retry failed edits");
@@ -133,7 +133,7 @@ export const retryEdit = mutation({
     await ctx.db.patch(args.editId, {
       status: "pending",
       errorMessage: undefined,
-      retryCount: edit.retryCount + 1,
+      retryCount: (edit.retryCount || 0) + 1,
     });
 
     return { success: true };

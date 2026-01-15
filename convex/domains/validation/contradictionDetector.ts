@@ -247,7 +247,7 @@ export const getEntityContradictions = internalQuery({
       .query("contradictions")
       .withIndex("by_entity", (q) => q.eq("entityId", entityId))
       .filter((q) => q.eq(q.field("status"), "unresolved"))
-      .collect();
+      .collect() as Doc<"contradictions">[];
   },
 });
 
@@ -260,7 +260,7 @@ export const getUnresolvedContradictions = internalQuery({
     return await ctx.db
       .query("contradictions")
       .withIndex("by_status", (q) => q.eq("status", "unresolved"))
-      .take(limit);
+      .take(limit) as Doc<"contradictions">[];
   },
 });
 
@@ -273,10 +273,10 @@ export const getCriticalContradictions = internalQuery({
     const contradictions = await ctx.db
       .query("contradictions")
       .withIndex("by_status", (q) => q.eq("status", "unresolved"))
-      .collect();
+      .collect() as Doc<"contradictions">[];
 
     return contradictions.filter(
-      (c) => c.severity === "critical" || c.severity === "high"
+      (c: Doc<"contradictions">) => c.severity === "critical" || c.severity === "high"
     );
   },
 });
@@ -293,7 +293,7 @@ export const getContradictionStats = internalQuery({
     bySeverity: Record<string, number>;
     byField: Record<string, number>;
   }> => {
-    const contradictions = await ctx.db.query("contradictions").collect();
+    const contradictions = await ctx.db.query("contradictions").collect() as Doc<"contradictions">[];
 
     const stats = {
       total: contradictions.length,
@@ -451,7 +451,7 @@ export const batchRecordContradictions = internalMutation({
             q.eq(q.field("status"), "unresolved")
           )
         )
-        .first();
+        .first() as Doc<"contradictions"> | null;
 
       if (!existing) {
         await ctx.db.insert("contradictions", {
@@ -565,16 +565,16 @@ export const autoResolveContradictions = internalAction({
 
     let resolved = 0;
 
-    for (const contradiction of unresolved) {
+    for (const contradiction of unresolved as Doc<"contradictions">[]) {
       // Only auto-resolve low severity
       if (contradiction.severity !== "low") {
         continue;
       }
 
-      // Use suggested resolution if confidence is high enough
+      // Use suggested resolution if confidence is high enough (using medium threshold)
       if (
         contradiction.suggestedResolution &&
-        contradiction.suggestedResolution.confidence >= QUALITY_CONFIG.minConfidence
+        contradiction.suggestedResolution.confidence >= QUALITY_CONFIG.thresholds.confidenceMedium
       ) {
         await ctx.runMutation(
           internal.domains.validation.contradictionDetector.resolveContradiction,
@@ -609,12 +609,12 @@ export const checkEntityIntegrity = internalAction({
       { entityId }
     );
 
-    const severityWeights = { low: 5, medium: 15, high: 30, critical: 50 };
+    const severityWeights: Record<string, number> = { low: 5, medium: 15, high: 30, critical: 50 };
     let penalty = 0;
     const issues: string[] = [];
 
-    for (const c of contradictions) {
-      penalty += severityWeights[c.severity];
+    for (const c of contradictions as Doc<"contradictions">[]) {
+      penalty += severityWeights[c.severity] || 0;
       issues.push(`${c.severity.toUpperCase()}: Conflicting ${c.field} values from ${c.factA.source} vs ${c.factB.source}`);
     }
 

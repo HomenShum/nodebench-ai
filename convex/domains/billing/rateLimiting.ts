@@ -9,6 +9,7 @@ import { v } from "convex/values";
 import { query, mutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api } from "../../_generated/api";
+import type { Doc } from "../../_generated/dataModel";
 import {
   type UserTier,
   type LlmProvider,
@@ -102,8 +103,8 @@ export const getCurrentUsage = query({
       const usageRecord = await ctx.db
         .query("llmUsageDaily")
         .withIndex("by_user_date", (q: any) => q.eq("userId", userId).eq("date", date))
-        .first();
-      
+        .first() as Doc<"llmUsageDaily"> | null;
+
       if (usageRecord) {
         usage = {
           requests: usageRecord.requests,
@@ -227,8 +228,8 @@ export const checkRequestAllowed = query({
       const usageRecord = await ctx.db
         .query("llmUsageDaily")
         .withIndex("by_user_date", (q: any) => q.eq("userId", userId).eq("date", date))
-        .first();
-      
+        .first() as Doc<"llmUsageDaily"> | null;
+
       if (usageRecord) {
         currentUsage = {
           requests: usageRecord.requests,
@@ -302,7 +303,7 @@ export const recordLlmUsage = mutation({
     const existing = await ctx.db
       .query("llmUsageDaily")
       .withIndex("by_user_date", (q: any) => q.eq("userId", userId).eq("date", date))
-      .first();
+      .first() as Doc<"llmUsageDaily"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -384,7 +385,7 @@ export const recordSessionLlmUsage = mutation({
     const existing = await ctx.db
       .query("anonymousUsageDaily")
       .withIndex("by_session_date", (q: any) => q.eq("sessionId", args.sessionId).eq("date", date))
-      .first();
+      .first() as Doc<"anonymousUsageDaily"> | null;
 
     const inc = args.incrementRequest === true ? 1 : 0;
 

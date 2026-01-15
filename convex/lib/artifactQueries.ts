@@ -34,7 +34,7 @@ async function getSafeUserId(ctx: any): Promise<Id<"users"> | null> {
   }
 
   // Verify the user exists
-  const user = await ctx.db.get(userId);
+  const user = await ctx.db.get(userId) as Doc<"users"> | null;
   if (!user) return null;
 
   return userId;
@@ -58,11 +58,11 @@ export const getArtifactsByRun = query({
     
     const rows = await ctx.db
       .query("artifacts")
-      .withIndex("by_user_run", (q) => 
+      .withIndex("by_user_run", (q) =>
         q.eq("userId", userId).eq("runId", args.runId)
       )
-      .collect();
-    
+      .collect() as Doc<"artifacts">[];
+
     // Map DB rows to ArtifactCard at the edge
     return toArtifactCards(rows);
   },
@@ -82,17 +82,17 @@ export const getArtifactLinksByRun = query({
     // Security: verify user owns artifacts in this run first
     const hasAccess = await ctx.db
       .query("artifacts")
-      .withIndex("by_user_run", (q) => 
+      .withIndex("by_user_run", (q) =>
         q.eq("userId", userId).eq("runId", args.runId)
       )
-      .first();
-    
+      .first() as Doc<"artifacts"> | null;
+
     if (!hasAccess) return [];
-    
+
     return await ctx.db
       .query("artifactLinks")
       .withIndex("by_run", (q) => q.eq("runId", args.runId))
-      .collect();
+      .collect() as Doc<"artifactLinks">[];
   },
 });
 
@@ -110,17 +110,17 @@ export const getEvidenceLinksByRun = query({
     // Check if user has any artifacts in this run
     const hasAccess = await ctx.db
       .query("artifacts")
-      .withIndex("by_user_run", (q) => 
+      .withIndex("by_user_run", (q) =>
         q.eq("userId", userId).eq("runId", args.runId)
       )
-      .first();
-    
+      .first() as Doc<"artifacts"> | null;
+
     if (!hasAccess) return [];
-    
+
     return await ctx.db
       .query("evidenceLinks")
       .withIndex("by_run", (q) => q.eq("runId", args.runId))
-      .collect();
+      .collect() as Doc<"evidenceLinks">[];
   },
 });
 
@@ -140,11 +140,11 @@ export const getArtifactById = query({
     // Fetch artifact and verify ownership
     const row = await ctx.db
       .query("artifacts")
-      .withIndex("by_run_artifact", (q) => 
+      .withIndex("by_run_artifact", (q) =>
         q.eq("runId", args.runId).eq("artifactId", args.artifactId)
       )
-      .first();
-    
+      .first() as Doc<"artifacts"> | null;
+
     // Security check: verify user owns this artifact
     if (!row || row.userId !== userId) return null;
     
@@ -169,27 +169,27 @@ export const getArtifactsBySection = query({
     // Get artifact links for this section
     const links = await ctx.db
       .query("artifactLinks")
-      .withIndex("by_run_section", (q) => 
+      .withIndex("by_run_section", (q) =>
         q.eq("runId", args.runId).eq("sectionId", args.sectionId)
       )
-      .collect();
-    
+      .collect() as Doc<"artifactLinks">[];
+
     // Fetch full artifact data (only user's artifacts)
     const rows = await Promise.all(
-      links.map(async (link) => {
+      links.map(async (link: Doc<"artifactLinks">) => {
         const row = await ctx.db
           .query("artifacts")
-          .withIndex("by_run_artifact", (q) => 
+          .withIndex("by_run_artifact", (q) =>
             q.eq("runId", args.runId).eq("artifactId", link.artifactId)
           )
-          .first();
+          .first() as Doc<"artifacts"> | null;
         // Security: only return if user owns this artifact
         return row && row.userId === userId ? row : null;
       })
     );
     
     // Filter nulls and map to ArtifactCard at the edge
-    return toArtifactCards(rows.filter((r): r is Doc<"artifacts"> => r !== null));
+    return toArtifactCards(rows.filter((r: Doc<"artifacts"> | null): r is Doc<"artifacts"> => r !== null));
   },
 });
 
@@ -212,11 +212,11 @@ export const upsertArtifact = mutation({
     // Check if artifact already exists
     const existing = await ctx.db
       .query("artifacts")
-      .withIndex("by_run_artifact", (q) => 
+      .withIndex("by_run_artifact", (q) =>
         q.eq("runId", args.runId).eq("artifactId", args.artifact.id)
       )
-      .first();
-    
+      .first() as Doc<"artifacts"> | null;
+
     if (existing) {
       // Only update if rev is higher (safe merge)
       if (args.artifact.rev > existing.rev) {
@@ -265,11 +265,11 @@ export const internalUpsertArtifact = internalMutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("artifacts")
-      .withIndex("by_run_artifact", (q) => 
+      .withIndex("by_run_artifact", (q) =>
         q.eq("runId", args.runId).eq("artifactId", args.artifact.id)
       )
-      .first();
-    
+      .first() as Doc<"artifacts"> | null;
+
     if (existing) {
       if (args.artifact.rev > existing.rev) {
         await ctx.db.patch(existing._id, {
@@ -327,20 +327,20 @@ export const enrichArtifact = mutation({
     
     const existing = await ctx.db
       .query("artifacts")
-      .withIndex("by_run_artifact", (q) => 
+      .withIndex("by_run_artifact", (q) =>
         q.eq("runId", args.runId).eq("artifactId", args.artifactId)
       )
-      .first();
-    
+      .first() as Doc<"artifacts"> | null;
+
     if (!existing) {
       return { action: "skipped", reason: "artifact not found" };
     }
-    
+
     // Security: verify user owns this artifact
     if (existing.userId !== userId) {
       return { action: "skipped", reason: "unauthorized" };
     }
-    
+
     // Only merge if rev is higher
     if (args.rev <= existing.rev) {
       return { action: "skipped", reason: "rev not higher" };
@@ -388,11 +388,11 @@ export const linkArtifactToSection = mutation({
     // Check if link already exists
     const existing = await ctx.db
       .query("artifactLinks")
-      .withIndex("by_run_artifact", (q) => 
+      .withIndex("by_run_artifact", (q) =>
         q.eq("runId", args.runId).eq("artifactId", args.artifactId)
       )
-      .first();
-    
+      .first() as Doc<"artifactLinks"> | null;
+
     if (existing && existing.sectionId === args.sectionId) {
       return { action: "skipped", reason: "link exists" };
     }
@@ -431,11 +431,11 @@ export const linkEvidence = mutation({
     // Check if link already exists
     const existing = await ctx.db
       .query("evidenceLinks")
-      .withIndex("by_run_fact", (q) => 
+      .withIndex("by_run_fact", (q) =>
         q.eq("runId", args.runId).eq("factId", args.factId)
       )
-      .first();
-    
+      .first() as Doc<"evidenceLinks"> | null;
+
     if (existing) {
       // Merge artifact IDs (dedupe)
       const merged = [...new Set([...existing.artifactIds, ...args.artifactIds])];
@@ -455,11 +455,11 @@ export const linkEvidence = mutation({
     for (const artifactId of args.artifactIds) {
       const artifact = await ctx.db
         .query("artifacts")
-        .withIndex("by_run_artifact", (q) => 
+        .withIndex("by_run_artifact", (q) =>
           q.eq("runId", args.runId).eq("artifactId", artifactId)
         )
-        .first();
-      
+        .first() as Doc<"artifacts"> | null;
+
       if (artifact) {
         await ctx.db.patch(artifact._id, {
           flags: { ...artifact.flags, isCited: true },
@@ -486,20 +486,20 @@ export const pinArtifact = mutation({
     
     const existing = await ctx.db
       .query("artifacts")
-      .withIndex("by_run_artifact", (q) => 
+      .withIndex("by_run_artifact", (q) =>
         q.eq("runId", args.runId).eq("artifactId", args.artifactId)
       )
-      .first();
-    
+      .first() as Doc<"artifacts"> | null;
+
     if (!existing) {
       return { action: "skipped", reason: "artifact not found" };
     }
-    
+
     // Security: verify user owns this artifact
     if (existing.userId !== userId) {
       return { action: "skipped", reason: "unauthorized" };
     }
-    
+
     await ctx.db.patch(existing._id, {
       flags: { ...existing.flags, isPinned: args.pinned },
     });
@@ -524,12 +524,12 @@ export const getAllowedUrlsForRun = internalQuery({
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query("artifacts")
-      .withIndex("by_user_run", (q) => 
+      .withIndex("by_user_run", (q) =>
         q.eq("userId", args.userId).eq("runId", args.runId)
       )
-      .collect();
-    
+      .collect() as Doc<"artifacts">[];
+
     // Return canonical URLs
-    return rows.map(r => r.canonicalUrl);
+    return rows.map((r: Doc<"artifacts">) => r.canonicalUrl);
   },
 });

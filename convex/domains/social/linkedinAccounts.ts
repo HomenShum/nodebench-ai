@@ -9,7 +9,7 @@ import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Account Management Queries
@@ -41,7 +41,7 @@ export const getLinkedInAccount = query({
     const account = await ctx.db
       .query("linkedinAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"linkedinAccounts"> | null;
 
     if (!account) return null;
 
@@ -68,7 +68,7 @@ export const getAccountById = internalQuery({
   args: { accountId: v.id("linkedinAccounts") },
   returns: v.any(),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.accountId);
+    return await ctx.db.get(args.accountId) as Doc<"linkedinAccounts"> | null;
   },
 });
 
@@ -82,7 +82,7 @@ export const getAccountForUser = internalQuery({
     return await ctx.db
       .query("linkedinAccounts")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .first();
+      .first() as Doc<"linkedinAccounts"> | null;
   },
 });
 
@@ -119,7 +119,7 @@ export const saveLinkedInAccount = mutation({
     const existing = await ctx.db
       .query("linkedinAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"linkedinAccounts"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -172,7 +172,7 @@ export const disconnectLinkedIn = mutation({
     const account = await ctx.db
       .query("linkedinAccounts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"linkedinAccounts"> | null;
 
     if (account) {
       await ctx.db.delete(account._id);

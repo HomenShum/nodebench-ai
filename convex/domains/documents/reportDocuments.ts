@@ -8,7 +8,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "../../_generated/dataModel";
+import { Id, Doc } from "../../_generated/dataModel";
 
 /**
  * Report type validator
@@ -161,7 +161,7 @@ export const getRecentReports = query({
       documents.slice(0, limit).map(async (doc) => {
         let fileUrl = null;
         if (doc.fileId) {
-          const file = await ctx.db.get(doc.fileId);
+          const file = await ctx.db.get(doc.fileId) as Doc<"files"> | null;
           if (file?.storageId) {
             fileUrl = await ctx.storage.getUrl(file.storageId);
           }
@@ -201,14 +201,14 @@ export const getReportDocument = query({
     documentId: v.id("documents"),
   },
   handler: async (ctx, args) => {
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) {
       return null;
     }
 
     let fileUrl = null;
     if (doc.fileId) {
-      const file = await ctx.db.get(doc.fileId);
+      const file = await ctx.db.get(doc.fileId as Id<"files">) as Doc<"files"> | null;
       if (file?.storageId) {
         fileUrl = await ctx.storage.getUrl(file.storageId);
       }

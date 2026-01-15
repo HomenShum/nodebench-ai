@@ -7,6 +7,7 @@
 
 import { v } from "convex/values";
 import { query, mutation } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // QUERIES: Public access to daily dossier (no auth required)
@@ -32,8 +33,8 @@ export const getLatestPublicDossier = query({
       .query("publicDossiers")
       .withIndex("by_date")
       .order("desc")
-      .first();
-    
+      .first() as Doc<"publicDossiers"> | null;
+
     return dossier;
   },
 });
@@ -48,8 +49,8 @@ export const getDossierByDate = query({
     const dossier = await ctx.db
       .query("publicDossiers")
       .withIndex("by_date_string", (q) => q.eq("dateString", date))
-      .first();
-    
+      .first() as Doc<"publicDossiers"> | null;
+
     return dossier;
   },
 });
@@ -72,7 +73,7 @@ export const storePublicDossier = mutation({
     const existing = await ctx.db
       .query("publicDossiers")
       .withIndex("by_date_string", (q) => q.eq("dateString", dateString))
-      .first();
+      .first() as Doc<"publicDossiers"> | null;
     
     if (existing) {
       // Update existing

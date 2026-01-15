@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
-import { Id } from "../../_generated/dataModel";
+import { Doc, Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 async function getSafeUserId(ctx: any): Promise<Id<"users">> {
@@ -71,9 +71,9 @@ export const listSheets = query({
     const sheets = await ctx.db
       .query("spreadsheets")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .take(100);
+      .take(100) as Doc<"spreadsheets">[];
 
-    sheets.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+    sheets.sort((a: Doc<"spreadsheets">, b: Doc<"spreadsheets">) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
     return sheets.slice(0, limit);
   },
 });
@@ -105,12 +105,12 @@ export const getRange = query({
       .withIndex("by_sheet_row_col", (q) =>
         q.eq("sheetId", sheetId).gte("row", startRow).lte("row", endRow)
       )
-      .collect();
+      .collect() as Doc<"sheetCells">[];
 
     // Filter columns in JS (Convex best practice prefers indices, but this is acceptable for small ranges)
     return rows
-      .filter((c) => c.col >= startCol && c.col <= endCol)
-      .map((c) => ({
+      .filter((c: Doc<"sheetCells">) => c.col >= startCol && c.col <= endCol)
+      .map((c: Doc<"sheetCells">) => ({
         _id: c._id,
         row: c.row,
         col: c.col,
@@ -131,7 +131,7 @@ export const applyOperations = mutation({
     errors: v.number(),
   }),
   handler: async (ctx, { sheetId, operations }) => {
-    const sheet = await ctx.db.get(sheetId);
+    const sheet = await ctx.db.get(sheetId) as Doc<"spreadsheets"> | null;
     if (!sheet) throw new Error("Sheet not found");
 
     let applied = 0;
@@ -146,7 +146,7 @@ export const applyOperations = mutation({
             .withIndex("by_sheet_row_col", (q) =>
               q.eq("sheetId", sheetId).eq("row", op.row).eq("col", op.col)
             )
-            .first();
+            .first() as Doc<"sheetCells"> | null;
 
           if (existing) {
             await ctx.db.patch(existing._id, {
@@ -173,7 +173,7 @@ export const applyOperations = mutation({
             .withIndex("by_sheet_row_col", (q) =>
               q.eq("sheetId", sheetId).eq("row", op.row).eq("col", op.col)
             )
-            .first();
+            .first() as Doc<"sheetCells"> | null;
 
           if (existing) {
             await ctx.db.patch(existing._id, {
@@ -204,7 +204,7 @@ export const applyOperations = mutation({
                 .withIndex("by_sheet_row_col", (q) =>
                   q.eq("sheetId", sheetId).eq("row", row).eq("col", col)
                 )
-                .first();
+                .first() as Doc<"sheetCells"> | null;
 
               if (existing) {
                 await ctx.db.patch(existing._id, {
@@ -254,7 +254,7 @@ export const insertRow = mutation({
   }),
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const sheet = await ctx.db.get(args.sheetId);
+    const sheet = await ctx.db.get(args.sheetId) as Doc<"spreadsheets"> | null;
     if (!sheet) throw new Error("Sheet not found");
     if (sheet.userId !== userId) throw new Error("Not authorized");
 
@@ -262,10 +262,10 @@ export const insertRow = mutation({
     const cellsToShift = await ctx.db
       .query("sheetCells")
       .withIndex("by_sheet_row_col", (q) => q.eq("sheetId", args.sheetId).gte("row", args.atRow))
-      .collect();
+      .collect() as Doc<"sheetCells">[];
 
     // Shift downward, highest rows first.
-    cellsToShift.sort((a, b) => (b.row - a.row) || (b.col - a.col));
+    cellsToShift.sort((a: Doc<"sheetCells">, b: Doc<"sheetCells">) => (b.row - a.row) || (b.col - a.col));
     for (const cell of cellsToShift) {
       await ctx.db.patch(cell._id, {
         row: cell.row + 1,
@@ -307,7 +307,7 @@ export const deleteRow = mutation({
   }),
   handler: async (ctx, args) => {
     const userId = await getSafeUserId(ctx);
-    const sheet = await ctx.db.get(args.sheetId);
+    const sheet = await ctx.db.get(args.sheetId) as Doc<"spreadsheets"> | null;
     if (!sheet) throw new Error("Sheet not found");
     if (sheet.userId !== userId) throw new Error("Not authorized");
 
@@ -315,7 +315,7 @@ export const deleteRow = mutation({
     const rowCells = await ctx.db
       .query("sheetCells")
       .withIndex("by_sheet_row_col", (q) => q.eq("sheetId", args.sheetId).eq("row", args.row))
-      .collect();
+      .collect() as Doc<"sheetCells">[];
 
     for (const cell of rowCells) {
       await ctx.db.delete(cell._id);
@@ -324,10 +324,10 @@ export const deleteRow = mutation({
     const cellsToShift = await ctx.db
       .query("sheetCells")
       .withIndex("by_sheet_row_col", (q) => q.eq("sheetId", args.sheetId).gte("row", args.row + 1))
-      .collect();
+      .collect() as Doc<"sheetCells">[];
 
     // Shift upward, lowest rows first.
-    cellsToShift.sort((a, b) => (a.row - b.row) || (a.col - b.col));
+    cellsToShift.sort((a: Doc<"sheetCells">, b: Doc<"sheetCells">) => (a.row - b.row) || (a.col - b.col));
     for (const cell of cellsToShift) {
       await ctx.db.patch(cell._id, {
         row: cell.row - 1,

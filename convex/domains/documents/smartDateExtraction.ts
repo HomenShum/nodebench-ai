@@ -11,6 +11,7 @@ import { v } from "convex/values";
 import { query, internalAction, internalMutation, internalQuery } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Doc } from "../../_generated/dataModel";
 
 // Common date patterns in filenames
 const DATE_PATTERNS = [
@@ -153,7 +154,7 @@ export const createDateMarker = internalMutation({
     const existingMarker = await ctx.db
       .query("calendarDateMarkers")
       .withIndex("by_document", (q) => q.eq("documentId", args.documentId))
-      .first();
+      .first() as Doc<"calendarDateMarkers"> | null;
 
     if (existingMarker) {
       // Update existing marker
@@ -264,7 +265,7 @@ export const getDateMarkersForRange = query({
     // Enrich with document info
     const enrichedMarkers = await Promise.all(
       markers.map(async (marker) => {
-        const doc = await ctx.db.get(marker.documentId);
+        const doc = await ctx.db.get(marker.documentId) as Doc<"documents"> | null;
         return {
           ...marker,
           documentTitle: doc?.title || marker.fileName,
@@ -305,7 +306,7 @@ export const getDateMarkersForDate = query({
     // Enrich with document info
     const enrichedMarkers = await Promise.all(
       markers.map(async (marker) => {
-        const doc = await ctx.db.get(marker.documentId);
+        const doc = await ctx.db.get(marker.documentId) as Doc<"documents"> | null;
         return {
           ...marker,
           documentTitle: doc?.title || marker.fileName,

@@ -1081,6 +1081,9 @@ const slackAccounts = defineTable({
   userAccessToken: v.optional(v.string()), // authed_user.access_token if granted
   scope: v.optional(v.string()),
   tokenType: v.optional(v.string()),
+  // Default channel for digest/notification delivery
+  defaultChannelId: v.optional(v.string()),
+  defaultChannelName: v.optional(v.string()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -1458,6 +1461,39 @@ const userEvents = defineTable({
   order: v.optional(v.number()),         // for Kanban ordering
   createdAt: v.number(),
   updatedAt: v.number(),
+
+  // ─── Encounter Capture (Slack/Email Distribution) ───────────────────────
+  sourceType: v.optional(v.union(
+    v.literal("manual"),         // User created in UI
+    v.literal("slack"),          // Captured from Slack
+    v.literal("email_forward"),  // Forwarded email ingest
+  )),
+  sourceId: v.optional(v.string()),           // Slack message ts, email ID
+  sourceChannelId: v.optional(v.string()),    // Slack channel ID
+
+  // Encounter-specific nested object for professional networking capture
+  encounter: v.optional(v.object({
+    participants: v.array(v.object({
+      name: v.string(),
+      role: v.optional(v.string()),
+      company: v.optional(v.string()),
+      email: v.optional(v.string()),
+      linkedEntityId: v.optional(v.id("entityContexts")),
+    })),
+    companies: v.array(v.object({
+      name: v.string(),
+      linkedEntityId: v.optional(v.id("entityContexts")),
+    })),
+    context: v.optional(v.string()),          // Meeting context/topic
+    followUpRequested: v.optional(v.boolean()),
+    rawText: v.optional(v.string()),          // Original message/email content
+    researchStatus: v.optional(v.union(
+      v.literal("none"),
+      v.literal("fast_pass"),
+      v.literal("deep_dive"),
+      v.literal("complete"),
+    )),
+  })),
 })
   .index("by_user", ["userId"])
   .index("by_user_status", ["userId", "status"]) // Kanban, filters
@@ -1465,7 +1501,8 @@ const userEvents = defineTable({
   .index("by_user_priority", ["userId", "priority"]) // prioritization
   .index("by_user_updatedAt", ["userId", "updatedAt"]) // recent activity
   .index("by_user_assignee", ["userId", "assigneeId"]) // filtering by assignee
-  .index("by_document", ["documentId"]);
+  .index("by_document", ["documentId"])
+  .index("by_user_sourceType", ["userId", "sourceType"]); // Encounter queries
 
 
 
@@ -2122,6 +2159,28 @@ const digestCache = defineTable({
   .index("by_date_persona", ["dateString", "persona"])
   .index("by_date", ["dateString"])
   .index("by_expires", ["expiresAt"]);
+
+/* ------------------------------------------------------------------ */
+/* SCHEDULED REPORTS - Automated PDF report generation                 */
+/* ------------------------------------------------------------------ */
+const scheduledReports = defineTable({
+  storageId: v.string(),                     // Convex storage ID for the PDF file
+  fileName: v.string(),                      // Human-readable filename
+  fileSize: v.number(),                      // File size in bytes
+  reportType: v.string(),                    // "weekly-digest", "monthly-summary", "quarterly-funding-summary"
+  title: v.string(),                         // Report title
+  description: v.string(),                   // Report description
+  quarterLabel: v.string(),                  // Period label (e.g., "Q4 2025", "Week of Jan 14")
+  totalDeals: v.number(),                    // Number of deals in report
+  totalAmountUsd: v.number(),                // Total funding amount
+  generatedAt: v.number(),                   // Timestamp when generated
+  status: v.string(),                        // "pending", "generating", "completed", "failed"
+  distributedTo: v.optional(v.array(v.string())), // Channels distributed to
+  error: v.optional(v.string()),             // Error message if failed
+})
+  .index("by_report_type", ["reportType"])
+  .index("by_generated_at", ["generatedAt"])
+  .index("by_status", ["status"]);
 
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
@@ -5572,4 +5631,522 @@ export default defineSchema({
     .index("by_timestamp", ["timestamp"])
     .index("by_guild_timestamp", ["guildId", "timestamp"]),
 
+  /* ------------------------------------------------------------------ */
+  /* SLACK INTERACTIONS - Interaction log for encounter capture/audit   */
+  /* ------------------------------------------------------------------ */
+  slackInteractions: defineTable({
+    slackUserId: v.string(),
+    slackUsername: v.string(),
+    slackTeamId: v.string(),
+    channelId: v.optional(v.string()),
+    channelName: v.optional(v.string()),
+    interactionType: v.string(),            // "slash_command" | "message" | "button_click" | "modal_submit"
+    commandName: v.optional(v.string()),
+    commandOptions: v.optional(v.any()),
+    messageText: v.optional(v.string()),
+    nodebenchUserId: v.optional(v.id("users")), // Linked NodeBench user if mapped
+    encounterId: v.optional(v.id("userEvents")), // Linked encounter if created
+    agentResponse: v.optional(v.string()),
+    processingTimeMs: v.optional(v.number()),
+    timestamp: v.number(),
+  })
+    .index("by_slack_user", ["slackUserId"])
+    .index("by_nodebench_user", ["nodebenchUserId"])
+    .index("by_team", ["slackTeamId"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_team_timestamp", ["slackTeamId", "timestamp"]),
+
+  // Scheduled PDF Reports
+  scheduledReports,
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * DUE DILIGENCE FRAMEWORK
+   * Parallelized multi-front research with traditional IC memo output
+   * ══════════════════════════════════════════════════════════════════════ */
+
+  /* ------------------------------------------------------------------ */
+  /* DUE DILIGENCE JOBS - Orchestration layer for DD research            */
+  /* ------------------------------------------------------------------ */
+  dueDiligenceJobs: defineTable({
+    jobId: v.string(),                        // UUID for deduplication
+    userId: v.id("users"),
+    entityId: v.optional(v.id("entityContexts")),
+    entityName: v.string(),
+    entityType: v.union(
+      v.literal("company"),
+      v.literal("fund"),
+      v.literal("person")
+    ),
+
+    // Trigger source
+    triggerSource: v.union(
+      v.literal("funding_detection"),         // Auto-triggered from funding events
+      v.literal("deals_feed"),                // From deals/opportunities feed
+      v.literal("manual"),                    // User-initiated
+      v.literal("scheduled_refresh")          // Periodic refresh of stale DD
+    ),
+    triggerEventId: v.optional(v.string()),   // Link to fundingEvent or feedItem
+
+    // Status workflow
+    status: v.union(
+      v.literal("pending"),                   // Queued
+      v.literal("analyzing"),                 // Complexity signal analysis
+      v.literal("executing"),                 // Parallel branch execution
+      v.literal("cross_checking"),            // Cross-check phase
+      v.literal("synthesizing"),              // Memo generation
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+
+    // Branch tracking
+    activeBranches: v.array(v.string()),      // Currently executing branch types
+    conditionalBranchesSpawned: v.optional(v.array(v.string())), // Dynamically added
+
+    // Complexity signals (determines conditional branches)
+    complexitySignals: v.optional(v.object({
+      fundingSize: v.optional(v.number()),    // USD amount
+      teamSize: v.optional(v.number()),       // Key people count
+      hasPatentMentions: v.optional(v.boolean()),
+      hasRegulatoryMentions: v.optional(v.boolean()),
+      hasPublicSecurities: v.optional(v.boolean()),
+      hasSerialFounders: v.optional(v.boolean()),
+      hasVCBackedFounders: v.optional(v.boolean()),
+      industryRisk: v.optional(v.union(
+        v.literal("low"),
+        v.literal("medium"),
+        v.literal("high")
+      )),
+      sectors: v.optional(v.array(v.string())),
+    })),
+
+    // Results
+    ddMemoId: v.optional(v.id("dueDiligenceMemos")),
+    overallConfidence: v.optional(v.number()),  // 0-1 final confidence
+
+    // Contradiction tracking
+    contradictions: v.optional(v.array(v.object({
+      field: v.string(),                      // Which field has conflict
+      sourceA: v.string(),                    // Branch or source A
+      valueA: v.string(),
+      sourceB: v.string(),                    // Branch or source B
+      valueB: v.string(),
+      resolution: v.optional(v.union(
+        v.literal("resolved_to_a"),
+        v.literal("resolved_to_b"),
+        v.literal("unresolved"),
+        v.literal("both_valid")
+      )),
+      resolutionReason: v.optional(v.string()),
+    }))),
+
+    // Task tree integration
+    parallelTreeId: v.optional(v.id("parallelTaskTrees")),
+
+    // Timing
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+
+    // Error tracking
+    error: v.optional(v.string()),
+    retryCount: v.optional(v.number()),
+  })
+    .index("by_jobId", ["jobId"])
+    .index("by_user", ["userId"])
+    .index("by_entity", ["entityName", "entityType"])
+    .index("by_entityId", ["entityId"])
+    .index("by_status", ["status"])
+    .index("by_user_status", ["userId", "status"])
+    .index("by_trigger", ["triggerSource", "createdAt"])
+    .index("by_createdAt", ["createdAt"])
+    .searchIndex("search_entity", {
+      searchField: "entityName",
+      filterFields: ["entityType", "status"],
+    }),
+
+  /* ------------------------------------------------------------------ */
+  /* DD RESEARCH BRANCHES - Individual research angles                   */
+  /* ------------------------------------------------------------------ */
+  ddResearchBranches: defineTable({
+    jobId: v.string(),                        // Links to dueDiligenceJobs
+    branchId: v.string(),                     // UUID
+    branchType: v.union(
+      // Core branches (always run)
+      v.literal("company_profile"),           // Basic company data
+      v.literal("team_founders"),             // Deep team/founder research
+      v.literal("market_competitive"),        // Market size, competitors
+      // Conditional branches (spawned based on complexity)
+      v.literal("technical_dd"),              // Tech stack, architecture
+      v.literal("ip_patents"),                // Patent portfolio, IP
+      v.literal("regulatory"),                // SEC, FDA, compliance
+      v.literal("financial_deep"),            // Deep financial analysis
+      v.literal("network_mapping")            // Network graph, relationships
+    ),
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("running"),
+      v.literal("awaiting_verification"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("skipped")                    // Conditional branch not needed
+    ),
+
+    // Integration with parallel task tree
+    taskTreeId: v.optional(v.id("parallelTaskTrees")),
+    taskNodeId: v.optional(v.string()),       // parallelTaskNodes.taskId
+
+    // Findings (branch-specific structured data)
+    findings: v.optional(v.any()),            // Varies by branchType
+    findingsSummary: v.optional(v.string()),  // Human-readable summary
+
+    // Confidence & verification
+    confidence: v.optional(v.number()),       // 0-1 confidence in findings
+    verificationScore: v.optional(v.number()), // From verifier agent
+
+    // Sources used
+    sourcesUsed: v.optional(v.array(v.object({
+      sourceType: v.union(
+        v.literal("sec_filing"),
+        v.literal("news_article"),
+        v.literal("company_website"),
+        v.literal("linkedin"),
+        v.literal("patent_db"),
+        v.literal("crunchbase"),
+        v.literal("pitchbook"),
+        v.literal("llm_inference")
+      ),
+      url: v.optional(v.string()),
+      title: v.optional(v.string()),
+      accessedAt: v.number(),
+      reliability: v.union(
+        v.literal("authoritative"),           // SEC, USPTO, official
+        v.literal("reliable"),                // Major news, LinkedIn
+        v.literal("secondary"),               // Blog, press release
+        v.literal("inferred")                 // LLM synthesis
+      ),
+      // Optional section tracking
+      section: v.optional(v.string()),        // Which memo section this supports
+      branchType: v.optional(v.string()),     // Which branch produced this source
+    }))),
+
+    // Timing
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+
+    // Error
+    error: v.optional(v.string()),
+  })
+    .index("by_job", ["jobId"])
+    .index("by_branchId", ["branchId"])
+    .index("by_job_type", ["jobId", "branchType"])
+    .index("by_job_status", ["jobId", "status"])
+    .index("by_status", ["status"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DUE DILIGENCE MEMOS - Traditional IC/VC memo structure              */
+  /* ------------------------------------------------------------------ */
+  dueDiligenceMemos: defineTable({
+    jobId: v.string(),                        // Links to dueDiligenceJobs
+    entityName: v.string(),
+    entityType: v.union(
+      v.literal("company"),
+      v.literal("fund"),
+      v.literal("person")
+    ),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // I. EXECUTIVE SUMMARY
+    // ═══════════════════════════════════════════════════════════════════
+    executiveSummary: v.string(),
+    verdict: v.union(
+      v.literal("STRONG_BUY"),
+      v.literal("BUY"),
+      v.literal("HOLD"),
+      v.literal("PASS"),
+      v.literal("INSUFFICIENT_DATA")
+    ),
+    verdictRationale: v.optional(v.string()),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // II. COMPANY OVERVIEW
+    // ═══════════════════════════════════════════════════════════════════
+    companyOverview: v.object({
+      description: v.string(),
+      hqLocation: v.optional(v.string()),
+      foundedYear: v.optional(v.number()),
+      employeeCount: v.optional(v.number()),
+      employeeGrowth: v.optional(v.string()), // e.g., "+50% YoY"
+      sectors: v.array(v.string()),
+      stage: v.optional(v.string()),          // Seed, Series A, etc.
+      businessModel: v.optional(v.string()),
+      keyProducts: v.optional(v.array(v.string())),
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // III. MARKET ANALYSIS
+    // ═══════════════════════════════════════════════════════════════════
+    marketAnalysis: v.object({
+      marketSize: v.optional(v.string()),     // TAM/SAM/SOM
+      marketGrowth: v.optional(v.string()),   // CAGR
+      competitors: v.array(v.object({
+        name: v.string(),
+        description: v.optional(v.string()),
+        fundingStage: v.optional(v.string()),
+        differentiator: v.optional(v.string()),
+        threat: v.optional(v.union(
+          v.literal("low"),
+          v.literal("medium"),
+          v.literal("high")
+        )),                                    // Competitive threat level
+      })),
+      differentiators: v.array(v.string()),   // Company's competitive advantages
+      whyNow: v.optional(v.string()),         // Market timing thesis
+      tailwinds: v.optional(v.array(v.string())),
+      headwinds: v.optional(v.array(v.string())),
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // IV. TEAM ASSESSMENT
+    // ═══════════════════════════════════════════════════════════════════
+    teamAnalysis: v.object({
+      founders: v.array(v.any()),             // TeamMemberProfile[]
+      executives: v.array(v.any()),           // TeamMemberProfile[]
+      boardMembers: v.array(v.any()),         // TeamMemberProfile[]
+      advisors: v.optional(v.array(v.any())),
+      networkGraph: v.optional(v.any()),      // Network visualization data
+      trackRecordSummary: v.optional(v.string()),
+      teamStrengths: v.optional(v.array(v.string())),
+      teamGaps: v.optional(v.array(v.string())),
+      founderMarketFit: v.optional(v.string()),
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // V. FINANCIALS / FUNDING HISTORY
+    // ═══════════════════════════════════════════════════════════════════
+    fundingHistory: v.object({
+      totalRaised: v.optional(v.object({
+        amount: v.number(),
+        currency: v.string(),
+        unit: v.string(),                     // M, B, K
+      })),
+      rounds: v.array(v.object({
+        roundType: v.string(),
+        date: v.optional(v.string()),
+        amount: v.optional(v.string()),
+        leadInvestors: v.optional(v.array(v.string())),
+        valuation: v.optional(v.string()),
+        verified: v.optional(v.boolean()),
+        source: v.optional(v.string()),
+      })),
+      valuationComps: v.optional(v.object({
+        currentValuation: v.optional(v.string()),
+        revenueMultiple: v.optional(v.number()),
+        comparables: v.optional(v.array(v.object({
+          company: v.string(),
+          valuation: v.string(),
+          multiple: v.optional(v.number()),
+        }))),
+      })),
+      burnRate: v.optional(v.string()),
+      runway: v.optional(v.string()),
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VI. RISKS
+    // ═══════════════════════════════════════════════════════════════════
+    risks: v.array(v.object({
+      category: v.union(
+        v.literal("Market"),
+        v.literal("Execution"),
+        v.literal("Regulatory"),
+        v.literal("Team"),
+        v.literal("Technical"),
+        v.literal("Financial"),
+        v.literal("Competitive"),
+        v.literal("Legal")
+      ),
+      description: v.string(),
+      severity: v.union(
+        v.literal("low"),
+        v.literal("medium"),
+        v.literal("high"),
+        v.literal("critical")
+      ),
+      likelihood: v.optional(v.union(
+        v.literal("low"),
+        v.literal("medium"),
+        v.literal("high")
+      )),
+      mitigation: v.optional(v.string()),
+      timeframe: v.optional(v.string()),      // Near-term, medium-term, long-term
+    })),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VII. INVESTMENT THESIS
+    // ═══════════════════════════════════════════════════════════════════
+    investmentThesis: v.object({
+      thesisSummary: v.string(),
+      keyDrivers: v.array(v.string()),        // Why this will work
+      keyMilestones: v.optional(v.array(v.object({
+        milestone: v.string(),
+        timeframe: v.optional(v.string()),
+        importance: v.optional(v.string()),
+      }))),
+      exitScenarios: v.optional(v.array(v.object({
+        scenario: v.string(),
+        probability: v.optional(v.string()),  // Low/Medium/High
+        potentialReturn: v.optional(v.string()),
+        acquirers: v.optional(v.array(v.string())),
+      }))),
+      comparableExits: v.optional(v.array(v.object({
+        company: v.string(),
+        exitType: v.string(),
+        exitValue: v.string(),
+        year: v.optional(v.number()),
+      }))),
+    }),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VERIFICATION & SOURCES
+    // ═══════════════════════════════════════════════════════════════════
+    verificationSummary: v.object({
+      contradictionsFound: v.number(),
+      contradictionsResolved: v.number(),
+      overallConfidence: v.number(),          // 0-1
+      dataCompleteness: v.number(),           // 0-1 how complete is the data
+      sourceQuality: v.union(
+        v.literal("high"),                    // Multiple authoritative sources
+        v.literal("medium"),                  // Mix of sources
+        v.literal("low")                      // Mostly inferred
+      ),
+    }),
+
+    // All sources used across all branches
+    sources: v.array(v.object({
+      sourceType: v.string(),
+      url: v.optional(v.string()),
+      title: v.optional(v.string()),
+      reliability: v.string(),
+      section: v.optional(v.string()),        // Which memo section uses this
+    })),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // PERSONA READINESS
+    // ═══════════════════════════════════════════════════════════════════
+    personaReadiness: v.optional(v.record(v.string(), v.object({
+      ready: v.boolean(),
+      missingFields: v.optional(v.array(v.string())),
+      relevanceScore: v.optional(v.number()), // 0-1 how relevant for this persona
+    }))),
+
+    // Timing
+    createdAt: v.number(),
+    updatedAt: v.number(),
+
+    // Version control
+    version: v.number(),
+    previousVersionId: v.optional(v.id("dueDiligenceMemos")),
+  })
+    .index("by_jobId", ["jobId"])
+    .index("by_entity", ["entityName", "entityType"])
+    .index("by_verdict", ["verdict"])
+    .index("by_createdAt", ["createdAt"])
+    .searchIndex("search_entity", {
+      searchField: "entityName",
+      filterFields: ["entityType", "verdict"],
+    }),
+
+  /* ------------------------------------------------------------------ */
+  /* DD GROUND TRUTH - Golden dataset for DD evaluation                  */
+  /* ------------------------------------------------------------------ */
+  ddGroundTruth: defineTable({
+    entityName: v.string(),
+    entityType: v.union(
+      v.literal("company"),
+      v.literal("fund"),
+      v.literal("person")
+    ),
+
+    // Verified facts with sources
+    verifiedFacts: v.object({
+      // Company facts
+      foundedYear: v.optional(v.object({
+        value: v.number(),
+        source: v.string(),
+        verifiedAt: v.number(),
+      })),
+      hqLocation: v.optional(v.object({
+        value: v.string(),
+        source: v.string(),
+        verifiedAt: v.number(),
+      })),
+      employeeCount: v.optional(v.object({
+        value: v.number(),
+        asOf: v.string(),
+        source: v.string(),
+        verifiedAt: v.number(),
+      })),
+
+      // Funding facts (SEC Form D verified)
+      fundingRounds: v.optional(v.array(v.object({
+        roundType: v.string(),
+        amount: v.number(),
+        date: v.string(),
+        secFormDUrl: v.optional(v.string()),
+        verified: v.boolean(),
+      }))),
+
+      // Team facts (LinkedIn verified)
+      keyPeople: v.optional(v.array(v.object({
+        name: v.string(),
+        role: v.string(),
+        linkedinUrl: v.optional(v.string()),
+        verified: v.boolean(),
+      }))),
+
+      // Patent facts (USPTO verified)
+      patents: v.optional(v.array(v.object({
+        patentId: v.string(),
+        title: v.string(),
+        inventors: v.array(v.string()),
+        usptoUrl: v.optional(v.string()),
+        verified: v.boolean(),
+      }))),
+
+      // Regulatory facts
+      regulatoryStatus: v.optional(v.object({
+        type: v.string(),                     // FDA, SEC, etc.
+        status: v.string(),
+        source: v.string(),
+        verifiedAt: v.number(),
+      })),
+    }),
+
+    // Expected memo content for evaluation
+    expectedMemo: v.optional(v.object({
+      expectedVerdict: v.optional(v.string()),
+      expectedRiskCategories: v.optional(v.array(v.string())),
+      expectedCompetitors: v.optional(v.array(v.string())),
+    })),
+
+    // Curation status
+    curatorId: v.optional(v.id("users")),
+    curationStatus: v.union(
+      v.literal("pending"),
+      v.literal("in_progress"),
+      v.literal("verified"),
+      v.literal("contested")
+    ),
+    curatorNotes: v.optional(v.string()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_entity", ["entityName", "entityType"])
+    .index("by_curation_status", ["curationStatus"]),
 });

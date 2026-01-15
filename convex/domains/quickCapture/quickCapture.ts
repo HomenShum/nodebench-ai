@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
+import { Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -103,7 +104,7 @@ export const getCapture = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
-    const capture = await ctx.db.get(args.captureId);
+    const capture = await ctx.db.get(args.captureId) as Doc<"quickCaptures"> | null;
     if (!capture || capture.userId !== userId) return null;
 
     return capture;
@@ -119,7 +120,7 @@ export const deleteCapture = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const capture = await ctx.db.get(args.captureId);
+    const capture = await ctx.db.get(args.captureId) as Doc<"quickCaptures"> | null;
     if (!capture || capture.userId !== userId) {
       throw new Error("Capture not found");
     }
@@ -153,7 +154,7 @@ export const updateCapture = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const capture = await ctx.db.get(args.captureId);
+    const capture = await ctx.db.get(args.captureId) as Doc<"quickCaptures"> | null;
     if (!capture || capture.userId !== userId) {
       throw new Error("Capture not found");
     }

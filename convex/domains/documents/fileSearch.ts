@@ -24,7 +24,6 @@ async function ensureStoreForUser(ctx: any, userId: Id<"users">): Promise<string
   const ai = new GoogleGenAI({ apiKey });
 
   const displayName = `nb-store-${String(userId).slice(0, 8)}`;
-  // @ts-expect-error - GoogleGenAI SDK version mismatch workaround
   const fileSearchStore = await ai.fileSearchStores.create({
     config: { displayName }
   });
@@ -52,7 +51,6 @@ async function uploadBufferToStore(args: {
   const blob = new Blob([payload as any], { type: args.mimeType });
 
   // Upload directly to the file search store
-  // @ts-expect-error - GoogleGenAI SDK version mismatch workaround
   const operation = await ai.fileSearchStores.uploadToFileSearchStore({
     file: blob as any,
     fileSearchStoreName: args.store,

@@ -558,7 +558,7 @@ export const runSelfHealing = internalAction({
     let actionsSucceeded = 0;
 
     // Process each unhealthy/degraded component
-    for (const [component, check] of Object.entries(health.components)) {
+    for (const [component, check] of Object.entries(health.components) as [string, { status: string; issues: string[] }][]) {
       if (check.status === "healthy") continue;
 
       for (const issue of check.issues) {
@@ -579,7 +579,7 @@ export const runSelfHealing = internalAction({
           );
 
           const recentAttempts = recentActions.filter(
-            (a) => a.issue === issue && a.status === "failed"
+            (a: Doc<"healingActions">) => a.issue === issue && a.status === "failed"
           ).length;
 
           if (recentAttempts >= playbook.escalateAfter) {
@@ -656,15 +656,15 @@ export const generateHealingReport = internalAction({
     // Get unique resolved and escalated issues
     const resolvedIssues = [...new Set(
       history
-        .filter((a) => a.status === "completed")
-        .map((a) => a.issue)
-    )];
+        .filter((a: Doc<"healingActions">) => a.status === "success")
+        .map((a: Doc<"healingActions">) => a.issue)
+    )] as string[];
 
     const escalatedIssues = [...new Set(
       history
-        .filter((a) => a.actionType === "escalate")
-        .map((a) => a.issue)
-    )];
+        .filter((a: Doc<"healingActions">) => a.action === "alert")
+        .map((a: Doc<"healingActions">) => a.issue)
+    )] as string[];
 
     // Generate recommendations
     const recommendations: string[] = [];
@@ -677,7 +677,7 @@ export const generateHealingReport = internalAction({
       recommendations.push("Multiple issues escalated - manual intervention needed");
     }
 
-    const mostCommonAction = Object.entries(stats.byType)
+    const mostCommonAction = (Object.entries(stats.byType) as [string, number][])
       .sort(([, a], [, b]) => b - a)[0];
     if (mostCommonAction && mostCommonAction[1] > 10) {
       recommendations.push(`Frequent ${mostCommonAction[0]} actions - investigate root cause`);

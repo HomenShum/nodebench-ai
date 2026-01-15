@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, action, internalQuery } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Doc } from "../../_generated/dataModel";
 import type { DashboardState } from "../../../src/features/research/types";
 
 /**
@@ -24,7 +25,7 @@ export const getFeedItemsForMetrics = internalQuery({
       .take(200);
 
     // Filter to last 7 days and return relevant fields
-    const recentItems = items.filter(item => {
+    const recentItems = items.filter((item: Doc<"feedItems">) => {
       if (!item.publishedAt) return false;
       const pubTime = new Date(item.publishedAt).getTime();
       return pubTime > sevenDaysAgo;
@@ -33,7 +34,7 @@ export const getFeedItemsForMetrics = internalQuery({
     // If no recent items, return all items (fallback for demo/testing)
     const resultItems = recentItems.length > 0 ? recentItems : items;
 
-    return resultItems.map(item => ({
+    return resultItems.map((item: Doc<"feedItems">) => ({
       sourceId: item.sourceId,
       type: item.type,
       category: item.category,
@@ -65,12 +66,12 @@ export const getLatestDashboardSnapshot = query({
       .query("dailyBriefSnapshots")
       .withIndex("by_generated_at")
       .order("desc")
-      .first();
-    
+      .first() as Doc<"dailyBriefSnapshots"> | null;
+
     if (!snapshot) {
       return null;
     }
-    
+
     return {
       dashboardMetrics: snapshot.dashboardMetrics as DashboardState,
       generatedAt: snapshot.generatedAt,
@@ -92,7 +93,7 @@ export const getDashboardSnapshotByDate = query({
       .query("dailyBriefSnapshots")
       .withIndex("by_date_string", (q) => q.eq("dateString", args.dateString))
       .order("desc")
-      .first();
+      .first() as Doc<"dailyBriefSnapshots"> | null;
     
     if (!snapshot) {
       return null;
@@ -144,7 +145,7 @@ export const getHistoricalSnapshots = query({
       .filter((q) => q.gte(q.field("generatedAt"), cutoffDate))
       .take(days);
     
-    return snapshots.map(snapshot => ({
+    return snapshots.map((snapshot: Doc<"dailyBriefSnapshots">) => ({
       dateString: snapshot.dateString,
       generatedAt: snapshot.generatedAt,
       version: snapshot.version,

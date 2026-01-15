@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { Doc } from "../../_generated/dataModel";
 import { internalMutation } from "../../_generated/server";
 
 /**
@@ -17,10 +18,10 @@ export const storeDashboardMetrics = internalMutation({
     const generatedAt = Date.now();
 
     // Check if we already have a snapshot for today
-    const existing = await ctx.db
+    const existing = (await ctx.db
       .query("dailyBriefSnapshots")
       .withIndex("by_date_string", (q) => q.eq("dateString", dateString))
-      .first();
+      .first()) as Doc<"dailyBriefSnapshots"> | null;
 
     const version = existing ? existing.version + 1 : 1;
 
@@ -48,7 +49,7 @@ export const patchDashboardEntityGraph = internalMutation({
     entityGraph: v.any(),
   },
   handler: async (ctx, args) => {
-    const snapshot = await ctx.db.get(args.snapshotId);
+    const snapshot = (await ctx.db.get(args.snapshotId)) as Doc<"dailyBriefSnapshots"> | null;
     if (!snapshot) throw new Error("Snapshot not found");
 
     const currentMetrics =

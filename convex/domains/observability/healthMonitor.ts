@@ -101,7 +101,7 @@ async function checkSignalIngestion(ctx: any): Promise<HealthCheckResult> {
     const errorSignals = recentSignals.filter((s: Doc<"signals">) => s.status === "error");
     metrics.errorRate = recentSignals.length > 0 ? errorSignals.length / recentSignals.length : 0;
 
-    if (metrics.errorRate > HEALTH_CONFIG.errorRateThreshold) {
+    if (metrics.errorRate > HEALTH_CONFIG.errorRateCritical) {
       issues.push(`High error rate: ${(metrics.errorRate * 100).toFixed(1)}%`);
     }
 
@@ -146,7 +146,7 @@ async function checkResearchQueue(ctx: any): Promise<HealthCheckResult> {
     metrics.failedToday = stats.failedToday;
 
     // Check for queue backup
-    if (stats.queued > HEALTH_CONFIG.queueBacklogThreshold) {
+    if (stats.queued > HEALTH_CONFIG.queueDepthWarning) {
       issues.push(`Queue backlog: ${stats.queued} tasks waiting`);
     }
 
@@ -159,7 +159,7 @@ async function checkResearchQueue(ctx: any): Promise<HealthCheckResult> {
     const totalProcessed = stats.completedToday + stats.failedToday;
     metrics.failureRate = totalProcessed > 0 ? stats.failedToday / totalProcessed : 0;
 
-    if (metrics.failureRate > HEALTH_CONFIG.errorRateThreshold) {
+    if (metrics.failureRate > HEALTH_CONFIG.errorRateCritical) {
       issues.push(`High failure rate: ${(metrics.failureRate * 100).toFixed(1)}%`);
     }
 
@@ -516,7 +516,7 @@ export const getLatestHealthChecks = internalQuery({
     const checks = await ctx.db
       .query("healthChecks")
       .order("desc")
-      .take(50);
+      .take(50) as Doc<"healthChecks">[];
 
     // Return only the most recent check per component
     const latestByComponent = new Map<string, Doc<"healthChecks">>();
@@ -546,7 +546,7 @@ export const getHealthHistory = internalQuery({
       .withIndex("by_component", (q) => q.eq("component", component))
       .filter((q) => q.gte(q.field("timestamp"), cutoff))
       .order("desc")
-      .collect();
+      .collect() as Doc<"healthChecks">[];
   },
 });
 
@@ -559,11 +559,11 @@ export const getActiveAlerts = internalQuery({
     const checks = await ctx.db
       .query("healthChecks")
       .order("desc")
-      .take(100);
+      .take(100) as Doc<"healthChecks">[];
 
     // Filter for unhealthy/degraded checks
     return checks.filter(
-      (c) => (c.status === "unhealthy" || c.status === "degraded") && c.issues.length > 0
+      (c: Doc<"healthChecks">) => (c.status === "unhealthy" || c.status === "degraded") && c.issues.length > 0
     );
   },
 });
@@ -577,7 +577,7 @@ export const getSystemHealth = query({
     const checks = await ctx.db
       .query("healthChecks")
       .order("desc")
-      .take(50);
+      .take(50) as Doc<"healthChecks">[];
 
     // Get latest check per component
     const components: Record<HealthCheckType, HealthCheckResult> = {} as Record<HealthCheckType, HealthCheckResult>;
@@ -593,7 +593,7 @@ export const getSystemHealth = query({
     ];
 
     for (const type of componentTypes) {
-      const check = checks.find((c) => c.component === type);
+      const check = checks.find((c: Doc<"healthChecks">) => c.component === type);
       if (check) {
         components[type] = {
           component: type,
@@ -629,11 +629,11 @@ export const getSystemHealth = query({
 
     // Count active alerts
     const activeAlerts = checks.filter(
-      (c) => c.status === "unhealthy" || c.status === "degraded"
+      (c: Doc<"healthChecks">) => c.status === "unhealthy" || c.status === "degraded"
     ).length;
 
     // Calculate uptime (simplified - time since last unhealthy check)
-    const lastUnhealthy = checks.find((c) => c.status === "unhealthy");
+    const lastUnhealthy = checks.find((c: Doc<"healthChecks">) => c.status === "unhealthy");
     const uptime = lastUnhealthy
       ? Date.now() - lastUnhealthy.timestamp
       : Date.now() - (checks[checks.length - 1]?.timestamp || Date.now());
@@ -724,7 +724,7 @@ export const getOldHealthChecks = internalQuery({
     return await ctx.db
       .query("healthChecks")
       .filter((q) => q.lt(q.field("timestamp"), before))
-      .take(limit);
+      .take(limit) as Doc<"healthChecks">[];
   },
 });
 
@@ -846,27 +846,27 @@ export const generateHealthReport = internalAction({
     );
 
     // Calculate uptime percentage
-    const healthyChecks = checks.filter((c) => c.status === "healthy" && c.timestamp >= cutoff);
-    const totalChecks = checks.filter((c) => c.timestamp >= cutoff);
+    const healthyChecks = checks.filter((c: Doc<"healthChecks">) => c.status === "healthy" && c.timestamp >= cutoff);
+    const totalChecks = checks.filter((c: Doc<"healthChecks">) => c.timestamp >= cutoff);
     const uptimePercent = totalChecks.length > 0 ? (healthyChecks.length / totalChecks.length) * 100 : 100;
 
     // Calculate average latency
     const avgLatency =
       checks.length > 0
-        ? checks.reduce((sum, c) => sum + c.latencyMs, 0) / checks.length
+        ? checks.reduce((sum: number, c: Doc<"healthChecks">) => sum + c.latencyMs, 0) / checks.length
         : 0;
 
     // Count unique issues
-    const allIssues = checks.flatMap((c) => c.issues);
+    const allIssues = checks.flatMap((c: Doc<"healthChecks">) => c.issues);
     const issueCount = new Set(allIssues).size;
 
     // Generate recommendations
     const recommendations: string[] = [];
 
-    const unhealthyComponents = checks.filter((c) => c.status === "unhealthy");
+    const unhealthyComponents = checks.filter((c: Doc<"healthChecks">) => c.status === "unhealthy");
     if (unhealthyComponents.length > 0) {
       recommendations.push(
-        `Investigate unhealthy components: ${unhealthyComponents.map((c) => c.component).join(", ")}`
+        `Investigate unhealthy components: ${unhealthyComponents.map((c: Doc<"healthChecks">) => c.component).join(", ")}`
       );
     }
 

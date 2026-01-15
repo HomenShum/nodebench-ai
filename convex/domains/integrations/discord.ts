@@ -26,6 +26,7 @@
 import { v } from "convex/values";
 import { action, internalAction, mutation, query, internalMutation } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Doc } from "../../_generated/dataModel";
 import nacl from "tweetnacl";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -624,7 +625,7 @@ export const registerDiscordUser = mutation({
     const existing = await ctx.db
       .query("discordUsers")
       .withIndex("by_user_id", (q) => q.eq("discordUserId", args.discordUserId))
-      .first();
+      .first() as Doc<"discordUsers"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -659,7 +660,7 @@ export const getDiscordUser = query({
     return await ctx.db
       .query("discordUsers")
       .withIndex("by_user_id", (q) => q.eq("discordUserId", args.discordUserId))
-      .first();
+      .first() as Doc<"discordUsers"> | null;
   },
 });
 
@@ -675,7 +676,7 @@ export const toggleNotifications = mutation({
     const user = await ctx.db
       .query("discordUsers")
       .withIndex("by_user_id", (q) => q.eq("discordUserId", args.discordUserId))
-      .first();
+      .first() as Doc<"discordUsers"> | null;
 
     if (user) {
       await ctx.db.patch(user._id, { notificationsEnabled: args.enabled });
@@ -734,7 +735,7 @@ export const getRecentInteractions = query({
       .query("discordInteractions")
       .withIndex("by_user_id", (q) => q.eq("discordUserId", args.discordUserId))
       .order("desc")
-      .take(limit);
+      .take(limit) as Doc<"discordInteractions">[];
   },
 });
 

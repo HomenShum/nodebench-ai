@@ -7,7 +7,7 @@
 
 import { v } from "convex/values";
 import { mutation } from "../../_generated/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 /**
  * Create a new swarm record
@@ -108,7 +108,7 @@ export const updateSwarmStatus = mutation({
     const swarm = await ctx.db
       .query("agentSwarms")
       .withIndex("by_swarm", (q) => q.eq("swarmId", args.swarmId))
-      .first();
+      .first() as Doc<"agentSwarms"> | null;
 
     if (!swarm) throw new Error(`Swarm not found: ${args.swarmId}`);
 
@@ -146,7 +146,7 @@ export const updateTaskStatus = mutation({
     const task = await ctx.db
       .query("swarmAgentTasks")
       .withIndex("by_task", (q) => q.eq("taskId", args.taskId))
-      .first();
+      .first() as Doc<"swarmAgentTasks"> | null;
 
     if (!task) throw new Error(`Task not found: ${args.taskId}`);
 
@@ -176,7 +176,7 @@ export const setSwarmResult = mutation({
     const swarm = await ctx.db
       .query("agentSwarms")
       .withIndex("by_swarm", (q) => q.eq("swarmId", args.swarmId))
-      .first();
+      .first() as Doc<"agentSwarms"> | null;
 
     if (!swarm) throw new Error(`Swarm not found: ${args.swarmId}`);
 

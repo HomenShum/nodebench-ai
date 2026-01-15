@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
-import { Id } from "../../_generated/dataModel";
+import { Id, Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -65,7 +65,7 @@ export const getUserPreferences = query({
     const preferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (!preferences) {
       // Return default values if no preferences exist
@@ -121,7 +121,7 @@ export const getDocOrders = query({
     const preferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     return {
       docOrderByFilter: preferences?.docOrderByFilter ?? undefined,
@@ -148,7 +148,7 @@ export const setDocOrderForFilter = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (existing) {
       const current = existing.docOrderByFilter ?? {};
@@ -192,7 +192,7 @@ export const setDocOrderForSegmented = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
 
 
@@ -250,7 +250,7 @@ export const updateUserPreferences = mutation({
     const existingPreferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     const now = Date.now();
 
@@ -333,7 +333,7 @@ export const setUpcomingViewPrefs = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, { upcomingMode, updatedAt: now });
@@ -383,7 +383,7 @@ export const setKanbanLaneTitles = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, { kanbanLaneTitles: titles, updatedAt: now });
@@ -428,7 +428,7 @@ export const getAgendaUpcomingOrders = query({
     const preferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     return {
       agendaListOrder: preferences?.agendaListOrder,
@@ -455,7 +455,7 @@ export const setAgendaUpcomingOrders = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     const updates: any = { updatedAt: now };
     if (args.agendaListOrder !== undefined) updates.agendaListOrder = args.agendaListOrder;
@@ -510,7 +510,7 @@ export const setPlannerViewPrefs = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     const updates: any = { updatedAt: now };
     if (args.density !== undefined) updates.plannerDensity = args.density;
@@ -567,7 +567,7 @@ export const getCalendarUiPrefs = query({
     const preferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     return {
       calendarHubSizePct: preferences?.calendarHubSizePct ?? 45,
@@ -598,7 +598,7 @@ export const setTimeZonePreference = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, { timeZone, updatedAt: now });
@@ -641,7 +641,7 @@ export const upsertCalendarHubSizePct = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, { calendarHubSizePct: clamped, updatedAt: now });
@@ -682,7 +682,7 @@ export const setPlannerMode = mutation({
     const existing = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, { plannerMode: mode, updatedAt: now });
@@ -725,7 +725,7 @@ export const updateUngroupedSectionName = mutation({
     const existingPreferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     const now = Date.now();
 
@@ -766,7 +766,7 @@ export const updateUngroupedExpandedState = mutation({
     const existingPreferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     const now = Date.now();
 
@@ -821,7 +821,7 @@ export const updateSmsPreferences = mutation({
     const existingPreferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     const now = Date.now();
 
@@ -866,7 +866,7 @@ export const getSmsPreferences = query({
     const prefs = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     if (!prefs) {
       return {
@@ -924,7 +924,7 @@ export const setSmsPreferencesInternal = internalMutation({
     const existingPreferences = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
+      .first() as Doc<"userPreferences"> | null;
 
     const now = Date.now();
 

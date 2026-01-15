@@ -391,7 +391,7 @@ export const synthesizeEntityInsights = internalAction({
 
     // Filter by specified personas if provided
     if (personas && personas.length > 0) {
-      insights = insights.filter((i) => personas.includes(i.personaId));
+      insights = insights.filter((i: PersonaInsight) => personas.includes(i.personaId));
     }
 
     if (insights.length === 0) {
@@ -423,17 +423,17 @@ export const synthesizeEntityInsights = internalAction({
     const prioritizedActions = consolidateActions(insights);
 
     // Build perspectives array
-    const perspectives = insights.map((insight) => ({
+    const perspectives = insights.map((insight: PersonaInsight) => ({
       personaId: insight.personaId,
-      personaName: PERSONA_CONFIG[insight.personaId]?.name || insight.personaId,
+      personaName: insight.personaId, // Use personaId as the display name
       verdict: insight.verdict || "neutral",
       confidence: insight.confidence,
       keyInsight: insight.keyPoints[0] || insight.content.slice(0, 200),
     }));
 
     // Generate consensus summary
-    const personasConsulted = [...new Set(insights.map((i) => i.personaId))];
-    const totalSources = insights.reduce((sum, i) => sum + i.sources.length, 0);
+    const personasConsulted = [...new Set(insights.map((i: PersonaInsight) => i.personaId))] as PersonaId[];
+    const totalSources = insights.reduce((sum: number, i: PersonaInsight) => sum + i.sources.length, 0);
 
     let consensusSummary = `Based on ${personasConsulted.length} persona perspectives with ${totalSources} sources:\n\n`;
 
@@ -544,7 +544,7 @@ export const synthesizePortfolio = internalAction({
 
       // Filter by persona if specified
       const filteredInsights = personaId
-        ? insights.filter((i) => i.personaId === personaId)
+        ? insights.filter((i: PersonaInsight) => i.personaId === personaId)
         : insights;
 
       if (filteredInsights.length === 0) continue;
@@ -637,8 +637,8 @@ export const comparePersonaPerspectives = internalAction({
       { entityId }
     );
 
-    const insightA = allInsights.find((i) => i.personaId === personaA);
-    const insightB = allInsights.find((i) => i.personaId === personaB);
+    const insightA = allInsights.find((i: PersonaInsight) => i.personaId === personaA);
+    const insightB = allInsights.find((i: PersonaInsight) => i.personaId === personaB);
 
     if (!insightA || !insightB) {
       return {
@@ -654,12 +654,12 @@ export const comparePersonaPerspectives = internalAction({
 
     // Find agreements (overlapping key points)
     const agreements: string[] = [];
-    const pointsA = new Set(insightA.keyPoints.map((p) => p.toLowerCase().slice(0, 50)));
+    const pointsA = new Set(insightA.keyPoints.map((p: string) => p.toLowerCase().slice(0, 50)));
 
     for (const pointB of insightB.keyPoints) {
       const normalizedB = pointB.toLowerCase().slice(0, 50);
       for (const pointA of pointsA) {
-        if (pointA.includes(normalizedB.slice(0, 20)) || normalizedB.includes(pointA.slice(0, 20))) {
+        if ((pointA as string).includes(normalizedB.slice(0, 20)) || normalizedB.includes((pointA as string).slice(0, 20))) {
           agreements.push(pointB);
           break;
         }
@@ -689,12 +689,12 @@ export const comparePersonaPerspectives = internalAction({
     return {
       comparison: {
         personaA: {
-          name: PERSONA_CONFIG[personaA as PersonaId]?.name || personaA,
+          name: personaA, // Use personaId as the display name
           verdict: insightA.verdict || "neutral",
           keyPoints: insightA.keyPoints.slice(0, 5),
         },
         personaB: {
-          name: PERSONA_CONFIG[personaB as PersonaId]?.name || personaB,
+          name: personaB, // Use personaId as the display name
           verdict: insightB.verdict || "neutral",
           keyPoints: insightB.keyPoints.slice(0, 5),
         },

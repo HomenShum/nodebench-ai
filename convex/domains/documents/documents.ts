@@ -599,10 +599,10 @@ export const listDocumentsByTag = query({
     const documents: any[] = [];
     for (const docIdStr of docIds) {
       try {
-        const doc = await ctx.db.get(docIdStr as Id<"documents">);
+        const doc = await ctx.db.get(docIdStr as Id<"documents">) as Doc<"documents"> | null;
         if (!doc) continue;
-        if ((doc).isArchived) continue;
-        if ((doc).createdBy !== userId) continue;
+        if (doc.isArchived) continue;
+        if (doc.createdBy !== userId) continue;
         documents.push(doc);
       } catch {
         // Skip invalid IDs
@@ -619,7 +619,7 @@ export const getTitle = query({
   args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) return null;
     if (!doc.isPublic && doc.createdBy !== userId) return null;
     return { title: doc.title } as { title: string };
@@ -632,7 +632,7 @@ export const getTitles = query({
     const userId = await getAuthUserId(ctx);
     const out: Array<{ _id: Id<"documents">; title: string }> = [];
     for (const id of args.ids) {
-      const doc = await ctx.db.get(id);
+      const doc = await ctx.db.get(id) as Doc<"documents"> | null;
       if (doc && (doc.isPublic || doc.createdBy === userId)) {
         out.push({ _id: id, title: doc.title });
       }
@@ -732,7 +732,7 @@ export const getSidebarWithPreviews = query({
       let mediaUrl: string | null = null;
       let csvUrl: string | null = null;
       if (doc.documentType === "file" && doc.fileId) {
-        const file = await ctx.db.get(doc.fileId as Id<"files">);
+        const file = await ctx.db.get(doc.fileId as Id<"files">) as Doc<"files"> | null;
         if (file) {
           fileAnalyzedAt = file.analyzedAt;
           fileSize = file.fileSize;
@@ -882,7 +882,7 @@ export const getById = query({
   handler: async (ctx, args) => {
     // Use provided userId or fall back to authenticated user
     const userId = args.userId || await getAuthUserId(ctx);
-    const document = await ctx.db.get(args.documentId);
+    const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!document) return null;
     if (!document.isPublic && document.createdBy !== userId) return null;
     return document;
@@ -935,7 +935,7 @@ export const update = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
     const { id, ...rest } = args;
-    const existingDocument = await ctx.db.get(id);
+    const existingDocument = await ctx.db.get(id) as Doc<"documents"> | null;
     if (!existingDocument) throw new Error("Not found");
     if (existingDocument.createdBy !== userId) throw new Error("Unauthorized");
 
@@ -959,7 +959,7 @@ export const removeIcon = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    const existingDocument = await ctx.db.get(args.id);
+    const existingDocument = await ctx.db.get(args.id) as Doc<"documents"> | null;
     if (!existingDocument) throw new Error("Not found");
     if (existingDocument.createdBy !== userId) throw new Error("Unauthorized");
     return await ctx.db.patch(args.id, { icon: undefined });
@@ -972,7 +972,7 @@ export const setDocumentType = mutation({
   handler: async (ctx, { id, documentType }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    const existing = await ctx.db.get(id);
+    const existing = await ctx.db.get(id) as Doc<"documents"> | null;
     if (!existing) throw new Error("Not found");
     if (existing.createdBy !== userId) throw new Error("Unauthorized");
     await ctx.db.patch(id, { documentType } as any);
@@ -986,7 +986,7 @@ export const removeCoverImage = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    const existingDocument = await ctx.db.get(args.id);
+    const existingDocument = await ctx.db.get(args.id) as Doc<"documents"> | null;
     if (!existingDocument) throw new Error("Not found");
     if (existingDocument.createdBy !== userId) throw new Error("Unauthorized");
     return await ctx.db.patch(args.id, { coverImage: undefined });
@@ -998,7 +998,7 @@ export const archive = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    const existingDocument = await ctx.db.get(args.id);
+    const existingDocument = await ctx.db.get(args.id) as Doc<"documents"> | null;
     if (!existingDocument) throw new Error("Not found");
     if (existingDocument.createdBy !== userId) throw new Error("Unauthorized");
 
@@ -1034,7 +1034,7 @@ export const restore = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    const existingDocument = await ctx.db.get(args.id);
+    const existingDocument = await ctx.db.get(args.id) as Doc<"documents"> | null;
     if (!existingDocument) throw new Error("Not found");
     if (existingDocument.createdBy !== userId) throw new Error("Unauthorized");
 
@@ -1049,9 +1049,9 @@ export const restore = mutation({
       }
     };
 
-    const options: Partial<typeof existingDocument> = { isArchived: false };
+    const options: Partial<Doc<"documents">> = { isArchived: false };
     if (existingDocument.parentId) {
-      const parent = await ctx.db.get(existingDocument.parentId);
+      const parent = await ctx.db.get(existingDocument.parentId) as Doc<"documents"> | null;
       if (parent?.isArchived) options.parentId = undefined;
     }
     const document = await ctx.db.patch(args.id, options);
@@ -1065,7 +1065,7 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    const existingDocument = await ctx.db.get(args.id);
+    const existingDocument = await ctx.db.get(args.id) as Doc<"documents"> | null;
     if (!existingDocument) throw new Error("Not found");
     if (existingDocument.createdBy !== userId) throw new Error("Unauthorized");
     await ctx.db.delete(args.id);
@@ -1086,7 +1086,7 @@ export const getNodesPaginated = query({
     }
 
     // Check document access
-    const document = await ctx.db.get(documentId);
+    const document = await ctx.db.get(documentId) as Doc<"documents"> | null;
     if (!document) {
       throw new Error("Document not found");
     }
@@ -1175,7 +1175,7 @@ export const getPreviewById = query({
   args: { documentId: v.id("documents"), maxLen: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    const doc = await ctx.db.get(args.documentId);
+    const doc = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!doc) return null;
     if (!doc.isPublic && doc.createdBy !== userId) return null;
 
@@ -1253,7 +1253,7 @@ export const trackNodeEdit = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     // Check if user can edit this document
-    const document = await ctx.db.get(args.documentId);
+    const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!document) throw new Error("Document not found");
 
     const isOwner = document.createdBy === userId;
@@ -1290,13 +1290,13 @@ export const getNodeEditInfo = query({
     nodeId: v.string(),
   },
   handler: async (ctx, args) => {
-    const document = await ctx.db.get(args.documentId);
+    const document = await ctx.db.get(args.documentId) as Doc<"documents"> | null;
     if (!document) return null;
 
     const nodeEditKey = `node_${args.nodeId}`;
-    const editedBy = (document)[`${nodeEditKey}_editedBy`];
-    const editedAt = (document)[`${nodeEditKey}_editedAt`];
-    const content = (document)[`${nodeEditKey}_content`];
+    const editedBy = (document as any)[`${nodeEditKey}_editedBy`];
+    const editedAt = (document as any)[`${nodeEditKey}_editedAt`];
+    const content = (document as any)[`${nodeEditKey}_content`];
 
     if (!editedBy || !editedAt) return null;
 
@@ -1317,7 +1317,7 @@ export const toggleFavorite = mutation({
       throw new Error("Not authenticated");
     }
 
-    const document = await ctx.db.get(args.id);
+    const document = await ctx.db.get(args.id) as Doc<"documents"> | null;
     if (!document) {
       throw new Error("Document not found");
     }
@@ -1373,7 +1373,7 @@ export const getLinkedAssets = query({
     }
 
     // Get the dossier to verify access
-    const dossier = await ctx.db.get(args.dossierId);
+    const dossier = await ctx.db.get(args.dossierId) as Doc<"documents"> | null;
     if (!dossier) {
       return [];
     }
@@ -1428,7 +1428,7 @@ export const getOrCreateQuickNotes = mutation({
       userId = rawUserId as Id<"users">;
     }
 
-    const dossier = await ctx.db.get(args.dossierId);
+    const dossier = await ctx.db.get(args.dossierId) as Doc<"documents"> | null;
     if (!dossier) {
       throw new Error("Dossier not found");
     }

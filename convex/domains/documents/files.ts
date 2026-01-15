@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "../../_generated/api";
+import type { Doc, Id } from "../../_generated/dataModel";
 
 export const generateUploadUrl = mutation(async (ctx) => {
   const identity = await ctx.auth.getUserIdentity();
@@ -33,7 +34,7 @@ export const finalizeCsvReplace = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const file = await ctx.db.get(args.fileId);
+    const file = await ctx.db.get(args.fileId) as Doc<"files"> | null;
     if (!file) throw new Error("File not found");
     if (file.userId !== userId) throw new Error("Not authorized to modify this file");
 
@@ -41,7 +42,7 @@ export const finalizeCsvReplace = mutation({
       storageId: args.newStorageId,
       fileSize: args.newFileSize,
       lastModified: Date.now(),
-      modificationCount: (file.modificationCount || 0) + 1,
+      modificationCount: ((file as any).modificationCount || 0) + 1,
     });
 
     console.log(`CSV storage replaced for file ${args.fileId}`, {
@@ -67,7 +68,7 @@ export const finalizeExcelReplace = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const file = await ctx.db.get(args.fileId);
+    const file = await ctx.db.get(args.fileId) as Doc<"files"> | null;
     if (!file) throw new Error("File not found");
     if (file.userId !== userId) throw new Error("Not authorized to modify this file");
 
@@ -75,7 +76,7 @@ export const finalizeExcelReplace = mutation({
       storageId: args.newStorageId,
       fileSize: args.newFileSize,
       lastModified: Date.now(),
-      modificationCount: (file.modificationCount || 0) + 1,
+      modificationCount: ((file as any).modificationCount || 0) + 1,
     });
 
     console.log(`XLSX storage replaced for file ${args.fileId}`, {
@@ -250,7 +251,7 @@ export const renameFile = mutation({
       throw new Error("Not authenticated");
     }
 
-    const file = await ctx.db.get(args.fileId);
+    const file = await ctx.db.get(args.fileId) as Doc<"files"> | null;
     if (!file) {
       throw new Error("File not found");
     }
@@ -374,7 +375,7 @@ export const updateCsvContent = mutation({
     }
 
     // Get the existing file
-    const file = await ctx.db.get(args.fileId);
+    const file = await ctx.db.get(args.fileId) as Doc<"files"> | null;
     if (!file) {
       throw new Error("File not found");
     }
@@ -393,7 +394,7 @@ export const updateCsvContent = mutation({
       // Keep existing storageId for now - would need proper file replacement in production
       fileSize: contentSize,
       lastModified: Date.now(),
-      modificationCount: (file.modificationCount || 0) + 1
+      modificationCount: ((file as any).modificationCount || 0) + 1
     });
 
     // Log the modification details for audit trail
@@ -427,7 +428,7 @@ export const prepareCsvExport = mutation({
     }
 
     // Get the original file for reference
-    const originalFile = await ctx.db.get(args.originalFileId);
+    const originalFile = await ctx.db.get(args.originalFileId) as Doc<"files"> | null;
     if (!originalFile) {
       throw new Error("Original file not found");
     }

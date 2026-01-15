@@ -144,7 +144,7 @@ export const createSwarm = action({
     );
 
     // 2. Generate agent configs with unique state key prefixes
-    const agentConfigs: AgentConfig[] = agents.map((agentName, idx) => ({
+    const agentConfigs: AgentConfig[] = agents.map((agentName: string, idx: number) => ({
       agentName,
       role: getAgentRole(agentName),
       query: `${query} (Focus: ${getAgentFocus(agentName)})`,
@@ -229,7 +229,7 @@ export const executeSwarmInternal = internalAction({
       });
 
       // 2. Schedule all agent delegations in parallel
-      const delegationTasks = tasks.map((task) => ({
+      const delegationTasks = tasks.map((task: { taskId: string; agentName: string; query: string }) => ({
         delegationId: crypto.randomUUID(),
         agentName: task.agentName as any, // Type coercion for AgentName
         query: task.query,
@@ -287,7 +287,7 @@ export const executeSwarmInternal = internalAction({
         if (allCompleted) {
           // Update task records with results
           for (const delegation of delegations) {
-            const idx = delegationTasks.findIndex((t) => t.delegationId === delegation.delegationId);
+            const idx = delegationTasks.findIndex((t: { delegationId: string }) => t.delegationId === delegation.delegationId);
             const task = idx >= 0 ? tasks[idx] : null;
             if (task) {
               // Get the final write event for this delegation

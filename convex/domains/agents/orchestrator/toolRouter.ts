@@ -11,6 +11,7 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation, action } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
+import type { Doc } from "../../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -229,7 +230,7 @@ export const resetCircuitBreaker = internalMutation({
         const existing = await ctx.db
             .query("toolHealth")
             .withIndex("by_toolName", (q) => q.eq("toolName", args.toolName))
-            .first();
+            .first() as Doc<"toolHealth"> | null;
 
         if (!existing) {
             return false;

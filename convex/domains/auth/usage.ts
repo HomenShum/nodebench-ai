@@ -2,6 +2,7 @@ import { query, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api } from "../../_generated/api";
+import type { Doc } from "../../_generated/dataModel";
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
@@ -29,7 +30,7 @@ export const getDailyUsagePublic = query({
       .withIndex("by_user_provider_date", (q) =>
         q.eq("userId", userId).eq("provider", provider).eq("date", date)
       )
-      .first();
+      .first() as Doc<"dailyUsage"> | null;
 
     const limit = await getEffectiveLimit(ctx);
     return { count: usage?.count ?? 0, limit, date };
@@ -66,7 +67,7 @@ export const getUsageSeries = query({
         .withIndex("by_user_provider_date", (q) =>
           q.eq("userId", userId).eq("provider", provider).eq("date", date)
         )
-        .first();
+        .first() as Doc<"dailyUsage"> | null;
 
       results.push({ date, count: usage?.count ?? 0, limit: effLimit });
     }
@@ -90,7 +91,7 @@ export const incrementDailyUsage = internalMutation({
       .withIndex("by_user_provider_date", (q) =>
         q.eq("userId", userId).eq("provider", provider).eq("date", date)
       )
-      .first();
+      .first() as Doc<"dailyUsage"> | null;
 
     const inc = Math.max(1, Math.floor(amount ?? 1));
     const now = Date.now();

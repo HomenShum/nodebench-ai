@@ -4,7 +4,7 @@
 import { mutation, query } from "../../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "../../_generated/dataModel";
+import type { Id, Doc } from "../../_generated/dataModel";
 
 /**
  * Track an API call
@@ -50,7 +50,7 @@ export const trackApiUsage = mutation({
       .withIndex("by_user_api_date", (q) =>
         q.eq("userId", userId).eq("apiName", args.apiName).eq("date", date)
       )
-      .first();
+      .first() as Doc<"apiUsageDaily"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {

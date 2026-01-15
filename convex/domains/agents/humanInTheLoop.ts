@@ -111,7 +111,7 @@ export const respondToRequest = mutation({
     const userId = await getSafeUserId(ctx);
 
     // Get the request
-    const request = await ctx.db.get(args.requestId);
+    const request = await ctx.db.get(args.requestId) as { userId: typeof userId; status: string } | null;
     if (!request) {
       throw new Error("Request not found");
     }
@@ -148,7 +148,7 @@ export const cancelRequest = mutation({
     const userId = await getSafeUserId(ctx);
 
     // Get the request
-    const request = await ctx.db.get(args.requestId);
+    const request = await ctx.db.get(args.requestId) as { userId: typeof userId; status: string } | null;
     if (!request) {
       throw new Error("Request not found");
     }

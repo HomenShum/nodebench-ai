@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../_generated/server";
+import { Doc } from "../_generated/dataModel";
 import { hashSync } from "../../shared/artifacts";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -36,7 +37,7 @@ export const createRun = internalMutation({
       .query("globalResearchRuns")
       .withIndex("by_queryKey_sortTs", (q) => q.eq("queryKey", queryKey))
       .order("desc")
-      .first();
+      .first() as Doc<"globalResearchRuns"> | null;
 
     const version = (latestRun?.version ?? 0) + 1;
 
@@ -72,7 +73,7 @@ export const startRun = internalMutation({
     const run = await ctx.db
       .query("globalResearchRuns")
       .withIndex("by_researchRunId", (q) => q.eq("researchRunId", researchRunId))
-      .first();
+      .first() as Doc<"globalResearchRuns"> | null;
 
     if (!run) {
       console.error(`[globalResearch/runs] Run not found: ${researchRunId}`);
@@ -104,7 +105,7 @@ export const completeRun = internalMutation({
     const run = await ctx.db
       .query("globalResearchRuns")
       .withIndex("by_researchRunId", (q) => q.eq("researchRunId", researchRunId))
-      .first();
+      .first() as Doc<"globalResearchRuns"> | null;
 
     if (!run) {
       console.error(`[globalResearch/runs] Run not found: ${researchRunId}`);
@@ -140,7 +141,7 @@ export const failRun = internalMutation({
     const run = await ctx.db
       .query("globalResearchRuns")
       .withIndex("by_researchRunId", (q) => q.eq("researchRunId", researchRunId))
-      .first();
+      .first() as Doc<"globalResearchRuns"> | null;
 
     if (!run) {
       console.error(`[globalResearch/runs] Run not found: ${researchRunId}`);
@@ -242,7 +243,7 @@ export const checkCacheStatus = internalQuery({
         q.eq("queryKey", queryKey).eq("status", "completed")
       )
       .order("desc")
-      .first();
+      .first() as Doc<"globalResearchRuns"> | null;
 
     if (!latestCompleted) {
       return { hasCache: false as const };
@@ -349,7 +350,7 @@ export const appendEvent = internalMutation({
       .query("globalResearchEvents")
       .withIndex("by_runId_seq", (q) => q.eq("researchRunId", researchRunId))
       .order("desc")
-      .first();
+      .first() as Doc<"globalResearchEvents"> | null;
 
     const seq = (lastEvent?.seq ?? 0) + 1;
     const eventKey = generateEventKey(researchRunId, kind, artifactKey, seq);
@@ -400,9 +401,9 @@ export const getEventsSinceSeq = internalQuery({
       .query("globalResearchEvents")
       .withIndex("by_runId_seq", (q) => q.eq("researchRunId", researchRunId))
       .order("asc")
-      .take(1000); // Overfetch
+      .take(1000) as Doc<"globalResearchEvents">[];
 
     // Filter in memory (Convex doesn't support gt on compound index second field)
-    return events.filter((e) => e.seq > sinceSeq).slice(0, limit);
+    return events.filter((e: Doc<"globalResearchEvents">) => e.seq > sinceSeq).slice(0, limit);
   },
 });

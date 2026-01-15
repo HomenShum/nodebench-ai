@@ -13,6 +13,7 @@ import {
   internalQuery,
 } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -234,10 +235,10 @@ export const runComprehensiveEvaluation = internalAction({
 
     // Calculate overall score
     const overallScore = results.length > 0
-      ? Math.round(results.reduce((sum, r) => sum + r.outputQuality, 0) / results.length)
+      ? Math.round(results.reduce((sum: number, r: LiveEvaluationResult) => sum + r.outputQuality, 0) / results.length)
       : 0;
 
-    const successRate = results.filter((r) => r.success).length / results.length;
+    const successRate = results.filter((r: LiveEvaluationResult) => r.success).length / results.length;
 
     // Generate recommendation
     let recommendation = "maintain";
@@ -320,19 +321,19 @@ export const generatePerformanceReport = internalAction({
     const modelUsage = usageStats.byModel[modelId] || { calls: 0, success: 0, cost: 0 };
 
     // Calculate metrics
-    const successCount = results.filter((r) => r.success).length;
+    const successCount = results.filter((r: LiveEvaluationResult) => r.success).length;
     const successRate = results.length > 0 ? successCount / results.length : 0;
     const avgLatency = results.length > 0
-      ? results.reduce((sum, r) => sum + r.latencyMs, 0) / results.length
+      ? results.reduce((sum: number, r: LiveEvaluationResult) => sum + r.latencyMs, 0) / results.length
       : 0;
     const avgQuality = results.length > 0
-      ? results.reduce((sum, r) => sum + r.outputQuality, 0) / results.length
+      ? results.reduce((sum: number, r: LiveEvaluationResult) => sum + r.outputQuality, 0) / results.length
       : 0;
     const avgTokenEff = results.length > 0
-      ? results.reduce((sum, r) => sum + r.tokenEfficiency, 0) / results.length
+      ? results.reduce((sum: number, r: LiveEvaluationResult) => sum + r.tokenEfficiency, 0) / results.length
       : 0;
     const avgCostEff = results.length > 0
-      ? results.reduce((sum, r) => sum + r.costEfficiency, 0) / results.length
+      ? results.reduce((sum: number, r: LiveEvaluationResult) => sum + r.costEfficiency, 0) / results.length
       : 0;
 
     // Task breakdown
@@ -421,15 +422,15 @@ export const getEvaluationResults = internalQuery({
       .query("freeModelEvaluations")
       .withIndex("by_timestamp")
       .filter((q) => q.gte(q.field("timestamp"), since))
-      .collect();
+      .collect() as Doc<"freeModelEvaluations">[];
 
     // Transform and filter by model
     return results
-      .filter((r) => {
+      .filter((r: Doc<"freeModelEvaluations">) => {
         // Get the model to check openRouterId
         return true; // We store modelId as string in LiveEvaluationResult
       })
-      .map((r) => ({
+      .map((r: Doc<"freeModelEvaluations">) => ({
         modelId: r.modelId as unknown as string,
         taskType: "evaluation",
         scenarioId: "basic",
@@ -458,24 +459,24 @@ export const getAggregateStats = internalQuery({
       .query("freeModelEvaluations")
       .withIndex("by_timestamp")
       .filter((q) => q.gte(q.field("timestamp"), since))
-      .collect();
+      .collect() as Doc<"freeModelEvaluations">[];
 
     const usage = await ctx.db
       .query("autonomousModelUsage")
       .withIndex("by_timestamp")
       .filter((q) => q.gte(q.field("timestamp"), since))
-      .collect();
+      .collect() as Doc<"autonomousModelUsage">[];
 
     return {
       evaluationCount: evals.length,
-      successfulEvals: evals.filter((e) => e.success).length,
+      successfulEvals: evals.filter((e: Doc<"freeModelEvaluations">) => e.success).length,
       avgLatency: evals.length > 0
-        ? evals.reduce((sum, e) => sum + e.latencyMs, 0) / evals.length
+        ? evals.reduce((sum: number, e: Doc<"freeModelEvaluations">) => sum + e.latencyMs, 0) / evals.length
         : 0,
       usageCount: usage.length,
-      successfulUsage: usage.filter((u) => u.success).length,
-      totalCost: usage.reduce((sum, u) => sum + u.cost, 0),
-      freeUsageCount: usage.filter((u) => u.cost === 0).length,
+      successfulUsage: usage.filter((u: Doc<"autonomousModelUsage">) => u.success).length,
+      totalCost: usage.reduce((sum: number, u: Doc<"autonomousModelUsage">) => sum + u.cost, 0),
+      freeUsageCount: usage.filter((u: Doc<"autonomousModelUsage">) => u.cost === 0).length,
     };
   },
 });

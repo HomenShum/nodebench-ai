@@ -1487,7 +1487,7 @@ export const postStartupFundingBrief = internalAction({
       const eventSector = crm?.industry || event.sector || "";
       if (sectorCategories && sectorCategories.length > 0) {
         const sectorLower = eventSector.toLowerCase();
-        const matchesSector = sectorCategories.some(cat => {
+        const matchesSector = sectorCategories.some((cat: string) => {
           if (cat === "healthcare" && (sectorLower.includes("health") || sectorLower.includes("bio") || sectorLower.includes("med"))) return true;
           if (cat === "fintech" && (sectorLower.includes("fin") || sectorLower.includes("payment") || sectorLower.includes("bank"))) return true;
           if (cat === "ai_ml" && (sectorLower.includes("ai") || sectorLower.includes("ml") || sectorLower.includes("machine"))) return true;

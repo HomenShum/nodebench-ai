@@ -124,13 +124,13 @@ function formatForEmail(
   // Build HTML email
   const keyFactsHtml = content.keyFacts
     .map(
-      (fact) =>
+      (fact: { label: string; value: string; category?: string }) =>
         `<tr><td style="padding:8px;border-bottom:1px solid #eee;"><strong>${fact.label}</strong></td><td style="padding:8px;border-bottom:1px solid #eee;">${fact.value}</td></tr>`
     )
     .join("");
 
   const nextActionsHtml = content.nextActions
-    .map((action) => `<li style="margin:4px 0;">${action}</li>`)
+    .map((action: string) => `<li style="margin:4px 0;">${action}</li>`)
     .join("");
 
   const html = `
@@ -180,7 +180,7 @@ function formatForEmail(
     to: config.recipients || [],
     subject,
     html,
-    text: `${content.summary}\n\nKey Facts:\n${content.keyFacts.map((f) => `- ${f.label}: ${f.value}`).join("\n")}\n\nNext Actions:\n${content.nextActions.map((a) => `- ${a}`).join("\n")}`,
+    text: `${content.summary}\n\nKey Facts:\n${content.keyFacts.map((f: { label: string; value: string }) => `- ${f.label}: ${f.value}`).join("\n")}\n\nNext Actions:\n${content.nextActions.map((a: string) => `- ${a}`).join("\n")}`,
   };
 }
 
@@ -232,7 +232,7 @@ function formatForChannel(
 export const getPublishingTask = internalQuery({
   args: { publishingTaskId: v.id("publishingTasks") },
   handler: async (ctx, { publishingTaskId }): Promise<Doc<"publishingTasks"> | null> => {
-    return await ctx.db.get(publishingTaskId);
+    return (await ctx.db.get(publishingTaskId)) as Doc<"publishingTasks"> | null;
   },
 });
 
@@ -242,11 +242,11 @@ export const getPublishingTask = internalQuery({
 export const getPendingTasks = internalQuery({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 50 }): Promise<Doc<"publishingTasks">[]> => {
-    return await ctx.db
+    return (await ctx.db
       .query("publishingTasks")
       .withIndex("by_status", (q) => q.eq("status", "pending"))
       .order("asc")
-      .take(limit);
+      .take(limit)) as Doc<"publishingTasks">[];
   },
 });
 
@@ -410,8 +410,9 @@ export const processPublishingTask = internalAction({
 
     try {
       // 3. Format content for each enabled channel
-      const enabledChannels = task.channels.filter((c) => c.enabled);
-      const formattedContents = enabledChannels.map((channelConfig) =>
+      type ChannelConfig = Doc<"publishingTasks">["channels"][0];
+      const enabledChannels = task.channels.filter((c: ChannelConfig) => c.enabled);
+      const formattedContents = enabledChannels.map((channelConfig: ChannelConfig) =>
         formatForChannel(task.content, channelConfig, task.entityName)
       );
 
@@ -423,10 +424,10 @@ export const processPublishingTask = internalAction({
 
       // 5. Deliver to each channel in parallel
       const deliveryResults: DeliveryResult[] = await Promise.all(
-        formattedContents.map(async ({ channel, payload }) => {
-          const result = await deliverToChannel(channel, payload);
+        formattedContents.map(async (formatted: FormattedContent) => {
+          const result = await deliverToChannel(formatted.channel, formatted.payload);
           return {
-            channel,
+            channel: formatted.channel,
             success: result.success,
             deliveredAt: result.success ? Date.now() : undefined,
             messageId: result.messageId,
@@ -462,7 +463,7 @@ export const processPublishingTask = internalAction({
       // 8. Create delivery jobs for failed channels (for retry)
       for (const result of deliveryResults) {
         if (!result.success) {
-          const formattedContent = formattedContents.find((f) => f.channel === result.channel);
+          const formattedContent = formattedContents.find((f: FormattedContent) => f.channel === result.channel);
           if (formattedContent) {
             await ctx.runMutation(
               internal.domains.publishing.publishingOrchestrator.createDeliveryJob,

@@ -1,5 +1,6 @@
 import { internalMutation, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
+import { Doc } from "../../_generated/dataModel";
 
 export const writeMemory = internalMutation({
   args: {
@@ -15,7 +16,7 @@ export const writeMemory = internalMutation({
     const existing = await ctx.db
       .query("mcpMemoryEntries")
       .withIndex("by_key", (q) => q.eq("key", args.entry.key))
-      .first();
+      .first() as Doc<"mcpMemoryEntries"> | null;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -53,7 +54,7 @@ export const readMemory = internalQuery({
     const entry = await ctx.db
       .query("mcpMemoryEntries")
       .withIndex("by_key", (q) => q.eq("key", args.key))
-      .first();
+      .first() as Doc<"mcpMemoryEntries"> | null;
     if (!entry) return null;
     return {
       id: entry._id,
@@ -85,7 +86,7 @@ export const listMemory = internalQuery({
       const entry = await ctx.db
         .query("mcpMemoryEntries")
         .withIndex("by_key", (q) => q.eq("key", args.key as string))
-        .first();
+        .first() as Doc<"mcpMemoryEntries"> | null;
       if (!entry) return [];
       return [{
         id: entry._id,
@@ -96,14 +97,14 @@ export const listMemory = internalQuery({
     }
 
     const contains = (args.contains ?? args.filter ?? "").toLowerCase();
-    const entries = await ctx.db.query("mcpMemoryEntries").collect();
+    const entries = await ctx.db.query("mcpMemoryEntries").collect() as Doc<"mcpMemoryEntries">[];
     const filtered = contains
-      ? entries.filter((e) => (e.key ?? "").toLowerCase().includes(contains))
+      ? entries.filter((e: Doc<"mcpMemoryEntries">) => (e.key ?? "").toLowerCase().includes(contains))
       : entries;
 
-    filtered.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+    filtered.sort((a: Doc<"mcpMemoryEntries">, b: Doc<"mcpMemoryEntries">) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 
-    return filtered.slice(0, limit).map((e) => ({
+    return filtered.slice(0, limit).map((e: Doc<"mcpMemoryEntries">) => ({
       id: e._id,
       key: e.key,
       content: e.content,
@@ -119,7 +120,7 @@ export const deleteMemory = internalMutation({
     const entry = await ctx.db
       .query("mcpMemoryEntries")
       .withIndex("by_key", (q) => q.eq("key", args.key))
-      .first();
+      .first() as Doc<"mcpMemoryEntries"> | null;
     if (!entry) return false;
     await ctx.db.delete(entry._id);
     return true;
@@ -138,7 +139,7 @@ export const getMemoryById = internalQuery({
     v.null(),
   ),
   handler: async (ctx, args) => {
-    const entry = await ctx.db.get(args.id);
+    const entry = await ctx.db.get(args.id) as Doc<"mcpMemoryEntries"> | null;
     if (!entry) return null;
     return {
       id: entry._id,
@@ -153,7 +154,7 @@ export const deleteMemoryById = internalMutation({
   args: { id: v.id("mcpMemoryEntries") },
   returns: v.boolean(),
   handler: async (ctx, args) => {
-    const entry = await ctx.db.get(args.id);
+    const entry = await ctx.db.get(args.id) as Doc<"mcpMemoryEntries"> | null;
     if (!entry) return false;
     await ctx.db.delete(args.id);
     return true;

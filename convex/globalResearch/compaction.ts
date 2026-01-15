@@ -6,6 +6,7 @@ import { v } from "convex/values";
 import { internalMutation, internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { MENTION_RETENTION_DAYS, getDayBucket } from "./mentions";
+import { Doc } from "../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -33,7 +34,7 @@ export const getCompactionState = internalMutation({
     const existing = await ctx.db
       .query("globalCompactionState")
       .withIndex("by_type", (q) => q.eq("compactionType", compactionType))
-      .first();
+      .first() as Doc<"globalCompactionState"> | null;
 
     if (existing) {
       return existing;
@@ -51,7 +52,7 @@ export const getCompactionState = internalMutation({
       lastRunAt: Date.now(),
     });
 
-    return ctx.db.get(id);
+    return await ctx.db.get(id) as Doc<"globalCompactionState"> | null;
   },
 });
 
@@ -70,7 +71,7 @@ export const updateCompactionState = internalMutation({
     const state = await ctx.db
       .query("globalCompactionState")
       .withIndex("by_type", (q) => q.eq("compactionType", args.compactionType))
-      .first();
+      .first() as Doc<"globalCompactionState"> | null;
 
     if (!state) {
       console.error(
@@ -251,7 +252,7 @@ export const cleanupStaleLocks = internalMutation({
           q.lt(q.field("startedAt"), cutoff)
         )
       )
-      .take(100);
+      .take(100) as Doc<"globalQueryLocks">[];
 
     let cleaned = 0;
     for (const lock of staleLocks) {
@@ -296,7 +297,7 @@ export const purgeOldEvents = internalMutation({
     const oldEvents = await ctx.db
       .query("globalResearchEvents")
       .withIndex("by_createdAt", (q) => q.lt("createdAt", cutoff))
-      .take(batchSize + 1);
+      .take(batchSize + 1) as Doc<"globalResearchEvents">[];
 
     const hasMore = oldEvents.length > batchSize;
     const toDelete = oldEvents.slice(0, batchSize);
