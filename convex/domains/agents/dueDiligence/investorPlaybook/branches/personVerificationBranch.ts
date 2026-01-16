@@ -71,7 +71,7 @@ export async function executePersonVerificationBranch(
         const snippet = r.snippet || r.content || "";
 
         sources.push({
-          sourceType: "web_search",
+          sourceType: "news_article",
           title,
           url,
           accessedAt: Date.now(),

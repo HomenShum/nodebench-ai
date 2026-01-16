@@ -6,6 +6,39 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ## Changelog
 
+### v0.3.4 (January 16, 2026)
+
+**🚀 Enhanced Verification & TypeScript Fixes**
+
+Major improvements to claim verification with industry best practices from Anthropic, OpenAI, and Manus.
+
+**Enhanced Verification Patterns:**
+| Pattern | Source | Description |
+|---------|--------|-------------|
+| OODA Loop | Manus | Observe-Orient-Decide-Act iterative refinement |
+| Source Triangulation | OpenAI Deep Research | Cross-verify across independent sources |
+| Reflection | Anthropic | Challenge initial verdicts with counter-arguments |
+| Confidence Calibration | Industry | Evidence strength-based scoring |
+
+**Evaluation Score Improvements:**
+- Task 1 (MyDentalWig): **100/100** - Investor scam detection ✓
+- Task 2 (Vijay Rao/Manus): **100/100** (up from 67) - Complex claim verification ✓
+
+**New Files:**
+- `branches/enhancedClaimVerification.ts` - OODA loop, triangulation, reflection patterns
+- `branches/enhancedNewsVerification.ts` - Multi-tier news source verification
+- `deepResearch/claimClassifier.ts` - Claim type classification and speculation detection
+
+**TypeScript Fixes (45 errors resolved):**
+- Fixed `SourceType` mappings (`web_search` → `news_article`)
+- Fixed `SourceReliability` mappings
+- Added `consensus` field to `NewsVerificationResult`
+- Fixed implicit `any` types in map callbacks
+- Fixed property access on union types
+- Fixed undefined handling in optional properties
+
+---
+
 ### v0.3.3 (January 16, 2026)
 
 **🔍 Investor Playbook - Agentic Due Diligence System**

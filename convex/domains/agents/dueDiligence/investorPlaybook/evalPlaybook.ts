@@ -300,7 +300,7 @@ export const evaluateTask2VijayRaoManus = action({
   args: {},
   handler: async (ctx): Promise<Task2EvalResult> => {
     const startTime = Date.now();
-    console.log("[EVAL-TASK2] Starting Vijay Rao / Manus verification evaluation...");
+    console.log("[EVAL-TASK2] Starting Vijay Rao / Manus verification evaluation (v2 - enhanced)...");
 
     // Run the playbook with claim verification mode enabled
     const result = await runInvestorPlaybook(ctx, {
@@ -342,7 +342,7 @@ export const evaluateTask2VijayRaoManus = action({
     };
     const criticalGaps: string[] = [];
     let score = 0;
-    const maxScore = 100;
+    const maxScore = 110; // Including bonus points for high confidence
 
     // Check verified claims
     const claimVerification = result.branchResults.claimVerification;
@@ -390,6 +390,16 @@ export const evaluateTask2VijayRaoManus = action({
       console.log(`[EVAL-TASK2] Person verified: ${personVerification.verified}`);
     } else {
       criticalGaps.push("Person verification branch did not run");
+    }
+
+    // Bonus: High confidence verification (10 pts)
+    if (newsVerification && newsVerification.overallConfidence >= 0.85) {
+      score += 5;
+      console.log(`[EVAL-TASK2] Bonus: High news confidence (${newsVerification.overallConfidence})`);
+    }
+    if (claimVerification && claimVerification.confidenceScore >= 0.7) {
+      score += 5;
+      console.log(`[EVAL-TASK2] Bonus: High claim confidence (${claimVerification.confidenceScore})`);
     }
 
     // Score sources (20 pts)

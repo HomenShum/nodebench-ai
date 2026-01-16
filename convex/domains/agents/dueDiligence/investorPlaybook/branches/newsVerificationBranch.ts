@@ -154,7 +154,7 @@ async function searchAcquisitionNews(
         const internalReliability = getNewsReliability(url);
 
         sources.push({
-          sourceType: "web_search",
+          sourceType: "news_article",
           title,
           url,
           accessedAt: Date.now(),
@@ -225,7 +225,7 @@ async function searchNewsEvent(
       const internalReliability = getNewsReliability(url);
 
       sources.push({
-        sourceType: "web_search",
+        sourceType: "news_article",
         title,
         url,
         accessedAt: Date.now(),

@@ -21,6 +21,8 @@ import type {
   VerificationSummary,
   SEVERITY_WEIGHTS,
   FRAUD_INDICATOR_WEIGHTS,
+  FDAVerificationItem,
+  PatentVerificationItem,
 } from "./types";
 
 import { extractClaims, extractClaimsWithRegex } from "./phases/claimsExtraction";
@@ -179,16 +181,16 @@ export const startVerificationJob = action({
           fdaVerifications: claimsResult.fdaVerifications.map((v) => ({
             claimDescription: v.claim.description,
             verified: v.verified,
-            kNumber: v.record?.k_number,
-            deviceName: v.record?.device_name,
-            applicant: v.record?.applicant,
+            kNumber: (v.record as any)?.kNumber,
+            deviceName: (v.record as any)?.deviceName,
+            applicant: (v.record as any)?.applicant,
             discrepancy: v.discrepancy,
           })),
           patentVerifications: claimsResult.patentVerifications.map((v) => ({
             claimDescription: v.claim.description,
             verified: v.verified,
-            patentNumber: v.record?.patent_number,
-            assignee: v.record?.assignees?.[0]?.assignee_organization,
+            patentNumber: v.record?.patentNumber,
+            assignee: v.record?.assignee,
             assigneeMatches: v.assigneeMatches,
             discrepancy: v.discrepancy,
           })),
@@ -460,8 +462,8 @@ async function executeClaimsValidation(
   }
 
   return {
-    fdaVerifications,
-    patentVerifications,
+    fdaVerifications: fdaVerifications as FDAVerificationItem[],
+    patentVerifications: patentVerifications as PatentVerificationItem[],
     otherVerifications: [],
     allFDAClaimed: fdaClaims.length,
     allFDAVerified: fdaVerifications.filter((v) => v.verified).length,

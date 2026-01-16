@@ -1993,4 +1993,4 @@ export function formatReferenceList(references: FormattedReference[]): string {
 // EXPORTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-export { planSubAgentTasks, crossVerifyFindings, synthesizeReport, formatWithCitation, formatReferenceList };
+export { planSubAgentTasks, crossVerifyFindings, synthesizeReport };

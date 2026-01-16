@@ -637,7 +637,7 @@ export const createDDScratchpad = internalMutation({
     ];
 
     // Generate todo list
-    const todoList: TodoItem[] = args.branches.map((branch, i) => ({
+    const todoList: TodoItem[] = args.branches.map((branch: string, i: number) => ({
       id: `todo-${i}`,
       task: `Complete ${branch.replace(/_/g, " ")} research`,
       status: "pending" as const,
@@ -664,7 +664,7 @@ export const createDDScratchpad = internalMutation({
       globalGoals,
       todoList,
       branchProgress,
-      findingSummaries: {},
+      findingSummaries: {} as Record<BranchType, BranchFindingSummary>,
       failedApproaches: [],
       contradictions: [],
       workingNotes: [],
@@ -693,8 +693,8 @@ export const updateDDScratchpad = internalMutation({
   handler: async (ctx, { jobId, updates }) => {
     const existing = await ctx.db
       .query("agentScratchpads")
-      .withIndex("by_agent_thread_id", q => q.eq("agentThreadId", `dd-${jobId}`))
-      .first();
+      .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", `dd-${jobId}`))
+      .first() as Doc<"agentScratchpads"> | null;
 
     if (!existing) {
       throw new Error(`Scratchpad not found for job ${jobId}`);
@@ -721,8 +721,8 @@ export const getDDScratchpad = internalQuery({
   handler: async (ctx, { jobId }) => {
     const existing = await ctx.db
       .query("agentScratchpads")
-      .withIndex("by_agent_thread_id", q => q.eq("agentThreadId", `dd-${jobId}`))
-      .first();
+      .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", `dd-${jobId}`))
+      .first() as Doc<"agentScratchpads"> | null;
 
     return existing?.scratchpad as DDScratchpad | null;
   },
@@ -739,8 +739,8 @@ export const recordFailedApproach = internalMutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("agentScratchpads")
-      .withIndex("by_agent_thread_id", q => q.eq("agentThreadId", `dd-${args.jobId}`))
-      .first();
+      .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", `dd-${args.jobId}`))
+      .first() as Doc<"agentScratchpads"> | null;
 
     if (!existing) return;
 
@@ -773,25 +773,26 @@ export const recordBranchSummary = internalMutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("agentScratchpads")
-      .withIndex("by_agent_thread_id", q => q.eq("agentThreadId", `dd-${args.jobId}`))
-      .first();
+      .withIndex("by_agent_thread", (q) => q.eq("agentThreadId", `dd-${args.jobId}`))
+      .first() as Doc<"agentScratchpads"> | null;
 
     if (!existing) return;
 
     const scratchpad = existing.scratchpad as DDScratchpad;
+    const branchType = args.branchType as BranchType;
     const summary = summarizeBranchFindings(
-      args.branchType as BranchType,
+      branchType,
       args.findings,
       args.sources as DDSource[],
       args.confidence
     );
 
-    scratchpad.findingSummaries[args.branchType as BranchType] = summary;
+    scratchpad.findingSummaries[branchType] = summary;
 
     // Update branch progress
-    if (scratchpad.branchProgress[args.branchType]) {
-      scratchpad.branchProgress[args.branchType].status = "completed";
-      scratchpad.branchProgress[args.branchType].completedAt = Date.now();
+    if (scratchpad.branchProgress[branchType]) {
+      scratchpad.branchProgress[branchType].status = "completed";
+      scratchpad.branchProgress[branchType].completedAt = Date.now();
     }
 
     // Update todo list
@@ -821,8 +822,8 @@ export const getEntityMemory = internalQuery({
 
     const entry = await ctx.db
       .query("mcpMemoryEntries")
-      .withIndex("by_key", q => q.eq("key", key))
-      .first();
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .first() as Doc<"mcpMemoryEntries"> | null;
 
     if (!entry) return null;
 
@@ -852,8 +853,8 @@ export const updateEntityMemory = internalMutation({
     // Get existing memory
     const existing = await ctx.db
       .query("mcpMemoryEntries")
-      .withIndex("by_key", q => q.eq("key", key))
-      .first();
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .first() as Doc<"mcpMemoryEntries"> | null;
 
     let memory: EntityMemoryEntry;
 

@@ -131,8 +131,8 @@ async function extractClaimsFromQuery(
     const result = await generateText({
       model,
       prompt,
-      maxSteps: 1,
-    });
+      maxTokens: 2000,
+    } as Parameters<typeof generateText>[0]);
 
     // Parse JSON from response
     const jsonMatch = result.text.match(/\{[\s\S]*\}/);
@@ -641,6 +641,7 @@ interface AgenticDDResult {
   webEnrichment: {
     fdaClaimFromWeb: string | undefined;
     patentsFromWeb: string[] | undefined;
+    fundingPortalFromWeb: string | undefined;
     redFlagsFromWeb: string[] | undefined;
   };
   verificationPlan: Array<{ phase: string; description: string }>;
@@ -771,8 +772,8 @@ async function runAgenticDDCore(
     stopRulesTriggered: playbookResult.synthesis.stopRules
       .filter((r: any) => r.triggered)
       .map((r: any) => ({ rule: r.rule, description: r.description })),
-    conditions: playbookResult.synthesis.conditions,
-    requiredResolutions: playbookResult.synthesis.requiredResolutions,
+    conditions: playbookResult.synthesis.conditions || [],
+    requiredResolutions: playbookResult.synthesis.requiredResolutions || [],
     extractedIntent: {
       isScamCheck: intent.isScamCheck,
       isFundingRelated: intent.isFundingRelated,

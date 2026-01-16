@@ -47,6 +47,8 @@ import {
   executeNewsVerificationBranch,
   extractClaimsFromQuery,
 } from "./branches";
+import { executeEnhancedClaimVerification } from "./branches/enhancedClaimVerification";
+import { executeEnhancedNewsVerification } from "./branches/enhancedNewsVerification";
 
 // ============================================================================
 // MAIN ORCHESTRATOR
@@ -262,17 +264,29 @@ export async function runInvestorPlaybook(
   // ============================================================================
 
   // Claim Verification - extract and verify claims from complex queries
+  // Uses enhanced verification with OODA loop, triangulation, and reflection (Anthropic/OpenAI/Manus patterns)
   if (config.claimVerificationMode?.enabled && config.claimVerificationMode.rawQuery) {
     if (PLAYBOOK_BRANCH_TRIGGERS.claim_verification(signals)) {
       executedBranches.push("claim_verification");
       const claims = extractClaimsFromQuery(config.claimVerificationMode.rawQuery);
       if (claims.length > 0) {
         branchPromises.push(
-          executeClaimVerificationBranch(ctx, claims).then(result => {
+          executeEnhancedClaimVerification(ctx, claims, {
+            enableReflection: true,
+            enableTriangulation: true,
+            maxIterations: 2,
+            requireMultipleSources: true,
+          }).then(result => {
             branchResults.claimVerification = result.findings;
             allSources.push(...result.sources);
+            console.log(`[Playbook] Enhanced claim verification: ${result.methodology.join(" -> ")}`);
           }).catch(err => {
-            console.error("[Playbook] Claim verification failed:", err);
+            console.error("[Playbook] Enhanced claim verification failed, falling back:", err);
+            // Fallback to basic claim verification
+            return executeClaimVerificationBranch(ctx, claims).then(fallbackResult => {
+              branchResults.claimVerification = fallbackResult.findings;
+              allSources.push(...fallbackResult.sources);
+            });
           })
         );
       }
@@ -301,20 +315,37 @@ export async function runInvestorPlaybook(
   }
 
   // News/Acquisition Verification
+  // Uses enhanced verification with multi-source triangulation and contradiction detection
   if (config.claimVerificationMode?.acquisitionAcquirer || config.claimVerificationMode?.newsEvent) {
     if (PLAYBOOK_BRANCH_TRIGGERS.news_verification(signals)) {
       executedBranches.push("news_verification");
       branchPromises.push(
-        executeNewsVerificationBranch(
+        executeEnhancedNewsVerification(
           ctx,
           config.claimVerificationMode.acquisitionAcquirer,
           config.claimVerificationMode.acquisitionTarget,
-          config.claimVerificationMode.newsEvent
+          config.claimVerificationMode.newsEvent,
+          {
+            requireMultipleSources: true,
+            requireTier1Source: false, // Don't require Tier 1, but prefer it
+            checkContradictions: true,
+          }
         ).then(result => {
           branchResults.newsVerification = result.findings;
           allSources.push(...result.sources);
+          console.log(`[Playbook] Enhanced news verification: ${result.methodology.join(" -> ")}`);
+          console.log(`[Playbook] News triangulation: ${result.triangulation.tier1SourceCount} T1, ${result.triangulation.tier2SourceCount} T2 sources`);
         }).catch(err => {
-          console.error("[Playbook] News verification failed:", err);
+          console.error("[Playbook] Enhanced news verification failed, falling back:", err);
+          return executeNewsVerificationBranch(
+            ctx,
+            config.claimVerificationMode?.acquisitionAcquirer,
+            config.claimVerificationMode?.acquisitionTarget,
+            config.claimVerificationMode?.newsEvent
+          ).then(fallbackResult => {
+            branchResults.newsVerification = fallbackResult.findings;
+            allSources.push(...fallbackResult.sources);
+          });
         })
       );
     }
@@ -444,7 +475,7 @@ function identifyDiscrepancies(
           verifiedValue: "Scam/fraud mentions found in web search",
           source: "Web Search",
           severity: "major",
-          category: "reputation",
+          category: "entity",  // Entity category covers reputation issues
         });
       }
       if (flag.includes("Outsized promotional claims")) {
@@ -597,14 +628,14 @@ function evaluateStopRules(
     triggered: hasScamMentions === true,
     rule: "Scam/Fraud Mentions in Web Search",
     description: "Web search found mentions of scam or fraud associated with this entity. Requires careful investigation.",
-    recommendation: "investigate",
+    recommendation: "proceed_with_caution",
   });
 
   stopRules.push({
     triggered: hasOutsizedClaims === true,
     rule: "Outsized Promotional Claims",
     description: "Entity makes billion-dollar claims that may not be supported by actual financials. High risk of promotional exaggeration.",
-    recommendation: "investigate",
+    recommendation: "proceed_with_caution",
   });
 
   // Rule 1: Direct wire + missing SEC filings
@@ -707,7 +738,7 @@ function determineRiskAndRecommendation(
   // Check for triggered stop rules
   const disengageRules = stopRules.filter(r => r.triggered && r.recommendation === "disengage");
   const requireResolutionRules = stopRules.filter(r => r.triggered && r.recommendation === "require_resolution");
-  const investigateRules = stopRules.filter(r => r.triggered && r.recommendation === "investigate");
+  const cautionRules = stopRules.filter(r => r.triggered && r.recommendation === "proceed_with_caution");
 
   if (disengageRules.length > 0) {
     return {
@@ -736,19 +767,19 @@ function determineRiskAndRecommendation(
   }
 
   // If we have investigate rules (scam mentions, outsized claims), elevate risk
-  if (investigateRules.length >= 2 || (investigateRules.length >= 1 && majorDiscrepancies.length >= 1)) {
+  if (cautionRules.length >= 2 || (cautionRules.length >= 1 && majorDiscrepancies.length >= 1)) {
     return {
       overallRisk: "high",
       recommendation: "require_resolution",
       requiredResolutions: [
-        ...investigateRules.map(r => r.description),
+        ...cautionRules.map(r => r.description),
         "Verify all promotional claims against SEC filings",
         "Request audited financial statements",
       ],
     };
   }
 
-  if (criticalDiscrepancies.length === 1 || majorDiscrepancies.length >= 2 || investigateRules.length >= 1) {
+  if (criticalDiscrepancies.length === 1 || majorDiscrepancies.length >= 2 || cautionRules.length >= 1) {
     return {
       overallRisk: "elevated",
       recommendation: "proceed_with_conditions",
@@ -756,7 +787,7 @@ function determineRiskAndRecommendation(
         "Obtain written clarification on all flagged discrepancies",
         "Request supporting documentation for claims",
         "Consider reduced investment amount",
-        ...(investigateRules.length > 0 ? ["Investigate web search red flags before proceeding"] : []),
+        ...(cautionRules.length > 0 ? ["Review web search red flags before proceeding"] : []),
       ],
     };
   }

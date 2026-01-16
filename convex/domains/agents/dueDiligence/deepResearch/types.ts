@@ -232,6 +232,7 @@ export interface NewsVerificationResult {
   timelineConsistent: boolean;
   officialConfirmation: boolean;
   verdict: string;
+  consensus: "strong" | "moderate" | "weak" | "contradicted" | "none";
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

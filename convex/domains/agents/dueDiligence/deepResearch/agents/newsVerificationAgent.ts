@@ -444,6 +444,7 @@ function verifyAcrossSources(
     timelineConsistent: true, // Will be updated by timeline extraction
     officialConfirmation: hasOfficialConfirmation,
     verdict: generateVerdict(verified, confidence, consensus, hasOfficialConfirmation),
+    consensus,
   };
 }
 

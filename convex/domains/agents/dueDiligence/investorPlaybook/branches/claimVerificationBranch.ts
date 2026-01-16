@@ -19,6 +19,14 @@ function mapToSourceReliability(internal: InternalReliability): SourceReliabilit
   }
 }
 
+function mapToClaimReliability(internal: InternalReliability): "authoritative" | "reputable" | "unknown" {
+  switch (internal) {
+    case "authoritative": return "authoritative";
+    case "reputable": return "reputable";
+    case "unknown": return "unknown";
+  }
+}
+
 interface ClaimVerificationResult {
   findings: ClaimVerificationFindings;
   sources: DDSource[];
@@ -121,11 +129,11 @@ async function verifyIndividualClaim(
       claimSources.push({
         title,
         url,
-        reliability: mapToSourceReliability(determineReliability(url)),
+        reliability: mapToClaimReliability(determineReliability(url)),
       });
 
       sources.push({
-        sourceType: "web_search",
+        sourceType: "news_article",
         title,
         url,
         accessedAt: Date.now(),

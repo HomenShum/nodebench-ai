@@ -437,11 +437,11 @@ export const executeEnhancedDDJob = internalAction({
         if (toSpawn.length > 0) {
           console.log(
             `[DD-Enhanced] Spawning ${toSpawn.length} handoff branches: ` +
-              toSpawn.map((h) => h.to).join(", ")
+              toSpawn.map((h: BranchHandoff) => h.to).join(", ")
           );
 
           // Create tasks for handoff branches
-          const handoffConfigs = toSpawn.map((h) => ({
+          const handoffConfigs = toSpawn.map((h: BranchHandoff) => ({
             title: `${getBranchTitle(h.to)} (Handoff)`,
             description: `${getBranchDescription(h.to, job.entityName)} - Triggered by ${h.from}`,
             agentName: `DD-Handoff-${h.to}`,
@@ -453,7 +453,7 @@ export const executeEnhancedDDJob = internalAction({
           );
 
           // Create branch records for handoffs
-          const handoffBranchRecords = toSpawn.map((h, idx) => ({
+          const handoffBranchRecords = toSpawn.map((h: BranchHandoff, idx: number) => ({
             branchType: h.to,
             taskTreeId: treeId,
             taskNodeId: handoffTaskIds[idx],
@@ -466,7 +466,7 @@ export const executeEnhancedDDJob = internalAction({
 
           // Execute handoff branches
           handoffBranchResults = await Promise.all(
-            toSpawn.map((handoff, idx) =>
+            toSpawn.map((handoff: BranchHandoff, idx: number) =>
               executeEnhancedBranch(
                 ctx,
                 jobId,
@@ -481,7 +481,7 @@ export const executeEnhancedDDJob = internalAction({
           );
 
           // Mark handoffs completed
-          for (const handoff of toSpawn) {
+          for (const handoff of toSpawn as BranchHandoff[]) {
             await ctx.runMutation(
               internal.domains.agents.dueDiligence.ddBranchHandoff.markHandoffCompleted,
               { jobId, handoffId: handoff.id }
@@ -1393,7 +1393,7 @@ Guidelines:
       prompt,
       maxTokens: 500,
       temperature: 0.3,
-    });
+    } as Parameters<typeof generateText>[0]);
 
     if (text && text.length > 50) {
       console.log(`[DD-Enhanced] LLM executive summary generated (${text.length} chars) using FREE model`);
@@ -1486,7 +1486,7 @@ Return JSON:
       prompt,
       maxTokens: 600,
       temperature: 0.3,
-    });
+    } as Parameters<typeof generateText>[0]);
 
     if (text) {
       try {
