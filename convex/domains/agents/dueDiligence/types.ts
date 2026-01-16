@@ -25,6 +25,18 @@ export const CONDITIONAL_BRANCHES = [
   "network_mapping",
 ] as const;
 
+// Investor Playbook branches (additional verification for funding requests)
+export const INVESTOR_PLAYBOOK_BRANCHES = [
+  "entity_verification",
+  "sec_edgar",
+  "finra_validation",
+  "fda_verification",
+  "uspto_deepdive",
+  "money_flow_integrity",
+] as const;
+
+export type InvestorPlaybookBranchType = typeof INVESTOR_PLAYBOOK_BRANCHES[number];
+
 export const ALL_BRANCH_TYPES = [...CORE_BRANCHES, ...CONDITIONAL_BRANCHES] as const;
 
 export type BranchType = typeof ALL_BRANCH_TYPES[number];

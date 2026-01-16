@@ -159,7 +159,10 @@
       "Bash(Select-String -Pattern \"dossierGenerator\")",
       "Bash(test:*)",
       "Bash(npx esbuild:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(Select-String \"playbook\" -CaseSensitive:$false)",
+      "Bash(set DEBUG=convex:*)",
+      "Bash(npx ts-node:*)"
     ],
     "deny": [],
     "ask": []

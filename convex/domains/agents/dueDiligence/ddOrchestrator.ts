@@ -121,9 +121,11 @@ export const startDueDiligenceJob = action({
       v.literal("funding_detection"),
       v.literal("deals_feed"),
       v.literal("manual"),
-      v.literal("scheduled_refresh")
+      v.literal("scheduled_refresh"),
+      v.literal("encounter")
     ),
     triggerEventId: v.optional(v.string()),
+    triggerEncounterId: v.optional(v.id("encounterEvents")),
     entityId: v.optional(v.id("entityContexts")),
     userId: v.id("users"),
   },
@@ -306,6 +308,18 @@ export const executeDDJob = internalAction({
         api.domains.agents.parallelTaskTree.updateTreeStatus,
         { treeId, status: "completed", phase: "Due diligence complete" }
       );
+
+      // If triggered from encounter, update the encounter with DD completion
+      if (job.triggerSource === "encounter" && job.triggerEncounterId) {
+        console.log(`[DD] Updating encounter ${job.triggerEncounterId} with DD completion`);
+        await ctx.runMutation(
+          internal.domains.encounters.encounterMutations.internalCompleteDDEnrichment,
+          {
+            encounterId: job.triggerEncounterId,
+            ddMemoId: memoId,
+          }
+        );
+      }
 
       const elapsedMs = Date.now() - startTime;
       console.log(`[DD] Completed ${jobId} in ${elapsedMs}ms with confidence ${(overallConfidence * 100).toFixed(1)}%`);

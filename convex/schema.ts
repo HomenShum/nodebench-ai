@@ -5683,9 +5683,11 @@ export default defineSchema({
       v.literal("funding_detection"),         // Auto-triggered from funding events
       v.literal("deals_feed"),                // From deals/opportunities feed
       v.literal("manual"),                    // User-initiated
-      v.literal("scheduled_refresh")          // Periodic refresh of stale DD
+      v.literal("scheduled_refresh"),         // Periodic refresh of stale DD
+      v.literal("encounter")                  // Triggered from encounter capture
     ),
     triggerEventId: v.optional(v.string()),   // Link to fundingEvent or feedItem
+    triggerEncounterId: v.optional(v.id("encounterEvents")), // Link to encounter if triggered from one
 
     // Status workflow
     status: v.union(
@@ -6062,6 +6064,448 @@ export default defineSchema({
     }),
 
   /* ------------------------------------------------------------------ */
+  /* INVESTOR PLAYBOOK - Verification jobs and cache tables              */
+  /* ------------------------------------------------------------------ */
+
+  // Investor protection verification jobs
+  investorPlaybookJobs: defineTable({
+    jobId: v.string(),                        // UUID for deduplication
+    userId: v.id("users"),
+
+    // Input - the offering being verified
+    offeringName: v.string(),
+    offeringUrl: v.optional(v.string()),
+    fundingPortal: v.optional(v.string()),
+    pitchDocumentId: v.optional(v.id("documents")),
+    pitchText: v.optional(v.string()),
+
+    // Extracted claims from pitch
+    extractedClaims: v.optional(v.object({
+      companyName: v.string(),
+      companyNameVariants: v.optional(v.array(v.string())),
+      incorporationState: v.optional(v.string()),
+      incorporationDate: v.optional(v.string()),
+      secFilingType: v.optional(v.string()),
+      fundingPortal: v.optional(v.string()),
+      fdaClaims: v.array(v.object({
+        description: v.string(),
+        claimedType: v.string(),
+        clearanceNumber: v.optional(v.string()),
+        productName: v.optional(v.string()),
+      })),
+      patentClaims: v.array(v.object({
+        description: v.string(),
+        patentNumber: v.optional(v.string()),
+        status: v.string(),
+        inventorNames: v.optional(v.array(v.string())),
+      })),
+      fundingClaims: v.optional(v.object({
+        targetRaise: v.optional(v.string()),
+        previousRaises: v.optional(v.array(v.string())),
+        valuation: v.optional(v.string()),
+      })),
+      otherClaims: v.array(v.object({
+        category: v.string(),
+        claim: v.string(),
+        evidence: v.optional(v.string()),
+      })),
+      extractedAt: v.number(),
+      confidence: v.number(),
+    })),
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("extracting_claims"),
+      v.literal("verifying_entity"),
+      v.literal("verifying_securities"),
+      v.literal("validating_claims"),
+      v.literal("checking_money_flow"),
+      v.literal("synthesizing"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+
+    // Phase results
+    entityVerification: v.optional(v.object({
+      verified: v.boolean(),
+      stateRegistry: v.optional(v.string()),
+      record: v.optional(v.object({
+        state: v.string(),
+        entityName: v.string(),
+        fileNumber: v.string(),
+        formationDate: v.optional(v.string()),
+        registeredAgent: v.optional(v.string()),
+        registeredAgentAddress: v.optional(v.string()),
+        status: v.string(),
+        entityType: v.optional(v.string()),
+      })),
+      discrepancies: v.array(v.string()),
+      redFlags: v.array(v.string()),
+      verifiedAt: v.number(),
+    })),
+
+    securitiesVerification: v.optional(v.object({
+      verified: v.boolean(),
+      filingType: v.optional(v.string()),
+      filing: v.optional(v.object({
+        formType: v.string(),
+        filingDate: v.string(),
+        cik: v.string(),
+        accessionNumber: v.string(),
+        issuerName: v.string(),
+        offeringAmount: v.optional(v.string()),
+        url: v.string(),
+      })),
+      filingFound: v.boolean(),
+      fundingPortal: v.optional(v.object({
+        portalName: v.string(),
+        finraId: v.optional(v.string()),
+        registrationDate: v.optional(v.string()),
+        isRegistered: v.boolean(),
+      })),
+      portalVerified: v.boolean(),
+      discrepancies: v.array(v.string()),
+      redFlags: v.array(v.string()),
+      verifiedAt: v.number(),
+    })),
+
+    claimsValidation: v.optional(v.object({
+      fdaVerifications: v.array(v.object({
+        claimDescription: v.string(),
+        verified: v.boolean(),
+        kNumber: v.optional(v.string()),
+        deviceName: v.optional(v.string()),
+        applicant: v.optional(v.string()),
+        discrepancy: v.optional(v.string()),
+      })),
+      patentVerifications: v.array(v.object({
+        claimDescription: v.string(),
+        verified: v.boolean(),
+        patentNumber: v.optional(v.string()),
+        assignee: v.optional(v.string()),
+        assigneeMatches: v.boolean(),
+        discrepancy: v.optional(v.string()),
+      })),
+      allFDAClaimed: v.number(),
+      allFDAVerified: v.number(),
+      allPatentsClaimed: v.number(),
+      allPatentsVerified: v.number(),
+      verifiedAt: v.number(),
+    })),
+
+    moneyFlowVerification: v.optional(v.object({
+      verified: v.boolean(),
+      expectedFlow: v.string(),
+      escrowAgent: v.optional(v.string()),
+      escrowVerified: v.boolean(),
+      redFlags: v.array(v.string()),
+      verifiedAt: v.number(),
+    })),
+
+    // Final result link
+    resultId: v.optional(v.id("investorPlaybookResults")),
+
+    // Timing
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+
+    // Error
+    error: v.optional(v.string()),
+  })
+    .index("by_jobId", ["jobId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_offering", ["offeringName"])
+    .index("by_createdAt", ["createdAt"])
+    .searchIndex("search_offering", {
+      searchField: "offeringName",
+      filterFields: ["status"],
+    }),
+
+  // State registry verification cache
+  investorPlaybookEntityCache: defineTable({
+    entityName: v.string(),
+    state: v.string(),
+    fileNumber: v.optional(v.string()),
+    formationDate: v.optional(v.string()),
+    entityType: v.optional(v.string()),
+    status: v.union(
+      v.literal("Active"),
+      v.literal("Inactive"),
+      v.literal("Dissolved"),
+      v.literal("Merged"),
+      v.literal("Suspended"),
+      v.literal("Unknown")
+    ),
+    registeredAgent: v.optional(v.object({
+      name: v.string(),
+      address: v.string(),
+    })),
+    goodStanding: v.optional(v.boolean()),
+    verifiedAt: v.number(),
+    sourceUrl: v.optional(v.string()),
+  })
+    .index("by_entity_state", ["entityName", "state"])
+    .index("by_verifiedAt", ["verifiedAt"]),
+
+  // SEC EDGAR filings cache
+  investorPlaybookSecCache: defineTable({
+    entityName: v.string(),
+    cik: v.optional(v.string()),
+    formType: v.string(),                    // "C", "D", "10-K", etc.
+    accessionNumber: v.string(),
+    filingDate: v.string(),
+    filingUrl: v.string(),
+    offeringAmount: v.optional(v.number()),
+    intermediaryName: v.optional(v.string()),
+    parsedData: v.optional(v.any()),
+    cachedAt: v.number(),
+  })
+    .index("by_entity", ["entityName"])
+    .index("by_cik", ["cik"])
+    .index("by_form", ["formType"])
+    .index("by_cachedAt", ["cachedAt"]),
+
+  // FDA verification cache
+  investorPlaybookFdaCache: defineTable({
+    entityName: v.string(),
+    deviceName: v.optional(v.string()),
+    verificationType: v.union(
+      v.literal("510k"),
+      v.literal("pma"),
+      v.literal("registration"),
+      v.literal("listing"),
+      v.literal("recall"),
+      v.literal("adverse_event")
+    ),
+    referenceNumber: v.string(),             // K-number, PMA number, etc.
+    status: v.string(),
+    decisionDate: v.optional(v.string()),
+    productCode: v.optional(v.string()),
+    sourceUrl: v.optional(v.string()),
+    cachedAt: v.number(),
+  })
+    .index("by_entity", ["entityName"])
+    .index("by_type", ["verificationType"])
+    .index("by_reference", ["referenceNumber"])
+    .index("by_cachedAt", ["cachedAt"]),
+
+  // USPTO patent cache
+  investorPlaybookPatentCache: defineTable({
+    entityName: v.string(),
+    patentNumber: v.string(),
+    title: v.string(),
+    inventors: v.array(v.string()),
+    assignee: v.string(),
+    currentAssignee: v.optional(v.string()),
+    filingDate: v.optional(v.string()),
+    issueDate: v.optional(v.string()),
+    expirationDate: v.optional(v.string()),
+    patentType: v.optional(v.string()),
+    status: v.union(
+      v.literal("Active"),
+      v.literal("Expired"),
+      v.literal("Lapsed")
+    ),
+    usptoUrl: v.string(),
+    cachedAt: v.number(),
+  })
+    .index("by_entity", ["entityName"])
+    .index("by_patent", ["patentNumber"])
+    .index("by_assignee", ["assignee"])
+    .index("by_cachedAt", ["cachedAt"]),
+
+  // FINRA portal verification cache
+  investorPlaybookFinraCache: defineTable({
+    portalName: v.string(),
+    crd: v.string(),
+    secFileNumber: v.optional(v.string()),
+    status: v.union(
+      v.literal("Active"),
+      v.literal("Inactive"),
+      v.literal("Suspended"),
+      v.literal("Withdrawn")
+    ),
+    registrationDate: v.optional(v.string()),
+    website: v.optional(v.string()),
+    disclosureCount: v.optional(v.number()),
+    verifiedAt: v.number(),
+  })
+    .index("by_portal", ["portalName"])
+    .index("by_crd", ["crd"])
+    .index("by_verifiedAt", ["verifiedAt"]),
+
+  // Investor playbook synthesis results
+  investorPlaybookResults: defineTable({
+    jobId: v.optional(v.string()),           // Links to DD job if part of full DD
+    entityName: v.string(),
+    entityType: v.union(
+      v.literal("company"),
+      v.literal("fund"),
+      v.literal("person")
+    ),
+
+    // Overall assessment
+    overallRisk: v.union(
+      v.literal("low"),
+      v.literal("moderate"),
+      v.literal("elevated"),
+      v.literal("high"),
+      v.literal("critical")
+    ),
+    recommendation: v.union(
+      v.literal("proceed"),
+      v.literal("proceed_with_conditions"),
+      v.literal("require_resolution"),
+      v.literal("pass")
+    ),
+    shouldDisengage: v.boolean(),
+
+    // Verification scores
+    verificationScores: v.object({
+      entity: v.number(),
+      securities: v.number(),
+      finra: v.number(),
+      fda: v.number(),
+      patents: v.number(),
+      moneyFlow: v.number(),
+      overall: v.number(),
+    }),
+
+    // Discrepancies
+    discrepancyCount: v.number(),
+    criticalDiscrepancies: v.number(),
+
+    // Stop rules
+    stopRulesTriggered: v.array(v.string()),
+
+    // Conditions/resolutions
+    conditions: v.optional(v.array(v.string())),
+    requiredResolutions: v.optional(v.array(v.string())),
+
+    // Branch execution
+    branchesExecuted: v.array(v.string()),
+    executionTimeMs: v.number(),
+
+    // Full synthesis (stored as JSON)
+    fullSynthesis: v.optional(v.any()),
+
+    // Metadata
+    createdAt: v.number(),
+    userId: v.optional(v.id("users")),
+  })
+    .index("by_entity", ["entityName", "entityType"])
+    .index("by_risk", ["overallRisk"])
+    .index("by_recommendation", ["recommendation"])
+    .index("by_createdAt", ["createdAt"])
+    .index("by_jobId", ["jobId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DEEP RESEARCH - Multi-agent research system                         */
+  /* ------------------------------------------------------------------ */
+
+  // Deep research jobs
+  deepResearchJobs: defineTable({
+    jobId: v.string(),
+    userId: v.id("users"),
+    query: v.string(),
+    depth: v.union(
+      v.literal("quick"),
+      v.literal("standard"),
+      v.literal("comprehensive"),
+      v.literal("exhaustive")
+    ),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("decomposing_query"),
+      v.literal("spawning_agents"),
+      v.literal("executing_research"),
+      v.literal("cross_verifying"),
+      v.literal("evaluating_hypotheses"),
+      v.literal("synthesizing"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+
+    // Query decomposition
+    decomposedQuery: v.optional(v.any()), // DecomposedQuery
+
+    // Sub-agent tracking
+    subAgentTasks: v.optional(v.array(v.object({
+      taskId: v.string(),
+      type: v.string(),
+      target: v.string(),
+      status: v.string(),
+      startedAt: v.optional(v.number()),
+      completedAt: v.optional(v.number()),
+    }))),
+
+    // Results
+    reportId: v.optional(v.id("deepResearchReports")),
+
+    // Timing
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+    error: v.optional(v.string()),
+  })
+    .index("by_jobId", ["jobId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_createdAt", ["createdAt"]),
+
+  // Deep research reports
+  deepResearchReports: defineTable({
+    jobId: v.string(),
+    originalQuery: v.string(),
+
+    // Summary
+    executiveSummary: v.string(),
+    keyFindings: v.array(v.string()),
+    confidence: v.number(),
+
+    // Verdict
+    overallVerdict: v.union(
+      v.literal("VERIFIED"),
+      v.literal("PARTIALLY_SUPPORTED"),
+      v.literal("UNVERIFIED"),
+      v.literal("CONTRADICTED"),
+      v.literal("FALSIFIED")
+    ),
+    verdictReasoning: v.string(),
+
+    // Findings (stored as JSON)
+    personProfiles: v.optional(v.any()),
+    companyProfiles: v.optional(v.any()),
+    newsEvents: v.optional(v.any()),
+    relationships: v.optional(v.any()),
+    hypothesesEvaluated: v.optional(v.any()),
+
+    // Verified claims
+    verifiedClaimsCount: v.number(),
+    unverifiedClaimsCount: v.number(),
+    contradictionsCount: v.number(),
+
+    // Sources
+    sourcesCount: v.number(),
+
+    // Sub-agent summary
+    subAgentsSummary: v.optional(v.any()),
+
+    // Timing
+    executionTimeMs: v.number(),
+    createdAt: v.number(),
+    userId: v.optional(v.id("users")),
+  })
+    .index("by_jobId", ["jobId"])
+    .index("by_verdict", ["overallVerdict"])
+    .index("by_createdAt", ["createdAt"]),
+
+  /* ------------------------------------------------------------------ */
   /* DD GROUND TRUTH - Golden dataset for DD evaluation                  */
   /* ------------------------------------------------------------------ */
   ddGroundTruth: defineTable({
@@ -6149,4 +6593,358 @@ export default defineSchema({
   })
     .index("by_entity", ["entityName", "entityType"])
     .index("by_curation_status", ["curationStatus"]),
+
+  /* ================================================================== */
+  /* ENCOUNTER EVENTS - Fast pipeline capture for side-events           */
+  /* ================================================================== */
+  encounterEvents: defineTable({
+    userId: v.id("users"),
+
+    // Source tracking
+    sourceType: v.union(
+      v.literal("slack"),
+      v.literal("web_ui"),
+      v.literal("email_forward"),
+      v.literal("calendar_sync")
+    ),
+    sourceId: v.optional(v.string()),
+    sourceChannelId: v.optional(v.string()),
+
+    // Core encounter data
+    rawText: v.string(),
+    title: v.string(),
+    context: v.optional(v.string()),
+
+    // Extracted entities (from NER pass)
+    participants: v.array(v.object({
+      name: v.string(),
+      role: v.optional(v.string()),
+      company: v.optional(v.string()),
+      email: v.optional(v.string()),
+      linkedEntityId: v.optional(v.id("entityContexts")),
+      confidence: v.number(),
+    })),
+    companies: v.array(v.object({
+      name: v.string(),
+      linkedEntityId: v.optional(v.id("entityContexts")),
+      confidence: v.number(),
+    })),
+
+    // Research status
+    researchStatus: v.union(
+      v.literal("none"),
+      v.literal("fast_pass_queued"),
+      v.literal("fast_pass_complete"),
+      v.literal("deep_dive_queued"),
+      v.literal("deep_dive_running"),
+      v.literal("complete")
+    ),
+
+    // Fast-pass results (inline for <10s display)
+    fastPassResults: v.optional(v.object({
+      entitySummaries: v.array(v.object({
+        entityName: v.string(),
+        summary: v.string(),
+        keyFacts: v.array(v.string()),
+        fundingStage: v.optional(v.string()),
+        lastFundingAmount: v.optional(v.string()),
+        sector: v.optional(v.string()),
+      })),
+      generatedAt: v.number(),
+      elapsedMs: v.number(),
+    })),
+
+    // Deep dive reference
+    ddJobId: v.optional(v.string()),
+    ddMemoId: v.optional(v.id("dueDiligenceMemos")),
+
+    // Follow-up tracking
+    followUpRequested: v.boolean(),
+    followUpDate: v.optional(v.number()),
+    followUpTaskId: v.optional(v.id("userEvents")),
+    suggestedNextAction: v.optional(v.string()),
+
+    // Timestamps
+    capturedAt: v.number(),
+    enrichedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_status", ["userId", "researchStatus"])
+    .index("by_source", ["sourceType", "sourceId"])
+    .index("by_user_captured", ["userId", "capturedAt"])
+    .index("by_dd_job", ["ddJobId"])
+    .searchIndex("search_encounter", {
+      searchField: "rawText",
+      filterFields: ["userId", "researchStatus"],
+    }),
+
+  /* ================================================================== */
+  /* NEWS ITEMS - Ingested content from feed sources for blip pipeline  */
+  /* ================================================================== */
+  newsItems: defineTable({
+    // Unique identification
+    sourceId: v.string(),
+    contentHash: v.string(),
+
+    // Source metadata
+    source: v.union(
+      v.literal("hacker_news"),
+      v.literal("arxiv"),
+      v.literal("reddit"),
+      v.literal("rss"),
+      v.literal("github"),
+      v.literal("product_hunt"),
+      v.literal("dev_to"),
+      v.literal("twitter"),
+      v.literal("manual")
+    ),
+    sourceUrl: v.string(),
+
+    // Content
+    title: v.string(),
+    fullContent: v.optional(v.string()),
+    summary: v.optional(v.string()),
+
+    // Classification
+    category: v.union(
+      v.literal("tech"),
+      v.literal("ai_ml"),
+      v.literal("funding"),
+      v.literal("research"),
+      v.literal("security"),
+      v.literal("startup"),
+      v.literal("product"),
+      v.literal("regulatory"),
+      v.literal("markets"),
+      v.literal("general")
+    ),
+    tags: v.array(v.string()),
+
+    // Engagement metrics (for ranking)
+    engagementScore: v.number(),
+    rawMetrics: v.optional(v.object({
+      upvotes: v.optional(v.number()),
+      comments: v.optional(v.number()),
+      shares: v.optional(v.number()),
+      stars: v.optional(v.number()),
+    })),
+
+    // Processing status
+    processingStatus: v.union(
+      v.literal("ingested"),
+      v.literal("claim_extraction"),
+      v.literal("blips_generated"),
+      v.literal("verification_queued"),
+      v.literal("complete")
+    ),
+
+    // Timestamps
+    publishedAt: v.number(),
+    ingestedAt: v.number(),
+    processedAt: v.optional(v.number()),
+  })
+    .index("by_source_id", ["sourceId"])
+    .index("by_content_hash", ["contentHash"])
+    .index("by_source", ["source", "publishedAt"])
+    .index("by_category", ["category", "publishedAt"])
+    .index("by_status", ["processingStatus"])
+    .index("by_engagement", ["engagementScore"])
+    .index("by_published", ["publishedAt"]),
+
+  /* ================================================================== */
+  /* CLAIM SPANS - Extracted atomic claims from news items              */
+  /* ================================================================== */
+  claimSpans: defineTable({
+    newsItemId: v.id("newsItems"),
+
+    // Claim content
+    claimText: v.string(),
+    originalSpan: v.string(),
+    spanStartIdx: v.number(),
+    spanEndIdx: v.number(),
+
+    // Classification
+    claimType: v.union(
+      v.literal("factual"),
+      v.literal("quantitative"),
+      v.literal("attribution"),
+      v.literal("temporal"),
+      v.literal("causal"),
+      v.literal("comparative"),
+      v.literal("predictive"),
+      v.literal("opinion")
+    ),
+
+    // Entities mentioned
+    entities: v.array(v.object({
+      name: v.string(),
+      type: v.union(
+        v.literal("company"),
+        v.literal("person"),
+        v.literal("product"),
+        v.literal("technology"),
+        v.literal("organization"),
+        v.literal("location")
+      ),
+      linkedEntityId: v.optional(v.id("entityContexts")),
+    })),
+
+    // Verification status
+    verificationStatus: v.union(
+      v.literal("unverified"),
+      v.literal("pending"),
+      v.literal("verified"),
+      v.literal("partially_verified"),
+      v.literal("contradicted"),
+      v.literal("unverifiable")
+    ),
+    verificationId: v.optional(v.id("blipClaimVerifications")),
+
+    // Confidence
+    extractionConfidence: v.number(),
+
+    createdAt: v.number(),
+  })
+    .index("by_news_item", ["newsItemId"])
+    .index("by_verification", ["verificationStatus"])
+    .index("by_type", ["claimType"]),
+
+  /* ================================================================== */
+  /* MEANING BLIPS - Universal blips with persona lens at render time   */
+  /* ================================================================== */
+  meaningBlips: defineTable({
+    // Source linkage
+    newsItemId: v.id("newsItems"),
+    claimSpanId: v.optional(v.id("claimSpans")),
+
+    // Core blip content (UNIVERSAL - no persona baked in)
+    headline: v.string(),     // 5-word version
+    summary: v.string(),      // 10-word version
+    context: v.string(),      // 20-word version
+
+    // Key facts for hover popover
+    keyFacts: v.array(v.object({
+      fact: v.string(),
+      source: v.optional(v.string()),
+      date: v.optional(v.string()),
+      confidence: v.number(),
+    })),
+
+    // Entity spotlight
+    primaryEntity: v.optional(v.object({
+      name: v.string(),
+      type: v.string(),
+      linkedEntityId: v.optional(v.id("entityContexts")),
+    })),
+
+    // Verification summary
+    verificationSummary: v.object({
+      totalClaims: v.number(),
+      verifiedClaims: v.number(),
+      contradictedClaims: v.number(),
+      overallConfidence: v.number(),
+    }),
+
+    // Source attribution
+    sources: v.array(v.object({
+      name: v.string(),
+      url: v.optional(v.string()),
+      publishedAt: v.optional(v.number()),
+      reliability: v.union(
+        v.literal("authoritative"),
+        v.literal("reliable"),
+        v.literal("secondary"),
+        v.literal("inferred")
+      ),
+    })),
+
+    // Ranking signals
+    relevanceScore: v.number(),
+    engagementScore: v.number(),
+    freshnessScore: v.number(),
+
+    // Category for filtering
+    category: v.string(),
+    tags: v.array(v.string()),
+
+    // Timestamps
+    publishedAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_news_item", ["newsItemId"])
+    .index("by_category", ["category", "publishedAt"])
+    .index("by_relevance", ["relevanceScore"])
+    .index("by_published", ["publishedAt"]),
+
+  /* ================================================================== */
+  /* PERSONA LENSES - Pre-computed persona-specific view hints          */
+  /* ================================================================== */
+  personaLenses: defineTable({
+    blipId: v.id("meaningBlips"),
+    personaId: v.string(),   // "JPM_STARTUP_BANKER", "EARLY_STAGE_VC", etc.
+
+    // Persona-specific framing
+    framingHook: v.string(),
+    actionPrompt: v.optional(v.string()),
+    relevanceScore: v.number(),
+
+    // Why it matters for this persona
+    whyItMatters: v.optional(v.string()),
+
+    createdAt: v.number(),
+  })
+    .index("by_blip", ["blipId"])
+    .index("by_persona", ["personaId", "relevanceScore"])
+    .index("by_blip_persona", ["blipId", "personaId"]),
+
+  /* ================================================================== */
+  /* BLIP CLAIM VERIFICATIONS - LLM-as-judge verification results       */
+  /* ================================================================== */
+  blipClaimVerifications: defineTable({
+    claimSpanId: v.id("claimSpans"),
+
+    // Verification result
+    verdict: v.union(
+      v.literal("verified"),
+      v.literal("partially_verified"),
+      v.literal("contradicted"),
+      v.literal("unverifiable"),
+      v.literal("insufficient_evidence")
+    ),
+    confidence: v.number(),
+
+    // Evidence
+    supportingEvidence: v.array(v.object({
+      sourceUrl: v.optional(v.string()),
+      sourceName: v.string(),
+      snippet: v.string(),
+      publishedAt: v.optional(v.number()),
+      alignment: v.union(
+        v.literal("supports"),
+        v.literal("contradicts"),
+        v.literal("neutral")
+      ),
+    })),
+
+    // Contradictions found
+    contradictions: v.optional(v.array(v.object({
+      contradictingClaim: v.string(),
+      sourceUrl: v.optional(v.string()),
+      sourceName: v.string(),
+    }))),
+
+    // LLM judge metadata
+    judgeModel: v.string(),
+    judgeReasoning: v.string(),
+
+    // Timing
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_claim", ["claimSpanId"])
+    .index("by_verdict", ["verdict"])
+    .index("by_confidence", ["confidence"]),
 });

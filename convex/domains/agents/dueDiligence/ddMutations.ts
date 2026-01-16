@@ -157,9 +157,11 @@ export const createDDJob = mutation({
       v.literal("funding_detection"),
       v.literal("deals_feed"),
       v.literal("manual"),
-      v.literal("scheduled_refresh")
+      v.literal("scheduled_refresh"),
+      v.literal("encounter")
     ),
     triggerEventId: v.optional(v.string()),
+    triggerEncounterId: v.optional(v.id("encounterEvents")),
     entityId: v.optional(v.id("entityContexts")),
     userId: v.id("users"),
   },
@@ -197,6 +199,7 @@ export const createDDJob = mutation({
       entityType: args.entityType,
       triggerSource: args.triggerSource,
       triggerEventId: args.triggerEventId,
+      triggerEncounterId: args.triggerEncounterId,
       status: "pending",
       activeBranches: [],
       createdAt: now,
@@ -217,9 +220,11 @@ export const createDDJobInternal = internalMutation({
       v.literal("funding_detection"),
       v.literal("deals_feed"),
       v.literal("manual"),
-      v.literal("scheduled_refresh")
+      v.literal("scheduled_refresh"),
+      v.literal("encounter")
     ),
     triggerEventId: v.optional(v.string()),
+    triggerEncounterId: v.optional(v.id("encounterEvents")),
     entityId: v.optional(v.id("entityContexts")),
     userId: v.id("users"),
   },
@@ -256,6 +261,7 @@ export const createDDJobInternal = internalMutation({
       entityType: args.entityType,
       triggerSource: args.triggerSource,
       triggerEventId: args.triggerEventId,
+      triggerEncounterId: args.triggerEncounterId,
       status: "pending",
       activeBranches: [],
       createdAt: now,

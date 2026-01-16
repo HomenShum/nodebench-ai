@@ -218,6 +218,20 @@ crons.interval("ingest Reddit ML feed", { hours: 4 }, internal.feed.ingestReddit
 crons.interval("ingest RSS tech feeds", { hours: 2 }, internal.feed.ingestRSSInternal, {});
 
 // ═══════════════════════════════════════════════════════════════════════════
+// BLIPS PIPELINE - "Undo AI Slop" Meaning Blips Feed
+// Daily ingestion → claim extraction → blip generation → verification → persona lenses
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Run phased blip pipeline daily at 6:30 AM UTC (after morning brief)
+// Uses scheduling to break up long-running pipeline into phases
+crons.daily(
+  "run blips pipeline (phased)",
+  { hourUTC: 6, minuteUTC: 30 },
+  internal.domains.blips.blipPipeline.runPipelinePhased,
+  {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Funding Detection Pipeline - Auto-detect funding from feeds, enrich, dedupe
 // ═══════════════════════════════════════════════════════════════════════════
 

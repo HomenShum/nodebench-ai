@@ -584,18 +584,45 @@ async function triggerDeepDiveFromButton(
   entityName: string,
   slackUser: SlackUser
 ): Promise<{ blocks: any[] }> {
-  // TODO: Trigger deep research job
-  return {
-    blocks: [
+  if (!slackUser.nodebenchUserId) {
+    return { blocks: buildErrorBlocks("Account not linked to NodeBench") };
+  }
+
+  try {
+    // Trigger DD job directly via orchestrator
+    const result = await ctx.runAction(
+      api.domains.agents.dueDiligence.ddOrchestrator.startDueDiligenceJob,
       {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `:hourglass_flowing_sand: *Deep dive started for:* ${entityName}\n\nI'll update you when the research is complete.`,
+        entityName,
+        entityType: "company" as const,
+        triggerSource: "manual" as const,
+        userId: slackUser.nodebenchUserId,
+      }
+    );
+
+    const statusMsg = result.status === "existing"
+      ? `A deep dive is already in progress for *${entityName}*. Job ID: \`${result.jobId}\``
+      : `Deep dive started for *${entityName}*. Job ID: \`${result.jobId}\``;
+
+    return {
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `:hourglass_flowing_sand: ${statusMsg}\n\n_I'll update you when the research is complete._`,
+          },
         },
-      },
-    ],
-  };
+      ],
+    };
+  } catch (error) {
+    console.error("[SlackAgent] Deep dive trigger error:", error);
+    return {
+      blocks: buildErrorBlocks(
+        error instanceof Error ? error.message : "Failed to start deep dive"
+      ),
+    };
+  }
 }
 
 async function addFollowUpTask(

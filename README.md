@@ -6,6 +6,51 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ## Changelog
 
+### v0.3.3 (January 16, 2026)
+
+**🔍 Investor Playbook - Agentic Due Diligence System**
+
+Complete implementation of the Investor Playbook evaluation system with claim verification and person/news verification branches.
+
+**Core Features:**
+| Feature | Description |
+|---------|-------------|
+| Agentic Playbook | Multi-branch due diligence with parallel execution |
+| Claim Verification | Extract and verify specific claims from complex queries |
+| Person Verification | LinkedIn/professional identity verification |
+| News Verification | Acquisition news and corporate event verification |
+| Entity Verification | Company registration and state registry checks |
+| SEC Verification | Form C, Form D, and crowdfunding portal validation |
+
+**Evaluation System:**
+- Task 1 (MyDentalWig): 100/100 score - Investment scam detection
+- Task 2 (Vijay Rao/Manus): 62/100 score - Complex claim verification
+
+**New Branches:**
+- `claimVerificationBranch.ts` - Extracts claims and verifies against authoritative sources
+- `personVerificationBranch.ts` - Professional identity verification via LinkedIn/Crunchbase
+- `newsVerificationBranch.ts` - Acquisition and corporate news verification
+
+**New Files:**
+- `convex/domains/agents/dueDiligence/investorPlaybook/` - Complete playbook system
+  - `agenticPlaybook.ts` - Main agentic playbook orchestrator
+  - `evalPlaybook.ts` - Evaluation functions for ground truth comparison
+  - `playbookBranches.ts` - Branch execution logic
+  - `playbookMutations.ts` - Database operations
+  - `types.ts` - TypeScript interfaces
+  - `branches/` - Individual verification branches
+- `convex/domains/agents/dueDiligence/ddContextEngine.ts` - Scratchpad and entity memory
+- `convex/domains/agents/dueDiligence/ddBranchHandoff.ts` - Dynamic branch handoffs
+- `convex/domains/agents/dueDiligence/ddEnhancedOrchestrator.ts` - Enhanced DD orchestration
+
+**New Adapters:**
+- `fdaAdapter.ts` - FDA 510(k) clearance verification
+- `finraAdapter.ts` - FINRA BrokerCheck portal verification
+- `stateRegistryAdapter.ts` - State business registry lookup
+- `usptoAdapter.ts` - USPTO patent verification
+
+---
+
 ### v0.3.2 (January 14, 2026)
 
 **📄 PDF Report Generation Enhancements**
