@@ -441,9 +441,18 @@ async function enrichContextFromWeb(
 
     // Look for red flags (use allContent which includes portal search results)
     const redFlags: string[] = [];
-    if (/scam|fraud|warning/i.test(allContent)) {
-      redFlags.push("Scam/fraud mentions found in web search");
+
+    // Context-aware scam detection to distinguish:
+    // 1. Company is being accused of being a scam (REAL FLAG)
+    // 2. Scammers are impersonating the company (FALSE POSITIVE for legitimate companies)
+    const scamResult = detectScamMentions(allContent, entityName);
+    if (scamResult.isDirectAccusation) {
+      redFlags.push(`Scam/fraud accusations against entity: ${scamResult.context}`);
+    } else if (scamResult.hasImpersonationWarnings) {
+      // Don't flag - this is actually a sign of a legitimate company being impersonated
+      console.log(`[AgenticPlaybook] Scam mentions found but appear to be impersonation warnings, not accusations against ${entityName}`);
     }
+
     if (/lawsuit|litigation|sued/i.test(allContent)) {
       redFlags.push("Legal issues mentioned");
     }
@@ -498,6 +507,240 @@ function extractIndustry(text: string): string | undefined {
     }
   }
   return undefined;
+}
+
+/**
+ * Context-aware scam/fraud detection
+ *
+ * CRITICAL DISTINCTION:
+ * 1. Scams ABOUT a company: "Scammers impersonating OpenAI" - FALSE POSITIVE for legitimate company
+ * 2. Scams BY a company: "OpenAI is a scam" - REAL FLAG
+ *
+ * For well-known companies like OpenAI, Twitter, Meta, there are many articles warning about
+ * scammers impersonating them. This should NOT flag the legitimate company.
+ *
+ * Detection patterns:
+ * - IMPERSONATION (benign): "beware of scams using [company] name", "fake [company]", "scammers posing as [company]"
+ * - DIRECT ACCUSATION (flag): "[company] is a scam", "SEC charges [company] with fraud"
+ * - VICTIM CONTEXT (benign): "[company] warns users about scams", "[company] fighting fraud"
+ */
+interface ScamDetectionResult {
+  hasAnyMention: boolean;
+  isDirectAccusation: boolean;
+  hasImpersonationWarnings: boolean;
+  isCompanyFightingScams: boolean;
+  context: string;
+  confidence: "high" | "medium" | "low";
+}
+
+function detectScamMentions(content: string, entityName: string): ScamDetectionResult {
+  const contentLower = content.toLowerCase();
+  const entityLower = entityName.toLowerCase();
+
+  // Check if there are any scam/fraud mentions at all
+  const hasScamWord = /scam|fraud|ponzi|pyramid\s*scheme/i.test(content);
+  if (!hasScamWord) {
+    return {
+      hasAnyMention: false,
+      isDirectAccusation: false,
+      hasImpersonationWarnings: false,
+      isCompanyFightingScams: false,
+      context: "",
+      confidence: "high",
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // KNOWN LEGITIMATE COMPANIES - Extra scrutiny for false positive prevention
+  // ═══════════════════════════════════════════════════════════════════════════
+  const knownLegitimateCompanies = [
+    "openai", "microsoft", "google", "meta", "facebook", "twitter", "x",
+    "apple", "amazon", "tesla", "nvidia", "vercel", "stripe", "coinbase",
+    "robinhood", "netflix", "uber", "airbnb", "spotify", "slack",
+  ];
+  const isKnownLegitimate = knownLegitimateCompanies.some(c =>
+    entityLower.includes(c) || c.includes(entityLower)
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // IMPERSONATION WARNING PATTERNS (benign for the real company)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const impersonationPatterns = [
+    // Scammers using/impersonating company name
+    /scam(?:s|mers?)?\s+(?:impersonat|pretend|pos|claim|using)\w*\s+/i,
+    /(?:fake|phony|fraudulent)\s+(?:version|account|website|app|email)\s+(?:of\s+)?/i,
+    /impersonat\w+\s+[^.]*(?:company|brand|account)/i,
+    /(?:posing|pretending)\s+(?:as|to be)\s+/i,
+
+    // Warning/alert articles
+    /beware\s+(?:of\s+)?(?:fake|phishing|scam)/i,
+    /scam\s+alert|warning.*scam|alert.*scam/i,
+    /protect\s+yourself\s+from\s+scam/i,
+    /how\s+to\s+(?:spot|avoid|identify|recognize)\s+[^.]*?scam/i,
+
+    // Government warnings about impersonation scams
+    /fcc|ftc|fbi|sec\s+warn(?:s|ing)?.*(?:scam|fraud)/i,
+    /consumer\s+(?:alert|warning)/i,
+
+    // Phishing scams
+    /phishing\s+(?:scam|attack|email)/i,
+    /scam\s+(?:email|text|message|call)/i,
+
+    // Third-party scam reports
+    /(?:report|reporting)\s+(?:a\s+)?scam/i,
+    /scam(?:s)?\s+(?:that\s+)?(?:use|using)\s+[^.]*?name/i,
+    /fake\s+[^.]*?\s+scam/i,
+  ];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMPANY FIGHTING SCAMS PATTERNS (company is victim/defender)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const companyFightingScamsPatterns = [
+    new RegExp(`${entityLower}\\s+(?:warns?|alert|caution|advise)\\s+(?:users?|customers?|about)`, "i"),
+    new RegExp(`${entityLower}\\s+(?:fighting|combating|cracking down|battling)\\s+(?:scam|fraud)`, "i"),
+    new RegExp(`${entityLower}\\s+(?:report|announce).*(?:anti-fraud|security)`, "i"),
+    new RegExp(`${entityLower}\\s+(?:takes? action|sues?)\\s+.*scam`, "i"),
+    new RegExp(`${entityLower}\\s+(?:help|protect)\\s+(?:users?|customers?)\\s+(?:from|against)\\s+scam`, "i"),
+  ];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DIRECT ACCUSATION PATTERNS (real flag)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const directAccusationPatterns = [
+    // "[Company] is a scam"
+    new RegExp(`${entityLower}\\s+(?:is|was|are)\\s+(?:a\\s+)?(?:scam|fraud|ponzi|pyramid)`, "i"),
+    // "[Company] scam" as accusation
+    new RegExp(`${entityLower}\\s+(?:scam|fraud)(?:ulent)?(?:ly)?(?:\\s+scheme)?(?!.*(?:alert|warning|beware|impersonat|fake))`, "i"),
+    // "Fraud by/from [Company]"
+    new RegExp(`(?:scam|fraud|ponzi)\\s+(?:by|from|at|run by)\\s+${entityLower}`, "i"),
+    // Legal actions
+    new RegExp(`${entityLower}.*(?:sued|charged|indicted|accused).*(?:fraud|scam)`, "i"),
+    new RegExp(`sec\\s+(?:charges|sues|accuses)\\s+${entityLower}`, "i"),
+    new RegExp(`${entityLower}.*(?:settlement|fine|penalty).*(?:fraud|scam)`, "i"),
+    // Direct labels
+    new RegExp(`(?:fake|fraudulent)\\s+(?:company|business|startup)\\s+${entityLower}`, "i"),
+    new RegExp(`${entityLower}\\s+(?:founders?|ceo|executives?).*(?:fraud|scam)`, "i"),
+  ];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ANALYSIS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Count matches for each category
+  const impersonationMatchCount = impersonationPatterns.filter(p => p.test(contentLower)).length;
+  const fightingScamsMatchCount = companyFightingScamsPatterns.filter(p => p.test(contentLower)).length;
+  const directAccusationMatchCount = directAccusationPatterns.filter(p => p.test(contentLower)).length;
+
+  const isImpersonationWarning = impersonationMatchCount > 0;
+  const isCompanyFightingScams = fightingScamsMatchCount > 0;
+  const isDirectAccusation = directAccusationMatchCount > 0;
+
+  // Extract context around scam mentions for reporting
+  let context = "";
+  const scamMatch = content.match(/.{0,50}(?:scam|fraud).{0,50}/i);
+  if (scamMatch) {
+    context = scamMatch[0].replace(/\s+/g, " ").trim();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DECISION LOGIC
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // For known legitimate companies, require STRONG evidence of direct accusation
+  if (isKnownLegitimate) {
+    // If ANY impersonation or fighting patterns found, assume benign
+    if (isImpersonationWarning || isCompanyFightingScams) {
+      console.log(`[ScamDetection] Known company ${entityName}: Impersonation/defense context detected, NOT flagging`);
+      return {
+        hasAnyMention: true,
+        isDirectAccusation: false,
+        hasImpersonationWarnings: isImpersonationWarning,
+        isCompanyFightingScams,
+        context,
+        confidence: "high",
+      };
+    }
+    // Only flag if MULTIPLE direct accusation patterns match with NO impersonation context
+    if (directAccusationMatchCount >= 2 && !isImpersonationWarning) {
+      return {
+        hasAnyMention: true,
+        isDirectAccusation: true,
+        hasImpersonationWarnings: false,
+        isCompanyFightingScams: false,
+        context,
+        confidence: "medium", // Still medium because known companies rarely are scams
+      };
+    }
+    // Default: don't flag known legitimate companies without strong evidence
+    return {
+      hasAnyMention: true,
+      isDirectAccusation: false,
+      hasImpersonationWarnings: isImpersonationWarning,
+      isCompanyFightingScams,
+      context,
+      confidence: "high",
+    };
+  }
+
+  // For unknown companies, use balanced logic
+  // Priority: impersonation/defense > direct accusation
+  if ((isImpersonationWarning || isCompanyFightingScams) && !isDirectAccusation) {
+    // Impersonation warning without direct accusation = benign
+    return {
+      hasAnyMention: true,
+      isDirectAccusation: false,
+      hasImpersonationWarnings: isImpersonationWarning,
+      isCompanyFightingScams,
+      context,
+      confidence: "high",
+    };
+  }
+
+  if (isDirectAccusation && !(isImpersonationWarning || isCompanyFightingScams)) {
+    // Direct accusation without impersonation context = real flag
+    return {
+      hasAnyMention: true,
+      isDirectAccusation: true,
+      hasImpersonationWarnings: false,
+      isCompanyFightingScams: false,
+      context,
+      confidence: directAccusationMatchCount >= 2 ? "high" : "medium",
+    };
+  }
+
+  if (isDirectAccusation && isImpersonationWarning) {
+    // Both patterns found = ambiguous, be conservative
+    // Weight by match counts
+    if (impersonationMatchCount > directAccusationMatchCount) {
+      return {
+        hasAnyMention: true,
+        isDirectAccusation: false,
+        hasImpersonationWarnings: true,
+        isCompanyFightingScams,
+        context,
+        confidence: "low",
+      };
+    }
+    // Default to flagging with low confidence if direct > impersonation
+    return {
+      hasAnyMention: true,
+      isDirectAccusation: true,
+      hasImpersonationWarnings: true,
+      isCompanyFightingScams,
+      context,
+      confidence: "low",
+    };
+  }
+
+  // Default: scam word found but no clear patterns
+  return {
+    hasAnyMention: true,
+    isDirectAccusation: false,
+    hasImpersonationWarnings: false,
+    isCompanyFightingScams: false,
+    context,
+    confidence: "low",
+  };
 }
 
 // ============================================================================
@@ -730,6 +973,12 @@ async function runAgenticDDCore(
       redFlagsFromWeb: enrichedContext.redFlagsFromWeb,
       fundingPortal: enrichedContext.fundingPortal,
       fdaClaim: enrichedContext.claimsFromWeb?.fdaStatus,
+    },
+    // CRITICAL: Pass raw query for scientific claim detection
+    // This enables detection of debunked claims like LK-99, cold fusion, etc.
+    claimVerificationMode: {
+      enabled: true,
+      rawQuery: query,  // Full original query for scientific claim pattern matching
     },
   };
 

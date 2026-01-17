@@ -33,6 +33,7 @@ import {
   ClaimVerificationFindings,
   PersonVerificationFindings,
   NewsVerificationFindings,
+  ScientificClaimVerificationFindings,
 } from "./types";
 
 import {
@@ -46,6 +47,15 @@ import {
   executePersonVerificationBranch,
   executeNewsVerificationBranch,
   extractClaimsFromQuery,
+  executeScientificClaimVerificationBranch,
+  detectScientificClaims,
+  // Persona-specific branches
+  executeDealMemoSynthesisBranch,
+  executeFundPerformanceVerificationBranch,
+  executeClinicalTrialVerificationBranch,
+  executeLiteratureTriangulationBranch,
+  executeMAActivityVerificationBranch,
+  executeEconomicIndicatorVerificationBranch,
 } from "./branches";
 import { executeEnhancedClaimVerification } from "./branches/enhancedClaimVerification";
 import { executeEnhancedNewsVerification } from "./branches/enhancedNewsVerification";
@@ -92,6 +102,50 @@ export interface PlaybookConfig {
     acquisitionTarget?: string;           // Target in acquisition
     newsEvent?: string;                   // News event to verify
   };
+
+  // Persona-specific evaluation context
+  personaContext?: {
+    persona?: string;                       // Current persona for branch routing
+    // Financial persona context (Banker, VC, LP)
+    dealMemoRequested?: boolean;            // Generate deal memo
+    fundPerformanceRequested?: boolean;     // Verify fund performance
+    claimedFundMetrics?: {
+      tvpi?: number;
+      dpi?: number;
+      irr?: number;
+      fundName?: string;
+    };
+    // Industry persona context (Pharma BD, Academic R&D)
+    clinicalTrialContext?: {
+      drugName?: string;
+      companyName?: string;
+      claimedPhase?: string;
+      nctId?: string;
+    };
+    literatureContext?: {
+      topic?: string;
+      additionalContext?: string;
+      authors?: string[];
+      methodology?: string;
+      claimedFindings?: string;
+      targetJournals?: string[];
+    };
+    // Strategic persona context (Corp Dev, Macro Strategist)
+    maContext?: {
+      acquirer?: string;
+      target?: string;
+      claimedDealValue?: string;
+    };
+    macroContext?: {
+      thesisName?: string;
+      region?: string;
+      claimedIndicators?: Array<{ name: string; value: number; unit?: string }>;
+      claimedPolicy?: {
+        expectedChange?: string;
+        confidence?: number;
+      };
+    };
+  };
 }
 
 export interface PlaybookResult {
@@ -107,6 +161,7 @@ export interface PlaybookResult {
     claimVerification?: ClaimVerificationFindings;
     personVerification?: PersonVerificationFindings;
     newsVerification?: NewsVerificationFindings;
+    scientificClaimVerification?: ScientificClaimVerificationFindings;
   };
   sources: DDSource[];
   executionTimeMs: number;
@@ -143,6 +198,21 @@ export async function runInvestorPlaybook(
       config.claimVerificationMode?.acquisitionAcquirer,
       config.claimVerificationMode?.acquisitionTarget,
     ].filter(Boolean) as string[],
+    // Persona-specific signals
+    persona: config.personaContext?.persona,
+    entityType: config.entityType,
+    dealMemoRequested: config.personaContext?.dealMemoRequested,
+    fundPerformanceRequested: config.personaContext?.fundPerformanceRequested,
+    claimedTVPI: config.personaContext?.claimedFundMetrics?.tvpi,
+    claimedDPI: config.personaContext?.claimedFundMetrics?.dpi,
+    claimedIRR: config.personaContext?.claimedFundMetrics?.irr,
+    clinicalTrialMentioned: Boolean(config.personaContext?.clinicalTrialContext),
+    nctIdMentioned: config.personaContext?.clinicalTrialContext?.nctId,
+    academicResearchMentioned: Boolean(config.personaContext?.literatureContext),
+    literatureReviewRequested: Boolean(config.personaContext?.literatureContext?.topic),
+    maActivityRequested: Boolean(config.personaContext?.maContext),
+    economicThesisRequested: Boolean(config.personaContext?.macroContext),
+    macroIndicatorsMentioned: Boolean(config.personaContext?.macroContext?.claimedIndicators),
   };
 
   // Build branch execution promises
@@ -260,6 +330,47 @@ export async function runInvestorPlaybook(
   }
 
   // ============================================================================
+  // SCIENTIFIC CLAIM VERIFICATION (Critical for detecting debunked science)
+  // ============================================================================
+
+  // Scientific Claim Verification - detect debunked claims like LK-99, cold fusion, etc.
+  // Searches arXiv, PubMed, Retraction Watch for peer review status, replication failures, debunkings
+  const rawQueryForScientific = config.claimVerificationMode?.rawQuery || config.entityName;
+  console.log(`[Playbook] Scientific claim detection input: "${rawQueryForScientific}"`);
+
+  const scientificDetection = detectScientificClaims(rawQueryForScientific);
+  console.log(`[Playbook] Scientific claim detection result:`, JSON.stringify(scientificDetection));
+
+  // Check if we should run scientific claim verification
+  const shouldRunScientificVerification =
+    scientificDetection.hasScientificClaims ||
+    config.personaContext?.literatureContext ||
+    PLAYBOOK_BRANCH_TRIGGERS.scientific_claim_verification({
+      ...signals,
+      hasScientificClaims: scientificDetection.hasScientificClaims,
+      claimedScientificDiscovery: scientificDetection.claimedDiscovery,
+      researchArea: scientificDetection.researchArea,
+    });
+
+  if (shouldRunScientificVerification) {
+    executedBranches.push("scientific_claim_verification");
+    branchPromises.push(
+      executeScientificClaimVerificationBranch(
+        ctx,
+        config.entityName,
+        scientificDetection.claimedDiscovery,
+        scientificDetection.researchArea
+      ).then(result => {
+        branchResults.scientificClaimVerification = result.findings;
+        allSources.push(...result.sources);
+        console.log(`[Playbook] Scientific claim verification: Status=${result.findings.overallStatus}, RedFlags=${result.findings.redFlags.length}`);
+      }).catch(err => {
+        console.error("[Playbook] Scientific claim verification failed:", err);
+      })
+    );
+  }
+
+  // ============================================================================
   // NEW VERIFICATION BRANCHES (Claim, Person, News)
   // ============================================================================
 
@@ -349,6 +460,147 @@ export async function runInvestorPlaybook(
         })
       );
     }
+  }
+
+  // ============================================================================
+  // PERSONA-SPECIFIC BRANCHES
+  // ============================================================================
+
+  // Deal Memo Synthesis (Financial personas: Banker, VC)
+  if (PLAYBOOK_BRANCH_TRIGGERS.deal_memo_synthesis(signals)) {
+    executedBranches.push("deal_memo_synthesis");
+    branchPromises.push(
+      executeDealMemoSynthesisBranch(
+        ctx,
+        config.entityName,
+        config.entityType === "person" ? "company" : config.entityType // Map "person" to "company" for deal memo
+      ).then(result => {
+        // Store in branchResults - synthesis will be extracted during report generation
+        (branchResults as any).dealMemoSynthesis = result.findings;
+        allSources.push(...result.sources);
+        console.log(`[Playbook] Deal memo synthesis completed for ${config.entityName}`);
+      }).catch(err => {
+        console.error("[Playbook] Deal memo synthesis failed:", err);
+      })
+    );
+  }
+
+  // Fund Performance Verification (LP Allocator persona)
+  if (PLAYBOOK_BRANCH_TRIGGERS.fund_performance_verification(signals)) {
+    executedBranches.push("fund_performance_verification");
+    const fundMetrics = config.personaContext?.claimedFundMetrics;
+    branchPromises.push(
+      executeFundPerformanceVerificationBranch(
+        ctx,
+        config.entityName,
+        undefined, // gpName is optional
+        fundMetrics ? {
+          tvpi: fundMetrics.tvpi,
+          dpi: fundMetrics.dpi,
+          irr: fundMetrics.irr,
+        } : undefined
+      ).then(result => {
+        (branchResults as any).fundPerformanceVerification = result.findings;
+        allSources.push(...result.sources);
+        console.log(`[Playbook] Fund performance verification completed`);
+      }).catch(err => {
+        console.error("[Playbook] Fund performance verification failed:", err);
+      })
+    );
+  }
+
+  // Clinical Trial Verification (Pharma BD persona)
+  if (PLAYBOOK_BRANCH_TRIGGERS.clinical_trial_verification(signals)) {
+    executedBranches.push("clinical_trial_verification");
+    const clinicalContext = config.personaContext?.clinicalTrialContext;
+    branchPromises.push(
+      executeClinicalTrialVerificationBranch(
+        ctx,
+        clinicalContext?.drugName || config.entityName,
+        clinicalContext?.companyName || config.entityName, // Default to entity name if no company specified
+        clinicalContext?.claimedPhase ? {
+          phase: clinicalContext.claimedPhase,
+          nctId: clinicalContext.nctId,
+        } : undefined
+      ).then(result => {
+        (branchResults as any).clinicalTrialVerification = result.findings;
+        allSources.push(...result.sources);
+        console.log(`[Playbook] Clinical trial verification completed`);
+      }).catch(err => {
+        console.error("[Playbook] Clinical trial verification failed:", err);
+      })
+    );
+  }
+
+  // Literature Triangulation (Academic R&D persona)
+  if (PLAYBOOK_BRANCH_TRIGGERS.literature_triangulation(signals)) {
+    executedBranches.push("literature_triangulation");
+    const litContext = config.personaContext?.literatureContext;
+    branchPromises.push(
+      executeLiteratureTriangulationBranch(
+        ctx,
+        litContext?.topic || config.entityName,
+        litContext ? {
+          authors: litContext.authors,
+          methodology: litContext.methodology,
+          claimedFindings: litContext.claimedFindings,
+          targetJournals: litContext.targetJournals,
+        } : undefined
+      ).then(result => {
+        (branchResults as any).literatureTriangulation = result.findings;
+        allSources.push(...result.sources);
+        console.log(`[Playbook] Literature triangulation completed`);
+      }).catch(err => {
+        console.error("[Playbook] Literature triangulation failed:", err);
+      })
+    );
+  }
+
+  // M&A Activity Verification (Corp Dev persona)
+  if (PLAYBOOK_BRANCH_TRIGGERS.ma_activity_verification(signals)) {
+    executedBranches.push("ma_activity_verification");
+    const maContext = config.personaContext?.maContext;
+    branchPromises.push(
+      executeMAActivityVerificationBranch(
+        ctx,
+        maContext?.acquirer || config.claimVerificationMode?.acquisitionAcquirer || "",
+        maContext?.target || config.claimVerificationMode?.acquisitionTarget || "",
+        maContext?.claimedDealValue ? {
+          dealValue: maContext.claimedDealValue,
+        } : undefined
+      ).then(result => {
+        (branchResults as any).maActivityVerification = result.findings;
+        allSources.push(...result.sources);
+        console.log(`[Playbook] M&A activity verification completed`);
+      }).catch(err => {
+        console.error("[Playbook] M&A activity verification failed:", err);
+      })
+    );
+  }
+
+  // Economic Indicator Verification (Macro Strategist persona)
+  if (PLAYBOOK_BRANCH_TRIGGERS.economic_indicator_verification(signals)) {
+    executedBranches.push("economic_indicator_verification");
+    const macroContext = config.personaContext?.macroContext;
+    branchPromises.push(
+      executeEconomicIndicatorVerificationBranch(
+        ctx,
+        macroContext?.thesisName || config.entityName,
+        macroContext?.region || "US",
+        macroContext?.claimedIndicators?.map(ind => ({
+          name: ind.name,
+          value: ind.value,
+          unit: ind.unit || "%", // Default to percentage if no unit specified
+        })),
+        macroContext?.claimedPolicy
+      ).then(result => {
+        (branchResults as any).economicIndicatorVerification = result.findings;
+        allSources.push(...result.sources);
+        console.log(`[Playbook] Economic indicator verification completed`);
+      }).catch(err => {
+        console.error("[Playbook] Economic indicator verification failed:", err);
+      })
+    );
   }
 
   // Execute all branches in parallel
@@ -565,6 +817,73 @@ function identifyDiscrepancies(
     }
   }
 
+  // Scientific claim discrepancies
+  // CRITICAL: Detect debunked claims, retractions, replication failures
+  if (branchResults.scientificClaimVerification) {
+    const sci = branchResults.scientificClaimVerification;
+
+    // Debunked scientific claim
+    if (sci.overallStatus === "debunked") {
+      discrepancies.push({
+        field: "Scientific Claim",
+        claimedValue: sci.claims[0]?.claim || "Scientific breakthrough",
+        verifiedValue: "DEBUNKED by scientific community",
+        source: "Scientific Literature Search",
+        severity: "critical",
+        category: "entity",
+      });
+    }
+
+    // Retracted papers
+    if (sci.overallStatus === "retracted" || sci.retractions.length > 0) {
+      discrepancies.push({
+        field: "Scientific Papers",
+        claimedValue: "Valid peer-reviewed research",
+        verifiedValue: `${sci.retractions.length} paper(s) RETRACTED`,
+        source: "Retraction Watch / Scientific Journals",
+        severity: "critical",
+        category: "entity",
+      });
+    }
+
+    // Replication failures
+    if (sci.overallStatus === "replication_failed") {
+      const failedCount = sci.replicationStudies.filter(r => r.result === "failure").length;
+      discrepancies.push({
+        field: "Scientific Replication",
+        claimedValue: "Reproducible scientific results",
+        verifiedValue: `${failedCount} replication attempt(s) FAILED`,
+        source: "Independent Replication Studies",
+        severity: "critical",
+        category: "entity",
+      });
+    }
+
+    // Preprint only (no peer review)
+    if (sci.overallStatus === "preprint_only") {
+      discrepancies.push({
+        field: "Peer Review Status",
+        claimedValue: "Peer-reviewed research",
+        verifiedValue: "PREPRINT ONLY - not peer reviewed",
+        source: "arXiv / Scientific Databases",
+        severity: "major",
+        category: "entity",
+      });
+    }
+
+    // Critical red flags
+    for (const flag of sci.redFlags.filter(f => f.severity === "critical")) {
+      discrepancies.push({
+        field: "Scientific Verification",
+        claimedValue: "Valid scientific claim",
+        verifiedValue: flag.description,
+        source: "Scientific Claim Verification",
+        severity: "critical",
+        category: "entity",
+      });
+    }
+  }
+
   // Financial discrepancies from SEC Form C data
   // Ground truth pattern: Check for zero/minimal revenue with large project claims
   if (branchResults.secEdgar?.formCFilings) {
@@ -720,6 +1039,67 @@ function evaluateStopRules(
     description: "Critical wire fraud indicators detected in payment instructions.",
     recommendation: "disengage",
   });
+
+  // Rule 6: Contradicted Scientific/Technical Claims (from claimVerification)
+  // Detects pseudoscience, debunked claims, and failed replications (e.g., LK-99, cold fusion)
+  const hasContradictedClaims = (branchResults.claimVerification?.contradictedClaims?.length ?? 0) > 0;
+  const contradictedClaimCount = branchResults.claimVerification?.contradictedClaims?.length ?? 0;
+  const contradictedClaimContext = branchResults.claimVerification?.contradictedClaims
+    ?.map(c => c.claim).slice(0, 3).join("; ") || "";
+
+  stopRules.push({
+    triggered: hasContradictedClaims,
+    rule: "Contradicted Scientific/Technical Claims",
+    description: `${contradictedClaimCount} claim(s) contradicted by evidence. ` +
+      `Scientific claims may be debunked, not replicated, or contradict established knowledge. ` +
+      (contradictedClaimContext ? `Claims: ${contradictedClaimContext}` : ""),
+    recommendation: "require_resolution",
+  });
+
+  // Rule 7: Scientific Claim Verification Red Flags (from scientificClaimVerification)
+  // CRITICAL: Detects debunked science, retractions, replication failures
+  const scientificFindings = branchResults.scientificClaimVerification;
+  const hasScientificRedFlags = scientificFindings && scientificFindings.redFlags.length > 0;
+  const criticalScientificFlags = scientificFindings?.redFlags.filter(f => f.severity === "critical") ?? [];
+  const highScientificFlags = scientificFindings?.redFlags.filter(f => f.severity === "high") ?? [];
+
+  // Determine severity level
+  const isDebunked = scientificFindings?.overallStatus === "debunked";
+  const isRetracted = scientificFindings?.overallStatus === "retracted";
+  const hasReplicationFailure = scientificFindings?.overallStatus === "replication_failed";
+
+  if (isDebunked || isRetracted) {
+    stopRules.push({
+      triggered: true,
+      rule: "Debunked/Retracted Scientific Claim",
+      description: `CRITICAL: Scientific claim has been ${isDebunked ? "DEBUNKED by the research community" : "RETRACTED"}. ` +
+        `${scientificFindings?.scientificConsensus || "Multiple independent sources confirm the claim is invalid."}`,
+      recommendation: "disengage",
+    });
+  } else if (hasReplicationFailure) {
+    stopRules.push({
+      triggered: true,
+      rule: "Failed Scientific Replication",
+      description: `HIGH RISK: Independent replication attempts have FAILED. ` +
+        `${scientificFindings?.replicationStudies.filter(r => r.result === "failure").length || 0} failed replications found. ` +
+        `This is a major red flag for any investment based on this scientific claim.`,
+      recommendation: "require_resolution",
+    });
+  } else if (criticalScientificFlags.length > 0) {
+    stopRules.push({
+      triggered: true,
+      rule: "Critical Scientific Claim Issues",
+      description: criticalScientificFlags.map(f => f.description).join(" "),
+      recommendation: "require_resolution",
+    });
+  } else if (highScientificFlags.length > 0) {
+    stopRules.push({
+      triggered: true,
+      rule: "Scientific Claim Verification Concerns",
+      description: `Scientific claim verification found concerns: ${highScientificFlags.map(f => f.description).join("; ")}`,
+      recommendation: "proceed_with_caution",
+    });
+  }
 
   return stopRules;
 }

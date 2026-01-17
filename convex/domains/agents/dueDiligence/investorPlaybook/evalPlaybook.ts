@@ -453,3 +453,119 @@ export const evaluateTask2VijayRaoManus = action({
     };
   },
 });
+
+// ============================================================================
+// UNIFIED HARNESS INTEGRATION
+// ============================================================================
+
+/**
+ * Run Investor Playbook for Unified Persona Evaluation
+ *
+ * This action is called by the unified persona harness to evaluate
+ * different personas against their ground truth cases.
+ */
+export const runInvestorPlaybookEval = action({
+  args: {
+    entityName: v.string(),
+    entityType: v.optional(v.string()),
+    persona: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    console.log(`[EVAL] Running playbook eval for ${args.entityName} (persona: ${args.persona || "default"})...`);
+    const startTime = Date.now();
+
+    // Map persona to appropriate config signals
+    const signals = getPersonaSignals(args.persona);
+
+    // Run the playbook
+    const result = await runInvestorPlaybook(ctx, {
+      entityName: args.entityName,
+      entityType: (args.entityType as "company" | "fund" | "person") || "company",
+      signals,
+      // Enable claim verification for journalist/academic personas
+      // CRITICAL: Pass rawQuery for scientific claim detection (LK-99, cold fusion, etc.)
+      claimVerificationMode: ["JOURNALIST", "ACADEMIC_RD", "PHARMA_BD", "CTO_TECH_LEAD"].includes(args.persona || "")
+        ? {
+            enabled: true,
+            rawQuery: args.entityName, // Pass entity name as query for scientific claim pattern matching
+            newsEvent: `News about ${args.entityName}`,
+          }
+        : {
+            enabled: true,
+            rawQuery: args.entityName, // Always pass for scientific claim detection
+          },
+    });
+
+    const executionTimeMs = Date.now() - startTime;
+    console.log(`[EVAL] Playbook eval completed in ${executionTimeMs}ms`);
+
+    return {
+      synthesis: result.synthesis,
+      branchResults: result.branchResults,
+      sources: result.sources,
+      executionTimeMs,
+    };
+  },
+});
+
+/**
+ * Map persona to complexity signals for routing
+ */
+function getPersonaSignals(persona?: string): import("./types").PlaybookComplexitySignals {
+  const baseSignals = {
+    isRequestingFunding: false,
+    isClaimVerification: false,
+    hasSpecificClaims: false,
+    acquisitionMentioned: false,
+    newsEventMentioned: false,
+    academicResearchMentioned: false,
+    hasScientificClaims: false,
+  };
+
+  switch (persona) {
+    case "JPM_STARTUP_BANKER":
+      return { ...baseSignals, isRequestingFunding: true };
+
+    case "LP_ALLOCATOR":
+      return { ...baseSignals, hasSpecificClaims: true };
+
+    case "QUANT_PM":
+      return { ...baseSignals, hasSpecificClaims: true };
+
+    case "EARLY_STAGE_VC":
+      return { ...baseSignals, isRequestingFunding: true, hasSpecificClaims: true };
+
+    case "PHARMA_BD":
+      // Pharma BD needs scientific claim verification for drug/biotech claims
+      return { ...baseSignals, hasSpecificClaims: true, academicResearchMentioned: true };
+
+    case "ACADEMIC_RD":
+      // Academic R&D is the primary persona for scientific claim verification
+      return {
+        ...baseSignals,
+        isClaimVerification: true,
+        hasSpecificClaims: true,
+        academicResearchMentioned: true,
+        hasScientificClaims: true, // Always check scientific claims for this persona
+      };
+
+    case "CORP_DEV":
+      return { ...baseSignals, acquisitionMentioned: true };
+
+    case "MACRO_STRATEGIST":
+      return { ...baseSignals, newsEventMentioned: true };
+
+    case "FOUNDER_STRATEGY":
+      return { ...baseSignals, hasSpecificClaims: true };
+
+    case "CTO_TECH_LEAD":
+      // CTO needs scientific claim verification for tech claims
+      return { ...baseSignals, hasSpecificClaims: true, academicResearchMentioned: true };
+
+    case "JOURNALIST":
+      return { ...baseSignals, isClaimVerification: true, newsEventMentioned: true };
+
+    default:
+      return baseSignals;
+  }
+}

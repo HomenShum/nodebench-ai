@@ -160,6 +160,16 @@ export const PERSONA_VALIDATION_RULES: Record<PersonaId, PersonaValidationRules>
     contradictionTolerance: "strict",
     qualityThreshold: 80,
   },
+  FOUNDER_STRATEGY: {
+    personaId: "FOUNDER_STRATEGY",
+    freshnessThresholdDays: 30,
+    requiredFields: ["competitive position", "market", "strategy", "risks", "opportunities"],
+    minSources: 3,
+    minNextActions: 3,
+    allowedFactTypes: ["competitive", "market", "strategy", "product", "team"],
+    contradictionTolerance: "moderate",
+    qualityThreshold: 75,
+  },
 };
 
 /* ================================================================== */

@@ -89,7 +89,11 @@ export type SourceType =
   | "patent_db"
   | "crunchbase"
   | "pitchbook"
-  | "llm_inference";
+  | "llm_inference"
+  | "social_media"
+  | "research_report"
+  | "academic_paper"
+  | "regulatory_filing";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPLEXITY SIGNALS (determines conditional branches)

@@ -26,6 +26,8 @@ import {
   FDAStatus,
   FDA510kClearance,
   FDAPMAApproval,
+  FDABLAApproval,
+  FDANDAApproval,
   FDARegistration,
   FDADeviceListing,
   FDAAdverseEvent,
@@ -63,6 +65,12 @@ export async function executeFdaVerificationBranch(
     // Step 3: Search for PMA approvals (Class III devices)
     const pmaApprovals = await searchPMAApprovals(ctx, entityName, deviceName);
 
+    // Step 3.5: Search for BLA approvals (biologics: vaccines, gene therapy)
+    const blaApprovals = await searchBLAApprovals(ctx, entityName, deviceName);
+
+    // Step 3.6: Search for NDA approvals (pharmaceutical drugs)
+    const ndaApprovals = await searchNDAApprovals(ctx, entityName, deviceName);
+
     // Step 4: Check for adverse events
     const adverseEvents = await searchAdverseEvents(ctx, entityName, deviceName);
 
@@ -78,12 +86,17 @@ export async function executeFdaVerificationBranch(
     const verifiedListings = filterVerifiedMatches(listings, entityName, "deviceName", entityName);
     const verifiedPMAs = filterVerifiedMatches(pmaApprovals, entityName, "applicant", entityName);
 
+    const verifiedBLAs = filterVerifiedMatches(blaApprovals, entityName, "applicant", entityName);
+    const verifiedNDAs = filterVerifiedMatches(ndaApprovals, entityName, "applicant", entityName);
+
     // CRITICAL: If company name is a unique/made-up name, no FDA records should match
     // For names like "MyDentalWig" - there should be NO verified clearances unless
     // the EXACT company (or close variant) appears in FDA records
     console.error(`[FDA-Verification] Company: ${entityName}`);
     console.error(`[FDA-Verification] Raw clearances found: ${clearances.length}, Verified: ${verifiedClearances.length}`);
     console.error(`[FDA-Verification] Raw registrations found: ${registrations.length}, Verified: ${verifiedRegistrations.length}`);
+    console.error(`[FDA-Verification] Raw BLAs found: ${blaApprovals.length}, Verified: ${verifiedBLAs.length}`);
+    console.error(`[FDA-Verification] Raw NDAs found: ${ndaApprovals.length}, Verified: ${verifiedNDAs.length}`);
     console.error(`[FDA-Verification] Claimed Status: ${claimedStatus}`);
 
     // DEBUG: Log first clearance applicant if any
@@ -119,10 +132,38 @@ export async function executeFdaVerificationBranch(
       confidence += 0.15;
     }
 
+    // Add BLA source if found
+    if (verifiedBLAs.length > 0) {
+      sources.push({
+        sourceType: "sec_filing",
+        url: "https://www.accessdata.fda.gov/scripts/cder/daf/",
+        title: "FDA Drugs@FDA - Biologics License Applications",
+        accessedAt: now,
+        reliability: "authoritative",
+        section: "fda_bla",
+      });
+      confidence += 0.3;
+    }
+
+    // Add NDA source if found
+    if (verifiedNDAs.length > 0) {
+      sources.push({
+        sourceType: "sec_filing",
+        url: "https://www.accessdata.fda.gov/scripts/cder/daf/",
+        title: "FDA Drugs@FDA - New Drug Applications",
+        accessedAt: now,
+        reliability: "authoritative",
+        section: "fda_nda",
+      });
+      confidence += 0.3;
+    }
+
     // Step 6: Determine actual FDA status (using VERIFIED matches only)
     const actualStatus = determineFDAStatus(
       verifiedClearances,
       verifiedPMAs,
+      verifiedBLAs,
+      verifiedNDAs,
       verifiedRegistrations,
       verifiedListings
     );
@@ -138,6 +179,10 @@ export async function executeFdaVerificationBranch(
       hasClearance: verifiedClearances.length > 0,
       pmaApprovals: verifiedPMAs,
       hasPMA: verifiedPMAs.length > 0,
+      blaApprovals: verifiedBLAs,
+      hasBLA: verifiedBLAs.length > 0,
+      ndaApprovals: verifiedNDAs,
+      hasNDA: verifiedNDAs.length > 0,
       registrations: verifiedRegistrations,
       deviceListings: verifiedListings,
       isRegistered: verifiedRegistrations.length > 0,
@@ -151,7 +196,9 @@ export async function executeFdaVerificationBranch(
         clearanceMatchesClaims: checkClearanceMatchesClaims(
           claimedStatus,
           verifiedClearances,
-          verifiedRegistrations
+          verifiedRegistrations,
+          verifiedBLAs,
+          verifiedNDAs
         ),
         noActiveRecalls: !recalls.some(r => r.recallStatus === "Ongoing"),
         noSeriousAdverseEvents: !adverseEvents.some(e =>
@@ -165,6 +212,8 @@ export async function executeFdaVerificationBranch(
         actualStatus,
         verifiedClearances,
         verifiedRegistrations,
+        verifiedBLAs,
+        verifiedNDAs,
         recalls,
         adverseEvents
       ),
@@ -172,6 +221,8 @@ export async function executeFdaVerificationBranch(
         verifiedClearances,
         verifiedRegistrations,
         verifiedListings,
+        verifiedBLAs,
+        verifiedNDAs,
         confidence
       ),
     };
@@ -389,6 +440,193 @@ async function searchPMAApprovals(
   }
 }
 
+/**
+ * Search for BLA (Biologics License Application) approvals
+ * Used for vaccines, gene therapy, blood products, etc.
+ * Searches Drugs@FDA and Purple Book databases
+ */
+async function searchBLAApprovals(
+  ctx: any,
+  companyName: string,
+  productName?: string
+): Promise<FDABLAApproval[]> {
+  const approvals: FDABLAApproval[] = [];
+
+  try {
+    // Search FDA Drugs@FDA database for BLA approvals
+    const searchQuery = productName
+      ? `site:accessdata.fda.gov "BLA" OR "biologics license" "${companyName}" "${productName}"`
+      : `site:accessdata.fda.gov "BLA" OR "biologics license" "${companyName}"`;
+
+    const result = await ctx.runAction(
+      api.domains.search.fusion.actions.fusionSearch,
+      {
+        query: searchQuery,
+        mode: "balanced",
+        maxTotal: 10,
+        skipRateLimit: true,
+      }
+    );
+
+    const results = result?.payload?.results ?? [];
+
+    for (const r of results) {
+      const content = (r.snippet || "") + " " + (r.title || "");
+
+      // Look for BLA numbers (e.g., BLA 125742)
+      const blaMatch = content.match(/BLA\s*(\d{6})/i);
+      if (blaMatch) {
+        const dateMatch = content.match(/(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})/);
+        const extractedApplicant = extractApplicantName(content) || "Unknown Applicant";
+
+        approvals.push({
+          blaNumber: `BLA ${blaMatch[1]}`,
+          productName: productName || extractProductName(content),
+          applicant: extractedApplicant,
+          approvalDate: dateMatch?.[1] || "Unknown",
+          activeIngredient: extractActiveIngredient(content),
+          indication: extractIndication(content),
+          isOriginalApproval: !content.toLowerCase().includes("supplement"),
+        });
+        console.log(`[FDA-BLA] Found BLA ${blaMatch[1]}, applicant: ${extractedApplicant}`);
+      }
+    }
+
+    // Also search for company name + vaccine/biologic keywords
+    const bioSearchQuery = `site:fda.gov "${companyName}" vaccine OR biologic approved BLA`;
+    const bioResult = await ctx.runAction(
+      api.domains.search.fusion.actions.fusionSearch,
+      {
+        query: bioSearchQuery,
+        mode: "fast",
+        maxTotal: 5,
+        skipRateLimit: true,
+      }
+    );
+
+    const bioResults = bioResult?.payload?.results ?? [];
+    for (const r of bioResults) {
+      const content = (r.snippet || "") + " " + (r.title || "");
+      const blaMatch = content.match(/BLA\s*(\d{6})/i);
+      if (blaMatch && !approvals.some(a => a.blaNumber === `BLA ${blaMatch[1]}`)) {
+        const dateMatch = content.match(/(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})/);
+        const extractedApplicant = extractApplicantName(content) || "Unknown Applicant";
+
+        approvals.push({
+          blaNumber: `BLA ${blaMatch[1]}`,
+          productName: productName || extractProductName(content),
+          applicant: extractedApplicant,
+          approvalDate: dateMatch?.[1] || "Unknown",
+          activeIngredient: extractActiveIngredient(content),
+          indication: extractIndication(content),
+          isOriginalApproval: !content.toLowerCase().includes("supplement"),
+        });
+        console.log(`[FDA-BLA-Bio] Found BLA ${blaMatch[1]}, applicant: ${extractedApplicant}`);
+      }
+    }
+
+    return approvals;
+
+  } catch (error) {
+    console.error(`[FDA-BLA] Search error:`, error);
+    return [];
+  }
+}
+
+/**
+ * Search for NDA (New Drug Application) approvals
+ * Used for pharmaceutical drugs
+ */
+async function searchNDAApprovals(
+  ctx: any,
+  companyName: string,
+  productName?: string
+): Promise<FDANDAApproval[]> {
+  const approvals: FDANDAApproval[] = [];
+
+  try {
+    // Search FDA Drugs@FDA database for NDA approvals
+    const searchQuery = productName
+      ? `site:accessdata.fda.gov "NDA" OR "new drug application" "${companyName}" "${productName}"`
+      : `site:accessdata.fda.gov "NDA" OR "new drug application" "${companyName}"`;
+
+    const result = await ctx.runAction(
+      api.domains.search.fusion.actions.fusionSearch,
+      {
+        query: searchQuery,
+        mode: "balanced",
+        maxTotal: 10,
+        skipRateLimit: true,
+      }
+    );
+
+    const results = result?.payload?.results ?? [];
+
+    for (const r of results) {
+      const content = (r.snippet || "") + " " + (r.title || "");
+
+      // Look for NDA numbers (e.g., NDA 215510)
+      const ndaMatch = content.match(/NDA\s*(\d{6})/i);
+      if (ndaMatch) {
+        const dateMatch = content.match(/(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})/);
+        const extractedApplicant = extractApplicantName(content) || "Unknown Applicant";
+
+        approvals.push({
+          ndaNumber: `NDA ${ndaMatch[1]}`,
+          productName: productName || extractProductName(content),
+          applicant: extractedApplicant,
+          approvalDate: dateMatch?.[1] || "Unknown",
+          activeIngredient: extractActiveIngredient(content),
+          indication: extractIndication(content),
+          isOriginalApproval: !content.toLowerCase().includes("supplement"),
+        });
+        console.log(`[FDA-NDA] Found NDA ${ndaMatch[1]}, applicant: ${extractedApplicant}`);
+      }
+    }
+
+    return approvals;
+
+  } catch (error) {
+    console.error(`[FDA-NDA] Search error:`, error);
+    return [];
+  }
+}
+
+/**
+ * Extract product name from FDA content
+ */
+function extractProductName(content: string): string {
+  const patterns = [
+    /(?:product|drug|vaccine|biologic)[:\s]+([A-Za-z][A-Za-z0-9\s-]+?)(?:\s+(?:BLA|NDA|by|from)|$)/i,
+    /([A-Z][a-z]+(?:-[A-Z][a-z]+)?)(?:\s+(?:vaccine|injection|solution))/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = content.match(pattern);
+    if (match && match[1] && match[1].length > 2) {
+      return match[1].trim();
+    }
+  }
+
+  return "Unknown Product";
+}
+
+/**
+ * Extract active ingredient from FDA content
+ */
+function extractActiveIngredient(content: string): string | undefined {
+  const match = content.match(/(?:active ingredient|contains)[:\s]+([A-Za-z0-9\s-]+?)(?:\s+(?:mg|mcg|is|for)|$)/i);
+  return match?.[1]?.trim();
+}
+
+/**
+ * Extract indication (approved use) from FDA content
+ */
+function extractIndication(content: string): string | undefined {
+  const match = content.match(/(?:indicated for|approved for|treatment of)[:\s]+([^.]+)/i);
+  return match?.[1]?.trim();
+}
+
 async function searchAdverseEvents(
   ctx: any,
   companyName: string,
@@ -504,15 +742,27 @@ async function searchRecalls(
 function determineFDAStatus(
   clearances: FDA510kClearance[],
   pmaApprovals: FDAPMAApproval[],
+  blaApprovals: FDABLAApproval[],
+  ndaApprovals: FDANDAApproval[],
   registrations: FDARegistration[],
   listings: FDADeviceListing[]
 ): FDAStatus {
-  // PMA is highest level of approval
+  // BLA is highest level for biologics (vaccines, gene therapy)
+  if (blaApprovals.length > 0) {
+    return "BLA Approved";
+  }
+
+  // NDA for pharmaceutical drugs
+  if (ndaApprovals.length > 0) {
+    return "NDA Approved";
+  }
+
+  // PMA for Class III medical devices
   if (pmaApprovals.length > 0) {
     return "PMA Approved";
   }
 
-  // 510(k) clearance
+  // 510(k) clearance for Class II devices
   if (clearances.length > 0) {
     const hasClearance = clearances.some(c => c.decision === "Substantially Equivalent");
     if (hasClearance) {
@@ -520,7 +770,7 @@ function determineFDAStatus(
     }
   }
 
-  // Only registered/listed (NOT cleared)
+  // Only registered/listed (NOT cleared/approved)
   if (registrations.length > 0 || listings.length > 0) {
     return "Registered/Listed Only";
   }
@@ -547,9 +797,24 @@ function checkStatusMatch(
     return actualStatus === "510(k) Cleared";
   }
 
-  // "Approved" could be PMA or cleared
-  if (claimedLower.includes("approved")) {
-    return actualStatus === "PMA Approved" || actualStatus === "510(k) Cleared";
+  // "Approved" or "FDA Approved" could match BLA, NDA, PMA, or 510(k) cleared
+  if (claimedLower.includes("approved") || claimedLower.includes("fda approved")) {
+    return (
+      actualStatus === "BLA Approved" ||
+      actualStatus === "NDA Approved" ||
+      actualStatus === "PMA Approved" ||
+      actualStatus === "510(k) Cleared"
+    );
+  }
+
+  // "Licensed" matches BLA
+  if (claimedLower.includes("licensed") || claimedLower.includes("bla")) {
+    return actualStatus === "BLA Approved";
+  }
+
+  // "NDA" matches NDA
+  if (claimedLower.includes("nda") || claimedLower.includes("new drug")) {
+    return actualStatus === "NDA Approved";
   }
 
   // "Registered" is different from cleared
@@ -563,7 +828,9 @@ function checkStatusMatch(
 function checkClearanceMatchesClaims(
   claimedStatus: string | undefined,
   clearances: FDA510kClearance[],
-  registrations: FDARegistration[]
+  registrations: FDARegistration[],
+  blaApprovals: FDABLAApproval[],
+  ndaApprovals: FDANDAApproval[]
 ): boolean {
   if (!claimedStatus) return true;
 
@@ -578,6 +845,15 @@ function checkClearanceMatchesClaims(
     return false; // Misrepresentation: registered ≠ cleared
   }
 
+  // If they claim "approved" and have BLA/NDA, that's valid
+  if (claimedLower.includes("approved")) {
+    return (
+      clearances.length > 0 ||
+      blaApprovals.length > 0 ||
+      ndaApprovals.length > 0
+    );
+  }
+
   return true;
 }
 
@@ -590,19 +866,28 @@ function generateFDARedFlags(
   actualStatus: FDAStatus,
   clearances: FDA510kClearance[],
   registrations: FDARegistration[],
+  blaApprovals: FDABLAApproval[],
+  ndaApprovals: FDANDAApproval[],
   recalls: FDARecall[],
   adverseEvents: FDAAdverseEvent[]
 ): FdaVerificationFindings["redFlags"] {
   const redFlags: FdaVerificationFindings["redFlags"] = [];
 
+  // Check if any approval exists
+  const hasAnyApproval =
+    clearances.length > 0 ||
+    blaApprovals.length > 0 ||
+    ndaApprovals.length > 0;
+
   // Status misrepresentation (CRITICAL)
   if (claimedStatus) {
     const claimedLower = claimedStatus.toLowerCase();
 
-    // Claiming "cleared" when only registered
+    // Claiming "cleared" when only registered (and no BLA/NDA)
     if (
       (claimedLower.includes("cleared") || claimedLower.includes("510(k)")) &&
-      actualStatus === "Registered/Listed Only"
+      actualStatus === "Registered/Listed Only" &&
+      !hasAnyApproval
     ) {
       redFlags.push({
         type: "status_misrepresentation",
@@ -611,15 +896,16 @@ function generateFDARedFlags(
       });
     }
 
-    // Claiming approval when not found - THIS IS MISREPRESENTATION
+    // Claiming approval when not found - but only if no BLA/NDA either
     if (
       (claimedLower.includes("cleared") || claimedLower.includes("approved")) &&
-      actualStatus === "Not Found"
+      actualStatus === "Not Found" &&
+      !hasAnyApproval
     ) {
       redFlags.push({
-        type: "status_misrepresentation",  // Use misrepresentation, not clearance_not_found
+        type: "status_misrepresentation",
         severity: "critical",
-        description: `Company claims "FDA ${claimedLower.includes("cleared") ? "Cleared" : "Approved"}" but NO FDA records found. This is a potential misrepresentation. Request the specific 510(k) K-number.`,
+        description: `Company claims "FDA ${claimedLower.includes("cleared") ? "Cleared" : "Approved"}" but NO FDA records found. This is a potential misrepresentation. Request documentation.`,
       });
     }
   }
@@ -771,6 +1057,8 @@ function calculateFDAConfidence(
   clearances: FDA510kClearance[],
   registrations: FDARegistration[],
   listings: FDADeviceListing[],
+  blaApprovals: FDABLAApproval[],
+  ndaApprovals: FDANDAApproval[],
   baseConfidence: number
 ): number {
   let confidence = baseConfidence;
@@ -778,6 +1066,8 @@ function calculateFDAConfidence(
   if (clearances.length > 0) confidence += 0.3;
   if (registrations.length > 0) confidence += 0.15;
   if (listings.length > 0) confidence += 0.1;
+  if (blaApprovals.length > 0) confidence += 0.35;
+  if (ndaApprovals.length > 0) confidence += 0.35;
 
   return Math.min(0.95, confidence);
 }
@@ -791,6 +1081,10 @@ function createEmptyFDAFindings(claimedStatus?: string): FdaVerificationFindings
     hasClearance: false,
     pmaApprovals: [],
     hasPMA: false,
+    blaApprovals: [],
+    hasBLA: false,
+    ndaApprovals: [],
+    hasNDA: false,
     registrations: [],
     deviceListings: [],
     isRegistered: false,
@@ -807,8 +1101,8 @@ function createEmptyFDAFindings(claimedStatus?: string): FdaVerificationFindings
       facilityInGoodStanding: false,
     },
     redFlags: claimedStatus ? [{
-      type: "status_misrepresentation",  // Use misrepresentation when claims can't be verified
-      severity: "critical",  // Upgraded to critical since they made a claim
+      type: "status_misrepresentation",
+      severity: "critical",
       description: `Company claims "${claimedStatus}" but no FDA records could be verified. This is a potential misrepresentation.`,
     }] : [],
     overallConfidence: 0.1,

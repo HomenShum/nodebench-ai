@@ -316,6 +316,7 @@ export const PERSONA_CONFIG = {
     "CORP_DEV",
     "LP_ALLOCATOR",
     "JOURNALIST",
+    "FOUNDER_STRATEGY",
   ] as const,
 
   /** Default persona for generic queries */
@@ -333,6 +334,7 @@ export const PERSONA_CONFIG = {
     CORP_DEV: ["m&a", "partnerships", "strategy"],
     LP_ALLOCATOR: ["funds", "allocation", "performance"],
     JOURNALIST: ["news", "media", "coverage"],
+    FOUNDER_STRATEGY: ["startups", "fundraising", "growth", "competition"],
   },
 
   /** Persona research cadences */
@@ -347,6 +349,7 @@ export const PERSONA_CONFIG = {
     CORP_DEV: "daily",
     LP_ALLOCATOR: "weekly",
     JOURNALIST: "continuous",
+    FOUNDER_STRATEGY: "daily",
   },
 } as const;
 

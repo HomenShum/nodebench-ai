@@ -6,6 +6,52 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ## Changelog
 
+### v0.3.5 (January 16, 2026)
+
+**🔬 Persona Evaluation System & Scientific Claim Verification**
+
+Major expansion of the evaluation framework with persona-specific ground truth testing and enhanced scientific claim verification.
+
+**Test Gap Fixes:**
+| Gap | Fix |
+|-----|-----|
+| LK-99 False Negative | Debunked superconductor (2023) was rated LOW risk - Added scientific claim verification branch |
+| Twitter/OpenAI False Positives | Legitimate companies flagged due to impersonation scam articles - Added context-aware scam detection |
+
+**New Evaluation Framework:**
+- **Unified Persona Harness** - Orchestrates evaluations across 11 personas in 5 groups
+- **Ground Truth Cases** - Real, verifiable data (SEC EDGAR, FRED, ClinicalTrials.gov)
+- **Scoring Framework** - 100-point normalized scoring with weighted categories and critical thresholds
+
+**Persona Groups:**
+| Group | Personas | Ground Truth Examples |
+|-------|----------|----------------------|
+| Financial | JPM Banker, LP Allocator, Quant PM, Early Stage VC | TechCorp Series B, Apex Fund |
+| Industry | Pharma BD, Academic R&D | Moderna mRNA-1345 (NCT05127434), CRISPR-Cas9 Nobel |
+| Strategic | Corp Dev, Macro Strategist, Founder/Strategy | J&J/Shockwave $13.1B acquisition, Fed Dec 2024 rates |
+| Technical | CTO/Tech Lead | CloudScale migration case |
+| Media | Journalist | ViralTech layoffs verification |
+
+**New Files:**
+- `convex/domains/evaluation/personas/` - Persona evaluation harnesses
+  - `unifiedPersonaHarness.ts` - Main evaluation orchestrator
+  - `types.ts` - Shared type definitions for all personas
+  - `financial/`, `industry/`, `strategic/`, `technical/`, `media/` - Per-group evaluators
+- `convex/domains/evaluation/scoring/` - Scoring framework
+  - `scoringFramework.ts` - Normalized scoring with weighted categories
+  - `personaWeights.ts` - Persona-specific category weights
+- `convex/domains/evaluation/inference/` - Persona inference evaluation
+
+**TypeScript Fixes (103 errors resolved):**
+- Added `FOUNDER_STRATEGY` persona to all config mappings
+- Fixed `PersonaEvalResult` interface with optional properties
+- Fixed `ScoringCategory` property names (`isCritical`, `name`)
+- Fixed `PersonaScoringConfig.passingThreshold` property name
+- Added `PersonaId` type casting in harness functions
+- Fixed ground truth enum values (dealStatus, dealType, phase)
+
+---
+
 ### v0.3.4 (January 16, 2026)
 
 **🚀 Enhanced Verification & TypeScript Fixes**

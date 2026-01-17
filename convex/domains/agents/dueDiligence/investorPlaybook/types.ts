@@ -19,15 +19,29 @@ import { DDSource, SourceReliability, SourceType } from "../types";
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const INVESTOR_PLAYBOOK_BRANCHES = [
+  // Core verification branches
   "entity_verification",
   "sec_edgar",
   "finra_validation",
   "fda_verification",
   "uspto_deepdive",
   "money_flow_integrity",
-  "claim_verification",     // New: Verifies specific claims from complex queries
-  "person_verification",    // New: Verifies person identity and professional background
-  "news_verification",      // New: Verifies news/acquisition events
+  "claim_verification",     // Verifies specific claims from complex queries
+  "person_verification",    // Verifies person identity and professional background
+  "news_verification",      // Verifies news/acquisition events
+  "scientific_claim_verification", // Verifies scientific/research claims (LK-99, cold fusion, etc.)
+
+  // Financial persona branches (Banker, VC, LP)
+  "deal_memo_synthesis",           // Generates deal memos for bankers/VCs
+  "fund_performance_verification", // Verifies fund TVPI/DPI/IRR for LP due diligence
+
+  // Industry persona branches (Pharma BD, Academic R&D)
+  "clinical_trial_verification",   // Verifies ClinicalTrials.gov data
+  "literature_triangulation",      // Cross-references academic literature
+
+  // Strategic persona branches (Corp Dev, Macro Strategist)
+  "ma_activity_verification",      // Verifies M&A deal facts
+  "economic_indicator_verification", // Validates macro indicators vs FRED/BLS
 ] as const;
 
 export type InvestorPlaybookBranchType = typeof INVESTOR_PLAYBOOK_BRANCHES[number];
@@ -310,6 +324,9 @@ export type FDAStatus =
   | "510(k) Cleared"
   | "PMA Approved"
   | "De Novo Granted"
+  | "BLA Approved"           // Biologics License Application (vaccines, gene therapy, blood products)
+  | "NDA Approved"           // New Drug Application (pharmaceutical drugs)
+  | "ANDA Approved"          // Abbreviated New Drug Application (generics)
   | "Registered/Listed Only"
   | "Pending Review"
   | "Not Found"
@@ -339,6 +356,41 @@ export interface FDAPMAApproval {
     approvalDate: string;
     type: string;
   }>;
+}
+
+/**
+ * BLA (Biologics License Application) Approval
+ * Used for vaccines, gene therapies, blood products, allergenics, etc.
+ * Approved via Drugs@FDA and Purple Book databases
+ */
+export interface FDABLAApproval {
+  blaNumber: string;            // e.g., "BLA 125742"
+  productName: string;          // e.g., "mRESVIA"
+  applicant: string;            // e.g., "Moderna"
+  approvalDate: string;
+  activeIngredient?: string;
+  dosageForm?: string;
+  routeOfAdministration?: string;
+  indication?: string;          // What it's approved to treat
+  therapeuticArea?: string;
+  isOriginalApproval: boolean;  // vs. supplemental approval
+}
+
+/**
+ * NDA (New Drug Application) Approval
+ * Used for new pharmaceutical drugs
+ */
+export interface FDANDAApproval {
+  ndaNumber: string;            // e.g., "NDA 215510"
+  productName: string;
+  applicant: string;
+  approvalDate: string;
+  activeIngredient?: string;
+  dosageForm?: string;
+  routeOfAdministration?: string;
+  indication?: string;
+  therapeuticEquivalenceCode?: string;
+  isOriginalApproval: boolean;
 }
 
 export interface FDARegistration {
@@ -385,13 +437,21 @@ export interface FdaVerificationFindings {
   actualStatus: FDAStatus;
   statusMatchesClaims: boolean;
 
-  // 510(k) clearances
+  // 510(k) clearances (medical devices)
   clearances: FDA510kClearance[];
   hasClearance: boolean;
 
-  // PMA approvals
+  // PMA approvals (Class III devices)
   pmaApprovals: FDAPMAApproval[];
   hasPMA: boolean;
+
+  // BLA approvals (biologics: vaccines, gene therapy, blood products)
+  blaApprovals: FDABLAApproval[];
+  hasBLA: boolean;
+
+  // NDA approvals (pharmaceutical drugs)
+  ndaApprovals: FDANDAApproval[];
+  hasNDA: boolean;
 
   // Registration & Listing (different from clearance!)
   registrations: FDARegistration[];
@@ -670,6 +730,7 @@ export interface InvestorPlaybookSynthesis {
   // Entity being evaluated
   entityName: string;
   evaluationDate: number;
+  executiveSummary?: string; // For persona evaluation scoring
 
   // Branch findings
   entityVerification?: EntityVerificationFindings;
@@ -862,6 +923,98 @@ export interface NewsVerificationFindings {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PHASE 10: SCIENTIFIC CLAIM VERIFICATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Status of a scientific claim after verification
+ */
+export type ScientificClaimStatus =
+  | "peer_reviewed_verified"  // Published in peer-reviewed journal AND independently replicated
+  | "peer_reviewed"           // Published in peer-reviewed journal, not yet replicated
+  | "preprint_only"           // Only exists as preprint (arXiv, etc.)
+  | "replication_failed"      // Independent replication attempts have FAILED
+  | "retracted"               // Paper has been retracted
+  | "debunked"                // Scientific community consensus is that claim is false
+  | "unverified";             // No scientific evidence found
+
+/**
+ * Peer review status of research
+ */
+export type PeerReviewStatus =
+  | "peer_reviewed"           // Published in peer-reviewed journal
+  | "preprint"                // Only available as preprint
+  | "not_submitted";          // No papers found
+
+/**
+ * A scientific claim to verify
+ */
+export interface ScientificClaim {
+  claim: string;
+  claimType: "breakthrough" | "discovery" | "treatment" | "technology" | "material" | "other";
+  status: ScientificClaimStatus;
+  peerReviewStatus: PeerReviewStatus;
+  replicationStatus: "replicated" | "failed" | "partial" | "not_attempted";
+  hasBeenRetracted: boolean;
+  hasBeenDebunked: boolean;
+  evidence: {
+    supporting: string[];
+    contradicting: string[];
+  };
+  scientificConsensus?: string;
+  sources: Array<{
+    title: string;
+    url?: string;
+    type: "arxiv" | "pubmed" | "journal" | "news" | "retraction_watch";
+    date?: string;
+  }>;
+}
+
+/**
+ * Record of a replication study
+ */
+export interface ReplicationStudy {
+  studyTitle: string;
+  authors: string[];
+  institution?: string;
+  date?: string;
+  result: "success" | "failure" | "partial";
+  summary: string;
+  sourceUrl?: string;
+}
+
+/**
+ * Record of a paper retraction
+ */
+export interface RetractionRecord {
+  paperTitle: string;
+  journal?: string;
+  retractionDate?: string;
+  reason?: string;
+  type: "retraction" | "correction" | "withdrawal" | "expression_of_concern";
+  sourceUrl?: string;
+}
+
+/**
+ * Findings from scientific claim verification
+ */
+export interface ScientificClaimVerificationFindings {
+  claims: ScientificClaim[];
+  overallStatus: ScientificClaimStatus;
+  peerReviewedPapers: number;
+  preprints: number;
+  replicationStudies: ReplicationStudy[];
+  retractions: RetractionRecord[];
+  scientificConsensus?: string;
+  redFlags: Array<{
+    type: "claim_debunked" | "paper_retracted" | "replication_failure" | "no_peer_review" | "no_replication" | "conflicting_evidence" | "no_evidence";
+    severity: "low" | "medium" | "high" | "critical";
+    description: string;
+  }>;
+  overallConfidence: number;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // BRANCH TRIGGER CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -889,6 +1042,37 @@ export interface PlaybookComplexitySignals extends ComplexitySignals {
   acquisitionMentioned?: boolean;     // Query mentions acquisition
   newsEventMentioned?: boolean;       // Query mentions news event to verify
   companiesInvolved?: string[];       // Companies involved in acquisition/news
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PERSONA-SPECIFIC SIGNALS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Current persona (from inference)
+  persona?: string;
+  entityType?: "company" | "fund" | "person" | "event" | "research_signal";
+
+  // Financial persona signals (Banker, VC, LP)
+  dealMemoRequested?: boolean;           // Request for deal memo generation
+  fundPerformanceRequested?: boolean;    // Request for fund performance verification
+  claimedTVPI?: number;                  // Claimed TVPI to verify
+  claimedDPI?: number;                   // Claimed DPI to verify
+  claimedIRR?: number;                   // Claimed IRR to verify
+
+  // Industry persona signals (Pharma BD, Academic R&D)
+  clinicalTrialMentioned?: boolean;      // Clinical trial verification needed
+  nctIdMentioned?: string;               // ClinicalTrials.gov NCT ID
+  academicResearchMentioned?: boolean;   // Academic research verification needed
+  literatureReviewRequested?: boolean;   // Cross-reference literature needed
+
+  // Strategic persona signals (Corp Dev, Macro Strategist)
+  maActivityRequested?: boolean;         // M&A activity verification needed
+  economicThesisRequested?: boolean;     // Economic thesis validation needed
+  macroIndicatorsMentioned?: boolean;    // Macro indicators verification needed
+
+  // Scientific claim verification signals
+  hasScientificClaims?: boolean;         // Query contains scientific/research claims
+  claimedScientificDiscovery?: string;   // Specific scientific claim (e.g., "room-temperature superconductor")
+  researchArea?: string;                 // Area of research (physics, biology, etc.)
 }
 
 export const PLAYBOOK_BRANCH_TRIGGERS: Record<
@@ -950,4 +1134,56 @@ export const PLAYBOOK_BRANCH_TRIGGERS: Record<
   news_verification: (signals) =>
     Boolean(signals.acquisitionMentioned) ||
     Boolean(signals.newsEventMentioned),
+
+  // Scientific claim verification: Run when query contains scientific/research claims
+  // CRITICAL for detecting debunked claims like LK-99 superconductor
+  scientific_claim_verification: (signals) =>
+    Boolean(signals.hasScientificClaims) ||
+    Boolean(signals.claimedScientificDiscovery) ||
+    Boolean(signals.academicResearchMentioned) ||
+    signals.sectors?.some(s =>
+      ["DeepTech", "Biotech", "Pharma", "Physics", "Materials Science", "Quantum"].includes(s)
+    ) || false,
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PERSONA-SPECIFIC BRANCH TRIGGERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Deal memo synthesis: Run for banker/VC personas or funding analysis
+  deal_memo_synthesis: (signals) =>
+    signals.persona === "JPM_STARTUP_BANKER" ||
+    signals.persona === "EARLY_STAGE_VC" ||
+    Boolean(signals.dealMemoRequested),
+
+  // Fund performance verification: Run for LP allocator persona
+  fund_performance_verification: (signals) =>
+    signals.persona === "LP_ALLOCATOR" ||
+    Boolean(signals.fundPerformanceRequested) ||
+    signals.entityType === "fund",
+
+  // Clinical trial verification: Run for pharma BD persona
+  clinical_trial_verification: (signals) =>
+    signals.persona === "PHARMA_BD" ||
+    Boolean(signals.clinicalTrialMentioned) ||
+    signals.sectors?.some(s =>
+      ["Pharma", "Biotech", "Clinical"].includes(s)
+    ) || false,
+
+  // Literature triangulation: Run for academic R&D persona
+  literature_triangulation: (signals) =>
+    signals.persona === "ACADEMIC_RD" ||
+    Boolean(signals.academicResearchMentioned) ||
+    Boolean(signals.literatureReviewRequested),
+
+  // M&A activity verification: Run for corp dev persona
+  ma_activity_verification: (signals) =>
+    signals.persona === "CORP_DEV" ||
+    Boolean(signals.acquisitionMentioned) ||
+    Boolean(signals.maActivityRequested),
+
+  // Economic indicator verification: Run for macro strategist persona
+  economic_indicator_verification: (signals) =>
+    signals.persona === "MACRO_STRATEGIST" ||
+    Boolean(signals.macroIndicatorsMentioned) ||
+    Boolean(signals.economicThesisRequested),
 };

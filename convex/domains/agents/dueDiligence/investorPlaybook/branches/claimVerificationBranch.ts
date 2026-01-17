@@ -210,6 +210,32 @@ function analyzeEvidence(
     }
   }
 
+  // Scientific claim skepticism patterns (LK-99, cold fusion, etc.)
+  const scienceSkepticismPatterns = [
+    /could\s+not\s+(?:be\s+)?replic|fail(?:ed|ure)?\s+to\s+replic|replication\s+fail/i,
+    /not\s+reproduc|cannot\s+reproduc|unable\s+to\s+reproduc/i,
+    /retract(?:ed|ion)|paper\s+(?:was\s+)?withdrawn/i,
+    /violat(?:es?|ed|ion)\s+(?:the\s+)?(?:laws?\s+of\s+)?(?:physics|thermodynamics|conservation)/i,
+    /pseudoscien(?:ce|tific)|junk\s+science|fringe\s+science/i,
+    /extraordinary\s+claim|too\s+good\s+to\s+be\s+true/i,
+    /scientific\s+consensus\s+(?:is\s+)?(?:against|contradicts)/i,
+    /no\s+(?:credible\s+)?(?:peer[- ]?reviewed?\s+)?evidence/i,
+    /preprint.*not\s+(?:yet\s+)?peer[- ]?review/i,
+    /experts?\s+(?:are\s+)?skeptic|widespread\s+skepticism/i,
+    /perpetual\s+motion|over[- ]?unity|free\s+energy/i,
+    /room[- ]?temperature\s+superconductor.*(?:claim|fail|debunk|skeptic)/i,
+    /cold\s+fusion.*(?:claim|fail|debunk)/i,
+    /later\s+(?:shown|proven|found)\s+to\s+be\s+(?:false|incorrect|wrong)/i,
+  ];
+
+  // Check for scientific skepticism indicators
+  for (const pattern of scienceSkepticismPatterns) {
+    if (pattern.test(combinedEvidence)) {
+      console.log(`[ClaimVerification] Scientific skepticism pattern matched: ${pattern}`);
+      return { status: "contradicted", confidence: "contradicted" };
+    }
+  }
+
   // Check for confirming signals
   if (evidence.length >= 2) {
     return { status: "verified", confidence: "high" };

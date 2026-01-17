@@ -181,6 +181,17 @@ const PERSONA_RESEARCH_STRATEGIES: Record<
     prioritySignals: ["breaking announcement", "exclusive", "trend emergence"],
     outputFormat: "Story brief with angle, sources, and context",
   },
+  FOUNDER_STRATEGY: {
+    focusAreas: ["competitive landscape", "market positioning", "growth strategy"],
+    searchPatterns: [
+      "competitor analysis",
+      "market opportunity",
+      "growth strategy",
+      "founder playbook",
+    ],
+    prioritySignals: ["competitor move", "market shift", "strategy pivot"],
+    outputFormat: "Strategic brief with competitive position, opportunities, and risks",
+  },
 };
 
 /* ================================================================== */
