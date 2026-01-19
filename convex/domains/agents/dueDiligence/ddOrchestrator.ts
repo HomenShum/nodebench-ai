@@ -30,6 +30,9 @@ import {
   Contradiction,
   DDSource,
   Verdict,
+  MicroBranchType,
+  RISK_BASED_BRANCHES,
+  DDTier,
 } from "./types";
 
 // Import actual branch handlers
@@ -111,7 +114,8 @@ async function withRetry<T>(
 // ============================================================================
 
 /**
- * Start a due diligence job - main entry point
+ * Start a due diligence job - main entry point.
+ * Now supports tiered DD with branchOverride for automatic tier selection.
  */
 export const startDueDiligenceJob = action({
   args: {
@@ -128,14 +132,34 @@ export const startDueDiligenceJob = action({
     triggerEncounterId: v.optional(v.id("encounterEvents")),
     entityId: v.optional(v.id("entityContexts")),
     userId: v.id("users"),
+    // NEW: Tiered DD support
+    ddTier: v.optional(v.union(
+      v.literal("FULL_PLAYBOOK"),
+      v.literal("STANDARD_DD"),
+      v.literal("LIGHT_DD"),
+      v.literal("FAST_VERIFY")
+    )),
+    branchOverride: v.optional(v.array(v.string())),
+    // NEW: Risk scoring metadata (v3)
+    riskScore: v.optional(v.number()),
+    escalationTriggers: v.optional(v.array(v.string())),
+    // NEW: Micro-branches for fast checks
+    microBranches: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    console.log(`[DD] Starting due diligence for ${args.entityName} (${args.entityType})`);
+    const tierLabel = args.ddTier ?? "FULL_PLAYBOOK";
+    console.log(`[DD] Starting ${tierLabel} due diligence for ${args.entityName} (${args.entityType})`);
+    if (args.branchOverride) {
+      console.log(`[DD] Using branch override: ${args.branchOverride.join(", ")}`);
+    }
 
-    // 1. Create the job
+    // 1. Create the job (pass tier info)
     const { jobId, existing } = await ctx.runMutation(
       internal.domains.agents.dueDiligence.ddMutations.createDDJobInternal,
-      args
+      {
+        ...args,
+        ddTier: tierLabel,
+      }
     );
 
     if (existing) {
@@ -143,23 +167,56 @@ export const startDueDiligenceJob = action({
       return { jobId, status: "existing" };
     }
 
-    // 2. Schedule the execution action
+    // 2. Determine micro-branches based on tier
+    const microBranchesToRun: MicroBranchType[] = args.microBranches
+      ? (args.microBranches as MicroBranchType[])
+      : RISK_BASED_BRANCHES[tierLabel as DDTier] ?? [];
+
+    console.log(`[DD] Micro-branches for ${tierLabel}: ${microBranchesToRun.join(", ")}`);
+
+    // 3. Schedule the execution action (pass branchOverride and microBranches)
     await ctx.scheduler.runAfter(
       0,
       internal.domains.agents.dueDiligence.ddOrchestrator.executeDDJob,
-      { jobId }
+      {
+        jobId,
+        branchOverride: args.branchOverride,
+        microBranches: microBranchesToRun,
+        riskScore: args.riskScore,
+        escalationTriggers: args.escalationTriggers,
+      }
     );
 
-    return { jobId, status: "started" };
+    return {
+      jobId,
+      status: "started",
+      tier: tierLabel,
+      microBranchCount: microBranchesToRun.length,
+    };
   },
 });
 
 /**
- * Execute DD job - internal action that runs the full pipeline
+ * Execute DD job - internal action that runs the full pipeline.
+ * Now supports branchOverride for tiered DD and micro-branches for fast checks.
+ *
+ * Pipeline:
+ * 1. Analyze complexity signals
+ * 2. Run micro-branches (fast, parallel pre-checks)
+ * 3. Spawn full DD branches
+ * 4. Execute branches in parallel
+ * 5. Cross-check findings
+ * 6. Synthesize memo
  */
 export const executeDDJob = internalAction({
-  args: { jobId: v.string() },
-  handler: async (ctx, { jobId }) => {
+  args: {
+    jobId: v.string(),
+    branchOverride: v.optional(v.array(v.string())),
+    microBranches: v.optional(v.array(v.string())),
+    riskScore: v.optional(v.number()),
+    escalationTriggers: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, { jobId, branchOverride, microBranches, riskScore, escalationTriggers }) => {
     const startTime = Date.now();
 
     try {
@@ -177,17 +234,58 @@ export const executeDDJob = internalAction({
         { jobId, status: "analyzing", complexitySignals: signals }
       );
 
-      // Phase 2: Determine branches and spawn them
-      console.log(`[DD] Phase 2: Spawning branches for ${jobId}`);
-      const branchesToSpawn = determineBranches(signals);
-
-      // Get job details
+      // Get job details early (needed for micro-branches)
       const job = await ctx.runQuery(
         internal.domains.agents.dueDiligence.ddMutations.getDDJobInternal,
         { jobId }
       );
 
       if (!job) throw new Error("Job not found after creation");
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Phase 1.5: Run micro-branches (fast parallel pre-checks)
+      // These run even for FAST_VERIFY tier to catch fraud indicators early
+      // ─────────────────────────────────────────────────────────────────────────
+      let microBranchResults: any = null;
+
+      if (microBranches && microBranches.length > 0) {
+        console.log(`[DD] Phase 1.5: Running ${microBranches.length} micro-branches for ${jobId}`);
+        console.log(`[DD] Micro-branches: ${microBranches.join(", ")}`);
+
+        try {
+          microBranchResults = await ctx.runAction(
+            internal.domains.agents.dueDiligence.microBranches.runMicroBranches,
+            {
+              companyName: job.entityName,
+              branches: microBranches,
+              websiteUrl: (job as any).websiteUrl,
+              founderNames: (job as any).founderNames,
+              sourceUrl: (job as any).sourceUrl,
+            }
+          );
+
+          console.log(`[DD] Micro-branch results for ${jobId}:`);
+          console.log(`  Overall: ${microBranchResults.overallStatus}`);
+          console.log(`  Pass: ${microBranchResults.passCount}, Warn: ${microBranchResults.warnCount}, Fail: ${microBranchResults.failCount}`);
+          console.log(`  Time: ${microBranchResults.totalTimeMs}ms`);
+
+          // Log escalation if micro-branches found issues
+          if (microBranchResults.overallStatus === "fail") {
+            console.log(`[DD] ⚠️ MICRO-BRANCH FAILURE: ${job.entityName} flagged by fast checks`);
+          }
+        } catch (error) {
+          console.warn(`[DD] Micro-branch execution failed, continuing with full DD:`, error);
+        }
+      }
+
+      // Phase 2: Determine branches and spawn them
+      // Use branchOverride if provided (tiered DD), otherwise use signal-based selection
+      console.log(`[DD] Phase 2: Spawning branches for ${jobId}`);
+      const branchesToSpawn: BranchType[] = branchOverride
+        ? (branchOverride as BranchType[])
+        : determineBranches(signals);
+
+      console.log(`[DD] Branches to spawn: ${branchesToSpawn.join(", ")} (${branchOverride ? "tier override" : "signal-based"})`);
 
       // Create parallel task tree for integration
       const { treeId, rootTaskId } = await ctx.runMutation(

@@ -6,9 +6,12 @@
  */
 
 import { v } from "convex/values";
-import { query } from "../../_generated/server";
+import { query as queryBase } from "../../_generated/server";
 import type { Id, Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+// Avoid TS2589 "excessively deep" instantiations in dashboard-only queries.
+const query = queryBase as any;
 
 /**
  * Get aggregated agent statistics

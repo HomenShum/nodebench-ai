@@ -64,14 +64,14 @@ export const activateTools = createTool({
           tools: args.tools,
           categories: args.categories,
         },
-      });
-      
-      if (result.success) {
-        const activated = [];
+       });
+       
+       if (result.success) {
+        const activated: string[] = [];
         if (args.tools) activated.push(`${args.tools.length} tools`);
         if (args.categories) activated.push(`${args.categories.length} categories`);
         return `Successfully activated ${activated.join(" and ")}`;
-      }
+       }
       
       return `Failed to activate tools: ${result.error}`;
     } catch (error: any) {
@@ -79,4 +79,3 @@ export const activateTools = createTool({
     }
   },
 });
-

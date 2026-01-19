@@ -53,7 +53,7 @@ export const findAllUsersByEmail = query({
       .filter((q) => q.eq(q.field("email"), args.email))
       .collect() as Doc<"users">[];
 
-    const results = [];
+    const results: any[] = [];
     for (const user of users) {
       const googleAccount = await ctx.db
         .query("googleAccounts")
@@ -190,7 +190,7 @@ export const listGmailUsers = query({
       .query("googleAccounts")
       .collect() as Doc<"googleAccounts">[];
 
-    const results = [];
+    const results: any[] = [];
 
     for (const account of googleAccounts) {
       const user = await ctx.db.get(account.userId) as Doc<"users"> | null;

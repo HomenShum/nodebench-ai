@@ -114,7 +114,18 @@ export function briefToScrollySections(brief: DailyBriefPayload): Array<{
     activeRegion: string;
   };
 }> {
-  const sections = [];
+  type ScrollySection = {
+    id: string;
+    meta: { date: string; title: string };
+    content: { body: string[]; deepDives: Array<{ title: string; content: string }> };
+    dashboard: {
+      phaseLabel: string;
+      kpis: Array<{ label: string; value: number; unit: string; color: string }>;
+      marketSentiment: number;
+      activeRegion: string;
+    };
+  };
+  const sections: ScrollySection[] = [];
 
   // Act I - Setup
   sections.push({

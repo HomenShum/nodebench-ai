@@ -102,18 +102,39 @@ export const linkupFetch = action({
           console.log(`[linkupFetch] 🎯 Cache HIT for: "${args.url}" (age: ${Math.round(cached.ageMs / 1000)}s)`);
           try {
             const contentHash = sha256Hex(cached.response);
-            await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+
+            let storageId: string | undefined;
+            if (cached.response.length >= STORE_TO_STORAGE_CHARS) {
+              const blob = new Blob([cached.response], { type: "text/markdown; charset=utf-8" });
+              storageId = await ctx.storage.store(blob);
+            }
+
+            const artifactResult = await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
               sourceType: "url_fetch",
               sourceUrl: args.url,
               contentHash,
-              rawContent: truncateForDb(cached.response),
+              rawContent: storageId ? truncateForDb(cached.response) : cached.response,
+              rawStorageId: storageId as any,
+              mimeType: "text/markdown; charset=utf-8",
+              sizeBytes: cached.response.length,
               extractedData: {
                 tool: "linkupFetch",
                 cacheHit: true,
                 cacheAgeMs: cached.ageMs,
+                storageId,
+                contentLength: cached.response.length,
               },
               fetchedAt,
             });
+
+            const hasAnyChunk = await ctx.runQuery(internal.domains.artifacts.evidenceSearch.countChunksForArtifact, {
+              artifactId: artifactResult.id,
+            });
+            if (hasAnyChunk === 0) {
+              await ctx.scheduler.runAfter(0, internal.domains.artifacts.evidenceIndexActions.indexArtifact, {
+                artifactId: artifactResult.id,
+              });
+            }
           } catch (artifactErr) {
             console.warn("[linkupFetch] Failed to persist sourceArtifact from cache hit", artifactErr);
           }
@@ -220,39 +241,46 @@ export const linkupFetch = action({
       // Persist durable snapshot for citations / replayability.
       try {
         const contentHash = sha256Hex(result);
-        const existing = await ctx.runQuery(internal.domains.artifacts.sourceArtifacts.findByUrlAndHash, {
+
+        let storageId: string | undefined;
+        if (result.length >= STORE_TO_STORAGE_CHARS) {
+          const blob = new Blob([result], { type: "text/markdown; charset=utf-8" });
+          storageId = await ctx.storage.store(blob);
+        }
+
+        const artifactResult = await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+          sourceType: "url_fetch",
           sourceUrl: args.url,
           contentHash,
+          rawContent: storageId ? truncateForDb(result) : result,
+          rawStorageId: storageId as any,
+          mimeType: "text/markdown; charset=utf-8",
+          sizeBytes: result.length,
+          title: data.title,
+          extractedData: {
+            tool: "linkupFetch",
+            cacheHit: false,
+            jsRendered: renderJs,
+            title: data.title,
+            description: data.description,
+            author: data.author,
+            publishedDate: data.publishedDate,
+            siteName: data.siteName,
+            language: data.language,
+            images: data.images,
+            includeRawHtml: args.includeRawHtml ?? false,
+            storageId,
+            contentLength: result.length,
+          },
+          fetchedAt,
         });
 
-        if (!existing) {
-          let storageId: string | undefined;
-          if (result.length >= STORE_TO_STORAGE_CHARS) {
-            const blob = new Blob([result], { type: "text/markdown; charset=utf-8" });
-            storageId = await ctx.storage.store(blob);
-          }
-
-          await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
-            sourceType: "url_fetch",
-            sourceUrl: args.url,
-            contentHash,
-            rawContent: storageId ? truncateForDb(result) : result,
-            extractedData: {
-              tool: "linkupFetch",
-              cacheHit: false,
-              jsRendered: renderJs,
-              title: data.title,
-              description: data.description,
-              author: data.author,
-              publishedDate: data.publishedDate,
-              siteName: data.siteName,
-              language: data.language,
-              images: data.images,
-              includeRawHtml: args.includeRawHtml ?? false,
-              storageId,
-              contentLength: result.length,
-            },
-            fetchedAt,
+        const hasAnyChunk = await ctx.runQuery(internal.domains.artifacts.evidenceSearch.countChunksForArtifact, {
+          artifactId: artifactResult.id,
+        });
+        if (hasAnyChunk === 0) {
+          await ctx.scheduler.runAfter(0, internal.domains.artifacts.evidenceIndexActions.indexArtifact, {
+            artifactId: artifactResult.id,
           });
         }
       } catch (artifactErr) {
@@ -313,6 +341,59 @@ export const linkupFetch = action({
 
       throw error;
     }
+  },
+});
+
+/**
+ * Fetch via Linkup but return a compact handle (artifactId + preview), not the full content.
+ * Useful for progressive disclosure + evidence-based workflows.
+ */
+export const linkupFetchEvidence = action({
+  args: {
+    url: v.string(),
+    renderJs: v.optional(v.boolean()),
+    includeRawHtml: v.optional(v.boolean()),
+    extractImages: v.optional(v.boolean()),
+    forceRefresh: v.optional(v.boolean()),
+    maxPreviewChars: v.optional(v.number()),
+  },
+  returns: v.object({
+    url: v.string(),
+    artifactId: v.optional(v.id("sourceArtifacts")),
+    fetchedAt: v.optional(v.number()),
+    contentHash: v.string(),
+    contentLength: v.number(),
+    title: v.optional(v.string()),
+    preview: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const content = await ctx.runAction(internal.tools.media.linkupFetch.linkupFetch, {
+      url: args.url,
+      renderJs: args.renderJs,
+      includeRawHtml: args.includeRawHtml,
+      extractImages: args.extractImages,
+      forceRefresh: args.forceRefresh,
+    });
+
+    const contentHash = sha256Hex(content);
+    const artifact = await ctx.runQuery(internal.domains.artifacts.sourceArtifacts.findByUrlAndHash, {
+      sourceUrl: args.url,
+      contentHash,
+    });
+
+    const maxPreviewChars = Math.max(200, Math.min(args.maxPreviewChars ?? 1500, 5000));
+    const titleMatch = content.match(/^#\\s+(.+)$/m);
+    const title = titleMatch ? titleMatch[1].trim() : undefined;
+
+    return {
+      url: args.url,
+      artifactId: artifact?._id,
+      fetchedAt: artifact?.fetchedAt,
+      contentHash,
+      contentLength: content.length,
+      title,
+      preview: content.slice(0, maxPreviewChars),
+    };
   },
 });
 

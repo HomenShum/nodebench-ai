@@ -159,7 +159,7 @@ export const generatePersonaLensesBatch = internalAction({
 
     // Filter to those without lenses (in practice, we'd have a query for this)
     const blipsToProcess = allBlips.slice(0, limit);
-    const results = [];
+    const results: any[] = [];
 
     for (const blip of blipsToProcess) {
       try {

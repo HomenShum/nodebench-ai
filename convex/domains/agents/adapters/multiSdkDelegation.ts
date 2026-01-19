@@ -31,10 +31,15 @@ async function ensureDefaults(): Promise<void> {
   await ensureDefaultAdaptersRegistered();
 }
 
+function createToolLoose(config: any) {
+  // Avoid TS2589 "excessively deep" from Zod inference + tool generics.
+  return createTool(config as any) as any;
+}
+
 /**
  * Tool to delegate a task to a specific SDK adapter
  */
-export const delegateToSdkAdapter = createTool({
+export const delegateToSdkAdapter = createToolLoose({
   description: `Delegate a task to a specific SDK adapter. Available adapters can be discovered with listSdkAdapters.
 
 Use this when you need:
@@ -85,7 +90,7 @@ Use this when you need:
 /**
  * Tool to auto-route a query to the best SDK based on content
  */
-export const autoRouteToSdk = createTool({
+export const autoRouteToSdk = createToolLoose({
   description: `Automatically route a query to the most appropriate SDK based on the task type.
 
 Routing rules:
@@ -134,7 +139,7 @@ Routing rules:
 /**
  * Tool to list all available SDK adapters
  */
-export const listSdkAdapters = createTool({
+export const listSdkAdapters = createToolLoose({
   description: "List all registered SDK adapters with their capabilities",
   args: z.object({
     sdkFilter: z
@@ -160,7 +165,7 @@ export const listSdkAdapters = createTool({
 /**
  * Tool to execute multiple tasks across different SDKs in parallel
  */
-export const parallelSdkExecution = createTool({
+export const parallelSdkExecution = createToolLoose({
   description: `Execute multiple tasks across different SDK adapters in parallel.
 
 Example use cases:
@@ -207,7 +212,7 @@ Example use cases:
 /**
  * Tool to perform a cross-SDK handoff
  */
-export const crossSdkHandoff = createTool({
+export const crossSdkHandoff = createToolLoose({
   description: `Hand off a task from one SDK adapter to another with full context transfer.
 
 Use this when:
@@ -258,7 +263,7 @@ Use this when:
 /**
  * Tool to use Anthropic extended thinking for complex reasoning
  */
-export const useExtendedThinking = createTool({
+export const useExtendedThinking = createToolLoose({
   description: `Use Anthropic Claude with extended thinking for complex reasoning tasks.
 
 Best for:
@@ -321,7 +326,7 @@ Best for:
 /**
  * Tool to create a triage flow with OpenAI Agents SDK
  */
-export const createTriageFlow = createTool({
+export const createTriageFlow = createToolLoose({
   description: `Create and execute a triage flow using OpenAI Agents SDK.
 
 The triage agent routes the query to the appropriate specialist based on content.

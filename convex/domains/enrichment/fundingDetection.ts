@@ -359,7 +359,12 @@ export const processFeedItemForFunding = internalAction({
     const companyName = extractCompanyName(feedItem.title);
 
     // If we have a URL, fetch full content for better extraction
-    let enrichedData = null;
+    let enrichedData: {
+      fullContentFetched: boolean;
+      amountRaw: string | undefined;
+      amountUsd: number | undefined;
+      leadInvestors: string[];
+    } | null = null;
     if (feedItem.url) {
       try {
         const fullContent = await ctx.runAction(

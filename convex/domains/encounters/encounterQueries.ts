@@ -99,7 +99,7 @@ export const getEncounterWithEnrichment = query({
     }
 
     // Fetch linked entity contexts for participants and companies
-    const entityContexts = [];
+    const entityContexts: any[] = [];
     for (const participant of encounter.participants) {
       if (participant.linkedEntityId) {
         const context = await ctx.db.get(participant.linkedEntityId);

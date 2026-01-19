@@ -47,13 +47,21 @@ export const runStartupFundingBrief = action({
     profiles: v.optional(v.array(v.any())),
     errors: v.optional(v.array(v.string())),
     reason: v.optional(v.string()),
-    // NEW: Deduplication info
+    // Deduplication info
     skippedDuplicates: v.optional(v.array(v.string())),
     progressions: v.optional(v.array(v.object({
       company: v.string(),
       previousUrl: v.string(),
       previousRound: v.string(),
     }))),
+    // Fast verification summary
+    verificationSummary: v.optional(v.object({
+      total: v.number(),
+      verified: v.number(),
+      partial: v.number(),
+      unverified: v.number(),
+      noVerification: v.number(),
+    })),
   }),
   handler: async (ctx, args) => {
     return await ctx.runAction(internal.workflows.dailyLinkedInPost.postStartupFundingBrief, {

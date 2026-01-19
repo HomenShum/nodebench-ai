@@ -976,7 +976,7 @@ export const addSampleTools = internalMutation({
     if (!server) return null;
 
     const now = Date.now();
-    const sampleTools = [];
+    const sampleTools: Array<{ name: string; description: string; schema: any }> = [];
 
     // Add different sample tools based on server name/type
     if (server.name.toLowerCase().includes("tavily")) {

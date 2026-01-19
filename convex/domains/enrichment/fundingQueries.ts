@@ -331,7 +331,12 @@ export const getAllFundingForBrief = query({
     // Fetch associated entity data for enrichment (only for limited set)
     const enrichedEvents = await Promise.all(
       limitedEvents.map(async (event: Doc<"fundingEvents">) => {
-        let entityData = null;
+        let entityData: {
+          name: any;
+          type: any;
+          sector: any;
+          crmFields: any;
+        } | null = null;
         if (event.companyId) {
           const entity = await ctx.db.get(event.companyId) as Doc<"entityContexts"> | null;
           if (entity) {

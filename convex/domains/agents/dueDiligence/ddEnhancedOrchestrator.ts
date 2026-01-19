@@ -188,7 +188,7 @@ export const startEnhancedDDJob = action({
     }
 
     // 2. Check Entity Memory for existing research
-    let entityMemory = null;
+    let entityMemory: any = null;
     if (args.enableEntityMemory !== false && ENABLE_ENTITY_MEMORY) {
       entityMemory = await ctx.runQuery(
         internal.domains.agents.dueDiligence.ddContextEngine.getEntityMemory,

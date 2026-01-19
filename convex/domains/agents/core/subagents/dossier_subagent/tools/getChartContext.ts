@@ -62,6 +62,8 @@ Returns chart series info, data values, current act, and any existing annotation
         );
       }
 
+      const enrichmentData: any = enrichment;
+
       // Build context response
       const response = {
         briefId: args.briefId,
@@ -83,10 +85,10 @@ Returns chart series info, data values, current act, and any existing annotation
           position: a.position,
         })),
         existingEnrichment: enrichment ? {
-          title: enrichment.title,
-          hasContext: !!enrichment.context,
-          entityCount: enrichment.entities?.length || 0,
-          sourceCount: enrichment.sources?.length || 0,
+          title: enrichmentData?.title,
+          hasContext: !!enrichmentData?.context,
+          entityCount: enrichmentData?.entities?.length || 0,
+          sourceCount: enrichmentData?.sources?.length || 0,
         } : null,
       };
 
@@ -96,4 +98,3 @@ Returns chart series info, data values, current act, and any existing annotation
     }
   },
 });
-

@@ -180,7 +180,14 @@ export const searchSecFilings = createTool({
       const accessionNumbers = recentFilings.accessionNumber || [];
       const primaryDocuments = recentFilings.primaryDocument || [];
 
-      const filings = [];
+      const filings: Array<{
+        formType: any;
+        filingDate: any;
+        accessionNumber: any;
+        primaryDocument: any;
+        url: string;
+        documentUrl: string;
+      }> = [];
       for (let i = 0; i < Math.min(forms.length, args.limit * 3); i++) {
         const formType = forms[i];
         
@@ -442,4 +449,3 @@ Entity Type: ${data.entityType || "N/A"}`;
     }
   },
 });
-

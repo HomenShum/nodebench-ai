@@ -541,6 +541,10 @@ const sourceArtifacts = defineTable({
   sourceUrl: v.optional(v.string()),
   contentHash: v.string(),
   rawContent: v.optional(v.string()),
+  rawStorageId: v.optional(v.id("_storage")),
+  mimeType: v.optional(v.string()),
+  sizeBytes: v.optional(v.number()),
+  title: v.optional(v.string()),
   extractedData: v.optional(v.any()),
   fetchedAt: v.number(),
   expiresAt: v.optional(v.number()),
@@ -549,6 +553,71 @@ const sourceArtifacts = defineTable({
   .index("by_hash", ["contentHash"])
   .index("by_sourceUrl_hash", ["sourceUrl", "contentHash"])
   .index("by_sourceUrl", ["sourceUrl", "fetchedAt"]);
+
+/* ------------------------------------------------------------------ */
+/* ARTIFACT CHUNKS - addressable evidence units for retrieval           */
+/* ------------------------------------------------------------------ */
+const artifactChunks = defineTable({
+  artifactId: v.id("sourceArtifacts"),
+  runId: v.optional(v.id("agentRuns")),
+  sourceUrl: v.optional(v.string()),
+  fetchedAt: v.number(),
+  contentHash: v.string(),
+  chunkVersion: v.number(),
+  chunkKey: v.string(), // deterministic key: artifactId:start-end:vN
+  startOffset: v.optional(v.number()),
+  endOffset: v.optional(v.number()),
+  timestampStart: v.optional(v.number()),
+  timestampEnd: v.optional(v.number()),
+  headingPath: v.optional(v.array(v.string())),
+  nodeId: v.optional(v.string()),
+  text: v.string(),
+  chunkHash: v.string(),
+  createdAt: v.number(),
+})
+  .index("by_artifact_version_offset", ["artifactId", "chunkVersion", "startOffset"])
+  .index("by_chunkKey", ["chunkKey"])
+  .index("by_run_fetchedAt", ["runId", "fetchedAt"])
+  .searchIndex("search_text", {
+    searchField: "text",
+    filterFields: ["artifactId", "runId", "chunkVersion"],
+  });
+
+/* ------------------------------------------------------------------ */
+/* ARTIFACT INDEX JOBS - ingestion/indexing telemetry                   */
+/* ------------------------------------------------------------------ */
+const artifactIndexJobs = defineTable({
+  artifactId: v.id("sourceArtifacts"),
+  contentHash: v.string(),
+  chunkVersion: v.number(),
+  status: v.union(
+    v.literal("queued"),
+    v.literal("running"),
+    v.literal("succeeded"),
+    v.literal("failed"),
+  ),
+  attempts: v.number(),
+  error: v.optional(v.string()),
+  chunkCount: v.optional(v.number()),
+  latencyMs: v.optional(v.number()),
+  modelUsed: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_status_updatedAt", ["status", "updatedAt"])
+  .index("by_artifact_hash_version", ["artifactId", "contentHash", "chunkVersion"]);
+
+/* ------------------------------------------------------------------ */
+/* EVIDENCE PACKS - persisted bundles used in a run                     */
+/* ------------------------------------------------------------------ */
+const evidencePacks = defineTable({
+  runId: v.optional(v.id("agentRuns")),
+  query: v.string(),
+  scope: v.optional(v.any()),
+  chunkIds: v.array(v.id("artifactChunks")),
+  createdAt: v.number(),
+})
+  .index("by_run_createdAt", ["runId", "createdAt"]);
 
 /* ------------------------------------------------------------------ */
 /* TOOL HEALTH - adaptive routing telemetry + circuit breaker          */
@@ -2215,6 +2284,9 @@ export default defineSchema({
   mcpMemoryEntries,
   agentRuns,
   sourceArtifacts,
+  artifactChunks,
+  artifactIndexJobs,
+  evidencePacks,
   toolHealth,
   agentRunEvents,
   instagramPosts,
@@ -6947,4 +7019,221 @@ export default defineSchema({
     .index("by_claim", ["claimSpanId"])
     .index("by_verdict", ["verdict"])
     .index("by_confidence", ["confidence"]),
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * KNOWLEDGE PRODUCT LAYER
+   * Source Registry, Diff Tracking, and Skill Tree for curriculum management.
+   * See: convex/domains/knowledge/ for mutations/queries.
+   * ══════════════════════════════════════════════════════════════════════ */
+
+  /* ------------------------------------------------------------------ */
+  /* SOURCE REGISTRY - Authoritative source curation with trust metadata */
+  /* ------------------------------------------------------------------ */
+  sourceRegistry: defineTable({
+    // Identity
+    registryId: v.string(),           // sr_<domain>_<slug>
+    domain: v.string(),               // "anthropic", "openai", "gemini", etc.
+
+    // Source metadata
+    canonicalUrl: v.string(),
+    name: v.string(),                 // "Claude Prompt Library"
+    category: v.union(
+      v.literal("official_docs"),
+      v.literal("prompt_library"),
+      v.literal("changelog"),
+      v.literal("github_repo"),
+      v.literal("pricing"),
+      v.literal("api_reference"),
+      v.literal("newsletter"),
+      v.literal("observability"),
+      v.literal("framework_docs")
+    ),
+
+    // Trust metadata
+    trustRationale: v.string(),       // "Official Anthropic documentation"
+    reliabilityTier: v.union(
+      v.literal("authoritative"),     // Primary source (official docs, SEC filings)
+      v.literal("reliable"),          // Vetted secondary source
+      v.literal("secondary")          // Community/third-party
+    ),
+
+    // Freshness
+    refreshCadence: v.union(
+      v.literal("hourly"),
+      v.literal("daily"),
+      v.literal("weekly"),
+      v.literal("manual")
+    ),
+    lastFetchedAt: v.optional(v.number()),
+    lastChangedAt: v.optional(v.number()),
+    currentContentHash: v.optional(v.string()),
+
+    // Licensing
+    usageConstraints: v.union(
+      v.literal("internal_only"),
+      v.literal("shareable_with_attribution"),
+      v.literal("public_domain")
+    ),
+
+    // Status
+    isActive: v.boolean(),
+    isPinned: v.boolean(),            // Always include in dossiers
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_registryId", ["registryId"])
+    .index("by_domain", ["domain"])
+    .index("by_category", ["category"])
+    .index("by_pinned", ["isPinned", "domain"])
+    .index("by_active", ["isActive", "domain"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SOURCE SNAPSHOTS - Point-in-time captures for diff tracking         */
+  /* ------------------------------------------------------------------ */
+  sourceSnapshots: defineTable({
+    registryId: v.string(),
+    snapshotAt: v.number(),
+    contentHash: v.string(),
+    rawContent: v.optional(v.string()),   // Full content for diff (if small)
+    contentStorageId: v.optional(v.id("_storage")), // For large content
+    extractedSections: v.optional(v.array(v.object({
+      sectionId: v.string(),
+      title: v.string(),
+      contentHash: v.string(),
+    }))),
+
+    // Metadata
+    httpStatus: v.optional(v.number()),
+    contentLength: v.optional(v.number()),
+    fetchDurationMs: v.optional(v.number()),
+  })
+    .index("by_registryId", ["registryId"])
+    .index("by_registry_time", ["registryId", "snapshotAt"])
+    .index("by_snapshotAt", ["snapshotAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SOURCE DIFFS - Detected changes between snapshots                   */
+  /* ------------------------------------------------------------------ */
+  sourceDiffs: defineTable({
+    registryId: v.string(),
+    fromSnapshotAt: v.number(),
+    toSnapshotAt: v.number(),
+
+    // Change summary
+    changeType: v.union(
+      v.literal("guidance_added"),
+      v.literal("guidance_removed"),
+      v.literal("guidance_modified"),
+      v.literal("breaking_change"),
+      v.literal("deprecation"),
+      v.literal("new_pattern"),
+      v.literal("pricing_change"),
+      v.literal("api_change"),
+      v.literal("model_update"),
+      v.literal("minor_update")
+    ),
+    severity: v.union(
+      v.literal("critical"),       // Breaking changes, major deprecations
+      v.literal("high"),           // Significant new features, important updates
+      v.literal("medium"),         // Notable changes worth tracking
+      v.literal("low")             // Minor updates, typo fixes
+    ),
+
+    // Human-readable
+    changeTitle: v.string(),          // "New tool_use parameter added"
+    changeSummary: v.string(),        // 2-3 sentence explanation
+    affectedSections: v.array(v.string()),
+
+    // Raw diff
+    diffHunks: v.optional(v.array(v.object({
+      type: v.union(
+        v.literal("add"),
+        v.literal("remove"),
+        v.literal("modify")
+      ),
+      oldText: v.optional(v.string()),
+      newText: v.optional(v.string()),
+      context: v.optional(v.string()),
+    }))),
+
+    // Classification metadata
+    classifiedBy: v.optional(v.string()),  // "llm" | "rules" | "human"
+    classificationConfidence: v.optional(v.number()),
+
+    detectedAt: v.number(),
+  })
+    .index("by_registryId", ["registryId"])
+    .index("by_registry_time", ["registryId", "detectedAt"])
+    .index("by_severity", ["severity", "detectedAt"])
+    .index("by_changeType", ["changeType", "detectedAt"])
+    .index("by_detectedAt", ["detectedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SKILL NODES - Hierarchical knowledge curriculum                     */
+  /* ------------------------------------------------------------------ */
+  skillNodes: defineTable({
+    skillId: v.string(),              // "llm_basics", "tool_use", "agent_orchestration"
+
+    // Hierarchy
+    parentSkillId: v.optional(v.string()),
+    depth: v.number(),                // 0 = foundation, 1 = intermediate, 2 = advanced, 3 = expert
+
+    // Metadata
+    title: v.string(),
+    description: v.string(),
+    domain: v.string(),               // "foundations", "agent_systems", "production", "evaluation"
+
+    // Prerequisites
+    prerequisiteSkillIds: v.array(v.string()),
+
+    // Linked content
+    artifactIds: v.array(v.string()),         // Linked reading materials (globalArtifact keys)
+    registrySourceIds: v.array(v.string()),   // Linked authoritative sources
+
+    // Progression
+    estimatedHours: v.optional(v.number()),
+    milestones: v.array(v.object({
+      milestoneId: v.string(),
+      title: v.string(),
+      criteria: v.string(),
+    })),
+
+    // Curation
+    isAdminCurated: v.boolean(),      // Admin-curated vs user-created
+    createdBy: v.optional(v.id("users")),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_skillId", ["skillId"])
+    .index("by_domain", ["domain", "depth"])
+    .index("by_parent", ["parentSkillId"])
+    .index("by_admin_curated", ["isAdminCurated", "domain"]),
+
+  /* ------------------------------------------------------------------ */
+  /* USER SKILL PROGRESS - Per-user progress tracking                    */
+  /* ------------------------------------------------------------------ */
+  userSkillProgress: defineTable({
+    userId: v.id("users"),
+    skillId: v.string(),
+
+    status: v.union(
+      v.literal("not_started"),
+      v.literal("in_progress"),
+      v.literal("completed")
+    ),
+    completedMilestones: v.array(v.string()),
+
+    // Reading progress
+    artifactsRead: v.array(v.string()),
+    lastActivityAt: v.number(),
+
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_skill", ["userId", "skillId"])
+    .index("by_skill", ["skillId"])
+    .index("by_status", ["status", "userId"]),
 });

@@ -200,10 +200,12 @@ export async function executeEnhancedNewsVerification(
 
 function generateAcquisitionSearchQueries(acquirer: string, target: string): string[] {
   return [
-    // Tier 1 source-specific searches
-    `"${acquirer}" acquire "${target}" site:reuters.com OR site:bloomberg.com OR site:wsj.com`,
-    // Tier 2 tech news sources
-    `"${acquirer}" "${target}" site:businessinsider.com OR site:theverge.com OR site:techcrunch.com`,
+    // Prefer separate site queries (many search backends handle OR + site: inconsistently)
+    `"${acquirer}" acquire "${target}" site:reuters.com`,
+    `"${acquirer}" acquire "${target}" site:bloomberg.com`,
+    `"${acquirer}" "${target}" site:businessinsider.com`,
+    `"${acquirer}" "${target}" site:theverge.com`,
+    `"${acquirer}" "${target}" site:venturebeat.com`,
     // General acquisition search
     `"${acquirer}" "${target}" acquisition announcement deal`,
     // Alternative phrasing

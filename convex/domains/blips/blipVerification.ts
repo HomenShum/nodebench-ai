@@ -77,7 +77,7 @@ export const verifyClaimsBatch = internalAction({
       { limit }
     );
 
-    const results = [];
+    const results: any[] = [];
 
     for (const claim of unverifiedClaims) {
       try {

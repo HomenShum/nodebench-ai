@@ -95,7 +95,7 @@ export function parseInlineMarks(text: string): TipTapNode[] {
       }
 
       // Add marked text
-      const marks = [];
+      const marks: Array<{ type: string }> = [];
       if (match.markType.includes("bold")) marks.push({ type: "bold" });
       if (match.markType.includes("italic")) marks.push({ type: "italic" });
       if (match.markType === "code") marks.push({ type: "code" });

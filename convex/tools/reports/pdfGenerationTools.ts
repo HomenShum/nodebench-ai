@@ -304,7 +304,7 @@ Example: "Create a dossier for OpenAI" or "Generate company report for Anthropic
       };
 
       // Generate AI analysis if requested
-      let aiAnalysis = undefined;
+      let aiAnalysis: any | undefined = undefined;
       if (args.includeAnalysis) {
         aiAnalysis = {
           strengths: [

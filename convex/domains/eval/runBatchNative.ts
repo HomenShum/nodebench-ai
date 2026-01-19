@@ -192,7 +192,7 @@ export const runBatchNative = action({
     console.log(`[runBatchNative] Running ${testCases.length} test cases`);
 
     // Run all test cases
-    const results = [];
+    const results: any[] = [];
     for (const testCase of testCases) {
       const result = await runTestCaseNative(openai, testCase);
       results.push({
@@ -211,4 +211,3 @@ export const runBatchNative = action({
     };
   },
 });
-

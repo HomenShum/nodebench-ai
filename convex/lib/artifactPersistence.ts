@@ -1379,7 +1379,7 @@ export const getMetasByRun = internalQuery({
  * Generate unique + shared artifacts for a specific worker
  */
 function makeWorkerArtifacts(workerId: number, uniqueCount: number, sharedUrls: string[]) {
-  const artifacts = [];
+  const artifacts: Array<{ url: string; title: string; kind: string; provider: string }> = [];
   
   // Unique URLs for this worker
   for (let i = 0; i < uniqueCount; i++) {
@@ -1600,7 +1600,7 @@ export const stressChunking = internalAction({
     console.log(`[stressChunking] Starting with ${artifactCount} artifacts (expected ${expectedChunks} chunks)`);
     
     // Generate big payload
-    const payload = [];
+    const payload: Array<{ url: string; title: string; kind: string; provider: string }> = [];
     for (let i = 0; i < artifactCount; i++) {
       payload.push({
         url: `https://chunking-test.example.com/article-${i}`,
@@ -1611,7 +1611,7 @@ export const stressChunking = internalAction({
     }
     
     // Simulate chunking like the wrapper does
-    const chunks = [];
+    const chunks: Array<typeof payload> = [];
     for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
       chunks.push(payload.slice(i, i + CHUNK_SIZE));
     }

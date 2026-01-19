@@ -33,6 +33,14 @@ import {
   deleteAgentMemory,
 } from "../../../tools/wrappers/coreAgentTools";
 
+// Evidence tools (store → index → retrieve → cite)
+import {
+  fetchUrlToEvidence,
+  indexEvidenceArtifact,
+  searchEvidence,
+  getEvidenceChunk,
+} from "../../../tools/wrappers/evidenceTools";
+
 // Import GAM unified memory tools (memory-first protocol)
 import {
   queryMemory,
@@ -360,6 +368,10 @@ export const createCoordinatorAgent = (
     linkupSearch,
     fusionSearch,
     quickSearch,
+    fetchUrlToEvidence,
+    indexEvidenceArtifact,
+    searchEvidence,
+    getEvidenceChunk,
     externalOrchestratorTool,
     ...dataAccessTools,
 

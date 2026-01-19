@@ -196,7 +196,15 @@ export const getUserFileDocuments = query({
       )
       .collect();
 
-    const results = [];
+    const results: Array<{
+      _id: any;
+      title: any;
+      fileType: any;
+      mimeType: any;
+      lastModified: any;
+      fileName: any;
+      fileSize: any;
+    }> = [];
     for (const doc of documents) {
       if (doc.fileId) {
         const file = await ctx.db.get(doc.fileId) as Doc<"files"> | null;

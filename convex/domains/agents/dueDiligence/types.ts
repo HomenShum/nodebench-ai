@@ -43,6 +43,201 @@ export type BranchType = typeof ALL_BRANCH_TYPES[number];
 export type CoreBranchType = typeof CORE_BRANCHES[number];
 export type ConditionalBranchType = typeof CONDITIONAL_BRANCHES[number];
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DD TIER SYSTEM (determines depth of due diligence based on deal size/stage)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type DDTier = "FULL_PLAYBOOK" | "STANDARD_DD" | "LIGHT_DD" | "FAST_VERIFY";
+
+/**
+ * Branch presets for each DD tier
+ *
+ * FULL_PLAYBOOK ($50M+ or Series C+): All core + all conditional + investor playbook
+ * STANDARD_DD ($5M-$50M or Series A/B): Core + technical + financial
+ * LIGHT_DD ($1M-$5M or Seed): Core branches only
+ * FAST_VERIFY (<$1M or Pre-seed): No DD branches, fast verify only
+ */
+export const DD_TIER_BRANCHES: Record<DDTier, BranchType[]> = {
+  FULL_PLAYBOOK: [
+    ...CORE_BRANCHES,
+    ...CONDITIONAL_BRANCHES,
+  ],
+  STANDARD_DD: [
+    ...CORE_BRANCHES,
+    "technical_dd",
+    "financial_deep",
+  ],
+  LIGHT_DD: [...CORE_BRANCHES],
+  FAST_VERIFY: [], // No DD branches, handled by fast verification
+};
+
+/**
+ * Tier thresholds for automatic selection
+ */
+export const DD_TIER_THRESHOLDS = {
+  FULL_PLAYBOOK: {
+    minAmountUsd: 50_000_000, // $50M
+    roundTypes: ["series-c", "series-d-plus", "growth"],
+  },
+  STANDARD_DD: {
+    minAmountUsd: 5_000_000, // $5M
+    roundTypes: ["series-a", "series-b"],
+  },
+  LIGHT_DD: {
+    minAmountUsd: 1_000_000, // $1M
+    roundTypes: ["seed"],
+  },
+  FAST_VERIFY: {
+    minAmountUsd: 0,
+    roundTypes: ["pre-seed", "angel", "unknown"],
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RISK-BASED DD SYSTEM (v3) - Expands funding-based tiers with risk scoring
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Risk categories that can trigger tier escalation
+ * Based on FATF risk-based approach and investor protection guidance
+ */
+export type DDRiskCategory =
+  | "identity_provenance"    // Unverifiable founders, mismatched bios
+  | "claims_verification"    // Big claims with no primary anchors
+  | "transaction_integrity"  // BEC patterns, urgency, payment anomalies
+  | "sector_regulatory"      // Fintech/health/govtech higher compliance surface
+  | "entity_authenticity"    // New domain, hidden WHOIS, no registry footprint
+  | "document_consistency";  // Deck changes, claim inconsistencies
+
+/**
+ * Risk signal with severity and source
+ */
+export interface DDRiskSignal {
+  category: DDRiskCategory;
+  severity: "low" | "medium" | "high" | "critical";
+  signal: string;
+  source: string;
+  detectedAt: number;
+}
+
+/**
+ * Risk score result (0-100) with breakdown
+ */
+export interface DDRiskScore {
+  overall: number;  // 0-100
+  breakdown: Record<DDRiskCategory, number>;  // Per-category scores
+  signals: DDRiskSignal[];
+  escalationTriggers: string[];  // Hard-fail triggers that force escalation
+  recommendedTier: DDTier;
+  tierOverride: boolean;  // True if risk score overrode funding-based tier
+}
+
+/**
+ * Risk score thresholds for tier selection
+ * Higher risk = deeper DD, regardless of funding amount
+ */
+export const DD_RISK_THRESHOLDS = {
+  FAST_VERIFY: { max: 20 },      // Only truly low-risk deals stay here
+  LIGHT_DD: { min: 21, max: 45 },
+  STANDARD_DD: { min: 46, max: 70 },
+  FULL_PLAYBOOK: { min: 71 },    // High risk = full playbook
+};
+
+/**
+ * Hard-fail escalation triggers (instant tier bump)
+ * These always escalate regardless of funding or score
+ */
+export const ESCALATION_TRIGGERS = {
+  IDENTITY_MISMATCH: "Founder name/title inconsistency across credible sources",
+  PAYMENT_ANOMALY: "Payment instruction changes or impersonation indicators",
+  EXTRAORDINARY_CLAIMS: "Extraordinary claims with no primary/credible sources",
+  REGULATORY_CLAIMS_UNVERIFIED: "Regulated domain claims (FDA, SEC, etc.) without primary sources",
+  BEC_INDICATORS: "Business email compromise patterns detected",
+  ENTITY_NOT_FOUND: "Company not found in any business registry",
+  DOMAIN_SPOOFING: "Domain age <90 days with hidden WHOIS + impersonation patterns",
+} as const;
+
+export type EscalationTrigger = keyof typeof ESCALATION_TRIGGERS;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MICRO-BRANCHES (lightweight, fast, composable)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Micro-branches are fast, targeted checks that run even for small deals.
+ * They're designed to be high-signal, low-cost, and parallelizable.
+ */
+export const MICRO_BRANCHES = [
+  "identity_registry",        // Corporate registry + founder identity verification
+  "founder_footprint",        // Cross-source founder consistency
+  "claim_ledger",            // Claims with evidence grading
+  "traction_sanity",         // Customer/usage/pricing plausibility
+  "security_posture",        // SOC2/HIPAA/compliance claims check
+  "controversy_scan",        // Litigation/controversy basic scan
+  "channel_integrity",       // Email/domain authenticity (anti-BEC)
+  "beneficial_ownership",    // UBO verification (FinCEN CTA compliance)
+] as const;
+
+export type MicroBranchType = typeof MICRO_BRANCHES[number];
+
+/**
+ * Sector-specific branch packs (triggered by sector detection)
+ */
+export const SECTOR_BRANCH_PACKS: Record<string, MicroBranchType[]> = {
+  fintech: ["identity_registry", "claim_ledger", "security_posture"],
+  healthcare: ["claim_ledger", "traction_sanity"],  // + regulatory_clinical
+  govtech: ["claim_ledger", "security_posture"],    // + contract_verification
+  ai_ml: ["claim_ledger", "traction_sanity"],       // + ip_provenance
+  enterprise: ["security_posture", "traction_sanity"],
+};
+
+/**
+ * Risk-based branch selection (overrides funding-based)
+ */
+export const RISK_BASED_BRANCHES: Record<DDTier, MicroBranchType[]> = {
+  FAST_VERIFY: ["identity_registry", "claim_ledger", "channel_integrity"],  // Minimum even for small deals
+  LIGHT_DD: [...MICRO_BRANCHES.slice(0, 5)],  // All micro except channel (already in fast)
+  STANDARD_DD: [...MICRO_BRANCHES],
+  FULL_PLAYBOOK: [...MICRO_BRANCHES],  // Plus full DD branches from CORE_BRANCHES + CONDITIONAL_BRANCHES
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CLAIM LEDGER (central diligence artifact)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * A single verifiable claim extracted from source materials
+ */
+export interface DDClaim {
+  id: string;
+  claimText: string;              // 5-20 word headline of what it means
+  claimType: "revenue" | "customer" | "partnership" | "regulatory" | "technical" | "team" | "funding" | "other";
+  extractedFrom: {
+    source: string;               // e.g., "pitch deck page 7", "press release"
+    timestamp?: number;
+    quoteSpan?: string;           // Exact quote if available
+  };
+  verdict: "verified" | "disputed" | "unverifiable" | "context_needed";
+  confidence: number;             // 0-1
+  freshness: "current" | "stale" | "historical";  // <30d, 30-180d, >180d
+  citations: string[];            // sourceArtifactIds
+  contradictions?: string[];      // Other claims that contradict this one
+  verificationMethod?: string;    // How we verified (e.g., "SEC filing", "registry lookup")
+}
+
+/**
+ * The claim ledger for an entity - central DD artifact
+ */
+export interface ClaimLedger {
+  entityName: string;
+  entityType: "company" | "fund" | "person";
+  claims: DDClaim[];
+  overallIntegrity: "high" | "medium" | "low" | "unassessable";
+  contradictionCount: number;
+  unverifiableCount: number;
+  lastUpdated: number;
+}
+
 export type DDJobStatus =
   | "pending"
   | "analyzing"

@@ -879,7 +879,7 @@ export const sendBreakingAlert = action({
     const tags = tagMap[args.alertType || "breaking_news"] || ["bell"];
 
     // Build actions
-    const actions = [];
+    const actions: any[] = [];
     if (args.sourceUrl) {
       actions.push({
         action: "view" as const,

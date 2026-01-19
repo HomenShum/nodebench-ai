@@ -197,6 +197,10 @@ export const searchFilings = internalAction({
                     }
                 );
                 artifactIds.push(artifactResult.id);
+
+                await ctx.scheduler.runAfter(0, internal.domains.artifacts.evidenceIndexActions.indexArtifact, {
+                    artifactId: artifactResult.id,
+                });
             }
 
             return {

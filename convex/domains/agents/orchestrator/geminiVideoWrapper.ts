@@ -9,7 +9,21 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../../_generated/server";
+import { internal } from "../../../_generated/api";
 import { GoogleGenAI, createUserContent } from "@google/genai";
+import { createHash } from "crypto";
+
+const STORE_TO_STORAGE_CHARS = 250_000;
+const MAX_INLINE_RAW_CONTENT_CHARS = 120_000;
+
+function sha256Hex(input: string): string {
+    return createHash("sha256").update(input).digest("hex");
+}
+
+function truncateForDb(input: string): string {
+    if (input.length <= MAX_INLINE_RAW_CONTENT_CHARS) return input;
+    return input.slice(0, MAX_INLINE_RAW_CONTENT_CHARS) + `\n\n<!-- TRUNCATED: ${input.length} chars -->\n`;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -114,6 +128,40 @@ Format your response as:
             });
 
             const transcriptText = response.text || "";
+
+            // Persist transcript for citations / replayability (store large transcripts in Convex Storage)
+            try {
+                const contentHash = sha256Hex(transcriptText);
+                let storageId: string | undefined;
+                if (transcriptText.length >= STORE_TO_STORAGE_CHARS) {
+                    const blob = new Blob([transcriptText], { type: "text/plain; charset=utf-8" });
+                    storageId = await ctx.storage.store(blob);
+                }
+
+                const artifactResult = await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+                    sourceType: "video_transcript",
+                    sourceUrl: args.videoUrl,
+                    contentHash,
+                    rawContent: storageId ? truncateForDb(transcriptText) : transcriptText,
+                    rawStorageId: storageId as any,
+                    mimeType: "text/plain; charset=utf-8",
+                    sizeBytes: transcriptText.length,
+                    title: "Video transcript",
+                    extractedData: {
+                        tool: "geminiTranscribe",
+                        mimeType,
+                        storageId,
+                        contentLength: transcriptText.length,
+                    },
+                    fetchedAt: Date.now(),
+                });
+
+                await ctx.scheduler.runAfter(0, internal.domains.artifacts.evidenceIndexActions.indexArtifact, {
+                    artifactId: artifactResult.id,
+                });
+            } catch (err) {
+                console.warn("[geminiVideoWrapper] Failed to persist transcript as sourceArtifact", err);
+            }
 
             // Extract claims if requested
             let claims: ExtractedClaim[] | undefined;
@@ -287,6 +335,39 @@ For claims, format as JSON at the end:
                         // No valid JSON found
                     }
                 }
+            }
+
+            // Persist image analysis for citations / replayability
+            try {
+                const contentHash = sha256Hex(responseText);
+                let storageId: string | undefined;
+                if (responseText.length >= STORE_TO_STORAGE_CHARS) {
+                    const blob = new Blob([responseText], { type: "text/plain; charset=utf-8" });
+                    storageId = await ctx.storage.store(blob);
+                }
+
+                const artifactResult = await ctx.runMutation(internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact, {
+                    sourceType: "api_response",
+                    sourceUrl: args.imageUrl,
+                    contentHash,
+                    rawContent: storageId ? truncateForDb(responseText) : responseText,
+                    rawStorageId: storageId as any,
+                    mimeType: "text/plain; charset=utf-8",
+                    sizeBytes: responseText.length,
+                    title: "Image analysis",
+                    extractedData: {
+                        tool: "geminiAnalyzeImage",
+                        storageId,
+                        contentLength: responseText.length,
+                    },
+                    fetchedAt: Date.now(),
+                });
+
+                await ctx.scheduler.runAfter(0, internal.domains.artifacts.evidenceIndexActions.indexArtifact, {
+                    artifactId: artifactResult.id,
+                });
+            } catch (err) {
+                console.warn("[geminiVideoWrapper] Failed to persist image analysis as sourceArtifact", err);
             }
 
             return {

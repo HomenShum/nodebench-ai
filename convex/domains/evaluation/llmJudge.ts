@@ -621,14 +621,14 @@ export const evaluateWithBooleanJudge = action({
       verdictReason = `All criteria met: ${totalScore}/${totalPossible} (${Math.round(totalScore / totalPossible * 100)}%)`;
     } else if (criticalPass) {
       verdict = "PARTIAL";
-      const failing = [];
+      const failing: string[] = [];
       if (!entityPasses) failing.push(`entity (${entityScore}/5)`);
       if (!personaPasses) failing.push(`persona (${personaScore}/5)`);
       if (!qualityPasses) failing.push(`quality (${qualityScore}/8)`);
       verdictReason = `Partial pass: ${failing.join(", ")} below threshold`;
     } else {
       verdict = "FAIL";
-      const critical = [];
+      const critical: string[] = [];
       if (!safetyPasses) critical.push(`safety (${safetyScore}/5)`);
       if (!factualPasses) critical.push(`factual (${factualScore}/8)`);
       verdictReason = `Critical failure: ${critical.join(", ")}`;

@@ -31,7 +31,7 @@ export const getDocumentForUpsert = internalQuery({
     const doc = await ctx.db.get(documentId) as Doc<"documents"> | null;
     if (!doc) return null;
 
-    let fileData = null;
+    let fileData: { storageId: Id<"_storage">; mimeType: string } | null = null;
     if (doc.documentType === "file" && doc.fileId) {
       const file = await ctx.db.get(doc.fileId) as Doc<"files"> | null;
       if (file?.storageId) {

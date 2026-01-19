@@ -549,31 +549,36 @@ function calculateCalibratedConfidence(
   // Base score from verification ratios
   let score = 0;
 
-  // Verified claims contribute positively
-  for (let i = 0; i < verified.length; i++) {
-    const claim = verified[i];
+  const triangulationByClaim = new Map<string, TriangulationResult>();
+  for (const t of triangulations) triangulationByClaim.set(t.claim, t);
+
+  // Evidence-backed claims (verified OR contradicted) both increase confidence that the system can adjudicate.
+  for (const claim of verified) {
     let claimScore = claim.confidence === "high" ? 1.0 :
                      claim.confidence === "medium" ? 0.7 :
                      claim.confidence === "low" ? 0.4 : 0.3;
 
-    // Boost for triangulation
-    if (triangulations[i]?.consensusLevel === "strong") {
+    const tri = triangulationByClaim.get(claim.claim);
+    if (tri?.consensusLevel === "strong") {
       claimScore = Math.min(1, claimScore + 0.15);
-    } else if (triangulations[i]?.consensusLevel === "moderate") {
+    } else if (tri?.consensusLevel === "moderate") {
       claimScore = Math.min(1, claimScore + 0.1);
     }
 
     score += claimScore;
   }
 
+  for (const claim of contradicted) {
+    let claimScore = 0.7;
+    const tri = triangulationByClaim.get(claim.claim);
+    if (tri?.consensusLevel === "strong") claimScore = 0.85;
+    else if (tri?.consensusLevel === "moderate") claimScore = 0.8;
+    score += claimScore;
+  }
+
   // Unverified claims contribute less
   for (const claim of unverified) {
     score += 0.2; // Neutral - not negative
-  }
-
-  // Contradicted claims are negative
-  for (const claim of contradicted) {
-    score -= 0.3; // Penalty for contradictions
   }
 
   // Normalize
@@ -649,6 +654,22 @@ function calculateRelevanceScore(claim: string, snippet: string): number {
 
 function analyzeSentiment(claim: string, snippet: string): "supporting" | "contradicting" | "neutral" {
   const snippetLower = snippet.toLowerCase();
+  const claimLower = claim.toLowerCase();
+
+  // Domain-specific contradiction heuristics (high-signal patterns)
+  // Example: "X trains their own models" vs evidence that it uses third-party foundation models.
+  const isOwnModelsClaim =
+    /\btrain(s|ed|ing)?\b/.test(claimLower) &&
+    /\b(own|their own)\b/.test(claimLower) &&
+    /\bmodel(s)?\b/.test(claimLower);
+  const evidenceSuggestsThirdPartyModels =
+    /\b(third[- ]party|foundation model|hosted model|api model)\b/.test(snippetLower) ||
+    /\b(anthropic|claude|qwen|openai|gpt-)\b/.test(snippetLower) ||
+    /\buses?\s+(?:anthropic|claude|qwen|openai|gpt)\b/.test(snippetLower);
+
+  if (isOwnModelsClaim && evidenceSuggestsThirdPartyModels) {
+    return "contradicting";
+  }
 
   // Check for contradiction patterns
   const contradictPatterns = [

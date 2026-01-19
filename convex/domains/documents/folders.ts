@@ -390,7 +390,7 @@ export const getFolderWithDocuments = query({
       .collect();
 
     // Get the actual documents
-    const documents = [];
+    const documents: any[] = [];
     for (const df of documentFolders) {
       const doc = await ctx.db.get(df.documentId) as Doc<"documents"> | null;
       if (doc && !doc.isArchived) {

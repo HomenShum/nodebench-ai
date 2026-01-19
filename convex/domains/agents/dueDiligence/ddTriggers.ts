@@ -3,6 +3,17 @@
  *
  * Actions for DD triggers. Contains ONLY actions (Node.js runtime).
  * Queries and mutations are in ddTriggerQueries.ts.
+ *
+ * TIERED DD SYSTEM (v3 - Risk-Aware):
+ * Combines funding-based tiers with risk-based escalation.
+ *
+ * KEY INSIGHT: Deal size alone is NOT a reliable proxy for diligence depth.
+ * Lower-funding companies often have HIGHER information asymmetry and risk.
+ *
+ * Risk-Based Override:
+ * - High risk scores (71+) escalate to FULL_PLAYBOOK regardless of funding
+ * - Escalation triggers (identity mismatch, BEC indicators) force immediate upgrade
+ * - Small deals with high risk get MORE scrutiny, not less
  */
 
 "use node";
@@ -11,6 +22,13 @@ import { v } from "convex/values";
 import { action } from "../../../_generated/server";
 import { internal, api } from "../../../_generated/api";
 import { Id } from "../../../_generated/dataModel";
+import { DDTier, DD_TIER_BRANCHES, RISK_BASED_BRANCHES, MicroBranchType } from "./types";
+import {
+  detectRiskSignals,
+  calculateRiskScore,
+  RiskAssessmentInput,
+  formatRiskScore,
+} from "./riskScoring";
 
 // Cooldown period before re-triggering DD for same entity (ms)
 const DD_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -31,34 +49,21 @@ interface DDJobRecord {
 // ============================================================================
 
 /**
- * Trigger DD from a funding event
+ * Trigger DD from a funding event.
+ * Uses risk-aware tiered DD system (v3) to determine depth of analysis.
+ *
+ * This action performs risk assessment before tier selection, allowing
+ * small deals with high risk to escalate to deeper DD tiers.
  */
 export const triggerDDFromFunding = action({
   args: {
     fundingEventId: v.id("fundingEvents"),
     userId: v.id("users"),
+    // Optional: skip risk assessment (use funding-only tiers)
+    skipRiskAssessment: v.optional(v.boolean()),
   },
-  handler: async (ctx, { fundingEventId, userId }) => {
-    // Check if should trigger
-    const check = await ctx.runQuery(
-      api.domains.agents.dueDiligence.ddTriggerQueries.shouldTriggerDDForFunding,
-      { fundingEventId }
-    );
-
-    if (!check.shouldTrigger) {
-      console.log(`[ddTriggers] Skipping DD for ${fundingEventId}: ${check.reason}`);
-      await ctx.runMutation(
-        internal.domains.agents.dueDiligence.ddTriggerQueries.recordTriggerDecision,
-        {
-          fundingEventId,
-          triggered: false,
-          reason: check.reason,
-        }
-      );
-      return { triggered: false, reason: check.reason };
-    }
-
-    // Get the funding event
+  handler: async (ctx, { fundingEventId, userId, skipRiskAssessment }) => {
+    // Get the funding event first (needed for risk assessment)
     const event = await ctx.runQuery(
       internal.domains.enrichment.fundingQueries.getFundingEventById,
       { fundingEventId }
@@ -68,7 +73,102 @@ export const triggerDDFromFunding = action({
       return { triggered: false, reason: "Funding event not found" };
     }
 
-    // Start DD job
+    // ─────────────────────────────────────────────────────────────────────────
+    // RISK ASSESSMENT (v3)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    let riskScore: number | undefined;
+    let escalationTriggers: string[] | undefined;
+
+    if (!skipRiskAssessment) {
+      try {
+        // Build risk assessment input from available data
+        const riskInput: RiskAssessmentInput = {
+          companyName: event.companyName,
+          websiteUrl: event.websiteUrl,
+          amountUsd: event.amountUsd,
+          roundType: event.roundType,
+          sourceUrl: event.sourceUrl,
+          sectors: event.sectors,
+          // Note: Additional risk signals (founders, claims) would be
+          // gathered during enrichment. For now we use available data.
+        };
+
+        // Detect risk signals
+        const signals = detectRiskSignals(riskInput);
+
+        // Calculate risk score
+        const riskResult = calculateRiskScore(signals);
+        riskScore = riskResult.overall;
+        escalationTriggers = riskResult.escalationTriggers;
+
+        console.log(`[ddTriggers] Risk assessment for ${event.companyName}:`);
+        console.log(`  Score: ${riskScore}/100`);
+        console.log(`  Signals: ${signals.length}`);
+        if (escalationTriggers.length > 0) {
+          console.log(`  ESCALATION TRIGGERS: ${escalationTriggers.join(", ")}`);
+        }
+      } catch (error) {
+        console.warn(`[ddTriggers] Risk assessment failed, using funding-based tiers:`, error);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TIER SELECTION (with risk override)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Check if should trigger (now with risk assessment)
+    const check = await ctx.runQuery(
+      api.domains.agents.dueDiligence.ddTriggerQueries.shouldTriggerDDForFunding,
+      {
+        fundingEventId,
+        riskScore,
+        escalationTriggers,
+      }
+    );
+
+    // Extract tier and metadata from check result
+    const tier: DDTier = (check as any).tier ?? "STANDARD_DD";
+    const tierResult = (check as any).tierResult;
+    const wasOverridden = tierResult?.wasOverridden ?? false;
+
+    if (!check.shouldTrigger) {
+      console.log(`[ddTriggers] Skipping DD for ${fundingEventId}: ${check.reason} (tier: ${tier})`);
+      await ctx.runMutation(
+        internal.domains.agents.dueDiligence.ddTriggerQueries.recordTriggerDecision,
+        {
+          fundingEventId,
+          triggered: false,
+          reason: check.reason,
+        }
+      );
+      return {
+        triggered: false,
+        reason: check.reason,
+        tier,
+        riskScore,
+        wasOverridden,
+      };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // BRANCH SELECTION (tier-specific + risk micro-branches)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Get full DD branches for this tier
+    const ddBranches = DD_TIER_BRANCHES[tier];
+
+    // Get micro-branches based on risk (these run even for small deals)
+    const microBranches: MicroBranchType[] = tierResult?.microBranches ?? RISK_BASED_BRANCHES[tier];
+
+    console.log(`[ddTriggers] Starting ${tier} DD for ${event.companyName}`);
+    console.log(`  DD Branches: ${ddBranches.length}`);
+    console.log(`  Micro-branches: ${microBranches.length}`);
+    if (wasOverridden) {
+      console.log(`  RISK OVERRIDE: tier escalated from funding-based ${tierResult?.fundingBasedTier}`);
+    }
+
+    // Start DD job with tier-specific branches and micro-branches
     const result = await ctx.runAction(
       api.domains.agents.dueDiligence.ddOrchestrator.startDueDiligenceJob,
       {
@@ -78,6 +178,14 @@ export const triggerDDFromFunding = action({
         triggerEventId: fundingEventId,
         entityId: event.companyId,
         userId,
+        // Pass tier and branch override
+        ddTier: tier,
+        branchOverride: ddBranches,
+        // Pass micro-branches for fast pre-checks
+        microBranches,
+        // Pass risk metadata for logging/tracking
+        riskScore,
+        escalationTriggers,
       }
     );
 
@@ -92,9 +200,18 @@ export const triggerDDFromFunding = action({
       }
     );
 
-    console.log(`[ddTriggers] Triggered DD job ${result.jobId} for ${event.companyName}`);
+    console.log(`[ddTriggers] Triggered ${tier} DD job ${result.jobId} for ${event.companyName}`);
 
-    return { triggered: true, jobId: result.jobId };
+    return {
+      triggered: true,
+      jobId: result.jobId,
+      tier,
+      branchCount: ddBranches.length,
+      microBranchCount: microBranches.length,
+      riskScore,
+      wasOverridden,
+      escalationTriggers,
+    };
   },
 });
 

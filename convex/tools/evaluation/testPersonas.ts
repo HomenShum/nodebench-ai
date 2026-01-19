@@ -49,7 +49,7 @@ const BANKER_GRADE_ENTITY: EnrichedEntityPayload = {
 export const runPersonaTest = action({
     args: {},
     handler: async (ctx) => {
-        const results = [];
+        const results: Array<{ persona: string; hollowPass: boolean; fullPass: boolean }> = [];
 
         // Test 1: JPM Banker
         const bankerHollow = evaluateBankerPersona(HOLLOW_ENTITY);

@@ -341,7 +341,7 @@ async function executeSecuritiesVerification(
   // Search for SEC filings
   const filingResult = await secAdapter.verifyCompanyHasFilings(companyName, ["C", "D"]);
 
-  let filing = undefined;
+  let filing: any | undefined = undefined;
   let filingType = claimedFilingType;
 
   if (filingResult.hasFilings && filingResult.filings.length > 0) {
@@ -368,7 +368,7 @@ async function executeSecuritiesVerification(
   }
 
   // Verify funding portal if provided
-  let portalRecord = undefined;
+  let portalRecord: any | undefined = undefined;
   let portalVerified = false;
 
   if (fundingPortal) {
@@ -412,7 +412,7 @@ async function executeClaimsValidation(
   console.log(`[InvestorProtection] Phase 3: Validating claims for ${companyName}`);
 
   // Verify FDA claims
-  const fdaVerifications = [];
+  const fdaVerifications: any[] = [];
   for (const claim of fdaClaims) {
     if (claim.clearanceNumber) {
       const result = await fdaAdapter.verify510kClaim(claim.clearanceNumber, companyName);
@@ -436,7 +436,7 @@ async function executeClaimsValidation(
   }
 
   // Verify patent claims
-  const patentVerifications = [];
+  const patentVerifications: any[] = [];
   for (const claim of patentClaims) {
     if (claim.patentNumber) {
       const result = await usptoAdapter.verifyPatentClaim(claim.patentNumber, companyName);

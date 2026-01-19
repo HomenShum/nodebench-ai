@@ -791,10 +791,13 @@ Inspired by Microsoft AutoGen's Teachability, agents can now learn and persist k
 # Install dependencies
 npm install
 
-# Set up Convex
-npx convex dev
+# Start Convex dev (typecheck enabled)
+npm run dev:backend
 
-# Start development server
+# Frontend only
+npm run dev:frontend
+
+# Full stack (frontend + backend + voice)
 npm run dev
 ```
 
@@ -806,6 +809,43 @@ Create a `.env.local` file:
 VITE_CONVEX_URL=your_convex_url
 OPENAI_API_KEY=your_openai_key
 LINKUP_API_KEY=your_linkup_key
+```
+
+### End-to-end validation (required)
+
+```bash
+# Typecheck + build
+npm run lint
+
+# Unit tests
+npm run test:run
+
+# Deployment gate (runs full suite + citations/date checks)
+npx convex run domains/evaluation/e2eValidation:preDeploymentCheck '{}'
+
+# Due diligence benchmark suite (must be 100%)
+npx convex run domains/evaluation/runBenchmark:runDDBenchmark '{}'
+
+# Task 2 ground truth eval (target: 100+ / 110)
+npx convex run domains/agents/dueDiligence/investorPlaybook/evalPlaybook:evaluateTask2VijayRaoManus '{}'
+```
+
+### Knowledge diffs ("What Changed") demo
+
+```bash
+# Seed authoritative sources (idempotent)
+npx convex run domains/knowledge/sourceRegistry:seedInitialSourcesInternal '{}'
+
+# Refresh sources + record diffs
+npx convex run domains/knowledge/sourceDiffs:processSourceRefresh '{}'
+
+# UI: open Research Hub → Changes tab
+```
+
+### Funding brief (LinkedIn) dry run
+
+```bash
+npx convex run workflows/dailyLinkedInPost:testStartupFundingBrief '{hoursBack:72,maxProfiles:3,enableEnrichment:false}'
 ```
 
 ---
@@ -1934,7 +1974,7 @@ Revamped "The Daily Dossier" UI to a modern, flowing newsletter layout (Substack
 
 #### Remaining Issues (Non-Blocking)
 - 13 TypeScript errors in `dynamicAgents.ts` and `agentWorkflows.ts` (workflow invocation)
-- Workaround: Deploy with `--typecheck=disable` flag
+- Workaround: fix type errors (typecheck remains enabled)
 - Priority: Low - does not affect human-in-the-loop functionality
 
 Detailed fix documentation and testing results for this work have been

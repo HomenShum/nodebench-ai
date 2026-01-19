@@ -57,6 +57,10 @@ export const toolCategories = {
     name: "Agent Memory",
     description: "Store and retrieve agent working memory",
   },
+  evidence: {
+    name: "Evidence & Citations",
+    description: "Store, index, and retrieve evidence chunks for citation",
+  },
   planning: {
     name: "Planning & Orchestration",
     description: "Task planning and multi-step orchestration",
@@ -389,6 +393,31 @@ export const toolSummaries: Record<string, ToolSummary> = {
   // ─────────────────────────────────────────────────────────────────────────
   // Planning & Orchestration
   // ─────────────────────────────────────────────────────────────────────────
+  fetchUrlToEvidence: {
+    description: "Fetch a URL and return an artifactId + short preview for later citation",
+    category: "evidence",
+    keywords: ["evidence", "fetch", "url", "article", "store", "snapshot"],
+    module: "wrappers/evidenceTools",
+  },
+  indexEvidenceArtifact: {
+    description: "Index a stored artifact into searchable evidence chunks",
+    category: "evidence",
+    keywords: ["evidence", "index", "chunks", "citation"],
+    module: "wrappers/evidenceTools",
+  },
+  searchEvidence: {
+    description: "Search stored evidence chunks and return quote + chunkId for citation",
+    category: "evidence",
+    keywords: ["evidence", "search", "quote", "cite", "chunk"],
+    module: "wrappers/evidenceTools",
+  },
+  getEvidenceChunk: {
+    description: "Fetch a specific evidence chunk by chunkId (bounded text)",
+    category: "evidence",
+    keywords: ["evidence", "chunk", "fetch", "quote", "citation"],
+    module: "wrappers/evidenceTools",
+  },
+
   createPlan: {
     description: "Create an explicit task plan with steps",
     category: "planning",
@@ -618,4 +647,3 @@ export function searchTools(
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }
-

@@ -145,7 +145,7 @@ export const generateBlipsBatch = internalAction({
     );
 
     const allItems = [...pendingItems, ...ingestedItems].slice(0, limit);
-    const results = [];
+    const results: any[] = [];
 
     for (const item of allItems) {
       try {

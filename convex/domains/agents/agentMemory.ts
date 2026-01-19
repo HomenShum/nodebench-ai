@@ -23,9 +23,20 @@
  */
 
 import { v } from "convex/values";
-import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
+import {
+  mutation as mutationBase,
+  query as queryBase,
+  internalMutation as internalMutationBase,
+  internalQuery as internalQueryBase,
+} from "../../_generated/server";
 import type { Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+// Avoid TS2589 "excessively deep" instantiations in large-schema projects.
+const mutation = mutationBase as any;
+const query = queryBase as any;
+const internalMutation = internalMutationBase as any;
+const internalQuery = internalQueryBase as any;
 
 /**
  * Write data to agent memory

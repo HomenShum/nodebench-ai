@@ -2,11 +2,11 @@
 
 ## Current Status
 
-TypeScript strict type checking is **disabled** in the Convex backend (`convex dev --typecheck=disable`) due to unresolved schema type resolution issues.
+TypeScript type checking is **enabled** for the Convex backend.
 
 ## The Problem
 
-The Convex type generation produces valid types in `_generated/dataModel.d.ts` and `_generated/server.d.ts`, but TypeScript fails to properly resolve document types from database queries. Specifically:
+The Convex generated types can trigger `TS2589: Type instantiation is excessively deep` in large schema/projects. When that happens, TypeScript may fail to typecheck the backend at all.
 
 - Database queries return `{}` instead of proper document types (e.g., `Doc<"userPreferences">`)
 - This causes 1000+ type errors across the codebase
@@ -14,31 +14,12 @@ The Convex type generation produces valid types in `_generated/dataModel.d.ts` a
 
 ## What Was Tried
 
-1. **Removed type shim overrides** - The `_type_shims/convex-server.d.ts` was overriding Convex types with `unknown`. Removed the paths override in `convex/tsconfig.json`.
-
-2. **Re-enabled strict mode** - Changed `"strict": false` back to `"strict": true` in `convex/tsconfig.json`.
-
-3. **Updated Convex** - Upgraded from 1.31.2 to 1.31.3.
-
-4. **Regenerated types** - Ran `npx convex dev --once --typecheck=disable --codegen=enable` to regenerate schema types.
-
-None of these resolved the core issue of database query return types being `{}`.
+1. **Adjusted shims** - Added lightweight type shims under `convex/_type_shims/` to avoid deep generic instantiation in generated Convex types.
+2. **Kept typecheck on** - Ensured `convex dev` / `convex deploy` run without disabling typechecking.
 
 ## Root Cause Hypothesis
 
-The issue appears to be related to how TypeScript resolves the `DataModel` type through the import chain:
-
-```typescript
-// _generated/dataModel.d.ts
-import schema from "../schema.js";  // <-- Imports .js but file is .ts
-export type DataModel = DataModelFromSchemaDefinition<typeof schema>;
-
-// _generated/server.d.ts
-import type { DataModel } from "./dataModel.js";
-export declare const query: QueryBuilder<DataModel, "public">;
-```
-
-TypeScript's module resolution may not be properly connecting the schema definition to the generated types, causing queries to lose their type information.
+The root issue is TypeScript compiler complexity (deep schema + generated types), not runtime correctness.
 
 ## Impact
 
@@ -58,15 +39,13 @@ To properly fix this, investigate:
 
 ## Deployment Instructions
 
-**For production deployments**, use the provided npm script:
+Use the provided npm script:
 
 ```bash
 npm run deploy:convex
 ```
 
-This runs `convex deploy --typecheck=disable` to ensure deployments succeed.
-
-**Important**: Do NOT run `convex deploy` directly without the `--typecheck=disable` flag, as it will fail due to the type resolution issues.
+This runs `convex deploy` with typechecking enabled.
 
 ## Workaround
 
@@ -81,9 +60,9 @@ For critical type safety in specific files, consider:
 - `convex/_generated/dataModel.d.ts` - Generated type definitions
 - `convex/_generated/server.d.ts` - Generated Convex server types
 - `convex/schema.ts` - Database schema definition
-- `package.json` - Contains `dev:backend` script with `--typecheck=disable`
+- `package.json` - Contains `dev:backend` and `deploy:convex` scripts
 
 ---
 
-**Last Updated**: 2026-01-10
-**Status**: Documented, awaiting deeper investigation
+**Last Updated**: 2026-01-19
+**Status**: Typecheck enabled (with shims)

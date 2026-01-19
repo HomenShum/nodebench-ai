@@ -15,6 +15,9 @@ import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import type { AgentDigestOutput } from "../domains/agents/digestAgent";
+import type { FastVerifyResult } from "../domains/verification/fastVerification";
+import { calculateRiskScore, detectRiskSignals, selectDDTierWithRisk } from "../domains/agents/dueDiligence/riskScoring";
+import type { MicroBranchResult } from "../domains/agents/dueDiligence/microBranches";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LINKEDIN POST FORMATTING
@@ -946,12 +949,33 @@ export const testMultiPersonaDigest = internalAction({
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * DD (Due Diligence) result for funding profiles
+ */
+interface DDResult {
+  riskScore: number;
+  tier: "FAST_VERIFY" | "LIGHT_DD" | "STANDARD_DD" | "FULL_PLAYBOOK";
+  wasOverridden: boolean;  // Tier escalated due to risk signals
+  escalationTriggers: string[];
+  signals: Array<{
+    category: string;
+    severity: string;
+    signal: string;
+  }>;
+  microBranchResults?: Array<{
+    branch: string;
+    status: "pass" | "warn" | "fail" | "inconclusive";
+    summary: string;
+  }>;
+}
+
+/**
  * Funding company profile for detailed posts
  */
 interface FundingProfile {
   companyName: string;
   roundType: string;
   amount: string;
+  amountUsd?: number;  // For DD tier calculation
   announcedDate: string;
   sector: string;
   product: string;
@@ -965,6 +989,10 @@ interface FundingProfile {
   newsUrl: string;
   confidence: number;
   verificationStatus: string;
+  // Fast verification result (added for LinkedIn badges)
+  fastVerify?: FastVerifyResult;
+  // Full DD result (risk-aware tier selection)
+  ddResult?: DDResult;
 }
 
 /**
@@ -990,6 +1018,43 @@ function sanitizeForLinkedIn(text: string): string {
     .trim();
 }
 
+function formatDDTierBadge(tier: DDResult["tier"]): string {
+  switch (tier) {
+    case "FULL_PLAYBOOK":
+      return "[FULL_PLAYBOOK]";
+    case "STANDARD_DD":
+      return "[STANDARD_DD]";
+    case "LIGHT_DD":
+      return "[LIGHT_DD]";
+    case "FAST_VERIFY":
+    default:
+      return "[FAST_VERIFY]";
+  }
+}
+
+function shouldShowDDInPost(p: FundingProfile): boolean {
+  const dd = p.ddResult;
+  if (!dd) return false;
+  if (dd.escalationTriggers.length > 0) return true;
+  if (dd.tier !== "FAST_VERIFY") return true;
+  if ((p.fastVerify?.overallStatus ?? "unverified") !== "verified") return true;
+  return dd.riskScore >= 25;
+}
+
+function topRiskSignals(dd: DDResult, limit: number): string[] {
+  const severityRank: Record<string, number> = {
+    critical: 4,
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
+  return [...dd.signals]
+    .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
+    .slice(0, limit)
+    .map(s => `${s.severity}: ${s.signal}`);
+}
+
 /**
  * Format a detailed Startup Funding Brief for LinkedIn.
  * Each company gets a full profile with background info.
@@ -997,6 +1062,7 @@ function sanitizeForLinkedIn(text: string): string {
 /**
  * Format a DETAILED company profile (full info - ~600-800 chars each)
  * Includes founders, backgrounds, investor notes for banker-grade intel
+ * Now includes verification badges from fast verification
  */
 function formatCompanyDetailed(
   p: FundingProfile,
@@ -1005,9 +1071,37 @@ function formatCompanyDetailed(
   const roundLabel = p.roundType.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   const lines: string[] = [];
 
-  lines.push(`${index}. ${p.companyName.toUpperCase()}`);
+  // Company name with verification badge
+  const verifyBadge = p.fastVerify?.badge || "";
+  const ddBadge = p.ddResult ? formatDDTierBadge(p.ddResult.tier) : "";
+  const safeCompanyName = sanitizeForLinkedIn(p.companyName).toUpperCase();
+  lines.push(`${index}. ${safeCompanyName} ${verifyBadge} ${ddBadge}`.trim());
   lines.push(`${roundLabel} - ${p.amount}`);
   lines.push(`Announced: ${p.announcedDate}`);
+
+  // DD signals (risk tier, escalation triggers, micro-branches)
+  if (p.ddResult && shouldShowDDInPost(p)) {
+    const dd = p.ddResult;
+    const tierLine = `DD: Tier ${dd.tier}${dd.wasOverridden ? " [risk override]" : ""} | Risk ${dd.riskScore}/100`;
+    lines.push(sanitizeForLinkedIn(tierLine));
+
+    if (dd.escalationTriggers.length > 0) {
+      lines.push(`ALERT: ${sanitizeForLinkedIn(dd.escalationTriggers.slice(0, 2).join("; "))}`);
+    }
+
+    const signals = topRiskSignals(dd, 2);
+    if (signals.length > 0) {
+      lines.push(`Signals: ${sanitizeForLinkedIn(signals.join("; "))}`);
+    }
+
+    if (dd.microBranchResults && dd.microBranchResults.length > 0) {
+      const checks = dd.microBranchResults
+        .slice(0, 3)
+        .map(r => `${r.branch}=${r.status}`)
+        .join(", ");
+      lines.push(`Checks: ${sanitizeForLinkedIn(checks)}`);
+    }
+  }
 
   // Sector
   const sector = sanitizeForLinkedIn(p.sector);
@@ -1048,7 +1142,21 @@ function formatCompanyDetailed(
 
   // Source URL
   if (p.sourceUrl) {
-    lines.push(`Source: ${p.sourceUrl}`);
+    const accessedDate = new Date().toISOString().split("T")[0];
+    lines.push(`Source [accessed ${accessedDate}]: ${p.sourceUrl}`);
+  }
+
+  // Verification status line (only for partial/unverified to flag attention)
+  if (p.fastVerify) {
+    const status = p.fastVerify.overallStatus;
+    if (status === "unverified" || status === "suspicious") {
+      const sourceCred = p.fastVerify.sourceCredibility;
+      const credLabel = sourceCred === "high" ? "trusted source" : sourceCred === "medium" ? "medium source" : "unverified source";
+      lines.push(`DD Note: ${credLabel}, verify independently`);
+    } else if (status === "partial") {
+      lines.push(`DD Note: Partial verification - some signals found`);
+    }
+    // For "verified" status, the badge is sufficient, no extra line needed
   }
 
   return lines.join("\n");
@@ -1509,6 +1617,7 @@ export const postStartupFundingBrief = internalAction({
         companyName: event.companyName,
         roundType: event.roundType,
         amount: event.amountRaw || (event.amountUsd ? `$${(event.amountUsd / 1_000_000).toFixed(1)}M` : "Undisclosed"),
+        amountUsd: event.amountUsd ?? undefined,
         announcedDate: new Date(event.announcedAt).toLocaleDateString("en-US", {
           year: "numeric",
           month: "long",
@@ -1565,6 +1674,150 @@ export const postStartupFundingBrief = internalAction({
       };
     }
 
+    // Step 4: Fast verification for each company
+    console.log(`[startupFundingBrief] Running fast verification on ${fundingProfiles.length} companies...`);
+    try {
+      const verifyResults = await ctx.runAction(
+        internal.domains.verification.fastVerification.batchFastVerify,
+        {
+          companies: fundingProfiles.map(p => ({
+            companyName: p.companyName,
+            websiteUrl: p.website !== "N/A" ? p.website : undefined,
+            sourceUrl: p.sourceUrl || undefined,
+          })),
+          maxConcurrent: 3,
+        }
+      );
+
+      // Attach verification results to profiles
+      for (let i = 0; i < fundingProfiles.length; i++) {
+        if (verifyResults[i]) {
+          fundingProfiles[i].fastVerify = verifyResults[i];
+        }
+      }
+
+      const verifiedCount = verifyResults.filter((r: FastVerifyResult) => r.overallStatus === "verified" || r.overallStatus === "partial").length;
+      console.log(`[startupFundingBrief] Fast verification complete: ${verifiedCount}/${fundingProfiles.length} verified/partial`);
+    } catch (e) {
+      console.warn(`[startupFundingBrief] Fast verification failed, continuing without badges:`, e);
+    }
+
+    // Step 4.5: Risk-aware DD tier selection + micro-branch signals (bounded)
+    console.log(`[startupFundingBrief] Computing DD tiers and risk signals...`);
+    try {
+      const ddResults = await Promise.all(
+        fundingProfiles.map(async (p): Promise<DDResult> => {
+          const founderNames =
+            p.founders && p.founders !== "N/A"
+              ? p.founders
+                  .split(",")
+                  .map(s => s.trim())
+                  .filter(Boolean)
+                  .slice(0, 2)
+              : undefined;
+
+          const riskInputBase = {
+            companyName: p.companyName,
+            websiteUrl: p.website && p.website !== "N/A" ? p.website : undefined,
+            amountUsd: p.amountUsd,
+            roundType: p.roundType,
+            sectors: p.sector && p.sector !== "N/A" ? [p.sector] : undefined,
+            sourceUrl: p.sourceUrl || undefined,
+            fastVerifyResult: p.fastVerify
+              ? {
+                  entityFound: p.fastVerify.entityFound,
+                  websiteLive: p.fastVerify.websiteLive,
+                  sourceCredibility: p.fastVerify.sourceCredibility,
+                }
+              : undefined,
+          };
+
+          // Initial risk score (cheap)
+          let signals = detectRiskSignals(riskInputBase as any);
+          let riskScore = calculateRiskScore(signals);
+          let tierSelection = selectDDTierWithRisk(
+            p.amountUsd ?? null,
+            p.roundType,
+            riskScore
+          );
+
+          // Run micro-branches only when needed (limit tool/API cost)
+          const status = p.fastVerify?.overallStatus;
+          const shouldRunMicroBranches =
+            tierSelection.tier !== "FAST_VERIFY" ||
+            riskScore.overall >= 25 ||
+            status === "unverified" ||
+            status === "suspicious";
+
+          let microBranchResults: MicroBranchResult[] = [];
+          if (shouldRunMicroBranches) {
+            const microCalls: Array<Promise<MicroBranchResult>> = [];
+
+            microCalls.push(
+              ctx.runAction(internal.domains.agents.dueDiligence.microBranches.runIdentityRegistry, {
+                companyName: p.companyName,
+              })
+            );
+
+            microCalls.push(
+              ctx.runAction(internal.domains.agents.dueDiligence.microBranches.runBeneficialOwnership, {
+                companyName: p.companyName,
+                founderNames,
+              })
+            );
+
+            microBranchResults = await Promise.all(microCalls);
+
+            // Recompute risk with micro-branch signals
+            const registry = microBranchResults.find(r => r.branch === "identity_registry");
+            const foundInRegistry = registry?.status === "pass";
+
+            signals = detectRiskSignals({
+              ...(riskInputBase as any),
+              foundInRegistry,
+            });
+            riskScore = calculateRiskScore(signals);
+            tierSelection = selectDDTierWithRisk(
+              p.amountUsd ?? null,
+              p.roundType,
+              riskScore
+            );
+          }
+
+          return {
+            riskScore: riskScore.overall,
+            tier: tierSelection.tier,
+            wasOverridden: tierSelection.wasOverridden,
+            escalationTriggers: riskScore.escalationTriggers,
+            signals: riskScore.signals.map(s => ({
+              category: s.category,
+              severity: s.severity,
+              signal: s.signal,
+            })),
+            microBranchResults: microBranchResults.length
+              ? microBranchResults.map(r => ({
+                  branch: r.branch,
+                  status: r.status,
+                  summary: r.summary,
+                }))
+              : undefined,
+          };
+        })
+      );
+
+      for (let i = 0; i < fundingProfiles.length; i++) {
+        fundingProfiles[i].ddResult = ddResults[i];
+      }
+
+      const tierCounts = ddResults.reduce<Record<string, number>>((acc, r) => {
+        acc[r.tier] = (acc[r.tier] || 0) + 1;
+        return acc;
+      }, {});
+      console.log(`[startupFundingBrief] DD tiers computed:`, tierCounts);
+    } catch (e) {
+      console.warn(`[startupFundingBrief] DD tier selection failed, continuing without DD overlay:`, e);
+    }
+
     // Format the LinkedIn posts (multi-part if needed)
     // Pass total events count to show link to app for full list
     const totalEventsAvailable = fundingEvents.length;
@@ -1575,6 +1828,16 @@ export const postStartupFundingBrief = internalAction({
     if (dryRun) {
       console.log(`[startupFundingBrief] DRY RUN - ${linkedInPosts.length} posts:`);
       linkedInPosts.forEach((p, i) => console.log(`\n--- Post ${i + 1} ---\n${p}`));
+
+      // Build verification summary
+      const verificationSummary = {
+        total: fundingProfiles.length,
+        verified: fundingProfiles.filter(p => p.fastVerify?.overallStatus === "verified").length,
+        partial: fundingProfiles.filter(p => p.fastVerify?.overallStatus === "partial").length,
+        unverified: fundingProfiles.filter(p => p.fastVerify?.overallStatus === "unverified" || p.fastVerify?.overallStatus === "suspicious").length,
+        noVerification: fundingProfiles.filter(p => !p.fastVerify).length,
+      };
+
       return {
         success: true,
         posted: false,
@@ -1588,7 +1851,20 @@ export const postStartupFundingBrief = internalAction({
           amount: p.amount,
           product: p.product,
           founders: p.founders,
+          verification: p.fastVerify ? {
+            status: p.fastVerify.overallStatus,
+            badge: p.fastVerify.badge,
+            sourceCredibility: p.fastVerify.sourceCredibility,
+            entityFound: p.fastVerify.entityFound,
+            websiteLive: p.fastVerify.websiteLive,
+          } : undefined,
+          dd: p.ddResult ? {
+            tier: p.ddResult.tier,
+            riskScore: p.ddResult.riskScore,
+            escalationTriggers: p.ddResult.escalationTriggers,
+          } : undefined,
         })),
+        verificationSummary,
       };
     }
 

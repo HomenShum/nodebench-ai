@@ -267,7 +267,7 @@ export const getThreadsWithSwarmInfo = query({
     // Enrich with swarm status
     const enrichedThreads = await Promise.all(
       threads.map(async (thread) => {
-        let swarmInfo = null;
+        let swarmInfo: any = null;
         if (thread.swarmId) {
           const swarm = await ctx.db
             .query("agentSwarms")

@@ -83,7 +83,7 @@ export const syncEmailsForUser = action({
     console.log(`[emailAdmin] Found ${threads.length} threads`);
 
     // Fetch full thread details for each
-    const syncedThreads = [];
+    const syncedThreads: any[] = [];
     for (const thread of threads.slice(0, maxThreads)) {
       try {
         const threadUrl = `${GMAIL_API_BASE}/threads/${thread.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Date`;

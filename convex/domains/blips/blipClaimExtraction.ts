@@ -90,7 +90,7 @@ export const extractClaimsBatch = internalAction({
       { status: "ingested", limit }
     );
 
-    const results = [];
+    const results: any[] = [];
 
     for (const item of pendingItems) {
       try {
