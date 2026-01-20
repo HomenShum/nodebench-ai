@@ -81,6 +81,8 @@ export const APPROVED_MODELS = [
   "qwen3-235b",        // Qwen3 235B - latest Qwen $0.18/M
   "minimax-m2.1",      // MiniMax M2.1 - agentic workflows $0.28/M
   "mistral-large",     // Mistral Large 2411 - function calling $2/M
+  "glm-4.7-flash",     // GLM 4.7 Flash - fast, agentic coding ($0.07/$0.40)
+  "glm-4.7",           // GLM 4.7 - flagship ($0.40/$1.50)
   // OpenRouter free-tier models (require OPENROUTER_API_KEY; $0 pricing tier - Jan 2026)
   "mimo-v2-flash-free", // Xiaomi MiMo V2 Flash - 309B MoE, #1 SWE-bench
   "devstral-2-free", // Mistral Devstral 2 - 123B agentic coding
@@ -270,6 +272,20 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
     pricing: { inputPerMillion: 2.00, outputPerMillion: 6.00 },
   },
+  "glm-4.7-flash": {
+    alias: "glm-4.7-flash",
+    provider: "openrouter",
+    sdkId: "z-ai/glm-4.7-flash", // Canonical: z-ai/glm-4.7-flash-20260119
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
+    pricing: { inputPerMillion: 0.07, outputPerMillion: 0.40 },
+  },
+  "glm-4.7": {
+    alias: "glm-4.7",
+    provider: "openrouter",
+    sdkId: "z-ai/glm-4.7", // Canonical: z-ai/glm-4.7-20251222
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 202_752 },
+    pricing: { inputPerMillion: 0.40, outputPerMillion: 1.50 },
+  },
   // ═══════════════════════════════════════════════════════════════════════════
   // OPENROUTER FREE-TIER MODELS - Evaluated Jan 2026
   // PROVEN WORKING (100% pass rate on core eval suite):
@@ -430,6 +446,14 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "nvidia/llama-3.1-nemotron-70b-instruct:free": "nemotron-free",
   "nemotron": "nemotron-free",
   "nemotron-70b": "nemotron-free",
+
+  // GLM 4.7 family (priced)
+  "z-ai/glm-4.7-flash": "glm-4.7-flash",
+  "z-ai/glm-4.7-flash-20260119": "glm-4.7-flash",
+  "glm-4.7-flash": "glm-4.7-flash",
+  "z-ai/glm-4.7": "glm-4.7",
+  "z-ai/glm-4.7-20251222": "glm-4.7",
+  "glm-4.7": "glm-4.7",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

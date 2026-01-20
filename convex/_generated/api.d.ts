@@ -239,6 +239,7 @@ import type * as domains_calendar_events from "../domains/calendar/events.js";
 import type * as domains_calendar_holidays from "../domains/calendar/holidays.js";
 import type * as domains_calendar_holidaysActions from "../domains/calendar/holidaysActions.js";
 import type * as domains_calendar_index from "../domains/calendar/index.js";
+import type * as domains_canonicalization_duplicateDetection from "../domains/canonicalization/duplicateDetection.js";
 import type * as domains_channels_channelIntelligence from "../domains/channels/channelIntelligence.js";
 import type * as domains_channels_engagementOptimizer from "../domains/channels/engagementOptimizer.js";
 import type * as domains_channels_index from "../domains/channels/index.js";
@@ -376,6 +377,11 @@ import type * as domains_financial_validation from "../domains/financial/validat
 import type * as domains_financial_xbrlParser from "../domains/financial/xbrlParser.js";
 import type * as domains_groundTruth_auditLog from "../domains/groundTruth/auditLog.js";
 import type * as domains_groundTruth_versions from "../domains/groundTruth/versions.js";
+import type * as domains_hitl_adjudicationWorkflow from "../domains/hitl/adjudicationWorkflow.js";
+import type * as domains_hitl_distributionDriftDetection from "../domains/hitl/distributionDriftDetection.js";
+import type * as domains_hitl_labelerCalibration from "../domains/hitl/labelerCalibration.js";
+import type * as domains_hitl_labelingQueue from "../domains/hitl/labelingQueue.js";
+import type * as domains_hitl_validationWorkspaceEnforcement from "../domains/hitl/validationWorkspaceEnforcement.js";
 import type * as domains_integrations_discord from "../domains/integrations/discord.js";
 import type * as domains_integrations_discordAgent from "../domains/integrations/discordAgent.js";
 import type * as domains_integrations_email from "../domains/integrations/email.js";
@@ -443,6 +449,13 @@ import type * as domains_observability_dashboardData from "../domains/observabil
 import type * as domains_observability_healthMonitor from "../domains/observability/healthMonitor.js";
 import type * as domains_observability_index from "../domains/observability/index.js";
 import type * as domains_observability_selfHealer from "../domains/observability/selfHealer.js";
+import type * as domains_operations_gameDayTracking from "../domains/operations/gameDayTracking.js";
+import type * as domains_operations_mcpRateLimiting from "../domains/operations/mcpRateLimiting.js";
+import type * as domains_operations_mcpSecurity from "../domains/operations/mcpSecurity.js";
+import type * as domains_operations_privacyEnforcement from "../domains/operations/privacyEnforcement.js";
+import type * as domains_operations_sloCollector from "../domains/operations/sloCollector.js";
+import type * as domains_operations_sloDashboardQueries from "../domains/operations/sloDashboardQueries.js";
+import type * as domains_operations_sloFramework from "../domains/operations/sloFramework.js";
 import type * as domains_operations_validationWorkflow from "../domains/operations/validationWorkflow.js";
 import type * as domains_personas_index from "../domains/personas/index.js";
 import type * as domains_personas_multiPersonaSynthesizer from "../domains/personas/multiPersonaSynthesizer.js";
@@ -534,6 +547,7 @@ import type * as domains_social_linkedinFundingPosts from "../domains/social/lin
 import type * as domains_social_linkedinPosting from "../domains/social/linkedinPosting.js";
 import type * as domains_social_postDedup from "../domains/social/postDedup.js";
 import type * as domains_social_postDedupAction from "../domains/social/postDedupAction.js";
+import type * as domains_social_specializedPostQueries from "../domains/social/specializedPostQueries.js";
 import type * as domains_tasks_dailyNotes from "../domains/tasks/dailyNotes.js";
 import type * as domains_tasks_eventTaskDocuments from "../domains/tasks/eventTaskDocuments.js";
 import type * as domains_tasks_index from "../domains/tasks/index.js";
@@ -544,6 +558,7 @@ import type * as domains_tasks_workflows_coordinatorWorkflow from "../domains/ta
 import type * as domains_tasks_workflows_index from "../domains/tasks/workflows/index.js";
 import type * as domains_teachability_index from "../domains/teachability/index.js";
 import type * as domains_telemetry_disclosureEvents from "../domains/telemetry/disclosureEvents.js";
+import type * as domains_testing_testingFramework from "../domains/testing/testingFramework.js";
 import type * as domains_utilities_migrations from "../domains/utilities/migrations.js";
 import type * as domains_utilities_seedGoldenDataset from "../domains/utilities/seedGoldenDataset.js";
 import type * as domains_utilities_snapshotMigrations from "../domains/utilities/snapshotMigrations.js";
@@ -713,6 +728,7 @@ import type * as workflows_prdComposerWorkflow from "../workflows/prdComposerWor
 import type * as workflows_scheduledPDFReports from "../workflows/scheduledPDFReports.js";
 import type * as workflows_scheduledPDFReportsMutations from "../workflows/scheduledPDFReportsMutations.js";
 import type * as workflows_sendMockBankerDigest from "../workflows/sendMockBankerDigest.js";
+import type * as workflows_specializedLinkedInPosts from "../workflows/specializedLinkedInPosts.js";
 import type * as workflows_testDailyBrief from "../workflows/testDailyBrief.js";
 
 import type {
@@ -953,6 +969,7 @@ declare const fullApi: ApiFromModules<{
   "domains/calendar/holidays": typeof domains_calendar_holidays;
   "domains/calendar/holidaysActions": typeof domains_calendar_holidaysActions;
   "domains/calendar/index": typeof domains_calendar_index;
+  "domains/canonicalization/duplicateDetection": typeof domains_canonicalization_duplicateDetection;
   "domains/channels/channelIntelligence": typeof domains_channels_channelIntelligence;
   "domains/channels/engagementOptimizer": typeof domains_channels_engagementOptimizer;
   "domains/channels/index": typeof domains_channels_index;
@@ -1090,6 +1107,11 @@ declare const fullApi: ApiFromModules<{
   "domains/financial/xbrlParser": typeof domains_financial_xbrlParser;
   "domains/groundTruth/auditLog": typeof domains_groundTruth_auditLog;
   "domains/groundTruth/versions": typeof domains_groundTruth_versions;
+  "domains/hitl/adjudicationWorkflow": typeof domains_hitl_adjudicationWorkflow;
+  "domains/hitl/distributionDriftDetection": typeof domains_hitl_distributionDriftDetection;
+  "domains/hitl/labelerCalibration": typeof domains_hitl_labelerCalibration;
+  "domains/hitl/labelingQueue": typeof domains_hitl_labelingQueue;
+  "domains/hitl/validationWorkspaceEnforcement": typeof domains_hitl_validationWorkspaceEnforcement;
   "domains/integrations/discord": typeof domains_integrations_discord;
   "domains/integrations/discordAgent": typeof domains_integrations_discordAgent;
   "domains/integrations/email": typeof domains_integrations_email;
@@ -1157,6 +1179,13 @@ declare const fullApi: ApiFromModules<{
   "domains/observability/healthMonitor": typeof domains_observability_healthMonitor;
   "domains/observability/index": typeof domains_observability_index;
   "domains/observability/selfHealer": typeof domains_observability_selfHealer;
+  "domains/operations/gameDayTracking": typeof domains_operations_gameDayTracking;
+  "domains/operations/mcpRateLimiting": typeof domains_operations_mcpRateLimiting;
+  "domains/operations/mcpSecurity": typeof domains_operations_mcpSecurity;
+  "domains/operations/privacyEnforcement": typeof domains_operations_privacyEnforcement;
+  "domains/operations/sloCollector": typeof domains_operations_sloCollector;
+  "domains/operations/sloDashboardQueries": typeof domains_operations_sloDashboardQueries;
+  "domains/operations/sloFramework": typeof domains_operations_sloFramework;
   "domains/operations/validationWorkflow": typeof domains_operations_validationWorkflow;
   "domains/personas/index": typeof domains_personas_index;
   "domains/personas/multiPersonaSynthesizer": typeof domains_personas_multiPersonaSynthesizer;
@@ -1248,6 +1277,7 @@ declare const fullApi: ApiFromModules<{
   "domains/social/linkedinPosting": typeof domains_social_linkedinPosting;
   "domains/social/postDedup": typeof domains_social_postDedup;
   "domains/social/postDedupAction": typeof domains_social_postDedupAction;
+  "domains/social/specializedPostQueries": typeof domains_social_specializedPostQueries;
   "domains/tasks/dailyNotes": typeof domains_tasks_dailyNotes;
   "domains/tasks/eventTaskDocuments": typeof domains_tasks_eventTaskDocuments;
   "domains/tasks/index": typeof domains_tasks_index;
@@ -1258,6 +1288,7 @@ declare const fullApi: ApiFromModules<{
   "domains/tasks/workflows/index": typeof domains_tasks_workflows_index;
   "domains/teachability/index": typeof domains_teachability_index;
   "domains/telemetry/disclosureEvents": typeof domains_telemetry_disclosureEvents;
+  "domains/testing/testingFramework": typeof domains_testing_testingFramework;
   "domains/utilities/migrations": typeof domains_utilities_migrations;
   "domains/utilities/seedGoldenDataset": typeof domains_utilities_seedGoldenDataset;
   "domains/utilities/snapshotMigrations": typeof domains_utilities_snapshotMigrations;
@@ -1427,6 +1458,7 @@ declare const fullApi: ApiFromModules<{
   "workflows/scheduledPDFReports": typeof workflows_scheduledPDFReports;
   "workflows/scheduledPDFReportsMutations": typeof workflows_scheduledPDFReportsMutations;
   "workflows/sendMockBankerDigest": typeof workflows_sendMockBankerDigest;
+  "workflows/specializedLinkedInPosts": typeof workflows_specializedLinkedInPosts;
   "workflows/testDailyBrief": typeof workflows_testDailyBrief;
 }>;
 

@@ -26,7 +26,7 @@
 // TYPE DEFINITIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type LlmProvider = "openai" | "anthropic" | "gemini";
+export type LlmProvider = "openai" | "anthropic" | "gemini" | "openrouter";
 
 export type LlmTask =
   | "chat"
@@ -74,6 +74,8 @@ export const modelPricing: Record<string, ModelPricing> = {
   "qwen3-235b": { inputPer1M: 0.18, outputPer1M: 0.54, contextWindow: 131072 },
   "minimax-m2.1": { inputPer1M: 0.28, outputPer1M: 1.20, contextWindow: 196608 },
   "mistral-large": { inputPer1M: 2.00, outputPer1M: 6.00, contextWindow: 131072 },
+  "glm-4.7-flash": { inputPer1M: 0.07, outputPer1M: 0.40, cachedInputPer1M: 0.01, contextWindow: 200000 },
+  "glm-4.7": { inputPer1M: 0.40, outputPer1M: 1.50, contextWindow: 202752 },
 
   // OpenRouter Free-Tier Models ($0 pricing - auto-discovered Jan 2026)
   "mimo-v2-flash-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 262144 },
@@ -123,7 +125,7 @@ export const tierLimits: Record<UserTier, TierLimits> = {
     requestsPerDay: 500,
     tokensPerDay: 2_000_000,
     maxTokensPerRequest: 32_000,
-    allowedProviders: ["openai", "anthropic", "gemini"],
+    allowedProviders: ["openai", "anthropic", "gemini", "openrouter"],
     allowedModels: [],  // All models
     costLimitPerDay: 25.00,
   },
@@ -131,7 +133,7 @@ export const tierLimits: Record<UserTier, TierLimits> = {
     requestsPerDay: 2000,
     tokensPerDay: 10_000_000,
     maxTokensPerRequest: 128_000,
-    allowedProviders: ["openai", "anthropic", "gemini"],
+    allowedProviders: ["openai", "anthropic", "gemini", "openrouter"],
     allowedModels: [],  // All models
     costLimitPerDay: 100.00,
   },
@@ -139,7 +141,7 @@ export const tierLimits: Record<UserTier, TierLimits> = {
     requestsPerDay: -1,  // Unlimited
     tokensPerDay: -1,    // Unlimited
     maxTokensPerRequest: 400_000,
-    allowedProviders: ["openai", "anthropic", "gemini"],
+    allowedProviders: ["openai", "anthropic", "gemini", "openrouter"],
     allowedModels: [],   // All models
     costLimitPerDay: -1, // Unlimited
   },
@@ -184,6 +186,17 @@ export const llmModelCatalog: ModelCatalog = {
     fileSearch: ["gemini-3-flash"],
     voice: ["gemini-3-flash"],
     coding: ["gemini-3-pro", "gemini-3-flash"],
+  },
+  openrouter: {
+    chat: ["glm-4.7-flash", "deepseek-v3.2-speciale", "deepseek-r1", "glm-4.7"],
+    agent: ["glm-4.7-flash", "deepseek-v3.2-speciale", "deepseek-r1", "glm-4.7"],
+    router: ["glm-4.7-flash", "deepseek-v3.2-speciale"],
+    judge: ["deepseek-r1", "glm-4.7"],
+    analysis: ["deepseek-r1", "glm-4.7"],
+    vision: [],
+    fileSearch: ["glm-4.7-flash", "deepseek-v3.2-speciale"],
+    voice: [],
+    coding: ["glm-4.7-flash", "deepseek-v3.2-speciale", "mistral-large"],
   },
 };
 
@@ -289,6 +302,9 @@ export function getProviderForModel(modelName: string): LlmProvider | null {
   }
   if (modelName.startsWith("gemini-")) {
     return "gemini";
+  }
+  if (modelPricing[modelName] != null) {
+    return "openrouter";
   }
   return null;
 }
@@ -505,6 +521,13 @@ export const providerIntegrationStatus: ProviderStatus[] = [
     supportsAgents: true,
     notes: "Fully integrated. SDK installed.",
   },
+  {
+    provider: "openrouter",
+    sdkPackage: "@ai-sdk/openai (OpenRouter-compatible baseURL)",
+    integrated: true,
+    supportsAgents: true,
+    notes: "Integrated via OpenAI-compatible API; requires OPENROUTER_API_KEY.",
+  },
 ];
 
 export function getProviderStatus(provider: LlmProvider): ProviderStatus | undefined {
@@ -611,6 +634,7 @@ export const providerEnvVars: Record<LlmProvider, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
   gemini: "GEMINI_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
 };
 
 /**
@@ -631,7 +655,7 @@ export function isProviderConfigured(provider: LlmProvider): boolean {
  * Get all configured providers
  */
 export function getConfiguredProviders(): LlmProvider[] {
-  return (["openai", "anthropic", "gemini"] as LlmProvider[]).filter(isProviderConfigured);
+  return (["openai", "anthropic", "gemini", "openrouter"] as LlmProvider[]).filter(isProviderConfigured);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -640,26 +664,29 @@ export function getConfiguredProviders(): LlmProvider[] {
 
 /** Fallback chain for each provider */
 export const providerFallbackChain: Record<LlmProvider, LlmProvider[]> = {
-  openai: ["anthropic", "gemini"],
-  anthropic: ["openai", "gemini"],
-  gemini: ["openai", "anthropic"],
+  openai: ["anthropic", "gemini", "openrouter"],
+  anthropic: ["openai", "gemini", "openrouter"],
+  gemini: ["openai", "anthropic", "openrouter"],
+  openrouter: ["gemini", "openai", "anthropic"],
 };
 
 /** Model equivalents across providers (for failover) - 8 approved models */
 export const modelEquivalents: Record<string, Record<LlmProvider, string>> = {
   // High-tier models
-  "gpt-5.2": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro" },
-  "claude-opus-4.5": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro" },
-  "claude-sonnet-4.5": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro" },
-  "gemini-3-pro": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro" },
+  "gpt-5.2": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
+  "claude-opus-4.5": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
+  "claude-sonnet-4.5": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
+  "gemini-3-pro": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
+  "glm-4.7": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
 
   // Mid-tier/balanced models
-  "gpt-5-mini": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash" },
+  "gpt-5-mini": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
+  "glm-4.7-flash": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
 
   // Fast/efficient models
-  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash" },
-  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash" },
-  "gemini-3-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash" },
+  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
+  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
+  "gemini-3-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
 };
 
 /**
@@ -676,6 +703,7 @@ export function getEquivalentModel(modelName: string, targetProvider: LlmProvide
     openai: "gpt-5-nano",          // Cheapest OpenAI
     anthropic: "claude-haiku-4.5", // Cheapest Anthropic (DEFAULT)
     gemini: "gemini-3-flash",      // Cheapest Google (Dec 17, 2025)
+    openrouter: "glm-4.7-flash",   // Cheapest OpenRouter-priced model (Jan 2026)
   };
 
   return defaults[targetProvider];

@@ -6,15 +6,23 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ## Changelog
 
+- Full release notes: `src/features/research/data/CHANGELOG.md`
+- In-app: Research Hub → Changelog
+
 ### v0.3.6 (January 20, 2026)
 
 **UI + Performance**
-- Home: Added a “Start here” action row (Fast Agent, Create Dossier, What Changed) and clarified primary vs secondary CTAs.
-- Fast Agent: Added “Recent chats” landing section (avoids auto-opening the first thread) to improve conversion/retention.
+- Home: Added a "Start here" action row (Fast Agent, Create Dossier, What Changed) and clarified primary vs secondary CTAs.
+- Fast Agent: Added a "Recent chats" landing section (avoids auto-opening the first thread) to improve conversion/retention.
 - Bundling: Lazy-loaded `TabManager` + `FastAgentPanel` and deferred spreadsheet deps; reduced initial `vendor-*.js` bundle size and removed oversized chunk warnings.
+- Changelog: Added in-app Changelog tab (Research Hub → Changelog).
+
+**Models**
+- Added OpenRouter priced models `glm-4.7-flash` and `glm-4.7` to the model registry and model picker.
+- Benchmarks: Persona episode eval now estimates OpenRouter costs using the repo pricing catalog.
 
 **Reliability**
-- Website liveness: Multi-vantage consensus no longer marks sites “dead” from partial DNS/HTTP evidence, reducing false “website not live” signals.
+- Website liveness: Multi-vantage consensus no longer marks sites "dead" from partial DNS/HTTP evidence, reducing false "website not live" signals.
 
 **LinkedIn / Social**
 - Added optional 2-stage semantic dedup scaffolding (`useSemanticDedup`) with embeddings + LLM-as-judge verdict fields for startup funding posts.
@@ -1921,7 +1929,7 @@ Comprehensive 7-phase reorganization of the entire codebase to establish clean, 
 
 #### Known Limitations (Future Enhancements)
 1. Frontend integration pending (using localStorage currently)
-2. Changelog rendering in UI not yet implemented
+2. Changelog rendering in dossier view not yet implemented (use Research Hub → Changelog)
 3. Trending searches showcase not yet built
 4. Background cleanup job recommended for old entries
 
@@ -1929,7 +1937,7 @@ Comprehensive 7-phase reorganization of the entire codebase to establish clean, 
 1. Replace localStorage with Convex hooks in frontend
 2. Add enrichment logic for stale cache
 3. Build trending searches UI component
-4. Add changelog rendering to dossier view
+4. Optional: surface changelog inside dossier view
 
 ### 2025-11-30 - Daily Dossier Newsletter UI Revamp ✅
 

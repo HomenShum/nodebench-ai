@@ -1185,6 +1185,22 @@ interface FundingProfile {
   fastVerify?: FastVerifyResult;
   // Full DD result (risk-aware tier selection)
   ddResult?: DDResult;
+  // Progression tracking: indicates company raised previous round
+  progression?: {
+    previousRound: string;
+    previousPostUrl?: string;
+    diffSummary?: string; // For semantic dedup updates
+  };
+  // Full funding timeline from fundingEvents (original source data)
+  fundingTimeline?: Array<{
+    roundType: string;
+    amount: string;
+    amountUsd?: number;
+    date: string;           // Formatted date string from announcedAt
+    sourceUrls: string[];   // Original discovery source URLs
+    announcedAt: number;    // Original announcement timestamp
+    leadInvestors: string[];
+  }>;
 }
 
 /**
@@ -1211,16 +1227,80 @@ function sanitizeForLinkedIn(text: string): string {
 }
 
 function formatDDTierBadge(tier: DDResult["tier"]): string {
+  // Enhanced badges: Shorter format with tier-appropriate indicators
   switch (tier) {
     case "FULL_PLAYBOOK":
-      return "[FULL_PLAYBOOK]";
+      return "[DD:FULL]"; // Deep institutional-grade DD
     case "STANDARD_DD":
-      return "[STANDARD_DD]";
+      return "[DD:STD]"; // Standard due diligence
     case "LIGHT_DD":
-      return "[LIGHT_DD]";
+      return "[DD:LT]"; // Light touch DD
     case "FAST_VERIFY":
     default:
-      return "[FAST_VERIFY]";
+      return "[DD:FV]"; // Fast verification only
+  }
+}
+
+/**
+ * Format risk score as qualitative label with optional score
+ */
+function formatRiskLabel(riskScore: number, showNumeric = true): string {
+  let label: string;
+  if (riskScore >= 75) {
+    label = "CRITICAL";
+  } else if (riskScore >= 50) {
+    label = "HIGH";
+  } else if (riskScore >= 25) {
+    label = "MEDIUM";
+  } else {
+    label = "LOW";
+  }
+  return showNumeric ? `${label} (${riskScore}/100)` : label;
+}
+
+/**
+ * Format micro-branch result in user-friendly format
+ * Converts technical branch names to readable labels
+ */
+function formatMicroBranchResult(branch: string, status: string): string {
+  // Friendly branch name mapping
+  const branchLabels: Record<string, string> = {
+    identity_registry: "Registry",
+    beneficial_ownership: "Ownership",
+    website_verification: "Website",
+    news_sentiment: "News",
+    regulatory_check: "Regulatory",
+    patent_search: "Patents",
+    team_verification: "Team",
+  };
+
+  // Friendly status mapping with indicators
+  const statusLabels: Record<string, string> = {
+    pass: "OK",
+    fail: "FAIL",
+    warn: "WARN",
+    skip: "N/A",
+    error: "ERR",
+  };
+
+  const friendlyBranch = branchLabels[branch] || branch.replace(/_/g, " ");
+  const friendlyStatus = statusLabels[status] || status;
+
+  return `${friendlyBranch}:${friendlyStatus}`;
+}
+
+/**
+ * Format source credibility with visual indicator
+ */
+function formatSourceCredibility(credibility: string | undefined): string {
+  switch (credibility) {
+    case "high":
+      return "[SRC:TRUSTED]";
+    case "medium":
+      return "[SRC:KNOWN]";
+    case "low":
+    default:
+      return "[SRC:UNVERIFIED]";
   }
 }
 
@@ -1263,33 +1343,105 @@ function formatCompanyDetailed(
   const roundLabel = p.roundType.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   const lines: string[] = [];
 
-  // Company name with verification badge
+  // Company name with verification badge and progression indicator
   const verifyBadge = p.fastVerify?.badge || "";
   const ddBadge = p.ddResult ? formatDDTierBadge(p.ddResult.tier) : "";
+  const progressionBadge = p.progression ? "[FOLLOW-ON]" : "";
   const safeCompanyName = sanitizeForLinkedIn(p.companyName).toUpperCase();
-  lines.push(`${index}. ${safeCompanyName} ${verifyBadge} ${ddBadge}`.trim());
+  lines.push(`${index}. ${safeCompanyName} ${verifyBadge} ${ddBadge} ${progressionBadge}`.trim().replace(/\s+/g, " "));
   lines.push(`${roundLabel} - ${p.amount}`);
   lines.push(`Announced: ${p.announcedDate}`);
+
+  // Funding timeline: show COMPLETE funding journey with source citations
+  // For later-stage companies (Series B+), show ALL prior rounds from inception
+  if (p.fundingTimeline && p.fundingTimeline.length > 0) {
+    // Determine if this is a later-stage company (Series B or beyond)
+    const laterStageRounds = ["series-b", "series-c", "series-d-plus", "growth", "ipo"];
+    const isLaterStage = laterStageRounds.includes(p.roundType.toLowerCase());
+
+    // For Series B+: show ALL rounds (complete journey from inception)
+    // For early-stage: show up to 4 rounds (still informative but compact)
+    const maxRoundsToShow = isLaterStage ? p.fundingTimeline.length : 4;
+    const priorRounds = p.fundingTimeline.slice(0, maxRoundsToShow);
+
+    // Calculate total raised across all rounds for context
+    const totalRaised = p.fundingTimeline.reduce((sum, entry) => {
+      return sum + (entry.amountUsd || 0);
+    }, 0);
+    const totalRaisedStr = totalRaised > 0
+      ? `$${(totalRaised / 1_000_000).toFixed(1)}M total`
+      : "";
+
+    lines.push(`FUNDING JOURNEY:${totalRaisedStr ? ` [${totalRaisedStr}]` : ""}`);
+
+    for (const entry of priorRounds) {
+      const roundLabel = entry.roundType.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      // Format: "Jan 2024: Seed [$5M]"
+      const roundLine = `  -> ${entry.date}: ${roundLabel} [${entry.amount}]`;
+      lines.push(sanitizeForLinkedIn(roundLine));
+
+      // Add source URL if available (first source only to keep compact)
+      if (entry.sourceUrls && entry.sourceUrls.length > 0) {
+        const sourceUrl = entry.sourceUrls[0];
+        // Only show domain for readability
+        try {
+          const domain = new URL(sourceUrl).hostname.replace("www.", "");
+          lines.push(`     Source: ${domain}`);
+        } catch {
+          // Skip invalid URLs
+        }
+      }
+
+      // Show lead investor if available
+      if (entry.leadInvestors && entry.leadInvestors.length > 0) {
+        lines.push(`     Lead: ${sanitizeForLinkedIn(entry.leadInvestors[0])}`);
+      }
+    }
+
+    // If we truncated, indicate there's more history
+    if (p.fundingTimeline.length > maxRoundsToShow) {
+      lines.push(`  ... +${p.fundingTimeline.length - maxRoundsToShow} earlier rounds`);
+    }
+
+    // Add diff summary if semantic dedup detected changes
+    if (p.progression?.diffSummary) {
+      lines.push(`Update: ${sanitizeForLinkedIn(p.progression.diffSummary)}`);
+    }
+  } else if (p.progression) {
+    // Fallback: simple progression display if no full timeline
+    const prevRoundLabel = p.progression.previousRound.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    lines.push(`PROGRESSION: Previously raised ${prevRoundLabel}`);
+    if (p.progression.diffSummary) {
+      lines.push(`Update: ${sanitizeForLinkedIn(p.progression.diffSummary)}`);
+    }
+  }
 
   // DD signals (risk tier, escalation triggers, micro-branches)
   if (p.ddResult && shouldShowDDInPost(p)) {
     const dd = p.ddResult;
-    const tierLine = `DD: Tier ${dd.tier}${dd.wasOverridden ? " [risk override]" : ""} | Risk ${dd.riskScore}/100`;
+    // Enhanced: Use qualitative risk label instead of raw score
+    const riskLabel = formatRiskLabel(dd.riskScore);
+    const overrideNote = dd.wasOverridden ? " [RISK_OVERRIDE]" : "";
+    const tierLine = `DD: ${dd.tier}${overrideNote} | Risk: ${riskLabel}`;
     lines.push(sanitizeForLinkedIn(tierLine));
 
+    // Enhanced: Prioritize escalation alerts with urgency indicator
     if (dd.escalationTriggers.length > 0) {
-      lines.push(`ALERT: ${sanitizeForLinkedIn(dd.escalationTriggers.slice(0, 2).join("; "))}`);
+      const urgency = dd.riskScore >= 50 ? "URGENT" : "ALERT";
+      lines.push(`${urgency}: ${sanitizeForLinkedIn(dd.escalationTriggers.slice(0, 2).join("; "))}`);
     }
 
+    // Risk signals with severity context
     const signals = topRiskSignals(dd, 2);
     if (signals.length > 0) {
       lines.push(`Signals: ${sanitizeForLinkedIn(signals.join("; "))}`);
     }
 
+    // Enhanced: More user-friendly micro-branch display
     if (dd.microBranchResults && dd.microBranchResults.length > 0) {
       const checks = dd.microBranchResults
         .slice(0, 3)
-        .map(r => `${r.branch}=${r.status}`)
+        .map(r => formatMicroBranchResult(r.branch, r.status))
         .join(", ");
       lines.push(`Checks: ${sanitizeForLinkedIn(checks)}`);
     }
@@ -1347,23 +1499,32 @@ function formatCompanyDetailed(
     }
   }
 
-  // Source URL
+  // Source URL with credibility indicator
   if (p.sourceUrl) {
     const accessedDate = new Date().toISOString().split("T")[0];
-    lines.push(`Source [accessed ${accessedDate}]: ${p.sourceUrl}`);
+    const credIndicator = p.fastVerify?.sourceCredibility
+      ? ` ${formatSourceCredibility(p.fastVerify.sourceCredibility)}`
+      : "";
+    lines.push(`Source${credIndicator} [${accessedDate}]: ${p.sourceUrl}`);
   }
 
-  // Verification status line (only for partial/unverified to flag attention)
+  // Enhanced: Verification status with confidence and actionable guidance
   if (p.fastVerify) {
     const status = p.fastVerify.overallStatus;
+    const confidence = p.confidence;
+
     if (status === "unverified" || status === "suspicious") {
-      const sourceCred = p.fastVerify.sourceCredibility;
-      const credLabel = sourceCred === "high" ? "trusted source" : sourceCred === "medium" ? "medium source" : "unverified source";
-      lines.push(`DD Note: ${credLabel}, verify independently`);
+      const credLabel = formatSourceCredibility(p.fastVerify.sourceCredibility);
+      const confNote = confidence && confidence < 0.7 ? ` | Conf: ${(confidence * 100).toFixed(0)}%` : "";
+      lines.push(`DD Note: ${credLabel}${confNote} - verify independently`);
     } else if (status === "partial") {
-      lines.push(`DD Note: Partial verification - some signals found`);
+      const confNote = confidence && confidence < 0.85 ? ` | Conf: ${(confidence * 100).toFixed(0)}%` : "";
+      lines.push(`DD Note: Partial verification${confNote} - some signals found`);
+    } else if (status === "verified" && confidence && confidence >= 0.9) {
+      // Only show confidence for high-confidence verified items
+      lines.push(`Verified | Conf: ${(confidence * 100).toFixed(0)}%`);
     }
-    // For "verified" status, the badge is sufficient, no extra line needed
+    // For "verified" without high confidence, the badge is sufficient
   }
 
   return lines.join("\n");
@@ -1387,6 +1548,26 @@ function formatStartupFundingBriefMultiPart(
   // App URL for full funding brief (uses hash-based navigation)
   const APP_URL = "https://nodebench-ai.vercel.app/#funding";
 
+  // Compute verification summary for header
+  const verifyStats = {
+    verified: profiles.filter(p => p.fastVerify?.overallStatus === "verified").length,
+    partial: profiles.filter(p => p.fastVerify?.overallStatus === "partial").length,
+    unverified: profiles.filter(p => !p.fastVerify || p.fastVerify.overallStatus === "unverified" || p.fastVerify.overallStatus === "suspicious").length,
+  };
+
+  // DD tier summary
+  const ddStats = {
+    fullPlaybook: profiles.filter(p => p.ddResult?.tier === "FULL_PLAYBOOK").length,
+    standardDD: profiles.filter(p => p.ddResult?.tier === "STANDARD_DD").length,
+    lightDD: profiles.filter(p => p.ddResult?.tier === "LIGHT_DD").length,
+    fastVerify: profiles.filter(p => !p.ddResult || p.ddResult.tier === "FAST_VERIFY").length,
+  };
+
+  // Build concise verification summary line
+  const verifyLine = verifyStats.verified > 0 || verifyStats.partial > 0
+    ? `DD Summary: ${verifyStats.verified} verified, ${verifyStats.partial} partial, ${verifyStats.unverified} pending`
+    : "";
+
   const header = `STARTUP FUNDING BRIEF\n${dateString} - NodeBench AI`;
 
   // Show if there are more events than we're displaying
@@ -1396,7 +1577,12 @@ function formatStartupFundingBriefMultiPart(
 
   const footer = `${moreEventsNote}\n\nNodeBench AI - Startup Intelligence\n#Startups #Funding #VentureCapital #AI #TechNews`;
 
-  let currentPost = header + `\n[1/?] Latest Funding Rounds\n`;
+  // Add verification summary to first post header
+  const headerWithSummary = verifyLine
+    ? `${header}\n${verifyLine}\n[1/?] Latest Funding Rounds\n`
+    : `${header}\n[1/?] Latest Funding Rounds\n`;
+
+  let currentPost = headerWithSummary;
   let partNumber = 1;
   let profileIndex = 1;
 
@@ -1821,6 +2007,37 @@ export const postStartupFundingBrief = internalAction({
       }
     }
 
+    // Step 1.6: Fetch COMPLETE funding history from fundingEvents table (original source data)
+    // This gives us REAL funding rounds with original sourceUrls and announcedAt dates
+    // NO lookback limits - for Series B/C/D/IPO companies, we want the FULL journey from inception
+    let fundingHistories: Record<string, Array<{
+      roundType: string;
+      amountRaw: string;
+      amountUsd?: number;
+      announcedAt: number;
+      sourceUrls: string[];
+      leadInvestors: string[];
+      confidence: number;
+      verificationStatus: string;
+    }>> = {};
+
+    if (fundingEvents.length > 0) {
+      try {
+        fundingHistories = await ctx.runQuery(
+          internal.domains.enrichment.fundingQueries.batchGetFundingHistory,
+          {
+            companyNames: fundingEvents.map(e => e.companyName),
+            fullHistory: true, // Get COMPLETE history - no time limits
+          }
+        );
+        const companiesWithHistory = Object.values(fundingHistories).filter(t => t.length > 1).length;
+        const maxRounds = Math.max(...Object.values(fundingHistories).map(t => t.length), 0);
+        console.log(`[startupFundingBrief] Fetched funding history: ${companiesWithHistory}/${fundingEvents.length} companies have prior rounds (max: ${maxRounds} rounds)`);
+      } catch (e) {
+        console.warn(`[startupFundingBrief] Failed to fetch funding history:`, e);
+      }
+    }
+
     // Step 2: Enrich with entity context data + AI enrichment
     const fundingProfiles: FundingProfile[] = [];
     const skippedDuplicates: string[] = [];
@@ -1915,6 +2132,33 @@ export const postStartupFundingBrief = internalAction({
         }
       }
 
+      // Check for progression data (from either semantic or legacy dedup)
+      const progressionEntry = progressions.find(p => p.company === event.companyName);
+      const progressionData = progressionEntry ? {
+        previousRound: progressionEntry.previousRound,
+        previousPostUrl: progressionEntry.previousUrl,
+        diffSummary: useSemanticDedup ? semanticDedupResults.get(event.companyName)?.diffSummary : undefined,
+      } : undefined;
+
+      // Build funding timeline from original fundingEvents data (real source URLs)
+      const companyHistory = fundingHistories[event.companyName] ?? [];
+      // Only show timeline if there are PRIOR rounds (more than 1 entry, excluding current)
+      const priorRounds = companyHistory.filter(entry => entry.announcedAt < event.announcedAt);
+      const formattedTimeline = priorRounds.length > 0
+        ? priorRounds.map(entry => ({
+            roundType: entry.roundType,
+            amount: entry.amountRaw,
+            amountUsd: entry.amountUsd,
+            date: new Date(entry.announcedAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+            }),
+            sourceUrls: entry.sourceUrls,
+            announcedAt: entry.announcedAt,
+            leadInvestors: entry.leadInvestors,
+          }))
+        : undefined;
+
       // Build initial profile
       let profile: FundingProfile = {
         companyName: event.companyName,
@@ -1941,6 +2185,8 @@ export const postStartupFundingBrief = internalAction({
         newsUrl: `https://news.google.com/search?q=${encodeURIComponent(event.companyName + " funding")}`,
         confidence: event.confidence,
         verificationStatus: event.verificationStatus,
+        progression: progressionData,
+        fundingTimeline: formattedTimeline,
       };
 
       // Step 3: AI enrichment if needed and enabled

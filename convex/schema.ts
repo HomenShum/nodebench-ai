@@ -1354,6 +1354,235 @@ const linkedinFundingPosts = defineTable({
   });
 
 /* ------------------------------------------------------------------ */
+/* SPECIALIZED LINKEDIN POSTS - FDA, Clinical Trials, Research, M&A  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * LinkedIn FDA Update Posts - Tracks regulatory milestone posts
+ * Enables timeline progression: "Previously cleared 3 510(k)s, now PMA approved"
+ */
+const linkedinFdaPosts = defineTable({
+  // Company identification
+  companyNameNormalized: v.string(),
+  companyName: v.string(),
+
+  // FDA event details
+  eventType: v.union(
+    v.literal("510k"),
+    v.literal("pma"),
+    v.literal("bla"),
+    v.literal("nda"),
+    v.literal("recall"),
+    v.literal("adverse_event")
+  ),
+  productName: v.string(),
+  referenceNumber: v.optional(v.string()),    // K-number, PMA number, etc.
+  decisionDate: v.string(),
+  description: v.optional(v.string()),
+  sourceUrl: v.optional(v.string()),
+
+  // Sector categorization
+  sector: v.optional(v.string()),
+  sectorCategory: v.optional(v.string()),
+
+  // Post details
+  postUrn: v.string(),
+  postUrl: v.string(),
+  postPart: v.optional(v.number()),
+  totalParts: v.optional(v.number()),
+
+  // Timeline progression
+  previousPostId: v.optional(v.id("linkedinFdaPosts")),
+  progressionType: v.optional(v.union(
+    v.literal("new"),
+    v.literal("additional-clearance"),     // Another 510(k) for same company
+    v.literal("major-upgrade"),             // 510(k) → PMA progression
+    v.literal("recall-follow-up")           // Post about a recalled product
+  )),
+
+  // Timestamps
+  postedAt: v.number(),
+  fdaCacheId: v.optional(v.string()),        // Link to investorPlaybookFdaCache
+})
+  .index("by_company", ["companyNameNormalized"])
+  .index("by_company_type", ["companyNameNormalized", "eventType"])
+  .index("by_postedAt", ["postedAt"])
+  .index("by_sector", ["sectorCategory", "postedAt"])
+  .index("by_eventType", ["eventType", "postedAt"]);
+
+/**
+ * LinkedIn Clinical Trial Posts - Tracks trial milestone posts
+ * Enables timeline: "Phase 1 completed Dec 2024, now entering Phase 3"
+ */
+const linkedinClinicalPosts = defineTable({
+  // Company identification
+  companyNameNormalized: v.string(),
+  companyName: v.string(),
+  drugName: v.optional(v.string()),
+
+  // Trial details
+  trialPhase: v.union(
+    v.literal("preclinical"),
+    v.literal("phase-1"),
+    v.literal("phase-1-2"),
+    v.literal("phase-2"),
+    v.literal("phase-2-3"),
+    v.literal("phase-3"),
+    v.literal("nda-submitted"),
+    v.literal("approved")
+  ),
+  nctId: v.optional(v.string()),              // ClinicalTrials.gov NCT ID
+  indication: v.optional(v.string()),
+  milestone: v.string(),                       // "Phase 2 results announced", "FDA Fast Track", etc.
+  milestoneDate: v.string(),
+  sourceUrl: v.optional(v.string()),
+
+  // Sector categorization
+  sector: v.optional(v.string()),
+  sectorCategory: v.optional(v.string()),
+
+  // Post details
+  postUrn: v.string(),
+  postUrl: v.string(),
+  postPart: v.optional(v.number()),
+  totalParts: v.optional(v.number()),
+
+  // Timeline progression
+  previousPostId: v.optional(v.id("linkedinClinicalPosts")),
+  previousPhase: v.optional(v.string()),       // For phase progression tracking
+  progressionType: v.optional(v.union(
+    v.literal("new"),
+    v.literal("phase-advance"),               // Phase 1 → Phase 2
+    v.literal("results-announced"),           // Trial results
+    v.literal("regulatory-milestone"),        // Fast Track, Breakthrough, etc.
+    v.literal("approval")                     // FDA/EMA approval
+  )),
+
+  // Timestamps
+  postedAt: v.number(),
+})
+  .index("by_company", ["companyNameNormalized"])
+  .index("by_company_drug", ["companyNameNormalized", "drugName"])
+  .index("by_postedAt", ["postedAt"])
+  .index("by_sector", ["sectorCategory", "postedAt"])
+  .index("by_phase", ["trialPhase", "postedAt"]);
+
+/**
+ * LinkedIn Research Posts - Tracks academic paper/research posts
+ * Enables timeline: "Building on their 2024 Nature paper on X..."
+ */
+const linkedinResearchPosts = defineTable({
+  // Entity identification (company or researcher)
+  entityNameNormalized: v.string(),
+  entityName: v.string(),
+  entityType: v.union(v.literal("company"), v.literal("researcher"), v.literal("institution")),
+
+  // Paper details
+  paperTitle: v.string(),
+  authors: v.array(v.string()),
+  journal: v.optional(v.string()),
+  publishDate: v.string(),
+  doi: v.optional(v.string()),
+  arxivId: v.optional(v.string()),
+  abstract: v.optional(v.string()),
+  sourceUrl: v.optional(v.string()),
+
+  // Impact metrics
+  citationCount: v.optional(v.number()),
+  impactScore: v.optional(v.number()),         // h-index, impact factor, etc.
+
+  // Sector categorization
+  sector: v.optional(v.string()),
+  sectorCategory: v.optional(v.string()),
+  researchArea: v.optional(v.string()),        // "AI/ML", "Biotech", "Quantum", etc.
+
+  // Post details
+  postUrn: v.string(),
+  postUrl: v.string(),
+  postPart: v.optional(v.number()),
+  totalParts: v.optional(v.number()),
+
+  // Timeline progression
+  previousPostId: v.optional(v.id("linkedinResearchPosts")),
+  progressionType: v.optional(v.union(
+    v.literal("new"),
+    v.literal("follow-up-study"),             // Same authors, related topic
+    v.literal("breakthrough"),                // High-impact publication
+    v.literal("citation-milestone")           // Paper reached citation milestone
+  )),
+
+  // Timestamps
+  postedAt: v.number(),
+})
+  .index("by_entity", ["entityNameNormalized"])
+  .index("by_entity_type", ["entityNameNormalized", "entityType"])
+  .index("by_postedAt", ["postedAt"])
+  .index("by_sector", ["sectorCategory", "postedAt"])
+  .index("by_researchArea", ["researchArea", "postedAt"]);
+
+/**
+ * LinkedIn M&A Posts - Tracks acquisition/merger posts
+ * Enables timeline: "Third acquisition this year, previously acquired X and Y"
+ */
+const linkedinMaPosts = defineTable({
+  // Acquirer identification
+  acquirerNameNormalized: v.string(),
+  acquirerName: v.string(),
+
+  // Target identification
+  targetNameNormalized: v.string(),
+  targetName: v.string(),
+
+  // Deal details
+  dealType: v.union(
+    v.literal("acquisition"),
+    v.literal("merger"),
+    v.literal("strategic-investment"),
+    v.literal("spin-off"),
+    v.literal("divestiture")
+  ),
+  dealValue: v.optional(v.string()),           // "$500M", "Undisclosed"
+  dealValueUsd: v.optional(v.number()),
+  announcedDate: v.string(),
+  closedDate: v.optional(v.string()),
+  status: v.union(
+    v.literal("announced"),
+    v.literal("pending"),
+    v.literal("closed"),
+    v.literal("terminated")
+  ),
+  sourceUrl: v.optional(v.string()),
+
+  // Sector categorization
+  sector: v.optional(v.string()),
+  sectorCategory: v.optional(v.string()),
+
+  // Post details
+  postUrn: v.string(),
+  postUrl: v.string(),
+  postPart: v.optional(v.number()),
+  totalParts: v.optional(v.number()),
+
+  // Timeline progression (for serial acquirers)
+  previousPostId: v.optional(v.id("linkedinMaPosts")),
+  acquirerDealCount: v.optional(v.number()),   // How many deals this acquirer has done
+  progressionType: v.optional(v.union(
+    v.literal("new"),
+    v.literal("serial-acquirer"),             // Same acquirer, another deal
+    v.literal("deal-update"),                 // Status change (announced → closed)
+    v.literal("target-history")               // Target's journey to acquisition
+  )),
+
+  // Timestamps
+  postedAt: v.number(),
+})
+  .index("by_acquirer", ["acquirerNameNormalized"])
+  .index("by_target", ["targetNameNormalized"])
+  .index("by_postedAt", ["postedAt"])
+  .index("by_sector", ["sectorCategory", "postedAt"])
+  .index("by_dealType", ["dealType", "postedAt"]);
+
+/* ------------------------------------------------------------------ */
 /* API KEYS - Per-user API keys for providers                        */
 /* ------------------------------------------------------------------ */
 const userApiKeys = defineTable({
@@ -2582,6 +2811,10 @@ export default defineSchema({
   notionAccounts,
   linkedinAccounts,
   linkedinFundingPosts,
+  linkedinFdaPosts,
+  linkedinClinicalPosts,
+  linkedinResearchPosts,
+  linkedinMaPosts,
   userApiKeys,
   dailyUsage,
   subscriptions,
@@ -8212,54 +8445,779 @@ export default defineSchema({
     tokenHash: v.string(),           // SHA-256 of token (never store plaintext)
     name: v.string(),                // Human-readable name
 
-    userId: v.id("users"),
+    userId: v.string(),
 
-    // Scopes
+    // Scopes (OWASP API5: BFLA Prevention)
     scopes: v.array(v.union(
       v.literal("read:artifacts"),
       v.literal("read:evaluations"),
       v.literal("read:groundtruth"),
+      v.literal("read:models"),
       v.literal("write:evaluations"),
       v.literal("write:corrections"),
-      v.literal("admin:groundtruth"),
+      v.literal("write:labels"),
+      v.literal("admin:all"),
     )),
 
-    // Rate limits
-    rateLimitPerMinute: v.number(),
-    rateLimitPerDay: v.number(),
+    // Tool allowlists (OWASP API5: Function-level authz)
+    allowedTools: v.array(v.string()),  // Specific tools or "*" for all
+
+    // Environment restrictions
+    allowedEnvironments: v.array(v.union(
+      v.literal("development"),
+      v.literal("staging"),
+      v.literal("production")
+    )),
+
+    // Rate limits (OWASP API4: Resource consumption)
+    rateLimit: v.optional(v.object({
+      requestsPerMinute: v.number(),
+      requestsPerHour: v.number(),
+      requestsPerDay: v.number(),
+      burstAllowance: v.optional(v.number()),
+    })),
 
     // Lifecycle
     expiresAt: v.optional(v.number()),
     lastUsedAt: v.optional(v.number()),
-    isRevoked: v.boolean(),
+    revokedAt: v.optional(v.number()),
 
     createdAt: v.number(),
   })
     .index("by_token_hash", ["tokenHash"])
-    .index("by_user", ["userId", "isRevoked"]),
+    .index("by_user", ["userId", "revokedAt"])
+    .index("by_expires", ["expiresAt"]),
 
   /* ------------------------------------------------------------------ */
-  /* MCP ACCESS LOG - Audit log for MCP access                           */
+  /* MCP ACCESS LOG - Audit log for MCP access (OWASP API9, API10)      */
   /* ------------------------------------------------------------------ */
   mcpAccessLog: defineTable({
     tokenId: v.id("mcpApiTokens"),
-    userId: v.id("users"),
+    userId: v.string(),
 
-    method: v.string(),              // Tool name or HTTP method
-    resource: v.string(),            // Resource URI
-    scope: v.string(),               // Scope used
+    tool: v.string(),                // Tool name
+    operation: v.string(),           // Operation performed
+    argsHash: v.string(),            // SHA-256 of arguments (not full args for privacy)
 
     statusCode: v.number(),
     latencyMs: v.number(),
 
+    // Authorization tracking
+    authorized: v.boolean(),
+    scopesUsed: v.array(v.string()),
+    authFailureReason: v.optional(v.string()),
+
     // Rate limit tracking
-    requestsInWindow: v.optional(v.number()),
-    windowStart: v.optional(v.number()),
+    rateLimitHit: v.optional(v.boolean()),
+    quotaRemaining: v.optional(v.object({
+      minute: v.number(),
+      hour: v.number(),
+      day: v.number(),
+    })),
 
     createdAt: v.number(),
   })
     .index("by_token", ["tokenId", "createdAt"])
-    .index("by_user", ["userId", "createdAt"]),
+    .index("by_user", ["userId", "createdAt"])
+    .index("by_authorized", ["authorized", "createdAt"])
+    .index("by_tool", ["tool", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* MCP RATE LIMIT BUCKETS - Token bucket state for rate limiting      */
+  /* ------------------------------------------------------------------ */
+  mcpRateLimitBuckets: defineTable({
+    tokenId: v.id("mcpApiTokens"),
+
+    minuteBucket: v.object({
+      tokens: v.number(),
+      lastRefillAt: v.number(),
+      capacity: v.number(),
+      refillRate: v.number(),
+    }),
+
+    hourBucket: v.object({
+      tokens: v.number(),
+      lastRefillAt: v.number(),
+      capacity: v.number(),
+      refillRate: v.number(),
+    }),
+
+    dayBucket: v.object({
+      tokens: v.number(),
+      lastRefillAt: v.number(),
+      capacity: v.number(),
+      refillRate: v.number(),
+    }),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_token", ["tokenId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* MCP SERVER PACKAGES - Supply chain security (OWASP API8)           */
+  /* ------------------------------------------------------------------ */
+  mcpServerPackages: defineTable({
+    packageName: v.string(),
+    version: v.string(),
+
+    // Supply chain security
+    checksum: v.string(),            // SHA-256 of package
+    signature: v.optional(v.string()), // Digital signature
+    signedBy: v.optional(v.string()), // Signer identity
+
+    // Approval workflow
+    approvedBy: v.optional(v.string()),
+    approvedAt: v.optional(v.number()),
+    status: v.union(
+      v.literal("pending_review"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("deprecated")
+    ),
+
+    // Security metadata
+    knownVulnerabilities: v.optional(v.array(v.object({
+      cveId: v.string(),
+      severity: v.string(),
+      patchedInVersion: v.optional(v.string()),
+    }))),
+
+    // Usage tracking
+    isPinned: v.boolean(),           // If true, enforce this exact version
+    lastUsedAt: v.optional(v.number()),
+
+    createdAt: v.number(),
+  })
+    .index("by_package_version", ["packageName", "version"])
+    .index("by_status", ["status", "approvedAt"])
+    .index("by_pinned", ["isPinned", "packageName"]),
+
+  /* ================================================================== */
+  /* HITL (HUMAN-IN-THE-LOOP) WORKFLOWS                                  */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* LABELING TASKS - Queue of items needing human labels               */
+  /* ------------------------------------------------------------------ */
+  labelingTasks: defineTable({
+    taskId: v.string(),
+
+    // Source reference
+    sourceType: v.union(
+      v.literal("source_quality"),
+      v.literal("verification_audit"),
+      v.literal("inconclusive_event"),
+      v.literal("multi_vantage_disagreement"),
+      v.literal("fact_check_coverage")
+    ),
+    sourceRecordId: v.string(),    // ID of source record
+
+    // Stratification (for sampling)
+    stratum: v.string(),           // "high_confidence", "suspicious", "timeout", etc.
+    persona: v.optional(v.string()), // Persona that made the call
+    dependency: v.optional(v.string()), // External dependency involved
+    confidenceBucket: v.optional(v.string()), // "high", "medium", "low"
+    sourceTier: v.optional(v.string()), // tier1, tier2, etc.
+    isMultiVantageDisagreement: v.optional(v.boolean()),
+    costWeight: v.optional(v.number()), // FN risk weight
+
+    // Context for labeler
+    contextData: v.any(),          // Claim, post, evidence, etc.
+
+    // Assignment
+    assignedTo: v.optional(v.string()),
+    assignedAt: v.optional(v.number()),
+
+    // SLA tracking
+    slaDeadline: v.number(),       // When this must be labeled by
+    agingWarningThreshold: v.number(), // When to warn (e.g., 48h)
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("assigned"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("escalated")
+    ),
+
+    // Priority (high-cost FN risk = higher priority)
+    priority: v.union(
+      v.literal("critical"),
+      v.literal("high"),
+      v.literal("medium"),
+      v.literal("low")
+    ),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status_priority", ["status", "priority", "createdAt"])
+    .index("by_stratum", ["stratum", "status"])
+    .index("by_assigned", ["assignedTo", "status"])
+    .index("by_sla", ["slaDeadline", "status"])
+    .index("by_source", ["sourceType", "sourceRecordId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* LABELS - Multi-annotator labels (immutable append-only)            */
+  /* ------------------------------------------------------------------ */
+  labels: defineTable({
+    labelId: v.string(),
+
+    // Link to task
+    taskId: v.id("labelingTasks"),
+    sourceType: v.string(),
+    sourceRecordId: v.string(),
+
+    // Labeler info
+    labeledBy: v.string(),
+    labeledAt: v.number(),
+
+    // Label value (type depends on sourceType)
+    label: v.union(
+      // Source quality
+      v.literal("appropriate"),
+      v.literal("over_scored"),
+      v.literal("under_scored"),
+      v.literal("wrong_tier"),
+      // Verification
+      v.literal("verified_true"),
+      v.literal("verified_false"),
+      v.literal("inconclusive"),
+      v.literal("needs_escalation"),
+      // Inconclusive
+      v.literal("true_inconclusive"),
+      v.literal("false_negative"),
+      v.literal("should_have_retried"),
+    ),
+
+    // Confidence in label
+    confidence: v.number(),        // 0-100
+
+    // Link to rationale
+    rationaleId: v.id("labelRationales"),
+
+    // Metadata
+    timeSpentSeconds: v.optional(v.number()),
+    wasEscalated: v.optional(v.boolean()),
+
+    createdAt: v.number(),
+  })
+    .index("by_task", ["taskId", "labeledAt"])
+    .index("by_labeler", ["labeledBy", "labeledAt"])
+    .index("by_source", ["sourceType", "sourceRecordId"])
+    .index("by_label", ["label", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* LABEL RATIONALES - Structured evidence + reasoning                 */
+  /* ------------------------------------------------------------------ */
+  labelRationales: defineTable({
+    rationaleId: v.string(),
+    labelId: v.id("labels"),
+
+    // Evidence references
+    evidenceArtifactIds: v.array(v.id("sourceArtifacts")),
+    evidenceChunkIds: v.optional(v.array(v.string())),
+    evidenceUrls: v.optional(v.array(v.string())),
+
+    // Reasoning
+    shortRationale: v.string(),    // 1-2 sentences
+    detailedRationale: v.optional(v.string()),
+
+    // Policy tags (for pattern analysis)
+    policyTags: v.array(v.string()), // ["stale_data", "low_quality_source", etc.]
+
+    // What evidence would change this decision
+    pivotEvidence: v.optional(v.string()),
+
+    // Suggested rule changes (feeds calibration)
+    suggestedRuleChanges: v.optional(v.array(v.object({
+      ruleId: v.string(),
+      currentValue: v.any(),
+      suggestedValue: v.any(),
+      reasoning: v.string(),
+    }))),
+
+    createdAt: v.number(),
+  })
+    .index("by_label", ["labelId"])
+    .index("by_policy_tag", ["policyTags"])
+    .index("by_created", ["createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* EVIDENCE ATTACHMENTS - Hash pointers to evidence (not raw blobs)   */
+  /* ------------------------------------------------------------------ */
+  evidenceAttachments: defineTable({
+    attachmentId: v.string(),
+    rationaleId: v.id("labelRationales"),
+
+    // Attachment type
+    type: v.union(
+      v.literal("screenshot"),
+      v.literal("pdf_excerpt"),
+      v.literal("json_snippet"),
+      v.literal("url_snapshot")
+    ),
+
+    // Hash pointer (NOT the raw content)
+    contentHash: v.string(),       // SHA-256 of content
+    storageId: v.optional(v.id("_storage")), // Reference to stored blob
+    artifactId: v.optional(v.id("sourceArtifacts")), // Or link to existing artifact
+
+    // Metadata
+    mimeType: v.optional(v.string()),
+    sizeBytes: v.optional(v.number()),
+    caption: v.optional(v.string()),
+
+    createdAt: v.number(),
+  })
+    .index("by_rationale", ["rationaleId"])
+    .index("by_hash", ["contentHash"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ADJUDICATION REQUESTS - For disagreements + escalations            */
+  /* ------------------------------------------------------------------ */
+  adjudicationRequests: defineTable({
+    adjudicationId: v.string(),
+
+    // Link to task
+    taskId: v.id("labelingTasks"),
+    sourceType: v.string(),
+    sourceRecordId: v.string(),
+
+    // Reason for adjudication
+    reason: v.union(
+      v.literal("disagreement"),   // Multiple labelers disagree
+      v.literal("low_confidence"),  // Labeler requested escalation
+      v.literal("high_cost_fn"),    // High FN risk
+      v.literal("rule_ambiguity")   // Policy unclear
+    ),
+
+    // Disagreeing labels
+    labelIds: v.array(v.id("labels")),
+
+    // Risk/cost context
+    costWeight: v.number(),
+    fnRiskTier: v.optional(v.string()),
+
+    // Priority (high-cost = high priority)
+    priority: v.union(
+      v.literal("critical"),
+      v.literal("high"),
+      v.literal("medium"),
+      v.literal("low")
+    ),
+
+    // Assignment
+    assignedAdjudicator: v.optional(v.string()),
+    assignedAt: v.optional(v.number()),
+
+    // SLA
+    slaDeadline: v.number(),
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("in_progress"),
+      v.literal("resolved"),
+      v.literal("deferred")
+    ),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status_priority", ["status", "priority", "createdAt"])
+    .index("by_task", ["taskId"])
+    .index("by_adjudicator", ["assignedAdjudicator", "status"])
+    .index("by_sla", ["slaDeadline", "status"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ADJUDICATION DECISIONS - Immutable final decisions                 */
+  /* ------------------------------------------------------------------ */
+  adjudicationDecisions: defineTable({
+    decisionId: v.string(),
+    adjudicationId: v.id("adjudicationRequests"),
+
+    // Decision
+    finalLabel: v.string(),
+    confidence: v.number(),
+
+    // Reasoning (structured)
+    decision: v.object({
+      agreedWithLabelId: v.optional(v.id("labels")), // If agreed with one labeler
+      synthesizedNewLabel: v.optional(v.boolean()),  // If created new interpretation
+      reasoning: v.string(),
+      evidenceReferences: v.array(v.id("sourceArtifacts")),
+      policyInterpretation: v.optional(v.string()),
+    }),
+
+    // Rule change suggestion (feeds calibration)
+    suggestedRuleChanges: v.optional(v.array(v.object({
+      ruleId: v.string(),
+      changeType: v.union(
+        v.literal("threshold_adjustment"),
+        v.literal("new_pattern"),
+        v.literal("policy_clarification")
+      ),
+      proposal: v.string(),
+      expectedImpact: v.string(),
+    }))),
+
+    // Adjudicator
+    adjudicatorId: v.string(),
+    decidedAt: v.number(),
+
+    // Required: evidence binding
+    evidenceBindingComplete: v.boolean(),
+    evidenceArtifactIds: v.array(v.id("sourceArtifacts")),
+    evidenceContentHashes: v.array(v.string()),
+
+    createdAt: v.number(),
+  })
+    .index("by_adjudication", ["adjudicationId"])
+    .index("by_adjudicator", ["adjudicatorId", "decidedAt"])
+    .index("by_decided", ["decidedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* INTER-ANNOTATOR AGREEMENT SNAPSHOTS - Cohen's kappa tracking       */
+  /* ------------------------------------------------------------------ */
+  interAnnotatorAgreement: defineTable({
+    snapshotId: v.string(),
+
+    // Time window
+    startDate: v.number(),
+    endDate: v.number(),
+
+    // Stratum
+    stratum: v.string(),
+
+    // Agreement metrics
+    cohensKappa: v.number(),       // -1 to 1
+    percentAgreement: v.number(),  // 0-100
+    sampleSize: v.number(),
+
+    // Breakdown by label pair
+    confusionMatrix: v.any(),      // Label1 × Label2 confusion matrix
+
+    // Annotator pairs analyzed
+    annotatorPairs: v.array(v.object({
+      annotator1: v.string(),
+      annotator2: v.string(),
+      kappa: v.number(),
+      agreements: v.number(),
+      disagreements: v.number(),
+    })),
+
+    // Quality gates
+    passesKappaThreshold: v.boolean(), // >= 0.6 for "substantial"
+    threshold: v.number(),
+
+    computedAt: v.number(),
+  })
+    .index("by_stratum", ["stratum", "computedAt"])
+    .index("by_computed", ["computedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DATASET PROMOTION GATES - Track deployable dataset criteria        */
+  /* ------------------------------------------------------------------ */
+  datasetPromotionGates: defineTable({
+    gateId: v.string(),
+    datasetVersion: v.string(),
+
+    // Sample size gates
+    minSampleSizePerStratum: v.record(v.string(), v.number()), // stratum → min size
+    actualSampleSize: v.record(v.string(), v.number()),
+    sampleSizeGatePassed: v.boolean(),
+
+    // Agreement gates
+    minKappa: v.number(),
+    actualKappa: v.number(),
+    kappaGatePassed: v.boolean(),
+
+    // Adjudication backlog gate
+    maxAdjudicationBacklog: v.number(),
+    actualAdjudicationBacklog: v.number(),
+    backlogGatePassed: v.boolean(),
+
+    // Overall gate
+    allGatesPassed: v.boolean(),
+
+    // Metadata
+    evaluatedAt: v.number(),
+    evaluatedBy: v.string(),
+  })
+    .index("by_version", ["datasetVersion"])
+    .index("by_passed", ["allGatesPassed", "evaluatedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GAME DAY EXECUTION TRACKING - Quarterly drill evidence             */
+  /* ------------------------------------------------------------------ */
+  gameDayExecutions: defineTable({
+    executionId: v.string(),
+    scenarioName: v.string(),
+
+    // Scheduling
+    scheduledDate: v.number(),
+    actualStartTime: v.number(),
+    actualEndTime: v.optional(v.number()),
+
+    // Participants
+    participants: v.array(v.object({
+      userId: v.string(),
+      role: v.string(),        // "incident_commander", "on_call", "observer"
+    })),
+
+    // Timeline of events
+    timeline: v.array(v.object({
+      time: v.number(),
+      event: v.string(),
+      actionTaken: v.string(),
+      correct: v.boolean(),
+      evidence: v.optional(v.string()),
+    })),
+
+    // Exit criteria checklist
+    exitCriteria: v.array(v.object({
+      criterion: v.string(),   // "Burn rate under threshold for 15min"
+      met: v.boolean(),
+      metAt: v.optional(v.number()),
+      evidence: v.optional(v.string()),
+    })),
+
+    // Outcomes
+    status: v.union(
+      v.literal("scheduled"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("cancelled")
+    ),
+    allCriteriaMet: v.optional(v.boolean()),
+
+    // Follow-ups
+    actionItems: v.optional(v.array(v.object({
+      item: v.string(),
+      owner: v.string(),
+      dueDate: v.number(),
+      status: v.union(v.literal("open"), v.literal("closed")),
+      closedAt: v.optional(v.number()),
+    }))),
+
+    // Postmortem link
+    postmortemDocumentId: v.optional(v.id("documents")),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_scheduled", ["scheduledDate"])
+    .index("by_status", ["status", "scheduledDate"])
+    .index("by_scenario", ["scenarioName", "scheduledDate"]),
+
+  /* ------------------------------------------------------------------ */
+  /* LABELER CALIBRATION - Gold set checks for quality                  */
+  /* ------------------------------------------------------------------ */
+  labelerCalibration: defineTable({
+    calibrationId: v.string(),
+    labelerId: v.string(),
+
+    // Gold set used
+    goldSetVersion: v.string(),
+    goldSetSize: v.number(),
+
+    // Results
+    correctLabels: v.number(),
+    incorrectLabels: v.number(),
+    accuracy: v.number(),          // 0-100
+
+    // Breakdown by stratum
+    byStratum: v.any(),            // stratum → {correct, incorrect, accuracy}
+
+    // Pass/fail
+    passThreshold: v.number(),     // e.g., 80%
+    passed: v.boolean(),
+
+    // Certification
+    certifiedUntil: v.optional(v.number()), // Valid until this date
+    recalibrationRequired: v.boolean(),
+
+    testDate: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_labeler", ["labelerId", "testDate"])
+    .index("by_certification", ["certifiedUntil", "passed"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GOLD SET CASES - Known-answer items for calibration                */
+  /* ------------------------------------------------------------------ */
+  goldSetCases: defineTable({
+    caseId: v.string(),
+    goldSetVersion: v.string(),
+
+    // Stratification
+    stratum: v.string(),
+    sourceType: v.string(),       // "source_quality", "verification", etc.
+
+    // Test data
+    contextData: v.any(),
+    sourceArtifactId: v.id("sourceArtifacts"),
+
+    // Ground truth answer
+    correctLabel: v.string(),
+    correctConfidence: v.number(),
+    toleranceBand: v.object({
+      minConfidence: v.number(),
+      maxConfidence: v.number(),
+    }),
+
+    // Rationale
+    rationale: v.string(),
+    policyReferences: v.array(v.string()),
+
+    // Metadata
+    createdBy: v.string(),
+    reviewedBy: v.optional(v.string()),
+    isActive: v.boolean(),
+
+    createdAt: v.number(),
+  })
+    .index("by_gold_set_version", ["goldSetVersion", "isActive"])
+    .index("by_stratum", ["stratum", "isActive"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DISTRIBUTION DRIFT SNAPSHOTS - Track dataset shifts                */
+  /* ------------------------------------------------------------------ */
+  distributionDriftSnapshots: defineTable({
+    snapshotId: v.string(),
+    datasetVersion: v.string(),
+
+    // Snapshot date
+    snapshotDate: v.number(),
+
+    // Distribution by stratum
+    stratumDistribution: v.record(v.string(), v.number()), // stratum → count
+
+    // Topic/domain distribution
+    topicDistribution: v.optional(v.record(v.string(), v.number())),
+    domainDistribution: v.optional(v.record(v.string(), v.number())),
+
+    // Comparison to baseline
+    baselineSnapshotId: v.optional(v.string()),
+    driftScore: v.optional(v.number()), // 0-100, 0=no drift
+    significantDrift: v.optional(v.boolean()),
+
+    // Breakdown
+    driftDetails: v.optional(v.array(v.object({
+      dimension: v.string(),     // "stratum", "topic", "domain"
+      category: v.string(),
+      baselinePercent: v.number(),
+      currentPercent: v.number(),
+      delta: v.number(),
+    }))),
+
+    // Gate requirement
+    requiresRevalidation: v.boolean(),
+
+    createdAt: v.number(),
+  })
+    .index("by_dataset", ["datasetVersion", "snapshotDate"])
+    .index("by_drift", ["significantDrift", "snapshotDate"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CANONICAL RECORDS - Deduplicated entity/event tracking             */
+  /* ------------------------------------------------------------------ */
+  canonicalRecords: defineTable({
+    canonicalId: v.string(),
+
+    // Entity identification
+    entityKey: v.string(),        // "NVDA", "openai-series-e"
+    recordType: v.union(
+      v.literal("company_fact"),
+      v.literal("funding_event"),
+      v.literal("product_launch"),
+      v.literal("verification_claim")
+    ),
+
+    // Canonical content
+    canonicalContent: v.any(),    // Structured canonical representation
+    contentHash: v.string(),      // Hash of canonical content
+
+    // Source consolidation
+    sourceArtifactIds: v.array(v.id("sourceArtifacts")),
+    primarySourceId: v.id("sourceArtifacts"), // Authoritative source
+    consolidatedAt: v.number(),
+
+    // Version tracking
+    version: v.number(),
+    previousCanonicalId: v.optional(v.string()),
+
+    // Change tracking
+    changeType: v.optional(v.union(
+      v.literal("new"),
+      v.literal("update"),
+      v.literal("correction"),
+      v.literal("consolidation")
+    )),
+    changeSummary: v.optional(v.string()),  // LLM-generated summary
+    changedFields: v.optional(v.array(v.string())),
+
+    // Duplicate links
+    duplicateOfCanonicalId: v.optional(v.string()),
+    nearDuplicateIds: v.optional(v.array(v.string())),
+    similarityScores: v.optional(v.record(v.string(), v.number())),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_entity_type", ["entityKey", "recordType"])
+    .index("by_content_hash", ["contentHash"])
+    .index("by_version", ["canonicalId", "version"])
+    .index("by_duplicate", ["duplicateOfCanonicalId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DUPLICATE DETECTION JOBS - Near-duplicate processing                */
+  /* ------------------------------------------------------------------ */
+  duplicateDetectionJobs: defineTable({
+    jobId: v.string(),
+
+    // Scope
+    sourceArtifactIds: v.array(v.id("sourceArtifacts")),
+    entityKey: v.optional(v.string()),
+    recordType: v.optional(v.string()),
+
+    // Method
+    method: v.union(
+      v.literal("embedding_similarity"),
+      v.literal("llm_judge"),
+      v.literal("hybrid")
+    ),
+
+    // Results
+    status: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+
+    duplicatePairs: v.optional(v.array(v.object({
+      artifactId1: v.id("sourceArtifacts"),
+      artifactId2: v.id("sourceArtifacts"),
+      similarityScore: v.number(),  // 0-100
+      isDuplicate: v.boolean(),
+      reasoning: v.optional(v.string()),
+    }))),
+
+    // Stats
+    artifactsProcessed: v.optional(v.number()),
+    duplicatesFound: v.optional(v.number()),
+    canonicalRecordsCreated: v.optional(v.number()),
+
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status", "createdAt"])
+    .index("by_entity", ["entityKey", "createdAt"]),
 
   /* ================================================================== */
   /* DYNAMIC CONTEXT CONFIGURATION                                       */
@@ -8466,6 +9424,10 @@ export default defineSchema({
     resolutionNotes: v.optional(v.string()),
     rootCause: v.optional(v.string()),
     incidentId: v.optional(v.string()),
+
+    // Burn-rate alerting fields
+    dedupeKey: v.optional(v.string()),
+    evaluationDetails: v.optional(v.any()),
   })
     .index("by_slo", ["sloId", "triggeredAt"])
     .index("by_severity", ["severity", "triggeredAt"])
@@ -8760,4 +9722,58 @@ export default defineSchema({
     .index("by_report_id", ["reportId"])
     .index("by_model", ["modelCardId", "validationDate"])
     .index("by_validator", ["validatedBy", "validationDate"]),
+
+  /* ================================================================== */
+  /* PRIVACY & RETENTION ENFORCEMENT (GDPR)                              */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* DELETION REQUESTS - Right to deletion (GDPR Article 17)             */
+  /* ------------------------------------------------------------------ */
+  deletionRequests: defineTable({
+    requestId: v.string(),
+    scope: v.union(
+      v.literal("user_data"),
+      v.literal("entity_data"),
+      v.literal("specific_records")
+    ),
+    subject: v.string(),  // User ID or entity key
+    recordIds: v.optional(v.array(v.string())),
+    requestedBy: v.string(),
+    requestedAt: v.number(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    deletionSummary: v.optional(v.object({
+      tablesAffected: v.array(v.string()),
+      recordsDeleted: v.number(),
+      tombstonesCreated: v.number(),
+      failedDeletions: v.array(v.object({
+        table: v.string(),
+        recordId: v.string(),
+        error: v.string(),
+      })),
+    })),
+    completedAt: v.optional(v.number()),
+    completedBy: v.optional(v.string()),
+  })
+    .index("by_request_id", ["requestId"])
+    .index("by_subject", ["subject", "requestedAt"])
+    .index("by_status", ["status", "requestedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DELETION TOMBSTONES - Audit trail for deletions                     */
+  /* ------------------------------------------------------------------ */
+  deletionTombstones: defineTable({
+    table: v.string(),
+    recordId: v.string(),
+    deletionRequestId: v.id("deletionRequests"),
+    deletedAt: v.number(),
+    deletedBy: v.optional(v.string()),
+  })
+    .index("by_table", ["table", "deletedAt"])
+    .index("by_request", ["deletionRequestId"]),
 });

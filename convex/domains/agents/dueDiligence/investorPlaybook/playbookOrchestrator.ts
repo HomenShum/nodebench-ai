@@ -61,6 +61,49 @@ import { executeEnhancedClaimVerification } from "./branches/enhancedClaimVerifi
 import { executeEnhancedNewsVerification } from "./branches/enhancedNewsVerification";
 
 // ============================================================================
+// TIMEOUT AND ERROR HANDLING UTILITIES
+// ============================================================================
+
+/**
+ * Wrap a promise with a timeout to prevent indefinite hangs.
+ * Critical for Promise.all() orchestration.
+ */
+function promiseWithTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string
+): Promise<T> {
+  let timeoutId: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`Timeout (${timeoutMs}ms): ${timeoutMessage}`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
+/**
+ * Maximum execution time for all branches combined.
+ * Individual branches have their own timeouts (5-10s), but we need
+ * a global guard to prevent indefinite hangs.
+ * Convex action timeout is 10 minutes, so we use 8 minutes to leave
+ * buffer for synthesis and return.
+ */
+const MAX_ORCHESTRATION_TIMEOUT_MS = 8 * 60 * 1000; // 8 minutes
+
+/**
+ * Track branch execution results for validation.
+ */
+interface BranchExecutionTracker {
+  succeeded: string[];
+  failed: Array<{ branch: string; error: string }>;
+  totalBranches: number;
+}
+
+// ============================================================================
 // MAIN ORCHESTRATOR
 // ============================================================================
 
@@ -176,6 +219,13 @@ export async function runInvestorPlaybook(
   const branchResults: PlaybookResult["branchResults"] = {};
   const executedBranches: InvestorPlaybookBranchType[] = [];
 
+  // Track branch execution for validation
+  const branchTracker: BranchExecutionTracker = {
+    succeeded: [],
+    failed: [],
+    totalBranches: 0,
+  };
+
   // Determine which branches to run based on signals
   const signals: PlaybookComplexitySignals = {
     isRequestingFunding: true,
@@ -221,6 +271,7 @@ export async function runInvestorPlaybook(
   // Entity Verification (always run)
   if (PLAYBOOK_BRANCH_TRIGGERS.entity_verification(signals)) {
     executedBranches.push("entity_verification");
+    branchTracker.totalBranches++;
     branchPromises.push(
       executeEntityVerificationBranch(
         ctx,
@@ -231,8 +282,11 @@ export async function runInvestorPlaybook(
       ).then(result => {
         branchResults.entityVerification = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("entity_verification");
       }).catch(err => {
-        console.error("[Playbook] Entity verification failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] Entity verification failed:", errorMsg);
+        branchTracker.failed.push({ branch: "entity_verification", error: errorMsg });
       })
     );
   }
@@ -240,6 +294,7 @@ export async function runInvestorPlaybook(
   // SEC EDGAR
   if (PLAYBOOK_BRANCH_TRIGGERS.sec_edgar(signals)) {
     executedBranches.push("sec_edgar");
+    branchTracker.totalBranches++;
     branchPromises.push(
       executeSecEdgarBranch(
         ctx,
@@ -249,8 +304,11 @@ export async function runInvestorPlaybook(
       ).then(result => {
         branchResults.secEdgar = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("sec_edgar");
       }).catch(err => {
-        console.error("[Playbook] SEC EDGAR failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] SEC EDGAR failed:", errorMsg);
+        branchTracker.failed.push({ branch: "sec_edgar", error: errorMsg });
       })
     );
   }
@@ -258,6 +316,7 @@ export async function runInvestorPlaybook(
   // FINRA Validation
   if (PLAYBOOK_BRANCH_TRIGGERS.finra_validation(signals)) {
     executedBranches.push("finra_validation");
+    branchTracker.totalBranches++;
     branchPromises.push(
       executeFinraValidationBranch(
         ctx,
@@ -267,8 +326,11 @@ export async function runInvestorPlaybook(
       ).then(result => {
         branchResults.finraValidation = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("finra_validation");
       }).catch(err => {
-        console.error("[Playbook] FINRA validation failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] FINRA validation failed:", errorMsg);
+        branchTracker.failed.push({ branch: "finra_validation", error: errorMsg });
       })
     );
   }
@@ -276,6 +338,7 @@ export async function runInvestorPlaybook(
   // FDA Verification
   if (PLAYBOOK_BRANCH_TRIGGERS.fda_verification(signals)) {
     executedBranches.push("fda_verification");
+    branchTracker.totalBranches++;
     branchPromises.push(
       executeFdaVerificationBranch(
         ctx,
@@ -285,8 +348,11 @@ export async function runInvestorPlaybook(
       ).then(result => {
         branchResults.fdaVerification = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("fda_verification");
       }).catch(err => {
-        console.error("[Playbook] FDA verification failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] FDA verification failed:", errorMsg);
+        branchTracker.failed.push({ branch: "fda_verification", error: errorMsg });
       })
     );
   }
@@ -294,6 +360,7 @@ export async function runInvestorPlaybook(
   // USPTO Deep Dive
   if (PLAYBOOK_BRANCH_TRIGGERS.uspto_deepdive(signals)) {
     executedBranches.push("uspto_deepdive");
+    branchTracker.totalBranches++;
     branchPromises.push(
       executeUsptoDeepdiveBranch(
         ctx,
@@ -303,8 +370,11 @@ export async function runInvestorPlaybook(
       ).then(result => {
         branchResults.usptoDeepdive = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("uspto_deepdive");
       }).catch(err => {
-        console.error("[Playbook] USPTO failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] USPTO failed:", errorMsg);
+        branchTracker.failed.push({ branch: "uspto_deepdive", error: errorMsg });
       })
     );
   }
@@ -312,6 +382,7 @@ export async function runInvestorPlaybook(
   // Money Flow Integrity (always run for funding)
   if (PLAYBOOK_BRANCH_TRIGGERS.money_flow_integrity(signals)) {
     executedBranches.push("money_flow_integrity");
+    branchTracker.totalBranches++;
     branchPromises.push(
       executeMoneyFlowBranch(
         ctx,
@@ -323,8 +394,11 @@ export async function runInvestorPlaybook(
       ).then(result => {
         branchResults.moneyFlowIntegrity = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("money_flow_integrity");
       }).catch(err => {
-        console.error("[Playbook] Money flow failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] Money flow failed:", errorMsg);
+        branchTracker.failed.push({ branch: "money_flow_integrity", error: errorMsg });
       })
     );
   }
@@ -354,6 +428,7 @@ export async function runInvestorPlaybook(
 
   if (shouldRunScientificVerification) {
     executedBranches.push("scientific_claim_verification");
+    branchTracker.totalBranches++;
     branchPromises.push(
       executeScientificClaimVerificationBranch(
         ctx,
@@ -363,9 +438,12 @@ export async function runInvestorPlaybook(
       ).then(result => {
         branchResults.scientificClaimVerification = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("scientific_claim_verification");
         console.log(`[Playbook] Scientific claim verification: Status=${result.findings.overallStatus}, RedFlags=${result.findings.redFlags.length}`);
       }).catch(err => {
-        console.error("[Playbook] Scientific claim verification failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] Scientific claim verification failed:", errorMsg);
+        branchTracker.failed.push({ branch: "scientific_claim_verification", error: errorMsg });
       })
     );
   }
@@ -379,6 +457,7 @@ export async function runInvestorPlaybook(
   if (config.claimVerificationMode?.enabled && config.claimVerificationMode.rawQuery) {
     if (PLAYBOOK_BRANCH_TRIGGERS.claim_verification(signals)) {
       executedBranches.push("claim_verification");
+      branchTracker.totalBranches++;
       const claims = extractClaimsFromQuery(config.claimVerificationMode.rawQuery);
       if (claims.length > 0) {
         branchPromises.push(
@@ -390,13 +469,21 @@ export async function runInvestorPlaybook(
           }).then(result => {
             branchResults.claimVerification = result.findings;
             allSources.push(...result.sources);
+            branchTracker.succeeded.push("claim_verification");
             console.log(`[Playbook] Enhanced claim verification: ${result.methodology.join(" -> ")}`);
           }).catch(err => {
-            console.error("[Playbook] Enhanced claim verification failed, falling back:", err);
-            // Fallback to basic claim verification
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.error("[Playbook] Enhanced claim verification failed, falling back:", errorMsg);
+            // Fallback to basic claim verification - chain the error handler
             return executeClaimVerificationBranch(ctx, claims).then(fallbackResult => {
               branchResults.claimVerification = fallbackResult.findings;
               allSources.push(...fallbackResult.sources);
+              branchTracker.succeeded.push("claim_verification"); // Fallback succeeded
+              console.log("[Playbook] Claim verification fallback succeeded");
+            }).catch(fallbackErr => {
+              const fallbackErrorMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+              console.error("[Playbook] Claim verification fallback also failed:", fallbackErrorMsg);
+              branchTracker.failed.push({ branch: "claim_verification", error: `Primary: ${errorMsg}; Fallback: ${fallbackErrorMsg}` });
             });
           })
         );
@@ -408,6 +495,7 @@ export async function runInvestorPlaybook(
   if (config.claimVerificationMode?.personToVerify) {
     if (PLAYBOOK_BRANCH_TRIGGERS.person_verification(signals)) {
       executedBranches.push("person_verification");
+      branchTracker.totalBranches++;
       branchPromises.push(
         executePersonVerificationBranch(
           ctx,
@@ -418,8 +506,11 @@ export async function runInvestorPlaybook(
         ).then(result => {
           branchResults.personVerification = result.findings;
           allSources.push(...result.sources);
+          branchTracker.succeeded.push("person_verification");
         }).catch(err => {
-          console.error("[Playbook] Person verification failed:", err);
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          console.error("[Playbook] Person verification failed:", errorMsg);
+          branchTracker.failed.push({ branch: "person_verification", error: errorMsg });
         })
       );
     }
@@ -430,6 +521,7 @@ export async function runInvestorPlaybook(
   if (config.claimVerificationMode?.acquisitionAcquirer || config.claimVerificationMode?.newsEvent) {
     if (PLAYBOOK_BRANCH_TRIGGERS.news_verification(signals)) {
       executedBranches.push("news_verification");
+      branchTracker.totalBranches++;
       branchPromises.push(
         executeEnhancedNewsVerification(
           ctx,
@@ -444,10 +536,13 @@ export async function runInvestorPlaybook(
         ).then(result => {
           branchResults.newsVerification = result.findings;
           allSources.push(...result.sources);
+          branchTracker.succeeded.push("news_verification");
           console.log(`[Playbook] Enhanced news verification: ${result.methodology.join(" -> ")}`);
           console.log(`[Playbook] News triangulation: ${result.triangulation.tier1SourceCount} T1, ${result.triangulation.tier2SourceCount} T2 sources`);
         }).catch(err => {
-          console.error("[Playbook] Enhanced news verification failed, falling back:", err);
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          console.error("[Playbook] Enhanced news verification failed, falling back:", errorMsg);
+          // Fallback to basic news verification - chain the error handler
           return executeNewsVerificationBranch(
             ctx,
             config.claimVerificationMode?.acquisitionAcquirer,
@@ -456,6 +551,12 @@ export async function runInvestorPlaybook(
           ).then(fallbackResult => {
             branchResults.newsVerification = fallbackResult.findings;
             allSources.push(...fallbackResult.sources);
+            branchTracker.succeeded.push("news_verification"); // Fallback succeeded
+            console.log("[Playbook] News verification fallback succeeded");
+          }).catch(fallbackErr => {
+            const fallbackErrorMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+            console.error("[Playbook] News verification fallback also failed:", fallbackErrorMsg);
+            branchTracker.failed.push({ branch: "news_verification", error: `Primary: ${errorMsg}; Fallback: ${fallbackErrorMsg}` });
           });
         })
       );
@@ -469,6 +570,7 @@ export async function runInvestorPlaybook(
   // Deal Memo Synthesis (Financial personas: Banker, VC)
   if (PLAYBOOK_BRANCH_TRIGGERS.deal_memo_synthesis(signals)) {
     executedBranches.push("deal_memo_synthesis");
+    branchTracker.totalBranches++;
     branchPromises.push(
       executeDealMemoSynthesisBranch(
         ctx,
@@ -478,9 +580,12 @@ export async function runInvestorPlaybook(
         // Store in branchResults - synthesis will be extracted during report generation
         (branchResults as any).dealMemoSynthesis = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("deal_memo_synthesis");
         console.log(`[Playbook] Deal memo synthesis completed for ${config.entityName}`);
       }).catch(err => {
-        console.error("[Playbook] Deal memo synthesis failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] Deal memo synthesis failed:", errorMsg);
+        branchTracker.failed.push({ branch: "deal_memo_synthesis", error: errorMsg });
       })
     );
   }
@@ -488,6 +593,7 @@ export async function runInvestorPlaybook(
   // Fund Performance Verification (LP Allocator persona)
   if (PLAYBOOK_BRANCH_TRIGGERS.fund_performance_verification(signals)) {
     executedBranches.push("fund_performance_verification");
+    branchTracker.totalBranches++;
     const fundMetrics = config.personaContext?.claimedFundMetrics;
     branchPromises.push(
       executeFundPerformanceVerificationBranch(
@@ -502,9 +608,12 @@ export async function runInvestorPlaybook(
       ).then(result => {
         (branchResults as any).fundPerformanceVerification = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("fund_performance_verification");
         console.log(`[Playbook] Fund performance verification completed`);
       }).catch(err => {
-        console.error("[Playbook] Fund performance verification failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] Fund performance verification failed:", errorMsg);
+        branchTracker.failed.push({ branch: "fund_performance_verification", error: errorMsg });
       })
     );
   }
@@ -512,6 +621,7 @@ export async function runInvestorPlaybook(
   // Clinical Trial Verification (Pharma BD persona)
   if (PLAYBOOK_BRANCH_TRIGGERS.clinical_trial_verification(signals)) {
     executedBranches.push("clinical_trial_verification");
+    branchTracker.totalBranches++;
     const clinicalContext = config.personaContext?.clinicalTrialContext;
     branchPromises.push(
       executeClinicalTrialVerificationBranch(
@@ -525,9 +635,12 @@ export async function runInvestorPlaybook(
       ).then(result => {
         (branchResults as any).clinicalTrialVerification = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("clinical_trial_verification");
         console.log(`[Playbook] Clinical trial verification completed`);
       }).catch(err => {
-        console.error("[Playbook] Clinical trial verification failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] Clinical trial verification failed:", errorMsg);
+        branchTracker.failed.push({ branch: "clinical_trial_verification", error: errorMsg });
       })
     );
   }
@@ -535,6 +648,7 @@ export async function runInvestorPlaybook(
   // Literature Triangulation (Academic R&D persona)
   if (PLAYBOOK_BRANCH_TRIGGERS.literature_triangulation(signals)) {
     executedBranches.push("literature_triangulation");
+    branchTracker.totalBranches++;
     const litContext = config.personaContext?.literatureContext;
     branchPromises.push(
       executeLiteratureTriangulationBranch(
@@ -549,9 +663,12 @@ export async function runInvestorPlaybook(
       ).then(result => {
         (branchResults as any).literatureTriangulation = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("literature_triangulation");
         console.log(`[Playbook] Literature triangulation completed`);
       }).catch(err => {
-        console.error("[Playbook] Literature triangulation failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] Literature triangulation failed:", errorMsg);
+        branchTracker.failed.push({ branch: "literature_triangulation", error: errorMsg });
       })
     );
   }
@@ -559,6 +676,7 @@ export async function runInvestorPlaybook(
   // M&A Activity Verification (Corp Dev persona)
   if (PLAYBOOK_BRANCH_TRIGGERS.ma_activity_verification(signals)) {
     executedBranches.push("ma_activity_verification");
+    branchTracker.totalBranches++;
     const maContext = config.personaContext?.maContext;
     branchPromises.push(
       executeMAActivityVerificationBranch(
@@ -571,9 +689,12 @@ export async function runInvestorPlaybook(
       ).then(result => {
         (branchResults as any).maActivityVerification = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("ma_activity_verification");
         console.log(`[Playbook] M&A activity verification completed`);
       }).catch(err => {
-        console.error("[Playbook] M&A activity verification failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] M&A activity verification failed:", errorMsg);
+        branchTracker.failed.push({ branch: "ma_activity_verification", error: errorMsg });
       })
     );
   }
@@ -581,6 +702,7 @@ export async function runInvestorPlaybook(
   // Economic Indicator Verification (Macro Strategist persona)
   if (PLAYBOOK_BRANCH_TRIGGERS.economic_indicator_verification(signals)) {
     executedBranches.push("economic_indicator_verification");
+    branchTracker.totalBranches++;
     const macroContext = config.personaContext?.macroContext;
     branchPromises.push(
       executeEconomicIndicatorVerificationBranch(
@@ -596,15 +718,59 @@ export async function runInvestorPlaybook(
       ).then(result => {
         (branchResults as any).economicIndicatorVerification = result.findings;
         allSources.push(...result.sources);
+        branchTracker.succeeded.push("economic_indicator_verification");
         console.log(`[Playbook] Economic indicator verification completed`);
       }).catch(err => {
-        console.error("[Playbook] Economic indicator verification failed:", err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error("[Playbook] Economic indicator verification failed:", errorMsg);
+        branchTracker.failed.push({ branch: "economic_indicator_verification", error: errorMsg });
       })
     );
   }
 
-  // Execute all branches in parallel
-  await Promise.all(branchPromises);
+  // ============================================================================
+  // EXECUTE ALL BRANCHES WITH TIMEOUT
+  // ============================================================================
+
+  // Execute all branches in parallel with global timeout guard
+  // This prevents indefinite hangs even if individual branches timeout
+  try {
+    await promiseWithTimeout(
+      Promise.all(branchPromises),
+      MAX_ORCHESTRATION_TIMEOUT_MS,
+      `Orchestration timeout after ${MAX_ORCHESTRATION_TIMEOUT_MS / 1000}s`
+    );
+  } catch (timeoutError) {
+    const errorMsg = timeoutError instanceof Error ? timeoutError.message : String(timeoutError);
+    console.error(`[Playbook] CRITICAL: Branch execution timed out: ${errorMsg}`);
+    // Record the timeout but continue with whatever results we have
+    branchTracker.failed.push({ branch: "_orchestration", error: errorMsg });
+  }
+
+  // ============================================================================
+  // RESULT VALIDATION
+  // ============================================================================
+
+  // Log branch execution summary
+  console.log(`[Playbook] Branch execution summary: ${branchTracker.succeeded.length}/${branchTracker.totalBranches} succeeded`);
+  if (branchTracker.failed.length > 0) {
+    console.warn(`[Playbook] Failed branches: ${branchTracker.failed.map(f => `${f.branch}(${f.error})`).join(", ")}`);
+  }
+
+  // Validate we have minimum required sources for reliable DD
+  const MIN_SOURCES_FOR_RELIABLE_DD = 2;
+  const authoritativeSources = allSources.filter(s => s.reliability === "authoritative");
+  if (allSources.length === 0) {
+    console.error("[Playbook] CRITICAL: No sources collected - DD results may be unreliable");
+  } else if (authoritativeSources.length < MIN_SOURCES_FOR_RELIABLE_DD) {
+    console.warn(`[Playbook] Warning: Only ${authoritativeSources.length} authoritative sources (min: ${MIN_SOURCES_FOR_RELIABLE_DD})`);
+  }
+
+  // Validate branch results are not all empty (sanity check)
+  const hasAnyResults = Object.keys(branchResults).length > 0;
+  if (!hasAnyResults && branchTracker.totalBranches > 0) {
+    console.error("[Playbook] CRITICAL: No branch results despite executing branches - possible silent failures");
+  }
 
   // Synthesize findings (include web enrichment for risk assessment)
   const synthesis = synthesizeFindings(
@@ -615,6 +781,16 @@ export async function runInvestorPlaybook(
     allSources,
     config.webEnrichment
   );
+
+  // Add execution metadata to synthesis for transparency
+  (synthesis as any).executionMetadata = {
+    branchesAttempted: branchTracker.totalBranches,
+    branchesSucceeded: branchTracker.succeeded.length,
+    branchesFailed: branchTracker.failed.length,
+    failedBranches: branchTracker.failed,
+    totalSources: allSources.length,
+    authoritativeSources: authoritativeSources.length,
+  };
 
   return {
     synthesis,

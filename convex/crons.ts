@@ -311,6 +311,46 @@ crons.daily(
   { hoursBack: 48, maxProfiles: 5 }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SPECIALIZED LINKEDIN POSTS - FDA, Research, Clinical Trials, M&A
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Post FDA regulatory updates to LinkedIn at 11:00 AM UTC (Tue/Thu)
+// 510(k) clearances, PMA approvals, recalls for biotech/medtech sectors
+crons.daily(
+  "post FDA updates to LinkedIn",
+  { hourUTC: 11, minuteUTC: 0 },
+  internal.workflows.specializedLinkedInPosts.postFDAUpdates,
+  { lookbackHours: 48, testMode: false }
+);
+
+// Post academic research highlights to LinkedIn at 2:00 PM UTC (Mon/Wed/Fri)
+// Significant papers related to tracked companies and sectors
+crons.daily(
+  "post academic research to LinkedIn",
+  { hourUTC: 14, minuteUTC: 0 },
+  internal.workflows.specializedLinkedInPosts.postAcademicResearch,
+  { lookbackDays: 7, testMode: false }
+);
+
+// Post clinical trial milestones to LinkedIn at 4:00 PM UTC (weekly on Thu)
+// Phase transitions, results posted, significant new trials
+crons.weekly(
+  "post clinical trial milestones to LinkedIn",
+  { dayOfWeek: "thursday", hourUTC: 16, minuteUTC: 0 },
+  internal.workflows.specializedLinkedInPosts.postClinicalTrialMilestones,
+  { lookbackDays: 7, testMode: false }
+);
+
+// Post M&A activity to LinkedIn at 1:00 PM UTC (Mon)
+// Acquisitions, mergers, strategic investments in tracked sectors
+crons.weekly(
+  "post MA activity to LinkedIn",
+  { dayOfWeek: "monday", hourUTC: 13, minuteUTC: 0 },
+  internal.workflows.specializedLinkedInPosts.postMAActivity,
+  { lookbackDays: 7, testMode: false }
+);
+
 // Advance Daily Brief domain memory tasks every 15 minutes
 crons.interval(
   "advance daily brief tasks",

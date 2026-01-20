@@ -177,6 +177,95 @@ export const batchCheckCompaniesPosted = internalQuery({
   },
 });
 
+/**
+ * Get full funding timeline for a company.
+ * Returns ALL past funding posts for this company, sorted by date (oldest first).
+ * Used to build a complete funding journey in LinkedIn posts.
+ *
+ * Lookback: 365 days by default to capture full funding history
+ */
+export const getCompanyFundingTimeline = internalQuery({
+  args: {
+    companyName: v.string(),
+    lookbackDays: v.optional(v.number()), // Default: 365 days
+  },
+  returns: v.array(
+    v.object({
+      roundType: v.string(),
+      amountRaw: v.string(),
+      postedAt: v.number(),
+      sourceUrl: v.optional(v.string()),
+      postUrl: v.string(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const normalized = normalizeCompanyName(args.companyName);
+    const lookbackMs = (args.lookbackDays ?? 365) * 24 * 60 * 60 * 1000;
+    const cutoffTime = Date.now() - lookbackMs;
+
+    // Fetch all previous posts for this company
+    const previousPosts = await ctx.db
+      .query("linkedinFundingPosts")
+      .withIndex("by_company", (q) => q.eq("companyNameNormalized", normalized))
+      .filter((q) => q.gte(q.field("postedAt"), cutoffTime))
+      .order("asc") // Oldest first for timeline
+      .collect();
+
+    return previousPosts.map(post => ({
+      roundType: post.roundType,
+      amountRaw: post.amountRaw,
+      postedAt: post.postedAt,
+      sourceUrl: post.sourceUrl,
+      postUrl: post.postUrl,
+    }));
+  },
+});
+
+/**
+ * Batch fetch funding timelines for multiple companies.
+ * More efficient than calling getCompanyFundingTimeline for each company.
+ */
+export const batchGetFundingTimelines = internalQuery({
+  args: {
+    companyNames: v.array(v.string()),
+    lookbackDays: v.optional(v.number()), // Default: 365 days
+  },
+  returns: v.any(), // Map<string, TimelineEntry[]>
+  handler: async (ctx, args) => {
+    const lookbackMs = (args.lookbackDays ?? 365) * 24 * 60 * 60 * 1000;
+    const cutoffTime = Date.now() - lookbackMs;
+
+    const results: Record<string, Array<{
+      roundType: string;
+      amountRaw: string;
+      postedAt: number;
+      sourceUrl?: string;
+      postUrl: string;
+    }>> = {};
+
+    for (const companyName of args.companyNames) {
+      const normalized = normalizeCompanyName(companyName);
+
+      const previousPosts = await ctx.db
+        .query("linkedinFundingPosts")
+        .withIndex("by_company", (q) => q.eq("companyNameNormalized", normalized))
+        .filter((q) => q.gte(q.field("postedAt"), cutoffTime))
+        .order("asc") // Oldest first for timeline
+        .collect();
+
+      results[companyName] = previousPosts.map(post => ({
+        roundType: post.roundType,
+        amountRaw: post.amountRaw,
+        postedAt: post.postedAt,
+        sourceUrl: post.sourceUrl,
+        postUrl: post.postUrl,
+      }));
+    }
+
+    return results;
+  },
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Internal Mutations - For use in actions
 // ═══════════════════════════════════════════════════════════════════════════

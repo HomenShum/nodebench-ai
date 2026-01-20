@@ -35,6 +35,7 @@ import {
   readGoogleGeminiApiPricingSnapshotFromFile,
 } from "./pricing/googleGeminiApiPricing";
 import { APPROVED_MODELS, MODEL_UI_INFO, type Provider } from "../src/shared/llm/approvedModels";
+import { modelPricing as sharedModelPricing } from "../shared/llm/modelCatalog";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -240,6 +241,24 @@ async function main() {
           model: modelPricing ?? null,
           notes: snapshot.notes,
         };
+      } else if (provider === "openrouter") {
+        const p = sharedModelPricing[model];
+        pricing = p
+          ? {
+              provider: "openrouter",
+              sourceUrl: "https://openrouter.ai/api/v1/models",
+              fetchedAt: new Date().toISOString(),
+              cache: { source: "repo", path: "shared/llm/modelCatalog.ts" },
+              model: {
+                model,
+                inputUsdPer1MTokens: p.inputPer1M,
+                outputUsdPer1MTokens: p.outputPer1M,
+                cachedInputUsdPer1MTokens: p.cachedInputPer1M ?? null,
+                contextWindow: p.contextWindow,
+              },
+              notes: "Pricing sourced from repo model catalog; verify with OpenRouter /models endpoint as needed.",
+            }
+          : { error: `Unknown OpenRouter model pricing for '${model}'` };
       } else {
         pricing = { error: `Unknown provider for model '${model}'` };
       }
@@ -346,6 +365,22 @@ async function main() {
       return (usageForPricing.inputTokens / 1_000_000) * pricing.model.inputUsdPer1MTokens +
         (usageForPricing.outputTokens / 1_000_000) * pricing.model.outputUsdPer1MTokens;
     }
+    if (pricing.provider === "openrouter") {
+      if (typeof pricing.model.inputUsdPer1MTokens !== "number" || typeof pricing.model.outputUsdPer1MTokens !== "number") return null;
+
+      const cached = Math.max(0, Number(usageForPricing.cachedInputTokens ?? 0) || 0);
+      const totalIn = Math.max(0, Number(usageForPricing.inputTokens ?? 0) || 0);
+      const uncachedIn = Math.max(0, totalIn - cached);
+
+      const cachedRate =
+        typeof pricing.model.cachedInputUsdPer1MTokens === "number"
+          ? pricing.model.cachedInputUsdPer1MTokens
+          : pricing.model.inputUsdPer1MTokens;
+
+      return (cached / 1_000_000) * cachedRate +
+        (uncachedIn / 1_000_000) * pricing.model.inputUsdPer1MTokens +
+        (usageForPricing.outputTokens / 1_000_000) * pricing.model.outputUsdPer1MTokens;
+    }
     return null;
   })();
 
@@ -400,6 +435,8 @@ async function main() {
     md.push(`## Pricing (API)`);
     if (res.pricing.provider === "openai") {
       md.push(`- provider=openai model=${p.model} input=$${p.inputUsdPer1MTokens}/1M cachedInput=$${p.cachedInputUsdPer1MTokens ?? "?"}/1M output=$${p.outputUsdPer1MTokens}/1M`);
+    } else if (res.pricing.provider === "openrouter") {
+      md.push(`- provider=openrouter model=${p.model} input=$${p.inputUsdPer1MTokens}/1M cachedInput=$${p.cachedInputUsdPer1MTokens ?? "?"}/1M output=$${p.outputUsdPer1MTokens}/1M`);
     } else if (res.pricing.provider === "anthropic") {
       md.push(`- provider=anthropic model=${p.model} baseInput=$${p.baseInputUsdPer1MTokens}/MTok output=$${p.outputUsdPer1MTokens}/MTok cacheHit=$${p.cacheHitUsdPer1MTokens ?? "?"}/MTok`);
     } else if (res.pricing.provider === "google") {

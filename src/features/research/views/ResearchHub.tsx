@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { ArrowRight, Newspaper, Zap, TrendingUp, Briefcase, LayoutGrid, Layers, Bell } from "lucide-react";
+import { ArrowRight, Newspaper, Zap, TrendingUp, Briefcase, LayoutGrid, Layers, Bell, ScrollText } from "lucide-react";
 import { formatBriefDate, isBriefDateToday } from "@/lib/briefDate";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -26,9 +26,10 @@ import { DealRadar } from "@/features/research/components/DealRadar";
 import { cn } from "@/lib/utils";
 
 const WhatChangedPanelLazy = React.lazy(() => import("@/features/research/components/WhatChangedPanel"));
+const ProductChangelogPanelLazy = React.lazy(() => import("@/features/research/components/ProductChangelogPanel"));
 
 // Tab definitions for the main content sections
-type ContentTab = 'overview' | 'signals' | 'briefing' | 'deals' | 'changes';
+type ContentTab = 'overview' | 'signals' | 'briefing' | 'deals' | 'changes' | 'changelog';
 
 const CONTENT_TABS: Array<{ id: ContentTab; label: string; icon: React.ElementType; description: string }> = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid, description: 'Digest + Personal Pulse' },
@@ -36,6 +37,7 @@ const CONTENT_TABS: Array<{ id: ContentTab; label: string; icon: React.ElementTy
   { id: 'briefing', label: 'Briefing', icon: Layers, description: 'Deep Institutional Analysis' },
   { id: 'deals', label: 'Deals', icon: Briefcase, description: 'Deal Radar & Funding' },
   { id: 'changes', label: 'Changes', icon: Bell, description: 'What Changed [Sources]' },
+  { id: 'changelog', label: 'Changelog', icon: ScrollText, description: 'Product updates' },
 ];
 
 export interface ResearchHubProps {
@@ -705,6 +707,30 @@ function ResearchHubContent(props: ResearchHubProps) {
                       }
                     >
                       <WhatChangedPanelLazy limit={20} daysBack={30} onAskAgent={handleAskAgentAboutChanges} />
+                    </React.Suspense>
+                  </div>
+                </section>
+              )}
+
+              {/* CHANGELOG TAB: Product changelog */}
+              {activeTab === 'changelog' && (
+                <section className="animate-in fade-in duration-300 pb-8">
+                  <div className="mb-3 flex items-center justify-between border-b border-stone-200 pb-2">
+                    <div className="flex items-center gap-3">
+                      <ScrollText className="w-4 h-4 text-emerald-800" />
+                      <h3 className="text-[11px] font-black text-emerald-900 uppercase tracking-[0.3em]">Changelog</h3>
+                    </div>
+                    <div className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold uppercase tracking-wider rounded">Product</div>
+                  </div>
+                  <div className="bg-stone-50/50 p-4 border border-stone-200/60 rounded-lg">
+                    <React.Suspense
+                      fallback={
+                        <div className="flex items-center justify-center py-10 text-sm text-stone-500">
+                          Loading changelog...
+                        </div>
+                      }
+                    >
+                      <ProductChangelogPanelLazy />
                     </React.Suspense>
                   </div>
                 </section>

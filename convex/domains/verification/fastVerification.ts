@@ -1083,7 +1083,17 @@ function classifyError(error: any, statusCode?: number): WebsiteCheckErrorClass 
   // DNS failures
   if (code.includes("enotfound") || errStr.includes("enotfound")) return "dns_nxdomain";
   if (code.includes("eai_again") || errStr.includes("eai_again")) return "dns_temp";
-  if (code.includes("getaddrinfo") || errStr.includes("getaddrinfo")) return "dns_nxdomain";
+  // "getaddrinfo" is a syscall used for multiple DNS error types. Treat it as NXDOMAIN only when
+  // we have a strong signal; otherwise classify as temporary/inconclusive to avoid false negatives.
+  if (code.includes("eai_noname") || errStr.includes("eai_noname")) return "dns_nxdomain";
+  if (
+    errStr.includes("name or service not known") ||
+    errStr.includes("nodename nor servname provided") ||
+    errStr.includes("no address associated with hostname")
+  ) {
+    return "dns_nxdomain";
+  }
+  if (code.includes("getaddrinfo") || errStr.includes("getaddrinfo")) return "dns_temp";
 
   // Connection failures
   if (code.includes("econnrefused") || errStr.includes("econnrefused")) return "connection_refused";

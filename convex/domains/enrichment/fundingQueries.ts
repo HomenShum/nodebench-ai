@@ -438,6 +438,161 @@ export const getFundingBriefSummary = query({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FUNDING HISTORY/TIMELINE - For LinkedIn posts with historical context
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Normalize company name for matching across funding events.
+ * Lowercase, trim, remove common suffixes.
+ */
+function normalizeCompanyName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[,.]$/g, "")
+    .replace(/\s+(inc|corp|llc|ltd|co|company|technologies|technology|labs|ai|io)\.?$/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Get full funding history for a company from the fundingEvents table.
+ * Returns ALL past funding rounds with original source URLs.
+ *
+ * This is the correct source for funding timelines - not our LinkedIn posts.
+ * Real funding data with original announcement dates and source URLs.
+ *
+ * For later-stage companies (Series B+), we want the COMPLETE funding journey
+ * from inception - no arbitrary lookback limits.
+ */
+export const getCompanyFundingHistory = internalQuery({
+  args: {
+    companyName: v.string(),
+    // If true, fetches ALL history regardless of time (for Series B+ companies)
+    fullHistory: v.optional(v.boolean()),
+    // Fallback lookback for early-stage if fullHistory not specified
+    lookbackDays: v.optional(v.number()), // Default: unlimited
+  },
+  returns: v.array(
+    v.object({
+      roundType: v.string(),
+      amountRaw: v.string(),
+      amountUsd: v.optional(v.number()),
+      announcedAt: v.number(),
+      sourceUrls: v.array(v.string()),
+      leadInvestors: v.array(v.string()),
+      confidence: v.number(),
+      verificationStatus: v.string(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const normalized = normalizeCompanyName(args.companyName);
+
+    // Get all funding events - we need to filter by normalized name
+    const allEvents = await ctx.db
+      .query("fundingEvents")
+      .withIndex("by_announcedAt")
+      .order("asc") // Oldest first for timeline
+      .collect();
+
+    // Filter by company name (normalized)
+    // If fullHistory=true or no lookbackDays specified, get ALL events
+    const useFullHistory = args.fullHistory ?? !args.lookbackDays;
+    const cutoffTime = useFullHistory
+      ? 0 // No cutoff - get everything
+      : Date.now() - (args.lookbackDays! * 24 * 60 * 60 * 1000);
+
+    const companyEvents = allEvents.filter(event => {
+      const eventNormalized = normalizeCompanyName(event.companyName);
+      return eventNormalized === normalized && event.announcedAt >= cutoffTime;
+    });
+
+    return companyEvents.map(event => ({
+      roundType: event.roundType,
+      amountRaw: event.amountRaw,
+      amountUsd: event.amountUsd,
+      announcedAt: event.announcedAt,
+      sourceUrls: event.sourceUrls,
+      leadInvestors: event.leadInvestors,
+      confidence: event.confidence,
+      verificationStatus: event.verificationStatus,
+    }));
+  },
+});
+
+/**
+ * Batch fetch funding history for multiple companies.
+ * Efficient for LinkedIn posts that include multiple companies.
+ *
+ * For later-stage companies (Series B, C, D, IPO), we want the COMPLETE
+ * funding journey from the very beginning - not just recent history.
+ */
+export const batchGetFundingHistory = internalQuery({
+  args: {
+    companyNames: v.array(v.string()),
+    // Always fetch full history - no lookback limits
+    // Later-stage companies need complete journey from inception
+    fullHistory: v.optional(v.boolean()), // Default: true
+  },
+  returns: v.any(), // Map<string, FundingHistoryEntry[]>
+  handler: async (ctx, args) => {
+    // Default to full history - we want complete funding journeys
+    const useFullHistory = args.fullHistory ?? true;
+
+    // Normalize all company names for matching
+    const normalizedNames = new Map<string, string>();
+    for (const name of args.companyNames) {
+      normalizedNames.set(normalizeCompanyName(name), name);
+    }
+
+    // Get ALL funding events (no time filter for complete history)
+    const allEvents = await ctx.db
+      .query("fundingEvents")
+      .withIndex("by_announcedAt")
+      .order("asc") // Oldest first for timeline
+      .collect();
+
+    // Build result map
+    const results: Record<string, Array<{
+      roundType: string;
+      amountRaw: string;
+      amountUsd?: number;
+      announcedAt: number;
+      sourceUrls: string[];
+      leadInvestors: string[];
+      confidence: number;
+      verificationStatus: string;
+    }>> = {};
+
+    // Initialize empty arrays for all requested companies
+    for (const name of args.companyNames) {
+      results[name] = [];
+    }
+
+    // Match events to companies
+    for (const event of allEvents) {
+      const eventNormalized = normalizeCompanyName(event.companyName);
+      const originalName = normalizedNames.get(eventNormalized);
+
+      if (originalName) {
+        results[originalName].push({
+          roundType: event.roundType,
+          amountRaw: event.amountRaw,
+          amountUsd: event.amountUsd,
+          announcedAt: event.announcedAt,
+          sourceUrls: event.sourceUrls,
+          leadInvestors: event.leadInvestors,
+          confidence: event.confidence,
+          verificationStatus: event.verificationStatus,
+        });
+      }
+    }
+
+    return results;
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // INTERNAL QUERIES - For scheduled report generation
 // ═══════════════════════════════════════════════════════════════════════════
 

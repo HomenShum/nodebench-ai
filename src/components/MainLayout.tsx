@@ -108,7 +108,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const [isTransitioning, setIsTransitioning] = useState(false);
   // Research state: toggle between high-level gateway and deep hub
   const [showResearchDossier, setShowResearchDossier] = useState(false);
-  const [researchHubInitialTab, setResearchHubInitialTab] = useState<"overview" | "signals" | "briefing" | "deals" | "changes">("overview");
+  const [researchHubInitialTab, setResearchHubInitialTab] = useState<"overview" | "signals" | "briefing" | "deals" | "changes" | "changelog">("overview");
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   // Multi-document selection for Fast Agent

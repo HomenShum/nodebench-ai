@@ -14,6 +14,15 @@ export const APPROVED_MODELS = [
   "claude-haiku-4.5", // Anthropic fast
   "gemini-3-pro", // Google flagship
   "gemini-3-flash", // Google fast (DEFAULT)
+  // OpenRouter priced models (Jan 2026)
+  "glm-4.7-flash", // GLM 4.7 Flash - fast, agentic coding
+  "glm-4.7", // GLM 4.7 - flagship reasoning/coding
+  "deepseek-r1", // DeepSeek R1 - reasoning model
+  "deepseek-v3.2-speciale", // DeepSeek V3.2 Speciale - agentic variant
+  "deepseek-v3.2", // DeepSeek V3.2 - general purpose
+  "qwen3-235b", // Qwen3 235B - tool calling
+  "minimax-m2.1", // MiniMax M2.1 - agentic workflows
+  "mistral-large", // Mistral Large - function calling
   // OpenRouter free-tier models (auto-discovered Jan 2026)
   "mimo-v2-flash-free", // Xiaomi MiMo V2 Flash - 256K, reasoning
   "devstral-2-free", // Mistral Devstral 2 - 256K, agentic coding (123B)
@@ -116,6 +125,78 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     tier: "fast",
     contextWindow: "1M",
     icon: "🔵",
+  },
+  "glm-4.7-flash": {
+    id: "glm-4.7-flash",
+    name: "GLM 4.7 Flash",
+    provider: "openrouter",
+    description: "Cheap fast agentic coding (200K)",
+    tier: "fast",
+    contextWindow: "200K",
+    icon: "OR",
+  },
+  "glm-4.7": {
+    id: "glm-4.7",
+    name: "GLM 4.7",
+    provider: "openrouter",
+    description: "Flagship reasoning/coding (203K)",
+    tier: "balanced",
+    contextWindow: "203K",
+    icon: "OR",
+  },
+  "deepseek-r1": {
+    id: "deepseek-r1",
+    name: "DeepSeek R1",
+    provider: "openrouter",
+    description: "Reasoning model (164K)",
+    tier: "powerful",
+    contextWindow: "164K",
+    icon: "OR",
+  },
+  "deepseek-v3.2-speciale": {
+    id: "deepseek-v3.2-speciale",
+    name: "DeepSeek V3.2 Speciale",
+    provider: "openrouter",
+    description: "Agentic variant, fast (164K)",
+    tier: "fast",
+    contextWindow: "164K",
+    icon: "OR",
+  },
+  "deepseek-v3.2": {
+    id: "deepseek-v3.2",
+    name: "DeepSeek V3.2",
+    provider: "openrouter",
+    description: "General purpose (164K)",
+    tier: "balanced",
+    contextWindow: "164K",
+    icon: "OR",
+  },
+  "qwen3-235b": {
+    id: "qwen3-235b",
+    name: "Qwen3 235B",
+    provider: "openrouter",
+    description: "Tool calling, huge model (131K)",
+    tier: "powerful",
+    contextWindow: "131K",
+    icon: "OR",
+  },
+  "minimax-m2.1": {
+    id: "minimax-m2.1",
+    name: "MiniMax M2.1",
+    provider: "openrouter",
+    description: "Agentic workflows (197K)",
+    tier: "balanced",
+    contextWindow: "197K",
+    icon: "OR",
+  },
+  "mistral-large": {
+    id: "mistral-large",
+    name: "Mistral Large",
+    provider: "openrouter",
+    description: "Function calling (131K)",
+    tier: "powerful",
+    contextWindow: "131K",
+    icon: "OR",
   },
   "mimo-v2-flash-free": {
     id: "mimo-v2-flash-free",
@@ -270,4 +351,3 @@ export const PROVIDER_COLORS: Record<
   google: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "🔵" },
   openrouter: { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", icon: "🟣" },
 };
-

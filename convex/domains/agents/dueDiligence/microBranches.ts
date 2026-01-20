@@ -1018,7 +1018,16 @@ function classifyWebsiteError(error: any): "dns_nxdomain" | "dns_temp" | "timeou
 
   if (code.includes("enotfound") || errStr.includes("enotfound")) return "dns_nxdomain";
   if (code.includes("eai_again") || errStr.includes("eai_again")) return "dns_temp";
-  if (code.includes("getaddrinfo") || errStr.includes("getaddrinfo")) return "dns_nxdomain";
+  // "getaddrinfo" can surface multiple DNS error classes; avoid treating it as NXDOMAIN unless clear.
+  if (code.includes("eai_noname") || errStr.includes("eai_noname")) return "dns_nxdomain";
+  if (
+    errStr.includes("name or service not known") ||
+    errStr.includes("nodename nor servname provided") ||
+    errStr.includes("no address associated with hostname")
+  ) {
+    return "dns_nxdomain";
+  }
+  if (code.includes("getaddrinfo") || errStr.includes("getaddrinfo")) return "dns_temp";
   if (error?.name === "AbortError" || errStr.includes("timeout")) return "timeout";
 
   return "network";

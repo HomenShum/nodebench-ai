@@ -23,7 +23,7 @@ import { api } from '../../../../convex/_generated/api';
 import { toast } from 'sonner';
 
 interface CinematicHomeProps {
-    onEnterHub: (tab?: "overview" | "signals" | "briefing" | "deals" | "changes") => void;
+    onEnterHub: (tab?: "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog") => void;
     onEnterWorkspace: () => void;
     onOpenFastAgent: () => void;
 }
