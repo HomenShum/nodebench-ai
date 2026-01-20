@@ -1685,10 +1685,11 @@ export const postStartupFundingBrief = internalAction({
     hoursBack: v.optional(v.number()),
     maxProfiles: v.optional(v.number()),
     roundTypes: v.optional(v.array(v.string())),
-    sectorCategories: v.optional(v.array(v.string())), // NEW: Filter by sector
+    sectorCategories: v.optional(v.array(v.string())), // Filter by sector
     enableEnrichment: v.optional(v.boolean()),
-    skipDeduplication: v.optional(v.boolean()), // NEW: Bypass dedup check
-    deduplicationDays: v.optional(v.number()), // NEW: Lookback window for dedup
+    skipDeduplication: v.optional(v.boolean()), // Bypass dedup check
+    deduplicationDays: v.optional(v.number()), // Lookback window for dedup
+    useSemanticDedup: v.optional(v.boolean()), // NEW: Use 2-stage LLM-as-judge dedup
   },
   handler: async (ctx, args) => {
     const dryRun = args.dryRun ?? false;
@@ -1696,7 +1697,10 @@ export const postStartupFundingBrief = internalAction({
     const maxProfiles = args.maxProfiles ?? 10; // Increased default from 5 to 10
     const enableEnrichment = args.enableEnrichment ?? true;
     const skipDeduplication = args.skipDeduplication ?? false;
-    const deduplicationDays = args.deduplicationDays ?? 14; // Default: skip if posted within 14 days
+    // Default: 21 days catches leaked→confirmed gap (SEC Form D = 15 days + announcement delay)
+    // Research: https://techcrunch.com/2019/03/28/how-to-delay-your-form-ds/
+    const deduplicationDays = args.deduplicationDays ?? 21;
+    const useSemanticDedup = args.useSemanticDedup ?? false; // NEW: Default to legacy dedup for now
 
     // EXPANDED: Include all major round types by default
     const roundTypes = args.roundTypes ?? [
@@ -1704,7 +1708,7 @@ export const postStartupFundingBrief = internalAction({
       "growth", "debt", "unknown"
     ];
 
-    // NEW: Sector category filter (optional)
+    // Sector category filter (optional)
     const sectorCategories = args.sectorCategories; // undefined = all sectors
     const dateString = new Date().toISOString().split("T")[0];
 
@@ -1713,6 +1717,7 @@ export const postStartupFundingBrief = internalAction({
     console.log(`  - roundTypes=${roundTypes.join(",")}`);
     console.log(`  - sectorCategories=${sectorCategories?.join(",") ?? "all"}`);
     console.log(`  - dedup=${!skipDeduplication}, dedup window=${deduplicationDays} days`);
+    console.log(`  - useSemanticDedup=${useSemanticDedup} (2-stage LLM-as-judge)`);
 
     // Step 1: Fetch funding events from the database
     let fundingEvents: any[] = [];
@@ -1732,7 +1737,8 @@ export const postStartupFundingBrief = internalAction({
       fundingEvents = [];
     }
 
-    // Step 1.5: Batch check for previously posted companies (deduplication)
+    // Step 1.5: Deduplication check
+    // NEW: Support both legacy (time-based) and semantic (LLM-as-judge) dedup
     let previouslyPosted: Record<string, {
       previousPostUrl: string;
       previousRoundType: string;
@@ -1740,19 +1746,78 @@ export const postStartupFundingBrief = internalAction({
       postedAt: number;
     } | null> = {};
 
+    // For semantic dedup, we'll store approved candidates with their embeddings
+    let semanticDedupResults: Map<string, {
+      verdict: string;
+      reasoning?: string;
+      confidence?: number;
+      priorPostId?: string;
+      diffSummary?: string;
+      embedding?: number[];
+    }> = new Map();
+
     if (!skipDeduplication && fundingEvents.length > 0) {
-      try {
-        previouslyPosted = await ctx.runQuery(
-          internal.domains.social.linkedinFundingPosts.batchCheckCompaniesPosted,
-          {
-            companyNames: fundingEvents.map(e => e.companyName),
-            lookbackDays: deduplicationDays,
+      if (useSemanticDedup) {
+        // NEW: 2-Stage Semantic Dedup with LLM-as-judge
+        console.log(`[startupFundingBrief] Using 2-stage semantic dedup with LLM-as-judge`);
+        try {
+          const candidates = fundingEvents.map(e => ({
+            companyName: e.companyName,
+            roundType: e.roundType,
+            amountRaw: e.amount || `$${e.amountUsd?.toLocaleString() || "undisclosed"}`,
+            sector: e.sector,
+            fundingEventId: e._id,
+          }));
+
+          const approvedPosts = await ctx.runAction(
+            internal.domains.social.postDedupAction.batchCheckDedup,
+            {
+              candidates,
+              lookbackDays: deduplicationDays * 3, // Wider lookback for semantic matching
+              maxPosts: maxProfiles,
+            }
+          );
+
+          // Store results for later use
+          for (const post of approvedPosts) {
+            semanticDedupResults.set(post.companyName, {
+              verdict: post.verdict,
+              reasoning: post.reasoning,
+              confidence: post.confidence,
+              priorPostId: post.priorPostId,
+              diffSummary: post.diffSummary,
+              embedding: post.embedding,
+            });
           }
-        );
-        const postedCount = Object.values(previouslyPosted).filter(v => v !== null).length;
-        console.log(`[startupFundingBrief] Dedup check: ${postedCount}/${fundingEvents.length} companies already posted`);
-      } catch (e) {
-        console.warn(`[startupFundingBrief] Dedup check failed, proceeding without:`, e);
+
+          console.log(`[startupFundingBrief] Semantic dedup: ${approvedPosts.length}/${fundingEvents.length} approved for posting`);
+          console.log(`  - Verdicts: ${approvedPosts.map(p => `${p.companyName}:${p.verdict}`).join(", ")}`);
+        } catch (e) {
+          console.warn(`[startupFundingBrief] Semantic dedup failed, falling back to legacy:`, e);
+          // Fall back to legacy dedup
+          previouslyPosted = await ctx.runQuery(
+            internal.domains.social.linkedinFundingPosts.batchCheckCompaniesPosted,
+            {
+              companyNames: fundingEvents.map(e => e.companyName),
+              lookbackDays: deduplicationDays,
+            }
+          );
+        }
+      } else {
+        // Legacy time-based dedup
+        try {
+          previouslyPosted = await ctx.runQuery(
+            internal.domains.social.linkedinFundingPosts.batchCheckCompaniesPosted,
+            {
+              companyNames: fundingEvents.map(e => e.companyName),
+              lookbackDays: deduplicationDays,
+            }
+          );
+          const postedCount = Object.values(previouslyPosted).filter(v => v !== null).length;
+          console.log(`[startupFundingBrief] Legacy dedup check: ${postedCount}/${fundingEvents.length} companies already posted`);
+        } catch (e) {
+          console.warn(`[startupFundingBrief] Dedup check failed, proceeding without:`, e);
+        }
       }
     }
 
@@ -1760,26 +1825,57 @@ export const postStartupFundingBrief = internalAction({
     const fundingProfiles: FundingProfile[] = [];
     const skippedDuplicates: string[] = [];
     const progressions: { company: string; previousUrl: string; previousRound: string }[] = [];
+    // NEW: Track embeddings and verdicts for recording
+    const postMetadata: Map<string, { embedding?: number[]; verdict?: string; diffSummary?: string }> = new Map();
 
     for (const event of fundingEvents) {
       if (fundingProfiles.length >= maxProfiles) break;
 
-      // DEDUPLICATION CHECK: Skip if already posted (same round)
-      const prevPost = previouslyPosted[event.companyName];
-      if (prevPost && !skipDeduplication) {
-        // Check if this is the same round (duplicate) or a new round (progression)
-        if (prevPost.previousRoundType === event.roundType) {
-          console.log(`[startupFundingBrief] Skipping ${event.companyName} - already posted ${event.roundType} on ${new Date(prevPost.postedAt).toLocaleDateString()}`);
-          skippedDuplicates.push(`${event.companyName} [${event.roundType}] -> ${prevPost.previousPostUrl}`);
+      // DEDUPLICATION CHECK
+      if (useSemanticDedup && semanticDedupResults.size > 0) {
+        // NEW: Semantic dedup check
+        const dedupResult = semanticDedupResults.get(event.companyName);
+        if (!dedupResult) {
+          // Not in approved list - skip
+          console.log(`[startupFundingBrief] Skipping ${event.companyName} - not approved by semantic dedup`);
+          skippedDuplicates.push(`${event.companyName} [${event.roundType}] -> semantic:DUPLICATE`);
           continue;
-        } else {
-          // This is a progression (new round since last post)
-          console.log(`[startupFundingBrief] Progression: ${event.companyName} from ${prevPost.previousRoundType} to ${event.roundType}`);
+        }
+
+        // Track metadata for recording
+        postMetadata.set(event.companyName, {
+          embedding: dedupResult.embedding,
+          verdict: dedupResult.verdict,
+          diffSummary: dedupResult.diffSummary,
+        });
+
+        // Check if it's an UPDATE (progression with diff)
+        if (dedupResult.verdict === "UPDATE" && dedupResult.priorPostId) {
+          console.log(`[startupFundingBrief] Update detected: ${event.companyName} - ${dedupResult.diffSummary}`);
           progressions.push({
             company: event.companyName,
-            previousUrl: prevPost.previousPostUrl,
-            previousRound: prevPost.previousRoundType,
+            previousUrl: dedupResult.priorPostId, // Will be resolved to URL later
+            previousRound: dedupResult.diffSummary || "updated info",
           });
+        }
+      } else {
+        // Legacy dedup check
+        const prevPost = previouslyPosted[event.companyName];
+        if (prevPost && !skipDeduplication) {
+          // Check if this is the same round (duplicate) or a new round (progression)
+          if (prevPost.previousRoundType === event.roundType) {
+            console.log(`[startupFundingBrief] Skipping ${event.companyName} - already posted ${event.roundType} on ${new Date(prevPost.postedAt).toLocaleDateString()}`);
+            skippedDuplicates.push(`${event.companyName} [${event.roundType}] -> ${prevPost.previousPostUrl}`);
+            continue;
+          } else {
+            // This is a progression (new round since last post)
+            console.log(`[startupFundingBrief] Progression: ${event.companyName} from ${prevPost.previousRoundType} to ${event.roundType}`);
+            progressions.push({
+              company: event.companyName,
+              previousUrl: prevPost.previousPostUrl,
+              previousRound: prevPost.previousRoundType,
+            });
+          }
         }
       }
 
@@ -2126,11 +2222,35 @@ export const postStartupFundingBrief = internalAction({
           totalParts: postUrls.length,
         }));
 
-        await ctx.runMutation(
+        // Record the basic post info
+        const recordedIds = await ctx.runMutation(
           internal.domains.social.linkedinFundingPosts.batchRecordPostedCompanies,
           { companies: companiesForRecording }
         );
         console.log(`[startupFundingBrief] Recorded ${companiesForRecording.length} companies for deduplication`);
+
+        // NEW: If using semantic dedup, also store embeddings and metadata
+        if (useSemanticDedup && postMetadata.size > 0) {
+          for (let i = 0; i < fundingProfiles.length; i++) {
+            const profile = fundingProfiles[i];
+            const metadata = postMetadata.get(profile.companyName);
+            if (metadata && recordedIds[i]) {
+              try {
+                await ctx.runMutation(
+                  internal.domains.social.postDedup.updatePostEmbedding,
+                  {
+                    postId: recordedIds[i],
+                    contentSummary: `${profile.companyName} raised ${profile.amount} in ${profile.roundType}`,
+                    embedding: metadata.embedding,
+                  }
+                );
+              } catch (embErr) {
+                console.warn(`[startupFundingBrief] Failed to store embedding for ${profile.companyName}:`, embErr);
+              }
+            }
+          }
+          console.log(`[startupFundingBrief] Stored embeddings for semantic dedup`);
+        }
       } catch (e) {
         console.warn(`[startupFundingBrief] Failed to record companies for dedup:`, e);
         // Don't fail the whole operation if recording fails

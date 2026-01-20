@@ -443,6 +443,7 @@ import type * as domains_observability_dashboardData from "../domains/observabil
 import type * as domains_observability_healthMonitor from "../domains/observability/healthMonitor.js";
 import type * as domains_observability_index from "../domains/observability/index.js";
 import type * as domains_observability_selfHealer from "../domains/observability/selfHealer.js";
+import type * as domains_operations_validationWorkflow from "../domains/operations/validationWorkflow.js";
 import type * as domains_personas_index from "../domains/personas/index.js";
 import type * as domains_personas_multiPersonaSynthesizer from "../domains/personas/multiPersonaSynthesizer.js";
 import type * as domains_personas_personaAutonomousAgent from "../domains/personas/personaAutonomousAgent.js";
@@ -531,6 +532,8 @@ import type * as domains_social_instagramIngestion from "../domains/social/insta
 import type * as domains_social_linkedinAccounts from "../domains/social/linkedinAccounts.js";
 import type * as domains_social_linkedinFundingPosts from "../domains/social/linkedinFundingPosts.js";
 import type * as domains_social_linkedinPosting from "../domains/social/linkedinPosting.js";
+import type * as domains_social_postDedup from "../domains/social/postDedup.js";
+import type * as domains_social_postDedupAction from "../domains/social/postDedupAction.js";
 import type * as domains_tasks_dailyNotes from "../domains/tasks/dailyNotes.js";
 import type * as domains_tasks_eventTaskDocuments from "../domains/tasks/eventTaskDocuments.js";
 import type * as domains_tasks_index from "../domains/tasks/index.js";
@@ -1154,6 +1157,7 @@ declare const fullApi: ApiFromModules<{
   "domains/observability/healthMonitor": typeof domains_observability_healthMonitor;
   "domains/observability/index": typeof domains_observability_index;
   "domains/observability/selfHealer": typeof domains_observability_selfHealer;
+  "domains/operations/validationWorkflow": typeof domains_operations_validationWorkflow;
   "domains/personas/index": typeof domains_personas_index;
   "domains/personas/multiPersonaSynthesizer": typeof domains_personas_multiPersonaSynthesizer;
   "domains/personas/personaAutonomousAgent": typeof domains_personas_personaAutonomousAgent;
@@ -1242,6 +1246,8 @@ declare const fullApi: ApiFromModules<{
   "domains/social/linkedinAccounts": typeof domains_social_linkedinAccounts;
   "domains/social/linkedinFundingPosts": typeof domains_social_linkedinFundingPosts;
   "domains/social/linkedinPosting": typeof domains_social_linkedinPosting;
+  "domains/social/postDedup": typeof domains_social_postDedup;
+  "domains/social/postDedupAction": typeof domains_social_postDedupAction;
   "domains/tasks/dailyNotes": typeof domains_tasks_dailyNotes;
   "domains/tasks/eventTaskDocuments": typeof domains_tasks_eventTaskDocuments;
   "domains/tasks/index": typeof domains_tasks_index;

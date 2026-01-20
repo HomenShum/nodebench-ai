@@ -612,19 +612,25 @@ export function FastAgentPanel({
   // For streaming mode, we use streamingMessages directly (UIMessage format)
   const messages = agentMessages;
 
+  const formatTimeAgo = useCallback((timestamp?: number | null): string => {
+    if (!timestamp) return "";
+    const diffMs = Date.now() - timestamp;
+    const minutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMs / 3600000);
+    const days = Math.floor(diffMs / 86400000);
+
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  }, []);
+
   // ========== EFFECTS ==========
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, liveThinking, liveToolCalls]);
-
-  // Auto-select first thread if none selected
-  useEffect(() => {
-    if (!activeThreadId && threads && threads.length > 0) {
-      setActiveThreadId(threads[0]!._id);
-    }
-  }, [threads, activeThreadId]);
 
   // Persist chat mode to localStorage
   useEffect(() => {
@@ -1635,11 +1641,71 @@ export function FastAgentPanel({
                           Nodebench AI
                         </h2>
 
-                        {/* Marketing Tagline */}
-                        <p className="text-sm text-[var(--text-muted)] text-center max-w-xs">
-                          Your intelligent research assistant. Search, analyze, and discover insights across documents, filings, and media.
-                        </p>
-                      </div>
+                       {/* Marketing Tagline */}
+                       <p className="text-sm text-[var(--text-muted)] text-center max-w-xs">
+                         Your intelligent research assistant. Search, analyze, and discover insights across documents, filings, and media.
+                       </p>
+                     </div>
+
+                      {/* Recent threads / last run */}
+                      {threads && threads.length > 0 && (
+                        <div className="px-4 pb-6">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-xs font-semibold text-[var(--text-secondary)]">
+                              Recent chats
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowSidebar(true)}
+                              className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] underline underline-offset-2"
+                            >
+                              View all
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {threads.slice(0, 3).map((thread: any) => {
+                              const lastAt =
+                                (thread?.lastMessageAt as number | undefined) ??
+                                (thread?.updatedAt as number | undefined) ??
+                                (thread?._creationTime as number | undefined);
+                              const title = thread?.title || "New Chat";
+                              const preview = (thread?.lastMessage as string | undefined) || "";
+                              const ago = formatTimeAgo(lastAt);
+
+                              return (
+                                <button
+                                  key={thread._id}
+                                  type="button"
+                                  onClick={() => setActiveThreadId(thread._id)}
+                                  className="w-full text-left rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] transition-colors px-3 py-2"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <div className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                                        {title}
+                                      </div>
+                                      {preview ? (
+                                        <div className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">
+                                          {preview}
+                                        </div>
+                                      ) : (
+                                        <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                                          No messages yet
+                                        </div>
+                                      )}
+                                    </div>
+                                    {ago ? (
+                                      <div className="text-[10px] text-[var(--text-muted)] whitespace-nowrap">
+                                        {ago}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Swarm Quick Actions */}
                       <SwarmQuickActions

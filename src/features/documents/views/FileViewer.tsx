@@ -26,15 +26,16 @@ import {
   Code2,
   ArrowLeft,
 } from 'lucide-react';
-import Spreadsheet from 'react-spreadsheet';
-import * as XLSX from 'xlsx';
+import type * as XLSX from 'xlsx';
 import { CodeViewer } from '../components/CodeViewer';
 
 const UnifiedEditor = React.lazy(() => import("@features/editor/components/UnifiedEditor"));
+const Spreadsheet = React.lazy(() => import('react-spreadsheet'));
 
 
 // Build a display matrix from a worksheet, expanding merged cells so content shows up
-function wsToDisplayAOA(ws: XLSX.WorkSheet): string[][] {
+type XlsxModule = typeof import('xlsx');
+function wsToDisplayAOA(ws: XLSX.WorkSheet, XLSX: XlsxModule): string[][] {
   const ref = (ws as any)['!ref'] || 'A1';
   const R = XLSX.utils.decode_range(ref);
   const rows = R.e.r - R.s.r + 1;
@@ -255,10 +256,11 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       try {
         const resp = await fetch(fileDocument.storageUrl!);
         const buf = await resp.arrayBuffer();
+        const XLSX = await import('xlsx');
         const wb = XLSX.read(buf, { type: 'array' });
         const sheets = wb.SheetNames.map((name: string) => {
-          const ws = wb.Sheets[name];
-          const aoa = wsToDisplayAOA(ws);
+          const ws = wb.Sheets[name] as unknown as XLSX.WorkSheet;
+          const aoa = wsToDisplayAOA(ws, XLSX);
           const data = aoa.map(r => r.map(c => ({ value: c })));
           return { name, data };
         });
@@ -417,7 +419,16 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
           </div>
         )}
         <div className="w-full h-[calc(100%-2rem)] overflow-auto rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-2">
-          <Spreadsheet data={currentData} />
+          <Suspense
+            fallback={
+              <div className="flex items-center gap-2 text-[var(--text-muted)] p-2">
+                <Loader2 strokeWidth={1.25} className="h-4 w-4 animate-spin" />
+                Loading spreadsheet...
+              </div>
+            }
+          >
+            <Spreadsheet data={currentData} />
+          </Suspense>
         </div>
       </div>
     );

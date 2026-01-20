@@ -6,8 +6,6 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
-import { FastAgentPanel } from "@features/agents/components/FastAgentPanel";
-import { TabManager } from "./TabManager";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { Zap, Menu, X as CloseIcon } from "lucide-react";
@@ -74,6 +72,16 @@ const FundingBriefView = lazy(() =>
     default: mod.FundingBriefView,
   })),
 );
+const TabManager = lazy(() =>
+  import("./TabManager").then((mod) => ({
+    default: mod.TabManager,
+  })),
+);
+const FastAgentPanel = lazy(() =>
+  import("@features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
+    default: mod.FastAgentPanel,
+  })),
+);
 
 const viewFallback = (
   <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
@@ -91,6 +99,7 @@ interface MainLayoutProps {
 export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome: _onShowWelcome, onShowResearchHub }: MainLayoutProps) {
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
+  const [fastAgentHasMounted, setFastAgentHasMounted] = useState(false);
   const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals' | 'benchmarks' | 'entity' | 'funding'>('research');
   // Entity name for entity profile page (extracted from hash)
   const [entityName, setEntityName] = useState<string | null>(null);
@@ -99,6 +108,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const [isTransitioning, setIsTransitioning] = useState(false);
   // Research state: toggle between high-level gateway and deep hub
   const [showResearchDossier, setShowResearchDossier] = useState(false);
+  const [researchHubInitialTab, setResearchHubInitialTab] = useState<"overview" | "signals" | "briefing" | "deals" | "changes">("overview");
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   // Multi-document selection for Fast Agent
@@ -146,6 +156,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       () => showFastAgentRef.current
     );
   }, [registerExternalState]);
+
+  useEffect(() => {
+    if (showFastAgent) setFastAgentHasMounted(true);
+  }, [showFastAgent]);
 
   // Removed quick prompt handoff (AIChatPanel removed)
 
@@ -786,8 +800,12 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                       className="h-full w-full"
                     >
                       <CinematicHome
-                        onEnterHub={() => setShowResearchDossier(true)}
+                        onEnterHub={(tab) => {
+                          setResearchHubInitialTab(tab ?? "overview");
+                          setShowResearchDossier(true);
+                        }}
                         onEnterWorkspace={() => setCurrentView('documents')}
+                        onOpenFastAgent={() => setShowFastAgent(true)}
                       />
                     </motion.div>
                   ) : (
@@ -801,6 +819,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     >
                       <ResearchHub
                         embedded
+                        initialTab={researchHubInitialTab}
                         onGoHome={() => setShowResearchDossier(false)}
                         onDocumentSelect={(id) => handleDocumentSelect(id as Id<"documents">)}
                         onEnterWorkspace={() => setCurrentView('documents')}
@@ -900,15 +919,17 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             style={{ width: `${agentPanelWidth}px` }}
           >
             <ErrorBoundary title="Fast Agent Panel Error">
-              <FastAgentPanel
-                isOpen={true}
-                onClose={() => setShowFastAgent(false)}
-                selectedDocumentIds={selectedDocumentIdsForAgent}
-                initialThreadId={fastAgentThreadId}
-                variant="sidebar"
-                openOptions={fastAgentOpenOptions}
-                onOptionsConsumed={clearFastAgentOptions}
-              />
+              <Suspense fallback={viewFallback}>
+                <FastAgentPanel
+                  isOpen={true}
+                  onClose={() => setShowFastAgent(false)}
+                  selectedDocumentIds={selectedDocumentIdsForAgent}
+                  initialThreadId={fastAgentThreadId}
+                  variant="sidebar"
+                  openOptions={fastAgentOpenOptions}
+                  onOptionsConsumed={clearFastAgentOptions}
+                />
+              </Suspense>
             </ErrorBoundary>
           </div>
         )}
@@ -916,17 +937,21 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
       {/* Fast Agent Panel - Overlay (Mobile Only) */}
       <div className="lg:hidden">
-        <ErrorBoundary title="Fast Agent Panel Error">
-          <FastAgentPanel
-            isOpen={showFastAgent}
-            onClose={() => setShowFastAgent(false)}
-            selectedDocumentIds={selectedDocumentIdsForAgent}
-            initialThreadId={fastAgentThreadId}
-            variant="overlay"
-            openOptions={fastAgentOpenOptions}
-            onOptionsConsumed={clearFastAgentOptions}
-          />
-        </ErrorBoundary>
+        {fastAgentHasMounted && (
+          <ErrorBoundary title="Fast Agent Panel Error">
+            <Suspense fallback={null}>
+              <FastAgentPanel
+                isOpen={showFastAgent}
+                onClose={() => setShowFastAgent(false)}
+                selectedDocumentIds={selectedDocumentIdsForAgent}
+                initialThreadId={fastAgentThreadId}
+                variant="overlay"
+                openOptions={fastAgentOpenOptions}
+                onOptionsConsumed={clearFastAgentOptions}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        )}
       </div>
 
       {showSettingsModal && (

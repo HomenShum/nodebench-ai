@@ -4,16 +4,21 @@ import { toast } from "sonner";
 import { api } from "../convex/_generated/api";
 import { MainLayout } from "./components/MainLayout";
 import { TutorialPage } from "@/features/onboarding/views/TutorialPage";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
 import { FastAgentProvider, useFastAgent } from "@/features/agents/context/FastAgentContext";
 import { SelectionProvider } from "@/features/agents/context/SelectionContext";
-import { FastAgentPanel } from "@/features/agents";
 import { FeedbackListener } from "@/shared/hooks/FeedbackListener";
 import { AgentGuidedOnboarding } from "@/features/onboarding/components/AgentGuidedOnboarding";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SkipLinks } from "./components/SkipLinks";
+
+const FastAgentPanel = lazy(() =>
+  import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
+    default: mod.FastAgentPanel,
+  })),
+);
 
 /**
  * GlobalFastAgentPanel - Renders FastAgentPanel connected to FastAgentContext
@@ -34,13 +39,15 @@ function GlobalFastAgentPanel() {
   };
 
   return (
-    <FastAgentPanel
-      isOpen={isOpen}
-      onClose={handleClose}
-      variant="overlay"
-      openOptions={options}
-      onOptionsConsumed={clearOptions}
-    />
+    <Suspense fallback={null}>
+      <FastAgentPanel
+        isOpen={isOpen}
+        onClose={handleClose}
+        variant="overlay"
+        openOptions={options}
+        onOptionsConsumed={clearOptions}
+      />
+    </Suspense>
   );
 }
 

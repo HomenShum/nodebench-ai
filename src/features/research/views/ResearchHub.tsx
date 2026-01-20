@@ -43,6 +43,8 @@ export interface ResearchHubProps {
   onEnterWorkspace?: () => void;
   /** When true, renders content-only (no sidebar/header) for use inside MainLayout */
   embedded?: boolean;
+  /** Optional initial tab when opening the hub */
+  initialTab?: ContentTab;
   /** Source toggles from parent (MainLayout) - used in embedded mode */
   activeSources?: string[];
   onToggleSource?: (sourceId: string) => void;
@@ -54,6 +56,7 @@ function ResearchHubContent(props: ResearchHubProps) {
     embedded = false,
     onDocumentSelect: _onDocumentSelect,
     onEnterWorkspace: _onEnterWorkspace,
+    initialTab,
     activeSources: _activeSources,
     onToggleSource: _onToggleSource,
     onGoHome,
@@ -69,7 +72,7 @@ function ResearchHubContent(props: ResearchHubProps) {
   const [readerItem, setReaderItem] = useState<ReaderItem | null>(null);
   const [activeEntity, setActiveEntity] = useState<{ name: string; type: "company" | "person" } | null>(null);
   const seededAuditRef = useRef(false);
-  const [activeTab, setActiveTab] = useState<ContentTab>('overview');
+  const [activeTab, setActiveTab] = useState<ContentTab>(() => initialTab ?? 'overview');
 
   // Fetch all brief data (Global + Personal)
   const {

@@ -14,24 +14,45 @@ import {
     CheckCircle2,
     TrendingUp,
     Plus,
-    Clock
+    Clock,
+    Bell
 } from 'lucide-react';
 import NumberFlow from '@number-flow/react';
-import { useQuery } from 'convex/react';
+import { useConvexAuth, useMutation, useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
+import { toast } from 'sonner';
 
 interface CinematicHomeProps {
-    onEnterHub: () => void;
+    onEnterHub: (tab?: "overview" | "signals" | "briefing" | "deals" | "changes") => void;
     onEnterWorkspace: () => void;
+    onOpenFastAgent: () => void;
 }
 
-export default function CinematicHome({ onEnterHub, onEnterWorkspace }: CinematicHomeProps) {
+export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFastAgent }: CinematicHomeProps) {
     const [isHovered, setIsHovered] = useState(false);
 
     // Fetch user activity stats
     const userStats = useQuery(api.domains.auth.userStats.getUserActivitySummary);
     const greeting = useQuery(api.domains.auth.userStats.getGreetingMessage);
     const insights = useQuery(api.domains.auth.userStats.getProductivityInsights);
+
+    const { isAuthenticated } = useConvexAuth();
+    const createDossier = useMutation(api.domains.documents.documents.createDossier);
+
+    const handleCreateDossier = async () => {
+        if (!isAuthenticated) {
+            toast.info("Sign in to create a dossier.");
+            return;
+        }
+
+        try {
+            const documentId = await createDossier({ title: "New Dossier" });
+            window.dispatchEvent(new CustomEvent('nodebench:openDocument', { detail: { documentId } }));
+        } catch (err: any) {
+            console.error("[CinematicHome] Failed to create dossier:", err);
+            toast.error(err?.message || "Failed to create dossier");
+        }
+    };
 
     return (
         <div className="min-h-full bg-[#faf9f6] flex flex-col items-center justify-center p-8 relative overflow-hidden">
@@ -72,6 +93,23 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace }: Cinemati
                                 </>
                             )}
                         </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <StartHereButton
+                                icon={<Zap className="w-3.5 h-3.5" />}
+                                label="Open Fast Agent"
+                                onClick={onOpenFastAgent}
+                            />
+                            <StartHereButton
+                                icon={<FileText className="w-3.5 h-3.5" />}
+                                label="Create Dossier"
+                                onClick={handleCreateDossier}
+                            />
+                            <StartHereButton
+                                icon={<Bell className="w-3.5 h-3.5" />}
+                                label="View What Changed"
+                                onClick={() => onEnterHub("changes")}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -81,11 +119,12 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace }: Cinemati
                         icon={<Plus className="w-4 h-4" />}
                         label="New Document"
                         onClick={onEnterWorkspace}
+                        variant="secondary"
                     />
                     <QuickActionButton
                         icon={<Sparkles className="w-4 h-4" />}
                         label="Research Hub"
-                        onClick={onEnterHub}
+                        onClick={() => onEnterHub()}
                         badge={userStats?.unreadBriefings}
                         variant="primary"
                     />
@@ -124,7 +163,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace }: Cinemati
             )}
 
             {/* 1. THE NEURAL ORB (Centerpiece) */}
-            <div className="relative mb-16 group cursor-pointer" onClick={onEnterHub}>
+            <div className="relative mb-16 group cursor-pointer" onClick={() => onEnterHub()}>
                 <motion.div
                     animate={{
                         scale: [1, 1.05, 1],
@@ -206,7 +245,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace }: Cinemati
                     title="The Research Hub"
                     desc="Access the full editorial dossier. Deep-dive into Act-based narratives, market signals, and live telemetry."
                     btnText="Open Research Hub"
-                    onClick={onEnterHub}
+                    onClick={() => onEnterHub()}
                     variant="dark"
                     icon={<Sparkles className="w-5 h-5" />}
                 />
@@ -292,9 +331,10 @@ function QuickActionButton({
     label: string,
     onClick: () => void,
     badge?: number,
-    variant?: "default" | "primary"
+    variant?: "default" | "primary" | "secondary"
 }) {
     const isPrimary = variant === "primary";
+    const isSecondary = variant === "secondary";
 
     return (
         <motion.button
@@ -304,17 +344,40 @@ function QuickActionButton({
             className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
                 isPrimary
                     ? "bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 hover:shadow-lg"
-                    : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
+                    : isSecondary
+                      ? "bg-transparent border-stone-200 text-stone-600 hover:bg-white/70 hover:text-emerald-950"
+                      : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
             }`}
         >
             {icon}
-            <span>{label}</span>
+            <span className={isSecondary ? "hidden sm:inline" : ""}>{label}</span>
             {badge !== undefined && badge > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                     {badge > 9 ? '9+' : badge}
                 </span>
             )}
         </motion.button>
+    );
+}
+
+function StartHereButton({
+    icon,
+    label,
+    onClick,
+}: {
+    icon: React.ReactNode,
+    label: string,
+    onClick: () => void,
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-stone-200 bg-white/60 backdrop-blur-md text-xs font-semibold text-stone-700 hover:bg-white hover:text-emerald-950 transition-colors"
+        >
+            {icon}
+            <span className="whitespace-nowrap">{label}</span>
+        </button>
     );
 }
 

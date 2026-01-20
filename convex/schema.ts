@@ -1259,6 +1259,10 @@ const linkedinAccounts = defineTable({
 /* LINKEDIN FUNDING POSTS - Track posted companies for deduplication  */
 /* Enables referencing previous posts and progression tracking        */
 /* ------------------------------------------------------------------ */
+/* 2-Stage Dedup System:
+ *   Stage 1: Hard key match (entityId + eventKey) + semantic similarity (embedding)
+ *   Stage 2: LLM-as-judge on shortlist → DUPLICATE | UPDATE | NEW | CONTRADICTS
+ */
 const linkedinFundingPosts = defineTable({
   // Company identification (normalized to lowercase for dedup)
   companyNameNormalized: v.string(),         // Lowercase, trimmed company name
@@ -1290,15 +1294,63 @@ const linkedinFundingPosts = defineTable({
   // Timestamps
   postedAt: v.number(),
   fundingEventId: v.optional(v.id("fundingEvents")),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 2-STAGE DEDUP SYSTEM - Semantic + LLM-as-judge deduplication
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Canonical identifiers for hard-match dedup (Stage 1a)
+  entityId: v.optional(v.string()),          // Canonical entity ID (e.g., company URN)
+  eventKey: v.optional(v.string()),          // Normalized event key: "{entityId}:{roundType}:{date}"
+
+  // Structured claims for semantic comparison (Stage 1b + Stage 2)
+  claims: v.optional(v.array(v.object({
+    claimType: v.string(),                   // "funding_amount", "investor", "valuation", etc.
+    subject: v.string(),                     // Entity the claim is about
+    predicate: v.string(),                   // The relationship/property
+    object: v.string(),                      // The value/target
+    confidence: v.optional(v.number()),      // Extraction confidence 0-1
+  }))),
+
+  // Canonical summary for embedding (Stage 1b)
+  contentSummary: v.optional(v.string()),    // Canonical "card summary" text
+  embedding: v.optional(v.array(v.float64())), // 1536-dim text-embedding-3-small
+
+  // Supersession tracking (Stage 2 output)
+  supersedesPostId: v.optional(v.id("linkedinFundingPosts")), // Post this replaces
+  relatedPostIds: v.optional(v.array(v.id("linkedinFundingPosts"))), // Related posts
+  diffSummary: v.optional(v.string()),       // What changed from prior post
+
+  // LLM-as-judge dedup verdict (Stage 2)
+  dedupJudgment: v.optional(v.object({
+    verdict: v.union(
+      v.literal("NEW"),                      // First-ever post for this event
+      v.literal("UPDATE"),                   // Same event, new material info
+      v.literal("DUPLICATE"),                // Semantically identical, skip
+      v.literal("CONTRADICTS_PRIOR"),        // Contradicts previous post
+      v.literal("INCONCLUSIVE")              // Judge couldn't decide
+    ),
+    comparedToPostId: v.optional(v.id("linkedinFundingPosts")),
+    reasoning: v.optional(v.string()),       // Brief reasoning
+    confidence: v.optional(v.number()),      // Judge confidence 0-1
+    judgedAt: v.number(),                    // When judgment was made
+  })),
 })
   .index("by_company", ["companyNameNormalized"])
   .index("by_company_round", ["companyNameNormalized", "roundType"])
   .index("by_postedAt", ["postedAt"])
   .index("by_sector", ["sectorCategory", "postedAt"])
   .index("by_roundType", ["roundType", "postedAt"])
+  .index("by_entityId", ["entityId"])
+  .index("by_eventKey", ["eventKey"])
   .searchIndex("search_company", {
     searchField: "companyName",
     filterFields: ["roundType", "sectorCategory"],
+  })
+  .vectorIndex("by_embedding", {
+    vectorField: "embedding",
+    dimensions: 1536,
+    filterFields: ["sectorCategory"],
   });
 
 /* ------------------------------------------------------------------ */
@@ -8379,4 +8431,333 @@ export default defineSchema({
   /* VERIFICATION AUDIT LOG - FP/FN calibration + SLO tracking          */
   /* ------------------------------------------------------------------ */
   verificationAuditLog,
+
+  /* ================================================================== */
+  /* SLO (SERVICE LEVEL OBJECTIVES) FRAMEWORK                            */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* SLO MEASUREMENTS - Time series of SLO metric values                 */
+  /* ------------------------------------------------------------------ */
+  sloMeasurements: defineTable({
+    sloId: v.string(),
+    value: v.number(),
+    metadata: v.optional(v.any()),
+    recordedAt: v.number(),
+  })
+    .index("by_slo", ["sloId", "recordedAt"])
+    .index("by_recorded", ["recordedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ALERT HISTORY - Track alert lifecycle                               */
+  /* ------------------------------------------------------------------ */
+  alertHistory: defineTable({
+    alertId: v.string(),
+    sloId: v.string(),
+    severity: v.string(),
+    currentValue: v.number(),
+    threshold: v.number(),
+    message: v.string(),
+    triggeredAt: v.number(),
+    acknowledgedAt: v.optional(v.number()),
+    resolvedAt: v.optional(v.number()),
+    acknowledgedBy: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()),
+    resolutionNotes: v.optional(v.string()),
+    rootCause: v.optional(v.string()),
+    incidentId: v.optional(v.string()),
+  })
+    .index("by_slo", ["sloId", "triggeredAt"])
+    .index("by_severity", ["severity", "triggeredAt"])
+    .index("by_triggered", ["triggeredAt"])
+    .index("by_unresolved", ["resolvedAt", "severity"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ERROR BUDGET SNAPSHOTS - Daily error budget state                   */
+  /* ------------------------------------------------------------------ */
+  errorBudgetSnapshots: defineTable({
+    sloId: v.string(),
+    snapshotDate: v.string(),
+    totalBudgetPercent: v.number(),
+    consumedPercent: v.number(),
+    remainingPercent: v.number(),
+    burnRateMultiplier: v.number(),
+    projectedExhaustionDate: v.optional(v.string()),
+    windowStartDate: v.string(),
+    windowEndDate: v.string(),
+    measurementCount: v.number(),
+    recordedAt: v.number(),
+  })
+    .index("by_slo_date", ["sloId", "snapshotDate"])
+    .index("by_date", ["snapshotDate"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RUNBOOK EXECUTIONS - Track runbook usage                            */
+  /* ------------------------------------------------------------------ */
+  runbookExecutions: defineTable({
+    runbookId: v.string(),
+    alertHistoryId: v.optional(v.id("alertHistory")),
+    executedBy: v.string(),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    outcome: v.optional(v.union(
+      v.literal("resolved"),
+      v.literal("escalated"),
+      v.literal("partial"),
+      v.literal("ineffective")
+    )),
+    stepsCompleted: v.optional(v.array(v.number())),
+    stepsSkipped: v.optional(v.array(v.number())),
+    feedback: v.optional(v.string()),
+    suggestedImprovements: v.optional(v.array(v.string())),
+  })
+    .index("by_runbook", ["runbookId", "startedAt"])
+    .index("by_outcome", ["outcome", "startedAt"]),
+
+  /* ================================================================== */
+  /* CLOSED-LOOP CALIBRATION WORKFLOW                                    */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* CALIBRATION PROPOSALS - Threshold adjustment proposals              */
+  /* ------------------------------------------------------------------ */
+  calibrationProposals: defineTable({
+    proposalId: v.string(),
+    proposalType: v.string(),
+    target: v.object({
+      type: v.string(),
+      id: v.string(),
+      field: v.string(),
+    }),
+    currentValue: v.any(),
+    proposedValue: v.any(),
+    evidence: v.optional(v.object({
+      supportingLabels: v.number(),
+      totalLabels: v.number(),
+      currentAccuracy: v.number(),
+      projectedAccuracy: v.number(),
+    })),
+    rationale: v.string(),
+    generatedBy: v.union(v.literal("system"), v.literal("human")),
+    generatedAt: v.number(),
+    status: v.union(
+      v.literal("pending_review"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("deployed"),
+      v.literal("rolled_back")
+    ),
+    reviewSubmittedAt: v.optional(v.number()),
+    assignedReviewer: v.optional(v.string()),
+    reviewNotes: v.optional(v.string()),
+    approvedBy: v.optional(v.string()),
+    approvedAt: v.optional(v.number()),
+    approvalNotes: v.optional(v.string()),
+    rejectedBy: v.optional(v.string()),
+    rejectedAt: v.optional(v.number()),
+    rejectionReason: v.optional(v.string()),
+    deploymentId: v.optional(v.id("calibrationDeployments")),
+  })
+    .index("by_proposal_id", ["proposalId"])
+    .index("by_status", ["status", "generatedAt"])
+    .index("by_type", ["proposalType", "generatedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CALIBRATION REGRESSION TESTS - Pre-deployment validation            */
+  /* ------------------------------------------------------------------ */
+  calibrationRegressionTests: defineTable({
+    proposalId: v.id("calibrationProposals"),
+    passed: v.boolean(),
+    gates: v.object({
+      alertStormCheck: v.object({
+        passed: v.boolean(),
+        newAlertsCount: v.number(),
+        threshold: v.number(),
+        details: v.string(),
+      }),
+      missedIssuesCheck: v.object({
+        passed: v.boolean(),
+        missedCount: v.number(),
+        threshold: v.number(),
+        details: v.string(),
+      }),
+      accuracyImprovementCheck: v.object({
+        passed: v.boolean(),
+        currentAccuracy: v.number(),
+        projectedAccuracy: v.number(),
+        minImprovement: v.number(),
+        details: v.string(),
+      }),
+      sampleSizeCheck: v.object({
+        passed: v.boolean(),
+        sampleSize: v.number(),
+        minSampleSize: v.number(),
+        details: v.string(),
+      }),
+    }),
+    simulation: v.object({
+      historicalDataPoints: v.number(),
+      correctBefore: v.number(),
+      correctAfter: v.number(),
+      newErrors: v.number(),
+      fixedErrors: v.number(),
+    }),
+    testedAt: v.number(),
+  })
+    .index("by_proposal", ["proposalId", "testedAt"])
+    .index("by_passed", ["passed", "testedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CALIBRATION DEPLOYMENTS - Deployment records with rollback          */
+  /* ------------------------------------------------------------------ */
+  calibrationDeployments: defineTable({
+    deploymentId: v.string(),
+    proposalId: v.id("calibrationProposals"),
+    changes: v.array(v.object({
+      target: v.string(),
+      field: v.string(),
+      oldValue: v.any(),
+      newValue: v.any(),
+    })),
+    deployedBy: v.string(),
+    deployedAt: v.number(),
+    rollbackEnabled: v.boolean(),
+    rollbackBy: v.optional(v.string()),
+    rolledBackAt: v.optional(v.number()),
+    rollbackReason: v.optional(v.string()),
+    monitoring: v.optional(v.object({
+      unexpectedErrors: v.number(),
+      alertVolumeChange: v.number(),
+      observedAccuracy: v.optional(v.number()),
+    })),
+  })
+    .index("by_deployment_id", ["deploymentId"])
+    .index("by_proposal", ["proposalId"])
+    .index("by_deployed_at", ["deployedAt"]),
+
+  /* ================================================================== */
+  /* INDEPENDENT VALIDATION WORKFLOW                                     */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* VALIDATION REQUESTS - Model validation requests                     */
+  /* ------------------------------------------------------------------ */
+  validationRequests: defineTable({
+    requestId: v.string(),
+    modelCardId: v.id("modelCards"),
+    trigger: v.union(
+      v.literal("initial"),
+      v.literal("scheduled_revalidation"),
+      v.literal("model_change"),
+      v.literal("performance_degradation"),
+      v.literal("manual")
+    ),
+    requestedBy: v.string(),
+    requestedAt: v.number(),
+    assignedValidator: v.optional(v.string()),
+    assignedAt: v.optional(v.number()),
+    assignedBy: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending_assignment"),
+      v.literal("in_progress"),
+      v.literal("findings_review"),
+      v.literal("completed"),
+      v.literal("rejected")
+    ),
+    notes: v.optional(v.string()),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_request_id", ["requestId"])
+    .index("by_model", ["modelCardId", "requestedAt"])
+    .index("by_status", ["status", "requestedAt"])
+    .index("by_validator", ["assignedValidator", "status"]),
+
+  /* ------------------------------------------------------------------ */
+  /* VALIDATION FINDINGS - Issues found during validation                */
+  /* ------------------------------------------------------------------ */
+  validationFindings: defineTable({
+    findingId: v.string(),
+    validationRequestId: v.id("validationRequests"),
+    severity: v.union(
+      v.literal("critical"),
+      v.literal("high"),
+      v.literal("medium"),
+      v.literal("low"),
+      v.literal("informational")
+    ),
+    category: v.union(
+      v.literal("data_quality"),
+      v.literal("methodology"),
+      v.literal("documentation"),
+      v.literal("performance"),
+      v.literal("governance"),
+      v.literal("other")
+    ),
+    title: v.string(),
+    description: v.string(),
+    evidence: v.array(v.string()),
+    recommendedAction: v.string(),
+    status: v.union(
+      v.literal("open"),
+      v.literal("remediated"),
+      v.literal("accepted_risk"),
+      v.literal("not_applicable")
+    ),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    remediatedBy: v.optional(v.string()),
+    remediatedAt: v.optional(v.number()),
+    remediationNotes: v.optional(v.string()),
+    acceptedBy: v.optional(v.string()),
+    acceptedAt: v.optional(v.number()),
+    acceptanceRationale: v.optional(v.string()),
+  })
+    .index("by_finding_id", ["findingId"])
+    .index("by_request", ["validationRequestId", "severity"])
+    .index("by_status", ["status", "severity"]),
+
+  /* ------------------------------------------------------------------ */
+  /* VALIDATION REPORTS - Final validation reports                       */
+  /* ------------------------------------------------------------------ */
+  validationReports: defineTable({
+    reportId: v.string(),
+    validationRequestId: v.id("validationRequests"),
+    modelCardId: v.id("modelCards"),
+    validatedBy: v.string(),
+    validationDate: v.string(),
+    independenceAttestation: v.object({
+      validatorRole: v.string(),
+      conflictOfInterest: v.boolean(),
+      conflictDescription: v.optional(v.string()),
+      attestedAt: v.number(),
+    }),
+    scope: v.object({
+      conceptualSoundness: v.boolean(),
+      ongoingMonitoring: v.boolean(),
+      outcomeAnalysis: v.boolean(),
+      dataQuality: v.boolean(),
+      assumptions: v.boolean(),
+      implementation: v.boolean(),
+    }),
+    findingsSummary: v.object({
+      critical: v.number(),
+      high: v.number(),
+      medium: v.number(),
+      low: v.number(),
+      informational: v.number(),
+    }),
+    recommendation: v.union(
+      v.literal("approve"),
+      v.literal("conditional_approval"),
+      v.literal("reject")
+    ),
+    recommendationRationale: v.string(),
+    approvedBy: v.optional(v.string()),
+    approvedAt: v.optional(v.number()),
+    nextValidationDate: v.optional(v.string()),
+    generatedAt: v.number(),
+  })
+    .index("by_report_id", ["reportId"])
+    .index("by_model", ["modelCardId", "validationDate"])
+    .index("by_validator", ["validatedBy", "validationDate"]),
 });

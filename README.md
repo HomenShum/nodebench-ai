@@ -6,6 +6,22 @@ A comprehensive AI-powered document management and research platform with multi-
 
 ## Changelog
 
+### v0.3.6 (January 20, 2026)
+
+**UI + Performance**
+- Home: Added a “Start here” action row (Fast Agent, Create Dossier, What Changed) and clarified primary vs secondary CTAs.
+- Fast Agent: Added “Recent chats” landing section (avoids auto-opening the first thread) to improve conversion/retention.
+- Bundling: Lazy-loaded `TabManager` + `FastAgentPanel` and deferred spreadsheet deps; reduced initial `vendor-*.js` bundle size and removed oversized chunk warnings.
+
+**Reliability**
+- Website liveness: Multi-vantage consensus no longer marks sites “dead” from partial DNS/HTTP evidence, reducing false “website not live” signals.
+
+**LinkedIn / Social**
+- Added optional 2-stage semantic dedup scaffolding (`useSemanticDedup`) with embeddings + LLM-as-judge verdict fields for startup funding posts.
+
+**Ops / Governance**
+- Added schema support for SLO tracking, calibration proposals/deployments, and independent model validation workflow (SR 11-7 style separation of duties).
+
 ### v0.3.5 (January 16, 2026)
 
 **🔬 Persona Evaluation System & Scientific Claim Verification**

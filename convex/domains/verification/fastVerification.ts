@@ -990,13 +990,15 @@ async function checkFromVantage(
   if (vantage === "cloudflare_doh" || vantage === "google_doh") {
     const provider = vantage === "cloudflare_doh" ? "cloudflare" : "google";
     const dohResult = await resolveDnsViaDoH(hostname, provider, timeoutMs);
+    const isNxdomain = dohResult.error?.includes("NXDOMAIN") ?? false;
 
     return {
       vantage,
-      live: dohResult.resolved ? null : false, // DNS resolved doesn't mean HTTP works
+      // DNS resolution is weak evidence of "exists", but not "responding". Only treat NXDOMAIN as dead.
+      live: dohResult.resolved ? null : isNxdomain ? false : null,
       latencyMs: Date.now() - startTime,
       error: dohResult.error,
-      errorClass: dohResult.error?.includes("NXDOMAIN") ? "dns_nxdomain" : undefined,
+      errorClass: isNxdomain ? "dns_nxdomain" : undefined,
       dnsResolved: dohResult.resolved,
       resolvedIp: dohResult.ip,
       probeType: "dns",
@@ -1545,9 +1547,6 @@ function computeVantageConsensusWeighted(
     // Have enough HTTP probes for meaningful consensus
     if (httpVotes.live >= 2) {
       return { live: true, consensusStrength: httpVotes.live / httpTotal, votes, httpVotes };
-    }
-    if (httpVotes.dead >= 2) {
-      return { live: false, consensusStrength: 1.0, votes, httpVotes };
     }
   }
 

@@ -17,7 +17,7 @@ import { internal } from "../_generated/api";
  * - sectorCategories: Filter by sector ["healthcare", "fintech", "ai_ml", "enterprise", "consumer", "deeptech", "climate"]
  * - roundTypes: Filter by round ["pre-seed", "seed", "series-a", "series-b", "series-c", "series-d-plus", "growth", "debt"]
  * - skipDeduplication: Bypass dedup check (default: false)
- * - deduplicationDays: Lookback window for dedup (default: 14)
+ * - deduplicationDays: Lookback window for dedup (default: 21)
  */
 export const runStartupFundingBrief = action({
   args: {
@@ -72,7 +72,7 @@ export const runStartupFundingBrief = action({
       sectorCategories: args.sectorCategories,
       roundTypes: args.roundTypes,
       skipDeduplication: args.skipDeduplication ?? false,
-      deduplicationDays: args.deduplicationDays ?? 14,
+      deduplicationDays: args.deduplicationDays ?? 21,
     });
   },
 });
