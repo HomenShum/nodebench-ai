@@ -55,6 +55,34 @@ export interface ModelPerformanceReport {
 // EVALUATION SCENARIOS
 // ═══════════════════════════════════════════════════════════════════════════
 
+const RED_PNG_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
+const BLUE_PNG_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYPgPAAEDAQAIicLsAAAAAElFTkSuQmCC";
+
+type OpenRouterMessage =
+  | { role: "user" | "assistant" | "system"; content: string }
+  | { role: "user" | "assistant" | "system"; content: any[] };
+
+function extractJsonFromText(text: string): unknown | null {
+  const trimmed = (text || "").trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      // fall through
+    }
+  }
+
+  const match = trimmed.match(/\\{[\\s\\S]*\\}/);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[0]);
+  } catch {
+    return null;
+  }
+}
+
 const EVALUATION_SCENARIOS = {
   // Basic capability tests
   basic_math: {
@@ -97,9 +125,78 @@ const EVALUATION_SCENARIOS = {
   // Instruction following
   structured_output: {
     prompt: 'Respond with exactly this JSON structure: {"status": "ok", "items": ["one", "two"]}',
-    expectedContains: ['"status"', '"ok"', '"items"', '"one"', '"two"'],
+    expectedJson: { status: "ok", items: ["one", "two"] },
     maxTokens: 50,
     taskType: "synthesis",
+  },
+
+  // Groundedness (citations to provided evidence)
+  citation_grounding: {
+    prompt: `Answer the question using ONLY the evidence below. If evidence is missing, say "insufficient evidence".
+Return JSON: {"answer": string, "citations": [{"chunkId": string, "quote": string}]}
+
+Evidence:
+- chunkId=chunk_a: "Higgsfield is an AI-driven video generation platform."
+- chunkId=chunk_b: "The website responds with HTTP 403 (bot protection), which still indicates it is live."
+
+Question: Is the website live?`,
+    expectedChunkIds: ["chunk_b"],
+    maxTokens: 200,
+    taskType: "research",
+  },
+
+  // Tool discipline (function calling)
+  tool_use_call: {
+    prompt: "Call the `search` tool with query = \"AI agent evaluation datasets 2026\". Do not answer directly.",
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "search",
+          description: "Search for information on the web",
+          parameters: {
+            type: "object",
+            properties: { query: { type: "string" } },
+            required: ["query"],
+          },
+        },
+      },
+    ],
+    requiresToolUse: true,
+    maxTokens: 150,
+    taskType: "validation",
+  },
+
+  // Multimodal smoke tests (vision models only)
+  vision_color_red: {
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "What is the dominant color in this image? Answer with just: red, green, or blue." },
+          { type: "image_url", image_url: { url: RED_PNG_DATA_URL } },
+        ],
+      },
+    ] as OpenRouterMessage[],
+    expectedContains: ["red"],
+    requiresVision: true,
+    maxTokens: 20,
+    taskType: "validation",
+  },
+  vision_color_blue: {
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "What is the dominant color in this image? Answer with just: red, green, or blue." },
+          { type: "image_url", image_url: { url: BLUE_PNG_DATA_URL } },
+        ],
+      },
+    ] as OpenRouterMessage[],
+    expectedContains: ["blue"],
+    requiresVision: true,
+    maxTokens: 20,
+    taskType: "validation",
   },
 } as const;
 
@@ -143,12 +240,35 @@ export const runComprehensiveEvaluation = internalAction({
       const scenario = EVALUATION_SCENARIOS[scenarioId];
       if (!scenario) continue;
 
+      // Don't penalize models for modalities/capabilities they don't claim to support.
+      if ("requiresVision" in scenario && (scenario as any).requiresVision && !model.capabilities.vision) {
+        continue;
+      }
+      if ("requiresToolUse" in scenario && (scenario as any).requiresToolUse && !model.capabilities.toolUse) {
+        continue;
+      }
+
       const startTime = Date.now();
       let success = false;
       let outputQuality = 0;
       const errors: string[] = [];
 
       try {
+        const requestBody: any = {
+          model: model.openRouterId,
+          max_tokens: (scenario as any).maxTokens,
+        };
+
+        if ("messages" in scenario && (scenario as any).messages) {
+          requestBody.messages = (scenario as any).messages;
+        } else {
+          requestBody.messages = [{ role: "user", content: (scenario as any).prompt }];
+        }
+
+        if ("tools" in scenario && (scenario as any).tools) {
+          requestBody.tools = (scenario as any).tools;
+        }
+
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -157,11 +277,7 @@ export const runComprehensiveEvaluation = internalAction({
             "HTTP-Referer": process.env.OPENROUTER_HTTP_REFERER || "https://nodebench.ai",
             "X-Title": process.env.OPENROUTER_X_TITLE || "NodeBench Eval",
           },
-          body: JSON.stringify({
-            model: model.openRouterId,
-            messages: [{ role: "user", content: scenario.prompt }],
-            max_tokens: scenario.maxTokens,
-          }),
+          body: JSON.stringify(requestBody),
           signal: AbortSignal.timeout(30000),
         });
 
@@ -171,38 +287,71 @@ export const runComprehensiveEvaluation = internalAction({
         } else {
           const data = await response.json();
           const content = data.choices?.[0]?.message?.content || "";
+          const toolCalls = data.choices?.[0]?.message?.tool_calls || [];
 
           // Evaluate output quality
           let qualityScore = 0;
+          let hardScored = false;
 
-          // Check expected content
-          if ("expectedContains" in scenario && scenario.expectedContains) {
-            const found = scenario.expectedContains.filter((kw: string) =>
-              content.toLowerCase().includes(kw.toLowerCase())
-            );
-            qualityScore += (found.length / scenario.expectedContains.length) * 50;
+          // Hard schema check: expectedJson must match exactly.
+          if ("expectedJson" in scenario && (scenario as any).expectedJson) {
+            const parsed = extractJsonFromText(content);
+            hardScored = true;
+            qualityScore =
+              parsed && JSON.stringify(parsed) === JSON.stringify((scenario as any).expectedJson)
+                ? 100
+                : 0;
           }
 
-          // Check quality keywords
-          if ("qualityKeywords" in scenario && scenario.qualityKeywords) {
-            const found = scenario.qualityKeywords.filter((kw: string) =>
-              content.toLowerCase().includes(kw.toLowerCase())
-            );
-            qualityScore += (found.length / scenario.qualityKeywords.length) * 30;
+          // Groundedness check: citations must reference expected chunk IDs and quote evidence text.
+          if ("expectedChunkIds" in scenario && (scenario as any).expectedChunkIds) {
+            const parsed = extractJsonFromText(content) as any;
+            const expected: string[] = (scenario as any).expectedChunkIds;
+            const citations = Array.isArray(parsed?.citations) ? parsed.citations : [];
+            const foundChunkIds = citations.map((c: any) => String(c?.chunkId || "")).filter(Boolean);
+            const foundExpected = expected.filter((id) => foundChunkIds.includes(id));
+            const quotesOk = citations.some((c: any) => typeof c?.quote === "string" && c.quote.length >= 10);
+            hardScored = true;
+            qualityScore = Math.round((foundExpected.length / expected.length) * 70) + (quotesOk ? 30 : 0);
           }
 
-          // Check minimum length
-          if ("minLength" in scenario && scenario.minLength) {
-            if (content.length >= scenario.minLength) {
-              qualityScore += 20;
-            } else {
-              qualityScore += (content.length / scenario.minLength) * 20;
+          // Tool-call check: requiresToolUse means the model must emit tool_calls.
+          if ("requiresToolUse" in scenario && (scenario as any).requiresToolUse) {
+            const hasToolCall = Array.isArray(toolCalls) && toolCalls.length > 0;
+            hardScored = true;
+            qualityScore = hasToolCall ? 100 : 0;
+          }
+
+          if (!hardScored) {
+            // Check expected content
+            if ("expectedContains" in scenario && scenario.expectedContains) {
+              const found = scenario.expectedContains.filter((kw: string) =>
+                content.toLowerCase().includes(kw.toLowerCase())
+              );
+              qualityScore += (found.length / scenario.expectedContains.length) * 50;
             }
-          } else if (content.length > 0) {
-            qualityScore += 20;
+
+            // Check quality keywords
+            if ("qualityKeywords" in scenario && scenario.qualityKeywords) {
+              const found = scenario.qualityKeywords.filter((kw: string) =>
+                content.toLowerCase().includes(kw.toLowerCase())
+              );
+              qualityScore += (found.length / scenario.qualityKeywords.length) * 30;
+            }
+
+            // Check minimum length
+            if ("minLength" in scenario && scenario.minLength) {
+              if (content.length >= scenario.minLength) {
+                qualityScore += 20;
+              } else {
+                qualityScore += (content.length / scenario.minLength) * 20;
+              }
+            } else if (content.length > 0) {
+              qualityScore += 20;
+            }
           }
 
-          outputQuality = Math.min(100, Math.round(qualityScore));
+          outputQuality = Math.min(100, Math.max(0, Math.round(qualityScore)));
           success = outputQuality >= 50;
         }
       } catch (e) {
@@ -290,6 +439,117 @@ export const evaluateAllModels = internalAction({
       modelsEvaluated: models.length,
       avgScore: models.length > 0 ? totalScore / models.length : 0,
       recommendations,
+    };
+  },
+});
+
+/**
+ * Evaluate a curated set of "free-first" OpenRouter models (text + multimodal) used for NodeBench gap analysis.
+ *
+ * Runs seeding first so these models exist even if discovery hasn't been run yet.
+ */
+export const evaluatePinnedFreeFirstModels = internalAction({
+  args: {
+    scenarios: v.optional(v.array(v.string())),
+  },
+  handler: async (
+    ctx,
+    { scenarios }
+  ): Promise<{
+    evaluated: number;
+    resultsByModel: Record<string, { overallScore: number; recommendation: string }>;
+  }> => {
+    await ctx.runAction(internal.domains.models.freeModelDiscovery.seedPinnedFreeModels, {});
+
+    const pinnedOpenRouterIds: string[] = [
+      "google/gemini-2.0-flash-exp:free",
+      "google/gemma-3-27b-it:free",
+      "allenai/molmo-2-8b:free",
+      "deepseek/deepseek-r1:free",
+      "meta-llama/llama-3.3-70b-instruct:free",
+      "z-ai/glm-4.5-air:free",
+      "mistralai/devstral-small-2505:free",
+    ];
+
+    const resultsByModel: Record<string, { overallScore: number; recommendation: string }> = {};
+    let evaluated = 0;
+
+    for (const openRouterId of pinnedOpenRouterIds) {
+      const model = await ctx.runQuery(
+        internal.domains.models.freeModelDiscovery.getFreeModelByOpenRouterId,
+        { openRouterId }
+      );
+
+      if (!model) {
+        resultsByModel[openRouterId] = { overallScore: 0, recommendation: "missing" };
+        continue;
+      }
+
+      const res = await ctx.runAction(internal.domains.models.livePerformanceEval.runComprehensiveEvaluation, {
+        modelId: model._id,
+        scenarios,
+      });
+
+      resultsByModel[openRouterId] = { overallScore: res.overallScore, recommendation: res.recommendation };
+      evaluated++;
+    }
+
+    return { evaluated, resultsByModel };
+  },
+});
+
+/**
+ * Evaluate a single model by OpenRouter ID, returning full per-scenario details.
+ * Useful for debugging rate limits / model availability / capability mismatches.
+ */
+export const evaluateByOpenRouterId = internalAction({
+  args: {
+    openRouterId: v.string(),
+    scenarios: v.optional(v.array(v.string())),
+    seedPinnedIfMissing: v.optional(v.boolean()),
+  },
+  handler: async (
+    ctx,
+    { openRouterId, scenarios, seedPinnedIfMissing }
+  ): Promise<{
+    openRouterId: string;
+    modelId: string;
+    name: string;
+    capabilities: { toolUse: boolean; streaming: boolean; structuredOutputs: boolean; vision: boolean };
+    overallScore: number;
+    recommendation: string;
+    results: LiveEvaluationResult[];
+  }> => {
+    let model = await ctx.runQuery(
+      internal.domains.models.freeModelDiscovery.getFreeModelByOpenRouterId,
+      { openRouterId }
+    );
+
+    if (!model && seedPinnedIfMissing) {
+      await ctx.runAction(internal.domains.models.freeModelDiscovery.seedPinnedFreeModels, {});
+      model = await ctx.runQuery(
+        internal.domains.models.freeModelDiscovery.getFreeModelByOpenRouterId,
+        { openRouterId }
+      );
+    }
+
+    if (!model) {
+      throw new Error(`Model not found in freeModels: ${openRouterId}`);
+    }
+
+    const res = await ctx.runAction(internal.domains.models.livePerformanceEval.runComprehensiveEvaluation, {
+      modelId: model._id,
+      scenarios,
+    });
+
+    return {
+      openRouterId,
+      modelId: model._id as unknown as string,
+      name: model.name,
+      capabilities: model.capabilities,
+      overallScore: res.overallScore,
+      recommendation: res.recommendation,
+      results: res.results,
     };
   },
 });

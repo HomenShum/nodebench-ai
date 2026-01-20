@@ -608,6 +608,29 @@ const artifactIndexJobs = defineTable({
   .index("by_artifact_hash_version", ["artifactId", "contentHash", "chunkVersion"]);
 
 /* ------------------------------------------------------------------ */
+/* RESOURCE LINKS - MCP-style pointers to artifacts for large outputs  */
+/* ------------------------------------------------------------------ */
+const resourceLinks = defineTable({
+  runId: v.optional(v.id("agentRuns")),
+  toolName: v.string(),                   // Which tool produced this output
+  toolCallId: v.string(),                 // Unique ID for the tool call
+  artifactId: v.id("sourceArtifacts"),    // Link to stored artifact
+  chunkIds: v.optional(v.array(v.id("artifactChunks"))), // Specific chunks if distilled
+  mimeType: v.string(),                   // e.g., "text/html", "application/json"
+  sizeBytes: v.number(),                  // Original output size
+  preview: v.string(),                    // First ~500 chars for context
+  title: v.optional(v.string()),          // Optional title for the resource
+  originalTokenEstimate: v.number(),      // Estimated tokens if inlined
+  actualTokens: v.number(),               // Tokens used (preview only)
+  tokenSavings: v.number(),               // Calculated savings
+  createdAt: v.number(),
+  accessedAt: v.optional(v.number()),     // Last time resource was retrieved
+})
+  .index("by_run", ["runId", "createdAt"])
+  .index("by_artifact", ["artifactId"])
+  .index("by_tool_call", ["toolCallId"]);
+
+/* ------------------------------------------------------------------ */
 /* EVIDENCE PACKS - persisted bundles used in a run                     */
 /* ------------------------------------------------------------------ */
 const evidencePacks = defineTable({
@@ -861,19 +884,49 @@ const searchCache = defineTable({
 const mcpTools = defineTable({
   serverId: v.id("mcpServers"),           // which server provides this tool
   name: v.string(),                       // tool name
-  description: v.optional(v.string()),    // tool description
-  schema: v.optional(v.any()),            // tool parameter schema
+  description: v.optional(v.string()),    // tool description (full)
+  schema: v.optional(v.any()),            // tool parameter schema (DEPRECATED - use mcpToolSchemas)
   isAvailable: v.boolean(),               // whether tool is currently available
   isEnabled: v.optional(v.boolean()),     // whether tool is enabled for use (user-controlled)
   lastUsed: v.optional(v.number()),       // last time tool was used
   usageCount: v.optional(v.number()),     // how many times tool has been used
   createdAt: v.number(),
   updatedAt: v.number(),
+  // Progressive disclosure fields (thin descriptor for search)
+  shortDescription: v.optional(v.string()), // One-line description (≤100 chars) for search
+  category: v.optional(v.string()),         // e.g., "filesystem", "database", "api", "web"
+  keywords: v.optional(v.array(v.string())), // Search keywords for tool discovery
+  schemaHash: v.optional(v.string()),       // FK to mcpToolSchemas.schemaHash for on-demand hydration
+  accessTier: v.optional(v.union(
+    v.literal("public"),                    // Anyone can see/use
+    v.literal("user"),                      // User-owned tools only
+    v.literal("restricted")                 // Requires explicit grant
+  )),
 })
   .index("by_server", ["serverId"])
   .index("by_server_available", ["serverId", "isAvailable"])
   .index("by_name", ["name"])
-  .index("by_server_name", ["serverId", "name"]);
+  .index("by_server_name", ["serverId", "name"])
+  .index("by_category", ["category", "isAvailable"])
+  .index("by_schema_hash", ["schemaHash"]);
+
+/* ------------------------------------------------------------------ */
+/* MCP TOOL SCHEMAS - Cached full schemas for on-demand hydration     */
+/* ------------------------------------------------------------------ */
+const mcpToolSchemas = defineTable({
+  toolId: v.id("mcpTools"),               // FK to mcpTools
+  serverId: v.id("mcpServers"),           // Server for quick lookups
+  toolName: v.string(),                   // Tool name for reference
+  schemaHash: v.string(),                 // SHA-256 of JSON.stringify(schema) for dedup/versioning
+  fullSchema: v.any(),                    // The complete JSON Schema
+  parametersCount: v.number(),            // Quick complexity metric
+  requiredParams: v.array(v.string()),    // List of required param names
+  cachedAt: v.number(),                   // When schema was cached
+  expiresAt: v.optional(v.number()),      // Optional TTL for cache invalidation
+})
+  .index("by_tool", ["toolId"])
+  .index("by_server_name", ["serverId", "toolName"])
+  .index("by_hash", ["schemaHash"]);
 
 /* ------------------------------------------------------------------ */
 /* MCP SESSIONS - Active MCP client sessions                          */
@@ -2199,6 +2252,28 @@ const digestCache = defineTable({
       keyInsight: v.string(),
       fundingStage: v.optional(v.string()),
     }))),
+    factCheckFindings: v.optional(v.array(v.object({
+      claim: v.string(),
+      status: v.string(),
+      explanation: v.string(),
+      source: v.optional(v.string()),
+      sourceUrl: v.optional(v.string()),
+      confidence: v.number(),
+    }))),
+    fundingRounds: v.optional(v.array(v.object({
+      rank: v.number(),
+      companyName: v.string(),
+      roundType: v.string(),
+      amountRaw: v.string(),
+      amountUsd: v.optional(v.number()),
+      leadInvestors: v.array(v.string()),
+      sector: v.optional(v.string()),
+      productDescription: v.optional(v.string()),
+      founderBackground: v.optional(v.string()),
+      sourceUrl: v.optional(v.string()),
+      announcedAt: v.number(),
+      confidence: v.number(),
+    }))),
     storyCount: v.number(),
     topSources: v.array(v.string()),
     topCategories: v.array(v.string()),
@@ -2228,6 +2303,150 @@ const digestCache = defineTable({
   .index("by_date_persona", ["dateString", "persona"])
   .index("by_date", ["dateString"])
   .index("by_expires", ["expiresAt"]);
+
+/* ------------------------------------------------------------------ */
+/* ENTITY MONITOR PROFILES - Continuous monitoring per FATF guidance   */
+/* Ref: https://www.fatf-gafi.org/recommendations                      */
+/* ------------------------------------------------------------------ */
+const entityMonitorProfiles = defineTable({
+  // Entity identification
+  entityType: v.string(),                    // "company", "person", "domain"
+  entityName: v.string(),                    // Company name, person name, etc.
+  entityId: v.optional(v.string()),          // External ID if known (CrunchBase, SEC, etc.)
+
+  // Monitoring configuration
+  monitorFrequency: v.string(),              // "daily", "weekly", "monthly"
+  riskTier: v.string(),                      // "low", "medium", "high", "critical"
+  triggerReason: v.string(),                 // Why monitoring was triggered
+
+  // Entity snapshot at creation
+  initialSnapshot: v.object({
+    websiteUrl: v.optional(v.string()),
+    websiteLive: v.optional(v.union(v.boolean(), v.null())),
+    sourceCredibility: v.optional(v.string()),
+    riskScore: v.optional(v.number()),
+    verificationStatus: v.optional(v.string()),
+  }),
+
+  // Latest check results
+  lastCheckAt: v.optional(v.number()),
+  lastCheckResult: v.optional(v.object({
+    websiteLive: v.optional(v.union(v.boolean(), v.null())),
+    riskScore: v.optional(v.number()),
+    verificationStatus: v.optional(v.string()),
+    changesDetected: v.array(v.string()),    // List of detected changes
+  })),
+  nextCheckAt: v.number(),                   // Scheduled next check time
+
+  // Change history
+  changeCount: v.number(),                   // Number of changes detected
+  alertsSent: v.number(),                    // Number of alerts triggered
+
+  // Status
+  status: v.string(),                        // "active", "paused", "archived"
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  createdBy: v.optional(v.id("users")),
+})
+  .index("by_entity", ["entityType", "entityName"])
+  .index("by_risk_tier", ["riskTier", "status"])
+  .index("by_next_check", ["nextCheckAt", "status"])
+  .index("by_status", ["status"]);
+
+/* ------------------------------------------------------------------ */
+/* VERIFICATION AUDIT LOG - Outcome tracking for calibration           */
+/* Enables FP/FN measurement, SLO tracking, methodology transparency   */
+/* ------------------------------------------------------------------ */
+const verificationAuditLog = defineTable({
+  // Entity identification
+  entityType: v.string(),                    // "company", "funding_claim", "person"
+  entityName: v.string(),
+  entityId: v.optional(v.string()),          // External ID if known
+
+  // Verification request context
+  requestId: v.string(),                     // Unique request ID for correlation
+  requestSource: v.string(),                 // "linkedin_post", "dd_pipeline", "manual"
+  triggeredBy: v.optional(v.id("users")),
+
+  // Input claim (for methodology transparency)
+  claimText: v.optional(v.string()),         // Original claim being verified
+  sourceUrl: v.optional(v.string()),         // Source of the claim
+  websiteUrl: v.optional(v.string()),        // Company website checked
+
+  // Verification results (tri-state)
+  entityFound: v.union(v.boolean(), v.null()),
+  websiteLive: v.union(v.boolean(), v.null()),
+  sourceCredibility: v.string(),             // "high", "medium", "low", "unknown"
+  overallStatus: v.string(),                 // "verified", "partial", "unverified", "suspicious"
+  confidenceScore: v.number(),               // 0-1
+
+  // Probe-level details (for observability)
+  probeResults: v.object({
+    entity: v.object({
+      result: v.union(v.boolean(), v.null()),
+      latencyMs: v.number(),
+      source: v.optional(v.string()),        // "fusion_search", "registry", etc.
+      summary: v.optional(v.string()),
+    }),
+    website: v.object({
+      result: v.union(v.boolean(), v.null()),
+      latencyMs: v.number(),
+      errorClass: v.optional(v.string()),    // Error taxonomy class
+      httpStatus: v.optional(v.number()),
+      attemptCount: v.number(),
+    }),
+    credibility: v.object({
+      tier: v.string(),
+      domain: v.string(),
+      matchType: v.optional(v.string()),     // "exact", "subdomain", "pattern"
+    }),
+  }),
+
+  // External fact-check results (if queried)
+  factCheckResults: v.optional(v.object({
+    provider: v.string(),                    // "google", "claimbuster", "none"
+    hasResults: v.boolean(),                 // Did we find any fact-checks?
+    factCheckCount: v.number(),
+    consensus: v.optional(v.string()),       // "true", "false", "mixed", "unproven", "insufficient"
+    agreementLevel: v.optional(v.number()),
+  })),
+
+  // Labeled outcome (for calibration - set later by human review)
+  labeledOutcome: v.optional(v.object({
+    verdict: v.string(),                     // "legit", "scam", "unclear", "insufficient_info"
+    labeledBy: v.optional(v.id("users")),
+    labeledAt: v.number(),
+    notes: v.optional(v.string()),
+    evidenceUrls: v.optional(v.array(v.string())),
+  })),
+
+  // Calibration metrics (computed when labeled)
+  calibration: v.optional(v.object({
+    wasCorrect: v.boolean(),                 // Did verification match labeled outcome?
+    errorType: v.optional(v.string()),       // "false_positive", "false_negative", "correct"
+    confidenceDelta: v.optional(v.number()), // How far off was confidence?
+  })),
+
+  // SLO tracking fields
+  sloMetrics: v.object({
+    totalLatencyMs: v.number(),              // End-to-end verification time
+    hadPrimarySource: v.boolean(),           // Did we find SEC/registry/official source?
+    hadTimeout: v.boolean(),                 // Any probe timed out?
+    circuitBreakerTripped: v.boolean(),      // Was any circuit breaker open?
+    inconclusiveCount: v.number(),           // How many probes were inconclusive?
+  }),
+
+  // Timestamps
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_entity", ["entityType", "entityName"])
+  .index("by_request", ["requestId"])
+  .index("by_source", ["requestSource", "createdAt"])
+  .index("by_status", ["overallStatus", "createdAt"])
+  .index("by_labeled", ["labeledOutcome.verdict", "createdAt"])
+  .index("by_calibration", ["calibration.errorType", "createdAt"])
+  .index("by_created", ["createdAt"]);
 
 /* ------------------------------------------------------------------ */
 /* SCHEDULED REPORTS - Automated PDF report generation                 */
@@ -2279,6 +2498,7 @@ export default defineSchema({
   financialEvents,
   mcpServers,
   mcpTools,
+  mcpToolSchemas,
   mcpSessions,
   mcpPlans,
   mcpMemoryEntries,
@@ -2286,6 +2506,7 @@ export default defineSchema({
   sourceArtifacts,
   artifactChunks,
   artifactIndexJobs,
+  resourceLinks,
   evidencePacks,
   toolHealth,
   agentRunEvents,
@@ -7236,4 +7457,926 @@ export default defineSchema({
     .index("by_user_skill", ["userId", "skillId"])
     .index("by_skill", ["skillId"])
     .index("by_status", ["status", "userId"]),
+
+  /* ================================================================== */
+  /* FINANCIAL ANALYSIS EVALUATION SYSTEM                                */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* GROUND TRUTH VERSIONS - Versioned, auditable ground truth           */
+  /* ------------------------------------------------------------------ */
+  groundTruthVersions: defineTable({
+    // Identity
+    entityKey: v.string(),           // "NVDA" or "openai-series-e"
+    version: v.number(),             // Monotonic version number
+
+    // Lifecycle status
+    status: v.union(
+      v.literal("draft"),            // Author editing
+      v.literal("pending_review"),   // Awaiting second reviewer
+      v.literal("approved"),         // Two-person sign-off
+      v.literal("superseded"),       // Replaced by newer version
+      v.literal("rejected"),         // Review rejected
+    ),
+
+    // Frozen snapshot (immutable once approved)
+    snapshotArtifactId: v.id("sourceArtifacts"),  // Links to frozen JSON
+    snapshotHash: v.string(),        // SHA-256 of snapshot content
+
+    // Authorship
+    authorId: v.id("users"),
+    reviewerId: v.optional(v.id("users")),
+    approvedAt: v.optional(v.number()),
+
+    // Change tracking
+    changeNote: v.string(),          // What changed from previous version
+    previousVersionId: v.optional(v.id("groundTruthVersions")),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_entity_version", ["entityKey", "version"])
+    .index("by_entity_status", ["entityKey", "status"])
+    .index("by_author", ["authorId", "status"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GROUND TRUTH AUDIT LOG - Audit trail for ground truth mutations     */
+  /* ------------------------------------------------------------------ */
+  groundTruthAuditLog: defineTable({
+    versionId: v.id("groundTruthVersions"),
+    entityKey: v.string(),
+
+    action: v.union(
+      v.literal("created"),
+      v.literal("submitted_for_review"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("superseded"),
+      v.literal("rollback"),
+    ),
+
+    actorId: v.id("users"),
+    reason: v.optional(v.string()),
+    metadata: v.optional(v.any()),    // Action-specific data
+
+    createdAt: v.number(),
+  })
+    .index("by_version", ["versionId", "createdAt"])
+    .index("by_entity", ["entityKey", "createdAt"])
+    .index("by_actor", ["actorId", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* FINANCIAL FUNDAMENTALS - Normalized SEC XBRL data                   */
+  /* ------------------------------------------------------------------ */
+  financialFundamentals: defineTable({
+    // Identity
+    ticker: v.string(),              // "NVDA"
+    cik: v.string(),                 // SEC CIK number
+    fiscalYear: v.number(),
+    fiscalQuarter: v.optional(v.number()),  // null = annual
+
+    // Source provenance
+    sourceArtifactId: v.id("sourceArtifacts"),  // Original 10-K/10-Q
+    xbrlUrl: v.string(),             // SEC EDGAR URL
+    filingDate: v.string(),          // ISO date
+
+    // Income Statement (in thousands)
+    incomeStatement: v.object({
+      revenue: v.number(),
+      costOfRevenue: v.optional(v.number()),
+      grossProfit: v.optional(v.number()),
+      operatingExpenses: v.optional(v.number()),
+      operatingIncome: v.optional(v.number()),
+      netIncome: v.number(),
+      eps: v.optional(v.number()),
+      sharesOutstanding: v.optional(v.number()),
+    }),
+
+    // Balance Sheet
+    balanceSheet: v.object({
+      totalAssets: v.number(),
+      totalLiabilities: v.number(),
+      totalEquity: v.number(),
+      cash: v.optional(v.number()),
+      totalDebt: v.optional(v.number()),
+      currentAssets: v.optional(v.number()),
+      currentLiabilities: v.optional(v.number()),
+    }),
+
+    // Cash Flow
+    cashFlow: v.object({
+      operatingCashFlow: v.number(),
+      capex: v.optional(v.number()),
+      freeCashFlow: v.optional(v.number()),
+      dividendsPaid: v.optional(v.number()),
+      shareRepurchases: v.optional(v.number()),
+    }),
+
+    // Computed metrics
+    metrics: v.optional(v.object({
+      grossMargin: v.optional(v.number()),
+      operatingMargin: v.optional(v.number()),
+      netMargin: v.optional(v.number()),
+      roic: v.optional(v.number()),
+      roe: v.optional(v.number()),
+      debtToEquity: v.optional(v.number()),
+    })),
+
+    // Data quality
+    extractionConfidence: v.number(),  // 0-1
+    manualOverrides: v.optional(v.array(v.string())),  // Fields manually corrected
+
+    // Full provenance tracking for each normalized field
+    // Maps field path (e.g., "incomeStatement.revenue") to provenance metadata
+    fieldProvenance: v.optional(v.array(v.object({
+      fieldPath: v.string(),           // e.g., "incomeStatement.revenue"
+      tag: v.string(),                 // Original XBRL concept name
+      namespace: v.string(),           // "us-gaap", "dei", "ifrs-full", or custom namespace
+      units: v.string(),               // "USD", "shares", "pure"
+      periodStart: v.optional(v.string()),  // ISO date for duration facts
+      periodEnd: v.string(),           // ISO date (end or instant)
+      fiscalPeriod: v.string(),        // "FY", "Q1", "Q2", "Q3", "Q4"
+      formType: v.string(),            // "10-K", "10-Q", etc.
+      accessionNumber: v.string(),     // SEC accession number
+      filedDate: v.string(),           // When filing was submitted
+      dimensions: v.optional(v.array(v.object({  // Dimensional qualifiers
+        axis: v.string(),
+        member: v.string(),
+      }))),
+      selectionRationale: v.string(),  // Why this tag was selected
+      isCustomTag: v.boolean(),        // Custom extension vs standard taxonomy
+      alternativeTags: v.optional(v.array(v.string())),  // Other tags considered
+      isComputed: v.optional(v.boolean()),  // True if derived/calculated
+      computedFrom: v.optional(v.array(v.string())),  // Source fields if computed
+    }))),
+
+    // Quality flags
+    hasCustomTags: v.optional(v.boolean()),  // True if any field uses custom tags
+    customTagCount: v.optional(v.number()),  // Number of fields with custom tags
+    needsReview: v.optional(v.boolean()),    // Flag for manual review
+
+    // Dimensional data strategy tracking
+    // See xbrlParser.ts for full documentation of the CONSOLIDATED_ONLY approach
+    dimensionalStrategy: v.optional(v.union(
+      v.literal("CONSOLIDATED_ONLY"),   // Extract only total/consolidated figures (current)
+      v.literal("SEGMENT_AWARE"),       // Extract segment-level data with reconciliation (future)
+      v.literal("FULL_DIMENSIONAL"),    // Extract all dimensional combinations (future)
+    )),
+    dimensionalFactsEncountered: v.optional(v.number()),  // Total dimensional facts seen
+    dimensionalFactsSkipped: v.optional(v.number()),      // Dimensional facts not extracted
+    hasSegmentData: v.optional(v.boolean()),              // True if company reports segment data
+
+    // Taxonomy version provenance (critical for reproducibility)
+    // See taxonomyManagement.ts for full documentation
+    taxonomyProvenance: v.optional(v.object({
+      primaryTaxonomy: v.object({
+        family: v.string(),
+        releaseYear: v.number(),
+        versionId: v.string(),
+        effectiveDate: v.string(),
+        taxonomyUrl: v.optional(v.string()),
+        changeNotes: v.optional(v.array(v.string())),
+      }),
+      detectedNamespaces: v.array(v.string()),
+      resolvedVersions: v.array(v.object({
+        family: v.string(),
+        releaseYear: v.number(),
+        versionId: v.string(),
+        effectiveDate: v.string(),
+        taxonomyUrl: v.optional(v.string()),
+        changeNotes: v.optional(v.array(v.string())),
+      })),
+      tagNormalizations: v.array(v.object({
+        originalTag: v.string(),
+        normalizedTag: v.string(),
+        reason: v.string(),
+      })),
+      extractionEngineVersion: v.string(),
+      tagMappingRevision: v.string(),
+      extractedAt: v.number(),
+    })),
+
+    createdAt: v.number(),
+  })
+    .index("by_ticker_period", ["ticker", "fiscalYear", "fiscalQuarter"])
+    .index("by_cik", ["cik", "fiscalYear"])
+    .index("by_source", ["sourceArtifactId"])
+    .index("by_needs_review", ["needsReview", "ticker"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RESTATEMENT OVERRIDES - Manual filing selection overrides          */
+  /* ------------------------------------------------------------------ */
+  // When multiple filings exist for the same period (e.g., 10-K and 10-K/A),
+  // default policy is "latest wins". Overrides allow pinning to specific filing.
+  restatementOverrides: defineTable({
+    ticker: v.string(),
+    fiscalYear: v.number(),
+    fiscalQuarter: v.optional(v.number()),
+
+    // Pinned filing
+    pinnedAccession: v.string(),   // SEC accession number to use
+    reason: v.string(),            // Why override was created
+
+    // Authorship
+    createdBy: v.string(),         // User ID or "system"
+    createdAt: v.number(),
+    updatedAt: v.number(),
+
+    // Expiration (optional - for temporary overrides)
+    expiresAt: v.optional(v.number()),
+  })
+    .index("by_ticker", ["ticker"])
+    .index("by_ticker_period", ["ticker", "fiscalYear", "fiscalQuarter"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RESTATEMENT DECISION LOG - Audit trail for filing selections       */
+  /* ------------------------------------------------------------------ */
+  // Records every decision made when selecting between multiple filings.
+  // Critical for reproducibility and debugging.
+  restatementDecisionLog: defineTable({
+    ticker: v.string(),
+    fiscalYear: v.number(),
+    fiscalQuarter: v.optional(v.number()),
+
+    // Decision
+    selectedAccession: v.string(),
+    selectionMethod: v.string(),   // "latest_wins", "manual_override", "pinned"
+    reason: v.string(),
+
+    // Available options
+    availableAccessions: v.array(v.string()),
+
+    // Override status
+    hasOverride: v.boolean(),
+
+    // Context
+    runId: v.optional(v.string()),
+
+    decidedAt: v.number(),
+  })
+    .index("by_ticker_period", ["ticker", "fiscalYear"])
+    .index("by_decided_at", ["decidedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* INCONCLUSIVE EVENT LOG - Track external dependency failures        */
+  /* ------------------------------------------------------------------ */
+  // Logs all "inconclusive" events when external dependencies fail.
+  // Critical for monitoring, debugging, and SLO tracking.
+  inconclusiveEventLog: defineTable({
+    // Failure details
+    dependency: v.string(),        // "sec_edgar", "financial_api", etc.
+    category: v.string(),          // "api_error", "timeout", "rate_limited", etc.
+    message: v.string(),
+    retriable: v.boolean(),
+    httpStatus: v.optional(v.number()),
+    retryAfterMs: v.optional(v.number()),
+
+    // Additional context
+    context: v.optional(v.any()),
+
+    // Entity context (optional)
+    ticker: v.optional(v.string()),
+    fiscalYear: v.optional(v.number()),
+    operation: v.optional(v.string()),  // What operation was attempted
+    runId: v.optional(v.string()),
+
+    occurredAt: v.number(),
+  })
+    .index("by_dependency", ["dependency", "occurredAt"])
+    .index("by_occurred_at", ["occurredAt"])
+    .index("by_category", ["category", "occurredAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* MODEL CARDS - MRM-style model documentation                        */
+  /* ------------------------------------------------------------------ */
+  // Model Risk Management documentation for enterprise compliance.
+  // Aligned with SR 11-7, OCC 2011-12 regulatory frameworks.
+  modelCards: defineTable({
+    modelId: v.string(),           // Unique model identifier
+    name: v.string(),              // Human-readable name
+    version: v.string(),           // Version string
+    description: v.string(),       // Brief description
+
+    // Classification
+    riskTier: v.string(),          // tier1_critical, tier2_significant, etc.
+    status: v.string(),            // development, validation, approved, etc.
+    useCase: v.string(),           // valuation, risk_assessment, etc.
+
+    // Ownership
+    owner: v.string(),             // Model owner (individual or team)
+
+    // Validation tracking
+    lastValidationDate: v.optional(v.string()),
+    nextValidationDate: v.optional(v.string()),
+
+    // Documentation
+    keyLimitations: v.array(v.string()),
+    compensatingControls: v.array(v.string()),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_model_id", ["modelId"])
+    .index("by_risk_tier", ["riskTier", "status"])
+    .index("by_next_validation", ["nextValidationDate"]),
+
+  /* ------------------------------------------------------------------ */
+  /* MODEL PERFORMANCE METRICS - Ongoing monitoring                     */
+  /* ------------------------------------------------------------------ */
+  modelPerformanceMetrics: defineTable({
+    modelId: v.string(),
+    version: v.string(),
+
+    // Reporting period
+    periodStart: v.string(),
+    periodEnd: v.string(),
+
+    // Usage metrics
+    totalExecutions: v.number(),
+    uniqueUsers: v.number(),
+    averageLatencyMs: v.number(),
+    errorRate: v.number(),
+    inconclusiveRate: v.number(),
+
+    recordedAt: v.number(),
+  })
+    .index("by_model_period", ["modelId", "periodStart"])
+    .index("by_recorded_at", ["recordedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SOURCE QUALITY LOG - Calibration data for source scoring           */
+  /* ------------------------------------------------------------------ */
+  // Logs every source quality classification for calibration/audit.
+  // Human labels enable threshold tuning and accuracy measurement.
+  sourceQualityLog: defineTable({
+    // Source identification
+    url: v.string(),
+    domain: v.string(),
+    sourceDate: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+
+    // Classification result
+    tier: v.string(),              // tier1_authoritative, etc.
+    score: v.number(),             // 0-100
+    matchedRules: v.array(v.string()),
+    confidence: v.number(),
+    scoreBreakdown: v.object({
+      domainScore: v.number(),
+      freshnessScore: v.number(),
+      metadataScore: v.number(),
+      citationScore: v.number(),
+    }),
+
+    // Context
+    entityKey: v.optional(v.string()),
+    evaluationId: v.optional(v.string()),
+
+    // Calibration labels (filled by human reviewers)
+    humanLabel: v.optional(v.union(
+      v.literal("appropriate"),
+      v.literal("over_scored"),
+      v.literal("under_scored"),
+      v.literal("wrong_tier")
+    )),
+    suggestedTier: v.optional(v.string()),
+    suggestedScore: v.optional(v.number()),
+    labelNotes: v.optional(v.string()),
+    labeledBy: v.optional(v.string()),
+    labeledAt: v.optional(v.number()),
+
+    classifiedAt: v.number(),
+  })
+    .index("by_classified_at", ["classifiedAt"])
+    .index("by_domain", ["domain", "classifiedAt"])
+    .index("by_tier", ["tier", "classifiedAt"])
+    .index("by_labeled", ["humanLabel", "labeledAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DCF MODELS - Executable DCF model representation                    */
+  /* ------------------------------------------------------------------ */
+  dcfModels: defineTable({
+    // Identity
+    modelId: v.string(),             // UUID
+    entityKey: v.string(),           // "NVDA"
+    version: v.number(),
+
+    // Source (AI-generated or analyst)
+    origin: v.union(v.literal("ai_generated"), v.literal("analyst"), v.literal("hybrid")),
+    authorId: v.optional(v.id("users")),
+    runId: v.optional(v.id("agentRuns")),
+
+    // Model inputs - stored as artifact for immutability
+    inputsArtifactId: v.id("sourceArtifacts"),  // JSON of all inputs
+
+    // Core assumptions (denormalized for queries)
+    assumptions: v.object({
+      // Forecast horizon
+      forecastYears: v.number(),     // Typically 5-10
+      baseYear: v.number(),          // FY from which projections start
+
+      // Revenue assumptions
+      revenue: v.object({
+        baseRevenue: v.number(),
+        growthRates: v.array(v.object({
+          year: v.number(),
+          rate: v.number(),
+          rationale: v.string(),
+          sourceChunkId: v.optional(v.string()),  // Citation
+        })),
+        terminalGrowthRate: v.number(),
+      }),
+
+      // Operating assumptions
+      operating: v.object({
+        grossMargin: v.array(v.object({ year: v.number(), value: v.number() })),
+        sgaPercent: v.array(v.object({ year: v.number(), value: v.number() })),
+        rdPercent: v.optional(v.array(v.object({ year: v.number(), value: v.number() }))),
+        daPercent: v.array(v.object({ year: v.number(), value: v.number() })),
+        capexPercent: v.array(v.object({ year: v.number(), value: v.number() })),
+        nwcPercent: v.array(v.object({ year: v.number(), value: v.number() })),
+      }),
+
+      // WACC components
+      wacc: v.object({
+        riskFreeRate: v.number(),
+        marketRiskPremium: v.number(),
+        beta: v.number(),
+        costOfEquity: v.number(),
+        costOfDebt: v.number(),
+        taxRate: v.number(),
+        debtWeight: v.number(),
+        equityWeight: v.number(),
+        wacc: v.number(),
+        sources: v.array(v.string()),
+      }),
+
+      // Terminal value
+      terminal: v.object({
+        method: v.union(v.literal("perpetuity"), v.literal("exit_multiple")),
+        perpetuityGrowth: v.optional(v.number()),
+        exitMultiple: v.optional(v.number()),
+        exitMultipleType: v.optional(v.string()),  // "EV/EBITDA", "EV/Revenue"
+      }),
+
+      // Capital structure / dilution
+      capitalStructure: v.optional(v.object({
+        currentShares: v.number(),
+        expectedDilution: v.optional(v.number()),  // Annual dilution rate
+        netDebt: v.optional(v.number()),
+      })),
+    }),
+
+    // Computed outputs (also stored as artifact for reproducibility)
+    outputsArtifactId: v.id("sourceArtifacts"),  // JSON of all outputs
+
+    // Summary outputs (denormalized)
+    outputs: v.object({
+      enterpriseValue: v.number(),
+      equityValue: v.number(),
+      impliedSharePrice: v.optional(v.number()),
+      presentValueFcf: v.number(),
+      terminalValue: v.number(),
+      terminalValuePercent: v.number(),  // % of total EV
+    }),
+
+    // Sensitivity analysis
+    sensitivity: v.optional(v.object({
+      waccRange: v.array(v.number()),       // e.g., [8%, 9%, 10%, 11%, 12%]
+      terminalGrowthRange: v.array(v.number()),
+      matrix: v.array(v.array(v.number())), // EV at each combo
+    })),
+
+    // Source citations
+    citationArtifactIds: v.array(v.id("sourceArtifacts")),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_entity_version", ["entityKey", "version"])
+    .index("by_run", ["runId"])
+    .index("by_origin", ["origin", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SOURCE QUALITY RULES - Machine-checkable source tier rules          */
+  /* ------------------------------------------------------------------ */
+  sourceQualityRules: defineTable({
+    ruleId: v.string(),
+    ruleName: v.string(),
+
+    // Classification
+    tier: v.union(
+      v.literal("tier1_authoritative"),  // SEC, USPTO, official gov
+      v.literal("tier2_reliable"),       // Earnings calls, IR decks
+      v.literal("tier3_secondary"),      // Sell-side, industry reports
+      v.literal("tier4_news"),           // News, press releases
+      v.literal("tier5_unverified"),     // LLM inference, social media
+    ),
+
+    // Detection rules (machine-checkable)
+    urlPatterns: v.array(v.string()),    // Regex patterns for URLs
+    domainAllowlist: v.optional(v.array(v.string())),
+    requiredMetadata: v.optional(v.array(v.string())),  // e.g., ["filingDate", "cik"]
+    maxAgeDays: v.optional(v.number()),  // Freshness requirement
+
+    // Scoring
+    reliabilityScore: v.number(),        // 0-100
+    citationWeight: v.number(),          // Weight in quality score
+
+    // Examples for training
+    examples: v.optional(v.array(v.string())),
+
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tier", ["tier", "isActive"])
+    .index("by_rule_id", ["ruleId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* FINANCIAL MODEL EVALUATIONS - DCF evaluation results                */
+  /* ------------------------------------------------------------------ */
+  financialModelEvaluations: defineTable({
+    evaluationId: v.string(),
+    entityName: v.string(),          // Ticker or entity identifier
+    evaluationType: v.union(v.literal("dcf"), v.literal("comparables"), v.literal("lbo")),
+
+    // Model references
+    aiModelId: v.optional(v.id("dcfModels")),
+    groundTruthVersionId: v.optional(v.id("groundTruthVersions")),
+
+    // Scores (0-100)
+    assumptionDriftScore: v.number(),
+    sourceQualityScore: v.number(),
+    modelAlignmentScore: v.number(),
+    overallScore: v.number(),
+
+    // Reproducibility gates
+    gatesPassed: v.optional(v.boolean()),
+    gateResults: v.optional(v.object({
+      inputCompleteness: v.any(),
+      determinismCheck: v.any(),
+      provenanceCompleteness: v.any(),
+      auditTrail: v.any(),
+    })),
+
+    // Detailed score breakdown
+    scoreBreakdown: v.optional(v.any()),
+
+    // Detailed comparisons (legacy)
+    assumptionComparison: v.optional(v.any()),
+    sourceComparison: v.optional(v.any()),
+    formulaComparison: v.optional(v.any()),
+
+    // Verdict
+    verdict: v.union(
+      v.literal("ALIGNED"),
+      v.literal("MINOR_DRIFT"),
+      v.literal("SIGNIFICANT_DRIFT"),
+      v.literal("METHODOLOGY_MISMATCH")
+    ),
+
+    // Pass/fail flags (legacy)
+    passedAssumptionThreshold: v.optional(v.boolean()),
+    passedSourceThreshold: v.optional(v.boolean()),
+    passedOverall: v.optional(v.boolean()),
+
+    userId: v.optional(v.id("users")),
+    createdAt: v.number(),
+  })
+    .index("by_evaluation_id", ["evaluationId"])
+    .index("by_entity", ["entityName", "createdAt"])
+    .index("by_verdict", ["verdict", "createdAt"])
+    .index("by_model", ["aiModelId"])
+    .index("by_groundtruth", ["groundTruthVersionId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* MODEL CORRECTION EVENTS - HITL correction capture for learning      */
+  /* ------------------------------------------------------------------ */
+  modelCorrectionEvents: defineTable({
+    // Identity
+    correctionId: v.string(),
+    evaluationId: v.id("financialModelEvaluations"),
+    dcfModelId: v.id("dcfModels"),
+    entityKey: v.string(),
+
+    // Correction details
+    fieldPath: v.string(),           // e.g., "assumptions.revenue.growthRates[0].rate"
+    aiValue: v.any(),                // Original AI value
+    correctedValue: v.any(),         // Human-corrected value
+    correctionType: v.union(
+      v.literal("value_override"),   // Simple value change
+      v.literal("formula_fix"),      // Methodology correction
+      v.literal("source_replacement"), // Better source provided
+      v.literal("assumption_reject"),  // AI assumption rejected entirely
+    ),
+
+    // Justification
+    reason: v.string(),              // Why the correction was made
+    betterSourceArtifactId: v.optional(v.id("sourceArtifacts")),  // If source replacement
+
+    // Magnitude tracking
+    impactOnEv: v.optional(v.number()),  // % change to enterprise value
+    severityLevel: v.union(
+      v.literal("minor"),            // <5% EV impact
+      v.literal("moderate"),         // 5-15% EV impact
+      v.literal("significant"),      // >15% EV impact
+    ),
+
+    // Learning signal
+    shouldUpdateGroundTruth: v.boolean(),  // Flag for ground truth update
+    learningCategory: v.optional(v.string()),  // For categorizing patterns
+
+    // Authorship
+    correctedBy: v.id("users"),
+    reviewedBy: v.optional(v.id("users")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("rejected"),
+    ),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_evaluation", ["evaluationId", "createdAt"])
+    .index("by_entity", ["entityKey", "createdAt"])
+    .index("by_field_path", ["fieldPath", "correctionType"])
+    .index("by_status", ["status", "shouldUpdateGroundTruth"])
+    .index("by_severity", ["severityLevel", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* MODEL REPRO PACKS - Reproducibility artifact frozen snapshots       */
+  /* ------------------------------------------------------------------ */
+  modelReproPacks: defineTable({
+    packId: v.string(),
+    entityKey: v.string(),
+
+    // Links to immutable artifacts
+    dcfModelId: v.id("dcfModels"),
+    groundTruthVersionId: v.optional(v.id("groundTruthVersions")),
+
+    // Frozen inputs (legacy format)
+    fundamentalsArtifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
+    sourceArtifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
+
+    // Frozen model (legacy format)
+    modelInputsHash: v.optional(v.string()),
+    modelOutputsHash: v.optional(v.string()),
+
+    // Full contents (new format - includes all provenance and hashes)
+    contents: v.optional(v.any()),
+
+    // Reproducibility validation
+    fullyReproducible: v.optional(v.boolean()),
+
+    // Evaluation results (if evaluated)
+    evaluationId: v.optional(v.id("financialModelEvaluations")),
+    evaluationScore: v.optional(v.number()),
+
+    // Export formats
+    exportedSpreadsheetId: v.optional(v.id("_storage")),
+    exportedPdfId: v.optional(v.id("_storage")),
+    exportedJsonId: v.optional(v.id("_storage")),
+
+    // Metadata
+    createdAt: v.number(),
+    createdBy: v.optional(v.id("users")),
+  })
+    .index("by_pack_id", ["packId"])
+    .index("by_entity", ["entityKey", "createdAt"])
+    .index("by_model", ["dcfModelId"])
+    .index("by_groundtruth", ["groundTruthVersionId"])
+    .index("by_reproducible", ["fullyReproducible", "createdAt"]),
+
+  /* ================================================================== */
+  /* MCP SERVER AUTHENTICATION & ACCESS                                  */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* MCP API TOKENS - Scoped tokens with rate limits                     */
+  /* ------------------------------------------------------------------ */
+  mcpApiTokens: defineTable({
+    tokenHash: v.string(),           // SHA-256 of token (never store plaintext)
+    name: v.string(),                // Human-readable name
+
+    userId: v.id("users"),
+
+    // Scopes
+    scopes: v.array(v.union(
+      v.literal("read:artifacts"),
+      v.literal("read:evaluations"),
+      v.literal("read:groundtruth"),
+      v.literal("write:evaluations"),
+      v.literal("write:corrections"),
+      v.literal("admin:groundtruth"),
+    )),
+
+    // Rate limits
+    rateLimitPerMinute: v.number(),
+    rateLimitPerDay: v.number(),
+
+    // Lifecycle
+    expiresAt: v.optional(v.number()),
+    lastUsedAt: v.optional(v.number()),
+    isRevoked: v.boolean(),
+
+    createdAt: v.number(),
+  })
+    .index("by_token_hash", ["tokenHash"])
+    .index("by_user", ["userId", "isRevoked"]),
+
+  /* ------------------------------------------------------------------ */
+  /* MCP ACCESS LOG - Audit log for MCP access                           */
+  /* ------------------------------------------------------------------ */
+  mcpAccessLog: defineTable({
+    tokenId: v.id("mcpApiTokens"),
+    userId: v.id("users"),
+
+    method: v.string(),              // Tool name or HTTP method
+    resource: v.string(),            // Resource URI
+    scope: v.string(),               // Scope used
+
+    statusCode: v.number(),
+    latencyMs: v.number(),
+
+    // Rate limit tracking
+    requestsInWindow: v.optional(v.number()),
+    windowStart: v.optional(v.number()),
+
+    createdAt: v.number(),
+  })
+    .index("by_token", ["tokenId", "createdAt"])
+    .index("by_user", ["userId", "createdAt"]),
+
+  /* ================================================================== */
+  /* DYNAMIC CONTEXT CONFIGURATION                                       */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* PROMPT ENHANCER CONFIGS - Formal Prompt Enhancer configuration      */
+  /* ------------------------------------------------------------------ */
+  promptEnhancerConfigs: defineTable({
+    configId: v.string(),
+    name: v.string(),
+
+    // Entity extraction settings
+    entityExtraction: v.object({
+      enabledTypes: v.array(v.string()),  // ["company", "person", "ticker"]
+      confidenceThreshold: v.number(),
+    }),
+
+    // Temporal inference settings
+    temporalInference: v.object({
+      enabled: v.boolean(),
+      defaultLookbackDays: v.number(),
+      recencyBias: v.number(),  // 0-1
+    }),
+
+    // Retrieval intent generation
+    retrievalIntent: v.object({
+      enabled: v.boolean(),
+      maxQueries: v.number(),
+      tokenBudget: v.number(),
+      evidencePriorities: v.array(v.string()),  // ["sec_filings", "earnings_calls"]
+    }),
+
+    // Persona inference
+    personaInference: v.object({
+      enabled: v.boolean(),
+      personas: v.array(v.string()),
+    }),
+
+    isDefault: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_config_id", ["configId"])
+    .index("by_default", ["isDefault"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DISTILLER CONFIGS - Formal File Distiller configuration             */
+  /* ------------------------------------------------------------------ */
+  distillerConfigs: defineTable({
+    configId: v.string(),
+    name: v.string(),
+
+    // Model selection
+    modelStrategy: v.union(
+      v.literal("free_first"),       // devstral → gemini-flash → haiku
+      v.literal("quality_first"),    // haiku → sonnet
+      v.literal("specific"),         // Use specified model
+    ),
+    preferredModel: v.optional(v.string()),
+
+    // Extraction settings
+    extraction: v.object({
+      maxFacts: v.number(),
+      minConfidence: v.number(),
+      requireCitations: v.boolean(),
+      citationFormat: v.string(),    // "{{cite:artifactId:chunkId}}"
+    }),
+
+    // Token budget
+    budget: v.object({
+      maxInputTokens: v.number(),
+      maxOutputTokens: v.number(),
+    }),
+
+    // Categories of facts to extract
+    factCategories: v.array(v.string()),  // ["financial", "team", "product", "market"]
+
+    isDefault: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_config_id", ["configId"])
+    .index("by_default", ["isDefault"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SEC API RATE LIMITS - Track SEC EDGAR API request rate              */
+  /* ------------------------------------------------------------------ */
+  secApiRateLimits: defineTable({
+    endpoint: v.string(),              // e.g., "companyfacts/CIK0001234567"
+    timestamp: v.number(),             // When the request was made
+    statusCode: v.number(),            // HTTP status code
+    latencyMs: v.number(),             // Response latency
+    retryAfterSec: v.optional(v.number()),  // Retry-After header value (seconds)
+    isRateLimited: v.optional(v.boolean()), // True if this was a 429 response
+    errorMessage: v.optional(v.string()),   // Error details for failed requests
+  })
+    .index("by_timestamp", ["timestamp"])
+    .index("by_endpoint", ["endpoint", "timestamp"])
+    .index("by_rate_limited", ["isRateLimited", "timestamp"]),
+
+  /* ------------------------------------------------------------------ */
+  /* SEC API CIRCUIT BREAKER - Adaptive rate limiting with circuit breaker */
+  /* ------------------------------------------------------------------ */
+  secApiCircuitBreaker: defineTable({
+    // Circuit breaker state
+    state: v.union(
+      v.literal("closed"),     // Normal operation
+      v.literal("open"),       // Blocking all requests
+      v.literal("half_open"),  // Testing if service recovered
+    ),
+
+    // Failure tracking
+    consecutiveFailures: v.number(),
+    totalFailuresInWindow: v.number(),  // Failures in rolling window
+    windowStartTimestamp: v.number(),
+
+    // Rate limit tracking
+    lastRateLimitTimestamp: v.optional(v.number()),
+    retryAfterUntil: v.optional(v.number()),  // Don't retry before this timestamp
+
+    // Backoff state
+    currentBackoffMs: v.number(),
+    maxBackoffMs: v.number(),
+
+    // Circuit open/close times
+    openedAt: v.optional(v.number()),
+    closedAt: v.optional(v.number()),
+    halfOpenAt: v.optional(v.number()),
+
+    // Configuration
+    failureThreshold: v.number(),       // Failures to open circuit
+    successThreshold: v.number(),       // Successes in half-open to close
+    windowDurationMs: v.number(),       // Rolling window for failure counting
+    openDurationMs: v.number(),         // How long to stay open before half-open
+
+    updatedAt: v.number(),
+  }),
+
+  /* ------------------------------------------------------------------ */
+  /* SEC API RESPONSE CACHE - Aggressive caching per SEC guidance        */
+  /* ------------------------------------------------------------------ */
+  secApiResponseCache: defineTable({
+    // Cache key
+    endpoint: v.string(),              // Full endpoint path
+    cacheKey: v.string(),              // Hash of endpoint + params
+
+    // Response data
+    responseHash: v.string(),          // SHA-256 of response for dedup
+    artifactId: v.id("sourceArtifacts"), // Link to full response
+
+    // Cache metadata
+    fetchedAt: v.number(),
+    expiresAt: v.number(),             // When to consider stale
+    hitCount: v.number(),              // Number of cache hits
+
+    // Validation
+    etag: v.optional(v.string()),      // For conditional requests
+    lastModified: v.optional(v.string()),
+  })
+    .index("by_cache_key", ["cacheKey"])
+    .index("by_endpoint", ["endpoint", "fetchedAt"])
+    .index("by_expires", ["expiresAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ENTITY MONITORING - Continuous KYC per FATF guidance               */
+  /* ------------------------------------------------------------------ */
+  entityMonitorProfiles,
+
+  /* ------------------------------------------------------------------ */
+  /* VERIFICATION AUDIT LOG - FP/FN calibration + SLO tracking          */
+  /* ------------------------------------------------------------------ */
+  verificationAuditLog,
 });

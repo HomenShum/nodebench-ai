@@ -41,6 +41,13 @@ import {
   getEvidenceChunk,
 } from "../../../tools/wrappers/evidenceTools";
 
+// Resource link retrieval tools (retrieve excerpts from resource_links/artifacts)
+import {
+  retrieveArtifact,
+  retrieveFullArtifact,
+  retrieveMultipleArtifacts,
+} from "../../../tools/wrappers/resourceLinkTools";
+
 // Import GAM unified memory tools (memory-first protocol)
 import {
   queryMemory,
@@ -217,6 +224,7 @@ import {
 
 // Artifact persistence wrapper
 import { wrapAllToolsWithArtifactPersistence } from "../../../lib/withArtifactPersistence";
+import { wrapAllToolsWithResourceLinkWrapping } from "../../../lib/withResourceLinkWrapping";
 import type { Id } from "../../../_generated/dataModel";
 
 // Section ID generation for artifact linking
@@ -246,28 +254,43 @@ function withSectionRefUpdate(
   artifactDeps: ArtifactDeps | undefined,
   tool: any
 ): any {
-  // @convex-dev/agent tools use execute, not handler
-  const originalExecute = tool.execute ?? tool.handler;
-  if (!originalExecute) return tool;
-  
-  return {
-    ...tool,
-    execute: async (args: any, options: any) => {
-      // Compute sectionId deterministically
-      const runId = args.runId ?? artifactDeps?.runId;
-      const sectionKey = args.sectionKey;
-      
-      if (runId && sectionKey && artifactDeps?.sectionIdRef) {
-        const sectionId = generateSectionId(runId, sectionKey);
-        artifactDeps.sectionIdRef.current = sectionId;
-        console.log(`[setActiveSection] Updated sectionIdRef to ${sectionKey} -> ${sectionId}`);
-      }
-      
-      return await originalExecute(args, options);
-    },
-    // Also wrap handler for compatibility
-    handler: originalExecute,
+  const toolAny = tool as any;
+  const originalExecute = toolAny?.execute;
+  const originalHandler = toolAny?.handler;
+
+  const updateSectionRef = (args: any) => {
+    const runId = args?.runId ?? artifactDeps?.runId;
+    const sectionKey = args?.sectionKey;
+    if (runId && sectionKey && artifactDeps?.sectionIdRef) {
+      const sectionId = generateSectionId(runId, sectionKey);
+      artifactDeps.sectionIdRef.current = sectionId;
+      console.log(`[setActiveSection] Updated sectionIdRef to ${sectionKey} -> ${sectionId}`);
+    }
   };
+
+  // @convex-dev/agent tools are AI SDK tools that call `execute(args, options)` with `this` binding.
+  if (typeof originalExecute === "function") {
+    return {
+      ...toolAny,
+      execute: async function (this: any, args: any, options: any) {
+        updateSectionRef(args);
+        return await originalExecute.call(this, args, options);
+      },
+    };
+  }
+
+  // Fallback for legacy tool shapes that expose `handler(ctx, args, options)`.
+  if (typeof originalHandler === "function") {
+    return {
+      ...toolAny,
+      handler: async (ctx: any, args: any, options: any) => {
+        updateSectionRef(args);
+        return await originalHandler(ctx, args, options);
+      },
+    };
+  }
+
+  return tool;
 }
 
 // Note: Subagent definitions and delegation tools have been moved to:
@@ -372,6 +395,9 @@ export const createCoordinatorAgent = (
     indexEvidenceArtifact,
     searchEvidence,
     getEvidenceChunk,
+    retrieveArtifact,
+    retrieveFullArtifact,
+    retrieveMultipleArtifacts,
     externalOrchestratorTool,
     ...dataAccessTools,
 
@@ -467,12 +493,18 @@ export const createCoordinatorAgent = (
   const wrappedTools = artifactDeps 
     ? wrapAllToolsWithArtifactPersistence(contextWrapped, artifactDeps)
     : contextWrapped;
+
+  // Wrap all tools to automatically return resource_links for large outputs.
+  // This ensures the orchestrator never receives large tool blobs directly.
+  const resourceWrappedTools = wrapAllToolsWithResourceLinkWrapping(wrappedTools, {
+    runId: artifactDeps?.runId,
+  });
   
   // Add setActiveSection with sectionIdRef update wrapper
   // This ensures artifact-producing tools pick up the current section
   const tools: Record<string, any> = {
-    ...wrappedTools,
-    setActiveSection: withSectionRefUpdate(artifactDeps, setActiveSection),
+    ...resourceWrappedTools,
+    setActiveSection: withSectionRefUpdate(artifactDeps, resourceWrappedTools.setActiveSection),
   };
 
   // Eval harness marker used to add lightweight instruction preamble.

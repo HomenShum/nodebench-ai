@@ -7,7 +7,6 @@ import { EvidenceProvider, useEvidence } from "@/features/research/contexts/Evid
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import type { FeedItem } from "@/features/research/components/FeedCard";
 import type { Evidence } from "@/features/research/types";
-import { WhatChangedPanel } from "@/features/research/components/WhatChangedPanel";
 import {
   BriefingSection,
   DashboardSection,
@@ -25,6 +24,8 @@ import { FeedReaderModal, type ReaderItem } from "@/features/research/components
 import { EntityContextDrawer } from "@/features/research/components/EntityContextDrawer";
 import { DealRadar } from "@/features/research/components/DealRadar";
 import { cn } from "@/lib/utils";
+
+const WhatChangedPanelLazy = React.lazy(() => import("@/features/research/components/WhatChangedPanel"));
 
 // Tab definitions for the main content sections
 type ContentTab = 'overview' | 'signals' | 'briefing' | 'deals' | 'changes';
@@ -415,6 +416,18 @@ function ResearchHubContent(props: ResearchHubProps) {
     });
   }, [openWithContext, dossierContextBase]);
 
+  const handleAskAgentAboutChanges = useCallback((input: { prompt: string; urls?: string[] }) => {
+    openWithContext({
+      contextTitle: "What Changed",
+      contextWebUrls: input.urls,
+      initialMessage: input.prompt,
+      dossierContext: {
+        ...dossierContextBase,
+        activeSectionId: "knowledge_product_changes",
+      },
+    });
+  }, [openWithContext, dossierContextBase]);
+
   const handleDashboardPointClick = useCallback((point: { seriesId: string; dataIndex: number; dataLabel: string; value: number; unit?: string }) => {
     openWithContext({
       contextTitle: "Pulse Overview",
@@ -681,7 +694,15 @@ function ResearchHubContent(props: ResearchHubProps) {
                     <div className="px-1.5 py-0.5 bg-indigo-50 text-indigo-800 border border-indigo-200 text-[9px] font-bold uppercase tracking-wider rounded">Sources</div>
                   </div>
                   <div className="bg-stone-50/50 p-4 border border-stone-200/60 rounded-lg">
-                    <WhatChangedPanel limit={20} daysBack={30} />
+                    <React.Suspense
+                      fallback={
+                        <div className="flex items-center justify-center py-10 text-sm text-stone-500">
+                          Loading changes…
+                        </div>
+                      }
+                    >
+                      <WhatChangedPanelLazy limit={20} daysBack={30} onAskAgent={handleAskAgentAboutChanges} />
+                    </React.Suspense>
                   </div>
                 </section>
               )}

@@ -111,6 +111,7 @@ export const analyzeMediaFile = createTool({
   args: z.object({
     fileId: z.string().describe("The file ID to analyze (from searchMedia results)"),
     analysisType: z.enum(["general", "object-detection", "highlights", "detailed"]).default("general").describe("Type of analysis to perform"),
+    analysisTopics: z.array(z.string()).optional().describe("Optional list of topics to focus on (reduces generic output and cost)"),
   }),
   
   handler: async (ctx, args): Promise<string> => {
@@ -150,7 +151,8 @@ File Details:
     try {
       const result = await ctx.runAction(api.domains.documents.fileAnalysis.analyzeFileWithGenAI, {
         fileId: args.fileId as any,
-        analysisPrompt,
+        analysisPrompt: args.analysisTopics?.length ? undefined : analysisPrompt,
+        analysisTopics: args.analysisTopics,
         analysisType: args.analysisType,
       });
       
@@ -295,4 +297,3 @@ Total available: ${mediaFiles.length}
 Showing: ${limitedFiles.length}`;
   },
 });
-

@@ -53,6 +53,7 @@ export {
   getDiffsBySeverity,
   getDiffsByChangeType,
   getDiffStats,
+  getRefreshSummary,
   // Diff mutations
   compareSnapshots,
   recordDiff,
@@ -60,6 +61,7 @@ export {
   fetchAndSnapshotSource,
   classifyChangeWithLLM,
   processSourceRefresh,
+  refreshSourcesNow,
   // Types
   type ChangeType,
   type Severity,

@@ -54,6 +54,57 @@ export interface PromptDiff {
   source: string; // e.g., "memory:DISCO", "temporal", "persona"
 }
 
+// ============================================================================
+// RETRIEVAL INTENT (Phase 4 - Dynamic Context Stack)
+// ============================================================================
+
+/**
+ * Query decomposition for retrieval
+ */
+export interface RetrievalQuery {
+  text: string;
+  type: "factual" | "temporal" | "comparison" | "exploratory";
+  priority: number; // 1-5, higher = more important
+}
+
+/**
+ * Filters for retrieval scope
+ */
+export interface RetrievalFilters {
+  entityIds?: string[];
+  freshnessHours?: number;
+  categories?: string[];
+  sourceTypes?: string[];
+}
+
+/**
+ * Evidence requirements for retrieval
+ */
+export interface EvidenceRequirements {
+  minSources: number;
+  requireCitations: boolean;
+  preferredProviders?: string[];
+}
+
+/**
+ * Budget hints for retrieval
+ */
+export interface RetrievalBudgetHints {
+  maxArtifactsToFetch: number;
+  maxTokensPerArtifact: number;
+  totalTokenBudget: number;
+}
+
+/**
+ * Structured retrieval intent for orchestrator planning
+ */
+export interface RetrievalIntent {
+  queries: RetrievalQuery[];
+  filters: RetrievalFilters;
+  evidenceRequirements: EvidenceRequirements;
+  budgetHints: RetrievalBudgetHints;
+}
+
 export interface EnhancedPrompt {
   original: string;
   enhanced: string;
@@ -66,6 +117,7 @@ export interface EnhancedPrompt {
     suggestedTools: string[];
     personaHint?: string;
   };
+  retrievalIntent?: RetrievalIntent;
 }
 
 // ============================================================================
@@ -334,6 +386,211 @@ function buildDossierContextPrefix(dossierContext: DossierContext): string {
 }
 
 // ============================================================================
+// RETRIEVAL INTENT GENERATION
+// ============================================================================
+
+/**
+ * Infer query type from prompt content
+ */
+function inferQueryType(prompt: string): RetrievalQuery["type"] {
+  const lowerPrompt = prompt.toLowerCase();
+
+  // Comparison queries
+  if (
+    lowerPrompt.includes(" vs ") ||
+    lowerPrompt.includes("compare") ||
+    lowerPrompt.includes("versus") ||
+    lowerPrompt.includes("difference between")
+  ) {
+    return "comparison";
+  }
+
+  // Temporal queries
+  if (
+    lowerPrompt.includes("when") ||
+    lowerPrompt.includes("timeline") ||
+    lowerPrompt.includes("history") ||
+    lowerPrompt.includes("latest") ||
+    lowerPrompt.includes("recent")
+  ) {
+    return "temporal";
+  }
+
+  // Exploratory queries
+  if (
+    lowerPrompt.includes("what is") ||
+    lowerPrompt.includes("who is") ||
+    lowerPrompt.includes("explain") ||
+    lowerPrompt.includes("overview") ||
+    lowerPrompt.includes("tell me about")
+  ) {
+    return "exploratory";
+  }
+
+  // Default to factual
+  return "factual";
+}
+
+/**
+ * Determine freshness requirements from temporal context
+ */
+function determineFreshnessHours(temporal: TemporalContext | null): number | undefined {
+  if (!temporal) return undefined;
+
+  // Parse the label to determine freshness
+  const label = temporal.label.toLowerCase();
+
+  if (label.includes("today") || label.includes("24 hour")) {
+    return 24;
+  }
+  if (label.includes("week") || label.includes("7 day")) {
+    return 168; // 7 * 24
+  }
+  if (label.includes("month") || label.includes("30 day")) {
+    return 720; // 30 * 24
+  }
+  if (label.includes("quarter")) {
+    return 2160; // 90 * 24
+  }
+  if (label.includes("year")) {
+    return 8760; // 365 * 24
+  }
+
+  return undefined;
+}
+
+/**
+ * Calculate budget hints based on query complexity
+ */
+function calculateBudgetHints(
+  prompt: string,
+  entities: EntityContext[],
+  personaHint: string | null
+): RetrievalBudgetHints {
+  const wordCount = prompt.split(/\s+/).length;
+  const entityCount = entities.length;
+
+  // Base budget
+  let maxArtifacts = 3;
+  let tokensPerArtifact = 2000;
+  let totalBudget = 6000;
+
+  // Adjust for complexity
+  if (wordCount > 50) {
+    maxArtifacts += 2;
+    totalBudget += 4000;
+  }
+
+  if (entityCount > 1) {
+    maxArtifacts += entityCount - 1;
+    totalBudget += entityCount * 2000;
+  }
+
+  // Persona adjustments
+  if (personaHint) {
+    switch (personaHint) {
+      case "ACADEMIC_RD":
+        // Research needs more sources
+        maxArtifacts += 3;
+        totalBudget += 6000;
+        break;
+      case "QUANT_ANALYST":
+        // Analytics needs higher precision
+        tokensPerArtifact = 3000;
+        totalBudget += 4000;
+        break;
+      case "JPM_STARTUP_BANKER":
+        // Due diligence needs comprehensive coverage
+        maxArtifacts += 2;
+        totalBudget += 4000;
+        break;
+    }
+  }
+
+  return {
+    maxArtifactsToFetch: Math.min(maxArtifacts, 10),
+    maxTokensPerArtifact: tokensPerArtifact,
+    totalTokenBudget: Math.min(totalBudget, 16000),
+  };
+}
+
+/**
+ * Generate structured retrieval intent for orchestrator planning
+ */
+function generateRetrievalIntent(
+  prompt: string,
+  entities: EntityContext[],
+  temporal: TemporalContext | null,
+  personaHint: string | null
+): RetrievalIntent {
+  // Decompose into queries
+  const queries: RetrievalQuery[] = [];
+  const mainType = inferQueryType(prompt);
+
+  // Primary query
+  queries.push({
+    text: prompt,
+    type: mainType,
+    priority: 5,
+  });
+
+  // Entity-specific sub-queries
+  for (let i = 0; i < Math.min(entities.length, 3); i++) {
+    const entity = entities[i];
+    queries.push({
+      text: `${entity.name} key facts`,
+      type: "factual",
+      priority: 4 - i,
+    });
+  }
+
+  // Temporal sub-query if relevant
+  if (temporal) {
+    queries.push({
+      text: `${prompt} ${temporal.label}`,
+      type: "temporal",
+      priority: 3,
+    });
+  }
+
+  // Build filters
+  const filters: RetrievalFilters = {};
+
+  if (entities.length > 0) {
+    filters.entityIds = entities.map((e) => e.name);
+  }
+
+  const freshnessHours = determineFreshnessHours(temporal);
+  if (freshnessHours) {
+    filters.freshnessHours = freshnessHours;
+  }
+
+  // Evidence requirements based on persona
+  const evidenceRequirements: EvidenceRequirements = {
+    minSources: entities.length > 1 ? 2 : 1,
+    requireCitations: true,
+  };
+
+  if (personaHint === "ACADEMIC_RD") {
+    evidenceRequirements.minSources = 3;
+    evidenceRequirements.preferredProviders = ["papers", "sec_filings"];
+  } else if (personaHint === "JPM_STARTUP_BANKER") {
+    evidenceRequirements.minSources = 2;
+    evidenceRequirements.preferredProviders = ["news", "sec_filings", "linkedin"];
+  }
+
+  // Budget hints
+  const budgetHints = calculateBudgetHints(prompt, entities, personaHint);
+
+  return {
+    queries,
+    filters,
+    evidenceRequirements,
+    budgetHints,
+  };
+}
+
+// ============================================================================
 // MAIN ENHANCEMENT ACTION
 // ============================================================================
 
@@ -353,6 +610,7 @@ export const enhancePrompt = action({
       })
     ),
     attachedFileIds: v.optional(v.array(v.string())),
+    generateRetrievalIntent: v.optional(v.boolean()), // Phase 4: Generate structured retrieval intent
   },
   returns: v.any(),
   handler: async (ctx, args): Promise<EnhancedPrompt> => {
@@ -451,7 +709,18 @@ export const enhancePrompt = action({
       parts.length > 0 ? `${parts.join("\n")}\n\n---\n\n` : "";
     const enhanced = `${contextBlock}${original}`;
 
-    return { original, enhanced, diff, injectedContext };
+    // 9. Generate retrieval intent if requested (Phase 4)
+    let retrievalIntent: RetrievalIntent | undefined;
+    if (args.generateRetrievalIntent) {
+      retrievalIntent = generateRetrievalIntent(
+        original,
+        entities,
+        temporal ?? null,
+        personaInference?.persona ?? null
+      );
+    }
+
+    return { original, enhanced, diff, injectedContext, retrievalIntent };
   },
 });
 

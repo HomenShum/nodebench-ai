@@ -378,46 +378,42 @@ export const runChannelIntegrity = internalAction({
       }
     }
 
-    // Check website liveness
+    // Check website liveness with retry logic
     if (args.websiteUrl) {
-      try {
-        const url = args.websiteUrl.startsWith("http")
-          ? args.websiteUrl
-          : `https://${args.websiteUrl}`;
+      const websiteResult = await checkWebsiteLiveWithRetry(args.websiteUrl);
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-        const response = await fetch(url, {
-          method: "HEAD",
-          signal: controller.signal,
+      if (websiteResult.live === true) {
+        signals.push({
+          type: "positive",
+          signal: "Website is live and responding",
+          source: "website_check",
         });
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          signals.push({
-            type: "positive",
-            signal: "Website is live and responding",
-            source: "website_check",
-          });
-          evidence.push({
-            type: "website_live",
-            url: args.websiteUrl,
-            timestamp: Date.now(),
-          });
-        } else {
-          signals.push({
-            type: "negative",
-            signal: `Website returned status ${response.status}`,
-            source: "website_check",
-            severity: "medium",
-          });
-        }
-      } catch {
+        evidence.push({
+          type: "website_live",
+          url: args.websiteUrl,
+          timestamp: Date.now(),
+        });
+      } else if (websiteResult.live === null) {
+        signals.push({
+          type: "neutral",
+          signal: websiteResult.error
+            ? `Website check inconclusive: ${websiteResult.error}`
+            : "Website check inconclusive",
+          source: "website_check",
+        });
+      } else if (websiteResult.status && websiteResult.status >= 400 && websiteResult.status < 600) {
+        // Server responding but with error (auth-required, not-found, 5xx, etc.)
+        signals.push({
+          type: "neutral",
+          signal: `Website responding but returned status ${websiteResult.status}`,
+          source: "website_check",
+        });
+      } else {
         signals.push({
           type: "negative",
-          signal: "Website not reachable",
+          signal: websiteResult.error
+            ? `Website check failed: ${websiteResult.error}`
+            : "Website not reachable after multiple attempts",
           source: "website_check",
           severity: "medium",
         });
@@ -995,6 +991,142 @@ function extractDomain(url: string): string | null {
   try {
     const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
     return urlObj.hostname.replace("www.", "");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Calculate exponential backoff with full jitter
+ * Ref: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+ */
+function calculateBackoffWithJitter(attempt: number, baseMs: number = 100, capMs: number = 2000): number {
+  const exponentialMs = Math.min(capMs, baseMs * Math.pow(2, attempt));
+  return Math.floor(Math.random() * exponentialMs);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Classify error for observability
+ */
+function classifyWebsiteError(error: any): "dns_nxdomain" | "dns_temp" | "timeout" | "network" {
+  const errStr = String(error?.message ?? error ?? "").toLowerCase();
+  const code = String(error?.cause?.code ?? error?.code ?? "").toLowerCase();
+
+  if (code.includes("enotfound") || errStr.includes("enotfound")) return "dns_nxdomain";
+  if (code.includes("eai_again") || errStr.includes("eai_again")) return "dns_temp";
+  if (code.includes("getaddrinfo") || errStr.includes("getaddrinfo")) return "dns_nxdomain";
+  if (error?.name === "AbortError" || errStr.includes("timeout")) return "timeout";
+
+  return "network";
+}
+
+/**
+ * Check if a website is live with retry logic to avoid false negatives.
+ * Uses progressive timeouts, User-Agent, and exponential backoff with jitter.
+ *
+ * Implements:
+ * - Exponential backoff with full jitter (AWS best practice)
+ * - Error taxonomy for observability
+ * - Only DNS NXDOMAIN is definitive failure; all else is inconclusive
+ */
+async function checkWebsiteLiveWithRetry(
+  url: string
+): Promise<{ live: boolean | null; status?: number; error?: string; errorClass?: string }> {
+  const normalizedUrl = normalizeWebsiteUrl(url);
+  if (!normalizedUrl) {
+    return { live: null, error: "Invalid website URL", errorClass: "invalid_url" };
+  }
+
+  // Common User-Agent to avoid blocks
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (compatible; NodeBenchBot/1.0; +https://nodebench.ai)",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  };
+
+  // Retry configuration per AWS best practices:
+  // - Progressive timeouts (8s, 10s, 10s)
+  // - Exponential backoff with full jitter between retries
+  // Ref: https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/
+  const attempts = [
+    { method: "HEAD" as const, timeout: 8000 },
+    { method: "HEAD" as const, timeout: 10000 },
+    { method: "GET" as const, timeout: 10000 },
+  ];
+
+  let lastError: string | undefined;
+  let lastStatus: number | undefined;
+  let lastErrorClass: string = "network";
+
+  for (let i = 0; i < attempts.length; i++) {
+    const attempt = attempts[i];
+
+    // Apply backoff with jitter before retry (not on first attempt)
+    if (i > 0) {
+      const backoffMs = calculateBackoffWithJitter(i, 100, 2000);
+      if (backoffMs > 0) {
+        await sleep(backoffMs);
+      }
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), attempt.timeout);
+
+      const response = await fetch(normalizedUrl, {
+        method: attempt.method,
+        signal: controller.signal,
+        redirect: "follow",
+        headers,
+      });
+
+      clearTimeout(timeoutId);
+      lastStatus = response.status;
+
+      // Any HTTP response indicates the website is responding
+      return { live: true, status: response.status, errorClass: "success" };
+    } catch (error: any) {
+      lastErrorClass = classifyWebsiteError(error);
+
+      const code = String(error?.cause?.code ?? error?.code ?? "");
+      lastError = error?.name === "AbortError"
+        ? `Timeout after ${attempt.timeout}ms`
+        : (error?.message || "Unknown error") + (code ? ` (${code})` : "");
+
+      // DNS NXDOMAIN is definitive - no point retrying
+      if (lastErrorClass === "dns_nxdomain") {
+        return { live: false, error: lastError, errorClass: lastErrorClass };
+      }
+
+      // If not timeout and HEAD failed, try GET
+      if (error?.name !== "AbortError" && attempt.method === "HEAD") {
+        continue;
+      }
+    }
+  }
+
+  // Only DNS NXDOMAIN is definitive failure
+  // All other errors (timeout, TLS, etc.) are INCONCLUSIVE
+  const isDefinitiveFailure = lastErrorClass === "dns_nxdomain";
+  return {
+    live: isDefinitiveFailure ? false : null,
+    status: lastStatus,
+    error: lastError,
+    errorClass: lastErrorClass,
+  };
+}
+
+function normalizeWebsiteUrl(input: string): string | null {
+  const trimmed = String(input ?? "").trim();
+  if (!trimmed) return null;
+  const cleaned = trimmed.replace(/[)\],.;]+$/g, "");
+  const withProto = cleaned.startsWith("http") ? cleaned : `https://${cleaned}`;
+  try {
+    const u = new URL(withProto);
+    return u.toString();
   } catch {
     return null;
   }

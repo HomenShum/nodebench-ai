@@ -26,7 +26,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 // Constants
 // ═══════════════════════════════════════════════════════════════════════════
 
-const LINKEDIN_API_VERSION = "202411";
+const LINKEDIN_API_VERSION = "202601";
 const LINKEDIN_API_BASE = "https://api.linkedin.com";
 
 // ═══════════════════════════════════════════════════════════════════════════

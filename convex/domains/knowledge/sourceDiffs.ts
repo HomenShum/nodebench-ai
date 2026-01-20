@@ -502,6 +502,69 @@ export const getDiffStats = query({
   },
 });
 
+/**
+ * Refresh summary for UI (last refresh times, due counts)
+ */
+export const getRefreshSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const sources = await ctx.db.query("sourceRegistry").collect();
+    const active = sources.filter((s) => s.isActive);
+
+    const now = Date.now();
+    const HOUR = 60 * 60 * 1000;
+    const DAY = 24 * HOUR;
+    const WEEK = 7 * DAY;
+
+    let dueCount = 0;
+    let lastFetchedAt = 0;
+    let lastChangedAt = 0;
+
+    for (const source of active) {
+      lastFetchedAt = Math.max(lastFetchedAt, source.lastFetchedAt ?? 0);
+      lastChangedAt = Math.max(lastChangedAt, source.lastChangedAt ?? 0);
+
+      const lastFetched = source.lastFetchedAt ?? 0;
+      const age = now - lastFetched;
+      let isDue = false;
+
+      switch (source.refreshCadence) {
+        case "hourly":
+          isDue = age > HOUR;
+          break;
+        case "daily":
+          isDue = age > DAY;
+          break;
+        case "weekly":
+          isDue = age > WEEK;
+          break;
+        case "manual":
+        default:
+          isDue = false;
+          break;
+      }
+
+      if (isDue) dueCount++;
+    }
+
+    const pinnedCount = active.filter((s) => s.isPinned).length;
+    const latestDiff = await ctx.db
+      .query("sourceDiffs")
+      .withIndex("by_detectedAt")
+      .order("desc")
+      .first();
+
+    return {
+      activeCount: active.length,
+      pinnedCount,
+      dueCount,
+      lastFetchedAt: lastFetchedAt || null,
+      lastChangedAt: lastChangedAt || null,
+      lastDiffDetectedAt: latestDiff?.detectedAt ?? null,
+    };
+  },
+});
+
 // ============================================================================
 // Snapshot Fetch Action
 // ============================================================================
@@ -774,5 +837,63 @@ export const processSourceRefresh = internalAction({
     );
 
     return { processed, changed, errors };
+  },
+});
+
+/**
+ * Manually refresh sources from the UI.
+ * Default scope is pinned sources to keep costs bounded.
+ */
+export const refreshSourcesNow = action({
+  args: {
+    scope: v.optional(v.union(v.literal("pinned"), v.literal("due"), v.literal("all_active"))),
+    maxSources: v.optional(v.number()),
+  },
+  handler: async (ctx, args): Promise<{
+    scope: "pinned" | "due" | "all_active";
+    processed: number;
+    changed: number;
+    errors: number;
+    totalCandidates: number;
+    limited: boolean;
+  }> => {
+    const scope = args.scope ?? "pinned";
+    const requestedMax = args.maxSources ?? 20;
+    const maxSources = Math.max(1, Math.min(requestedMax, 50));
+
+    const sources =
+      scope === "due"
+        ? await ctx.runQuery(internal.domains.knowledge.sourceRegistry.getSourcesDueForRefresh, {})
+        : scope === "all_active"
+          ? await ctx.runQuery(api.domains.knowledge.sourceRegistry.getAllActiveSources, {})
+          : await ctx.runQuery(api.domains.knowledge.sourceRegistry.getPinnedSources, {});
+
+    const candidates = sources.slice(0, maxSources);
+    let processed = 0;
+    let changed = 0;
+    let errors = 0;
+
+    for (const source of candidates) {
+      try {
+        const result = await ctx.runAction(internal.domains.knowledge.sourceDiffs.fetchAndSnapshotSource, {
+          registryId: source.registryId,
+          url: source.canonicalUrl,
+        });
+        processed++;
+        if (result.changed) changed++;
+      } catch (error) {
+        console.error(`[sourceDiffs] Manual refresh failed for ${source.registryId}:`, error);
+        errors++;
+      }
+    }
+
+    return {
+      scope,
+      processed,
+      changed,
+      errors,
+      totalCandidates: sources.length,
+      limited: sources.length > candidates.length,
+    };
   },
 });

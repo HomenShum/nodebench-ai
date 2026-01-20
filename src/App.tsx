@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { api } from "../convex/_generated/api";
 import { MainLayout } from "./components/MainLayout";
 import { TutorialPage } from "@/features/onboarding/views/TutorialPage";
-import ResearchHub from "@/features/research/views/ResearchHub";
 import { useState, useEffect, useRef } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
@@ -53,7 +52,6 @@ function App() {
     initialHash.startsWith('#calendar') ||
     initialHash.startsWith('#documents') ||
     initialHash.startsWith('#roadmap');
-  const [showResearchHub, setShowResearchHub] = useState(!hashIndicatesWorkspace);
   const [selectedDocumentId, setSelectedDocumentId] = useState<Id<"documents"> | null>(null);
 
   const user = useQuery(api.domains.auth.auth.loggedInUser);
@@ -66,7 +64,6 @@ function App() {
     const handleHashChange = () => {
       const h = window.location.hash.toLowerCase();
       if (h.startsWith('#agents') || h.startsWith('#calendar') || h.startsWith('#documents') || h.startsWith('#roadmap')) {
-        setShowResearchHub(false);
         setShowTutorial(false);
       }
     };
@@ -79,27 +76,18 @@ function App() {
 
   const handleGetStarted = () => {
     setShowTutorial(false);
-    setShowResearchHub(false);
   };
 
   const handleDocumentSelect = (documentId: string) => {
     setSelectedDocumentId(documentId as Id<"documents">);
     setShowTutorial(false);
-    setShowResearchHub(false);
   };
 
   const handleShowTutorial = () => {
     setShowTutorial(true);
-    setShowResearchHub(false);
   };
 
   const handleShowResearchHub = () => {
-    setShowResearchHub(true);
-    setShowTutorial(false);
-  };
-
-  const handleEnterWorkspace = () => {
-    setShowResearchHub(false);
     setShowTutorial(false);
   };
 

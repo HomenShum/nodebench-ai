@@ -116,38 +116,50 @@ export const selectModelForTask = internalQuery({
   args: {
     taskType: v.string(),
     requireToolUse: v.optional(v.boolean()),
+    requireVision: v.optional(v.boolean()),
   },
-  handler: async (ctx, { taskType, requireToolUse }): Promise<ModelSelectionResult> => {
+  handler: async (ctx, { taskType, requireToolUse, requireVision }): Promise<ModelSelectionResult> => {
     const requirements = AUTONOMOUS_MODEL_CONFIG.taskRequirements[
       taskType as AutonomousTaskType
     ] ?? { minContext: 8000, toolUse: false };
 
     const needsToolUse = requireToolUse ?? requirements.toolUse;
+    const needsVision = Boolean(requireVision);
 
     // Try to get best free model from discovery system
     if (AUTONOMOUS_MODEL_CONFIG.preferFreeModels) {
-      const bestFree = await ctx.db
+      const rankedFree = await ctx.db
         .query("freeModels")
         .withIndex("by_rank")
         .filter((q) => q.eq(q.field("isActive"), true))
-        .first() as Doc<"freeModels"> | null;
+        .take(20) as Doc<"freeModels">[];
+
+      const bestFree = rankedFree.find((m) =>
+        m.contextLength >= requirements.minContext &&
+        (!needsToolUse || m.capabilities.toolUse) &&
+        (!needsVision || m.capabilities.vision)
+      ) ?? null;
 
       if (bestFree) {
-        // Check if it meets requirements
-        if (
-          bestFree.contextLength >= requirements.minContext &&
-          (!needsToolUse || bestFree.capabilities.toolUse)
-        ) {
-          return {
-            modelId: bestFree.openRouterId,
-            provider: "openrouter",
-            isFree: true,
-            fallbackLevel: 0,
-          };
-        }
+        return {
+          modelId: bestFree.openRouterId,
+          provider: "openrouter",
+          isFree: true,
+          fallbackLevel: 0,
+        };
       }
 
-      // Fall back to known free models
+      // If vision is required and no free vision model is available, fall back to a native paid model.
+      if (needsVision) {
+        return {
+          modelId: AUTONOMOUS_MODEL_CONFIG.paidFallbackChain[0],
+          provider: "native",
+          isFree: false,
+          fallbackLevel: 0,
+        };
+      }
+
+      // Fall back to known free models (text-only chain)
       return {
         modelId: AUTONOMOUS_MODEL_CONFIG.knownFreeModels[0],
         provider: "openrouter",
@@ -172,9 +184,11 @@ export const selectModelForTask = internalQuery({
 export const getAutonomousFallbackChain = internalQuery({
   args: {
     taskType: v.string(),
+    requireVision: v.optional(v.boolean()),
   },
-  handler: async (ctx, { taskType }): Promise<ModelSelectionResult[]> => {
+  handler: async (ctx, { taskType, requireVision }): Promise<ModelSelectionResult[]> => {
     const chain: ModelSelectionResult[] = [];
+    const needsVision = Boolean(requireVision);
 
     // Add discovered free models first
     const freeModels = await ctx.db
@@ -184,11 +198,12 @@ export const getAutonomousFallbackChain = internalQuery({
       .take(5) as Doc<"freeModels">[];
 
     for (let i = 0; i < freeModels.length; i++) {
+      if (needsVision && !freeModels[i].capabilities.vision) continue;
       chain.push({
         modelId: freeModels[i].openRouterId,
         provider: "openrouter",
         isFree: true,
-        fallbackLevel: i,
+        fallbackLevel: chain.length,
       });
     }
 

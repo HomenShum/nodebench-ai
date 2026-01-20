@@ -10,6 +10,11 @@ import { PeopleSelectionCard, type PersonOption } from './PeopleSelectionCard';
 import { EventSelectionCard, type EventOption } from './EventSelectionCard';
 import { NewsSelectionCard, type NewsArticleOption } from './NewsSelectionCard';
 import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaExtractor';
+import { ResourceLinkCard, type ResourceLink } from './ResourceLinkCard';
+
+function isResourceLinkResult(value: unknown): value is ResourceLink {
+  return typeof value === 'object' && value !== null && (value as any).type === 'resource_link';
+}
 
 interface ToolResultPopoverProps {
   isOpen: boolean;
@@ -183,6 +188,11 @@ export function ToolResultPopover({
           <div className="flex-1 overflow-y-auto px-6 py-4">
             {activeTab === 'result' && (
               <div className="space-y-4">
+                {/* MCP-style resource_link renderer */}
+                {isResourceLinkResult(result) && (
+                  <ResourceLinkCard resourceLink={result} />
+                )}
+
                 {/* Media galleries */}
                 {extractedMedia.youtubeVideos.length > 0 && (
                   <div>
@@ -215,7 +225,7 @@ export function ToolResultPopover({
                 )}
 
                 {/* Text result */}
-                {typeof cleanedResult === 'string' && cleanedResult.trim() && (
+                {typeof cleanedResult === 'string' && cleanedResult.trim() && !isResourceLinkResult(result) && (
                   <div>
                     <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">Output</h3>
                     <pre className="bg-[var(--bg-primary)] text-[var(--text-primary)] p-3 rounded-lg text-xs overflow-x-auto max-h-64">
@@ -225,7 +235,7 @@ export function ToolResultPopover({
                 )}
 
                 {/* JSON result */}
-                {typeof cleanedResult !== 'string' && cleanedResult !== undefined && cleanedResult !== null && (
+                {typeof cleanedResult !== 'string' && cleanedResult !== undefined && cleanedResult !== null && !isResourceLinkResult(result) && (
                   <div>
                     <h3 className="text-sm font-medium text-[var(--text-primary)] mb-2">Output</h3>
                     <pre className="bg-[var(--bg-primary)] text-[var(--text-primary)] p-3 rounded-lg text-xs overflow-x-auto max-h-64">
@@ -303,4 +313,3 @@ export function ToolResultPopover({
     </>
   );
 }
-

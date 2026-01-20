@@ -1,12 +1,14 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, Component, type ReactNode, type ErrorInfo } from "react";
+import React, { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, Component, type ReactNode, type ErrorInfo } from "react";
 import ReactDOM from "react-dom";
 import { Id } from "../../../convex/_generated/dataModel";
 import { X } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import UnifiedEditor from "@features/editor/components/UnifiedEditor";
-import SpreadsheetMiniEditor from "@/features/documents/editors/SpreadsheetMiniEditor";
-import DossierMiniEditor from "@/features/documents/editors/DossierMiniEditor";
+
+// Lazy-load heavy editors so they don't bloat the main bundle.
+const UnifiedEditor = React.lazy(() => import("@features/editor/components/UnifiedEditor"));
+const SpreadsheetMiniEditor = React.lazy(() => import("@/features/documents/editors/SpreadsheetMiniEditor"));
+const DossierMiniEditor = React.lazy(() => import("@/features/documents/editors/DossierMiniEditor"));
 
 // Error boundary to gracefully handle editor initialization failures
 class EditorErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { hasError: boolean }> {
@@ -168,7 +170,9 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
   if (document?.dossierType === "primary") {
     return (
       <div className="min-h-[240px]">
-        <DossierMiniEditor documentId={documentId} onClose={onClose} />
+        <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+          <DossierMiniEditor documentId={documentId} onClose={onClose} />
+        </Suspense>
       </div>
     );
   }
@@ -178,7 +182,9 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
     return (
       <div className="min-h-[240px]">
         <EditorErrorBoundary>
-          <UnifiedEditor documentId={documentId} mode="quickNote" />
+          <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+            <UnifiedEditor documentId={documentId} mode="quickNote" />
+          </Suspense>
         </EditorErrorBoundary>
       </div>
     );
@@ -191,7 +197,9 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
     if (isSpreadsheet) {
       return (
         <div className="min-h-[240px]">
-          <SpreadsheetMiniEditor documentId={documentId} onClose={onClose} />
+          <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading spreadsheet…</div>}>
+            <SpreadsheetMiniEditor documentId={documentId} onClose={onClose} />
+          </Suspense>
         </div>
       );
     }
@@ -199,7 +207,9 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
   return (
     <div className="min-h-[240px]">
       <EditorErrorBoundary>
-        <UnifiedEditor documentId={documentId} mode="quickNote" />
+        <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+          <UnifiedEditor documentId={documentId} mode="quickNote" />
+        </Suspense>
       </EditorErrorBoundary>
     </div>
   );

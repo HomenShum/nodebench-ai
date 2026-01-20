@@ -262,8 +262,19 @@ window.addEventListener('message', async (message) => {
             return "date-vendor";
           }
 
-          // Catch-all vendor chunk for remaining dependencies
-          return "vendor";
+          // Catch-all vendor chunk for remaining dependencies.
+          // Split into a few deterministic buckets to avoid a single multi-MB vendor chunk.
+          const parts = normalizedId.split("/node_modules/");
+          const after = parts[1] ?? "";
+          const segs = after.split("/").filter(Boolean);
+          const pkg = segs[0]?.startsWith("@") ? `${segs[0]}/${segs[1] ?? ""}` : (segs[0] ?? "");
+          const key = pkg.replace(/^@/, "").toLowerCase();
+          const first = key[0] ?? "z";
+          const bucket =
+            first <= "f" ? "a-f" :
+            first <= "l" ? "g-l" :
+            first <= "r" ? "m-r" : "s-z";
+          return `vendor-${bucket}`;
         },
       },
     },

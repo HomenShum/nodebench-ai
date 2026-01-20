@@ -1,9 +1,11 @@
-import React from "react";
+import React, { Suspense } from "react";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import InlineTaskEditor from "@features/calendar/components/agenda/InlineTaskEditor";
 import InlineEventEditor from "@features/calendar/components/agenda/InlineEventEditor";
 import DocumentMiniEditor from "./DocumentMiniEditor";
-import SpreadsheetMiniEditor from "./SpreadsheetMiniEditor";
+
+// Spreadsheet editor is heavy (xlsx/react-spreadsheet). Lazy-load it so it doesn't bloat the main bundle.
+const SpreadsheetMiniEditor = React.lazy(() => import("./SpreadsheetMiniEditor"));
 
 export type PopoverMiniEditorProps =
   | { kind: "task"; taskId: Id<"tasks">; onClose: () => void }
@@ -28,5 +30,9 @@ export default function PopoverMiniEditor(props: PopoverMiniEditorProps) {
     return <DocumentMiniEditor documentId={props.documentId} onClose={props.onClose} />;
   }
   // spreadsheet
-  return <SpreadsheetMiniEditor documentId={props.documentId} onClose={props.onClose} />;
+  return (
+    <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading spreadsheet…</div>}>
+      <SpreadsheetMiniEditor documentId={props.documentId} onClose={props.onClose} />
+    </Suspense>
+  );
 }

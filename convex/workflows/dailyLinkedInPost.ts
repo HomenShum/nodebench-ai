@@ -28,6 +28,8 @@ import type { MicroBranchResult } from "../domains/agents/dueDiligence/microBran
  * LinkedIn posts have a 3000 character limit.
  * Uses clean plain-text formatting without emojis for better rendering.
  *
+ * IMPORTANT: Target post length is 1500-2500+ characters for optimal engagement.
+ *
  * Format matches user preference:
  * - Clean header with date
  * - Lead story with source and why it matters
@@ -40,19 +42,22 @@ function formatDigestForLinkedIn(
   digest: AgentDigestOutput,
   options: {
     maxLength?: number;
+    minLength?: number;
   } = {}
 ): string {
   const maxLength = options.maxLength || 2900; // LinkedIn allows 3000, use 2900 for safety
+  const minLength = options.minLength || 1500; // Target minimum for engagement
   const dateString = digest.dateString;
 
   const parts: string[] = [];
 
-  // Clean header without emojis
+  // Clean header without emojis - more detailed
   parts.push(`NodeBench AI Daily Intelligence Brief`);
   parts.push(`Date: ${dateString}`);
+  parts.push(`Curated insights from across the tech ecosystem`);
   parts.push("");
 
-  // Lead story (Act I) - Clean structure
+  // Lead story (Act I) - Expanded structure
   if (digest.leadStory) {
     parts.push(`TODAY'S KEY SIGNAL:`);
     parts.push(digest.leadStory.title);
@@ -62,6 +67,10 @@ function formatDigestForLinkedIn(
     if (digest.leadStory.whyItMatters) {
       parts.push(`Why it matters: ${digest.leadStory.whyItMatters}`);
     }
+    // Add additional context if available
+    if ((digest.leadStory as any).summary) {
+      parts.push(`Context: ${(digest.leadStory as any).summary}`);
+    }
     parts.push("");
   } else if (digest.narrativeThesis) {
     parts.push(`TODAY'S THESIS:`);
@@ -69,46 +78,50 @@ function formatDigestForLinkedIn(
     parts.push("");
   }
 
-  // Key Signals (Act II) - Clean nested structure
+  // Key Signals (Act II) - Expanded with more details
   if (digest.signals && digest.signals.length > 0) {
     parts.push(`KEY SIGNALS:`);
-    for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
+    parts.push("");
+    // Show up to 6 signals for more content
+    for (let i = 0; i < Math.min(digest.signals.length, 6); i++) {
       const signal = digest.signals[i];
       parts.push(`${i + 1}. ${signal.title}`);
       if (signal.summary) {
-        parts.push(` ${signal.summary}`);
-      }
-      if (signal.url) {
-        parts.push(` Read more: ${signal.url}`);
+        parts.push(`   ${signal.summary}`);
       }
       if (signal.hardNumbers) {
-        parts.push(` Data: ${signal.hardNumbers}`);
+        parts.push(`   Key data: ${signal.hardNumbers}`);
       }
+      if (signal.url) {
+        parts.push(`   Read more: ${signal.url}`);
+      }
+      parts.push("");
     }
-    parts.push("");
   }
 
-  // Fact-Check Findings - Clean format
+  // Fact-Check Findings - Expanded with more context
   if (digest.factCheckFindings && digest.factCheckFindings.length > 0) {
     parts.push(`FACT-CHECKED CLAIMS:`);
-    for (const finding of digest.factCheckFindings) {
+    parts.push("");
+    for (const finding of digest.factCheckFindings.slice(0, 5)) {
       const status = finding.status === "verified" ? "VERIFIED" :
                      finding.status === "false" ? "FALSE" :
                      finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
       parts.push(`[${status}] ${finding.claim}`);
       if (finding.explanation) {
-        parts.push(` ${finding.explanation}`);
+        parts.push(`   Analysis: ${finding.explanation}`);
       }
       if (finding.sourceUrl) {
-        parts.push(` Source: ${finding.sourceUrl}`);
+        parts.push(`   Source: ${finding.sourceUrl}`);
       }
+      parts.push("");
     }
-    parts.push("");
   }
 
-  // Action Items (Act III) - Clean numbered list
+  // Action Items (Act III) - Expanded numbered list
   if (digest.actionItems && digest.actionItems.length > 0) {
-    parts.push(`ACTION ITEMS:`);
+    parts.push(`RECOMMENDED ACTIONS:`);
+    parts.push("");
     for (let i = 0; i < Math.min(digest.actionItems.length, 5); i++) {
       const action = digest.actionItems[i];
       parts.push(`${i + 1}. ${action.action}`);
@@ -116,52 +129,122 @@ function formatDigestForLinkedIn(
     parts.push("");
   }
 
-  // Entity Spotlight - Clean format with links
+  // Entity Spotlight - Expanded format with links and more detail
   if (digest.entitySpotlight && digest.entitySpotlight.length > 0) {
-    parts.push(`ENTITIES TO WATCH:`);
-    for (const entity of digest.entitySpotlight) {
-      const typeLabel = entity.type ? `[${entity.type}]` : "";
-      const stage = entity.fundingStage ? ` | ${entity.fundingStage}` : "";
-      parts.push(`${entity.name} ${typeLabel}${stage}`);
-      parts.push(` ${entity.keyInsight}`);
-      // Add search links
+    parts.push(`COMPANIES AND PEOPLE TO WATCH:`);
+    parts.push("");
+    for (const entity of digest.entitySpotlight.slice(0, 5)) {
+      const typeLabel = entity.type ? `[${entity.type.toUpperCase()}]` : "";
+      const stage = entity.fundingStage ? ` - ${entity.fundingStage}` : "";
+      parts.push(`>> ${entity.name} ${typeLabel}${stage}`);
+      parts.push(`   ${entity.keyInsight}`);
+      // Add search links for research
       if (entity.type === "company" || entity.type === "person") {
         const searchQuery = encodeURIComponent(`${entity.name} latest news`);
-        parts.push(` News: https://news.google.com/search?q=${searchQuery}`);
+        parts.push(`   News: https://news.google.com/search?q=${searchQuery}`);
+        if (entity.type === "company") {
+          const cbQuery = encodeURIComponent(entity.name);
+          parts.push(`   Crunchbase: https://www.crunchbase.com/textsearch?q=${cbQuery}`);
+        }
       }
+      parts.push("");
     }
-    parts.push("");
   }
 
-  // Footer with # format (LinkedIn-friendly)
-  parts.push("---");
-  parts.push("Powered by NodeBench AI - Autonomous Intelligence Platform");
-  parts.push("#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI");
-
+  // Market Context section - Add if content is too short
   let content = parts.join("\n");
 
-  // If too long, intelligently truncate sections while keeping structure
+  // If under minimum length, add market context section
+  if (content.length < minLength && digest.signals && digest.signals.length > 0) {
+    const contextParts: string[] = [];
+    contextParts.push(`MARKET CONTEXT:`);
+    contextParts.push("");
+    contextParts.push(`Today's intelligence spans multiple domains including AI/ML advancements, startup funding, and technology infrastructure. Our autonomous agents continuously monitor HackerNews, ArXiv, Reddit, and premium RSS feeds to surface the most impactful signals.`);
+    contextParts.push("");
+
+    const categories = Array.isArray(digest.topCategories)
+      ? digest.topCategories.filter((c) => typeof c === "string" && c.trim().length > 0).slice(0, 8)
+      : [];
+    if (categories.length > 0) {
+      contextParts.push(`Today's coverage includes: ${categories.join(", ")}`);
+      contextParts.push("");
+    }
+
+    // Insert before footer
+    const footerIndex = parts.findIndex(p => p === "---");
+    if (footerIndex > -1) {
+      parts.splice(footerIndex, 0, ...contextParts);
+    } else {
+      parts.push(...contextParts);
+    }
+
+    content = parts.join("\n");
+  }
+
+  // Footer with # format (LinkedIn-friendly) - Expanded
+  if (!content.includes("---")) {
+    parts.push("---");
+    parts.push("");
+    parts.push("Powered by NodeBench AI - Autonomous Intelligence Platform");
+    parts.push("Zero-human-input continuous intelligence for investors and builders");
+    parts.push("");
+    parts.push("#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI #Startups #VentureCapital");
+    content = parts.join("\n");
+  }
+
+  // Final length check - expand if still too short
+  if (content.length < minLength) {
+    const paddingParts: string[] = [];
+    paddingParts.push("");
+    paddingParts.push("---");
+    paddingParts.push("");
+    paddingParts.push("ABOUT THIS BRIEF:");
+    paddingParts.push("This intelligence brief is generated autonomously by NodeBench AI's multi-agent system. Our platform ingests signals from across the tech ecosystem, fact-checks claims using multiple sources, and surfaces actionable insights for investors, founders, and technology leaders.");
+    paddingParts.push("");
+    paddingParts.push("Follow for daily intelligence briefs delivered at 6:15 AM UTC.");
+    paddingParts.push("");
+    paddingParts.push("#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI #Startups #VentureCapital #FundingNews");
+
+    // Replace existing footer with expanded one
+    const footerStart = content.indexOf("---");
+    if (footerStart > -1) {
+      content = content.substring(0, footerStart) + paddingParts.join("\n");
+    } else {
+      content = content + paddingParts.join("\n");
+    }
+  }
+
+  // If too long, intelligently truncate while maintaining minimum
   if (content.length > maxLength) {
     const shortParts: string[] = [];
-    shortParts.push(`NodeBench AI Daily Brief | ${dateString}`);
+    shortParts.push(`NodeBench AI Daily Intelligence Brief`);
+    shortParts.push(`Date: ${dateString}`);
     shortParts.push("");
 
     if (digest.leadStory) {
-      shortParts.push(`KEY SIGNAL: ${digest.leadStory.title}`);
+      shortParts.push(`TODAY'S KEY SIGNAL:`);
+      shortParts.push(digest.leadStory.title);
       if (digest.leadStory.url) {
         shortParts.push(`Source: ${digest.leadStory.url}`);
+      }
+      if (digest.leadStory.whyItMatters) {
+        shortParts.push(`Why it matters: ${digest.leadStory.whyItMatters}`);
       }
       shortParts.push("");
     }
 
     if (digest.signals && digest.signals.length > 0) {
-      shortParts.push(`SIGNALS:`);
-      for (let i = 0; i < Math.min(digest.signals.length, 3); i++) {
+      shortParts.push(`KEY SIGNALS:`);
+      shortParts.push("");
+      for (let i = 0; i < Math.min(digest.signals.length, 4); i++) {
         const signal = digest.signals[i];
         shortParts.push(`${i + 1}. ${signal.title}`);
-        if (signal.url) shortParts.push(` ${signal.url}`);
+        if (signal.summary) {
+          shortParts.push(`   ${signal.summary}`);
+        }
+        if (signal.url) shortParts.push(`   ${signal.url}`);
+        shortParts.push("");
       }
-      shortParts.push("");
     }
 
     if (digest.actionItems && digest.actionItems.length > 0) {
@@ -173,11 +256,13 @@ function formatDigestForLinkedIn(
     }
 
     shortParts.push("---");
-    shortParts.push("NodeBench AI | #AI #TechIntelligence");
+    shortParts.push("Powered by NodeBench AI - Autonomous Intelligence Platform");
+    shortParts.push("#AI #TechIntelligence #DailyBrief #NodeBenchAI #Startups");
 
     content = shortParts.join("\n");
   }
 
+  console.log(`[formatDigestForLinkedIn] Final content length: ${content.length} chars (target: ${minLength}-${maxLength})`);
   return content;
 }
 
@@ -200,20 +285,22 @@ export const postDailyDigestToLinkedIn = internalAction({
     persona: v.optional(v.string()),
     model: v.optional(v.string()),
     dryRun: v.optional(v.boolean()),
+    hoursBack: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const persona = args.persona || "GENERAL";
     const model = args.model || "mimo-v2-flash-free"; // Free model
     const dryRun = args.dryRun ?? false;
+    const hoursBack = args.hoursBack ?? 168; // Default to 7 days for better content availability
 
-    console.log(`[dailyLinkedInPost] Starting daily LinkedIn post workflow, persona=${persona}, model=${model}, dryRun=${dryRun}`);
+    console.log(`[dailyLinkedInPost] Starting daily LinkedIn post workflow, persona=${persona}, model=${model}, dryRun=${dryRun}, hoursBack=${hoursBack}`);
 
     // Step 1: Generate digest with fact-checks
     let digestResult;
     try {
       digestResult = await ctx.runAction(
         internal.domains.agents.digestAgent.generateDigestWithFactChecks,
-        { persona, model }
+        { persona, model, hoursBack }
       );
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
@@ -564,13 +651,16 @@ type PersonaId = keyof typeof LINKEDIN_PERSONAS;
 /**
  * Format digest content tailored to a specific persona.
  * Each persona has a RADICALLY DIFFERENT format optimized for their audience.
+ *
+ * IMPORTANT: Target post length is 1500-2500+ characters for optimal engagement.
  */
 function formatDigestForPersona(
   digest: AgentDigestOutput,
   personaId: PersonaId,
-  options: { maxLength?: number } = {}
+  options: { maxLength?: number; minLength?: number } = {}
 ): string {
   const maxLength = options.maxLength || 2900;
+  const minLength = options.minLength || 1500; // Target minimum for engagement
   const dateString = digest.dateString;
   const parts: string[] = [];
 
@@ -581,6 +671,7 @@ function formatDigestForPersona(
   if (personaId === "VC_INVESTOR") {
     parts.push(`VC DEAL FLOW MEMO`);
     parts.push(`${dateString} - NodeBench AI`);
+    parts.push(`Autonomous deal sourcing and market intelligence`);
     parts.push("");
 
     // Investment Thesis of the Day
@@ -591,17 +682,20 @@ function formatDigestForPersona(
       if (digest.leadStory.whyItMatters) {
         parts.push(`Market Impact: ${digest.leadStory.whyItMatters}`);
       }
+      if ((digest.leadStory as any).summary) {
+        parts.push(`Analysis: ${(digest.leadStory as any).summary}`);
+      }
       if (digest.leadStory.url) {
         parts.push(`Primary Source: ${digest.leadStory.url}`);
       }
       parts.push("");
     }
 
-    // Company Deep Dives - Most important for VCs
+    // Company Deep Dives - Most important for VCs - expanded
     if (digest.entitySpotlight && digest.entitySpotlight.length > 0) {
       parts.push(`COMPANY DEEP DIVES:`);
       parts.push("");
-      for (const entity of digest.entitySpotlight.slice(0, 4)) {
+      for (const entity of digest.entitySpotlight.slice(0, 5)) {
         const stage = entity.fundingStage || "Unknown Stage";
         parts.push(`>> ${entity.name.toUpperCase()}`);
         parts.push(`   Stage: ${stage}`);
@@ -612,38 +706,64 @@ function formatDigestForPersona(
         parts.push(`   Crunchbase: https://www.crunchbase.com/textsearch?q=${cbQuery}`);
         const newsQuery = encodeURIComponent(`${entity.name} funding news`);
         parts.push(`   News: https://news.google.com/search?q=${newsQuery}`);
+        const linkedinQuery = encodeURIComponent(`${entity.name} company`);
+        parts.push(`   LinkedIn: https://www.linkedin.com/search/results/companies/?keywords=${linkedinQuery}`);
         parts.push("");
       }
     }
 
-    // Deal Flow Signals
+    // Deal Flow Signals - expanded
     if (digest.signals && digest.signals.length > 0) {
       parts.push(`DEAL FLOW SIGNALS:`);
-      for (let i = 0; i < Math.min(digest.signals.length, 3); i++) {
+      parts.push("");
+      for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
         const signal = digest.signals[i];
         parts.push(`${i + 1}. ${signal.title}`);
         if (signal.summary) {
           parts.push(`   >> ${signal.summary}`);
         }
+        if (signal.hardNumbers) {
+          parts.push(`   Data: ${signal.hardNumbers}`);
+        }
         if (signal.url) {
           parts.push(`   Link: ${signal.url}`);
         }
+        parts.push("");
       }
+    }
+
+    // Fact-Check Findings for VCs
+    if (digest.factCheckFindings && digest.factCheckFindings.length > 0) {
+      parts.push(`DUE DILIGENCE FINDINGS:`);
       parts.push("");
+      for (const finding of digest.factCheckFindings.slice(0, 3)) {
+        const status = finding.status === "verified" ? "VERIFIED" :
+                       finding.status === "false" ? "FALSE" :
+                       finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
+        parts.push(`[${status}] ${finding.claim}`);
+        if (finding.explanation) {
+          parts.push(`   ${finding.explanation}`);
+        }
+        parts.push("");
+      }
     }
 
     // Portfolio Action Items
     if (digest.actionItems && digest.actionItems.length > 0) {
       parts.push(`PORTFOLIO ACTIONS:`);
-      for (let i = 0; i < Math.min(digest.actionItems.length, 3); i++) {
+      parts.push("");
+      for (let i = 0; i < Math.min(digest.actionItems.length, 4); i++) {
         parts.push(`${i + 1}. ${digest.actionItems[i].action}`);
       }
       parts.push("");
     }
 
     parts.push(`---`);
+    parts.push("");
     parts.push(`NodeBench AI - VC Intelligence Platform`);
-    parts.push(`#VentureCapital #Startups #DealFlow #SeriesA #SeedFunding #AngelInvesting`);
+    parts.push(`Autonomous deal flow powered by multi-agent research`);
+    parts.push("");
+    parts.push(`#VentureCapital #Startups #DealFlow #SeriesA #SeedFunding #AngelInvesting #FundingNews`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -653,6 +773,7 @@ function formatDigestForPersona(
   else if (personaId === "TECH_BUILDER") {
     parts.push(`TECH RADAR`);
     parts.push(`Engineering Intelligence - ${dateString}`);
+    parts.push(`Autonomous signal detection for builders and architects`);
     parts.push("");
 
     // Architecture Alert - Lead with technical implications
@@ -664,17 +785,21 @@ function formatDigestForPersona(
         parts.push(`Engineering Impact:`);
         parts.push(digest.leadStory.whyItMatters);
       }
+      if ((digest.leadStory as any).summary) {
+        parts.push(`Technical Context:`);
+        parts.push((digest.leadStory as any).summary);
+      }
       if (digest.leadStory.url) {
         parts.push(`Source: ${digest.leadStory.url}`);
       }
       parts.push("");
     }
 
-    // Tech Stack Signals - Detailed with metrics
+    // Tech Stack Signals - Detailed with metrics - expanded
     if (digest.signals && digest.signals.length > 0) {
       parts.push(`STACK SIGNALS:`);
       parts.push("");
-      for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
+      for (let i = 0; i < Math.min(digest.signals.length, 6); i++) {
         const signal = digest.signals[i];
         parts.push(`[${i + 1}] ${signal.title}`);
         if (signal.summary) {
@@ -690,29 +815,53 @@ function formatDigestForPersona(
       }
     }
 
-    // Tech Companies/Tools to Evaluate
+    // Fact-Check Findings for Tech
+    if (digest.factCheckFindings && digest.factCheckFindings.length > 0) {
+      parts.push(`VERIFIED CLAIMS:`);
+      parts.push("");
+      for (const finding of digest.factCheckFindings.slice(0, 3)) {
+        const status = finding.status === "verified" ? "VERIFIED" :
+                       finding.status === "false" ? "FALSE" :
+                       finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
+        parts.push(`[${status}] ${finding.claim}`);
+        if (finding.explanation) {
+          parts.push(`   ${finding.explanation}`);
+        }
+        parts.push("");
+      }
+    }
+
+    // Tech Companies/Tools to Evaluate - expanded
     if (digest.entitySpotlight && digest.entitySpotlight.length > 0) {
       parts.push(`TOOLS & TECH TO EVALUATE:`);
-      for (const entity of digest.entitySpotlight.slice(0, 3)) {
-        parts.push(`- ${entity.name}: ${entity.keyInsight}`);
-        const ghQuery = encodeURIComponent(entity.name);
-        parts.push(`  GitHub: https://github.com/search?q=${ghQuery}`);
-      }
       parts.push("");
+      for (const entity of digest.entitySpotlight.slice(0, 4)) {
+        parts.push(`>> ${entity.name}`);
+        parts.push(`   ${entity.keyInsight}`);
+        const ghQuery = encodeURIComponent(entity.name);
+        parts.push(`   GitHub: https://github.com/search?q=${ghQuery}`);
+        const hnQuery = encodeURIComponent(entity.name);
+        parts.push(`   HackerNews: https://hn.algolia.com/?q=${hnQuery}`);
+        parts.push("");
+      }
     }
 
     // Engineering Action Items
     if (digest.actionItems && digest.actionItems.length > 0) {
       parts.push(`ENGINEERING BACKLOG:`);
-      for (let i = 0; i < Math.min(digest.actionItems.length, 4); i++) {
+      parts.push("");
+      for (let i = 0; i < Math.min(digest.actionItems.length, 5); i++) {
         parts.push(`[ ] ${digest.actionItems[i].action}`);
       }
       parts.push("");
     }
 
     parts.push(`---`);
+    parts.push("");
     parts.push(`NodeBench AI - Engineering Intelligence`);
-    parts.push(`#Engineering #DevOps #Architecture #OpenSource #AI #TechStack`);
+    parts.push(`AI-powered tech signal detection for builders`);
+    parts.push("");
+    parts.push(`#Engineering #DevOps #Architecture #OpenSource #AI #TechStack #SoftwareEngineering`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -721,6 +870,7 @@ function formatDigestForPersona(
   else {
     parts.push(`NodeBench AI Daily Intelligence Brief`);
     parts.push(`Date: ${dateString}`);
+    parts.push(`Curated insights from across the tech ecosystem`);
     parts.push("");
 
     if (digest.leadStory) {
@@ -737,57 +887,99 @@ function formatDigestForPersona(
 
     if (digest.signals && digest.signals.length > 0) {
       parts.push(`KEY SIGNALS:`);
-      for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
+      parts.push("");
+      for (let i = 0; i < Math.min(digest.signals.length, 6); i++) {
         const signal = digest.signals[i];
         parts.push(`${i + 1}. ${signal.title}`);
         if (signal.summary) {
-          parts.push(` ${signal.summary}`);
-        }
-        if (signal.url) {
-          parts.push(` Read more: ${signal.url}`);
+          parts.push(`   ${signal.summary}`);
         }
         if (signal.hardNumbers) {
-          parts.push(` Data: ${signal.hardNumbers}`);
+          parts.push(`   Key data: ${signal.hardNumbers}`);
         }
+        if (signal.url) {
+          parts.push(`   Read more: ${signal.url}`);
+        }
+        parts.push("");
       }
+    }
+
+    // Fact-Check Findings
+    if (digest.factCheckFindings && digest.factCheckFindings.length > 0) {
+      parts.push(`FACT-CHECKED CLAIMS:`);
       parts.push("");
+      for (const finding of digest.factCheckFindings.slice(0, 4)) {
+        const status = finding.status === "verified" ? "VERIFIED" :
+                       finding.status === "false" ? "FALSE" :
+                       finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
+        parts.push(`[${status}] ${finding.claim}`);
+        if (finding.explanation) {
+          parts.push(`   ${finding.explanation}`);
+        }
+        parts.push("");
+      }
     }
 
     if (digest.entitySpotlight && digest.entitySpotlight.length > 0) {
-      parts.push(`ENTITIES TO WATCH:`);
-      for (const entity of digest.entitySpotlight.slice(0, 4)) {
-        const typeLabel = entity.type ? `[${entity.type}]` : "";
+      parts.push(`COMPANIES AND PEOPLE TO WATCH:`);
+      parts.push("");
+      for (const entity of digest.entitySpotlight.slice(0, 5)) {
+        const typeLabel = entity.type ? `[${entity.type.toUpperCase()}]` : "";
         const stage = entity.fundingStage ? ` - ${entity.fundingStage}` : "";
-        parts.push(`${entity.name} ${typeLabel}${stage}`);
-        parts.push(` ${entity.keyInsight}`);
+        parts.push(`>> ${entity.name} ${typeLabel}${stage}`);
+        parts.push(`   ${entity.keyInsight}`);
         if (entity.type === "company") {
           const newsQuery = encodeURIComponent(`${entity.name} latest news`);
-          parts.push(` News: https://news.google.com/search?q=${newsQuery}`);
+          parts.push(`   News: https://news.google.com/search?q=${newsQuery}`);
+          const cbQuery = encodeURIComponent(entity.name);
+          parts.push(`   Crunchbase: https://www.crunchbase.com/textsearch?q=${cbQuery}`);
         }
+        parts.push("");
       }
-      parts.push("");
     }
 
     if (digest.actionItems && digest.actionItems.length > 0) {
-      parts.push(`ACTION ITEMS:`);
-      for (let i = 0; i < Math.min(digest.actionItems.length, 4); i++) {
+      parts.push(`RECOMMENDED ACTIONS:`);
+      parts.push("");
+      for (let i = 0; i < Math.min(digest.actionItems.length, 5); i++) {
         parts.push(`${i + 1}. ${digest.actionItems[i].action}`);
       }
       parts.push("");
     }
 
     parts.push(`---`);
+    parts.push("");
     parts.push(`Powered by NodeBench AI - Autonomous Intelligence Platform`);
-    parts.push(`#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI`);
+    parts.push(`Zero-human-input continuous intelligence for investors and builders`);
+    parts.push("");
+    parts.push(`#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI #Startups #VentureCapital`);
   }
 
   let content = parts.join("\n");
 
-  // Truncate if too long
-  if (content.length > maxLength) {
-    content = content.slice(0, maxLength - 50) + "\n\n---\nPowered by NodeBench AI";
+  // If under minimum length, add expanded "about" section
+  if (content.length < minLength) {
+    const paddingParts: string[] = [];
+    paddingParts.push("");
+    paddingParts.push("ABOUT THIS BRIEF:");
+    paddingParts.push("This intelligence brief is generated autonomously by NodeBench AI's multi-agent system. Our platform ingests signals from HackerNews, ArXiv, Reddit, and premium RSS feeds, fact-checks claims using multiple sources, and surfaces actionable insights for investors, founders, and technology leaders.");
+    paddingParts.push("");
+
+    // Insert before the footer
+    const footerIndex = content.indexOf("---");
+    if (footerIndex > -1) {
+      content = content.substring(0, footerIndex) + paddingParts.join("\n") + content.substring(footerIndex);
+    } else {
+      content = content + paddingParts.join("\n");
+    }
   }
 
+  // Truncate if too long - but ensure we keep minimum
+  if (content.length > maxLength) {
+    content = content.slice(0, maxLength - 80) + "\n\n---\nPowered by NodeBench AI - Autonomous Intelligence\n#AI #TechIntelligence #NodeBenchAI";
+  }
+
+  console.log(`[formatDigestForPersona] ${personaId} content length: ${content.length} chars (target: ${minLength}-${maxLength})`);
   return content;
 }
 
@@ -1138,6 +1330,21 @@ function formatCompanyDetailed(
   // Website
   if (p.website && p.website !== "N/A") {
     lines.push(`Website: ${p.website}`);
+  }
+
+  // Website check transparency (avoid false "site down" claims)
+  if (p.fastVerify?.details?.websiteUrl) {
+    const live = p.fastVerify.websiteLive;
+    const status = p.fastVerify.details.websiteStatus;
+    const err = p.fastVerify.details.websiteError;
+    if (live === false) {
+      lines.push(`Website check: unreachable${err ? ` (${sanitizeForLinkedIn(err)})` : ""}`);
+    } else if (live === null) {
+      lines.push(`Website check: inconclusive${err ? ` (${sanitizeForLinkedIn(err)})` : ""}`);
+    } else if (typeof status === "number" && status >= 400) {
+      // Many sites return 403/429 to bots but are still live in-browser.
+      lines.push(`Website check: responding (HTTP ${status})`);
+    }
   }
 
   // Source URL
@@ -1723,14 +1930,16 @@ export const postStartupFundingBrief = internalAction({
             roundType: p.roundType,
             sectors: p.sector && p.sector !== "N/A" ? [p.sector] : undefined,
             sourceUrl: p.sourceUrl || undefined,
-            fastVerifyResult: p.fastVerify
-              ? {
-                  entityFound: p.fastVerify.entityFound,
-                  websiteLive: p.fastVerify.websiteLive,
-                  sourceCredibility: p.fastVerify.sourceCredibility,
-                }
-              : undefined,
-          };
+              fastVerifyResult: p.fastVerify
+                ? {
+                    entityFound: p.fastVerify.entityFound,
+                    websiteLive: p.fastVerify.websiteLive,
+                    websiteStatus: p.fastVerify.details.websiteStatus,
+                    websiteError: p.fastVerify.details.websiteError,
+                    sourceCredibility: p.fastVerify.sourceCredibility,
+                  }
+                : undefined,
+            };
 
           // Initial risk score (cheap)
           let signals = detectRiskSignals(riskInputBase as any);

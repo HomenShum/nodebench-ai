@@ -119,6 +119,117 @@ const FREE_MODEL_CONFIG = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * Pinned OpenRouter free-first models (Jan 2026)
+ *
+ * These are intentionally curated because "free" pools rotate and some models are experimental/deprecating.
+ * Seeding ensures they exist in `freeModels` even if discovery isn't run yet.
+ */
+const PINNED_FREE_FIRST_MODELS: Array<{
+  openRouterId: string;
+  name: string;
+  expectedVision: boolean;
+}> = [
+  {
+    openRouterId: "google/gemini-2.0-flash-exp:free",
+    name: "Gemini 2.0 Flash Experimental (free)",
+    expectedVision: true,
+  },
+  {
+    openRouterId: "google/gemma-3-27b-it:free",
+    name: "Gemma 3 27B IT (free)",
+    expectedVision: true,
+  },
+  {
+    openRouterId: "allenai/molmo-2-8b:free",
+    name: "Molmo 2 8B (free)",
+    expectedVision: true,
+  },
+  {
+    openRouterId: "deepseek/deepseek-r1:free",
+    name: "DeepSeek R1 (free)",
+    expectedVision: false,
+  },
+  {
+    openRouterId: "meta-llama/llama-3.3-70b-instruct:free",
+    name: "Llama 3.3 70B Instruct (free)",
+    expectedVision: false,
+  },
+  {
+    openRouterId: "z-ai/glm-4.5-air:free",
+    name: "GLM 4.5 Air (free)",
+    expectedVision: false,
+  },
+  {
+    openRouterId: "mistralai/devstral-small-2505:free",
+    name: "Devstral Small 2505 (free)",
+    expectedVision: false,
+  },
+];
+
+/**
+ * Seed pinned free-first models into the `freeModels` table.
+ *
+ * This does not run performance evaluation. It only ensures these model IDs exist so evals can target them.
+ */
+export const seedPinnedFreeModels = internalAction({
+  args: {},
+  handler: async (ctx): Promise<{ seeded: number; updatedFromApi: number }> => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    let apiModelById: Map<string, OpenRouterModel> | null = null;
+
+    // Optional enrichment: if OPENROUTER_API_KEY exists, fetch /models to get names/context/modality accurately.
+    if (apiKey) {
+      try {
+        const response = await fetch(FREE_MODEL_CONFIG.modelsApiUrl, {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": process.env.OPENROUTER_HTTP_REFERER || "https://nodebench.ai",
+            "X-Title": process.env.OPENROUTER_X_TITLE || "NodeBench Model Seed",
+          },
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (response.ok) {
+          const data = (await response.json()) as any;
+          const models: OpenRouterModel[] = (data?.data ?? []) as OpenRouterModel[];
+          apiModelById = new Map(models.map((m) => [m.id, m]));
+        }
+      } catch (e) {
+        console.warn("[freeModelDiscovery] seedPinnedFreeModels: failed to fetch /models; seeding with defaults", e);
+      }
+    }
+
+    let seeded = 0;
+    let updatedFromApi = 0;
+
+    for (const pinned of PINNED_FREE_FIRST_MODELS) {
+      const fromApi = apiModelById?.get(pinned.openRouterId);
+      const name = fromApi?.name || pinned.name;
+      const contextLength = fromApi?.context_length ?? FREE_MODEL_CONFIG.minContextLength;
+      const vision = fromApi?.architecture?.modality?.includes("image") ?? pinned.expectedVision;
+
+      // Conservative defaults; evaluation will refine.
+      await ctx.runMutation(internal.domains.models.freeModelDiscovery.upsertFreeModel, {
+        openRouterId: pinned.openRouterId,
+        name,
+        contextLength,
+        capabilities: {
+          toolUse: pinned.openRouterId.includes("instruct") || pinned.openRouterId.includes("chat"),
+          streaming: true,
+          structuredOutputs: false,
+          vision,
+        },
+      });
+
+      seeded++;
+      if (fromApi) updatedFromApi++;
+    }
+
+    return { seeded, updatedFromApi };
+  },
+});
+
+/**
  * Fetch available free models from OpenRouter API
  */
 export const discoverFreeModels = internalAction({

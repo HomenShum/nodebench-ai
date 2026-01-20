@@ -438,6 +438,57 @@ export function ChangeCard({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+interface ChangeListItemProps {
+  diff: SourceDiff;
+  source?: SourceInfo;
+  selected?: boolean;
+  onSelect?: () => void;
+}
+
+export function ChangeListItem({ diff, source, selected = false, onSelect }: ChangeListItemProps) {
+  const severityColor: Record<Severity, string> = {
+    critical: "bg-red-500",
+    high: "bg-orange-500",
+    medium: "bg-amber-500",
+    low: "bg-slate-400",
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
+        selected
+          ? "border-indigo-300 bg-indigo-50/60"
+          : "border-[color:var(--border-color)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)]"
+      }`}
+      aria-current={selected}
+    >
+      <div className="flex items-start gap-2.5">
+        <span className={`mt-1.5 h-2 w-2 rounded-full ${severityColor[diff.severity]}`} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-semibold text-[color:var(--text-primary)] leading-tight line-clamp-2">
+              {diff.changeTitle}
+            </p>
+            <span className="flex-shrink-0">
+              <ChangeTypeBadge changeType={diff.changeType} />
+            </span>
+          </div>
+          <div className="mt-1 flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">
+            <span className="truncate">{source?.name ?? diff.registryId}</span>
+            <span>•</span>
+            <span>{formatTimeAgo(diff.detectedAt)}</span>
+          </div>
+          <p className="mt-1 text-xs text-[color:var(--text-secondary)] line-clamp-2">
+            {diff.changeSummary}
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 // Change Card List Component
 // ═══════════════════════════════════════════════════════════════════════════
 

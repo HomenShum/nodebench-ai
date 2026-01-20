@@ -828,6 +828,9 @@ npx convex run domains/evaluation/runBenchmark:runDDBenchmark '{}'
 
 # Task 2 ground truth eval (target: 100+ / 110)
 npx convex run domains/agents/dueDiligence/investorPlaybook/evalPlaybook:evaluateTask2VijayRaoManus '{}'
+
+# Open-source ground truth eval (SQuAD v1.1) - requires citations + retrieveArtifact usage
+npx convex run tools/evaluation/openDatasetEval:runSQuADV11OpenSourceEval "{count:3,useCoordinator:true}"
 ```
 
 ### Knowledge diffs ("What Changed") demo

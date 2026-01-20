@@ -12,8 +12,8 @@
  * - Integrates with ChangeCard for individual change display
  */
 
-import React, { useState, useMemo } from "react";
-import { useQuery } from "convex/react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import {
   Bell,
@@ -21,11 +21,17 @@ import {
   Clock,
   Filter,
   RefreshCw,
-  ChevronDown,
   Zap,
   BookOpen,
 } from "lucide-react";
-import { ChangeCard, ChangeCardList, type SourceDiff, type Severity, type SourceInfo } from "./ChangeCard";
+import {
+  ChangeCard,
+  ChangeCardList,
+  ChangeListItem,
+  type SourceDiff,
+  type Severity,
+  type SourceInfo,
+} from "./ChangeCard";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -46,6 +52,8 @@ interface WhatChangedPanelProps {
   compact?: boolean;
   /** Callback when user clicks to view source */
   onViewSource?: (url: string) => void;
+  /** Optional callback to open an agent with context */
+  onAskAgent?: (input: { prompt: string; urls?: string[] }) => void;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -156,10 +164,21 @@ export function WhatChangedPanel({
   showHeader = true,
   compact = false,
   onViewSource,
+  onAskAgent,
 }: WhatChangedPanelProps) {
   // Local filter state
   const [selectedSeverity, setSelectedSeverity] = useState<Severity | "all">(severityFilter ?? "all");
   const [selectedDaysBack, setSelectedDaysBack] = useState(daysBack);
+  const [selectedDiffId, setSelectedDiffId] = useState<string | null>(null);
+  const [refreshState, setRefreshState] = useState<
+    | { status: "idle" }
+    | { status: "running" }
+    | { status: "done"; message: string }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
+
+  const refreshSummary = useQuery(api.domains.knowledge.sourceDiffs.getRefreshSummary, {});
+  const refreshSourcesNow = useAction(api.domains.knowledge.sourceDiffs.refreshSourcesNow);
 
   // Calculate time cutoff
   const sinceTime = useMemo(() => {
@@ -221,6 +240,89 @@ export function WhatChangedPanel({
     }
   };
 
+  const diffs: SourceDiff[] = useMemo(
+    () =>
+      filteredDiffs.map((d) => ({
+        _id: d._id,
+        registryId: d.registryId,
+        fromSnapshotAt: d.fromSnapshotAt,
+        toSnapshotAt: d.toSnapshotAt,
+        changeType: d.changeType,
+        severity: d.severity,
+        changeTitle: d.changeTitle,
+        changeSummary: d.changeSummary,
+        affectedSections: d.affectedSections,
+        diffHunks: d.diffHunks,
+        classifiedBy: d.classifiedBy ?? undefined,
+        classificationConfidence: d.classificationConfidence ?? undefined,
+        detectedAt: d.detectedAt,
+      })),
+    [filteredDiffs]
+  );
+
+  useEffect(() => {
+    if (diffs.length === 0) {
+      if (selectedDiffId !== null) setSelectedDiffId(null);
+      return;
+    }
+
+    if (!selectedDiffId) {
+      setSelectedDiffId(diffs[0]._id);
+      return;
+    }
+
+    if (!diffs.some((d) => d._id === selectedDiffId)) {
+      setSelectedDiffId(diffs[0]._id);
+    }
+  }, [diffs, selectedDiffId]);
+
+  const selectedDiff = useMemo(() => {
+    if (!selectedDiffId) return diffs[0];
+    return diffs.find((d) => d._id === selectedDiffId) ?? diffs[0];
+  }, [diffs, selectedDiffId]);
+
+  const selectedSource = useMemo(() => {
+    if (!selectedDiff) return undefined;
+    return sourcesMap.get(selectedDiff.registryId);
+  }, [selectedDiff, sourcesMap]);
+
+  const handleAskAgentClick = () => {
+    if (!onAskAgent || !selectedDiff) return;
+    const urls = selectedSource?.canonicalUrl ? [selectedSource.canonicalUrl] : undefined;
+    const detectedAt = new Date(selectedDiff.detectedAt).toLocaleString();
+
+    const prompt = [
+      "Analyze this source update and summarize impact + next actions.",
+      "",
+      `Title: ${selectedDiff.changeTitle}`,
+      `Source: ${selectedSource?.name ?? selectedDiff.registryId}`,
+      `Detected: ${detectedAt}`,
+      "",
+      `Summary: ${selectedDiff.changeSummary}`,
+      "",
+      "Requirements: cite the source URL with date; separate verified facts vs speculation.",
+    ].join("\n");
+
+    onAskAgent({ prompt, urls });
+  };
+
+  const handleRefreshNow = async () => {
+    if (refreshState.status === "running") return;
+    setRefreshState({ status: "running" });
+    try {
+      const result = await refreshSourcesNow({ scope: "pinned", maxSources: 20 });
+      setRefreshState({
+        status: "done",
+        message: `Refreshed ${result.processed} sources (${result.changed} changed, ${result.errors} errors)`,
+      });
+    } catch (err) {
+      setRefreshState({
+        status: "error",
+        message: err instanceof Error ? err.message : "Refresh failed",
+      });
+    }
+  };
+
   // Loading state
   if (diffsData === undefined) {
     return (
@@ -230,23 +332,6 @@ export function WhatChangedPanel({
       </div>
     );
   }
-
-  // Transform to SourceDiff type for ChangeCard
-  const diffs: SourceDiff[] = filteredDiffs.map((d) => ({
-    _id: d._id,
-    registryId: d.registryId,
-    fromSnapshotAt: d.fromSnapshotAt,
-    toSnapshotAt: d.toSnapshotAt,
-    changeType: d.changeType,
-    severity: d.severity,
-    changeTitle: d.changeTitle,
-    changeSummary: d.changeSummary,
-    affectedSections: d.affectedSections,
-    diffHunks: d.diffHunks,
-    classifiedBy: d.classifiedBy ?? undefined,
-    classificationConfidence: d.classificationConfidence ?? undefined,
-    detectedAt: d.detectedAt,
-  }));
 
   return (
     <div className={`flex flex-col ${compact ? "gap-3" : "gap-4"}`}>
@@ -266,25 +351,109 @@ export function WhatChangedPanel({
             <StatsBar {...stats} />
           </div>
 
-          {/* Filter Row */}
-          <FilterBar
-            severity={selectedSeverity}
-            onSeverityChange={setSelectedSeverity}
-            daysBack={selectedDaysBack}
-            onDaysBackChange={setSelectedDaysBack}
-          />
+          {/* Filter + Actions */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <FilterBar
+              severity={selectedSeverity}
+              onSeverityChange={setSelectedSeverity}
+              daysBack={selectedDaysBack}
+              onDaysBackChange={setSelectedDaysBack}
+            />
+
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              {typeof refreshSummary?.dueCount === "number" && refreshSummary.dueCount > 0 && (
+                <span className="px-2 py-0.5 text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200 rounded-full">
+                  {refreshSummary.dueCount} due
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleRefreshNow}
+                disabled={refreshState.status === "running"}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border
+                           border-[color:var(--border-color)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)]
+                           disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshState.status === "running" ? "animate-spin" : ""}`} />
+                Refresh now
+              </button>
+              {onAskAgent && (
+                <button
+                  type="button"
+                  onClick={handleAskAgentClick}
+                  disabled={!selectedDiff}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
+                           bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  Ask agent
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Refresh Meta */}
+          <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] text-[color:var(--text-muted)]">
+            <span>
+              {refreshSummary?.lastFetchedAt
+                ? `Last refresh: ${new Date(refreshSummary.lastFetchedAt).toLocaleString()}`
+                : "Last refresh: unknown"}
+            </span>
+            {refreshState.status === "done" && <span className="text-emerald-700">{refreshState.message}</span>}
+            {refreshState.status === "error" && <span className="text-red-700">{refreshState.message}</span>}
+          </div>
         </div>
       )}
 
-      {/* Change Cards */}
-      <div className={`${compact ? "space-y-3" : "space-y-4"}`}>
+      {/* Content */}
+      {compact ? (
+        <div className="space-y-3">
+          <ChangeCardList
+            diffs={diffs}
+            sources={sourcesMap}
+            emptyMessage={`No changes detected in the last ${selectedDaysBack} days`}
+            onViewSource={handleViewSource}
+          />
+        </div>
+      ) : diffs.length === 0 ? (
         <ChangeCardList
           diffs={diffs}
           sources={sourcesMap}
           emptyMessage={`No changes detected in the last ${selectedDaysBack} days`}
           onViewSource={handleViewSource}
         />
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,380px)_1fr] gap-4">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wide mb-2">
+              Recent changes
+            </div>
+            <div className="space-y-2 max-h-[70vh] overflow-auto pr-1">
+              {diffs.map((diff) => (
+                <ChangeListItem
+                  key={diff._id}
+                  diff={diff}
+                  source={sourcesMap.get(diff.registryId)}
+                  selected={diff._id === selectedDiffId}
+                  onSelect={() => setSelectedDiffId(diff._id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            {selectedDiff && (
+              <ChangeCard
+                key={selectedDiff._id}
+                diff={selectedDiff}
+                source={sourcesMap.get(selectedDiff.registryId)}
+                defaultExpanded
+                onViewSource={handleViewSource}
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer - Show more link if at limit */}
       {filteredDiffs.length >= limit && (

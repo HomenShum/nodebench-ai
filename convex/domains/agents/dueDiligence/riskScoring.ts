@@ -106,8 +106,10 @@ export interface RiskAssessmentInput {
 
   // Fast verify results (if available)
   fastVerifyResult?: {
-    entityFound: boolean;
-    websiteLive: boolean | null;
+    entityFound: boolean | null; // null = inconclusive (don't penalize)
+    websiteLive: boolean | null; // null = inconclusive (don't penalize)
+    websiteStatus?: number;
+    websiteError?: string;
     sourceCredibility: "high" | "medium" | "low" | "unknown";
   };
 }
@@ -300,28 +302,34 @@ export function detectRiskSignals(input: RiskAssessmentInput): DDRiskSignal[] {
     });
   }
 
-  // Fast verify failures
+  // Fast verify failures - only penalize on EXPLICIT failures, not inconclusive (null)
   if (input.fastVerifyResult) {
-    if (!input.fastVerifyResult.entityFound) {
+    // entityFound: only create signal on explicit false (not null/inconclusive)
+    if (input.fastVerifyResult.entityFound === false) {
       signals.push({
         category: "entity_authenticity",
         severity: "high",
-        signal: "Entity not found in fast verification",
+        signal: "Entity not found in verification search",
         source: "fast_verify",
         detectedAt: now,
       });
     }
 
+    // websiteLive: only create signal on explicit false (DNS failure = site doesn't exist)
+    // null means timeout/network issue - don't penalize
     if (input.fastVerifyResult.websiteLive === false) {
       signals.push({
         category: "entity_authenticity",
         severity: "medium",
-        signal: "Company website is not live",
+        signal: input.fastVerifyResult.websiteError
+          ? `Company website appears unreachable (${input.fastVerifyResult.websiteError})`
+          : "Company website appears unreachable",
         source: "fast_verify",
         detectedAt: now,
       });
     }
 
+    // sourceCredibility: low credibility still creates a signal
     if (input.fastVerifyResult.sourceCredibility === "low") {
       signals.push({
         category: "document_consistency",

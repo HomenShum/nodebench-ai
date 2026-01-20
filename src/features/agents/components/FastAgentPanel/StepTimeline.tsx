@@ -14,6 +14,11 @@ import { extractMediaFromText, removeMediaMarkersFromText } from './utils/mediaE
 import { YouTubeGallery } from './MediaGallery';
 import { SourceCard } from './SourceCard';
 import { ProfileCard } from './ProfileCard';
+import { ResourceLinkCard, type ResourceLink } from './ResourceLinkCard';
+
+function isResourceLinkResult(value: unknown): value is ResourceLink {
+  return typeof value === 'object' && value !== null && (value as any).type === 'resource_link';
+}
 
 interface StepTimelineProps {
   steps: TimelineStep[];
@@ -224,6 +229,9 @@ export function StepTimeline({
                         <div className="text-xs">
                           <div className="font-medium text-[var(--text-primary)] mb-2">Results:</div>
                           {(() => {
+                            if (isResourceLinkResult(step.result)) {
+                              return <ResourceLinkCard resourceLink={step.result} variant="compact" />;
+                            }
                             const resultText = typeof step.result === 'string' ? step.result : JSON.stringify(step.result, null, 2);
                             const media = extractMediaFromText(resultText);
                             

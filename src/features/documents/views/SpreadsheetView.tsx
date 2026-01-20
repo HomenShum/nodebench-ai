@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
@@ -26,12 +26,13 @@ import { PresenceIndicator } from "@/shared/components/PresenceIndicator";
 import { ZoomState, ZoomControls } from "@/hooks/useZoom";
 import { ZoomControls as ZoomControlsComponent } from "@/shared/components/ZoomControls";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
-import UnifiedEditor from "@features/editor/components/UnifiedEditor";
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 
 import Spreadsheet from 'react-spreadsheet';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+
+const UnifiedEditor = React.lazy(() => import("@features/editor/components/UnifiedEditor"));
 
 
 // Multi-line text editor for spreadsheet cells
@@ -1050,7 +1051,9 @@ useEffect(() => {
           </div>
           <div className="min-h-[240px]">
             <ErrorBoundary title="Failed to load notes">
-              <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+              <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+                <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+              </Suspense>
             </ErrorBoundary>
           </div>
         </div>

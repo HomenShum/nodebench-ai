@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useQuery, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
-import UnifiedEditor from "@features/editor/components/UnifiedEditor";
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
 import {
@@ -30,6 +29,8 @@ import {
 import Spreadsheet from 'react-spreadsheet';
 import * as XLSX from 'xlsx';
 import { CodeViewer } from '../components/CodeViewer';
+
+const UnifiedEditor = React.lazy(() => import("@features/editor/components/UnifiedEditor"));
 
 
 // Build a display matrix from a worksheet, expanding merged cells so content shows up
@@ -698,7 +699,9 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                 </div>
                 <div className="min-h-[240px]">
                   <ErrorBoundary title="Failed to load notes">
-                    <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+                    <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+                      <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
+                    </Suspense>
                   </ErrorBoundary>
                 </div>
               </div>

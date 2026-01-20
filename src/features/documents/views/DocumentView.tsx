@@ -1,16 +1,29 @@
 import { useQuery } from "convex/react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { DocumentHeader } from "@/features/documents/components/DocumentHeader";
 // Editor wrapper with UnifiedEditor (BlockNote/ProseMirror)
 import { Editor } from "@/components/Editor/Editor";
-import UnifiedEditor from "@features/editor/components/UnifiedEditor";
-import { FileViewer } from "@/features/documents/views/FileViewer";
-import { SpreadsheetView } from "@/features/documents/views/SpreadsheetView";
-import { DossierViewer } from "@/features/research/views/DossierViewer";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { isValidConvexId } from "@/lib/ids";
+
+const UnifiedEditor = lazy(() => import("@features/editor/components/UnifiedEditor"));
+const FileViewer = lazy(() =>
+  import("@/features/documents/views/FileViewer").then((mod) => ({ default: mod.FileViewer })),
+);
+const SpreadsheetView = lazy(() =>
+  import("@/features/documents/views/SpreadsheetView").then((mod) => ({ default: mod.SpreadsheetView })),
+);
+const DossierViewer = lazy(() =>
+  import("@/features/research/views/DossierViewer").then((mod) => ({ default: mod.DossierViewer })),
+);
+
+const viewFallback = (
+  <div className="flex items-center justify-center h-full bg-[var(--bg-primary)]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
+  </div>
+);
 
 interface DocumentViewProps {
   documentId: Id<"documents">;
@@ -151,23 +164,31 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
                     <div className="text-[var(--text-secondary)] text-sm">Timeline view is not available.</div>
                   </div>
                 ) : document.documentType === "dossier" ? (
-                  <DossierViewer documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
+                  <Suspense fallback={viewFallback}>
+                    <DossierViewer documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
+                  </Suspense>
                 ) : document.documentType === "file" ? (
                   document.fileType === "csv" ? (
-                    <SpreadsheetView documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
+                    <Suspense fallback={viewFallback}>
+                      <SpreadsheetView documentId={documentId} isGridMode={isGridMode} isFullscreen={isFullscreen} />
+                    </Suspense>
                   ) : (
-                    <FileViewer documentId={documentId} />
+                    <Suspense fallback={viewFallback}>
+                      <FileViewer documentId={documentId} />
+                    </Suspense>
                   )
                 ) : (
                   <div className={isGridMode && !isFullscreen ? 'w-full h-full px-2 py-2' : 'max-w-4xl mx-auto px-6 py-8'}>
                     {useUnifiedEditorFlag ? (
-                      <UnifiedEditor
-                        documentId={mountedDocId}
-                        mode={isGridMode && !isFullscreen ? 'quickEdit' : 'full'}
-                        isGridMode={isGridMode}
-                        isFullscreen={isFullscreen}
-                        editable={editable}
-                      />
+                      <Suspense fallback={viewFallback}>
+                        <UnifiedEditor
+                          documentId={mountedDocId}
+                          mode={isGridMode && !isFullscreen ? 'quickEdit' : 'full'}
+                          isGridMode={isGridMode}
+                          isFullscreen={isFullscreen}
+                          editable={editable}
+                        />
+                      </Suspense>
                     ) : (
                       // Legacy editor remains default until we flip the flag
                       <Editor documentId={mountedDocId} isGridMode={isGridMode} isFullscreen={isFullscreen} editable={editable} />

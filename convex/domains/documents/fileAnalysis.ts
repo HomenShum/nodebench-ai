@@ -23,11 +23,113 @@ interface AnalysisResult {
   structuredData?: any;
 }
 
+const MAX_ANALYSIS_TOPICS = 10;
+const MAX_TOPIC_CHARS = 80;
+const OPENROUTER_DEFAULT_TIMEOUT_MS = 30_000;
+
+function normalizeAnalysisTopics(topics: string[] | undefined): string[] {
+  if (!topics || topics.length === 0) return [];
+
+  const normalized = topics
+    .map((topic) => (topic ?? "").trim())
+    .filter(Boolean)
+    .map((topic) => (topic.length > MAX_TOPIC_CHARS ? topic.slice(0, MAX_TOPIC_CHARS) : topic));
+
+  const unique: string[] = [];
+  for (const topic of normalized) {
+    const key = topic.toLowerCase();
+    if (unique.some((t) => t.toLowerCase() === key)) continue;
+    unique.push(topic);
+    if (unique.length >= MAX_ANALYSIS_TOPICS) break;
+  }
+
+  return unique;
+}
+
+function buildAnalysisPrompt(params: {
+  analysisPrompt?: string;
+  analysisTopics: string[];
+  analysisType: string;
+  file: { fileName?: string; fileType?: string };
+}): string {
+  const basePrompt = (params.analysisPrompt ?? "").trim();
+  const topicsBlock = params.analysisTopics.length
+    ? `\n\nFocus Topics (optional):\n- ${params.analysisTopics.join("\n- ")}\n\nIf a topic is not present in the content, explicitly say "not found" rather than guessing.`
+    : "";
+
+  const constraints = `\n\nConstraints:\n- Be token-efficient and avoid generic filler.\n- Quote short, relevant snippets when possible.\n- If the content includes dates, keep them (don't generalize timeframes).\n- File Info: Name: ${params.file.fileName || "Unknown"}, Type: ${params.file.fileType || "Unknown"}, AnalysisType: ${params.analysisType}`;
+
+  if (basePrompt) return `${basePrompt}${topicsBlock}${constraints}`;
+
+  if (!params.analysisTopics.length) {
+    throw new Error("Either analysisPrompt or analysisTopics must be provided.");
+  }
+
+  return `Analyze the content focusing ONLY on the provided topics.${topicsBlock}${constraints}`;
+}
+
+function getOpenRouterHeaders(): Record<string, string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY not configured");
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+  if (process.env.OPENROUTER_HTTP_REFERER) headers["HTTP-Referer"] = process.env.OPENROUTER_HTTP_REFERER;
+  if (process.env.OPENROUTER_X_TITLE) headers["X-Title"] = process.env.OPENROUTER_X_TITLE;
+  return headers;
+}
+
+async function analyzeImageWithOpenRouter(args: {
+  modelId: string;
+  prompt: string;
+  mimeType: string;
+  imageBase64: string;
+  timeoutMs?: number;
+}): Promise<string> {
+  const baseURL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
+  const imageUrl = `data:${args.mimeType};base64,${args.imageBase64}`;
+
+  const response = await fetch(`${baseURL}/chat/completions`, {
+    method: "POST",
+    headers: getOpenRouterHeaders(),
+    body: JSON.stringify({
+      model: args.modelId,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: args.prompt },
+            { type: "image_url", image_url: { url: imageUrl } },
+          ],
+        },
+      ],
+      max_tokens: 1600,
+      temperature: 0,
+    }),
+    signal: AbortSignal.timeout(args.timeoutMs ?? OPENROUTER_DEFAULT_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`OpenRouter error ${response.status}: ${text}`);
+  }
+
+  const data = await response.json() as any;
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== "string" || content.trim().length === 0) {
+    throw new Error("OpenRouter returned empty content");
+  }
+  return content;
+}
+
 export const analyzeFileWithGenAI = action({
   args: {
     fileId: v.optional(v.id("files")),
     url: v.optional(v.string()),
-    analysisPrompt: v.string(),
+    analysisPrompt: v.optional(v.string()),
+    analysisTopics: v.optional(v.array(v.string())),
     analysisType: v.optional(v.string()),
     testBypassUserId: v.optional(v.union(v.id("users"), v.string())),
   },
@@ -59,6 +161,7 @@ export const analyzeFileWithGenAI = action({
       let fileType: string;
       let fileForAnalysis: any;
       let persistenceId: Id<"files">;
+      let openRouterInlineImage: { mimeType: string; imageBase64: string } | null = null;
 
       if (args.fileId) {
         // --- PATH 1: Handle File Input ---
@@ -99,7 +202,9 @@ export const analyzeFileWithGenAI = action({
           contentParts = await preprocessDocument(fileBlob, mimeType);
         } else if (mimeType.startsWith('image/')) {
           const buffer = Buffer.from(await fileBlob.arrayBuffer());
-          contentParts = [{ inlineData: { data: buffer.toString('base64'), mimeType } }];
+          const imageBase64 = buffer.toString("base64");
+          contentParts = [{ inlineData: { data: imageBase64, mimeType } }];
+          openRouterInlineImage = { mimeType, imageBase64 };
         } else {
           // Unknown/office/octet-stream/audio/video -> upload + wait path
           const uploadResult = await uploadFileToGenAI(ai, fileBlob, sourceName, mimeType);
@@ -136,13 +241,58 @@ export const analyzeFileWithGenAI = action({
         persistenceId = null as any; // Will handle URL saving separately later
       }
       
-      const analysisResult = await generateAnalysis(
-        ai, 
-        contentParts, 
-        args.analysisPrompt, 
-        args.analysisType || fileType, 
-        fileForAnalysis
-      );
+      const analysisType = args.analysisType || fileType;
+      const analysisTopics = normalizeAnalysisTopics(args.analysisTopics);
+      const resolvedPrompt = buildAnalysisPrompt({
+        analysisPrompt: args.analysisPrompt,
+        analysisTopics,
+        analysisType,
+        file: fileForAnalysis,
+      });
+      const model = analysisTopics.length
+        ? getLlmModel("analysis", "gemini", "gemini-3-flash")
+        : getLlmModel("analysis", "gemini");
+
+      const wantsStructured = shouldUseStructuredAnalysis(resolvedPrompt, analysisType);
+
+      // FREE-FIRST for screenshot/image analysis: if the input is an inline image and topics are provided,
+      // try OpenRouter vision (Molmo) to reduce cost; fall back to Gemini on 429/5xx/etc.
+      let analysisResult: AnalysisResult;
+      if (
+        openRouterInlineImage &&
+        analysisTopics.length > 0 &&
+        !wantsStructured &&
+        (process.env.OPENROUTER_API_KEY || "").trim().length > 0
+      ) {
+        try {
+          const openrouterText = await analyzeImageWithOpenRouter({
+            modelId: "allenai/molmo-2-8b:free",
+            prompt: resolvedPrompt,
+            mimeType: openRouterInlineImage.mimeType,
+            imageBase64: openRouterInlineImage.imageBase64,
+          });
+          analysisResult = { analysis: openrouterText, structuredData: null };
+        } catch (err) {
+          console.warn("[fileAnalysis] OpenRouter vision failed, falling back to Gemini.", err);
+          analysisResult = await generateAnalysis(
+            ai,
+            contentParts,
+            resolvedPrompt,
+            analysisType,
+            fileForAnalysis,
+            model
+          );
+        }
+      } else {
+        analysisResult = await generateAnalysis(
+          ai,
+          contentParts,
+          resolvedPrompt,
+          analysisType,
+          fileForAnalysis,
+          model
+        );
+      }
 
       // Save analysis results - handle files vs URLs differently
       if (args.fileId && persistenceId) {
@@ -151,7 +301,7 @@ export const analyzeFileWithGenAI = action({
           fileId: persistenceId,
           analysis: analysisResult.analysis,
           structuredData: analysisResult.structuredData,
-          analysisType: args.analysisType || fileType,
+          analysisType,
           processingTime: Date.now() - startTime,
         });
       } else if (args.url) {
@@ -511,12 +661,13 @@ async function generateAnalysis(
   contentParts: Part[], 
   analysisPrompt: string, 
   analysisType: string, 
-  file: any
+  file: any,
+  model: string
 ): Promise<AnalysisResult> {
   if (shouldUseStructuredAnalysis(analysisPrompt, analysisType)) {
-    return await generateStructuredAnalysis(ai, contentParts, analysisPrompt, analysisType, file);
+    return await generateStructuredAnalysis(ai, contentParts, analysisPrompt, analysisType, file, model);
   } else {
-    return await generateTextAnalysis(ai, contentParts, analysisPrompt, file);
+    return await generateTextAnalysis(ai, contentParts, analysisPrompt, file, model);
   }
 }
 
@@ -533,7 +684,8 @@ async function generateStructuredAnalysis(
   contentParts: Part[], 
   analysisPrompt: string, 
   analysisType: string, 
-  file: any
+  file: any,
+  model: string
 ): Promise<AnalysisResult> {
   const analysisTool = getAnalysisTool(analysisType);
   const enhancedPrompt = `Analyze the provided content based on the following request: ${analysisPrompt}. 
@@ -542,7 +694,7 @@ async function generateStructuredAnalysis(
 
   try {
     const result = await ai.models.generateContent({
-      model: getLlmModel("analysis", "gemini"),
+      model,
       contents: createUserContent([...contentParts, enhancedPrompt]),
       config: { tools: [{ functionDeclarations: [analysisTool] }] },
     });
@@ -555,11 +707,11 @@ async function generateStructuredAnalysis(
       return { analysis: formattedAnalysis, structuredData: structuredData };
     } else {
       console.warn("Model did not return expected function call, falling back to text analysis");
-      return generateTextAnalysis(ai, contentParts, analysisPrompt, file);
+      return generateTextAnalysis(ai, contentParts, analysisPrompt, file, model);
     }
   } catch (error) {
     console.error("Structured analysis failed, falling back to text:", error);
-    return generateTextAnalysis(ai, contentParts, analysisPrompt, file);
+    return generateTextAnalysis(ai, contentParts, analysisPrompt, file, model);
   }
 }
 
@@ -567,14 +719,15 @@ async function generateTextAnalysis(
   ai: GoogleGenAI,
   contentParts: Part[], 
   analysisPrompt: string, 
-  file: any
+  file: any,
+  model: string
 ): Promise<AnalysisResult> {
   const enhancedPrompt = `Analyze this content based on the following request: ${analysisPrompt}. 
   Please provide a detailed text-based analysis. 
   File Info: Name: ${file.fileName}, Type: ${file.fileType || 'Unknown'}`;
   
   const response = await ai.models.generateContent({
-    model: getLlmModel("analysis", "gemini"),
+    model,
     contents: createUserContent([...contentParts, enhancedPrompt]),
   });
   

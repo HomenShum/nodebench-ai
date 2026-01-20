@@ -12,9 +12,13 @@ import { internalAction } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 import { GoogleGenAI, createUserContent } from "@google/genai";
 import { createHash } from "crypto";
+import { getLlmModel } from "../../../../shared/llm/modelCatalog";
 
 const STORE_TO_STORAGE_CHARS = 250_000;
 const MAX_INLINE_RAW_CONTENT_CHARS = 120_000;
+const MAX_ANALYSIS_TOPICS = 10;
+const MAX_TOPIC_CHARS = 80;
+const OPENROUTER_DEFAULT_TIMEOUT_MS = 30_000;
 
 function sha256Hex(input: string): string {
     return createHash("sha256").update(input).digest("hex");
@@ -23,6 +27,127 @@ function sha256Hex(input: string): string {
 function truncateForDb(input: string): string {
     if (input.length <= MAX_INLINE_RAW_CONTENT_CHARS) return input;
     return input.slice(0, MAX_INLINE_RAW_CONTENT_CHARS) + `\n\n<!-- TRUNCATED: ${input.length} chars -->\n`;
+}
+
+function normalizeAnalysisTopics(topics: string[] | undefined): string[] {
+    if (!topics || topics.length === 0) return [];
+
+    const normalized = topics
+        .map((topic) => (topic ?? "").trim())
+        .filter(Boolean)
+        .map((topic) => (topic.length > MAX_TOPIC_CHARS ? topic.slice(0, MAX_TOPIC_CHARS) : topic));
+
+    const unique: string[] = [];
+    for (const topic of normalized) {
+        const key = topic.toLowerCase();
+        if (unique.some((t) => t.toLowerCase() === key)) continue;
+        unique.push(topic);
+        if (unique.length >= MAX_ANALYSIS_TOPICS) break;
+    }
+
+    return unique;
+}
+
+function buildVideoTranscriptionPrompt(params: { analysisTopics: string[] }): string {
+    const topicsLine = params.analysisTopics.length
+        ? `\n\n### Focus Topics (optional)\n- ${params.analysisTopics.join("\n- ")}\n\nIf topics are provided, pay extra attention to anything relevant to them, but still produce a complete transcription.`
+        : "";
+
+    return `Analyze this video and provide:
+1. A complete, accurate transcription of all spoken content (verbatim; preserve numbers, names, and product claims)
+2. A brief description of key visual elements and actions
+3. Timestamps for major segments (approximate seconds from start)${topicsLine}
+
+Format your response as:
+## Transcription
+[Complete transcription of audio]
+
+## Visual Summary
+[Key visual elements and actions]
+
+## Timestamps
+- 0:00 - [description]
+- [timestamp] - [description]`;
+}
+
+function buildImageAnalysisPrompt(params: { extractClaims: boolean; analysisTopics: string[] }): string {
+    const topicsLine = params.analysisTopics.length
+        ? `\n\nFocus Topics (optional):\n- ${params.analysisTopics.join("\n- ")}\nOnly include details that are relevant to these topics, plus any high-salience safety/medical/legal claims.`
+        : "";
+
+    if (!params.extractClaims) {
+        return `Describe this image in detail. Include any text visible and the context/purpose of the image.${topicsLine}`;
+    }
+
+    return `Analyze this image. Provide:
+1. A clear description of what's shown (concise)
+2. Any text visible in the image (quote it verbatim)
+3. Any factual claims being made (e.g., product claims, statistics, assertions)${topicsLine}
+
+For claims, format as JSON at the end:
+{"claims": [{"claim": "...", "confidence": 0.9, "category": "product"}]}`;
+}
+
+function getOpenRouterHeaders(): Record<string, string> {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) throw new Error("OPENROUTER_API_KEY not configured");
+
+    const headers: Record<string, string> = {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+    };
+    if (process.env.OPENROUTER_HTTP_REFERER) headers["HTTP-Referer"] = process.env.OPENROUTER_HTTP_REFERER;
+    if (process.env.OPENROUTER_X_TITLE) headers["X-Title"] = process.env.OPENROUTER_X_TITLE;
+    return headers;
+}
+
+function shouldFallbackFromOpenRouterStatus(status: number): boolean {
+    // Treat rate limits + transient upstream errors as "fallback to Gemini" rather than hard failure.
+    return [401, 403, 404, 408, 409, 429, 500, 502, 503, 504].includes(status);
+}
+
+async function analyzeImageWithOpenRouter(args: {
+    modelId: string;
+    prompt: string;
+    mimeType: string;
+    imageBase64: string;
+    timeoutMs?: number;
+}): Promise<string> {
+    const baseURL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
+    const imageUrl = `data:${args.mimeType};base64,${args.imageBase64}`;
+
+    const response = await fetch(`${baseURL}/chat/completions`, {
+        method: "POST",
+        headers: getOpenRouterHeaders(),
+        body: JSON.stringify({
+            model: args.modelId,
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: args.prompt },
+                        { type: "image_url", image_url: { url: imageUrl } },
+                    ],
+                },
+            ],
+            max_tokens: 1400,
+            temperature: 0,
+        }),
+        signal: AbortSignal.timeout(args.timeoutMs ?? OPENROUTER_DEFAULT_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`OpenRouter error ${response.status}: ${text}`);
+    }
+
+    const data = await response.json() as any;
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== "string" || content.trim().length === 0) {
+        throw new Error("OpenRouter returned empty content");
+    }
+
+    return content;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -49,6 +174,7 @@ export const transcribeVideo = internalAction({
         videoUrl: v.string(),
         mimeType: v.optional(v.string()),
         extractClaims: v.optional(v.boolean()),
+        analysisTopics: v.optional(v.array(v.string())),
     },
     returns: v.object({
         success: v.boolean(),
@@ -75,6 +201,7 @@ export const transcribeVideo = internalAction({
 
         try {
             const ai = new GoogleGenAI({ apiKey });
+            const analysisTopics = normalizeAnalysisTopics(args.analysisTopics);
 
             // For remote URLs, we need to either:
             // 1. Download and upload to Gemini File API
@@ -96,26 +223,15 @@ export const transcribeVideo = internalAction({
             const videoBuffer = Buffer.from(await videoBlob.arrayBuffer());
             const videoBase64 = videoBuffer.toString("base64");
 
-            // Transcription prompt
-            const transcriptionPrompt = `Analyze this video and provide:
-1. A complete, accurate transcription of all spoken content
-2. Description of key visual elements and actions
-3. Timestamps for major segments (approximate seconds from start)
+            const transcriptionPrompt = buildVideoTranscriptionPrompt({ analysisTopics });
 
-Format your response as:
-## Transcription
-[Complete transcription of audio]
+            // Use cheaper Flash when topics are provided; default to Pro for best transcription fidelity.
+            const model = analysisTopics.length
+                ? getLlmModel("vision", "gemini", "gemini-3-flash")
+                : getLlmModel("vision", "gemini", "gemini-3-pro");
 
-## Visual Summary
-[Key visual elements and actions]
-
-## Timestamps
-- 0:00 - [description]
-- [timestamp] - [description]`;
-
-            // Use Gemini 1.5 Pro for video understanding
             const response = await ai.models.generateContent({
-                model: "gemini-1.5-pro",
+                model,
                 contents: createUserContent([
                     { text: transcriptionPrompt },
                     {
@@ -149,9 +265,11 @@ Format your response as:
                     title: "Video transcript",
                     extractedData: {
                         tool: "geminiTranscribe",
+                        model,
                         mimeType,
                         storageId,
                         contentLength: transcriptText.length,
+                        analysisTopics,
                     },
                     fetchedAt: Date.now(),
                 });
@@ -232,7 +350,7 @@ ${transcript.substring(0, 10000)}`; // Limit transcript length
     try {
         // Use faster Flash model for extraction
         const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
+            model: getLlmModel("analysis", "gemini", "gemini-3-flash"),
             contents: createUserContent([{ text: claimPrompt }]),
         });
 
@@ -264,6 +382,7 @@ export const analyzeImage = internalAction({
     args: {
         imageUrl: v.string(),
         extractClaims: v.optional(v.boolean()),
+        analysisTopics: v.optional(v.array(v.string())),
     },
     returns: v.object({
         success: v.boolean(),
@@ -278,16 +397,8 @@ export const analyzeImage = internalAction({
     handler: async (ctx, args) => {
         console.log(`[geminiVideoWrapper] Analyzing image: ${args.imageUrl}`);
 
-        const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-        if (!apiKey) {
-            return {
-                success: false,
-                error: "Gemini API key not configured",
-            };
-        }
-
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const analysisTopics = normalizeAnalysisTopics(args.analysisTopics);
 
             // Download image
             const imageResponse = await fetch(args.imageUrl);
@@ -303,25 +414,67 @@ export const analyzeImage = internalAction({
             const imageBuffer = Buffer.from(await imageBlob.arrayBuffer());
             const imageBase64 = imageBuffer.toString("base64");
 
-            const prompt = args.extractClaims
-                ? `Analyze this image. Provide:
-1. A detailed description of what's shown
-2. Any text visible in the image
-3. Any factual claims being made (e.g., product claims, statistics, assertions)
-
-For claims, format as JSON at the end:
-{"claims": [{"claim": "...", "confidence": 0.9, "category": "product"}]}`
-                : "Describe this image in detail. Include any text visible and the context/purpose of the image.";
-
-            const response = await ai.models.generateContent({
-                model: "gemini-1.5-flash",
-                contents: createUserContent([
-                    { text: prompt },
-                    { inlineData: { data: imageBase64, mimeType } },
-                ]),
+            const prompt = buildImageAnalysisPrompt({
+                extractClaims: Boolean(args.extractClaims),
+                analysisTopics,
             });
 
-            const responseText = response.text || "";
+            // FREE-FIRST: try OpenRouter vision first (Molmo), fall back to Gemini if rate-limited/unavailable.
+            let responseText = "";
+            let provider: "openrouter" | "gemini" = "gemini";
+            let modelUsed = "";
+
+            const openRouterKey = process.env.OPENROUTER_API_KEY;
+            if (openRouterKey && openRouterKey.trim().length > 0) {
+                try {
+                    provider = "openrouter";
+                    modelUsed = "allenai/molmo-2-8b:free";
+                    responseText = await analyzeImageWithOpenRouter({
+                        modelId: modelUsed,
+                        prompt,
+                        mimeType,
+                        imageBase64,
+                    });
+                } catch (err) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    const statusMatch = message.match(/OpenRouter error (\d+):/);
+                    const status = statusMatch ? Number(statusMatch[1]) : null;
+
+                    if (status !== null && shouldFallbackFromOpenRouterStatus(status)) {
+                        console.warn(`[geminiVideoWrapper] OpenRouter vision failed (${status}), falling back to Gemini.`);
+                    } else {
+                        console.warn("[geminiVideoWrapper] OpenRouter vision failed, falling back to Gemini.", err);
+                    }
+                    responseText = "";
+                    provider = "gemini";
+                    modelUsed = "";
+                }
+            }
+
+            if (!responseText) {
+                const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+                if (!apiKey) {
+                    return {
+                        success: false,
+                        error: "No vision provider configured (OPENROUTER_API_KEY or GEMINI_API_KEY/GOOGLE_AI_API_KEY)",
+                    };
+                }
+
+                const ai = new GoogleGenAI({ apiKey });
+                const model = getLlmModel("vision", "gemini", "gemini-3-flash");
+                provider = "gemini";
+                modelUsed = model;
+
+                const response = await ai.models.generateContent({
+                    model,
+                    contents: createUserContent([
+                        { text: prompt },
+                        { inlineData: { data: imageBase64, mimeType } },
+                    ]),
+                });
+
+                responseText = response.text || "";
+            }
 
             // Extract claims if present
             let claims: ExtractedClaim[] | undefined;
@@ -356,9 +509,12 @@ For claims, format as JSON at the end:
                     sizeBytes: responseText.length,
                     title: "Image analysis",
                     extractedData: {
-                        tool: "geminiAnalyzeImage",
+                        tool: provider === "openrouter" ? "openrouterAnalyzeImage" : "geminiAnalyzeImage",
+                        provider,
+                        model: modelUsed,
                         storageId,
                         contentLength: responseText.length,
+                        analysisTopics,
                     },
                     fetchedAt: Date.now(),
                 });

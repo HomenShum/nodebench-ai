@@ -1,8 +1,10 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Id } from "../../../convex/_generated/dataModel";
-import UnifiedEditor, { type EditorMode } from "@features/editor/components/UnifiedEditor";
+import type { EditorMode } from "@features/editor/components/UnifiedEditor";
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import "./editor-blocks.css";
+
+const UnifiedEditor = React.lazy(() => import("@features/editor/components/UnifiedEditor"));
 
 interface EditorProps {
   documentId: Id<"documents">;
@@ -21,13 +23,15 @@ interface EditorProps {
 export function Editor({ documentId, isGridMode, isFullscreen, mode, editable }: EditorProps) {
   return (
     <ErrorBoundary title="Failed to load editor">
-      <UnifiedEditor
-        documentId={documentId as any}
-        mode={mode}
-        isGridMode={isGridMode}
-        isFullscreen={isFullscreen}
-        editable={editable}
-      />
+      <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+        <UnifiedEditor
+          documentId={documentId as any}
+          mode={mode}
+          isGridMode={isGridMode}
+          isFullscreen={isFullscreen}
+          editable={editable}
+        />
+      </Suspense>
     </ErrorBoundary>
   );
 }

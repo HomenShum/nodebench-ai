@@ -1,17 +1,18 @@
 import { useQuery, useAction, useMutation } from "convex/react";
-import { useRef, useState, useMemo, useEffect, useCallback } from "react";
+import { useRef, useState, useMemo, useEffect, useCallback, Suspense, lazy } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
 import { ChevronLeft, ChevronRight, Sparkles, Loader2, Video, Image as ImageIcon, FileText, Maximize2, Edit3, LayoutList, Search, Home, ChevronDown, Filter, SortAsc, ExternalLink } from "lucide-react";
 import { DossierMediaGallery } from "@/features/research/components/dossier/DossierMediaGallery";
 import { extractMediaFromTipTap, countMediaAssets, type TipTapDocument } from "@/features/research/components/dossier/tipTapMediaExtractor";
-import UnifiedEditor from "@features/editor/components/UnifiedEditor";
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
 import type { VideoAsset, ImageAsset, DocumentAsset } from "@/features/research/components/dossier/mediaExtractor";
 import { FocusSyncProvider } from "@/features/research/contexts/FocusSyncContext";
 import { useDossierAgentHandlers } from "@/features/research/hooks/useDossierAgentHandlers";
 import { isValidConvexId } from "@/lib/ids";
+
+const UnifiedEditor = lazy(() => import("@features/editor/components/UnifiedEditor"));
 
 type ViewMode = 'split' | 'unified';
 
@@ -587,7 +588,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
         {/* Full-width Unified Editor */}
         <div className="flex-1 overflow-hidden">
           <ErrorBoundary title="Failed to load editor">
-            <UnifiedEditor documentId={documentId} />
+            <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+              <UnifiedEditor documentId={documentId} />
+            </Suspense>
           </ErrorBoundary>
         </div>
       </div>
@@ -888,7 +891,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="flex-1 overflow-hidden">
               {quickNotesDocId ? (
                 <ErrorBoundary title="Failed to load notes">
-                  <UnifiedEditor documentId={quickNotesDocId} mode="quickNote" editable={true} autoCreateIfEmpty={true} />
+                  <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+                    <UnifiedEditor documentId={quickNotesDocId} mode="quickNote" editable={true} autoCreateIfEmpty={true} />
+                  </Suspense>
                 </ErrorBoundary>
               ) : (
                 <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
@@ -931,7 +936,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
         <div className="h-full overflow-y-auto opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">
           <div className="max-w-4xl mx-auto px-6 py-8">
             <ErrorBoundary title="Failed to load editor">
-              <UnifiedEditor documentId={documentId} mode="full" editable={true} autoCreateIfEmpty={true} />
+              <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+                <UnifiedEditor documentId={documentId} mode="full" editable={true} autoCreateIfEmpty={true} />
+              </Suspense>
             </ErrorBoundary>
           </div>
         </div>

@@ -19,7 +19,7 @@
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { ActionCtx } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { internal, api } from "../../_generated/api";
 import {
   toolSummaries,
   toolCategories,
@@ -27,6 +27,7 @@ import {
   type ToolCategory,
 } from "./toolRegistry";
 import type { HybridSearchResult } from "./hybridSearch";
+import type { MCPToolSummary, MCPSchemaHydrationResult } from "../../domains/mcp/mcpToolRegistry";
 
 interface CategoryItem {
   categoryKey: string;
@@ -37,6 +38,53 @@ interface CategoryItem {
 
 // Track which tools have been described (for validation in invokeTool)
 const describedTools = new Set<string>();
+
+// Track which MCP tools have been hydrated
+const describedMCPTools = new Set<string>();
+
+/**
+ * Helper to search MCP tools and format results
+ */
+async function searchMCPToolsHelper(
+  ctx: ActionCtx,
+  query: string,
+  category?: string,
+  limit: number = 5
+): Promise<{
+  results: Array<{
+    toolName: string;
+    toolId: string;
+    serverId: string;
+    description: string;
+    category: string;
+    matchScore: number;
+    isMCP: true;
+  }>;
+  count: number;
+}> {
+  try {
+    const mcpResults = await ctx.runQuery(
+      api.domains.mcp.mcpToolRegistry.searchMCPTools,
+      { query, category, limit }
+    );
+
+    return {
+      results: mcpResults.map((r: MCPToolSummary & { matchScore: number }) => ({
+        toolName: r.name,
+        toolId: r.toolId,
+        serverId: r.serverId,
+        description: r.shortDescription,
+        category: r.category,
+        matchScore: r.matchScore,
+        isMCP: true as const,
+      })),
+      count: mcpResults.length,
+    };
+  } catch (error) {
+    console.warn("[searchMCPToolsHelper] Failed to search MCP tools:", error);
+    return { results: [], count: 0 };
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // META-TOOL #1: searchAvailableTools (Hybrid Search)
@@ -111,7 +159,11 @@ ${categoryList}
 Try a more specific query or browse by category using listToolCategories.`;
       }
 
-      const toolList = searchResult.results
+      // Also search MCP tools
+      const mcpSearchResult = await searchMCPToolsHelper(ctx, query, category, 3);
+
+      // Combine results - built-in first, then MCP
+      const builtInList = searchResult.results
         .map((r: HybridSearchResult, i: number) => {
           let matchInfo = "";
           if (includeDebug) {
@@ -120,8 +172,21 @@ Try a more specific query or browse by category using listToolCategories.`;
           return `${i + 1}. **${r.toolName}** [${r.categoryName}]${matchInfo}\n   ${r.description}`;
         })
         .join("\n\n");
-      
-      let response = `Found ${searchResult.results.length} tools matching "${query}":
+
+      let mcpList = "";
+      if (mcpSearchResult.count > 0) {
+        mcpList = "\n\n**MCP Tools:**\n" + mcpSearchResult.results
+          .map((r, i) => {
+            const idx = searchResult.results.length + i + 1;
+            return `${idx}. **${r.toolName}** [MCP:${r.category}]\n   ${r.description}`;
+          })
+          .join("\n\n");
+      }
+
+      const totalCount = searchResult.results.length + mcpSearchResult.count;
+      const toolList = builtInList + mcpList;
+
+      let response = `Found ${totalCount} tools matching "${query}":
 
 ${toolList}
 
@@ -258,20 +323,15 @@ IMPORTANT: You must call this before invokeTool to understand the required argum
     const descriptions: string[] = [];
 
     for (const toolName of toolNames) {
+      // First check built-in tools
       const summary = toolSummaries[toolName];
 
-      if (!summary) {
-        descriptions.push(`❌ **${toolName}**: Tool not found. Use searchAvailableTools to find valid tools.`);
-        continue;
-      }
+      if (summary) {
+        // Built-in tool - mark as described and get schema
+        describedTools.add(toolName);
+        const schemaInfo = await getToolSchema(toolName, summary.module);
 
-      // Mark as described for invokeTool validation
-      describedTools.add(toolName);
-
-      // Get full schema from the actual tool module
-      const schemaInfo = await getToolSchema(toolName, summary.module);
-
-      descriptions.push(`✅ **${toolName}**
+        descriptions.push(`✅ **${toolName}**
 Category: ${summary.category}
 Module: ${summary.module}
 Description: ${summary.description}
@@ -281,6 +341,52 @@ Arguments:
 ${schemaInfo}
 
 Ready to use with invokeTool({ toolName: "${toolName}", arguments: {...} })`);
+        continue;
+      }
+
+      // Not a built-in tool - try MCP tools
+      try {
+        const mcpTools = await ctx.runQuery(
+          api.domains.mcp.mcpToolRegistry.searchMCPTools,
+          { query: toolName, limit: 1 }
+        );
+
+        if (mcpTools.length > 0 && mcpTools[0].name === toolName) {
+          const mcpTool = mcpTools[0];
+
+          // Hydrate the full schema
+          const hydrationResult = await ctx.runAction(
+            api.domains.mcp.mcpToolRegistry.hydrateMCPToolSchema,
+            { toolId: mcpTool.toolId }
+          ) as MCPSchemaHydrationResult;
+
+          // Mark as described
+          describedMCPTools.add(toolName);
+
+          const schemaInfo = hydrationResult.schema
+            ? JSON.stringify(hydrationResult.schema.fullSchema, null, 2)
+            : "No schema available - pass arguments based on description";
+
+          descriptions.push(`✅ **${toolName}** [MCP Tool]
+Category: ${mcpTool.category}
+Server: ${mcpTool.serverId}
+Description: ${mcpTool.shortDescription}
+Keywords: ${mcpTool.keywords.join(", ")}
+Schema Hash: ${hydrationResult.tool.schemaHash || "N/A"}
+Hydration: ${hydrationResult.fromCache ? "from cache" : "fresh"} (${hydrationResult.hydrationLatencyMs}ms)
+
+Arguments:
+${schemaInfo}
+
+Ready to use with invokeTool({ toolName: "${toolName}", arguments: {...} })`);
+          continue;
+        }
+      } catch (error) {
+        console.warn(`[describeTools] Failed to search MCP tools for ${toolName}:`, error);
+      }
+
+      // Tool not found in either registry
+      descriptions.push(`❌ **${toolName}**: Tool not found. Use searchAvailableTools to find valid tools.`);
     }
 
     return descriptions.join("\n\n---\n\n");

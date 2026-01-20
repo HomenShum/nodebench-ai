@@ -58,6 +58,10 @@ type Scenario = {
     requireVerificationStep?: boolean;
     requireProviderUsage?: boolean;
     requireTools?: string[];
+    // Phase 5: Dynamic Context Stack requirements
+    maxTokenBudget?: number;              // Maximum token budget for the run
+    requireResourceLinkUsage?: boolean;   // Must use resource_link pattern for large outputs
+    minCitationResolutionRate?: number;   // e.g., 0.95 = 95% citations must resolve
   };
 };
 
@@ -93,6 +97,64 @@ const SKILL_META_TOOLS = ["searchAvailableSkills", "describeSkill", "listSkillCa
 const TOOL_META_TOOLS = ["searchAvailableTools", "describeTools", "listToolCategories", "invokeTool"];
 const ALL_META_TOOLS = [...SKILL_META_TOOLS, ...TOOL_META_TOOLS];
 
+const RESOURCE_LINK_WRAP_THRESHOLD_BYTES = 100 * 1024;
+
+function isResourceLinkObject(value: unknown): value is { type: "resource_link"; sizeBytes?: number } {
+  return typeof value === "object" && value !== null && (value as any).type === "resource_link";
+}
+
+function getByteLength(str: string): number {
+  return new TextEncoder().encode(str).length;
+}
+
+function estimateValueSizeBytes(value: unknown): number {
+  if (typeof value === "string") return getByteLength(value);
+  try {
+    return getByteLength(JSON.stringify(value));
+  } catch {
+    return 0;
+  }
+}
+
+function collectResourceLinks(value: unknown, out: any[], depth: number = 0): void {
+  if (depth > 8) return;
+  if (isResourceLinkObject(value)) {
+    out.push(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectResourceLinks(item, out, depth + 1);
+    return;
+  }
+  if (typeof value === "object" && value !== null) {
+    const entries = Object.entries(value as Record<string, unknown>);
+    for (const [k, v] of entries.slice(0, 80)) {
+      if (k === "ctx") continue;
+      collectResourceLinks(v, out, depth + 1);
+    }
+  }
+}
+
+function analyzeToolResultsForResourceLinks(toolResults: unknown[]): {
+  resourceLinks: any[];
+  resourceLinkCount: number;
+  resourceLinkBytes: number;
+  hasLargeInlinePayload: boolean;
+} {
+  const resourceLinks: any[] = [];
+  for (const tr of toolResults) collectResourceLinks(tr, resourceLinks);
+
+  const resourceLinkBytes = resourceLinks.reduce((sum, rl) => sum + Number((rl as any)?.sizeBytes ?? 0), 0);
+  const hasLargeInlinePayload = toolResults.some((tr) => estimateValueSizeBytes(tr) >= RESOURCE_LINK_WRAP_THRESHOLD_BYTES);
+
+  return {
+    resourceLinks,
+    resourceLinkCount: resourceLinks.length,
+    resourceLinkBytes,
+    hasLargeInlinePayload,
+  };
+}
+
 /**
  * Disclosure summary extracted from tool calls telemetry.
  * This is computed ONLY from actual tool call data (never by inference).
@@ -118,13 +180,30 @@ interface DisclosureMetrics {
 
   // Token estimates (P0 baseline measurement)
   estimatedToolSchemaTokens: number;  // Estimated tokens for tool schemas loaded in prompt
+
+  // Phase 5: Resource link metrics (Dynamic Context Stack)
+  resourceLinksCreated: number;       // Large outputs wrapped as resource_links
+  resourceLinksRetrieved: number;     // Retrievals from resource_links
+  artifactBytesAvoided: number;       // Bytes saved by using resource_links
+
+  // Phase 5: Citation resolution metrics
+  citationsInResponse: number;        // Total citation anchors in response
+  citationsResolved: number;          // Citations that resolve to valid chunks
+  citationsUnresolved: number;        // Citations that couldn't be resolved
+
+  // Phase 5: Budget compliance
+  tokenBudgetExceeded: boolean;       // Did we exceed token budget?
+  costBudgetExceeded: boolean;        // Did we exceed cost budget?
 }
 
 /**
  * Extract disclosure metrics from tool calls telemetry.
  * This allows us to track progressive disclosure usage without modifying meta-tool implementations.
  */
-function extractDisclosureMetrics(toolCalls: Array<{ name: string; ok?: boolean; error?: string | null }>): DisclosureMetrics {
+function extractDisclosureMetrics(
+  toolCalls: Array<{ name: string; ok?: boolean; error?: string | null }>,
+  toolResults: unknown[] = []
+): DisclosureMetrics {
   const callNames = toolCalls.map((c) => String(c?.name ?? ""));
 
   // Skill metrics
@@ -175,6 +254,31 @@ function extractDisclosureMetrics(toolCalls: Array<{ name: string; ok?: boolean;
     ? nonMetaTools.length * ESTIMATED_TOKENS_PER_TOOL  // Deferred: only expanded tools
     : TOTAL_TOOLS_IN_CATALOG * ESTIMATED_TOKENS_PER_TOOL;  // Non-deferred: all tools
 
+  // Phase 5: Resource link metrics (extracted from tool results)
+  const _resourceLinkTools = ["wrapToolOutput", "retrieveArtifact", "retrieveFullArtifact", "retrieveMultipleArtifacts"];
+  const toolResultAnalysis = analyzeToolResultsForResourceLinks(toolResults);
+  const resourceLinksCreated = toolResultAnalysis.resourceLinkCount > 0
+    ? toolResultAnalysis.resourceLinkCount
+    : callNames.filter((n) => n === "wrapToolOutput").length;
+  const resourceLinksRetrieved = callNames.filter((n) =>
+    ["retrieveArtifact", "retrieveFullArtifact", "retrieveMultipleArtifacts"].includes(n)
+  ).length;
+
+  // Estimate bytes avoided. Prefer actual resource_link sizes when available.
+  const artifactBytesAvoided = toolResultAnalysis.resourceLinkBytes > 0
+    ? toolResultAnalysis.resourceLinkBytes
+    : resourceLinksCreated * 100 * 1024;
+
+  // Phase 5: Citation metrics (would need response analysis for accuracy)
+  // Placeholder: count citation anchors in tool names (actual implementation needs response text)
+  const citationsInResponse = 0; // Will be computed from response text
+  const citationsResolved = 0;
+  const citationsUnresolved = 0;
+
+  // Phase 5: Budget compliance (will be set by requirements checking)
+  const tokenBudgetExceeded = false;
+  const costBudgetExceeded = false;
+
   return {
     skillSearchCalls,
     skillsActivated,
@@ -187,6 +291,15 @@ function extractDisclosureMetrics(toolCalls: Array<{ name: string; ok?: boolean;
     directToolCalls: nonMetaTools.filter((n) => !ALL_META_TOOLS.includes(n)),
     disclosureLevel,
     estimatedToolSchemaTokens,
+    // Phase 5 additions
+    resourceLinksCreated,
+    resourceLinksRetrieved,
+    artifactBytesAvoided,
+    citationsInResponse,
+    citationsResolved,
+    citationsUnresolved,
+    tokenBudgetExceeded,
+    costBudgetExceeded,
   };
 }
 
@@ -277,6 +390,69 @@ function validateDebriefV1(debrief: DebriefV1): { ok: boolean; errors: string[] 
 
 function normalizeLower(s: string | null | undefined): string {
   return String(s ?? "").trim().toLowerCase();
+}
+
+type ParsedCitationAnchor =
+  | { kind: "cite"; raw: string; artifactId: string; chunkId: string }
+  | { kind: "fact"; raw: string; chunkId: string };
+
+function parseCitationAnchors(text: string): ParsedCitationAnchor[] {
+  const out: ParsedCitationAnchor[] = [];
+
+  const citeRe = /\{\{cite:([^:}]+):([^}]+)\}\}/g;
+  for (const match of text.matchAll(citeRe)) {
+    const artifactId = String(match[1] ?? "").trim();
+    const chunkId = String(match[2] ?? "").trim();
+    if (!artifactId || !chunkId) continue;
+    out.push({ kind: "cite", raw: match[0], artifactId, chunkId });
+  }
+
+  const factRe = /\{\{fact:distilled:([^:}]+):([^}]+)\}\}/g;
+  for (const match of text.matchAll(factRe)) {
+    const chunkId = String(match[2] ?? "").trim();
+    if (!chunkId) continue;
+    out.push({ kind: "fact", raw: match[0], chunkId });
+  }
+
+  return out;
+}
+
+async function resolveCitationAnchors(
+  ctx: any,
+  anchors: ParsedCitationAnchor[]
+): Promise<{ total: number; resolved: number; unresolved: number; resolutionRate: number; limited: boolean }> {
+  const MAX_TO_RESOLVE = 60;
+  const total = anchors.length;
+  if (total === 0) return { total: 0, resolved: 0, unresolved: 0, resolutionRate: 1, limited: false };
+
+  const limitedAnchors = anchors.slice(0, MAX_TO_RESOLVE);
+  const limited = total > limitedAnchors.length;
+
+  const uniqueChunkIds = Array.from(new Set(limitedAnchors.map((a) => a.chunkId)));
+  const chunkToArtifactId = new Map<string, string | null>();
+
+  for (const chunkId of uniqueChunkIds) {
+    try {
+      const chunk = await ctx.runQuery(internal.domains.artifacts.evidenceSearch.getEvidenceChunkById, {
+        chunkId: chunkId as any,
+      });
+      chunkToArtifactId.set(chunkId, chunk ? String(chunk.artifactId) : null);
+    } catch {
+      chunkToArtifactId.set(chunkId, null);
+    }
+  }
+
+  let resolved = 0;
+  for (const anchor of limitedAnchors) {
+    const artifactId = chunkToArtifactId.get(anchor.chunkId);
+    if (!artifactId) continue;
+    if (anchor.kind === "cite" && artifactId !== anchor.artifactId) continue;
+    resolved++;
+  }
+
+  const unresolved = total - resolved;
+  const resolutionRate = total > 0 ? resolved / total : 1;
+  return { total, resolved, unresolved, resolutionRate, limited };
 }
 
 function isRedactedEmailLike(value: string): boolean {
@@ -756,6 +932,34 @@ const PACK_SCENARIOS: Scenario[] = [
       requireTools: ["lookupGroundTruthEntity"],
     },
   },
+  // Phase 5: Resource link + citation scenarios
+  {
+    id: "pack_resource_link_budget",
+    name: "Pack: resource_link with tight token budget",
+    query: "DISCO — Comprehensive research deep dive with all available sources. Keep total context under 8000 tokens by using resource_links for large outputs. Cite all facts with proper anchors.",
+    expectedPersona: "EARLY_STAGE_VC",
+    expectedEntityId: "DISCO",
+    allowedPersonas: ["EARLY_STAGE_VC", "JPM_STARTUP_BANKER", "QUANT_ANALYST"],
+    requirements: {
+      minToolCalls: 2,
+      maxTokenBudget: 8000,
+      requireResourceLinkUsage: true,
+      requireTools: ["lookupGroundTruthEntity"],
+    },
+  },
+  {
+    id: "pack_citation_resolution",
+    name: "Pack: 95% citation resolution verification",
+    query: "DISCO — Provide a fully-cited analysis with at least 5 distinct facts. Every claim must have a citation anchor that resolves to a valid source chunk. I'll verify citation resolution.",
+    expectedPersona: "ACADEMIC_RD",
+    expectedEntityId: "DISCO",
+    allowedPersonas: ["ACADEMIC_RD", "EARLY_STAGE_VC", "JPM_STARTUP_BANKER"],
+    requirements: {
+      minToolCalls: 1,
+      minCitationResolutionRate: 0.95,
+      requireTools: ["lookupGroundTruthEntity"],
+    },
+  },
 ];
 
 
@@ -934,6 +1138,9 @@ export const runPersonaEpisodeEval = action({
           ? scoreAgainstGroundTruth({ expectedPersona, allowedPersonas, expectedEntityId, debrief: normalizedDebrief })
           : { ok: false, checks: {}, reasons: debriefValidation.errors };
 
+      const citationAnchors = parseCitationAnchors(finalText);
+      const citationStats = await resolveCitationAnchors(ctx, citationAnchors);
+
       const extraChecks: Record<string, boolean> = {};
       const extraReasons: string[] = [];
       if (requirements) {
@@ -1005,12 +1212,63 @@ export const runPersonaEpisodeEval = action({
           extraChecks.maxCostUsd = costUsd <= requirements.maxCostUsd;
           if (!extraChecks.maxCostUsd) extraReasons.push(`cost exceeded: $${costUsd.toFixed(4)} expected <= $${requirements.maxCostUsd.toFixed(2)}`);
         }
+
+        // Phase 5: Dynamic Context Stack requirements
+        if (typeof requirements.maxTokenBudget === "number") {
+          const totalTokens = providerUsage?.totalTokens ?? (estimatedInputTokens + estimatedOutputTokens);
+          extraChecks.maxTokenBudget = totalTokens <= requirements.maxTokenBudget;
+          if (!extraChecks.maxTokenBudget) {
+            extraReasons.push(`token budget exceeded: ${totalTokens} expected <= ${requirements.maxTokenBudget}`);
+          }
+        }
+
+        if (requirements.requireResourceLinkUsage === true) {
+          const resourceLinkAnalysis = analyzeToolResultsForResourceLinks(toolResults);
+
+          // Pass when:
+          // - a resource_link payload is observed in tool results, OR
+          // - the agent explicitly used resource_link tools, OR
+          // - no tool produced a payload large enough to require wrapping.
+          const resourceLinkTools = ["wrapToolOutput", "retrieveArtifact", "retrieveFullArtifact", "retrieveMultipleArtifacts"];
+          const usedResourceLinkTools = callNames.some((n: string) => resourceLinkTools.includes(n));
+          const hasResourceLinkInText =
+            finalText.includes("resource_link") ||
+            finalText.includes("\"type\":\"resource_link\"") ||
+            finalText.includes("\"type\": \"resource_link\"");
+          extraChecks.resourceLinkUsage =
+            resourceLinkAnalysis.resourceLinkCount > 0 ||
+            usedResourceLinkTools ||
+            hasResourceLinkInText ||
+            resourceLinkAnalysis.hasLargeInlinePayload === false;
+          if (!extraChecks.resourceLinkUsage) {
+            extraReasons.push("requireResourceLinkUsage not met: large tool output observed without resource_link wrapping");
+          }
+        }
+
+        if (typeof requirements.minCitationResolutionRate === "number") {
+          extraChecks.citationResolutionRate =
+            citationStats.resolutionRate >= requirements.minCitationResolutionRate;
+          if (!extraChecks.citationResolutionRate) {
+            extraReasons.push(
+              `citation resolution rate too low: ${(citationStats.resolutionRate * 100).toFixed(1)}% expected >= ${(requirements.minCitationResolutionRate * 100).toFixed(1)}%`
+            );
+          }
+          if (citationStats.total === 0) {
+            extraReasons.push("no citation anchors found in response");
+          }
+          if (citationStats.limited) {
+            extraReasons.push("citation resolution check limited to first 60 anchors");
+          }
+        }
       }
 
       const ok = gtScore.ok && Object.values(extraChecks).every(Boolean);
 
       // Extract disclosure metrics from tool calls (P0 instrumentation)
-      const disclosureMetrics = extractDisclosureMetrics(toolCalls);
+      const disclosureMetrics = extractDisclosureMetrics(toolCalls, toolResults);
+      disclosureMetrics.citationsInResponse = citationStats.total;
+      disclosureMetrics.citationsResolved = citationStats.resolved;
+      disclosureMetrics.citationsUnresolved = citationStats.unresolved;
       const disclosureWarnings = generateDisclosureWarnings(disclosureMetrics, s.id, expectedPersona);
 
       runs.push({
