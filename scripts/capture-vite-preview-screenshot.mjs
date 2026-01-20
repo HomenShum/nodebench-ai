@@ -42,7 +42,8 @@ function waitForReady(proc, { timeoutMs }) {
 }
 
 const port = process.env.PREVIEW_PORT ?? "4173";
-const url = `http://127.0.0.1:${port}/`;
+const baseUrl = `http://127.0.0.1:${port}`;
+const targetUrl = process.env.TARGET_URL ?? `${baseUrl}${process.env.TARGET_PATH ?? "/"}`;
 const screenshotPath = process.env.SCREENSHOT_PATH ?? "playwright-report/ui-preview.png";
 
 const preview = spawn(
@@ -75,7 +76,29 @@ try {
     }
   });
 
-  await page.goto(url, { waitUntil: "networkidle" });
+  await page.goto(targetUrl, { waitUntil: "networkidle" });
+
+  // Optional interaction steps, format: "role:name;role:name;..."
+  // Example: ACTION_STEPS="button:Fast Agent;button:Research Hub"
+  const rawSteps = process.env.ACTION_STEPS ?? "";
+  const steps = rawSteps
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const [role, ...rest] = s.split(":");
+      return { role: role?.trim() ?? "", name: rest.join(":").trim() };
+    })
+    .filter((s) => s.role && s.name);
+
+  for (const step of steps) {
+    const locator = page.getByRole(step.role, { name: step.name });
+    if (await locator.count()) {
+      await locator.first().click();
+      await delay(800);
+    }
+  }
+
   await delay(1500);
   await page.screenshot({ path: screenshotPath, fullPage: true });
   await browser.close();
