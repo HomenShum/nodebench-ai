@@ -1,0 +1,43 @@
+DATA QUALITY UPDATE
+
+We recently identified and corrected attribution errors in our startup funding intelligence system. Here's what we fixed and how we're improving:
+
+WHAT HAPPENED:
+Our automated funding detection system incorrectly attributed 11 major funding rounds to "Unknown Company" entries, affecting $20.7B+ in funding data. Additionally, 5 company names contained descriptive prefixes (e.g., "AI startup X" instead of "X").
+
+COMPANIES CORRECTED:
+• OpenEvidence - $12B Series D+ (AI platform for doctors)
+• Baseten - $5B (AI inference, Nvidia-backed)
+• WebAI - $2.5B Series A (sovereign AI)
+• Skild AI - $1.4B (robotics AI)
+• Humans - $480M Seed (AI startup)
+• Harmonic - $120M Series C (mathematical AI)
+• Type One Energy - $87M Series B (fusion energy)
+• Emergent - $70M Series B (vibe coding)
+• Flip - $20M Series A (vertical AI)
+• Nexxa AI - $9M Seed (industrial AI)
+• RiskFront - $3.3M Pre-seed (compliance AI)
+
+Plus cleaned descriptive prefixes from: Pennylane, Skild AI, Etched, Onebrief, Another
+
+THE FIX:
+✓ Manually corrected all 16 company attributions
+✓ Built AI-powered name extraction (95% accuracy vs 80% regex)
+✓ Created automated data cleanup pipeline
+✓ Added multi-source validation system
+✓ Implemented manual review dashboard
+
+RESULTS:
+• Unknown Companies: 11 → 0 (-100%)
+• Descriptive Prefix Issues: 6 → 1 (-83%)
+• Overall Data Quality Issues: 66 → 39 (-41%)
+
+WHY THIS MATTERS:
+Accurate attribution is critical for market intelligence. When we make mistakes, we own them and fix the systems that caused them. Our funding intelligence now has better extraction accuracy, automated quality checks, and human-in-the-loop review for ambiguous cases.
+
+TRANSPARENCY COMMITMENT:
+We're sharing this publicly because accuracy matters more than perfection. Our data quality systems are now significantly more robust, but if you spot errors, please let us know.
+
+Full technical report: github.com/[your-repo]/blob/main/DATA_CLEANUP_REPORT_2026-01-21.md
+
+#DataQuality #Transparency #StartupFunding #AI #MachineLearning
