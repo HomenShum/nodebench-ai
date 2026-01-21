@@ -366,6 +366,7 @@ import type * as domains_evaluation_testAnthropicApi from "../domains/evaluation
 import type * as domains_evaluation_testDirectApi from "../domains/evaluation/testDirectApi.js";
 import type * as domains_evaluation_validators from "../domains/evaluation/validators.js";
 import type * as domains_financial_corporateActions from "../domains/financial/corporateActions.js";
+import type * as domains_financial_dcfTools from "../domains/financial/dcfTools.js";
 import type * as domains_financial_fundamentals from "../domains/financial/fundamentals.js";
 import type * as domains_financial_inconclusiveOnFailure from "../domains/financial/inconclusiveOnFailure.js";
 import type * as domains_financial_index from "../domains/financial/index.js";
@@ -1096,6 +1097,7 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/testDirectApi": typeof domains_evaluation_testDirectApi;
   "domains/evaluation/validators": typeof domains_evaluation_validators;
   "domains/financial/corporateActions": typeof domains_financial_corporateActions;
+  "domains/financial/dcfTools": typeof domains_financial_dcfTools;
   "domains/financial/fundamentals": typeof domains_financial_fundamentals;
   "domains/financial/inconclusiveOnFailure": typeof domains_financial_inconclusiveOnFailure;
   "domains/financial/index": typeof domains_financial_index;

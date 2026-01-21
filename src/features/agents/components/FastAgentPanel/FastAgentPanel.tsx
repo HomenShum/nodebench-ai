@@ -1648,12 +1648,12 @@ export function FastAgentPanel({
                      </div>
 
                       {/* Recent threads / last run */}
-                      {threads && threads.length > 0 && (
-                        <div className="px-4 pb-6">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-xs font-semibold text-[var(--text-secondary)]">
-                              Recent chats
-                            </div>
+                      <div className="px-4 pb-6">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-xs font-semibold text-[var(--text-secondary)]">
+                            Recent chats
+                          </div>
+                          {threads.length > 0 && (
                             <button
                               type="button"
                               onClick={() => setShowSidebar(true)}
@@ -1661,9 +1661,22 @@ export function FastAgentPanel({
                             >
                               View all
                             </button>
-                          </div>
-                          <div className="space-y-2">
-                            {threads.slice(0, 3).map((thread: any) => {
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          {threadsStatus === "LoadingFirstPage" ? (
+                            <>
+                              <div className="h-10 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] animate-pulse" />
+                              <div className="h-10 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] animate-pulse" />
+                            </>
+                          ) : threads.length === 0 ? (
+                            <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2">
+                              <div className="text-[11px] text-[var(--text-muted)]">
+                                No chats yet — try a quick action below to start one.
+                              </div>
+                            </div>
+                          ) : (
+                            threads.slice(0, 3).map((thread: any) => {
                               const lastAt =
                                 (thread?.lastMessageAt as number | undefined) ??
                                 (thread?.updatedAt as number | undefined) ??
@@ -1702,10 +1715,10 @@ export function FastAgentPanel({
                                   </div>
                                 </button>
                               );
-                            })}
-                          </div>
+                            })
+                          )}
                         </div>
-                      )}
+                      </div>
 
                       {/* Swarm Quick Actions */}
                       <SwarmQuickActions

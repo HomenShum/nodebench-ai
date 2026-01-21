@@ -341,16 +341,17 @@ function QuickActionButton({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClick}
+            title={label}
             className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
                 isPrimary
                     ? "bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 hover:shadow-lg"
                     : isSecondary
-                      ? "bg-transparent border-stone-200 text-stone-600 hover:bg-white/70 hover:text-emerald-950"
+                      ? "px-3 bg-transparent border-stone-200 text-stone-600 hover:bg-white/70 hover:text-emerald-950"
                       : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
             }`}
         >
             {icon}
-            <span className={isSecondary ? "hidden sm:inline" : ""}>{label}</span>
+            <span className={isSecondary ? "hidden" : ""}>{label}</span>
             {badge !== undefined && badge > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                     {badge > 9 ? '9+' : badge}
