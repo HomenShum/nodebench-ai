@@ -179,3 +179,59 @@ export const postWeeklySourceSummary = action({
     });
   },
 });
+
+/**
+ * Generate and post ENHANCED weekly intelligence report
+ * Usage: npx convex run workflows/linkedinTrigger:postEnhancedWeeklySummary '{}'
+ *
+ * Includes ALL available metrics:
+ * - Source publishers (not just domains)
+ * - Sector distribution with funding totals
+ * - Geographic breakdown
+ * - Top investors by deal count
+ * - Verification status
+ * - Valuation metrics
+ * - Average deal size by stage
+ * - Data quality scores
+ */
+export const postEnhancedWeeklySummary = action({
+  args: {
+    dryRun: v.optional(v.boolean()),
+    daysBack: v.optional(v.number()), // Default 7
+  },
+  returns: v.object({
+    success: v.boolean(),
+    postUrl: v.optional(v.string()),
+    postUrn: v.optional(v.string()),
+    content: v.optional(v.string()),
+    error: v.optional(v.string()),
+    dryRun: v.optional(v.boolean()),
+  }),
+  handler: async (ctx, args) => {
+    // Generate the enhanced summary content
+    const result = await ctx.runAction(internal.workflows.enhancedWeeklySummary.formatEnhancedWeeklyPost, {
+      daysBack: args.daysBack ?? 7,
+    });
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: "Failed to generate enhanced weekly summary",
+      };
+    }
+
+    if (args.dryRun) {
+      console.log(`[postEnhancedWeeklySummary] DRY RUN:\n${result.content}`);
+      return {
+        success: true,
+        dryRun: true,
+        content: result.content,
+      };
+    }
+
+    // Post to LinkedIn
+    return await ctx.runAction(internal.domains.social.linkedinPosting.createTextPost, {
+      text: result.content,
+    });
+  },
+});
