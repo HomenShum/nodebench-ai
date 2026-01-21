@@ -455,3 +455,49 @@ export const getPostingStatsBySector = query({
     })).sort((a, b) => b.postCount - a.postCount);
   },
 });
+
+/**
+ * Delete an incorrect LinkedIn funding post (admin/correction tool).
+ * Use this to fix data attribution errors.
+ */
+export const deleteIncorrectPost = internalMutation({
+  args: {
+    postId: v.id("linkedinFundingPosts"),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    deletedPost: v.optional(v.object({
+      companyName: v.string(),
+      roundType: v.string(),
+      amountRaw: v.string(),
+      postUrl: v.string(),
+    })),
+  }),
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+
+    if (!post) {
+      return {
+        success: false,
+      };
+    }
+
+    console.log(`[linkedinFundingPosts] Deleting incorrect post: ${args.postId}`);
+    console.log(`  Company: ${post.companyName}`);
+    console.log(`  Round: ${post.roundType}`);
+    console.log(`  Amount: ${post.amountRaw}`);
+    console.log(`  Post URL: ${post.postUrl}`);
+
+    await ctx.db.delete(args.postId);
+
+    return {
+      success: true,
+      deletedPost: {
+        companyName: post.companyName,
+        roundType: post.roundType,
+        amountRaw: post.amountRaw,
+        postUrl: post.postUrl,
+      },
+    };
+  },
+});
