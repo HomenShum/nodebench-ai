@@ -130,3 +130,52 @@ export const runMultiPersonaDigest = action({
     });
   },
 });
+
+/**
+ * Generate and post weekly source summary
+ * Usage: npx convex run workflows/linkedinTrigger:postWeeklySourceSummary '{}'
+ *
+ * Shows all media sources monitored, companies covered, and funding tracked
+ * Demonstrates transparency and breadth of data aggregation
+ */
+export const postWeeklySourceSummary = action({
+  args: {
+    dryRun: v.optional(v.boolean()),
+    daysBack: v.optional(v.number()), // Default 7
+  },
+  returns: v.object({
+    success: v.boolean(),
+    postUrl: v.optional(v.string()),
+    postUrn: v.optional(v.string()),
+    content: v.optional(v.string()),
+    error: v.optional(v.string()),
+    dryRun: v.optional(v.boolean()),
+  }),
+  handler: async (ctx, args) => {
+    // Generate the summary content
+    const result = await ctx.runAction(internal.workflows.weeklySourceSummary.formatWeeklySourcePost, {
+      daysBack: args.daysBack ?? 7,
+    });
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: "Failed to generate weekly summary",
+      };
+    }
+
+    if (args.dryRun) {
+      console.log(`[postWeeklySourceSummary] DRY RUN:\n${result.content}`);
+      return {
+        success: true,
+        dryRun: true,
+        content: result.content,
+      };
+    }
+
+    // Post to LinkedIn
+    return await ctx.runAction(internal.domains.social.linkedinPosting.createTextPost, {
+      text: result.content,
+    });
+  },
+});
