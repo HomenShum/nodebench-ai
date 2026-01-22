@@ -45,8 +45,14 @@ const COMPANY_SECTOR_OVERRIDES: Record<string, string> = {
   "Type One Energy": "DeepTech - Space Tech",
   "IO River": "Enterprise SaaS - Data Infrastructure",
 
-  // LegalTech - already classified
-  // "Ivo AI": "LegalTech",
+  // LegalTech
+  "Ivo AI": "LegalTech",
+
+  // DeepTech - Quantum
+  "Equal1": "DeepTech - Quantum Computing",
+
+  // Defense (already has Defense Tech entry but Onebrief might be missing)
+  // Check if Onebrief is already classified
 
   // Construction
   "XBuild": "Construction Tech",

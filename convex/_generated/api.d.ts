@@ -293,7 +293,9 @@ import type * as domains_enrichment_fundingQueries from "../domains/enrichment/f
 import type * as domains_enrichment_fundingVerification from "../domains/enrichment/fundingVerification.js";
 import type * as domains_enrichment_llmCompanyExtraction from "../domains/enrichment/llmCompanyExtraction.js";
 import type * as domains_enrichment_llmEnrichment from "../domains/enrichment/llmEnrichment.js";
+import type * as domains_enrichment_quickVerificationUpgrade from "../domains/enrichment/quickVerificationUpgrade.js";
 import type * as domains_enrichment_testQueries from "../domains/enrichment/testQueries.js";
+import type * as domains_enrichment_useOfProceedsExtractor from "../domains/enrichment/useOfProceedsExtractor.js";
 import type * as domains_enrichment_workpools from "../domains/enrichment/workpools.js";
 import type * as domains_entities_decayManager from "../domains/entities/decayManager.js";
 import type * as domains_entities_entityLifecycle from "../domains/entities/entityLifecycle.js";
@@ -1037,7 +1039,9 @@ declare const fullApi: ApiFromModules<{
   "domains/enrichment/fundingVerification": typeof domains_enrichment_fundingVerification;
   "domains/enrichment/llmCompanyExtraction": typeof domains_enrichment_llmCompanyExtraction;
   "domains/enrichment/llmEnrichment": typeof domains_enrichment_llmEnrichment;
+  "domains/enrichment/quickVerificationUpgrade": typeof domains_enrichment_quickVerificationUpgrade;
   "domains/enrichment/testQueries": typeof domains_enrichment_testQueries;
+  "domains/enrichment/useOfProceedsExtractor": typeof domains_enrichment_useOfProceedsExtractor;
   "domains/enrichment/workpools": typeof domains_enrichment_workpools;
   "domains/entities/decayManager": typeof domains_entities_decayManager;
   "domains/entities/entityLifecycle": typeof domains_entities_entityLifecycle;
