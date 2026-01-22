@@ -26,6 +26,7 @@ import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
 import { ParallelTaskTimeline } from './FastAgentPanel.ParallelTaskTimeline';
 import { EditsTab } from './FastAgentPanel.EditsTab';
 import { BriefTab } from './FastAgentPanel.BriefTab';
+import { TaskManagerView } from '../TaskManager';
 // ThreadTabBar removed - functionality consolidated into simplified header
 import { SwarmLanesView } from './SwarmLanesView';
 import { SwarmQuickActions } from './SwarmQuickActions';
@@ -262,8 +263,8 @@ export function FastAgentPanel({
   const [disclosureEvents, setDisclosureEvents] = useState<DisclosureEvent[]>([]);
   const [showDisclosureTrace, setShowDisclosureTrace] = useState(false);
 
-  // Tab state - simplified to just Chat and Sources
-  const [activeTab, setActiveTab] = useState<'chat' | 'sources'>('chat');
+  // Tab state - Chat, Sources, and Telemetry (Task History)
+  const [activeTab, setActiveTab] = useState<'chat' | 'sources' | 'telemetry'>('chat');
   const [isThreadDropdownOpen, setIsThreadDropdownOpen] = useState(false);
 
   // Swarm hooks - for parallel agent orchestration
@@ -1483,11 +1484,12 @@ export function FastAgentPanel({
           </div>
         </div>
 
-        {/* Tab Bar - Minimal 2 tabs */}
+        {/* Tab Bar - Chat, Sources, and Telemetry */}
         <div className="flex items-center px-3 border-b border-[var(--border-color)]">
           {([
             { id: 'chat', label: 'Chat' },
             { id: 'sources', label: 'Sources' },
+            { id: 'telemetry', label: 'Telemetry' },
           ] as const).map((tab) => (
             <button
               type="button"
@@ -1544,7 +1546,9 @@ export function FastAgentPanel({
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] relative">
-            {activeTab === 'sources' ? (
+            {activeTab === 'telemetry' ? (
+              <TaskManagerView isPublic={false} className="h-full" />
+            ) : activeTab === 'sources' ? (
               <ArtifactsTab
                 media={aggregatedMedia}
                 documents={aggregatedDocumentActions}

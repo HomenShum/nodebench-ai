@@ -279,6 +279,9 @@ import type * as domains_encounters_encounterMutations from "../domains/encounte
 import type * as domains_encounters_encounterQueries from "../domains/encounters/encounterQueries.js";
 import type * as domains_encounters_index from "../domains/encounters/index.js";
 import type * as domains_encounters_types from "../domains/encounters/types.js";
+import type * as domains_enrichment_backfillMetadata from "../domains/enrichment/backfillMetadata.js";
+import type * as domains_enrichment_dataCleanup from "../domains/enrichment/dataCleanup.js";
+import type * as domains_enrichment_deleteDuplicates from "../domains/enrichment/deleteDuplicates.js";
 import type * as domains_enrichment_documentStore from "../domains/enrichment/documentStore.js";
 import type * as domains_enrichment_enrichmentQueue from "../domains/enrichment/enrichmentQueue.js";
 import type * as domains_enrichment_enrichmentWorker from "../domains/enrichment/enrichmentWorker.js";
@@ -287,6 +290,7 @@ import type * as domains_enrichment_fundingDetection from "../domains/enrichment
 import type * as domains_enrichment_fundingMutations from "../domains/enrichment/fundingMutations.js";
 import type * as domains_enrichment_fundingQueries from "../domains/enrichment/fundingQueries.js";
 import type * as domains_enrichment_fundingVerification from "../domains/enrichment/fundingVerification.js";
+import type * as domains_enrichment_llmCompanyExtraction from "../domains/enrichment/llmCompanyExtraction.js";
 import type * as domains_enrichment_testQueries from "../domains/enrichment/testQueries.js";
 import type * as domains_enrichment_workpools from "../domains/enrichment/workpools.js";
 import type * as domains_entities_decayManager from "../domains/entities/decayManager.js";
@@ -549,6 +553,10 @@ import type * as domains_social_linkedinPosting from "../domains/social/linkedin
 import type * as domains_social_postDedup from "../domains/social/postDedup.js";
 import type * as domains_social_postDedupAction from "../domains/social/postDedupAction.js";
 import type * as domains_social_specializedPostQueries from "../domains/social/specializedPostQueries.js";
+import type * as domains_taskManager_cronWrapper from "../domains/taskManager/cronWrapper.js";
+import type * as domains_taskManager_index from "../domains/taskManager/index.js";
+import type * as domains_taskManager_mutations from "../domains/taskManager/mutations.js";
+import type * as domains_taskManager_queries from "../domains/taskManager/queries.js";
 import type * as domains_tasks_dailyNotes from "../domains/tasks/dailyNotes.js";
 import type * as domains_tasks_eventTaskDocuments from "../domains/tasks/eventTaskDocuments.js";
 import type * as domains_tasks_index from "../domains/tasks/index.js";
@@ -576,6 +584,7 @@ import type * as domains_verification_fastVerification from "../domains/verifica
 import type * as domains_verification_index from "../domains/verification/index.js";
 import type * as domains_verification_instagramClaimVerification from "../domains/verification/instagramClaimVerification.js";
 import type * as domains_verification_instagramClaimVerificationMutations from "../domains/verification/instagramClaimVerificationMutations.js";
+import type * as domains_verification_multiSourceValidation from "../domains/verification/multiSourceValidation.js";
 import type * as feed from "../feed.js";
 import type * as globalResearch_artifacts from "../globalResearch/artifacts.js";
 import type * as globalResearch_cacheSimple from "../globalResearch/cacheSimple.js";
@@ -723,6 +732,7 @@ import type * as workflows_dailyLinkedInPostMutations from "../workflows/dailyLi
 import type * as workflows_dailyMorningBrief from "../workflows/dailyMorningBrief.js";
 import type * as workflows_emailResearchOrchestrator from "../workflows/emailResearchOrchestrator.js";
 import type * as workflows_enhancedMorningBrief from "../workflows/enhancedMorningBrief.js";
+import type * as workflows_enhancedWeeklySummary from "../workflows/enhancedWeeklySummary.js";
 import type * as workflows_index from "../workflows/index.js";
 import type * as workflows_linkedinTrigger from "../workflows/linkedinTrigger.js";
 import type * as workflows_prdComposerWorkflow from "../workflows/prdComposerWorkflow.js";
@@ -731,6 +741,7 @@ import type * as workflows_scheduledPDFReportsMutations from "../workflows/sched
 import type * as workflows_sendMockBankerDigest from "../workflows/sendMockBankerDigest.js";
 import type * as workflows_specializedLinkedInPosts from "../workflows/specializedLinkedInPosts.js";
 import type * as workflows_testDailyBrief from "../workflows/testDailyBrief.js";
+import type * as workflows_weeklySourceSummary from "../workflows/weeklySourceSummary.js";
 
 import type {
   ApiFromModules,
@@ -1010,6 +1021,9 @@ declare const fullApi: ApiFromModules<{
   "domains/encounters/encounterQueries": typeof domains_encounters_encounterQueries;
   "domains/encounters/index": typeof domains_encounters_index;
   "domains/encounters/types": typeof domains_encounters_types;
+  "domains/enrichment/backfillMetadata": typeof domains_enrichment_backfillMetadata;
+  "domains/enrichment/dataCleanup": typeof domains_enrichment_dataCleanup;
+  "domains/enrichment/deleteDuplicates": typeof domains_enrichment_deleteDuplicates;
   "domains/enrichment/documentStore": typeof domains_enrichment_documentStore;
   "domains/enrichment/enrichmentQueue": typeof domains_enrichment_enrichmentQueue;
   "domains/enrichment/enrichmentWorker": typeof domains_enrichment_enrichmentWorker;
@@ -1018,6 +1032,7 @@ declare const fullApi: ApiFromModules<{
   "domains/enrichment/fundingMutations": typeof domains_enrichment_fundingMutations;
   "domains/enrichment/fundingQueries": typeof domains_enrichment_fundingQueries;
   "domains/enrichment/fundingVerification": typeof domains_enrichment_fundingVerification;
+  "domains/enrichment/llmCompanyExtraction": typeof domains_enrichment_llmCompanyExtraction;
   "domains/enrichment/testQueries": typeof domains_enrichment_testQueries;
   "domains/enrichment/workpools": typeof domains_enrichment_workpools;
   "domains/entities/decayManager": typeof domains_entities_decayManager;
@@ -1280,6 +1295,10 @@ declare const fullApi: ApiFromModules<{
   "domains/social/postDedup": typeof domains_social_postDedup;
   "domains/social/postDedupAction": typeof domains_social_postDedupAction;
   "domains/social/specializedPostQueries": typeof domains_social_specializedPostQueries;
+  "domains/taskManager/cronWrapper": typeof domains_taskManager_cronWrapper;
+  "domains/taskManager/index": typeof domains_taskManager_index;
+  "domains/taskManager/mutations": typeof domains_taskManager_mutations;
+  "domains/taskManager/queries": typeof domains_taskManager_queries;
   "domains/tasks/dailyNotes": typeof domains_tasks_dailyNotes;
   "domains/tasks/eventTaskDocuments": typeof domains_tasks_eventTaskDocuments;
   "domains/tasks/index": typeof domains_tasks_index;
@@ -1307,6 +1326,7 @@ declare const fullApi: ApiFromModules<{
   "domains/verification/index": typeof domains_verification_index;
   "domains/verification/instagramClaimVerification": typeof domains_verification_instagramClaimVerification;
   "domains/verification/instagramClaimVerificationMutations": typeof domains_verification_instagramClaimVerificationMutations;
+  "domains/verification/multiSourceValidation": typeof domains_verification_multiSourceValidation;
   feed: typeof feed;
   "globalResearch/artifacts": typeof globalResearch_artifacts;
   "globalResearch/cacheSimple": typeof globalResearch_cacheSimple;
@@ -1454,6 +1474,7 @@ declare const fullApi: ApiFromModules<{
   "workflows/dailyMorningBrief": typeof workflows_dailyMorningBrief;
   "workflows/emailResearchOrchestrator": typeof workflows_emailResearchOrchestrator;
   "workflows/enhancedMorningBrief": typeof workflows_enhancedMorningBrief;
+  "workflows/enhancedWeeklySummary": typeof workflows_enhancedWeeklySummary;
   "workflows/index": typeof workflows_index;
   "workflows/linkedinTrigger": typeof workflows_linkedinTrigger;
   "workflows/prdComposerWorkflow": typeof workflows_prdComposerWorkflow;
@@ -1462,6 +1483,7 @@ declare const fullApi: ApiFromModules<{
   "workflows/sendMockBankerDigest": typeof workflows_sendMockBankerDigest;
   "workflows/specializedLinkedInPosts": typeof workflows_specializedLinkedInPosts;
   "workflows/testDailyBrief": typeof workflows_testDailyBrief;
+  "workflows/weeklySourceSummary": typeof workflows_weeklySourceSummary;
 }>;
 
 /**

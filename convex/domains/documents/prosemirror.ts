@@ -111,10 +111,10 @@ const sanitizeProseMirrorSnapshot = (snapshot: string): string => {
 
           // listItem often contains a paragraph, extract its content for inline display
           if (sanitizedContent.length === 1 &&
-              typeof sanitizedContent[0] === "object" &&
-              sanitizedContent[0] !== null &&
-              (sanitizedContent[0] as any).type === "paragraph" &&
-              Array.isArray((sanitizedContent[0] as any).content)) {
+            typeof sanitizedContent[0] === "object" &&
+            sanitizedContent[0] !== null &&
+            (sanitizedContent[0] as any).type === "paragraph" &&
+            Array.isArray((sanitizedContent[0] as any).content)) {
             sanitizedContent = (sanitizedContent[0] as any).content;
           }
 
@@ -354,59 +354,61 @@ export const createDocumentWithInitialSnapshot = mutation({
       });
       const getChildren = (b: any): any[] => Array.isArray(b?.children) ? b.children : [];
 
-      const convertBulletItem = (b: any): PMNode => ({
-        type: "listItem",
-        content: [pmParagraph(String(b?.text ?? ""))],
-      });
-      const convertTaskItem = (b: any): PMNode => ({
-        type: "taskItem",
-        attrs: { checked: !!b?.checked },
-        content: [pmParagraph(String(b?.text ?? ""))],
-      });
-
       const topLevel: PMNode[] = [];
-      let i2 = 0;
-      while (i2 < blocksInput.length) {
-        const b = blocksInput[i2] ?? {};
-        let blockNode: PMNode | null = null;
+      for (const b of blocksInput) {
+        if (!b || typeof b !== "object") continue;
 
-        if (b.type === "bulletListItem") {
-          const run: any[] = [];
-          while (i2 < blocksInput.length && blocksInput[i2]?.type === "bulletListItem") {
-            run.push(blocksInput[i2]); i2++;
-          }
-          blockNode = { type: "bulletList", content: run.map(convertBulletItem) };
-        } else if (b.type === "checkListItem") {
-          const run: any[] = [];
-          while (i2 < blocksInput.length && blocksInput[i2]?.type === "checkListItem") {
-            run.push(blocksInput[i2]); i2++;
-          }
-          blockNode = { type: "taskList", content: run.map(convertTaskItem) };
-        } else {
-          switch (b.type) {
-            case "heading":
-              blockNode = { type: "heading", attrs: { textAlignment: "left", level: b.level || 1 }, content: [pmText(String(b.text ?? ""))] };
-              break;
-            case "quote":
-              blockNode = { type: "blockquote", attrs: { textAlignment: "left" }, content: [pmText(String(b.text ?? ""))] };
-              break;
-            case "codeBlock":
-              blockNode = { type: "codeBlock", attrs: { language: b.lang || "text" }, content: b.text ? [pmText(String(b.text))] : [] };
-              break;
-            case "horizontalRule":
-              blockNode = { type: "horizontalRule", attrs: {} };
-              break;
-            case "paragraph":
-            default:
-              blockNode = pmParagraph(String(b.text ?? ""));
-          }
-          i2++;
+        let blockNode: PMNode | null = null;
+        const text = String(b.text ?? "");
+
+        switch (b.type) {
+          case "heading":
+            blockNode = {
+              type: "heading",
+              attrs: { textAlignment: "left", level: b.level || 1 },
+              content: text ? [pmText(text)] : [],
+            };
+            break;
+          case "bulletListItem":
+            blockNode = {
+              type: "bulletListItem",
+              attrs: { textAlignment: "left" },
+              content: text ? [pmText(text)] : [],
+            };
+            break;
+          case "checkListItem":
+            blockNode = {
+              type: "checkListItem",
+              attrs: { textAlignment: "left", checked: !!b.checked },
+              content: text ? [pmText(text)] : [],
+            };
+            break;
+          case "quote":
+            blockNode = {
+              type: "blockquote",
+              attrs: { textAlignment: "left" },
+              content: text ? [pmText(text)] : [],
+            };
+            break;
+          case "codeBlock":
+            blockNode = {
+              type: "codeBlock",
+              attrs: { language: b.lang || "text" },
+              content: text ? [pmText(text)] : [],
+            };
+            break;
+          case "horizontalRule":
+            blockNode = { type: "horizontalRule", attrs: {} };
+            break;
+          case "paragraph":
+          default:
+            blockNode = pmParagraph(text);
         }
 
         if (blockNode) {
           topLevel.push({
             type: "blockContainer",
-            content: [blockNode]
+            content: [blockNode],
           });
         }
       }

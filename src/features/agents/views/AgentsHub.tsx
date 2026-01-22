@@ -23,6 +23,8 @@ import {
   ChevronUp,
   DollarSign,
   Cpu,
+  ClipboardList,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
@@ -40,6 +42,7 @@ import { AgentSidebar } from "../components/AgentSidebar";
 import { SwarmLanesView } from "../components/FastAgentPanel/SwarmLanesView";
 import { AutonomousOperationsPanel } from "../components/AutonomousOperationsPanel";
 import { FreeModelRankingsPanel } from "../components/FreeModelRankingsPanel";
+import { TaskManagerView } from "../components/TaskManager";
 
 // Hooks
 import { useSwarmActions } from "@/hooks/useSwarm";
@@ -378,6 +381,27 @@ export function AgentsHub() {
             {/* Human Approval Queue */}
             <div className="mb-6">
               <HumanApprovalQueue />
+            </div>
+
+            {/* Task Manager - Agent Task History & Telemetry */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-[var(--accent-primary)]" />
+                  <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                    Task History
+                  </h2>
+                </div>
+                <a
+                  href="/#activity"
+                  className="flex items-center gap-1 text-xs text-[var(--accent-primary)] hover:underline"
+                >
+                  Public Feed <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <div className="rounded-lg border border-[var(--border-color)] overflow-hidden h-[500px]">
+                <TaskManagerView isPublic={false} className="h-full" />
+              </div>
             </div>
 
             {/* Coming Soon Banner */}

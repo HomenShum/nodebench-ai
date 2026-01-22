@@ -480,6 +480,62 @@ export const runAllTests = action({
   },
 });
 
+/**
+ * Run a bounded batch of tests and return the raw results.
+ *
+ * This exists because a full run can exceed Convex action time limits depending on tool latency
+ * and judge rate limits. The CLI (`scripts/runEvaluation.ts`) will call this in a loop.
+ */
+export const runTestBatch = action({
+  args: {
+    categories: v.optional(v.array(v.string())),
+    startIndex: v.optional(v.number()),
+    limit: v.optional(v.number()),
+    userId: v.optional(v.id("users")),
+  },
+  returns: v.object({
+    results: v.array(v.any()),
+    nextIndex: v.optional(v.number()),
+    total: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const startIndex = Math.max(0, args.startIndex ?? 0);
+    const limit = Math.max(1, Math.min(10, args.limit ?? 6));
+
+    let userId = args.userId;
+    if (!userId) {
+      const testUser = await ctx.runQuery(api.domains.utilities.seedGoldenDataset.getTestUser, {});
+      if (testUser) {
+        userId = testUser._id;
+      }
+    }
+
+    let testCases = allTestCases;
+    if (args.categories && args.categories.length > 0) {
+      testCases = allTestCases.filter((t) => args.categories!.includes(t.category));
+    }
+
+    const total = testCases.length;
+    const batch = testCases.slice(startIndex, startIndex + limit);
+
+    const results: EvaluationResult[] = [];
+    for (const testCase of batch) {
+      const result = await ctx.runAction(internal.tools.evaluation.evaluator.runSingleTest, {
+        testId: testCase.id,
+        userId,
+      });
+      results.push(result as EvaluationResult);
+    }
+
+    const nextIndex = startIndex + batch.length < total ? startIndex + batch.length : undefined;
+    return {
+      results,
+      nextIndex,
+      total,
+    };
+  },
+});
+
 function generateSummary(results: EvaluationResult[]): EvaluationSummary {
   const passed = results.filter(r => r.passed).length;
   const failed = results.length - passed;

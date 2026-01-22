@@ -70,13 +70,25 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const h = window.location.hash.toLowerCase();
-      if (h.startsWith('#agents') || h.startsWith('#calendar') || h.startsWith('#documents') || h.startsWith('#roadmap')) {
+      if (h.startsWith("#onboarding")) {
+        setShowTutorial(true);
+      } else if (
+        h.startsWith("#agents") ||
+        h.startsWith("#calendar") ||
+        h.startsWith("#documents") ||
+        h.startsWith("#roadmap")
+      ) {
         setShowTutorial(false);
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    // Initialize if hash is already present on mount
+    if (window.location.hash.toLowerCase().startsWith("#onboarding")) {
+      setShowTutorial(true);
+    }
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
+
 
   // Note: We no longer auto-show tutorial for new users
   // Users stay on ResearchHub and can access tutorial manually if needed

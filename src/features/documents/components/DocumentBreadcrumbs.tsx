@@ -22,7 +22,7 @@ interface BreadcrumbSegment {
 
 export function DocumentBreadcrumbs({ documentId, onNavigate }: DocumentBreadcrumbsProps) {
     // Get the current document to find its parent
-    const document = useQuery(api.domains.documents.documents.getById, { id: documentId });
+    const document = useQuery(api.domains.documents.documents.getById, { documentId });
 
     // Get the parent chain (ancestors)
     const ancestors = useQuery(
@@ -88,8 +88,8 @@ export function DocumentBreadcrumbs({ documentId, onNavigate }: DocumentBreadcru
                             onClick={() => isClickable && handleClick(segment.id)}
                             disabled={!isClickable}
                             className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${isClickable
-                                    ? 'hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] cursor-pointer'
-                                    : 'text-[var(--text-secondary)] font-medium cursor-default'
+                                ? 'hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] cursor-pointer'
+                                : 'text-[var(--text-secondary)] font-medium cursor-default'
                                 }`}
                         >
                             {segment.id === null ? (

@@ -9776,4 +9776,107 @@ export default defineSchema({
   })
     .index("by_table", ["table", "deletedAt"])
     .index("by_request", ["deletionRequestId"]),
+
+  /* ================================================================== */
+  /* TASK MANAGER (SESSIONS / TRACES / SPANS)                            */
+  /* ================================================================== */
+
+  agentTaskSessions: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    type: v.union(
+      v.literal("manual"),
+      v.literal("cron"),
+      v.literal("scheduled"),
+      v.literal("agent"),
+      v.literal("swarm"),
+    ),
+    visibility: v.union(v.literal("public"), v.literal("private")),
+    userId: v.optional(v.id("users")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+    ),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    totalDurationMs: v.optional(v.number()),
+    totalTokens: v.optional(v.number()),
+    inputTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+    cronJobName: v.optional(v.string()),
+    agentRunId: v.optional(v.id("agentRuns")),
+    agentThreadId: v.optional(v.string()),
+    swarmId: v.optional(v.string()),
+    toolsUsed: v.optional(v.array(v.string())),
+    agentsInvolved: v.optional(v.array(v.string())),
+    errorMessage: v.optional(v.string()),
+    errorStack: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_visibility_date", ["visibility", "startedAt"])
+    .index("by_user_date", ["userId", "startedAt"])
+    .index("by_type_date", ["type", "startedAt"])
+    .index("by_cron", ["cronJobName", "startedAt"]),
+
+  agentTaskTraces: defineTable({
+    sessionId: v.id("agentTaskSessions"),
+    traceId: v.string(),
+    workflowName: v.string(),
+    groupId: v.optional(v.string()),
+    status: v.union(
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("error"),
+    ),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+    totalDurationMs: v.optional(v.number()),
+    tokenUsage: v.optional(v.object({
+      input: v.number(),
+      output: v.number(),
+      total: v.number(),
+    })),
+    model: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_session", ["sessionId", "startedAt"])
+    .index("by_trace_id", ["traceId"]),
+
+  agentTaskSpans: defineTable({
+    traceId: v.id("agentTaskTraces"),
+    parentSpanId: v.optional(v.id("agentTaskSpans")),
+    seq: v.number(),
+    depth: v.number(),
+    spanType: v.union(
+      v.literal("agent"),
+      v.literal("generation"),
+      v.literal("tool"),
+      v.literal("guardrail"),
+      v.literal("handoff"),
+      v.literal("retrieval"),
+      v.literal("delegation"),
+      v.literal("custom"),
+    ),
+    name: v.string(),
+    status: v.union(
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("error"),
+    ),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+    durationMs: v.optional(v.number()),
+    data: v.optional(v.any()),
+    metadata: v.optional(v.any()),
+    error: v.optional(v.object({
+      message: v.string(),
+      code: v.optional(v.string()),
+      stack: v.optional(v.string()),
+    })),
+  })
+    .index("by_trace", ["traceId", "seq"])
+    .index("by_parent", ["parentSpanId", "seq"]),
 });

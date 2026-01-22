@@ -8,7 +8,7 @@ import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
 import { AnimatePresence, motion } from "framer-motion";
 
-import { Zap, Menu, X as CloseIcon } from "lucide-react";
+import { Sparkles, Zap, Menu, X as CloseIcon } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
@@ -82,6 +82,11 @@ const FastAgentPanel = lazy(() =>
     default: mod.FastAgentPanel,
   })),
 );
+const PublicActivityView = lazy(() =>
+  import("@/features/agents/views/PublicActivityView").then((mod) => ({
+    default: mod.PublicActivityView,
+  })),
+);
 
 const viewFallback = (
   <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
@@ -100,15 +105,75 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   // Agent Chat Panel removed
   const [showFastAgent, setShowFastAgent] = useState(false);
   const [fastAgentHasMounted, setFastAgentHasMounted] = useState(false);
-  const [currentView, setCurrentView] = useState<'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research' | 'showcase' | 'footnotes' | 'signals' | 'benchmarks' | 'entity' | 'funding'>('research');
+
+  type MainView =
+    | 'documents'
+    | 'calendar'
+    | 'roadmap'
+    | 'timeline'
+    | 'public'
+    | 'agents'
+    | 'research'
+    | 'showcase'
+    | 'footnotes'
+    | 'signals'
+    | 'benchmarks'
+    | 'entity'
+    | 'funding'
+    | 'activity';
+
+  function parseHashRoute(rawHash: string): {
+    view: MainView;
+    entityName: string | null;
+    showResearchDossier: boolean;
+    researchTab: "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
+  } {
+    const hash = (rawHash || '').toLowerCase();
+    if (hash.startsWith('#agents')) return { view: 'agents', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#calendar')) return { view: 'calendar', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#roadmap')) return { view: 'roadmap', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#timeline')) return { view: 'timeline', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#signals')) return { view: 'signals', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#documents') || hash.startsWith('#docs')) return { view: 'documents', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#showcase') || hash.startsWith('#demo')) return { view: 'showcase', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#footnotes') || hash.startsWith('#sources')) return { view: 'footnotes', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#benchmarks') || hash.startsWith('#eval')) return { view: 'benchmarks', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#funding') || hash.startsWith('#funding-brief')) return { view: 'funding', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith("#onboarding")) return { view: "research", entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#activity') || hash.startsWith('#public-activity')) return { view: 'activity', entityName: null, showResearchDossier: false, researchTab: "overview" };
+
+    if (hash.startsWith('#entity/') || hash.startsWith('#entity%2f')) {
+      const match = (rawHash || '').match(/^#entity[\/](.+)$/i);
+      const name = match ? decodeURIComponent(match[1]) : null;
+      return { view: 'entity', entityName: name, showResearchDossier: false, researchTab: "overview" };
+    }
+
+    if (hash.startsWith('#research') || hash.startsWith('#hub')) {
+      // Optional: `#research/briefing` deep link into a specific hub tab.
+      const tabMatch = hash.match(/^#(?:research|hub)\/(overview|signals|briefing|deals|changes|changelog)/);
+      const tab = (tabMatch?.[1] as any) ?? "overview";
+      return { view: 'research', entityName: null, showResearchDossier: true, researchTab: tab };
+    }
+
+    return { view: 'research', entityName: null, showResearchDossier: false, researchTab: "overview" };
+  }
+
+  const initialRoute = (() => {
+    if (typeof window === 'undefined') {
+      return { view: 'research' as const, entityName: null, showResearchDossier: false, researchTab: "overview" as const };
+    }
+    return parseHashRoute(window.location.hash || '');
+  })();
+
+  const [currentView, setCurrentView] = useState<MainView>(initialRoute.view);
   // Entity name for entity profile page (extracted from hash)
-  const [entityName, setEntityName] = useState<string | null>(null);
+  const [entityName, setEntityName] = useState<string | null>(initialRoute.entityName);
   const [isGridMode, setIsGridMode] = useState(false);
   // Transition state for smooth view changes
   const [isTransitioning, setIsTransitioning] = useState(false);
   // Research state: toggle between high-level gateway and deep hub
-  const [showResearchDossier, setShowResearchDossier] = useState(false);
-  const [researchHubInitialTab, setResearchHubInitialTab] = useState<"overview" | "signals" | "briefing" | "deals" | "changes" | "changelog">("overview");
+  const [showResearchDossier, setShowResearchDossier] = useState<boolean>(initialRoute.showResearchDossier);
+  const [researchHubInitialTab, setResearchHubInitialTab] = useState<"overview" | "signals" | "briefing" | "deals" | "changes" | "changelog">(initialRoute.researchTab);
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   // Multi-document selection for Fast Agent
@@ -240,6 +305,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   };
 
   const user = useQuery(api.domains.auth.auth.loggedInUser);
+  const userStats = useQuery(api.domains.auth.userStats.getUserActivitySummary);
 
   const { isAuthenticated } = useConvexAuth();
   const { signIn } = useAuthActions();
@@ -582,36 +648,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   useEffect(() => {
     const applyFromHash = () => {
       try {
-        const h = (window.location.hash || '').toLowerCase();
-        const rawHash = window.location.hash || '';
-        if (h.startsWith('#agents')) {
-          setCurrentView('agents');
-        } else if (h.startsWith('#calendar')) {
-          setCurrentView('calendar');
-        } else if (h.startsWith('#roadmap')) {
-          setCurrentView('roadmap');
-        } else if (h.startsWith('#timeline')) {
-          setCurrentView('timeline');
-        } else if (h.startsWith('#signals')) {
-          setCurrentView('signals');
-        } else if (h.startsWith('#documents') || h.startsWith('#docs')) {
-          setCurrentView('documents');
-        } else if (h.startsWith('#showcase') || h.startsWith('#demo')) {
-          setCurrentView('showcase');
-        } else if (h.startsWith('#footnotes') || h.startsWith('#sources')) {
-          setCurrentView('footnotes');
-        } else if (h.startsWith('#benchmarks') || h.startsWith('#eval')) {
-          setCurrentView('benchmarks');
-        } else if (h.startsWith('#funding') || h.startsWith('#funding-brief')) {
-          setCurrentView('funding');
-        } else if (h.startsWith('#entity/') || h.startsWith('#entity%2f')) {
-          // Extract entity name from hash (preserve original case)
-          const match = rawHash.match(/^#entity[\/](.+)$/i);
-          if (match) {
-            setEntityName(decodeURIComponent(match[1]));
-            setCurrentView('entity');
-          }
-        }
+        const next = parseHashRoute(window.location.hash || '');
+        setEntityName(next.entityName);
+        setResearchHubInitialTab(next.researchTab);
+        setShowResearchDossier(next.showResearchDossier);
+        setCurrentView(next.view);
       } catch {
         // ignore
       }
@@ -720,12 +761,49 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                                 : currentView === 'entity'
                                   ? `Entity: ${entityName || 'Profile'}`
                                   : selectedDocumentId
-                                  ? 'My Documents'
-                                  : 'My Workspace'}
+                                    ? 'My Documents'
+                                    : 'My Workspace'}
               </h1>
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
+              {/* Research Hub / Back to Home CTA - always visible for consistent navigation */}
+              {currentView === 'research' && showResearchDossier ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResearchDossier(false);
+                  }}
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors"
+                  title="Back to Home"
+                  aria-label="Back to Home"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Home</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onShowResearchHub?.();
+                    setCurrentView('research');
+                    setResearchHubInitialTab("overview");
+                    setShowResearchDossier(true);
+                  }}
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-emerald-900 text-white hover:bg-emerald-800 shadow-sm transition-colors relative"
+                  title="Open Research Hub"
+                  aria-label="Open Research Hub"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Research Hub</span>
+                  {(userStats?.unreadBriefings ?? 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                      {userStats!.unreadBriefings > 9 ? '9+' : userStats!.unreadBriefings}
+                    </span>
+                  )}
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setShowFastAgent((open) => !open)}
@@ -787,7 +865,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
           {/* Content Area - Resizable Split */}
           <div className={`flex-1 overflow-hidden transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`} data-main-content>
-            <Suspense fallback={viewFallback}>
+            <Suspense
+              key={`${currentView}:${showResearchDossier ? "hub" : "home"}`}
+              fallback={viewFallback}
+            >
               {currentView === 'research' ? (
                 <AnimatePresence mode="wait">
                   {!showResearchDossier ? (
@@ -862,6 +943,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 </div>
               ) : currentView === 'funding' ? (
                 <FundingBriefView />
+              ) : currentView === 'activity' ? (
+                <Suspense fallback={viewFallback}>
+                  <PublicActivityView />
+                </Suspense>
               ) : currentView === 'entity' && entityName ? (
                 <EntityProfilePage
                   entityName={entityName}

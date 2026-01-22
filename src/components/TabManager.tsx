@@ -52,6 +52,21 @@ export function TabManager({
 
   const documents = useQuery(api.domains.documents.documents.getSidebar);
 
+  // Preload calendar chunk on idle to avoid "Loading view..." flicker when switching tabs.
+  useEffect(() => {
+    const warm = () => {
+      void import("@/features/calendar/components/CalendarHomeHub");
+    };
+    if (typeof window === "undefined") return;
+    const w = window as any;
+    if (typeof w.requestIdleCallback === "function") {
+      w.requestIdleCallback(warm, { timeout: 1200 });
+      return;
+    }
+    const id = window.setTimeout(warm, 300);
+    return () => window.clearTimeout(id);
+  }, []);
+
   const addDocumentTab = useCallback(
     (documentId: Id<"documents">) => {
       // Use functional update to avoid races/duplicates when multiple

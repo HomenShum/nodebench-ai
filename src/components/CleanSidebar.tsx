@@ -39,9 +39,37 @@ interface CleanSidebarProps {
   selectedDocumentId?: Id<"documents"> | null;
   onDocumentSelect?: (docId: Id<"documents">) => void;
   /** Current view from MainLayout - used to highlight correct nav item */
-  currentView?: 'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research';
+  currentView?:
+    | 'documents'
+    | 'calendar'
+    | 'roadmap'
+    | 'timeline'
+    | 'public'
+    | 'agents'
+    | 'research'
+    | 'signals'
+    | 'benchmarks'
+    | 'funding'
+    | 'activity'
+    | 'entity'
+    | 'footnotes'
+    | 'showcase';
   /** Callback when view changes */
-  onViewChange?: (view: 'documents' | 'calendar' | 'roadmap' | 'timeline' | 'public' | 'agents' | 'research') => void;
+  onViewChange?: (view:
+    | 'documents'
+    | 'calendar'
+    | 'roadmap'
+    | 'timeline'
+    | 'public'
+    | 'agents'
+    | 'research'
+    | 'signals'
+    | 'benchmarks'
+    | 'funding'
+    | 'activity'
+    | 'entity'
+    | 'footnotes'
+    | 'showcase') => void;
 }
 
 export function CleanSidebar({
@@ -91,13 +119,10 @@ export function CleanSidebar({
   // Handle global navigation
   const handleNavigate = (page: ActivePage) => {
     if (page === 'research') {
-      // Navigate to research/home view
+      // Navigate to the Home gateway. The deep Research Hub is reachable via
+      // the top-bar CTA, so Home should be stable and predictable.
       onViewChange?.('research');
-      if (onEnterResearchHub) {
-        onEnterResearchHub();
-      } else {
-        onGoHome?.();
-      }
+      onGoHome?.();
     } else if (page === 'workspace') {
       onViewChange?.('documents');
       onModeChange('workspace');

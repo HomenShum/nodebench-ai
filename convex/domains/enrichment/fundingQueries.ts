@@ -215,10 +215,15 @@ export const getRecentFundingEvents = query({
       amountRaw: event.amountRaw,
       amountUsd: event.amountUsd,
       leadInvestors: event.leadInvestors,
+      coInvestors: event.coInvestors,
       sector: event.sector,
+      location: event.location,
+      valuation: event.valuation,
+      description: event.description,
       confidence: event.confidence,
       verificationStatus: event.verificationStatus,
       sourceUrls: event.sourceUrls,
+      sourceNames: event.sourceNames,
       announcedAt: event.announcedAt,
     }));
   },
@@ -595,6 +600,19 @@ export const batchGetFundingHistory = internalQuery({
 // ═══════════════════════════════════════════════════════════════════════════
 // INTERNAL QUERIES - For scheduled report generation
 // ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get a single funding event by ID.
+ * Used by backfill and enrichment scripts.
+ */
+export const getFundingEventById = internalQuery({
+  args: {
+    id: v.id("fundingEvents"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});
 
 /**
  * Get funding data for scheduled PDF report generation.

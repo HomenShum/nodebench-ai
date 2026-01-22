@@ -150,8 +150,8 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                                 ${insight.priority === 'high'
                                     ? 'bg-red-50/80 border-red-200 text-red-900'
                                     : insight.priority === 'medium'
-                                    ? 'bg-amber-50/80 border-amber-200 text-amber-900'
-                                    : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                                        ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+                                        : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
                                 }
                             `}
                         >
@@ -164,27 +164,34 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
 
             {/* 1. THE NEURAL ORB (Centerpiece) */}
             <div className="relative mb-16 group cursor-pointer" onClick={() => onEnterHub()}>
-                <motion.div
-                    animate={{
-                        scale: [1, 1.05, 1],
-                        rotate: [0, 90, 180, 270, 360],
-                    }}
-                    transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: "linear"
-                    }}
-                    className="w-80 h-80 relative flex items-center justify-center"
-                >
-                    {/* Subtle Outer Rings */}
-                    <div className="absolute inset-0 rounded-full border border-stone-200/60 scale-110" />
-                    <div className="absolute inset-0 rounded-full border border-stone-200/30 scale-125" />
+                {/* Container for the orb - fixed size */}
+                <div className="w-80 h-80 relative flex items-center justify-center">
+                    {/* Rotating outer rings only */}
+                    <motion.div
+                        animate={{
+                            rotate: [0, 360],
+                        }}
+                        transition={{
+                            duration: 20,
+                            repeat: Infinity,
+                            ease: "linear"
+                        }}
+                        className="absolute inset-0"
+                    >
+                        {/* Subtle Outer Rings */}
+                        <div className="absolute inset-0 rounded-full border border-stone-200/60 scale-110" />
+                        <div className="absolute inset-0 rounded-full border border-stone-200/30 scale-125" />
+                    </motion.div>
 
-                    {/* Pulsing Core */}
-                    <div className="w-64 h-64 rounded-full bg-white shadow-[0_0_80px_rgba(0,0,0,0.05)] border border-stone-100 flex items-center justify-center relative overflow-hidden">
+                    {/* Pulsing Core - Static, does NOT rotate */}
+                    <motion.div
+                        animate={{ scale: [1, 1.02, 1] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="w-64 h-64 rounded-full bg-white shadow-[0_0_80px_rgba(0,0,0,0.05)] border border-stone-100 flex items-center justify-center relative overflow-hidden"
+                    >
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-50/50 via-white to-indigo-50/50 opacity-40" />
 
-                        {/* Inner Glowing Content */}
+                        {/* Inner Glowing Content - Static */}
                         <div className="z-10 flex flex-col items-center text-center">
                             <Zap className="w-12 h-12 text-emerald-950 mb-4 animate-pulse" />
                             <div className="text-[10px] font-black text-emerald-900/40 uppercase tracking-[0.4em] mb-1">System Core</div>
@@ -197,8 +204,8 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                             className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"
                         />
-                    </div>
-                </motion.div>
+                    </motion.div>
+                </div>
 
                 {/* Floating Metrics around Orb */}
                 <MetricTag label="GLOBAL_SENTIMENT" value="0.72" color="text-emerald-700" className="top-0 -right-12" />
@@ -342,13 +349,12 @@ function QuickActionButton({
             whileTap={{ scale: 0.95 }}
             onClick={onClick}
             title={label}
-            className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
-                isPrimary
+            className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${isPrimary
                     ? "bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 hover:shadow-lg"
                     : isSecondary
-                      ? "px-3 bg-transparent border-stone-200 text-stone-600 hover:bg-white/70 hover:text-emerald-950"
-                      : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
-            }`}
+                        ? "px-3 bg-transparent border-stone-200 text-stone-600 hover:bg-white/70 hover:text-emerald-950"
+                        : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
+                }`}
         >
             {icon}
             <span className={isSecondary ? "hidden" : ""}>{label}</span>
