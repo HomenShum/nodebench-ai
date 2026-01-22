@@ -5326,7 +5326,43 @@ export default defineSchema({
     location: v.optional(v.string()),
     description: v.optional(v.string()),
     valuation: v.optional(v.string()),
-    useOfProceeds: v.optional(v.string()),
+
+    // Use of Proceeds - Enhanced structured format (2026-01-21)
+    useOfProceeds: v.optional(
+      v.union(
+        v.string(),  // Legacy: simple string format
+        v.object({
+          // Allocation breakdown
+          categories: v.array(v.object({
+            category: v.string(),              // "R&D", "Sales & Marketing", "Hiring", etc.
+            percentage: v.optional(v.number()), // 0-100
+            amount: v.optional(v.number()),    // USD cents
+            description: v.optional(v.string()),
+          })),
+
+          // Milestone-based tranches
+          milestones: v.optional(v.array(v.object({
+            milestone: v.string(),             // "Launch enterprise tier", "FDA approval"
+            fundingTranche: v.optional(v.number()), // USD cents to be released
+            targetDate: v.optional(v.string()), // ISO date or "Q2 2026"
+            description: v.optional(v.string()),
+          }))),
+
+          // Source & confidence
+          source: v.union(
+            v.literal("SEC filing"),
+            v.literal("press release"),
+            v.literal("company statement"),
+            v.literal("inferred"),
+            v.literal("unknown")
+          ),
+          confidence: v.number(),              // 0-1
+
+          // Summary for display
+          summary: v.optional(v.string()),     // Human-readable summary
+        })
+      )
+    ),
 
     // Lifecycle
     ttlDays: v.number(),                       // Cache expiry in days
@@ -9879,4 +9915,269 @@ export default defineSchema({
   })
     .index("by_trace", ["traceId", "seq"])
     .index("by_parent", ["parentSpanId", "seq"]),
+
+  /* ================================================================== */
+  /* DATA COMPLETENESS & OBSERVABILITY - P0/P1 TABLES                   */
+  /* Added 2026-01-21 to close critical feedback loops                  */
+  /* ================================================================== */
+
+  /* ------------------------------------------------------------------ */
+  /* ANALYTICS COMPONENT METRICS - Per-component report breakdown        */
+  /* Enables measurement of individual report components (P0)            */
+  /* ------------------------------------------------------------------ */
+  dailyReportComponentMetrics: defineTable({
+    // Report identification
+    date: v.string(),                          // YYYY-MM-DD
+    reportType: v.union(
+      v.literal("daily_brief"),
+      v.literal("weekly_digest"),
+      v.literal("funding_report"),
+      v.literal("research_highlights")
+    ),
+
+    // Component details
+    componentType: v.string(),                 // "funding_events", "research_highlights", "market_signals"
+    sourceName: v.string(),                    // "SiliconAngle", "TechCrunch", etc.
+    category: v.optional(v.string()),          // "AI/ML", "FinTech", etc.
+
+    // Metrics
+    itemCount: v.number(),                     // Number of items in this component
+    engagementScore: v.optional(v.number()),   // 0-1 engagement score
+    avgReadTimeSeconds: v.optional(v.number()),
+    clickThroughRate: v.optional(v.number()),  // 0-1 CTR
+    impressions: v.optional(v.number()),
+    clicks: v.optional(v.number()),
+
+    // Quality metrics
+    relevanceScore: v.optional(v.number()),    // 0-1 relevance score
+    freshnessHours: v.optional(v.number()),    // How recent was the content
+
+    // Metadata
+    createdAt: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_date_type", ["date", "reportType"])
+    .index("by_source", ["sourceName", "date"])
+    .index("by_category", ["category", "date"])
+    .index("by_component", ["componentType", "date"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RECOMMENDATION OUTCOMES - Feedback loop for recommendation system  */
+  /* Captures user actions on recommendations (P0 - CRITICAL)           */
+  /* ------------------------------------------------------------------ */
+  recommendationOutcomes: defineTable({
+    // Recommendation reference
+    recommendationId: v.id("recommendations"),
+    userId: v.id("users"),
+
+    // User action
+    action: v.union(
+      v.literal("accepted"),
+      v.literal("rejected"),
+      v.literal("ignored"),
+      v.literal("dismissed"),
+      v.literal("snoozed")
+    ),
+    actionTimestamp: v.number(),
+
+    // Feedback
+    reason: v.optional(v.string()),            // User-provided reason for rejection
+    actualValue: v.optional(v.number()),       // 0-1 user rating of value
+    timeTakenMs: v.optional(v.number()),       // How long before user acted
+
+    // Context
+    displayContext: v.optional(v.string()),    // Where was recommendation shown
+    metadata: v.optional(v.any()),             // Additional context
+
+    // Timestamps
+    createdAt: v.number(),
+  })
+    .index("by_recommendation", ["recommendationId"])
+    .index("by_user", ["userId", "actionTimestamp"])
+    .index("by_action", ["action", "actionTimestamp"])
+    .index("by_user_action", ["userId", "action"]),
+
+  /* ------------------------------------------------------------------ */
+  /* HUMAN DECISIONS - HITL decision outcome tracking (P0 - CRITICAL)   */
+  /* Tracks what decisions humans made on agent requests                */
+  /* ------------------------------------------------------------------ */
+  humanDecisions: defineTable({
+    // Request reference
+    requestId: v.id("humanRequests"),
+    requestType: v.string(),                   // Type of request from humanRequests
+
+    // Decision
+    decision: v.union(
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("modified"),
+      v.literal("escalated"),
+      v.literal("deferred")
+    ),
+
+    // Review details
+    reviewTimeMs: v.number(),                  // Time taken to make decision
+    reviewedBy: v.id("users"),
+    reviewedAt: v.number(),
+
+    // Feedback & modifications
+    feedback: v.optional(v.string()),          // Human feedback on the request
+    modifiedFields: v.optional(v.array(v.string())),
+    modifiedValues: v.optional(v.any()),       // { field: newValue }
+
+    // Confidence & reasoning
+    confidence: v.optional(v.number()),        // 0-1 confidence in decision
+    reasoning: v.optional(v.string()),         // Why this decision was made
+
+    // Workflow
+    escalatedTo: v.optional(v.id("users")),    // If escalated, to whom
+    deferredUntil: v.optional(v.number()),     // If deferred, when to revisit
+
+    // Metadata
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_request", ["requestId"])
+    .index("by_reviewer", ["reviewedBy", "reviewedAt"])
+    .index("by_decision", ["decision", "reviewedAt"])
+    .index("by_request_type", ["requestType", "reviewedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ADMIN AUDIT LOG - Compliance audit trail (P1 - COMPLIANCE)         */
+  /* Tracks all admin actions for GDPR/SOC2 compliance                  */
+  /* ------------------------------------------------------------------ */
+  adminAuditLog: defineTable({
+    // Action details
+    action: v.string(),                        // "user_created", "config_changed", "data_corrected"
+    actionCategory: v.union(
+      v.literal("user_management"),
+      v.literal("config_change"),
+      v.literal("data_correction"),
+      v.literal("permission_change"),
+      v.literal("deletion"),
+      v.literal("access_grant"),
+      v.literal("security_event")
+    ),
+
+    // Resource details
+    resourceType: v.string(),                  // "user", "config", "fundingEvent"
+    resourceId: v.optional(v.string()),        // ID of affected resource
+
+    // State changes
+    before: v.optional(v.any()),               // State before action
+    after: v.any(),                            // State after action
+
+    // Justification
+    reason: v.optional(v.string()),            // Why was this action taken
+    ticket: v.optional(v.string()),            // Related ticket/issue number
+
+    // Actor
+    actor: v.id("users"),
+    actorRole: v.optional(v.string()),         // Role at time of action
+
+    // Security
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+
+    // Metadata
+    metadata: v.optional(v.any()),
+    timestamp: v.number(),
+  })
+    .index("by_timestamp", ["timestamp"])
+    .index("by_actor", ["actor", "timestamp"])
+    .index("by_resource", ["resourceType", "resourceId", "timestamp"])
+    .index("by_category", ["actionCategory", "timestamp"])
+    .index("by_action", ["action", "timestamp"]),
+
+  /* ------------------------------------------------------------------ */
+  /* PERSONA CHANGE LOG - Persona configuration versioning (P1)         */
+  /* Tracks changes to persona budgets, lenses, hooks                   */
+  /* ------------------------------------------------------------------ */
+  personaChangeLog: defineTable({
+    // Persona identification
+    personaId: v.string(),                     // Persona identifier
+    personaType: v.union(
+      v.literal("budget"),
+      v.literal("lens"),
+      v.literal("hook"),
+      v.literal("preference"),
+      v.literal("setting")
+    ),
+
+    // Change details
+    fieldChanged: v.string(),                  // Which field was changed
+    previousValue: v.any(),                    // Previous value
+    newValue: v.any(),                         // New value
+
+    // Change metadata
+    changeType: v.union(
+      v.literal("create"),
+      v.literal("update"),
+      v.literal("delete"),
+      v.literal("reset")
+    ),
+
+    // Actor
+    actor: v.optional(v.id("users")),          // Who made the change (null = system)
+    actorType: v.union(
+      v.literal("user"),
+      v.literal("system"),
+      v.literal("admin"),
+      v.literal("automation")
+    ),
+
+    // Justification
+    reason: v.optional(v.string()),            // Why was this changed
+
+    // Impact tracking
+    impactedRecommendations: v.optional(v.number()), // How many recs affected
+    impactedJobs: v.optional(v.number()),      // How many jobs affected
+
+    // Metadata
+    metadata: v.optional(v.any()),
+    timestamp: v.number(),
+  })
+    .index("by_persona", ["personaId", "timestamp"])
+    .index("by_type", ["personaType", "timestamp"])
+    .index("by_field", ["fieldChanged", "timestamp"])
+    .index("by_actor", ["actor", "timestamp"]),
+
+  /* ------------------------------------------------------------------ */
+  /* VERIFICATION SLO METRICS - Aggregated verification accuracy (P1)   */
+  /* Daily rollup of verification accuracy for SLO tracking             */
+  /* ------------------------------------------------------------------ */
+  verificationSloMetrics: defineTable({
+    // Time window
+    date: v.string(),                          // YYYY-MM-DD
+    verificationType: v.string(),              // "funding_amount", "company_name", "investor"
+
+    // Confusion matrix
+    truePositives: v.number(),
+    falsePositives: v.number(),
+    trueNegatives: v.number(),
+    falseNegatives: v.number(),
+
+    // Derived metrics
+    precision: v.number(),                     // TP/(TP+FP)
+    recall: v.number(),                        // TP/(TP+FN)
+    f1Score: v.number(),                       // Harmonic mean of precision/recall
+    accuracy: v.number(),                      // (TP+TN)/(TP+TN+FP+FN)
+
+    // Volume metrics
+    totalVerifications: v.number(),
+    totalSources: v.number(),
+    avgSourcesPerVerification: v.number(),
+
+    // SLO tracking
+    sloTarget: v.number(),                     // Target precision (e.g., 0.95)
+    sloMet: v.boolean(),                       // Did we meet SLO?
+    sloMissMargin: v.optional(v.number()),     // How far from target if missed
+
+    // Metadata
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_type_date", ["verificationType", "date"])
+    .index("by_slo_met", ["sloMet", "date"]),
 });

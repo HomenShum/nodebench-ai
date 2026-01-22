@@ -203,6 +203,7 @@ import type * as domains_ai_metadataAnalyzer from "../domains/ai/metadataAnalyze
 import type * as domains_ai_morningDigest from "../domains/ai/morningDigest.js";
 import type * as domains_ai_morningDigestQueries from "../domains/ai/morningDigestQueries.js";
 import type * as domains_analytics_analytics from "../domains/analytics/analytics.js";
+import type * as domains_analytics_componentMetrics from "../domains/analytics/componentMetrics.js";
 import type * as domains_analytics_ossStats from "../domains/analytics/ossStats.js";
 import type * as domains_artifacts_evidenceIndex from "../domains/artifacts/evidenceIndex.js";
 import type * as domains_artifacts_evidenceIndexActions from "../domains/artifacts/evidenceIndexActions.js";
@@ -387,6 +388,7 @@ import type * as domains_financial_xbrlParser from "../domains/financial/xbrlPar
 import type * as domains_groundTruth_auditLog from "../domains/groundTruth/auditLog.js";
 import type * as domains_groundTruth_versions from "../domains/groundTruth/versions.js";
 import type * as domains_hitl_adjudicationWorkflow from "../domains/hitl/adjudicationWorkflow.js";
+import type * as domains_hitl_decisions from "../domains/hitl/decisions.js";
 import type * as domains_hitl_distributionDriftDetection from "../domains/hitl/distributionDriftDetection.js";
 import type * as domains_hitl_labelerCalibration from "../domains/hitl/labelerCalibration.js";
 import type * as domains_hitl_labelingQueue from "../domains/hitl/labelingQueue.js";
@@ -475,6 +477,7 @@ import type * as domains_publishing_publishingOrchestrator from "../domains/publ
 import type * as domains_quickCapture_index from "../domains/quickCapture/index.js";
 import type * as domains_quickCapture_quickCapture from "../domains/quickCapture/quickCapture.js";
 import type * as domains_quickCapture_voiceMemos from "../domains/quickCapture/voiceMemos.js";
+import type * as domains_recomm_feedback from "../domains/recomm/feedback.js";
 import type * as domains_recommendations_behaviorTracking from "../domains/recommendations/behaviorTracking.js";
 import type * as domains_recommendations_index from "../domains/recommendations/index.js";
 import type * as domains_recommendations_recommendationEngine from "../domains/recommendations/recommendationEngine.js";
@@ -949,6 +952,7 @@ declare const fullApi: ApiFromModules<{
   "domains/ai/morningDigest": typeof domains_ai_morningDigest;
   "domains/ai/morningDigestQueries": typeof domains_ai_morningDigestQueries;
   "domains/analytics/analytics": typeof domains_analytics_analytics;
+  "domains/analytics/componentMetrics": typeof domains_analytics_componentMetrics;
   "domains/analytics/ossStats": typeof domains_analytics_ossStats;
   "domains/artifacts/evidenceIndex": typeof domains_artifacts_evidenceIndex;
   "domains/artifacts/evidenceIndexActions": typeof domains_artifacts_evidenceIndexActions;
@@ -1133,6 +1137,7 @@ declare const fullApi: ApiFromModules<{
   "domains/groundTruth/auditLog": typeof domains_groundTruth_auditLog;
   "domains/groundTruth/versions": typeof domains_groundTruth_versions;
   "domains/hitl/adjudicationWorkflow": typeof domains_hitl_adjudicationWorkflow;
+  "domains/hitl/decisions": typeof domains_hitl_decisions;
   "domains/hitl/distributionDriftDetection": typeof domains_hitl_distributionDriftDetection;
   "domains/hitl/labelerCalibration": typeof domains_hitl_labelerCalibration;
   "domains/hitl/labelingQueue": typeof domains_hitl_labelingQueue;
@@ -1221,6 +1226,7 @@ declare const fullApi: ApiFromModules<{
   "domains/quickCapture/index": typeof domains_quickCapture_index;
   "domains/quickCapture/quickCapture": typeof domains_quickCapture_quickCapture;
   "domains/quickCapture/voiceMemos": typeof domains_quickCapture_voiceMemos;
+  "domains/recomm/feedback": typeof domains_recomm_feedback;
   "domains/recommendations/behaviorTracking": typeof domains_recommendations_behaviorTracking;
   "domains/recommendations/index": typeof domains_recommendations_index;
   "domains/recommendations/recommendationEngine": typeof domains_recommendations_recommendationEngine;

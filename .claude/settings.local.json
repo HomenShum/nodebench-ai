@@ -162,7 +162,8 @@
       "Bash(wc:*)",
       "Bash(Select-String \"playbook\" -CaseSensitive:$false)",
       "Bash(set DEBUG=convex:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Read(//d/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/**)"
     ],
     "deny": [],
     "ask": []
