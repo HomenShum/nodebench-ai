@@ -280,6 +280,7 @@ import type * as domains_encounters_encounterQueries from "../domains/encounters
 import type * as domains_encounters_index from "../domains/encounters/index.js";
 import type * as domains_encounters_types from "../domains/encounters/types.js";
 import type * as domains_enrichment_backfillMetadata from "../domains/enrichment/backfillMetadata.js";
+import type * as domains_enrichment_betterSectorClassifier from "../domains/enrichment/betterSectorClassifier.js";
 import type * as domains_enrichment_dataCleanup from "../domains/enrichment/dataCleanup.js";
 import type * as domains_enrichment_deleteDuplicates from "../domains/enrichment/deleteDuplicates.js";
 import type * as domains_enrichment_documentStore from "../domains/enrichment/documentStore.js";
@@ -291,6 +292,7 @@ import type * as domains_enrichment_fundingMutations from "../domains/enrichment
 import type * as domains_enrichment_fundingQueries from "../domains/enrichment/fundingQueries.js";
 import type * as domains_enrichment_fundingVerification from "../domains/enrichment/fundingVerification.js";
 import type * as domains_enrichment_llmCompanyExtraction from "../domains/enrichment/llmCompanyExtraction.js";
+import type * as domains_enrichment_llmEnrichment from "../domains/enrichment/llmEnrichment.js";
 import type * as domains_enrichment_testQueries from "../domains/enrichment/testQueries.js";
 import type * as domains_enrichment_workpools from "../domains/enrichment/workpools.js";
 import type * as domains_entities_decayManager from "../domains/entities/decayManager.js";
@@ -1022,6 +1024,7 @@ declare const fullApi: ApiFromModules<{
   "domains/encounters/index": typeof domains_encounters_index;
   "domains/encounters/types": typeof domains_encounters_types;
   "domains/enrichment/backfillMetadata": typeof domains_enrichment_backfillMetadata;
+  "domains/enrichment/betterSectorClassifier": typeof domains_enrichment_betterSectorClassifier;
   "domains/enrichment/dataCleanup": typeof domains_enrichment_dataCleanup;
   "domains/enrichment/deleteDuplicates": typeof domains_enrichment_deleteDuplicates;
   "domains/enrichment/documentStore": typeof domains_enrichment_documentStore;
@@ -1033,6 +1036,7 @@ declare const fullApi: ApiFromModules<{
   "domains/enrichment/fundingQueries": typeof domains_enrichment_fundingQueries;
   "domains/enrichment/fundingVerification": typeof domains_enrichment_fundingVerification;
   "domains/enrichment/llmCompanyExtraction": typeof domains_enrichment_llmCompanyExtraction;
+  "domains/enrichment/llmEnrichment": typeof domains_enrichment_llmEnrichment;
   "domains/enrichment/testQueries": typeof domains_enrichment_testQueries;
   "domains/enrichment/workpools": typeof domains_enrichment_workpools;
   "domains/entities/decayManager": typeof domains_entities_decayManager;

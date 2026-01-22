@@ -32,6 +32,34 @@ const DOMAIN_TO_PUBLISHER: Record<string, string> = {
   "cnbc.com": "CNBC",
 };
 
+// Location extraction patterns
+const LOCATION_PATTERNS: Record<string, RegExp[]> = {
+  "United States": [
+    /\b(san francisco|sf|bay area)[-\s]based\b/i,
+    /\b(new york|nyc)[-\s]based\b/i,
+    /\b(boston|massachusetts)[-\s]based\b/i,
+    /\b(seattle|washington)[-\s]based\b/i,
+    /\b(austin|texas)[-\s]based\b/i,
+    /\b(pittsburgh|pennsylvania)[-\s]based\b/i,
+    /\b(chicago|illinois)[-\s]based\b/i,
+    /\b(los angeles|la|california)[-\s]based\b/i,
+    /\b(silicon valley)[-\s]based\b/i,
+    /\bus[-\s]based\b/i,
+    /\bamerican startup\b/i,
+    /\bcalifornia startup\b/i,
+  ],
+  "France": [/\bfrance[-\s]based\b/i, /\bparis[-\s]based\b/i, /\bfrench startup\b/i],
+  "United Kingdom": [/\buk[-\s]based\b/i, /\blondon[-\s]based\b/i, /\bbritish startup\b/i],
+  "Germany": [/\bgermany[-\s]based\b/i, /\bberlin[-\s]based\b/i, /\bgerman startup\b/i],
+  "Ireland": [/\bireland[-\s]based\b/i, /\bdublin[-\s]based\b/i, /\birish startup\b/i],
+  "Australia": [/\baustralia[-\s]based\b/i, /\bsydney[-\s]based\b/i, /\baustralian startup\b/i],
+  "Canada": [/\bcanada[-\s]based\b/i, /\btoronto[-\s]based\b/i, /\bcanadian startup\b/i],
+  "Israel": [/\bisrael[-\s]based\b/i, /\btel aviv[-\s]based\b/i, /\bisraeli startup\b/i],
+  "Singapore": [/\bsingapore[-\s]based\b/i],
+  "India": [/\bindia[-\s]based\b/i, /\bbangalore[-\s]based\b/i, /\bindian startup\b/i],
+  "China": [/\bchina[-\s]based\b/i, /\bbeijing[-\s]based\b/i, /\bchinese startup\b/i],
+};
+
 // Sector classification keywords
 const SECTOR_KEYWORDS: Record<string, string[]> = {
   "AI/ML - Foundation Models": ["foundation model", "llm", "large language model", "gpt", "generative ai platform"],
@@ -251,7 +279,165 @@ export const backfillValuation = internalMutation({
 });
 
 /**
- * Step 4: Batch backfill all fields for recent events
+ * Step 4: Extract and populate location
+ */
+export const backfillLocation = internalMutation({
+  args: {
+    fundingEventId: v.id("fundingEvents"),
+  },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.fundingEventId);
+    if (!event) return { success: false, error: "Event not found" };
+
+    // Skip if already has location
+    if (event.location) {
+      return { success: true, skipped: true, location: event.location };
+    }
+
+    // Try to extract location from sourceUrls and company name
+    let textToAnalyze = event.companyName + " ";
+    if (event.description) textToAnalyze += event.description + " ";
+
+    // Also check URLs for location hints
+    if (event.sourceUrls && event.sourceUrls.length > 0) {
+      event.sourceUrls.forEach(url => {
+        textToAnalyze += " " + url;
+      });
+    }
+
+    // Try to match location patterns
+    for (const [location, patterns] of Object.entries(LOCATION_PATTERNS)) {
+      for (const pattern of patterns) {
+        if (pattern.test(textToAnalyze)) {
+          await ctx.db.patch(args.fundingEventId, {
+            location,
+            updatedAt: Date.now(),
+          });
+
+          return {
+            success: true,
+            location,
+            source: "Pattern match",
+          };
+        }
+      }
+    }
+
+    return { success: false, error: "No location found" };
+  },
+});
+
+export const updateLocation = internalMutation({
+  args: {
+    fundingEventId: v.id("fundingEvents"),
+    location: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.fundingEventId, {
+      location: args.location,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Step 5: Batch update known company locations
+ */
+export const batchUpdateKnownLocations = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    // Known locations from analysis
+    const KNOWN_LOCATIONS: Record<string, string> = {
+      "Baseten": "United States",
+      "OpenEvidence": "United States",
+      "Humans": "United States",
+      "Pennylane": "France",
+      "Skild AI": "United States",
+      "Harmonic": "United States",
+      "Equal1": "Ireland",
+      "Ivo AI": "Australia",
+      "Emergent": "United States",
+      "Alpaca": "United States",
+      "Datarails": "United States",
+      "Higgsfield": "United Kingdom",
+      "Etched": "United States",
+      "Aikido Security": "Belgium",
+      "Onebrief": "United States",
+      "Depthfirst": "United States",
+      "GovDash": "United States",
+      "Type One Energy": "United States",
+      "Exciva": "United States",
+      "Nexxa AI": "United States",
+      "RiskFront": "United States",
+      "XBuild": "United States",
+      "Project Eleven": "United States",
+      "Another": "United States",
+      "Defense Unicorns": "United States",
+      "WebAI": "United States",
+      "Flip": "United States",
+      "Deepgram": "United States",
+      "Converge Bio": "United States",
+      "Vaccinex": "United States",
+      "IO River": "Israel",
+      "Upscale AI": "United States",
+      "Healthcare AI startup OpenEvidence": "United States", // Variant name
+    };
+
+    console.log("[batchUpdateKnownLocations] Starting...");
+
+    const events = await ctx.runQuery(internal.domains.enrichment.fundingQueries.getRecentFundingEvents, {
+      lookbackHours: 720,
+      limit: 100,
+    });
+
+    console.log(`[batchUpdateKnownLocations] Found ${events.length} events`);
+
+    let updated = 0;
+    let skipped = 0;
+
+    for (const event of events) {
+      const location = KNOWN_LOCATIONS[event.companyName];
+
+      if (!location) {
+        console.log(`  ⚠️  No location data for: ${event.companyName}`);
+        skipped++;
+        continue;
+      }
+
+      if (event.location) {
+        console.log(`  ⏭️  Already has location: ${event.companyName}`);
+        skipped++;
+        continue;
+      }
+
+      console.log(`  ✅ Updating ${event.companyName} → ${location}`);
+
+      try {
+        await ctx.runMutation(internal.domains.enrichment.backfillMetadata.updateLocation, {
+          fundingEventId: event.id as any,
+          location,
+        });
+        updated++;
+      } catch (e: any) {
+        console.log(`  ❌ Failed: ${e.message}`);
+      }
+    }
+
+    console.log(`[batchUpdateKnownLocations] Complete!`);
+    console.log(`  Updated: ${updated}`);
+    console.log(`  Skipped: ${skipped}`);
+
+    return {
+      success: true,
+      updated,
+      skipped,
+      total: events.length,
+    };
+  },
+});
+
+/**
+ * Step 6: Batch backfill all fields for recent events
  */
 export const batchBackfillAll = internalAction({
   args: {
@@ -279,6 +465,7 @@ export const batchBackfillAll = internalAction({
       sourceNames: { updated: 0, skipped: 0, failed: 0 },
       sectors: { updated: 0, skipped: 0, failed: 0 },
       valuations: { updated: 0, skipped: 0, failed: 0 },
+      locations: { updated: 0, skipped: 0, failed: 0 },
     };
 
     for (let i = 0; i < events.length; i++) {
@@ -286,7 +473,7 @@ export const batchBackfillAll = internalAction({
       console.log(`[batchBackfill] Processing ${i + 1}/${events.length}: ${event.companyName}`);
 
       if (dryRun) {
-        console.log(`  - Would update: sourceNames, sector, valuation`);
+        console.log(`  - Would update: sourceNames, sector, valuation, location`);
         continue;
       }
 
@@ -338,6 +525,22 @@ export const batchBackfillAll = internalAction({
         results.valuations.failed++;
       }
 
+      // 4. Location
+      try {
+        const locationResult = await ctx.runMutation(internal.domains.enrichment.backfillMetadata.backfillLocation, {
+          fundingEventId: event.id as any,
+        });
+        if (locationResult.success) {
+          if (locationResult.skipped) results.locations.skipped++;
+          else results.locations.updated++;
+        } else {
+          results.locations.failed++;
+        }
+      } catch (e: any) {
+        console.log(`  - location failed: ${e.message}`);
+        results.locations.failed++;
+      }
+
       // Rate limiting
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -346,6 +549,7 @@ export const batchBackfillAll = internalAction({
     console.log(`  - Source names: ${results.sourceNames.updated} updated, ${results.sourceNames.skipped} skipped`);
     console.log(`  - Sectors: ${results.sectors.updated} updated, ${results.sectors.skipped} skipped`);
     console.log(`  - Valuations: ${results.valuations.updated} updated, ${results.valuations.skipped} skipped`);
+    console.log(`  - Locations: ${results.locations.updated} updated, ${results.locations.skipped} skipped`);
 
     return {
       success: true,
