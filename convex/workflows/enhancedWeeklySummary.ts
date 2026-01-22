@@ -406,6 +406,71 @@ export const generateEnhancedWeeklySummary = internalAction({
     const totalArticles = Array.from(sourceDomainMap.values()).reduce((sum, data) => sum + data.count, 0);
     const avgConfidence = events.length > 0 ? totalConfidence / events.length : 0;
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TRACK COMPONENT METRICS (Week 1 - Data Completeness Initiative)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Build component metrics for each source x sector combination
+    const componentMetrics: Array<{
+      date: string;
+      reportType: "weekly_digest" | "daily_brief" | "funding_report" | "research_highlights";
+      componentType: string;
+      sourceName: string;
+      category?: string;
+      itemCount: number;
+      freshnessHours?: number;
+    }> = [];
+
+    // Track funding events by publisher
+    for (const publisher of publishers) {
+      componentMetrics.push({
+        date: today,
+        reportType: "weekly_digest",
+        componentType: "funding_events",
+        sourceName: publisher.name,
+        itemCount: publisher.count,
+        freshnessHours: daysBack * 24,
+      });
+    }
+
+    // Track funding events by publisher x sector
+    for (const sector of sectors.slice(0, 5)) { // Top 5 sectors
+      // Count events per publisher for this sector
+      const publisherCounts = new Map<string, number>();
+      for (const event of events) {
+        if (event.sector === sector.name && event.sourceNames) {
+          for (const publisherName of event.sourceNames) {
+            publisherCounts.set(publisherName, (publisherCounts.get(publisherName) || 0) + 1);
+          }
+        }
+      }
+
+      // Record metrics for each publisher that covered this sector
+      for (const [publisherName, count] of publisherCounts.entries()) {
+        componentMetrics.push({
+          date: today,
+          reportType: "weekly_digest",
+          componentType: "funding_events",
+          sourceName: publisherName,
+          category: sector.name,
+          itemCount: count,
+          freshnessHours: daysBack * 24,
+        });
+      }
+    }
+
+    // Record all component metrics
+    try {
+      await ctx.runMutation(internal.domains.analytics.componentMetrics.batchRecordComponentMetrics, {
+        metrics: componentMetrics,
+      });
+      console.log(`[Analytics] Recorded ${componentMetrics.length} component metrics for ${today}`);
+    } catch (e: any) {
+      console.error(`[Analytics] Failed to record component metrics: ${e.message}`);
+      // Don't fail the whole summary if metrics recording fails
+    }
+
     return {
       success: true,
       summary: {
