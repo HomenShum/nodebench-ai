@@ -156,21 +156,21 @@ export const callGrokWithWebSearch = action({
     maxTokens: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // For Grok models with reasoning, just use the query directly
-    // The model has built-in web search capabilities
+    // Use Grok's knowledge and reasoning to synthesize current trends
+    // Note: Direct web search would require additional API setup
     return await callGrokAPI({
       model: args.model,
       messages: [
         {
           role: "system",
-          content: "You have access to real-time web search. Use it to find the latest information."
+          content: "You are Grok, an AI assistant with comprehensive knowledge of recent technology trends, releases, and announcements. Based on your training data and reasoning capabilities, provide detailed insights about current developments."
         },
         {
           role: "user",
           content: args.query
         }
       ],
-      temperature: args.temperature,
+      temperature: args.temperature ?? 0.7,
       maxTokens: args.maxTokens,
     });
   },
@@ -188,21 +188,21 @@ export const callGrokWithXSearch = action({
     maxTokens: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // For Grok models, just use the query directly
-    // The model has built-in X/Twitter search capabilities
+    // Use Grok's knowledge and reasoning to synthesize trends
+    // Note: Direct X API access would require additional authentication
     return await callGrokAPI({
       model: args.model,
       messages: [
         {
           role: "system",
-          content: "You have access to real-time X (Twitter) search. Use it to find trending discussions and posts."
+          content: "You are Grok, an AI assistant with knowledge of recent technology trends and developer discussions. Based on your training data and reasoning, provide insights about what developers are likely discussing."
         },
         {
           role: "user",
           content: args.query
         }
       ],
-      temperature: args.temperature,
+      temperature: args.temperature ?? 0.8,
       maxTokens: args.maxTokens,
     });
   },
