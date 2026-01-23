@@ -23,6 +23,11 @@ import {
   FolderOpen,
   DollarSign,
   TrendingUp,
+  Sparkles,
+  BookOpen,
+  Zap,
+  Github,
+  GitPullRequest,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 
@@ -55,7 +60,14 @@ interface CleanSidebarProps {
     | 'activity'
     | 'entity'
     | 'footnotes'
-    | 'showcase';
+    | 'showcase'
+    | 'cost-dashboard'
+    | 'industry-updates'
+    | 'for-you-feed'
+    | 'document-recommendations'
+    | 'agent-marketplace'
+    | 'github-explorer'
+    | 'pr-suggestions';
   /** Callback when view changes */
   onViewChange?: (view:
     | 'documents'
@@ -71,7 +83,14 @@ interface CleanSidebarProps {
     | 'activity'
     | 'entity'
     | 'footnotes'
-    | 'showcase') => void;
+    | 'showcase'
+    | 'cost-dashboard'
+    | 'industry-updates'
+    | 'for-you-feed'
+    | 'document-recommendations'
+    | 'agent-marketplace'
+    | 'github-explorer'
+    | 'pr-suggestions') => void;
 }
 
 export function CleanSidebar({
@@ -200,6 +219,80 @@ export function CleanSidebar({
               currentView === 'industry-updates' ? 'text-blue-600' : 'text-gray-400'
             }`} />
             <span>Industry Updates</span>
+          </a>
+        </div>
+      </div>
+
+      {/* X Algorithm Features */}
+      <div className="px-3 mt-4 mb-2">
+        <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          Discovery
+        </div>
+        <div className="space-y-1">
+          <a
+            href="/for-you"
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              currentView === 'for-you-feed'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <Sparkles className={`w-4 h-4 ${
+              currentView === 'for-you-feed' ? 'text-purple-600' : 'text-gray-400'
+            }`} />
+            <span>For You</span>
+          </a>
+          <a
+            href="/recommendations"
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              currentView === 'document-recommendations'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <BookOpen className={`w-4 h-4 ${
+              currentView === 'document-recommendations' ? 'text-indigo-600' : 'text-gray-400'
+            }`} />
+            <span>Recommendations</span>
+          </a>
+          <a
+            href="/marketplace"
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              currentView === 'agent-marketplace'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <Zap className={`w-4 h-4 ${
+              currentView === 'agent-marketplace' ? 'text-yellow-600' : 'text-gray-400'
+            }`} />
+            <span>Agent Marketplace</span>
+          </a>
+          <a
+            href="/github"
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              currentView === 'github-explorer'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <Github className={`w-4 h-4 ${
+              currentView === 'github-explorer' ? 'text-gray-900' : 'text-gray-400'
+            }`} />
+            <span>GitHub Explorer</span>
+          </a>
+          <a
+            href="/pr-suggestions"
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              currentView === 'pr-suggestions'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <GitPullRequest className={`w-4 h-4 ${
+              currentView === 'pr-suggestions' ? 'text-green-600' : 'text-gray-400'
+            }`} />
+            <span>PR Suggestions</span>
           </a>
         </div>
       </div>

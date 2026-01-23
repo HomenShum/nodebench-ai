@@ -1423,7 +1423,7 @@ export const getOrCreateQuickNotes = mutation({
       if (!userIdPart || userIdPart.length < 10) {
         throw new Error("Invalid user ID format. Please sign out and sign back in.");
       }
-      userId = userIdPart;
+      userId = userIdPart as Id<"users">;
     } else {
       userId = rawUserId as Id<"users">;
     }

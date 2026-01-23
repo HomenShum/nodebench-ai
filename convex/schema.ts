@@ -675,6 +675,77 @@ const toolHealth = defineTable({
   .index("by_toolName", ["toolName"])
   .index("by_circuitOpen", ["circuitOpen", "toolName"]);
 
+/* ------------------------------------------------------------------ */
+/* PROMPT ENHANCEMENT FEEDBACK - Learning loop for dynamic tool instructions */
+/* ------------------------------------------------------------------ */
+const promptEnhancementFeedback = defineTable({
+  userMessage: v.string(),
+  expectedTools: v.array(v.string()),
+  actualToolsCalled: v.array(v.string()),
+  missedTools: v.array(v.string()),
+  generatedInstructions: v.optional(v.string()),
+  model: v.string(),
+  threadId: v.string(),
+  messageId: v.string(),
+  wasSuccess: v.optional(v.boolean()),
+  createdAt: v.number(),
+})
+  .index("by_thread", ["threadId", "createdAt"])
+  .index("by_model", ["model", "createdAt"])
+  .index("by_success", ["wasSuccess", "createdAt"]);
+
+/* ------------------------------------------------------------------ */
+/* PROJECT CONTEXT - Codebase context for prompt enhancement          */
+/* ------------------------------------------------------------------ */
+const projectContext = defineTable({
+  // Project identity
+  projectId: v.string(),
+  userId: v.id("users"),
+
+  // Codebase structure
+  name: v.string(),
+  techStack: v.array(v.string()), // ["React", "TypeScript", "Convex"]
+  fileStructure: v.optional(v.object({
+    rootPath: v.string(),
+    keyDirectories: v.array(v.string()),
+    totalFiles: v.number(),
+  })),
+
+  // Recent changes
+  recentCommits: v.array(v.object({
+    sha: v.string(),
+    message: v.string(),
+    author: v.string(),
+    timestamp: v.number(),
+    filesChanged: v.array(v.string()),
+  })),
+
+  // Patterns and conventions
+  commonPatterns: v.array(v.string()), // ["Use Convex mutations for DB writes", "camelCase for variables"]
+  styleGuide: v.optional(v.object({
+    summary: v.string(),
+    rules: v.array(v.string()),
+  })),
+
+  // Dependency context
+  dependencies: v.optional(v.array(v.object({
+    name: v.string(),
+    version: v.string(),
+    isDevDependency: v.boolean(),
+  }))),
+
+  // Session state
+  currentBranch: v.optional(v.string()),
+  activeFiles: v.optional(v.array(v.string())), // Files open in editor
+
+  // Metadata
+  lastSyncedAt: v.number(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_project_id", ["projectId"])
+  .index("by_user", ["userId", "updatedAt"]);
+
 const agentRunEvents = defineTable({
   runId: v.id("agentRuns"),
   seq: v.number(), // monotonically increasing per run
@@ -1734,7 +1805,7 @@ const documentSnapshots = defineTable({
 /* ------------------------------------------------------------------ */
 const spreadsheets = defineTable({
   name: v.string(),
-  userId: v.id("users"),
+  userId: v.optional(v.id("users")), // Optional to allow guest users
   // Optional link to a DCF interactive session (enables bidirectional sync)
   dcfSessionId: v.optional(v.string()),
   createdAt: v.number(),
@@ -2807,6 +2878,8 @@ export default defineSchema({
   resourceLinks,
   evidencePacks,
   toolHealth,
+  promptEnhancementFeedback,
+  projectContext,
   agentRunEvents,
   instagramPosts,
   agentDelegations,

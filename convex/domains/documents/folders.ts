@@ -24,13 +24,13 @@ async function getSafeUserId(ctx: any): Promise<Id<"users">> {
   if (typeof rawUserId === 'string' && rawUserId.includes('|')) {
     // Extract the first part before the pipe as the actual user ID
     const userIdPart = rawUserId.split('|')[0];
-    
+
     // Validate that this looks like a proper Convex ID
     if (!userIdPart || userIdPart.length < 10) {
       throw new Error("Invalid user ID format. Please sign out and sign back in.");
     }
-    
-    userId = userIdPart;
+
+    userId = userIdPart as Id<"users">;
   } else {
     userId = rawUserId;
   }

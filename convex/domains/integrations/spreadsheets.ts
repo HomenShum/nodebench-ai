@@ -59,9 +59,9 @@ export const createSheet = mutation({
   },
 });
 
-// Internal helper for system/agent flows that already know the userId.
+// Internal helper for system/agent flows that already know the userId (or guest users).
 export const createSheetForUser = internalMutation({
-  args: { name: v.string(), userId: v.id("users") },
+  args: { name: v.string(), userId: v.optional(v.id("users")) },
   returns: v.id("spreadsheets"),
   handler: async (ctx, { name, userId }): Promise<Id<"spreadsheets">> => {
     const now = Date.now();

@@ -52,13 +52,35 @@ crons.daily(
 // Industry Monitoring - Scan for updates from AI leaders (2026)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Scan industry sources daily for new patterns and enhancements
-// Checks: Anthropic, OpenAI, Google DeepMind, LangChain, Vercel AI SDK
+// Enhanced industry scan with X/web search (Phase 5)
+// Runs daily at 6 AM UTC - includes X search, web search, and PR generation
 crons.daily(
-  "scan industry updates",
+  "enhanced industry scan",
   { hourUTC: 6, minuteUTC: 0 }, // 6 AM UTC daily
-  internal.domains.monitoring.industryUpdates.scanIndustryUpdates,
+  internal.domains.monitoring.industryUpdatesEnhanced.enhancedIndustryScan,
   {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// X ALGORITHM FEATURES - Phoenix ML powered discovery (Phase 2-6)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Update agent marketplace rankings hourly (Phase 4)
+// Recalculates Phoenix scores based on success rate, usage, latency, engagement
+crons.interval(
+  "update agent marketplace rankings",
+  { hours: 1 },
+  internal.domains.agents.agentMarketplace.updateAgentRankings,
+  {}
+);
+
+// Discover trending GitHub repositories hourly (Phase 6)
+// Fetches trending repos for AI/LLM topics and scores with Phoenix ML
+crons.interval(
+  "discover trending GitHub repos",
+  { hours: 1 },
+  internal.domains.research.githubExplorer.discoverTrendingRepos,
+  { userInterests: ["ai", "llm", "agents", "machine-learning"] }
 );
 
 // Cleanup old dead-letters daily (keep 30 days)

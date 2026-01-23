@@ -21,7 +21,7 @@ async function getSafeUserId(ctx: any): Promise<Id<"users"> | null> {
     if (!userIdPart || userIdPart.length < 10) {
       return null; // Invalid format, needs re-authentication
     }
-    userId = userIdPart;
+    userId = userIdPart as Id<"users">;
   } else {
     userId = rawUserId;
   }

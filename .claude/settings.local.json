@@ -177,7 +177,13 @@
       "Bash(npx agent-browser:*)",
       "Bash(agent-browser test-dcf-flow.js:*)",
       "Bash(./node_modules/.bin/agent-browser.cmd:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(pkill:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(mklink:*)",
+      "Bash(cmd /c 'cd /d \"\"d:\\\\VSCode Projects\\\\cafecorner_nodebench\\\\nodebench_ai4\\\\nodebench-ai\\\\next-app\"\" && mklink /D convex \"\"..\\\\convex\"\"')",
+      "Bash(npm start)"
     ],
     "deny": [],
     "ask": []
