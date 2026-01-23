@@ -2047,14 +2047,36 @@ export const getThreadMessagesWithStreaming = query({
       paginationOpts: args.paginationOpts,
     });
 
-    // DEBUG: Log all messages to understand what's being returned
-    console.log(`[getThreadMessagesWithStreaming] Retrieved ${(paginated.page as any[]).length} messages`);
-    (paginated.page as any[]).forEach((msg: any, index: number) => {
-      const content = typeof msg.text === 'string' ? msg.text :
-                     typeof msg.content === 'string' ? msg.content : '';
-      const contentPreview = content ? content.substring(0, 50) : '(empty)';
-      const messageId = msg._id ?? msg.id ?? msg.messageId ?? 'no-id';
-      console.log(`[getThreadMessagesWithStreaming] Message ${index}: role=${msg.role}, id=${messageId}, content="${contentPreview}...", status=${msg.status}`);
+    // ═══════════════════════════════════════════════════════════════════════
+    // FIX: Filter out empty/pending/failed assistant messages
+    //
+    // Root Cause (GitHub Issue #199):
+    // When agent actions are interrupted or fail, pending messages with empty
+    // content remain in the database. These should be filtered from UI display.
+    //
+    // This fix implements the cleanup pattern recommended in the issue:
+    // https://github.com/get-convex/agent/issues/199
+    // ═══════════════════════════════════════════════════════════════════════
+    const cleanedPage = (paginated.page as any[]).filter((msg: any) => {
+      // Always show user messages
+      if (msg.role !== 'assistant') return true;
+
+      // Get message content
+      const content = typeof msg.text === 'string' ? msg.text.trim() :
+                     typeof msg.content === 'string' ? msg.content.trim() : '';
+
+      // Get message status
+      const status = msg.status || 'unknown';
+
+      // Filter out empty assistant messages with pending/failed/error status
+      // These are leftover from interrupted/failed agent runs
+      if (!content || content === '' || content === '...') {
+        if (status === 'pending' || status === 'failed' || status === 'error') {
+          return false;
+        }
+      }
+
+      return true;
     });
 
     // Fetch streaming deltas
@@ -2066,6 +2088,7 @@ export const getThreadMessagesWithStreaming = query({
 
     return {
       ...paginated,
+      page: cleanedPage,
       streams,
     };
   },
