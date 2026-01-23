@@ -26,7 +26,7 @@
 // TYPE DEFINITIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type LlmProvider = "openai" | "anthropic" | "gemini" | "openrouter";
+export type LlmProvider = "openai" | "anthropic" | "gemini" | "openrouter" | "xai";
 
 export type LlmTask =
   | "chat"
@@ -76,6 +76,18 @@ export const modelPricing: Record<string, ModelPricing> = {
   "mistral-large": { inputPer1M: 2.00, outputPer1M: 6.00, contextWindow: 131072 },
   "glm-4.7-flash": { inputPer1M: 0.07, outputPer1M: 0.40, cachedInputPer1M: 0.01, contextWindow: 200000 },
   "glm-4.7": { inputPer1M: 0.40, outputPer1M: 1.50, contextWindow: 202752 },
+
+  // xAI Grok Series (Jan 2026) - Real-time web search + X integration
+  "grok-4-1-fast-reasoning": { inputPer1M: 0.20, outputPer1M: 0.50, cachedInputPer1M: 0.02, contextWindow: 2000000 },
+  "grok-4-1-fast-non-reasoning": { inputPer1M: 0.20, outputPer1M: 0.50, cachedInputPer1M: 0.02, contextWindow: 2000000 },
+  "grok-4-fast-reasoning": { inputPer1M: 0.20, outputPer1M: 0.50, cachedInputPer1M: 0.02, contextWindow: 256000 },
+  "grok-4-fast-non-reasoning": { inputPer1M: 0.20, outputPer1M: 0.50, cachedInputPer1M: 0.02, contextWindow: 256000 },
+  "grok-4": { inputPer1M: 3.00, outputPer1M: 15.00, cachedInputPer1M: 0.30, contextWindow: 256000 },
+  "grok-3": { inputPer1M: 3.00, outputPer1M: 15.00, cachedInputPer1M: 0.30, contextWindow: 128000 },
+  "grok-3-mini": { inputPer1M: 1.00, outputPer1M: 5.00, cachedInputPer1M: 0.10, contextWindow: 128000 },
+  "grok-code-fast-1": { inputPer1M: 0.20, outputPer1M: 0.50, cachedInputPer1M: 0.02, contextWindow: 256000 },
+  "grok-2-vision-1212": { inputPer1M: 3.00, outputPer1M: 15.00, cachedInputPer1M: 0.30, contextWindow: 128000 },
+  "grok-2": { inputPer1M: 3.00, outputPer1M: 15.00, cachedInputPer1M: 0.30, contextWindow: 128000 },
 
   // OpenRouter Free-Tier Models ($0 pricing - auto-discovered Jan 2026)
   "mimo-v2-flash-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 262144 },
@@ -197,6 +209,17 @@ export const llmModelCatalog: ModelCatalog = {
     fileSearch: ["glm-4.7-flash", "deepseek-v3.2-speciale"],
     voice: [],
     coding: ["glm-4.7-flash", "deepseek-v3.2-speciale", "mistral-large"],
+  },
+  xai: {
+    chat: ["grok-3-mini", "grok-4-1-fast-reasoning"],
+    agent: ["grok-4-1-fast-reasoning", "grok-4"],
+    router: ["grok-3-mini"],
+    judge: ["grok-4", "grok-4-1-fast-reasoning"],
+    analysis: ["grok-4-1-fast-reasoning", "grok-4"],
+    vision: ["grok-2-vision-1212"],
+    fileSearch: ["grok-3-mini", "grok-4-1-fast-non-reasoning"],
+    voice: ["grok-3-mini"],
+    coding: ["grok-code-fast-1", "grok-4-1-fast-reasoning"],
   },
 };
 
@@ -635,6 +658,7 @@ export const providerEnvVars: Record<LlmProvider, string> = {
   anthropic: "ANTHROPIC_API_KEY",
   gemini: "GEMINI_API_KEY",
   openrouter: "OPENROUTER_API_KEY",
+  xai: "XAI_API_KEY",
 };
 
 /**
@@ -655,7 +679,7 @@ export function isProviderConfigured(provider: LlmProvider): boolean {
  * Get all configured providers
  */
 export function getConfiguredProviders(): LlmProvider[] {
-  return (["openai", "anthropic", "gemini", "openrouter"] as LlmProvider[]).filter(isProviderConfigured);
+  return (["openai", "anthropic", "gemini", "openrouter", "xai"] as LlmProvider[]).filter(isProviderConfigured);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -668,25 +692,26 @@ export const providerFallbackChain: Record<LlmProvider, LlmProvider[]> = {
   anthropic: ["openai", "gemini", "openrouter"],
   gemini: ["openai", "anthropic", "openrouter"],
   openrouter: ["gemini", "openai", "anthropic"],
+  xai: ["openrouter", "anthropic", "openai"],
 };
 
 /** Model equivalents across providers (for failover) - 8 approved models */
 export const modelEquivalents: Record<string, Record<LlmProvider, string>> = {
   // High-tier models
-  "gpt-5.2": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
-  "claude-opus-4.5": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
-  "claude-sonnet-4.5": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
-  "gemini-3-pro": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
-  "glm-4.7": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7" },
+  "gpt-5.2": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
+  "claude-opus-4.5": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
+  "claude-sonnet-4.5": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
+  "gemini-3-pro": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
+  "glm-4.7": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
 
   // Mid-tier/balanced models
-  "gpt-5-mini": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
-  "glm-4.7-flash": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
+  "gpt-5-mini": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "glm-4.7-flash": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
 
   // Fast/efficient models
-  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
-  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
-  "gemini-3-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash" },
+  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "gemini-3-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
 };
 
 /**
@@ -704,6 +729,7 @@ export function getEquivalentModel(modelName: string, targetProvider: LlmProvide
     anthropic: "claude-haiku-4.5", // Cheapest Anthropic (DEFAULT)
     gemini: "gemini-3-flash",      // Cheapest Google (Dec 17, 2025)
     openrouter: "glm-4.7-flash",   // Cheapest OpenRouter-priced model (Jan 2026)
+    xai: "grok-3-mini",            // Cheapest xAI (Jan 2026)
   };
 
   return defaults[targetProvider];
