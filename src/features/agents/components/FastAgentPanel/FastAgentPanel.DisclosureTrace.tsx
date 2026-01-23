@@ -52,7 +52,11 @@ export type DisclosureEvent =
   | { t: number; kind: "invariant.check"; invariantId: "A" | "C" | "D"; status: "pass" | "fail" | "skip"; details?: string }
   | { t: number; kind: "context.compaction"; beforeTokens: number; afterTokens: number; reduction: number; factsKept: number }
   | { t: number; kind: "memory.update"; entityId: string; action: "create" | "update" | "skip"; factsAdded: number; reason?: string }
-  | { t: number; kind: "memory.query"; entityName: string; found: boolean; qualityTier?: string; ageInDays?: number; isStale?: boolean };
+  | { t: number; kind: "memory.query"; entityName: string; found: boolean; qualityTier?: string; ageInDays?: number; isStale?: boolean }
+  // Reasoning tool events - transparent step-by-step thinking
+  | { t: number; kind: "reasoning.start"; toolName: "reasoningTool"; promptPreview: string; maxTokens: number }
+  | { t: number; kind: "reasoning.thinking"; step: number; thought: string; tokensUsed?: number }
+  | { t: number; kind: "reasoning.complete"; reasoningTokens: number; outputTokens: number; totalTokens: number; cost: number; durationMs: number };
 
 export interface DisclosureSummary {
   skillSearchCalls: number;
@@ -76,6 +80,12 @@ export interface DisclosureSummary {
   tokensSavedByCompaction: number;
   memoryUpdates: { entityId: string; action: "create" | "update" | "skip"; factsAdded: number }[];
   memoryQueries: { entityName: string; found: boolean; qualityTier?: string; isStale?: boolean }[];
+  // Reasoning metrics
+  reasoningInvocations: number;
+  reasoningThinkingSteps: number;
+  reasoningTokens: number;
+  reasoningCost: number;
+  avgReasoningDuration: number;
 }
 
 interface DisclosureTraceProps {
@@ -142,6 +152,13 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
       return <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />;
     case "memory.query":
       return <Brain className="w-3.5 h-3.5 text-purple-400" />;
+    // Reasoning tool events
+    case "reasoning.start":
+      return <Brain className="w-3.5 h-3.5 text-cyan-400" />;
+    case "reasoning.thinking":
+      return <Brain className="w-3.5 h-3.5 text-cyan-500 animate-pulse" />;
+    case "reasoning.complete":
+      return <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />;
     default:
       return <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />;
   }
@@ -190,6 +207,13 @@ function getEventLabel(event: DisclosureEvent): string {
       return `memory.${event.action}: ${event.entityId}`;
     case "memory.query":
       return `memory.query: ${event.entityName}`;
+    // Reasoning tool events
+    case "reasoning.start":
+      return `reasoning: starting (max ${event.maxTokens} tokens)`;
+    case "reasoning.thinking":
+      return `reasoning: step ${event.step}`;
+    case "reasoning.complete":
+      return `reasoning: complete (${event.durationMs}ms)`;
     default:
       return "unknown event";
   }
@@ -237,6 +261,13 @@ function getEventDetail(event: DisclosureEvent): string | null {
         return "→ not found, will trigger enrichment";
       }
       return `→ ${event.qualityTier ?? "unknown"} tier, ${event.ageInDays ?? "?"}d old${event.isStale ? " (STALE)" : ""}`;
+    // Reasoning tool events
+    case "reasoning.start":
+      return `→ prompt: ${event.promptPreview}`;
+    case "reasoning.thinking":
+      return `→ ${event.thought}${event.tokensUsed ? ` (${event.tokensUsed} tokens)` : ""}`;
+    case "reasoning.complete":
+      return `→ reasoning: ${event.reasoningTokens.toLocaleString()} tokens, output: ${event.outputTokens.toLocaleString()} tokens, cost: $${event.cost.toFixed(6)}`;
     default:
       return null;
   }
@@ -323,6 +354,19 @@ export function DisclosureTrace({
     memoryQueries: events
       .filter((e): e is Extract<DisclosureEvent, { kind: "memory.query" }> => e.kind === "memory.query")
       .map((e) => ({ entityName: e.entityName, found: e.found, qualityTier: e.qualityTier, isStale: e.isStale })),
+    // Reasoning metrics
+    reasoningInvocations: events.filter(e => e.kind === "reasoning.start").length,
+    reasoningThinkingSteps: events.filter(e => e.kind === "reasoning.thinking").length,
+    reasoningTokens: events
+      .filter((e): e is Extract<DisclosureEvent, { kind: "reasoning.complete" }> => e.kind === "reasoning.complete")
+      .reduce((sum, e) => sum + e.reasoningTokens, 0),
+    reasoningCost: events
+      .filter((e): e is Extract<DisclosureEvent, { kind: "reasoning.complete" }> => e.kind === "reasoning.complete")
+      .reduce((sum, e) => sum + e.cost, 0),
+    avgReasoningDuration: (() => {
+      const completes = events.filter((e): e is Extract<DisclosureEvent, { kind: "reasoning.complete" }> => e.kind === "reasoning.complete");
+      return completes.length > 0 ? completes.reduce((sum, e) => sum + e.durationMs, 0) / completes.length : 0;
+    })(),
   };
 
   const budgetUtilization = Math.min((stats.totalTokensAdded / budgetLimit) * 100, 100);
@@ -539,6 +583,35 @@ export function DisclosureTrace({
                   {stats.memoryUpdates.length > 5 && (
                     <span className="text-[var(--text-muted)]">+{stats.memoryUpdates.length - 5} more</span>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Row 4: Reasoning metrics */}
+            {stats.reasoningInvocations > 0 && (
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1 text-cyan-400">
+                    <Brain className="w-3 h-3" />
+                    Reasoning
+                  </span>
+                  <span className="text-[var(--text-secondary)]">
+                    Calls: <span className="text-cyan-400 font-medium">{stats.reasoningInvocations}</span>
+                  </span>
+                  <span className="text-[var(--text-secondary)]">
+                    Steps: <span className="text-cyan-400 font-medium">{stats.reasoningThinkingSteps}</span>
+                  </span>
+                  <span className="text-[var(--text-secondary)]">
+                    Tokens: <span className="text-cyan-400 font-medium">{stats.reasoningTokens.toLocaleString()}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--text-secondary)]">
+                    Cost: <span className="text-cyan-400 font-medium">${stats.reasoningCost.toFixed(6)}</span>
+                  </span>
+                  <span className="text-[var(--text-secondary)]">
+                    Avg: <span className="text-cyan-400 font-medium">{Math.round(stats.avgReasoningDuration)}ms</span>
+                  </span>
                 </div>
               </div>
             )}

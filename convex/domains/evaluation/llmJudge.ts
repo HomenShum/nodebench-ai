@@ -29,15 +29,30 @@ import { getLanguageModelSafe } from "../agents/mcp_tools/models";
 
 /**
  * Get the best available judge model based on API key availability.
- * Priority: gemini-3-flash (cheapest) > claude-haiku-4.5 (fallback)
+ * FREE-FIRST STRATEGY with cost-optimized fallbacks:
+ * 1. devstral-2-free: $0.00/M (FREE via OpenRouter)
+ * 2. glm-4.7-flash: $0.07/M (ultra-cheap via OpenRouter)
+ * 3. gemini-3-flash: $0.50/M (if Google key available)
+ * 4. claude-haiku-4.5: $1.00/M (last resort)
  */
 function getDefaultJudgeModel(): string {
+  // Try FREE model first (OpenRouter)
+  if (process.env.OPENROUTER_API_KEY) {
+    return "devstral-2-free"; // FREE, 70s avg latency
+  }
+
+  // If OpenRouter available, use ultra-cheap GLM
+  if (process.env.OPENROUTER_API_KEY) {
+    return "glm-4.7-flash"; // $0.07/M - 86% cheaper than gemini
+  }
+
   // Check for Google API key
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    return "gemini-3-flash";
+    return "gemini-3-flash"; // $0.50/M
   }
-  // Fall back to Claude Haiku if Google not available
-  return "claude-haiku-4.5";
+
+  // Fall back to Claude Haiku if nothing else available
+  return "claude-haiku-4.5"; // $1.00/M - last resort
 }
 
 // ============================================================================

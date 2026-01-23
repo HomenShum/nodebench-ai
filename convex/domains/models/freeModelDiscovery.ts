@@ -123,12 +123,21 @@ const FREE_MODEL_CONFIG = {
  *
  * These are intentionally curated because "free" pools rotate and some models are experimental/deprecating.
  * Seeding ensures they exist in `freeModels` even if discovery isn't run yet.
+ *
+ * NOTE: xAI/Grok models are available via OpenRouter with free tier options.
+ * Grok models are highly cost-effective for ranking and recommendation tasks.
  */
 const PINNED_FREE_FIRST_MODELS: Array<{
   openRouterId: string;
   name: string;
   expectedVision: boolean;
 }> = [
+  // xAI/Grok models - excellent for ranking and recommendation (X algorithm patterns)
+  {
+    openRouterId: "xai/grok-3-mini:free",
+    name: "Grok 3 Mini (free)",
+    expectedVision: false,
+  },
   {
     openRouterId: "google/gemini-2.0-flash-exp:free",
     name: "Gemini 2.0 Flash Experimental (free)",

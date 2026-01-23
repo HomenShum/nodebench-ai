@@ -84,7 +84,7 @@ export const batchRecordComponentMetrics = internalMutation({
     })),
   },
   handler: async (ctx, args) => {
-    const metricIds = [];
+    const metricIds: string[] = [];
 
     for (const metric of args.metrics) {
       const metricId = await ctx.db.insert("dailyReportComponentMetrics", {
@@ -271,5 +271,214 @@ export const getTopPerformingSources = query({
     return results
       .sort((a, b) => b.avgEngagement - a.avgEngagement)
       .slice(0, limit);
+  },
+});
+
+/**
+ * Record user engagement with a report component
+ * Call this when users interact with report content
+ */
+export const recordEngagement = mutation({
+  args: {
+    date: v.string(), // YYYY-MM-DD
+    reportType: v.union(
+      v.literal("daily_brief"),
+      v.literal("weekly_digest"),
+      v.literal("funding_report"),
+      v.literal("research_highlights")
+    ),
+    componentType: v.string(),
+    sourceName: v.string(),
+    category: v.optional(v.string()),
+    engagementType: v.union(
+      v.literal("view"),
+      v.literal("click"),
+      v.literal("expand"),
+      v.literal("scroll"),
+      v.literal("time_spent")
+    ),
+    durationMs: v.optional(v.number()), // For time_spent events
+    targetUrl: v.optional(v.string()), // For click events
+    metadata: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    // Check if metric exists for this date/report/component/source
+    const existingMetrics = await ctx.db
+      .query("dailyReportComponentMetrics")
+      .withIndex("by_date", (q) => q.eq("date", args.date))
+      .collect();
+
+    const existingMetric = existingMetrics.find(
+      (m) =>
+        m.reportType === args.reportType &&
+        m.componentType === args.componentType &&
+        m.sourceName === args.sourceName &&
+        m.category === args.category
+    );
+
+    if (existingMetric) {
+      // Update existing metric
+      const updates: any = {};
+
+      if (args.engagementType === "time_spent" && args.durationMs) {
+        // Update average read time
+        const currentAvg = existingMetric.avgReadTimeSeconds || 0;
+        const currentCount = existingMetric.impressions || 1;
+        const newAvg =
+          (currentAvg * currentCount + args.durationMs / 1000) /
+          (currentCount + 1);
+        updates.avgReadTimeSeconds = newAvg;
+      }
+
+      if (args.engagementType === "click") {
+        // Increment clicks
+        updates.clicks = (existingMetric.clicks || 0) + 1;
+        // Update CTR
+        const totalImpressions = existingMetric.impressions || 1;
+        updates.clickThroughRate = ((existingMetric.clicks || 0) + 1) / totalImpressions;
+      }
+
+      if (args.engagementType === "view") {
+        // Increment impressions
+        updates.impressions = (existingMetric.impressions || 0) + 1;
+        // Recalculate CTR if we have clicks
+        if (existingMetric.clicks) {
+          updates.clickThroughRate = existingMetric.clicks / ((existingMetric.impressions || 0) + 1);
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await ctx.db.patch(existingMetric._id, {
+          ...updates,
+          updatedAt: Date.now(),
+        });
+
+        return { success: true, metricId: existingMetric._id, action: "updated" };
+      }
+    } else {
+      // Create new metric
+      const metricId = await ctx.db.insert("dailyReportComponentMetrics", {
+        date: args.date,
+        reportType: args.reportType,
+        componentType: args.componentType,
+        sourceName: args.sourceName,
+        category: args.category,
+        itemCount: 0, // Will be populated by workflow
+        impressions: args.engagementType === "view" ? 1 : 0,
+        clicks: args.engagementType === "click" ? 1 : 0,
+        avgReadTimeSeconds:
+          args.engagementType === "time_spent" && args.durationMs
+            ? args.durationMs / 1000
+            : undefined,
+        clickThroughRate: 0,
+        createdAt: Date.now(),
+      });
+
+      return { success: true, metricId, action: "created" };
+    }
+
+    return { success: true, action: "skipped" };
+  },
+});
+
+/**
+ * Batch record engagement events (for bulk processing)
+ */
+export const batchRecordEngagement = mutation({
+  args: {
+    events: v.array(
+      v.object({
+        date: v.string(),
+        reportType: v.union(
+          v.literal("daily_brief"),
+          v.literal("weekly_digest"),
+          v.literal("funding_report"),
+          v.literal("research_highlights")
+        ),
+        componentType: v.string(),
+        sourceName: v.string(),
+        category: v.optional(v.string()),
+        engagementType: v.union(
+          v.literal("view"),
+          v.literal("click"),
+          v.literal("expand"),
+          v.literal("scroll"),
+          v.literal("time_spent")
+        ),
+        durationMs: v.optional(v.number()),
+        targetUrl: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    let updated = 0;
+    let created = 0;
+
+    for (const event of args.events) {
+      // Check if metric exists
+      const existingMetrics = await ctx.db
+        .query("dailyReportComponentMetrics")
+        .withIndex("by_date", (q) => q.eq("date", event.date))
+        .collect();
+
+      const existingMetric = existingMetrics.find(
+        (m) =>
+          m.reportType === event.reportType &&
+          m.componentType === event.componentType &&
+          m.sourceName === event.sourceName &&
+          m.category === event.category
+      );
+
+      if (existingMetric) {
+        const updates: any = {};
+
+        if (event.engagementType === "time_spent" && event.durationMs) {
+          const currentAvg = existingMetric.avgReadTimeSeconds || 0;
+          const currentCount = existingMetric.impressions || 1;
+          const newAvg =
+            (currentAvg * currentCount + event.durationMs / 1000) /
+            (currentCount + 1);
+          updates.avgReadTimeSeconds = newAvg;
+        }
+
+        if (event.engagementType === "click") {
+          updates.clicks = (existingMetric.clicks || 0) + 1;
+          const totalImpressions = existingMetric.impressions || 1;
+          updates.clickThroughRate = updates.clicks / totalImpressions;
+        }
+
+        if (event.engagementType === "view") {
+          updates.impressions = (existingMetric.impressions || 0) + 1;
+          if (existingMetric.clicks) {
+            updates.clickThroughRate = existingMetric.clicks / updates.impressions;
+          }
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await ctx.db.patch(existingMetric._id, updates);
+          updated++;
+        }
+      } else {
+        await ctx.db.insert("dailyReportComponentMetrics", {
+          date: event.date,
+          reportType: event.reportType,
+          componentType: event.componentType,
+          sourceName: event.sourceName,
+          category: event.category,
+          itemCount: 0,
+          impressions: event.engagementType === "view" ? 1 : 0,
+          clicks: event.engagementType === "click" ? 1 : 0,
+          avgReadTimeSeconds:
+            event.engagementType === "time_spent" && event.durationMs
+              ? event.durationMs / 1000
+              : undefined,
+          clickThroughRate: 0,
+          createdAt: Date.now(),
+        });
+        created++;
+      }
+    }
+
+    return { success: true, updated, created };
   },
 });

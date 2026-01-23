@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "../../_generated/server";
+import { internalMutation, mutation, query } from "../../_generated/server";
 import { Doc, Id } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -59,6 +59,21 @@ export const createSheet = mutation({
   },
 });
 
+// Internal helper for system/agent flows that already know the userId.
+export const createSheetForUser = internalMutation({
+  args: { name: v.string(), userId: v.id("users") },
+  returns: v.id("spreadsheets"),
+  handler: async (ctx, { name, userId }): Promise<Id<"spreadsheets">> => {
+    const now = Date.now();
+    return await ctx.db.insert("spreadsheets", {
+      name,
+      userId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
 export const listSheets = query({
   args: {
     limit: v.optional(v.number()),
@@ -75,6 +90,18 @@ export const listSheets = query({
 
     sheets.sort((a: Doc<"spreadsheets">, b: Doc<"spreadsheets">) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
     return sheets.slice(0, limit);
+  },
+});
+
+export const getSheet = query({
+  args: { sheetId: v.id("spreadsheets") },
+  returns: v.any(),
+  handler: async (ctx, { sheetId }) => {
+    const userId = await getSafeUserId(ctx);
+    const sheet = await ctx.db.get(sheetId) as Doc<"spreadsheets"> | null;
+    if (!sheet) return null;
+    if (sheet.userId !== userId) throw new Error("Not authorized");
+    return sheet;
   },
 });
 

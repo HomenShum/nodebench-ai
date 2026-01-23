@@ -92,7 +92,7 @@ Be specific with sectors. Avoid defaulting to "Technology" if a more specific ca
 
       const result = await generateObject({
         model,
-        schema,
+        schema: schema as any,
         prompt,
       });
 

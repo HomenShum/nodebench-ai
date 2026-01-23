@@ -20,6 +20,21 @@ import {
   emailSyncState,
 } from "./schema/emailSchema";
 
+// Proactive system schema imports
+import {
+  proactiveEvents,
+  opportunities,
+  proactiveActions,
+  detectorRuns,
+  userProactiveSettings,
+  proactiveFeedbackLabels,
+  customDetectors,
+  adminUsers,
+  proactiveSubscriptions,
+  usageTracking,
+  userConsents,
+} from "./domains/proactive/schema";
+
 /* ------------------------------------------------------------------ */
 /* 1.  DOCUMENTS  –  page/board/post level metadata                    */
 /* ------------------------------------------------------------------ */
@@ -1720,6 +1735,8 @@ const documentSnapshots = defineTable({
 const spreadsheets = defineTable({
   name: v.string(),
   userId: v.id("users"),
+  // Optional link to a DCF interactive session (enables bidirectional sync)
+  dcfSessionId: v.optional(v.string()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -7847,6 +7864,192 @@ export default defineSchema({
     .index("by_actor", ["actorId", "createdAt"]),
 
   /* ------------------------------------------------------------------ */
+  /* GROUND TRUTH FINANCIALS - SEC EDGAR cached financial data          */
+  /* ------------------------------------------------------------------ */
+  groundTruthFinancials: defineTable({
+    ticker: v.string(),
+    cik: v.string(),                        // SEC CIK number
+    fiscalYear: v.number(),
+    fiscalQuarter: v.optional(v.number()),  // null for annual
+
+    // Income Statement
+    revenue: v.optional(v.number()),
+    costOfRevenue: v.optional(v.number()),
+    grossProfit: v.optional(v.number()),
+    operatingIncome: v.optional(v.number()),
+    netIncome: v.optional(v.number()),
+
+    // Balance Sheet
+    totalAssets: v.optional(v.number()),
+    totalLiabilities: v.optional(v.number()),
+    totalEquity: v.optional(v.number()),
+
+    // Cash Flow
+    operatingCashFlow: v.optional(v.number()),
+    freeCashFlow: v.optional(v.number()),
+
+    // Computed metrics
+    grossMargin: v.optional(v.number()),
+    operatingMargin: v.optional(v.number()),
+    netMargin: v.optional(v.number()),
+
+    // Source metadata
+    sourceUrl: v.string(),                  // SEC EDGAR URL
+    filingDate: v.string(),                 // ISO date
+    fetchedAt: v.number(),
+  })
+    .index("by_ticker_year", ["ticker", "fiscalYear", "fiscalQuarter"])
+    .index("by_cik", ["cik", "fiscalYear"])
+    .index("by_ticker", ["ticker", "fetchedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* GROUND TRUTH MARKET DATA - Alpha Vantage cached market metrics     */
+  /* ------------------------------------------------------------------ */
+  groundTruthMarketData: defineTable({
+    ticker: v.string(),
+
+    // Market data (from Alpha Vantage GLOBAL_QUOTE)
+    currentPrice: v.optional(v.number()),
+    volume: v.optional(v.number()),
+    previousClose: v.optional(v.number()),
+    changePercent: v.optional(v.number()),
+
+    // Additional metrics (from Alpha Vantage OVERVIEW or manual seeding)
+    marketCap: v.optional(v.number()),
+    beta: v.optional(v.number()),
+    forwardPE: v.optional(v.number()),
+
+    // Analyst estimates (from manual seeding)
+    analystTargetPrice: v.optional(v.number()),
+    analystRecommendation: v.optional(v.string()),
+
+    // Source metadata
+    sourceUrl: v.string(),
+    fetchedAt: v.number(),
+  })
+    .index("by_ticker", ["ticker"])
+    .index("by_fetched", ["fetchedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DCF PROGRESS SESSIONS - Workflow state tracking                   */
+  /* ------------------------------------------------------------------ */
+  dcfProgressSessions: defineTable({
+    sessionId: v.string(),
+    ticker: v.string(),
+    userId: v.optional(v.string()),
+    scenario: v.string(),
+
+    // Workflow state
+    steps: v.any(), // Array of ProgressStep objects
+    currentStep: v.number(),
+    status: v.string(), // "initialized" | "in_progress" | "completed" | "failed" | "rolled_back" | "branched"
+
+    // Branching support (LangGraph-style)
+    parentSessionId: v.optional(v.string()),
+    branchedFrom: v.optional(v.number()),
+
+    // Results
+    finalResult: v.optional(v.any()),
+    error: v.optional(v.string()),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    failedAt: v.optional(v.number()),
+  })
+    .index("by_session_id", ["sessionId"])
+    .index("by_ticker", ["ticker", "createdAt"])
+    .index("by_status", ["status", "updatedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* DCF SESSIONS - Interactive DCF model state                          */
+  /* ------------------------------------------------------------------ */
+  dcfSessions: defineTable({
+    sessionId: v.string(),
+    userId: v.optional(v.id("users")), // Optional to allow guest users
+    ticker: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+
+    // Optional link to a generated spreadsheet for real-time sync
+    spreadsheetId: v.optional(v.id("spreadsheets")),
+
+    // Editable parameters
+    parameters: v.object({
+      baseRevenue: v.number(),
+      revenueGrowthRates: v.array(v.number()), // [Y1..Y5] decimals (e.g., 0.10)
+      terminalGrowth: v.number(), // decimal (e.g., 0.03)
+
+      grossMargin: v.array(v.number()),
+      operatingMargin: v.array(v.number()),
+
+      riskFreeRate: v.number(), // decimal (e.g., 0.042)
+      beta: v.number(),
+      marketRiskPremium: v.number(), // decimal (e.g., 0.075)
+      costOfDebt: v.number(),
+      taxRate: v.number(),
+      debtWeight: v.number(),
+
+      baseFCF: v.number(),
+      sharesOutstanding: v.number(),
+      netDebt: v.number(),
+    }),
+
+    // Calculated results
+    results: v.object({
+      wacc: v.number(),
+      fcfProjections: v.array(v.object({
+        year: v.number(),
+        fcf: v.number(),
+        growthRate: v.number(),
+      })),
+      terminalValue: v.number(),
+      enterpriseValue: v.number(),
+      equityValue: v.number(),
+      fairValuePerShare: v.number(),
+      evaluationScore: v.number(),
+    }),
+
+    // Edit history
+    history: v.array(v.object({
+      timestamp: v.number(),
+      field: v.string(),
+      oldValue: v.any(),
+      newValue: v.any(),
+      triggeredBy: v.union(v.literal("user"), v.literal("agent")),
+    })),
+  })
+    .index("by_session_id", ["sessionId"])
+    .index("by_user", ["userId"])
+    .index("by_spreadsheet", ["spreadsheetId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* BALANCE SHEET DATA - Real balance sheet metrics from SEC EDGAR     */
+  /* ------------------------------------------------------------------ */
+  balanceSheetData: defineTable({
+    ticker: v.string(),
+    fiscalYear: v.number(),
+
+    // Balance sheet items
+    sharesOutstanding: v.optional(v.number()),
+    totalDebt: v.optional(v.number()),
+    cash: v.optional(v.number()),
+    netDebt: v.optional(v.number()),
+    totalAssets: v.optional(v.number()),
+    totalEquity: v.optional(v.number()),
+
+    // Source metadata
+    source: v.string(), // "sec_edgar" | "manual"
+    sourceUrl: v.string(),
+    fetchedAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_ticker_year", ["ticker", "fiscalYear"])
+    .index("by_ticker", ["ticker", "fetchedAt"]),
+
+
+  /* ------------------------------------------------------------------ */
   /* FINANCIAL FUNDAMENTALS - Normalized SEC XBRL data                   */
   /* ------------------------------------------------------------------ */
   financialFundamentals: defineTable({
@@ -10180,4 +10383,348 @@ export default defineSchema({
     .index("by_date", ["date"])
     .index("by_type_date", ["verificationType", "date"])
     .index("by_slo_met", ["sloMet", "date"]),
+
+  /* ------------------------------------------------------------------ */
+  /* PROACTIVE SYSTEM - Intelligent Automation & Proactive Features     */
+  /* ------------------------------------------------------------------ */
+
+  // Proactive event bus for activity signals
+  proactiveEvents,
+
+  // Detected opportunities from detectors
+  opportunities,
+
+  // Actions taken (suggest/draft/execute)
+  proactiveActions,
+
+  // Detector execution observability
+  detectorRuns,
+
+  // Per-user proactive settings
+  userProactiveSettings,
+
+  // User feedback for learning
+  proactiveFeedbackLabels,
+
+  // User-created custom detectors (premium)
+  customDetectors,
+
+  // Admin access control (invite-only)
+  adminUsers,
+
+  // Proactive billing and subscriptions
+  proactiveSubscriptions,
+
+  // Monthly quota tracking
+  usageTracking,
+
+  // Blanket consent tracking
+  userConsents,
+
+  /* ------------------------------------------------------------------ */
+  /* OBSERVABILITY - OpenTelemetry Traces for LLM Applications (2026)  */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Distributed traces for agent workflows.
+   * Implements OpenTelemetry semantic conventions for LLM observability.
+   * Compatible with Langfuse, Datadog, LangSmith, etc.
+   */
+  traces: defineTable({
+    traceId: v.string(),                       // UUID for entire execution
+    name: v.string(),                          // "swarm_execution", "workflow_daily_brief"
+    startTime: v.number(),                     // Unix timestamp ms
+    endTime: v.optional(v.number()),
+    level: v.union(
+      v.literal("DEBUG"),
+      v.literal("INFO"),
+      v.literal("WARNING"),
+      v.literal("ERROR")
+    ),
+
+    // Metadata
+    metadata: v.object({
+      userId: v.optional(v.string()),
+      sessionId: v.optional(v.string()),
+      tags: v.optional(v.array(v.string())),
+      metadata: v.optional(v.any()),
+    }),
+
+    // Spans (individual operations within trace)
+    spans: v.array(v.any()),                   // Array of span objects with attributes
+
+    // Aggregated metrics
+    totalCost: v.optional(v.number()),         // Total USD cost across all LLM calls
+    totalTokens: v.optional(v.number()),       // Total tokens used
+
+    // Status
+    status: v.union(
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("error")
+    ),
+    error: v.optional(v.string()),
+
+    createdAt: v.number(),
+  })
+    .index("by_trace_id", ["traceId"])
+    .index("by_name", ["name"])
+    .index("by_start_time", ["startTime"])
+    .index("by_session_id", ["metadata.sessionId"])
+    .index("by_status", ["status"]),
+
+  /* ------------------------------------------------------------------ */
+  /* CHECKPOINTING - Agent State Persistence (2026 LangGraph Pattern)  */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Agent checkpoints for long-running workflows.
+   * Enables resume-from-failure, human-in-the-loop, and state replay.
+   * Based on LangGraph's PostgresSaver pattern.
+   */
+  checkpoints: defineTable({
+    // Identity
+    workflowId: v.string(),                    // UUID for entire workflow (e.g., swarmId)
+    checkpointId: v.string(),                  // UUID for this checkpoint
+    checkpointNumber: v.number(),              // Sequential: 1, 2, 3...
+    parentCheckpointId: v.optional(v.string()), // For branching (rare)
+
+    // Workflow metadata
+    workflowType: v.string(),                  // "swarm", "dcf_analysis", "research"
+    workflowName: v.string(),                  // Human-readable name
+    userId: v.optional(v.string()),
+    sessionId: v.optional(v.string()),
+
+    // Current state
+    currentStep: v.string(),                   // "gathering", "synthesis", "approval_pending"
+    status: v.union(
+      v.literal("active"),
+      v.literal("paused"),
+      v.literal("completed"),
+      v.literal("error"),
+      v.literal("waiting_approval")
+    ),
+    progress: v.number(),                      // 0-100%
+
+    // Workflow state (varies by type)
+    state: v.any(),                            // Flexible state object
+
+    // Timing
+    createdAt: v.number(),
+    error: v.optional(v.string()),
+    estimatedTimeRemaining: v.optional(v.number()),
+    nextScheduledAction: v.optional(v.string()),
+  })
+    .index("by_workflow_id", ["workflowId"])
+    .index("by_checkpoint_id", ["checkpointId"])
+    .index("by_status", ["status"])
+    .index("by_created_at", ["createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* BATCH API - Async LLM Jobs for 50% Cost Savings (2026)            */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Batch API jobs for Anthropic & OpenAI.
+   * Process non-urgent requests asynchronously for 50% cost discount.
+   * Use cases: Daily briefs, scheduled content, background reports.
+   */
+  batchJobs: defineTable({
+    batchId: v.string(),                       // Our internal ID
+    provider: v.union(v.literal("anthropic"), v.literal("openai")),
+    providerBatchId: v.string(),               // Provider's batch ID
+
+    // Status
+    status: v.union(
+      v.literal("queued"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("cancelled")
+    ),
+
+    // Progress
+    requestCount: v.number(),                  // Total requests in batch
+    completedCount: v.number(),                // Completed so far
+    failedCount: v.number(),                   // Failed so far
+
+    // Timing
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),         // 24hrs from creation
+
+    // Results
+    results: v.optional(v.array(v.any())),     // Completed results
+    error: v.optional(v.string()),
+  })
+    .index("by_batch_id", ["batchId"])
+    .index("by_status", ["status"])
+    .index("by_created_at", ["createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* INDUSTRY MONITORING - Continuous Updates from AI Leaders (2026)   */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Industry updates from Anthropic, OpenAI, Google DeepMind, LangChain, Vercel AI SDK.
+   * Automatically scanned daily to identify relevant patterns and enhancements.
+   */
+  industryUpdates: defineTable({
+    // Source
+    provider: v.string(),                          // "anthropic", "openai", "google", "langchain", "vercel", "xai"
+    providerName: v.string(),                      // "Anthropic", "OpenAI", "xAI", etc.
+    url: v.string(),                               // Source URL
+
+    // Content
+    title: v.string(),                             // Update title/headline
+    summary: v.string(),                           // 2-3 sentence summary
+    relevance: v.number(),                         // Relevance score (0-100)
+    actionableInsights: v.array(v.string()),       // Key takeaways
+    implementationSuggestions: v.array(v.string()), // How to integrate
+
+    // Status tracking
+    status: v.union(
+      v.literal("new"),
+      v.literal("reviewed"),
+      v.literal("implemented")
+    ),
+
+    // Timestamps
+    scannedAt: v.number(),                         // When discovered
+    reviewedAt: v.optional(v.number()),           // When reviewed by team
+    implementedAt: v.optional(v.number()),        // When integrated
+  })
+    .index("by_status", ["status"])
+    .index("by_scanned_at", ["scannedAt"])
+    .index("by_provider", ["provider"])
+    .index("by_relevance", ["relevance"]),
+
+  /* ------------------------------------------------------------------ */
+  /* X ALGORITHM INTEGRATION - For You Feed & Recommendations (2026)   */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * For You Feed Snapshots - Cached personalized feed items
+   * Implements X's Thunder + Phoenix + Home Mixer pattern
+   */
+  forYouFeedSnapshots: defineTable({
+    userId: v.id("users"),
+    items: v.array(v.any()),                       // Ranked feed items
+    mixRatio: v.object({
+      inNetwork: v.number(),                       // 50% from people you follow
+      outOfNetwork: v.number(),                    // 40% discovery
+      trending: v.number(),                        // 10% trending
+    }),
+    totalCandidates: v.number(),                   // Total candidates evaluated
+    generatedAt: v.number(),                       // When generated
+  })
+    .index("by_user", ["userId", "generatedAt"]),
+
+  /**
+   * Feed Engagement Events - Multi-action tracking for ranking improvement
+   * Predicts: view, click, save, share
+   */
+  feedEngagements: defineTable({
+    userId: v.id("users"),
+    itemId: v.string(),                            // Item that was engaged with
+    action: v.union(
+      v.literal("view"),
+      v.literal("click"),
+      v.literal("save"),
+      v.literal("share")
+    ),
+    timestamp: v.number(),
+  })
+    .index("by_user", ["userId", "timestamp"])
+    .index("by_item", ["itemId"])
+    .index("by_action", ["action", "timestamp"]),
+
+  /**
+   * Document Discovery - Smart recommendations using X algorithm patterns
+   */
+  documentRecommendations: defineTable({
+    userId: v.id("users"),
+    documentId: v.id("documents"),
+    phoenixScore: v.number(),                      // 0-100 relevance score
+    relevanceReason: v.string(),                   // Why recommended
+    engagementPrediction: v.object({
+      view: v.number(),                            // 0-1 probability
+      click: v.number(),
+      save: v.number(),
+      share: v.number(),
+    }),
+    source: v.union(
+      v.literal("in_network"),
+      v.literal("out_of_network"),
+      v.literal("trending")
+    ),
+    generatedAt: v.number(),
+  })
+    .index("by_user", ["userId", "phoenixScore"])
+    .index("by_document", ["documentId"]),
+
+  /**
+   * Agent Marketplace Rankings - Ranked agent discovery
+   */
+  agentRankings: defineTable({
+    agentType: v.string(),                         // Agent type/category
+    agentId: v.string(),                           // Agent identifier
+    phoenixScore: v.number(),                      // 0-100 ranking score
+    usageCount: v.number(),                        // Total uses
+    successRate: v.number(),                       // 0-1 success rate
+    avgLatencyMs: v.number(),                      // Performance metric
+    multiActionPrediction: v.object({
+      run: v.number(),                             // 0-1 probability
+      fork: v.number(),
+      like: v.number(),
+      share: v.number(),
+    }),
+    lastRankedAt: v.number(),
+  })
+    .index("by_agent_type", ["agentType", "phoenixScore"])
+    .index("by_agent_id", ["agentId"]),
+
+  /**
+   * GitHub Repository Discovery - Trending repo analysis
+   */
+  githubRepositories: defineTable({
+    fullName: v.string(),                          // owner/repo
+    name: v.string(),
+    description: v.string(),
+    language: v.string(),
+    stars: v.number(),
+    starGrowth7d: v.number(),                      // Stars gained in 7 days
+    phoenixScore: v.number(),                      // 0-100 relevance
+    relevanceReason: v.string(),
+    topics: v.array(v.string()),
+    url: v.string(),
+    lastUpdated: v.number(),
+    discoveredAt: v.number(),
+  })
+    .index("by_phoenix_score", ["phoenixScore"])
+    .index("by_star_growth", ["starGrowth7d"])
+    .index("by_language", ["language", "stars"]),
+
+  /**
+   * Automated PR Suggestions - Generated from industry updates
+   */
+  prSuggestions: defineTable({
+    updateId: v.id("industryUpdates"),
+    title: v.string(),
+    description: v.string(),
+    changes: v.array(v.string()),
+    testing: v.array(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("implemented"),
+      v.literal("rejected")
+    ),
+    createdAt: v.number(),
+    approvedAt: v.optional(v.number()),
+    implementedAt: v.optional(v.number()),
+  })
+    .index("by_update", ["updateId"])
+    .index("by_status", ["status", "createdAt"]),
 });

@@ -45,7 +45,11 @@ export type DisclosureEvent =
   | { t: number; kind: "policy.confirm_denied"; draftId: string; reason: string }
   | { t: number; kind: "budget.warning"; currentTokens: number; budgetLimit: number; expansionCost: number }
   | { t: number; kind: "budget.exceeded"; currentTokens: number; budgetLimit: number }
-  | { t: number; kind: "enforcement.blocked"; rule: string; toolName?: string; reason: string };
+  | { t: number; kind: "enforcement.blocked"; rule: string; toolName?: string; reason: string }
+  // Reasoning tool events - transparent step-by-step thinking
+  | { t: number; kind: "reasoning.start"; toolName: "reasoningTool"; promptPreview: string; maxTokens: number }
+  | { t: number; kind: "reasoning.thinking"; step: number; thought: string; tokensUsed?: number }
+  | { t: number; kind: "reasoning.complete"; reasoningTokens: number; outputTokens: number; totalTokens: number; cost: number; durationMs: number };
 
 /**
  * Episode summary aggregates events into actionable metrics.
@@ -97,6 +101,13 @@ export interface DisclosureSummary {
   usedSkillFirst: boolean;           // Did skill search happen before tool invoke?
   allToolsViaGateway: boolean;       // Were all tools invoked via gateway?
   skillBeforeToolInvoke: boolean;    // Was describeSkill called before first tool invoke?
+
+  // Reasoning metrics
+  reasoningInvocations: number;      // Number of reasoning tool calls
+  reasoningThinkingSteps: number;    // Total thinking steps across all calls
+  reasoningTokens: number;           // Total reasoning tokens used
+  reasoningCost: number;             // Total cost of reasoning in USD
+  avgReasoningDuration: number;      // Average reasoning duration in ms
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -287,6 +298,42 @@ export class DisclosureLogger {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // REASONING EVENTS - Transparent step-by-step thinking
+  // ─────────────────────────────────────────────────────────────────────────
+
+  logReasoningStart(promptPreview: string, maxTokens: number): void {
+    this.events.push({
+      t: Date.now(),
+      kind: "reasoning.start",
+      toolName: "reasoningTool",
+      promptPreview: promptPreview.slice(0, 100), // Truncate for display
+      maxTokens,
+    });
+  }
+
+  logReasoningThinking(step: number, thought: string, tokensUsed?: number): void {
+    this.events.push({
+      t: Date.now(),
+      kind: "reasoning.thinking",
+      step,
+      thought: thought.slice(0, 200), // Truncate for display
+      tokensUsed,
+    });
+  }
+
+  logReasoningComplete(reasoningTokens: number, outputTokens: number, totalTokens: number, cost: number, durationMs: number): void {
+    this.events.push({
+      t: Date.now(),
+      kind: "reasoning.complete",
+      reasoningTokens,
+      outputTokens,
+      totalTokens,
+      cost,
+      durationMs,
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // ACCESSORS
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -348,6 +395,11 @@ export function reduceDisclosureEvents(
       usedSkillFirst: false,
       allToolsViaGateway: true,
       skillBeforeToolInvoke: false,
+      reasoningInvocations: 0,
+      reasoningThinkingSteps: 0,
+      reasoningTokens: 0,
+      reasoningCost: 0,
+      avgReasoningDuration: 0,
     };
   }
 
@@ -380,6 +432,11 @@ export function reduceDisclosureEvents(
 
   // Enforcement metrics
   const blocked = events.filter((e): e is Extract<DisclosureEvent, { kind: "enforcement.blocked" }> => e.kind === "enforcement.blocked");
+
+  // Reasoning metrics
+  const reasoningStarts = events.filter((e): e is Extract<DisclosureEvent, { kind: "reasoning.start" }> => e.kind === "reasoning.start");
+  const reasoningThinking = events.filter((e): e is Extract<DisclosureEvent, { kind: "reasoning.thinking" }> => e.kind === "reasoning.thinking");
+  const reasoningCompletes = events.filter((e): e is Extract<DisclosureEvent, { kind: "reasoning.complete" }> => e.kind === "reasoning.complete");
 
   // Quality indicators
   const firstSkillSearch = skillSearches[0]?.t ?? Infinity;
@@ -439,6 +496,15 @@ export function reduceDisclosureEvents(
     usedSkillFirst,
     allToolsViaGateway: true, // Assumed true when using this logger
     skillBeforeToolInvoke,
+
+    // Reasoning metrics
+    reasoningInvocations: reasoningStarts.length,
+    reasoningThinkingSteps: reasoningThinking.length,
+    reasoningTokens: reasoningCompletes.reduce((sum, e) => sum + e.reasoningTokens, 0),
+    reasoningCost: reasoningCompletes.reduce((sum, e) => sum + e.cost, 0),
+    avgReasoningDuration: reasoningCompletes.length > 0
+      ? reasoningCompletes.reduce((sum, e) => sum + e.durationMs, 0) / reasoningCompletes.length
+      : 0,
   };
 }
 

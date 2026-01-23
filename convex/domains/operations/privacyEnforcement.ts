@@ -603,7 +603,7 @@ export const createDeletionRequest = mutation({
   },
   returns: v.id("deletionRequests"),
   handler: async (ctx, args) => {
-    return await ctx.db.insert("deletionRequests", {
+    const requestId = await ctx.db.insert("deletionRequests", {
       requestId: `del_req_${Date.now()}`,
       scope: args.scope,
       subject: args.subject,
@@ -612,6 +612,32 @@ export const createDeletionRequest = mutation({
       requestedAt: Date.now(),
       status: "pending",
     });
+
+    // Log the security/privacy action
+    await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+      action: "create_deletion_request",
+      actionCategory: "security_event",
+      actor: args.requestedBy,
+      resourceType: "deletionRequests",
+      resourceId: requestId,
+      before: null,
+      after: {
+        scope: args.scope,
+        subject: args.subject,
+        recordCount: args.recordIds?.length ?? 0,
+      },
+      reason: `GDPR deletion request created for ${args.scope}: ${args.subject}`,
+      metadata: {
+        scope: args.scope,
+        subject: args.subject,
+        recordIdsCount: args.recordIds?.length ?? 0,
+        gdprCompliance: true,
+      },
+    }).catch((err) => {
+      console.warn('[createDeletionRequest] Failed to log audit entry:', err);
+    });
+
+    return requestId;
   },
 });
 

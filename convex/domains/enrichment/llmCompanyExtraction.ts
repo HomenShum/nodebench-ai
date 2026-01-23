@@ -178,7 +178,7 @@ Examples:
         try {
           const result = await generateObject({
             model,
-            schema,
+            schema: schema as any,
             prompt,
           });
 

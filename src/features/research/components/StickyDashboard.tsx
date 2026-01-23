@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock, PieChart, CheckCircle2, Circle, Loader2 } from "lucide-react";
@@ -9,6 +9,7 @@ import type { DashboardState, MarketShareSegment } from "@/features/research/typ
 import { formatBriefMonthYear } from "@/lib/briefDate";
 import { useEvidence } from "../contexts/EvidenceContext";
 import { DeltaIndicator } from "./DeltaIndicator";
+import { useEngagementTracking } from "@/lib/hooks/useEngagementTracking";
 
 export interface WorkflowStep {
   name: string;
@@ -104,6 +105,28 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
   // Evidence context for chart ↔ evidence linking
   const evidenceCtx = useEvidence();
 
+  // Engagement tracking
+  const { trackClick } = useEngagementTracking({
+    date: new Date().toISOString().split('T')[0],
+    reportType: 'daily_brief',
+    componentType: 'dashboard',
+    sourceName: 'All Sources',
+    autoTrackView: true,
+    autoTrackTime: true,
+  });
+
+  // Wrap data point click to track engagement
+  const handleDataPointClick = useCallback((point: ChartDataPointContext) => {
+    // Track the click
+    const evidenceId = point.linkedEvidenceIds?.[0];
+    if (evidenceId) {
+      trackClick(evidenceId);
+    }
+
+    // Call original handler
+    onDataPointClick?.(point);
+  }, [trackClick, onDataPointClick]);
+
   if (!data) return null;
 
   // Safe defaults
@@ -155,7 +178,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
                   lastUpdated: "today",
                 }}
                 onEvidenceClick={evidenceCtx.scrollToEvidence}
-                onDataPointClick={onDataPointClick}
+                onDataPointClick={handleDataPointClick}
                 evidenceMap={evidenceMap}
               />
             ) : (

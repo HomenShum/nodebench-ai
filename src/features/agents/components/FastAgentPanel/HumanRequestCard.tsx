@@ -1,7 +1,7 @@
 // src/components/FastAgentPanel/HumanRequestCard.tsx
 // UI component for displaying and responding to human-in-the-loop requests
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircleQuestion, Send, X, CheckCircle2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMutation } from 'convex/react';
@@ -43,9 +43,18 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
   const [response, setResponse] = useState('');
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const submitResponse = useMutation(api.agents.humanInTheLoop.submitHumanResponse);
-  const cancelRequest = useMutation(api.agents.humanInTheLoop.cancelHumanRequest);
+
+  // Track when user started viewing this request
+  const viewStartTimeRef = useRef<number>(Date.now());
+
+  // Reset start time if request changes
+  useEffect(() => {
+    viewStartTimeRef.current = Date.now();
+  }, [request._id]);
+
+  const respondToRequest = useMutation(api.domains.agents.humanInTheLoop.respondToRequest);
+  const cancelRequest = useMutation(api.domains.agents.humanInTheLoop.cancelRequest);
+  const recordDecision = useMutation(api.domains.hitl.decisions.recordHumanDecision);
 
   const handleSubmit = async () => {
     const finalResponse = selectedOption || response.trim();
@@ -55,11 +64,28 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
     }
 
     setIsSubmitting(true);
+    const reviewTimeMs = Date.now() - viewStartTimeRef.current;
+
     try {
-      await submitResponse({
+      // Submit the response
+      await respondToRequest({
         requestId: request._id,
         response: finalResponse,
       });
+
+      // Record the decision for analytics
+      await recordDecision({
+        requestId: request._id,
+        requestType: 'human_input',
+        decision: 'approved',
+        reviewTimeMs,
+        feedback: selectedOption ? `Selected option: ${selectedOption}` : undefined,
+        confidence: selectedOption ? 1.0 : 0.8, // Higher confidence for predefined options
+      }).catch((err) => {
+        // Don't block on analytics failure
+        console.warn('[HumanRequestCard] Failed to record decision:', err);
+      });
+
       toast.success('Response sent to agent');
       onRespond?.();
     } catch (err) {
@@ -72,8 +98,25 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
 
   const handleCancel = async () => {
     setIsSubmitting(true);
+    const reviewTimeMs = Date.now() - viewStartTimeRef.current;
+
     try {
+      // Cancel the request
       await cancelRequest({ requestId: request._id });
+
+      // Record the cancellation as a rejected decision
+      await recordDecision({
+        requestId: request._id,
+        requestType: 'human_input',
+        decision: 'rejected',
+        reviewTimeMs,
+        feedback: 'User cancelled the request',
+        reasoning: 'User explicitly cancelled without providing a response',
+      }).catch((err) => {
+        // Don't block on analytics failure
+        console.warn('[HumanRequestCard] Failed to record decision:', err);
+      });
+
       toast.info('Request cancelled');
       onRespond?.();
     } catch (err) {

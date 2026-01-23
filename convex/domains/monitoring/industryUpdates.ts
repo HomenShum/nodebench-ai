@@ -12,7 +12,7 @@
  */
 
 import { v } from "convex/values";
-import { action, internalAction, internalMutation, mutation, query } from "../../_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, query } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 
 const INDUSTRY_SOURCES = [
@@ -342,5 +342,32 @@ export const getImplementationSuggestions = query({
       byProvider,
       topSuggestions: suggestions,
     };
+  },
+});
+
+/**
+ * Get update by ID (for internal use)
+ */
+export const getUpdateById = internalQuery({
+  args: {
+    id: v.id("industryUpdates"),
+  },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
+
+/**
+ * Get high-priority updates (for PR generation)
+ */
+export const getHighPriorityUpdates = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("industryUpdates")
+      .withIndex("by_relevance")
+      .order("desc")
+      .filter((q) => q.gte(q.field("relevance"), 85))
+      .take(10);
   },
 });

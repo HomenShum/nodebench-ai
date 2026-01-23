@@ -29,6 +29,16 @@ const DocumentsHomeHub = lazy(() =>
     default: mod.DocumentsHomeHub,
   })),
 );
+const SpreadsheetsHub = lazy(() =>
+  import("@/features/spreadsheets/components/SpreadsheetsHub").then((mod) => ({
+    default: mod.SpreadsheetsHub,
+  })),
+);
+const SpreadsheetSheetView = lazy(() =>
+  import("@/features/spreadsheets/views/SpreadsheetSheetView").then((mod) => ({
+    default: mod.SpreadsheetSheetView,
+  })),
+);
 const CalendarHomeHub = lazy(() =>
   import("@/features/calendar/components/CalendarHomeHub").then((mod) => ({
     default: mod.CalendarHomeHub,
@@ -87,6 +97,31 @@ const PublicActivityView = lazy(() =>
     default: mod.PublicActivityView,
   })),
 );
+const HITLAnalyticsDashboard = lazy(() =>
+  import("@/features/analytics/views/HITLAnalyticsDashboard").then((mod) => ({
+    default: mod.default,
+  })),
+);
+const ComponentMetricsDashboard = lazy(() =>
+  import("@/features/analytics/views/ComponentMetricsDashboard").then((mod) => ({
+    default: mod.default,
+  })),
+);
+const RecommendationFeedbackDashboard = lazy(() =>
+  import("@/features/analytics/views/RecommendationAnalyticsDashboard").then((mod) => ({
+    default: mod.default,
+  })),
+);
+const CostDashboard = lazy(() =>
+  import("@/components/CostDashboard").then((mod) => ({
+    default: mod.CostDashboard,
+  })),
+);
+const IndustryUpdatesPanel = lazy(() =>
+  import("@/components/IndustryUpdatesPanel").then((mod) => ({
+    default: mod.IndustryUpdatesPanel,
+  })),
+);
 
 const viewFallback = (
   <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
@@ -108,6 +143,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   type MainView =
     | 'documents'
+    | 'spreadsheets'
     | 'calendar'
     | 'roadmap'
     | 'timeline'
@@ -120,47 +156,63 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     | 'benchmarks'
     | 'entity'
     | 'funding'
-    | 'activity';
+    | 'activity'
+    | 'analytics-hitl'
+    | 'analytics-components'
+    | 'analytics-recommendations'
+    | 'cost-dashboard'
+    | 'industry-updates';
 
   function parseHashRoute(rawHash: string): {
     view: MainView;
     entityName: string | null;
+    spreadsheetId: string | null;
     showResearchDossier: boolean;
     researchTab: "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
   } {
     const hash = (rawHash || '').toLowerCase();
-    if (hash.startsWith('#agents')) return { view: 'agents', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#calendar')) return { view: 'calendar', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#roadmap')) return { view: 'roadmap', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#timeline')) return { view: 'timeline', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#signals')) return { view: 'signals', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#documents') || hash.startsWith('#docs')) return { view: 'documents', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#showcase') || hash.startsWith('#demo')) return { view: 'showcase', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#footnotes') || hash.startsWith('#sources')) return { view: 'footnotes', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#benchmarks') || hash.startsWith('#eval')) return { view: 'benchmarks', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#funding') || hash.startsWith('#funding-brief')) return { view: 'funding', entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith("#onboarding")) return { view: "research", entityName: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#activity') || hash.startsWith('#public-activity')) return { view: 'activity', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#agents')) return { view: 'agents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#calendar')) return { view: 'calendar', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#roadmap')) return { view: 'roadmap', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#timeline')) return { view: 'timeline', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#signals')) return { view: 'signals', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#spreadsheets')) {
+      const match = (rawHash || '').match(/^#spreadsheets[\/](.+)$/i);
+      const id = match ? decodeURIComponent(match[1]) : null;
+      return { view: 'spreadsheets', entityName: null, spreadsheetId: id, showResearchDossier: false, researchTab: "overview" };
+    }
+    if (hash.startsWith('#documents') || hash.startsWith('#docs')) return { view: 'documents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#showcase') || hash.startsWith('#demo')) return { view: 'showcase', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#footnotes') || hash.startsWith('#sources')) return { view: 'footnotes', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#benchmarks') || hash.startsWith('#eval')) return { view: 'benchmarks', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#funding') || hash.startsWith('#funding-brief')) return { view: 'funding', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith("#onboarding")) return { view: "research", entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#activity') || hash.startsWith('#public-activity')) return { view: 'activity', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#analytics/hitl')) return { view: 'analytics-hitl', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#analytics/components')) return { view: 'analytics-components', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#analytics/recommendations')) return { view: 'analytics-recommendations', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#cost') || hash.startsWith('#dashboard/cost')) return { view: 'cost-dashboard', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (hash.startsWith('#industry') || hash.startsWith('#dashboard/industry')) return { view: 'industry-updates', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
 
     if (hash.startsWith('#entity/') || hash.startsWith('#entity%2f')) {
       const match = (rawHash || '').match(/^#entity[\/](.+)$/i);
       const name = match ? decodeURIComponent(match[1]) : null;
-      return { view: 'entity', entityName: name, showResearchDossier: false, researchTab: "overview" };
+      return { view: 'entity', entityName: name, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
     }
 
     if (hash.startsWith('#research') || hash.startsWith('#hub')) {
       // Optional: `#research/briefing` deep link into a specific hub tab.
       const tabMatch = hash.match(/^#(?:research|hub)\/(overview|signals|briefing|deals|changes|changelog)/);
       const tab = (tabMatch?.[1] as any) ?? "overview";
-      return { view: 'research', entityName: null, showResearchDossier: true, researchTab: tab };
+      return { view: 'research', entityName: null, spreadsheetId: null, showResearchDossier: true, researchTab: tab };
     }
 
-    return { view: 'research', entityName: null, showResearchDossier: false, researchTab: "overview" };
+    return { view: 'research', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
   }
 
   const initialRoute = (() => {
     if (typeof window === 'undefined') {
-      return { view: 'research' as const, entityName: null, showResearchDossier: false, researchTab: "overview" as const };
+      return { view: 'research' as const, entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" as const };
     }
     return parseHashRoute(window.location.hash || '');
   })();
@@ -168,6 +220,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const [currentView, setCurrentView] = useState<MainView>(initialRoute.view);
   // Entity name for entity profile page (extracted from hash)
   const [entityName, setEntityName] = useState<string | null>(initialRoute.entityName);
+  const [selectedSpreadsheetId, setSelectedSpreadsheetId] = useState<Id<"spreadsheets"> | null>(
+    initialRoute.spreadsheetId ? (initialRoute.spreadsheetId as any) : null
+  );
   const [isGridMode, setIsGridMode] = useState(false);
   // Transition state for smooth view changes
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -650,6 +705,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       try {
         const next = parseHashRoute(window.location.hash || '');
         setEntityName(next.entityName);
+        setSelectedSpreadsheetId(next.spreadsheetId ? (next.spreadsheetId as any) : null);
         setResearchHubInitialTab(next.researchTab);
         setShowResearchDossier(next.showResearchDossier);
         setCurrentView(next.view);
@@ -746,6 +802,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   ? 'Home'
                   : currentView === 'public'
                     ? 'Public Documents'
+                    : currentView === 'spreadsheets'
+                      ? 'Spreadsheets'
                     : currentView === 'calendar'
                       ? 'Calendar'
                       : currentView === 'roadmap'
@@ -758,11 +816,21 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                               ? 'Model Benchmarks'
                               : currentView === 'funding'
                                 ? 'Funding Brief'
-                                : currentView === 'entity'
-                                  ? `Entity: ${entityName || 'Profile'}`
-                                  : selectedDocumentId
-                                    ? 'My Documents'
-                                    : 'My Workspace'}
+                                : currentView === 'analytics-hitl'
+                                  ? 'HITL Analytics'
+                                  : currentView === 'analytics-components'
+                                    ? 'Component Metrics'
+                                    : currentView === 'analytics-recommendations'
+                                      ? 'Recommendation Feedback'
+                                      : currentView === 'cost-dashboard'
+                                        ? 'Cost Dashboard'
+                                        : currentView === 'industry-updates'
+                                          ? 'Industry Updates'
+                                          : currentView === 'entity'
+                                            ? `Entity: ${entityName || 'Profile'}`
+                                            : selectedDocumentId
+                                              ? 'My Documents'
+                                              : 'My Workspace'}
               </h1>
             </div>
 
@@ -914,6 +982,25 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 </AnimatePresence>
               ) : currentView === 'public' ? (
                 <PublicDocuments onDocumentSelect={handleDocumentSelect} />
+              ) : currentView === 'spreadsheets' ? (
+                <Suspense fallback={viewFallback}>
+                  {selectedSpreadsheetId ? (
+                    <SpreadsheetSheetView
+                      sheetId={selectedSpreadsheetId}
+                      onBack={() => {
+                        setSelectedSpreadsheetId(null);
+                        window.location.hash = "#spreadsheets";
+                      }}
+                    />
+                  ) : (
+                    <SpreadsheetsHub
+                      onOpenSheet={(id: Id<"spreadsheets">) => {
+                        setSelectedSpreadsheetId(id);
+                        window.location.hash = `#spreadsheets/${String(id)}`;
+                      }}
+                    />
+                  )}
+                </Suspense>
               ) : currentView === 'agents' ? (
                 <AgentsHub />
               ) : currentView === 'calendar' ? (
@@ -947,6 +1034,30 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <Suspense fallback={viewFallback}>
                   <PublicActivityView />
                 </Suspense>
+              ) : currentView === 'analytics-hitl' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <HITLAnalyticsDashboard />
+                </div>
+              ) : currentView === 'analytics-components' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <ComponentMetricsDashboard />
+                </div>
+              ) : currentView === 'analytics-recommendations' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <RecommendationFeedbackDashboard />
+                </div>
+              ) : currentView === 'cost-dashboard' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <Suspense fallback={viewFallback}>
+                    <CostDashboard />
+                  </Suspense>
+                </div>
+              ) : currentView === 'industry-updates' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <Suspense fallback={viewFallback}>
+                    <IndustryUpdatesPanel />
+                  </Suspense>
+                </div>
               ) : currentView === 'entity' && entityName ? (
                 <EntityProfilePage
                   entityName={entityName}

@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
 import { Id, Doc } from "../../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "../../_generated/api";
 
 /**
  * Utility function to safely extract user ID from authentication
@@ -254,6 +255,16 @@ export const updateUserPreferences = mutation({
 
     const now = Date.now();
 
+    // Capture before state
+    const beforeState = existingPreferences ? {
+      ungroupedSectionName: existingPreferences.ungroupedSectionName,
+      isUngroupedExpanded: existingPreferences.isUngroupedExpanded,
+      organizationMode: existingPreferences.organizationMode,
+      linkReminderOptOut: existingPreferences.linkReminderOptOut,
+      trackedHashtags: existingPreferences.trackedHashtags,
+      techStack: existingPreferences.techStack,
+    } : null;
+
     if (existingPreferences) {
       // Update existing preferences
       const updates: any = { updatedAt: now };
@@ -311,6 +322,22 @@ export const updateUserPreferences = mutation({
         updatedAt: now,
       });
     }
+
+    // Log persona change
+    await ctx.runMutation(internal.domains.operations.personaChangeTracking.logPersonaChangeInternal, {
+      personaId: userId,
+      personaType: "preference",
+      fieldChanged: "userPreferences",
+      previousValue: beforeState,
+      newValue: args,
+      changeType: existingPreferences ? "update" : "create",
+      actor: userId,
+      actorType: "user",
+      reason: "User updated preferences",
+      metadata: { source: "settings_ui", changedFields: Object.keys(args) },
+    }).catch((err) => {
+      console.warn('[updateUserPreferences] Failed to log persona change:', err);
+    });
 
     return { success: true };
   },
@@ -600,6 +627,8 @@ export const setTimeZonePreference = mutation({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first() as Doc<"userPreferences"> | null;
 
+    const previousTimeZone = existing?.timeZone;
+
     if (existing) {
       await ctx.db.patch(existing._id, { timeZone, updatedAt: now });
     } else {
@@ -620,6 +649,22 @@ export const setTimeZonePreference = mutation({
         updatedAt: now,
       });
     }
+
+    // Log persona change
+    await ctx.runMutation(internal.domains.operations.personaChangeTracking.logPersonaChangeInternal, {
+      personaId: userId,
+      personaType: "setting",
+      fieldChanged: "timeZone",
+      previousValue: previousTimeZone || null,
+      newValue: timeZone,
+      changeType: existing ? "update" : "create",
+      actor: userId,
+      actorType: "user",
+      reason: "User changed time zone preference",
+      metadata: { source: "settings_ui" },
+    }).catch((err) => {
+      console.warn('[setTimeZonePreference] Failed to log persona change:', err);
+    });
 
     return { success: true } as const;
   },
@@ -684,6 +729,8 @@ export const setPlannerMode = mutation({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first() as Doc<"userPreferences"> | null;
 
+    const previousMode = existing?.plannerMode;
+
     if (existing) {
       await ctx.db.patch(existing._id, { plannerMode: mode, updatedAt: now });
     } else {
@@ -703,6 +750,22 @@ export const setPlannerMode = mutation({
         updatedAt: now,
       });
     }
+
+    // Log persona change
+    await ctx.runMutation(internal.domains.operations.personaChangeTracking.logPersonaChangeInternal, {
+      personaId: userId,
+      personaType: "preference",
+      fieldChanged: "plannerMode",
+      previousValue: previousMode || null,
+      newValue: mode,
+      changeType: existing ? "update" : "create",
+      actor: userId,
+      actorType: "user",
+      reason: "User changed planner mode",
+      metadata: { source: "calendar_ui" },
+    }).catch((err) => {
+      console.warn('[setPlannerMode] Failed to log persona change:', err);
+    });
 
     return { success: true };
   },
@@ -823,6 +886,16 @@ export const updateSmsPreferences = mutation({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first() as Doc<"userPreferences"> | null;
 
+    // Capture before state for tracking
+    const beforeState = existingPreferences ? {
+      phoneNumber: existingPreferences.phoneNumber,
+      smsNotificationsEnabled: existingPreferences.smsNotificationsEnabled,
+      smsMeetingCreated: existingPreferences.smsMeetingCreated,
+      smsMeetingReminder: existingPreferences.smsMeetingReminder,
+      smsMorningDigest: existingPreferences.smsMorningDigest,
+      smsReminderMinutes: existingPreferences.smsReminderMinutes,
+    } : null;
+
     const now = Date.now();
 
     const updates: Record<string, any> = { updatedAt: now };
@@ -846,6 +919,26 @@ export const updateSmsPreferences = mutation({
         ...updates,
       });
     }
+
+    // Log persona change
+    await ctx.runMutation(internal.domains.operations.personaChangeTracking.logPersonaChangeInternal, {
+      personaId: userId,
+      personaType: "preference",
+      fieldChanged: "smsPreferences",
+      previousValue: beforeState,
+      newValue: args,
+      changeType: existingPreferences ? "update" : "create",
+      actor: userId,
+      actorType: "user",
+      reason: "User updated SMS notification preferences",
+      metadata: {
+        source: "settings_ui",
+        changedFields: Object.keys(args),
+        phoneNumberProvided: !!args.phoneNumber,
+      },
+    }).catch((err) => {
+      console.warn('[updateSmsPreferences] Failed to log persona change:', err);
+    });
 
     return { success: true };
   },

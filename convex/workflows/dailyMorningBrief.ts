@@ -471,6 +471,68 @@ export const runDailyMorningBrief = (internalAction as any)({
         version: storeResult.version,
       });
 
+      // ========================================================================
+      // TRACK COMPONENT METRICS (Week 1 - Data Completeness Initiative)
+      // ========================================================================
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+      // Build component metrics for each source
+      const componentMetrics: Array<{
+        date: string;
+        reportType: "daily_brief" | "weekly_digest" | "funding_report" | "research_highlights";
+        componentType: string;
+        sourceName: string;
+        category?: string;
+        itemCount: number;
+        freshnessHours?: number;
+      }> = [];
+
+      // Track items by source
+      const bySource = sourceSummary.bySource || {};
+      for (const [sourceName, count] of Object.entries(bySource)) {
+        if (typeof count === 'number' && count > 0) {
+          componentMetrics.push({
+            date: today,
+            reportType: "daily_brief",
+            componentType: "feed_items",
+            sourceName,
+            itemCount: count,
+            freshnessHours: 24, // Daily brief covers last 24 hours
+          });
+        }
+      }
+
+      // Track items by category (for top categories only)
+      const byCategory = sourceSummary.byCategory || {};
+      const topCategories = Object.entries(byCategory)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 5); // Top 5 categories
+
+      for (const [categoryName, count] of topCategories) {
+        if (typeof count === 'number' && count > 0) {
+          componentMetrics.push({
+            date: today,
+            reportType: "daily_brief",
+            componentType: "feed_items",
+            sourceName: "All Sources",
+            category: categoryName,
+            itemCount: count,
+            freshnessHours: 24,
+          });
+        }
+      }
+
+      // Record all component metrics
+      try {
+        await ctx.runMutation(internal.domains.analytics.componentMetrics.batchRecordComponentMetrics, {
+          metrics: componentMetrics,
+        });
+        console.log(`[Analytics] Recorded ${componentMetrics.length} component metrics for daily brief ${today}`);
+      } catch (e: any) {
+        console.error(`[Analytics] Failed to record component metrics: ${e.message}`);
+        // Don't fail the whole workflow if metrics recording fails
+      }
+
       return {
         success: true,
         totalTimeMs: totalTime,

@@ -132,6 +132,20 @@ function extractRequiredParams(schema: Record<string, unknown>): string[] {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Get ALL available tools (for hybrid search)
+ * Internal use only - used by hybrid search to get full dataset
+ */
+export const getAllAvailableTools = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("mcpTools")
+      .filter(q => q.eq(q.field("isAvailable"), true))
+      .collect();
+  },
+});
+
+/**
  * Get thin descriptors for all available MCP tools
  * Returns ~50 tokens per tool for context-efficient search
  */

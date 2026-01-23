@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Lightbulb, FileText, Users, Bell, Sparkles, ChevronRight } from 'lucide-react';
+import { X, Lightbulb, FileText, Users, Bell, Sparkles, ChevronRight, ThumbsUp, ThumbsDown, Star } from 'lucide-react';
 import { Id } from '../../convex/_generated/dataModel';
 
 interface RecommendationCardProps {
@@ -12,6 +12,8 @@ interface RecommendationCardProps {
   icon?: string;
   onDismiss: (id: Id<"recommendations">) => void;
   onClick: (id: Id<"recommendations">) => void;
+  onFeedback?: (id: Id<"recommendations">, action: "accepted" | "rejected", rating?: number, reason?: string) => void;
+  showFeedback?: boolean;
 }
 
 const typeIcons = {
@@ -36,8 +38,30 @@ export function RecommendationCard({
   actionLabel,
   onDismiss,
   onClick,
+  onFeedback,
+  showFeedback = true,
 }: RecommendationCardProps) {
   const Icon = typeIcons[type] || Lightbulb;
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [rating, setRating] = useState(0);
+
+  const handleAccept = () => {
+    setFeedbackGiven(true);
+    setShowRating(true);
+  };
+
+  const handleReject = (reason?: string) => {
+    setFeedbackGiven(true);
+    onFeedback?.(id, "rejected", undefined, reason);
+    // Auto-dismiss after reject
+    setTimeout(() => onDismiss(id), 1500);
+  };
+
+  const handleRatingSubmit = () => {
+    onFeedback?.(id, "accepted", rating);
+    onClick(id); // Proceed with the action
+  };
 
   return (
     <motion.div
@@ -65,13 +89,105 @@ export function RecommendationCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm text-gray-800 leading-snug">{message}</p>
-          <button
-            onClick={() => onClick(id)}
-            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            {actionLabel}
-            <ChevronRight className="h-3 w-3" />
-          </button>
+
+          {!feedbackGiven && !showRating && (
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onClick(id)}
+                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                {actionLabel}
+                <ChevronRight className="h-3 w-3" />
+              </button>
+
+              {/* Feedback buttons */}
+              {showFeedback && onFeedback && (
+                <div className="ml-auto flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleAccept}
+                    className="p-1.5 rounded hover:bg-green-100 transition-colors group"
+                    title="This is helpful"
+                    aria-label="Mark as helpful"
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5 text-gray-400 group-hover:text-green-600" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleReject("not_relevant")}
+                    className="p-1.5 rounded hover:bg-red-100 transition-colors group"
+                    title="Not relevant"
+                    aria-label="Not relevant"
+                  >
+                    <ThumbsDown className="h-3.5 w-3.5 text-gray-400 group-hover:text-red-600" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Rating prompt after accept */}
+          {showRating && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mt-3 p-2 bg-white/50 rounded border border-gray-200"
+            >
+              <p className="text-xs text-gray-600 mb-2">How helpful was this suggestion?</p>
+              <div className="flex items-center gap-1 mb-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    className="p-0.5 transition-colors"
+                    aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                    title={`${star} star${star > 1 ? 's' : ''}`}
+                  >
+                    <Star
+                      className={`h-4 w-4 ${
+                        star <= rating
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleRatingSubmit}
+                  disabled={rating === 0}
+                  className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit & Apply
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRating(false);
+                    onClick(id);
+                  }}
+                  className="text-xs px-2 py-1 text-gray-600 hover:text-gray-800"
+                >
+                  Skip
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Feedback confirmation */}
+          {feedbackGiven && !showRating && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-2 text-xs text-gray-500"
+            >
+              Thanks for your feedback!
+            </motion.div>
+          )}
         </div>
       </div>
     </motion.div>

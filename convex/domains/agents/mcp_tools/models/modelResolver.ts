@@ -113,6 +113,15 @@ export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
   // PROVEN FREE (100% pass rate in eval)
   "devstral-2-free",      // Fastest free: 70s avg
   "mimo-v2-flash-free",   // Reliable free: 83s avg
+  // OTHER FREE MODELS (try before paid fallback)
+  "deepseek-r1-free",     // DeepSeek R1 reasoning
+  "llama-4-maverick-free", // Meta Llama 4 flagship
+  "llama-4-scout-free",   // Meta Llama 4 efficient
+  "glm-4.5-air-free",     // GLM 4.5 Air agent-focused
+  "deepseek-chimera-free", // DeepSeek Chimera 671B
+  "grok-4-fast-free",     // X.AI Grok 4
+  "venice-dolphin-free",  // Venice Dolphin 24B
+  "nemotron-free",        // NVIDIA Nemotron 70B
   // CHEAP PAID (fallback)
   "gemini-3-flash",       // $0.50/M input, fast
   "gpt-5-nano",           // $0.10/M input, efficient

@@ -5,6 +5,7 @@
 import { v } from "convex/values";
 import { query, internalQuery, mutation } from "../../../_generated/server";
 import { Doc } from "../../../_generated/dataModel";
+import { internal } from "../../../_generated/api";
 
 /**
  * Find user by email (internal query for admin actions)
@@ -351,6 +352,8 @@ export const deleteExpiredGoogleAccount = mutation({
     }
 
     let deleted = 0;
+    const deletedAccounts: any[] = [];
+
     for (const user of users) {
       const googleAccount = await ctx.db
         .query("googleAccounts")
@@ -358,8 +361,39 @@ export const deleteExpiredGoogleAccount = mutation({
         .first() as Doc<"googleAccounts"> | null;
 
       if (googleAccount) {
+        // Capture state before deletion for audit log
+        const accountSnapshot = {
+          _id: googleAccount._id,
+          userId: googleAccount.userId,
+          email: googleAccount.email,
+          expiryDate: googleAccount.expiryDate,
+          scope: googleAccount.scope,
+        };
+
+        deletedAccounts.push(accountSnapshot);
+
+        // Delete the account
         await ctx.db.delete(googleAccount._id);
         deleted++;
+
+        // Log the admin action
+        await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+          action: "delete_expired_google_account",
+          actionCategory: "deletion",
+          actor: user._id, // Using the user whose account was deleted as actor since this is an admin action
+          resourceType: "googleAccounts",
+          resourceId: googleAccount._id,
+          before: accountSnapshot,
+          after: { deleted: true },
+          reason: `Google account expired or token refresh failed for ${args.email}`,
+          metadata: {
+            userEmail: args.email,
+            tokenWasExpired: googleAccount.expiryDate ? googleAccount.expiryDate < Date.now() : false,
+          },
+        }).catch((err) => {
+          // Don't fail the deletion if audit log fails
+          console.warn('[deleteExpiredGoogleAccount] Failed to log audit entry:', err);
+        });
       }
     }
 
@@ -367,6 +401,7 @@ export const deleteExpiredGoogleAccount = mutation({
       success: true,
       message: `Deleted ${deleted} Google account(s). User can now re-connect at /api/google/oauth/start`,
       oauthUrl: "/api/google/oauth/start",
+      deletedAccounts,
     };
   },
 });

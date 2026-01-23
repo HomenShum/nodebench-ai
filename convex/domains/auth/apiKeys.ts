@@ -2,6 +2,7 @@ import { query, mutation, internalQuery, internalMutation } from "../../_generat
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "../../_generated/dataModel";
+import { internal } from "../../_generated/api";
 
 export const getApiKeyStatus = query({
   args: { provider: v.string() },
@@ -86,16 +87,73 @@ export const saveEncryptedApiKeyPublic = mutation({
   handler: async (ctx, { provider, encryptedApiKey }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+
     const existing = await ctx.db
       .query("userApiKeys")
       .withIndex("by_user_provider", (q) => q.eq("userId", userId).eq("provider", provider))
       .first() as Doc<"userApiKeys"> | null;
+
     const now = Date.now();
+    const isUpdate = !!existing;
+
     if (existing) {
+      // Update existing key
+      const beforeState = {
+        _id: existing._id,
+        provider: existing.provider,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+      };
+
       await ctx.db.patch(existing._id, { encryptedApiKey, updatedAt: now });
+
+      // Log the update
+      await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+        action: "update_api_key",
+        actionCategory: "security_event",
+        actor: userId,
+        resourceType: "userApiKeys",
+        resourceId: existing._id,
+        before: beforeState,
+        after: { provider, updatedAt: now },
+        reason: `User updated API key for provider: ${provider}`,
+        metadata: {
+          provider,
+          previousUpdateAge: existing.updatedAt ? now - existing.updatedAt : null,
+        },
+      }).catch((err) => {
+        console.warn('[saveEncryptedApiKeyPublic] Failed to log audit entry:', err);
+      });
+
     } else {
-      await ctx.db.insert("userApiKeys", { userId, provider, encryptedApiKey, createdAt: now, updatedAt: now });
+      // Create new key
+      const newKeyId = await ctx.db.insert("userApiKeys", {
+        userId,
+        provider,
+        encryptedApiKey,
+        createdAt: now,
+        updatedAt: now
+      });
+
+      // Log the creation
+      await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+        action: "create_api_key",
+        actionCategory: "security_event",
+        actor: userId,
+        resourceType: "userApiKeys",
+        resourceId: newKeyId,
+        before: null,
+        after: { provider, createdAt: now },
+        reason: `User created new API key for provider: ${provider}`,
+        metadata: {
+          provider,
+          isFirstKey: true,
+        },
+      }).catch((err) => {
+        console.warn('[saveEncryptedApiKeyPublic] Failed to log audit entry:', err);
+      });
     }
+
     return null;
   },
 });
@@ -155,7 +213,36 @@ export const deleteApiKey = mutation({
       .first() as Doc<"userApiKeys"> | null;
 
     if (existing) {
+      // Capture state before deletion
+      const keySnapshot = {
+        _id: existing._id,
+        userId: existing.userId,
+        provider: existing.provider,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+        // Note: DO NOT log encryptedApiKey value for security
+      };
+
+      // Delete the key
       await ctx.db.delete(existing._id);
+
+      // Log the security action
+      await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+        action: "delete_api_key",
+        actionCategory: "security_event",
+        actor: userId,
+        resourceType: "userApiKeys",
+        resourceId: existing._id,
+        before: keySnapshot,
+        after: { deleted: true },
+        reason: `User deleted API key for provider: ${provider}`,
+        metadata: {
+          provider,
+          keyAge: existing.createdAt ? Date.now() - existing.createdAt : null,
+        },
+      }).catch((err) => {
+        console.warn('[deleteApiKey] Failed to log audit entry:', err);
+      });
     }
     return null;
   },
@@ -184,16 +271,74 @@ export const saveEncryptedApiKey = internalMutation({
   handler: async (ctx, { provider, encryptedApiKey }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
+
     const existing = await ctx.db
       .query("userApiKeys")
       .withIndex("by_user_provider", (q) => q.eq("userId", userId).eq("provider", provider))
       .first() as Doc<"userApiKeys"> | null;
+
     const now = Date.now();
+
     if (existing) {
+      // Update existing key
+      const beforeState = {
+        _id: existing._id,
+        provider: existing.provider,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+      };
+
       await ctx.db.patch(existing._id, { encryptedApiKey, updatedAt: now });
+
+      // Log the update
+      await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+        action: "update_api_key_internal",
+        actionCategory: "security_event",
+        actor: userId,
+        resourceType: "userApiKeys",
+        resourceId: existing._id,
+        before: beforeState,
+        after: { provider, updatedAt: now },
+        reason: `System updated API key for provider: ${provider}`,
+        metadata: {
+          provider,
+          previousUpdateAge: existing.updatedAt ? now - existing.updatedAt : null,
+          source: "internal",
+        },
+      }).catch((err) => {
+        console.warn('[saveEncryptedApiKey] Failed to log audit entry:', err);
+      });
+
     } else {
-      await ctx.db.insert("userApiKeys", { userId, provider, encryptedApiKey, createdAt: now, updatedAt: now });
+      // Create new key
+      const newKeyId = await ctx.db.insert("userApiKeys", {
+        userId,
+        provider,
+        encryptedApiKey,
+        createdAt: now,
+        updatedAt: now
+      });
+
+      // Log the creation
+      await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+        action: "create_api_key_internal",
+        actionCategory: "security_event",
+        actor: userId,
+        resourceType: "userApiKeys",
+        resourceId: newKeyId,
+        before: null,
+        after: { provider, createdAt: now },
+        reason: `System created new API key for provider: ${provider}`,
+        metadata: {
+          provider,
+          isFirstKey: true,
+          source: "internal",
+        },
+      }).catch((err) => {
+        console.warn('[saveEncryptedApiKey] Failed to log audit entry:', err);
+      });
     }
+
     return null;
   },
 });

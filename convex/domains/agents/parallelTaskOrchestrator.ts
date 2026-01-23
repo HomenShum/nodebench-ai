@@ -24,6 +24,7 @@ import { internal, api } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
+import { getLanguageModelSafe } from "./mcp_tools/models";
 
 // ============================================================================
 // Configuration
@@ -224,6 +225,19 @@ interface DecomposedBranch {
   agentName?: string;
 }
 
+/**
+ * Decompose query into parallel exploration strategies
+ *
+ * COST OPTIMIZATION:
+ * - Task decomposition is a structured, predictable operation
+ * - Recommended models (in order of preference):
+ *   1. glm-4.7-flash ($0.07/M) - 98% cheaper than claude-sonnet, excellent for structured tasks
+ *   2. deepseek-v3.2 ($0.25/M) - 92% cheaper, better reasoning if needed
+ *   3. qwen3-235b ($0.18/M) - 94% cheaper, good balance
+ * - Previous: claude-sonnet-4 ($3.00/M) - overkill for this task
+ *
+ * Savings: ~$2.93/M tokens processed (~97% cost reduction)
+ */
 async function decomposeQuery(
   query: string,
   branchCount: number,
@@ -251,7 +265,7 @@ Respond with a JSON array of objects:
 Only output the JSON array, no other text.`;
 
   const { text } = await generateText({
-    model: anthropic("claude-sonnet-4-20250514"),
+    model: getLanguageModelSafe("devstral-2-free"), // FREE model (100% cost savings vs claude-sonnet-4). glm-4.7-flash had empty response issues.
     prompt,
     maxOutputTokens: 1000,
   });
@@ -316,9 +330,12 @@ async function executeBranchesInParallel(
       });
 
       // Execute the branch
-      const { text } = await generateText({
-        model: anthropic("claude-sonnet-4-20250514"),
-        prompt: `You are exploring one approach to answer a research question.
+      // Cost optimization: Reasoning tool with glm-4.7-flash ($0.07/M) provides deep thinking at 98% savings vs claude-sonnet-4 ($3.00/M)
+      // Uses structured reasoning for better exploration quality with transparent step-by-step thinking
+      const reasoningResult = await ctx.runAction(
+        internal.domains.agents.mcp_tools.reasoningTool.getReasoning,
+        {
+          prompt: `You are exploring one approach to answer a research question.
 
 Main Query: "${query}"
 
@@ -329,8 +346,13 @@ ${context ? `Context: ${JSON.stringify(context)}` : ""}
 
 Explore this specific angle thoroughly. Provide your findings with clear reasoning.
 Be concise but comprehensive. Include any relevant facts, considerations, or caveats.`,
-        maxOutputTokens: 2000,
-      });
+          systemPrompt: "You are a research exploration agent. Think step-by-step to explore this research angle deeply.",
+          maxTokens: 2000,
+          extractStructured: true,
+        }
+      );
+
+      const text = reasoningResult.structuredResponse || reasoningResult.response;
 
       const elapsed = Date.now() - startTime;
 
@@ -415,8 +437,9 @@ async function verifyBranches(
     });
 
     try {
+      // Cost optimization: devstral-2-free ($0.00/M) FREE model at 100% savings vs claude-sonnet-4 ($3.00/M). glm-4.7-flash had empty response issues.
       const { text } = await generateText({
-        model: anthropic("claude-sonnet-4-20250514"),
+        model: getLanguageModelSafe("devstral-2-free"),
         prompt: `You are a verification agent. Evaluate this research result for quality and accuracy.
 
 Original Query: "${query}"
@@ -511,8 +534,9 @@ async function crossCheckBranches(
       if (source.taskId === target.taskId) continue;
 
       try {
+        // Cost optimization: devstral-2-free ($0.00/M) FREE model at 100% savings vs claude-sonnet-4 ($3.00/M). glm-4.7-flash had empty response issues.
         const { text } = await generateText({
-          model: anthropic("claude-sonnet-4-20250514"),
+          model: getLanguageModelSafe("devstral-2-free"),
           prompt: `You are a critique agent. Compare two research results for the same query.
 
 Query: "${query}"
@@ -644,9 +668,12 @@ async function mergeSurvivingPaths(
   }));
 
   // Generate merged result
-  const { text } = await generateText({
-    model: anthropic("claude-sonnet-4-20250514"),
-    prompt: `You are a synthesis agent. Merge multiple research results into a unified answer.
+  // Cost optimization: Reasoning tool with glm-4.7-flash ($0.07/M) provides deep synthesis thinking at 98% savings vs claude-sonnet-4 ($3.00/M)
+  // Uses structured reasoning to intelligently merge results, resolve contradictions, and synthesize coherent answers
+  const synthesisResult = await ctx.runAction(
+    internal.domains.agents.mcp_tools.reasoningTool.getReasoning,
+    {
+      prompt: `You are a synthesis agent. Merge multiple research results into a unified answer.
 
 Original Query: "${query}"
 
@@ -669,8 +696,13 @@ Create a unified answer that:
 4. Notes confidence level and any remaining uncertainties
 
 Provide the merged answer:`,
-    maxOutputTokens: 2500,
-  });
+      systemPrompt: "You are a research synthesis agent. Think step-by-step to merge multiple research results into a coherent, unified answer that resolves contradictions and captures the strongest insights.",
+      maxTokens: 2500,
+      extractStructured: true,
+    }
+  );
+
+  const text = synthesisResult.structuredResponse || synthesisResult.response;
 
   // Calculate overall confidence
   const avgVerificationScore =

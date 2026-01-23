@@ -3,7 +3,8 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Email } from "@convex-dev/auth/providers/Email";
 import Google from "@auth/core/providers/google";
-import { query } from "../../_generated/server";
+import { query, internalQuery } from "../../_generated/server";
+import { v } from "convex/values";
 
 const EmailMagicLink = Email({
   // Magic link behavior: skip requiring the email during verification
@@ -100,5 +101,15 @@ export const loggedInUser = query({
       return null;
     }
     return user;
+  },
+});
+
+/**
+ * Get user by ID (internal use)
+ */
+export const getUserById = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    return await ctx.db.get(userId);
   },
 });

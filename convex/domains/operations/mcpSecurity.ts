@@ -43,6 +43,7 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
+import { internal } from "../../_generated/api";
 
 /* ------------------------------------------------------------------ */
 /* SCOPED TOKEN MANAGEMENT (API1, API2)                                */
@@ -139,6 +140,32 @@ export const createMcpToken = mutation({
       expiresAt,
     });
 
+    // Log the security action
+    await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+      action: "create_mcp_token",
+      actionCategory: "security_event",
+      actor: args.userId,
+      resourceType: "mcpApiTokens",
+      resourceId: tokenId,
+      before: null,
+      after: {
+        name: args.name,
+        scopes: args.scopes,
+        allowedTools: args.allowedTools,
+        allowedEnvironments: args.allowedEnvironments,
+        expiresInDays: args.expiresInDays ?? 90,
+      },
+      reason: `Created MCP API token: ${args.name}`,
+      metadata: {
+        tokenName: args.name,
+        scopesCount: args.scopes.length,
+        toolsCount: args.allowedTools.length,
+        expiresAt,
+      },
+    }).catch((err) => {
+      console.warn('[createMcpToken] Failed to log audit entry:', err);
+    });
+
     return {
       tokenId,
       token,  // ONLY returned once - user must save it
@@ -157,11 +184,44 @@ export const revokeMcpToken = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Get token state before revocation
+    const token = await ctx.db.get(args.tokenId);
+
     await ctx.db.patch(args.tokenId, {
       revokedAt: Date.now(),
       revokedBy: args.revokedBy,
       revokedReason: args.reason,
     });
+
+    // Log the security action
+    if (token) {
+      await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+        action: "revoke_mcp_token",
+        actionCategory: "security_event",
+        actor: args.revokedBy,
+        resourceType: "mcpApiTokens",
+        resourceId: args.tokenId,
+        before: {
+          name: token.name,
+          userId: token.userId,
+          scopes: token.scopes,
+          createdAt: token.createdAt,
+        },
+        after: {
+          revokedAt: Date.now(),
+          revokedBy: args.revokedBy,
+          revokedReason: args.reason,
+        },
+        reason: `Revoked MCP token: ${args.reason}`,
+        metadata: {
+          tokenName: token.name,
+          tokenAge: Date.now() - token.createdAt,
+        },
+      }).catch((err) => {
+        console.warn('[revokeMcpToken] Failed to log audit entry:', err);
+      });
+    }
+
     return null;
   },
 });
@@ -206,6 +266,33 @@ export const rotateMcpToken = mutation({
       rateLimit: oldToken.rateLimit,
       createdAt: Date.now(),
       expiresAt: Date.now() + 90 * 24 * 60 * 60 * 1000,
+    });
+
+    // Log the security action
+    await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+      action: "rotate_mcp_token",
+      actionCategory: "security_event",
+      actor: args.rotatedBy,
+      resourceType: "mcpApiTokens",
+      resourceId: tokenId,
+      before: {
+        oldTokenId: args.oldTokenId,
+        name: oldToken.name,
+        createdAt: oldToken.createdAt,
+      },
+      after: {
+        newTokenId: tokenId,
+        name: `${oldToken.name} (rotated)`,
+        createdAt: Date.now(),
+      },
+      reason: `Rotated MCP token: ${oldToken.name}`,
+      metadata: {
+        oldTokenAge: Date.now() - oldToken.createdAt,
+        oldTokenId: args.oldTokenId,
+        newTokenId: tokenId,
+      },
+    }).catch((err) => {
+      console.warn('[rotateMcpToken] Failed to log audit entry:', err);
     });
 
     return { tokenId, token };

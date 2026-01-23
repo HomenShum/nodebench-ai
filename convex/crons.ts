@@ -48,6 +48,19 @@ crons.daily(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Industry Monitoring - Scan for updates from AI leaders (2026)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Scan industry sources daily for new patterns and enhancements
+// Checks: Anthropic, OpenAI, Google DeepMind, LangChain, Vercel AI SDK
+crons.daily(
+  "scan industry updates",
+  { hourUTC: 6, minuteUTC: 0 }, // 6 AM UTC daily
+  internal.domains.monitoring.industryUpdates.scanIndustryUpdates,
+  {}
+);
+
 // Cleanup old dead-letters daily (keep 30 days)
 crons.daily(
   "cleanup artifact dead-letters",

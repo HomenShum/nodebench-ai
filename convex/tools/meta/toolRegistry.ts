@@ -299,6 +299,12 @@ export const toolSummaries: Record<string, ToolSummary> = {
     keywords: ["profile", "company", "funded", "startup"],
     module: "financial/fundingResearchTools",
   },
+  createDCFSpreadsheet: {
+    description: "Create interactive DCF valuation model for a company with editable spreadsheet",
+    category: "financial",
+    keywords: ["dcf", "valuation", "model", "spreadsheet", "financial", "fair value", "wacc", "enterprise value"],
+    module: "domains/agents/tools/createDCFSpreadsheet",
+  },
 
   // ─────────────────────────────────────────────────────────────────────────
   // Task Management

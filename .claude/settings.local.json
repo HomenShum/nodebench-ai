@@ -163,7 +163,21 @@
       "Bash(Select-String \"playbook\" -CaseSensitive:$false)",
       "Bash(set DEBUG=convex:*)",
       "Bash(npx ts-node:*)",
-      "Read(//d/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/**)"
+      "Read(//d/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/**)",
+      "Bash(for mutation in \"updateUserPreferences\" \"setTimeZonePreference\" \"setPlannerMode\" \"updateSmsPreferences\" \"createCustomDetector\" \"updateCustomDetector\" \"deleteCustomDetector\" \"updateProactiveSettings\" \"grantConsent\" \"revokeConsent\")",
+      "Bash(do echo \"=== Checking $mutation ===\")",
+      "Bash(tasklist:*)",
+      "Bash(BASE_URL=http://localhost:5174 npx playwright test:*)",
+      "Bash(agent-browser install:*)",
+      "Bash(agent-browser open:*)",
+      "Bash(agent-browser:*)",
+      "Bash(where agent-browser)",
+      "Bash(lsof:*)",
+      "Bash(netstat:*)",
+      "Bash(npx agent-browser:*)",
+      "Bash(agent-browser test-dcf-flow.js:*)",
+      "Bash(./node_modules/.bin/agent-browser.cmd:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

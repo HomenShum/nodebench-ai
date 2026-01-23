@@ -11,7 +11,7 @@ interface RecommendationPanelProps {
 }
 
 export function RecommendationPanel({ className = '', onActionClick }: RecommendationPanelProps) {
-  const { recommendations, isLoading, dismiss, click } = useRecommendations();
+  const { recommendations, isLoading, dismiss, click, recordFeedback } = useRecommendations();
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleClick = async (id: typeof recommendations[0]['_id']) => {
@@ -20,6 +20,15 @@ export function RecommendationPanel({ className = '', onActionClick }: Recommend
       await click(id);
       onActionClick?.(rec.actionType ?? 'default', rec.actionData);
     }
+  };
+
+  const handleFeedback = async (
+    id: typeof recommendations[0]['_id'],
+    action: "accepted" | "rejected",
+    rating?: number,
+    reason?: string
+  ) => {
+    await recordFeedback(id, action, rating, reason);
   };
 
   if (isLoading) {
@@ -82,6 +91,8 @@ export function RecommendationPanel({ className = '', onActionClick }: Recommend
                     icon={rec.icon ?? undefined}
                     onDismiss={dismiss}
                     onClick={handleClick}
+                    onFeedback={handleFeedback}
+                    showFeedback={true}
                   />
                 ))}
               </AnimatePresence>

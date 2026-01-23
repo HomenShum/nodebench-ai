@@ -204,6 +204,8 @@ import {
 // Patch-based editing tools
 import { editDocument } from "../../tools/editDocument";
 import { editSpreadsheet } from "../../tools/editSpreadsheet";
+import { createDCFSpreadsheet } from "./tools/createDCFSpreadsheet";
+import { editDCFSpreadsheet } from "./tools/editDCFSpreadsheet";
 
 // Ground truth lookup for evaluation (CRITICAL for accurate responses)
 import { lookupGroundTruth } from "../../tools/evaluation/groundTruthLookup";
@@ -1120,6 +1122,10 @@ Always provide clear, helpful responses and confirm actions you take.`,
 
     // Spreadsheet editing (versioned artifacts)
     editSpreadsheet,
+
+    // Interactive DCF spreadsheet workflow
+    createDCFSpreadsheet,
+    editDCFSpreadsheet,
 
     // Ground truth lookup for evaluation (CRITICAL for accurate responses)
     // Use this FIRST when asked about known entities like DISCO, Ambros, ClearSpace, etc.
@@ -3530,51 +3536,33 @@ export const streamAsync = internalAction({
           }
         }
 
-        // Use enhanced provider-level fallback detection (rate limits, billing, auth, service unavailable) 
-        if (shouldTriggerProviderFallback(error) && !fallbackAttempted && !retryAttempted) {
+        // Use enhanced provider-level fallback detection (rate limits, billing, auth, service unavailable)
+        // Sequential fallback: Keep trying providers until one succeeds or we run out
+        if (shouldTriggerProviderFallback(error) && !retryAttempted) {
           const errorType = isProviderRateLimitError(error) ? "rate limit" : "provider unavailable";
 
-          // Special-case: if Anthropic is out of quota/usage, prefer OpenRouter free fallback if configured.
-          const openRouterKey =
-            typeof process !== "undefined" && process.env ? (process.env.OPENROUTER_API_KEY ?? "") : "";
-          const looksLikeQuota =
-            /api usage limits?|usage limits?|quota exceeded|insufficient credits|credit balance|resource exhausted/i.test(
-              String(errorMessage || "").toLowerCase(),
-            );
-          if (openRouterKey && openRouterKey.length > 10 && looksLikeQuota) {
-            const openRouterFallback = normalizeModelInput("openrouter/xiaomi/mimo-v2-flash:free");
-            fallbackAttempted = true;
+          // Track the model that just failed
+          if (!attemptedModels.includes(activeModel)) {
             attemptedModels.push(activeModel);
-            console.warn(
-              `[streamAsync:${executionId}] ${errorType} detected for ${activeModel} (${String(errorMessage).slice(0, 120)}...), falling back to ${openRouterFallback}.`,
-            );
-            await wait(RATE_LIMIT_BACKOFF_MS);
-            activeModel = openRouterFallback;
-            telemetry = await runStreamAttempt(activeModel, "fallback-openrouter");
-            if (args.runId && args.workerId) {
-              await ctx.runMutation(internal.domains.agents.orchestrator.queueProtocol.completeWorkItem, {
-                runId: args.runId,
-                workerId: args.workerId,
-                result: { status: "completed_fallback" },
-              });
-            }
-            return {
-              ok: true,
-              status: "completed_fallback",
-              executionId,
-              attemptedModels,
-              fallbackAttempted,
-              retryAttempted,
-              telemetry,
-            };
           }
 
-          const fallbackModel = getFallbackModelForRateLimit(activeModel);
-          if (fallbackModel) {
+          // Try to get the next fallback model
+          let nextFallbackModel = getFallbackModelForRateLimit(activeModel);
+
+          // If we've already tried this fallback, get the next one
+          const MAX_FALLBACK_ATTEMPTS = 5; // Prevent infinite loops
+          let fallbackAttempts = 0;
+          while (nextFallbackModel && attemptedModels.includes(nextFallbackModel) && fallbackAttempts < MAX_FALLBACK_ATTEMPTS) {
+            console.log(`[streamAsync:${executionId}] Already tried ${nextFallbackModel}, finding next fallback...`);
+            nextFallbackModel = getFallbackModelForRateLimit(nextFallbackModel);
+            fallbackAttempts++;
+          }
+
+          if (nextFallbackModel && !attemptedModels.includes(nextFallbackModel)) {
             fallbackAttempted = true;
-            console.warn(`[streamAsync:${executionId}] ${errorType} detected for ${activeModel}, falling back to ${fallbackModel}.`);
+            console.warn(`[streamAsync:${executionId}] ${errorType} detected for ${activeModel}, falling back to ${nextFallbackModel}. (Attempted: ${attemptedModels.join(", ")})`);
             await wait(RATE_LIMIT_BACKOFF_MS);
-            activeModel = fallbackModel;
+            activeModel = nextFallbackModel;
             try {
               telemetry = await runStreamAttempt(activeModel, "fallback");
               if (args.runId && args.workerId) {
@@ -3617,6 +3605,20 @@ export const streamAsync = internalAction({
                   telemetry,
                 };
               }
+
+              // If fallback also hit a provider error (rate limit), try NEXT fallback recursively
+              if (shouldTriggerProviderFallback(fallbackError)) {
+                console.warn(`[streamAsync:${executionId}] Fallback ${activeModel} also failed with ${errorType}, attempting next fallback...`);
+                // Record this failed attempt
+                if (!attemptedModels.includes(activeModel)) {
+                  attemptedModels.push(activeModel);
+                }
+                // Reset fallbackAttempted to allow sequential fallbacks
+                fallbackAttempted = false;
+                // Re-throw to trigger another fallback iteration
+                throw fallbackError;
+              }
+
               if (!shouldTriggerProviderFallback(fallbackError)) {
                 await recordFailureUsage(activeModel, fallbackMessage);
               }

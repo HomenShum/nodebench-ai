@@ -1,0 +1,582 @@
+{
+  "config": {
+    "configFile": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\playwright.config.ts",
+    "rootDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 16,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "analytics-dashboards.spec.ts",
+      "file": "analytics-dashboards.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Analytics Dashboards Integration (Agent Browser)",
+          "file": "analytics-dashboards.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "HITL Analytics Dashboard - Agent Browser Snapshot",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6185,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ Page loaded for HITL Analytics\n"
+                        },
+                        {
+                          "text": "✅ Found heading: HITL Analytics\n"
+                        },
+                        {
+                          "text": "✅ HITL Analytics Dashboard loaded successfully\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T06:59:44.403Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-0e7abb1d17bfac42eb2d",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 18,
+              "column": 3
+            },
+            {
+              "title": "Component Metrics Dashboard - Agent Browser Snapshot",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1361,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ Page loaded for Component Metrics\n"
+                        },
+                        {
+                          "text": "✅ Found heading: Component Metrics\n"
+                        },
+                        {
+                          "text": "✅ Component Metrics Dashboard loaded successfully\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T06:59:50.978Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-7ff5c89be3e20fe02415",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 43,
+              "column": 3
+            },
+            {
+              "title": "Recommendation Feedback Dashboard - Agent Browser Snapshot",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1312,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ Page loaded for Recommendation Feedback\n"
+                        },
+                        {
+                          "text": "✅ Found heading: Recommendation Feedback\n"
+                        },
+                        {
+                          "text": "✅ Recommendation Feedback Dashboard loaded successfully\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T06:59:52.347Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-462ff95b548048a63d05",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 67,
+              "column": 3
+            },
+            {
+              "title": "Navigation Flow - All Analytics Routes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1272,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ Loaded HITL Analytics\n"
+                        },
+                        {
+                          "text": "✅ Navigated to HITL Analytics\n"
+                        },
+                        {
+                          "text": "✓ Loaded Component Metrics\n"
+                        },
+                        {
+                          "text": "✅ Navigated to Component Metrics\n"
+                        },
+                        {
+                          "text": "✓ Loaded Recommendation Feedback\n"
+                        },
+                        {
+                          "text": "✅ Navigated to Recommendation Feedback\n"
+                        },
+                        {
+                          "text": "✅ All analytics routes navigation successful\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T06:59:53.666Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-e317d7a008e33000c2af",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 91,
+              "column": 3
+            },
+            {
+              "title": "Console Error Detection",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4620,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ No critical console errors detected\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T06:59:54.947Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-d45450f6620d723b5cc8",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 113,
+              "column": 3
+            },
+            {
+              "title": "Lazy Loading Performance",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 846,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ Dashboard lazy loaded in 299ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T06:59:59.586Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-19e9523c3055eec2f66f",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 146,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Agent Browser - Interactive Navigation",
+          "file": "analytics-dashboards.spec.ts",
+          "line": 163,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Sidebar Navigation Using Agent Browser",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2022,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ Initial page loaded\n"
+                        },
+                        {
+                          "text": "💡 Future: Use Agent Browser for deterministic element references\n"
+                        },
+                        {
+                          "text": "✅ Navigation to analytics dashboard successful\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T07:00:00.454Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-82e3fdba0003ce48d229",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 165,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Persona Tracking Integration (Requires Auth)",
+          "file": "analytics-dashboards.spec.ts",
+          "line": 185,
+          "column": 6,
+          "specs": [
+            {
+              "title": "User Preference Update - Persona Tracking",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\analytics-dashboards.spec.ts",
+                        "line": 187,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T07:00:02.491Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\analytics-dashboards.spec.ts",
+                            "line": 187,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-68ebe8beee4de7dfee82",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 187,
+              "column": 8
+            },
+            {
+              "title": "Custom Detector Creation - Persona Tracking",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\analytics-dashboards.spec.ts",
+                        "line": 195,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T07:00:02.491Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\analytics-dashboards.spec.ts",
+                            "line": 195,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-9488e578d8fe39239b31",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 195,
+              "column": 8
+            }
+          ]
+        },
+        {
+          "title": "Security Audit Logging (Requires Auth)",
+          "file": "analytics-dashboards.spec.ts",
+          "line": 201,
+          "column": 6,
+          "specs": [
+            {
+              "title": "API Key Deletion - Audit Logging",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\analytics-dashboards.spec.ts",
+                        "line": 203,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-23T07:00:02.492Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\analytics-dashboards.spec.ts",
+                            "line": 203,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "01f714932da4fcdc517b-7b001da3bb13f2a3c0f1",
+              "file": "analytics-dashboards.spec.ts",
+              "line": 203,
+              "column": 8
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-01-23T06:59:04.427Z",
+    "duration": 59026.503,
+    "expected": 7,
+    "skipped": 3,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,33 @@
+- document:
+  - navigation "Skip links" [ref=e1]:
+    - link "Skip to main content" [ref=e2]:
+      - /url: "#main-content"
+    - link "Skip to navigation" [ref=e3]:
+      - /url: "#main-navigation"
+  - main:
+    - text: N Nodebench AI Menu
+    - button "Home Research & Live Dossiers" [ref=e4]
+    - button "My Workspace" [ref=e5]
+    - button "Saved Dossiers" [ref=e6]
+    - text: File Explorer G Guest User Limited preview
+    - button "Continue with Google" [ref=e7]:
+      - img
+      - text: Continue with Google
+    - heading "Home" [ref=e8] [level=1]
+    - button "Open Research Hub" [ref=e9]: Research Hub
+    - button "Toggle Fast Agent Panel" [ref=e10]: Fast Agent
+    - text: 🌃
+    - heading "Working late" [ref=e11] [level=1]
+    - text: Start your journey today
+    - button "Open Fast Agent" [ref=e12]
+    - button "Create Dossier" [ref=e13]
+    - button "View What Changed" [ref=e14]
+    - button "New Document" [ref=e15]
+    - button "Research Hub" [ref=e16]
+    - text: System Core Active GLOBAL_SENTIMENT 0.72 TEMPORAL_DRIFT +0.04 Documents This Week 0 created Tasks Completed 0 this week Active Tasks 0 pending Total Knowledge 0 documents
+    - heading "The Research Hub" [ref=e17] [level=3]
+    - paragraph: Access the full editorial dossier. Deep-dive into Act-based narratives, market signals, and live telemetry.
+    - text: Open Research Hub
+    - heading "Strategic Workspace" [ref=e18] [level=3]
+    - paragraph: Interface with your personal library. Organize documents, track tasks, and manage institutional agents.
+    - text: "Open Workspace Live_Sync_Active Buffer: 98% 3:32:53 PM Lat_0.02ms Secure_Auth_v2.1"

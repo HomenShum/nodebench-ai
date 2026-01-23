@@ -42,6 +42,7 @@ import {
   FileText,
   Calendar,
   File,
+  FileSpreadsheet,
   Plus,
   Sparkles,
   Grid3X3,
@@ -218,6 +219,7 @@ export function DocumentsHomeHub({
   const documents = useQuery(api.domains.documents.documents.getSidebarWithPreviews);
 
   const loggedInUser = useQuery(api.domains.auth.auth.loggedInUser);
+  const spreadsheets = useQuery(api.domains.integrations.spreadsheets.listSheets, { limit: 10 });
 
   // Ensure onboarding seed on first visit to DocumentsHomeHub
 
@@ -6926,6 +6928,48 @@ export function DocumentsHomeHub({
                   accent
                   className="mb-6"
                 />
+
+                {Array.isArray(spreadsheets) && spreadsheets.length > 0 && (
+                  <div className="mb-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                        <FileSpreadsheet className="h-4 w-4 text-emerald-700" />
+                        Spreadsheets
+                        <span className="text-[var(--text-secondary)] font-normal">
+                          ({spreadsheets.length})
+                        </span>
+                      </h3>
+                      <button
+                        type="button"
+                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        onClick={() => {
+                          window.location.hash = "#spreadsheets";
+                        }}
+                      >
+                        View all
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {spreadsheets.slice(0, 6).map((s: any) => (
+                        <button
+                          key={String(s._id)}
+                          type="button"
+                          className="text-left rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] p-3 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                          onClick={() => {
+                            window.location.hash = `#spreadsheets/${String(s._id)}`;
+                          }}
+                        >
+                          <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+                            {s.name || "Untitled spreadsheet"}
+                          </div>
+                          <div className="text-xs text-[var(--text-secondary)] mt-1">
+                            Updated {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "—"}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Moved Filters/Tools into Documents & Files section below */}
 

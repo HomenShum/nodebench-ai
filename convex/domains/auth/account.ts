@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { action, mutation, query } from "../../_generated/server";
 import { getAuthUserId, getAuthSessionId, invalidateSessions } from "@convex-dev/auth/server";
 import type { Doc } from "../../_generated/dataModel";
+import { internal } from "../../_generated/api";
 
 export const listSessions = query({
   args: {},
@@ -82,6 +83,15 @@ export const signOutSession = mutation({
     if (currentSessionId && sessionId === currentSessionId) {
       throw new Error("Cannot sign out the current session here");
     }
+
+    // Capture session state before deletion
+    const sessionSnapshot = {
+      _id: session._id,
+      userId: session.userId,
+      _creationTime: session._creationTime,
+      expirationTime: session.expirationTime,
+    };
+
     // Delete refresh tokens for this session
     const tokens = await ctx.db
       .query("authRefreshTokens")
@@ -90,8 +100,28 @@ export const signOutSession = mutation({
     for (const t of tokens) {
       await ctx.db.delete(t._id);
     }
+
     // Delete the session itself
     await ctx.db.delete(sessionId);
+
+    // Log the security action
+    await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
+      action: "sign_out_session",
+      actionCategory: "security_event",
+      actor: userId,
+      resourceType: "authSessions",
+      resourceId: sessionId,
+      before: sessionSnapshot,
+      after: { deleted: true },
+      reason: `User manually signed out session`,
+      metadata: {
+        tokensDeleted: tokens.length,
+        sessionAge: Date.now() - session._creationTime,
+      },
+    }).catch((err) => {
+      console.warn('[signOutSession] Failed to log audit entry:', err);
+    });
+
     return null;
   },
 });

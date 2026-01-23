@@ -21,6 +21,8 @@ import {
   Settings,
   Trash2,
   FolderOpen,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 
@@ -165,6 +167,41 @@ export function CleanSidebar({
           recentDossiers={recentDossiers}
           onDossierSelect={handleDossierSelect}
         />
+      </div>
+
+      {/* Dashboard Links */}
+      <div className="px-3 mt-4 mb-2">
+        <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          Dashboards
+        </div>
+        <div className="space-y-1">
+          <a
+            href="#cost"
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              currentView === 'cost-dashboard'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <DollarSign className={`w-4 h-4 ${
+              currentView === 'cost-dashboard' ? 'text-green-600' : 'text-gray-400'
+            }`} />
+            <span>Cost Dashboard</span>
+          </a>
+          <a
+            href="#industry"
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              currentView === 'industry-updates'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <TrendingUp className={`w-4 h-4 ${
+              currentView === 'industry-updates' ? 'text-blue-600' : 'text-gray-400'
+            }`} />
+            <span>Industry Updates</span>
+          </a>
+        </div>
       </div>
 
       {/* Divider */}
