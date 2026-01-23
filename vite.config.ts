@@ -1,4 +1,4 @@
-import { defineConfig, splitVendorChunkPlugin, type Plugin } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -40,7 +40,6 @@ function criticalCSSPlugin(): Plugin {
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-    splitVendorChunkPlugin(),
     // Service Worker + PWA for aggressive caching
     VitePWA({
       registerType: 'autoUpdate',
@@ -211,16 +210,64 @@ window.addEventListener('message', async (message) => {
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
-        // Manual chunk splitting for better caching
-        manualChunks: {
-          // React ecosystem
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // Convex
-          'convex-vendor': ['convex/react'],
-          // Chart library (lazy loaded but still chunked separately)
-          'charts': ['recharts'],
-          // UI utilities
-          'ui-vendor': ['clsx', 'class-variance-authority'],
+        // Route-based code splitting for optimal loading
+        manualChunks(id) {
+          // Vendor chunks - only split large/important libraries
+          if (id.includes('/node_modules/')) {
+            // React core (keep small and cacheable)
+            if (id.match(/\/node_modules\/(react\/|react-dom\/|scheduler\/)/)) {
+              return 'react-vendor';
+            }
+            if (id.includes('/node_modules/react-router-dom/')) {
+              return 'router-vendor';
+            }
+            // Convex (API client)
+            if (id.includes('/node_modules/convex/')) {
+              return 'convex-vendor';
+            }
+            // Charts (lazy loaded, should be separate)
+            if (id.includes('/node_modules/recharts/')) {
+              return 'charts';
+            }
+            // Editor ecosystem (heavy, should be separate)
+            if (id.includes('/node_modules/@tiptap/') || id.includes('/node_modules/@blocknote/')) {
+              return 'editor-vendor';
+            }
+            // Spreadsheet engine (very heavy)
+            if (id.includes('/node_modules/xlsx')) {
+              return 'spreadsheet-vendor';
+            }
+            // Let everything else be handled by Vite's default splitting
+            // This avoids creating one massive vendor chunk
+          }
+
+          // Route-based splitting for application features
+          if (id.includes('/features/analytics/')) {
+            return 'route-analytics';
+          }
+          if (id.includes('/features/documents/')) {
+            return 'route-documents';
+          }
+          if (id.includes('/features/agents/')) {
+            return 'route-agents';
+          }
+          if (id.includes('/features/research/')) {
+            return 'route-research';
+          }
+          if (id.includes('/features/spreadsheets/')) {
+            return 'route-spreadsheets';
+          }
+          if (id.includes('/features/calendar/')) {
+            return 'route-calendar';
+          }
+
+          // Heavy editors from src
+          if (id.includes('/components/Editor/') || id.includes('UnifiedEditor')) {
+            return 'editor';
+          }
+
+          // Default: shared application code
+          return undefined;
         },
       },
     },
