@@ -2047,6 +2047,16 @@ export const getThreadMessagesWithStreaming = query({
       paginationOpts: args.paginationOpts,
     });
 
+    // DEBUG: Log all messages to understand what's being returned
+    console.log(`[getThreadMessagesWithStreaming] Retrieved ${(paginated.page as any[]).length} messages`);
+    (paginated.page as any[]).forEach((msg: any, index: number) => {
+      const content = typeof msg.text === 'string' ? msg.text :
+                     typeof msg.content === 'string' ? msg.content : '';
+      const contentPreview = content ? content.substring(0, 50) : '(empty)';
+      const messageId = msg._id ?? msg.id ?? msg.messageId ?? 'no-id';
+      console.log(`[getThreadMessagesWithStreaming] Message ${index}: role=${msg.role}, id=${messageId}, content="${contentPreview}...", status=${msg.status}`);
+    });
+
     // Fetch streaming deltas
     const streams =
       (await syncStreams(ctx, components.agent, {
@@ -2142,6 +2152,8 @@ export const initiateAsyncStreaming = mutation({
     const userId = await getAuthUserId(ctx);
     const isAnonymous = !userId;
     const requestId = crypto.randomUUID().substring(0, 8);
+
+    console.log(`[initiateAsyncStreaming:${requestId}] 🚀 MUTATION INVOKED - thread:${args.threadId}, userId:${userId ?? 'anonymous'}, prompt:${args.prompt.substring(0, 30)}...`);
 
     // ═══════════════════════════════════════════════════════════════════════
     // ANONYMOUS USER RATE LIMITING (5 free messages per day)
@@ -2338,6 +2350,7 @@ export const initiateAsyncStreaming = mutation({
       clientContext: args.clientContext,
     };
 
+    console.log(`[initiateAsyncStreaming:${requestId}] 📝 Creating agentRun for messageId:${messageId}`);
     const runId = await ctx.db.insert("agentRuns", {
       userId: userId ?? undefined,
       threadId: streamingThread.agentThreadId,

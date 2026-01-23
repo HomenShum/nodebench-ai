@@ -148,6 +148,10 @@ export function FastAgentPanel({
   // Contextual-open handling (FastAgentContext.openWithContext)
   const lastHandledOpenRequestIdRef = useRef<string | null>(null);
   const [pendingAutoSend, setPendingAutoSend] = useState<null | { requestId: string; message: string }>(null);
+  // Guard against duplicate auto-sends
+  const lastAutoSentRequestIdRef = useRef<string | null>(null);
+  // Guard against duplicate manual sends (rapid clicks)
+  const lastSentMessageRef = useRef<{ text: string; timestamp: number } | null>(null);
 
   // Dossier mode: persist dossier context after openOptions is consumed
   const dossierContextRef = useRef<DossierContext | null>(null);
@@ -742,7 +746,20 @@ export function FastAgentPanel({
 
   const handleSendMessage = useCallback(async (content?: string) => {
     const text = (content ?? input).trim();
+    console.log('[FastAgentPanel] 🎯 handleSendMessage called, text:', text.substring(0, 30) + '...', 'isBusy:', isBusy);
     if (!text || isBusy) return;
+
+    // ⚡ CRITICAL GUARD: Prevent duplicate sends of same message within 3 seconds
+    const now = Date.now();
+    const DEDUPE_WINDOW_MS = 3000;
+    if (lastSentMessageRef.current &&
+        lastSentMessageRef.current.text === text &&
+        now - lastSentMessageRef.current.timestamp < DEDUPE_WINDOW_MS) {
+      console.log('[FastAgentPanel] 🛑 Send BLOCKED - duplicate message within', DEDUPE_WINDOW_MS, 'ms');
+      return;
+    }
+    lastSentMessageRef.current = { text, timestamp: now };
+    console.log('[FastAgentPanel] ✅ Send ALLOWED - message recorded for deduplication');
 
     // Check if anonymous user has exceeded their daily limit
     if (anonymousSession.isAnonymous && !anonymousSession.canSendMessage) {
@@ -921,6 +938,7 @@ export function FastAgentPanel({
             }
             : undefined;
 
+        console.log('[FastAgentPanel] 🚀 Calling sendStreamingMessage with threadId:', threadId, 'prompt:', messageContent.substring(0, 30) + '...');
         await sendStreamingMessage({
           threadId: threadId as Id<"chatThreadsStream">,
           prompt: messageContent,
@@ -931,7 +949,7 @@ export function FastAgentPanel({
           clientContext,
         });
 
-        console.log('[FastAgentPanel] Streaming initiated');
+        console.log('[FastAgentPanel] ✅ Streaming initiated successfully');
         setIsStreaming(false);
 
         // Auto-name the thread if it's new (fire and forget)
@@ -985,6 +1003,14 @@ export function FastAgentPanel({
     const { message, requestId } = pendingAutoSend;
     if (openOptions?.requestId && openOptions.requestId !== requestId) return;
 
+    // ⚡ CRITICAL GUARD: Prevent duplicate auto-sends
+    if (lastAutoSentRequestIdRef.current === requestId) {
+      console.log('[FastAgentPanel] 🛑 Auto-send BLOCKED - already sent requestId:', requestId);
+      return;
+    }
+    lastAutoSentRequestIdRef.current = requestId;
+
+    console.log('[FastAgentPanel] ✅ Auto-send ALLOWED - requestId:', requestId);
     handleSendMessage(message);
     setPendingAutoSend(null);
     onOptionsConsumed?.();

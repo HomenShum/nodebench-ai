@@ -183,7 +183,21 @@
       "Bash(npx create-next-app@latest:*)",
       "Bash(mklink:*)",
       "Bash(cmd /c 'cd /d \"\"d:\\\\VSCode Projects\\\\cafecorner_nodebench\\\\nodebench_ai4\\\\nodebench-ai\\\\next-app\"\" && mklink /D convex \"\"..\\\\convex\"\"')",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(where:*)",
+      "Bash(vercel --prod --yes:*)",
+      "Bash(vercel env add:*)",
+      "Bash(vercel env:*)",
+      "Bash(printf:*)",
+      "Bash(bash set-vercel-env.sh)",
+      "Bash(vercel logs:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(start http://localhost:5173)",
+      "Bash(cmd /c fix-vercel-env.bat)",
+      "Bash(powershell:*)",
+      "Bash(python3:*)",
+      "Bash(git checkout:*)",
+      "Bash(git clean:*)"
     ],
     "deny": [],
     "ask": []

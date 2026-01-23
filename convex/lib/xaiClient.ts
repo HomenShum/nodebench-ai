@@ -35,6 +35,7 @@ interface GrokRequest {
   top_p?: number;
   stream?: boolean;
   tools?: GrokTool[];
+  tool_choice?: "auto" | "required" | { type: "function"; function: { name: string } };
   response_format?: { type: "json_object" | "text" };
 }
 
@@ -145,6 +146,7 @@ export const callGrok = action({
 
 /**
  * Call Grok with Web Search
+ * Uses grok-4-1-fast-reasoning which has built-in web search
  */
 export const callGrokWithWebSearch = action({
   args: {
@@ -154,26 +156,29 @@ export const callGrokWithWebSearch = action({
     maxTokens: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // For Grok models with reasoning, just use the query directly
+    // The model has built-in web search capabilities
     return await callGrokAPI({
       model: args.model,
-      messages: [{ role: "user", content: args.query }],
+      messages: [
+        {
+          role: "system",
+          content: "You have access to real-time web search. Use it to find the latest information."
+        },
+        {
+          role: "user",
+          content: args.query
+        }
+      ],
       temperature: args.temperature,
       maxTokens: args.maxTokens,
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "web_search",
-            description: "Search the web for real-time information",
-          },
-        },
-      ],
     });
   },
 });
 
 /**
  * Call Grok with X Search (Twitter)
+ * Uses grok-3-mini which has built-in X search
  */
 export const callGrokWithXSearch = action({
   args: {
@@ -183,20 +188,22 @@ export const callGrokWithXSearch = action({
     maxTokens: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // For Grok models, just use the query directly
+    // The model has built-in X/Twitter search capabilities
     return await callGrokAPI({
       model: args.model,
-      messages: [{ role: "user", content: args.query }],
+      messages: [
+        {
+          role: "system",
+          content: "You have access to real-time X (Twitter) search. Use it to find trending discussions and posts."
+        },
+        {
+          role: "user",
+          content: args.query
+        }
+      ],
       temperature: args.temperature,
       maxTokens: args.maxTokens,
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "x_search",
-            description: "Search X (Twitter) for posts and discussions",
-          },
-        },
-      ],
     });
   },
 });

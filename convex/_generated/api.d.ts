@@ -25,6 +25,8 @@ import type * as crons_proactiveDelivery from "../crons/proactiveDelivery.js";
 import type * as crons_proactiveDetectorRuns from "../crons/proactiveDetectorRuns.js";
 import type * as crons_proactiveEmailIngestion from "../crons/proactiveEmailIngestion.js";
 import type * as crons_sloCalculation from "../crons/sloCalculation.js";
+import type * as dataAudit from "../dataAudit.js";
+import type * as debugEnv from "../debugEnv.js";
 import type * as domains_agents_adapters_anthropic_anthropicReasoningAdapter from "../domains/agents/adapters/anthropic/anthropicReasoningAdapter.js";
 import type * as domains_agents_adapters_convex_convexAgentAdapter from "../domains/agents/adapters/convex/convexAgentAdapter.js";
 import type * as domains_agents_adapters_handoffBridge from "../domains/agents/adapters/handoffBridge.js";
@@ -853,6 +855,8 @@ declare const fullApi: ApiFromModules<{
   "crons/proactiveDetectorRuns": typeof crons_proactiveDetectorRuns;
   "crons/proactiveEmailIngestion": typeof crons_proactiveEmailIngestion;
   "crons/sloCalculation": typeof crons_sloCalculation;
+  dataAudit: typeof dataAudit;
+  debugEnv: typeof debugEnv;
   "domains/agents/adapters/anthropic/anthropicReasoningAdapter": typeof domains_agents_adapters_anthropic_anthropicReasoningAdapter;
   "domains/agents/adapters/convex/convexAgentAdapter": typeof domains_agents_adapters_convex_convexAgentAdapter;
   "domains/agents/adapters/handoffBridge": typeof domains_agents_adapters_handoffBridge;

@@ -1,7 +1,7 @@
 {
   "config": {
-    "configFile": "d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\playwright.config.ts",
-    "rootDir": "d:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/tests/e2e",
+    "configFile": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\playwright.config.ts",
+    "rootDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/tests/e2e",
     "forbidOnly": false,
     "fullyParallel": false,
     "globalSetup": null,
@@ -39,7 +39,7 @@
     "quiet": false,
     "projects": [
       {
-        "outputDir": "d:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/test-results",
+        "outputDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -47,12 +47,12 @@
         },
         "id": "chromium",
         "name": "chromium",
-        "testDir": "d:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/tests/e2e",
+        "testDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/tests/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 30000
+        "timeout": 120000
       }
     ],
     "shard": null,
@@ -65,239 +65,207 @@
   },
   "suites": [
     {
-      "title": "dcf-spreadsheet.spec.ts",
-      "file": "dcf-spreadsheet.spec.ts",
+      "title": "test-duplicate-fix.spec.ts",
+      "file": "test-duplicate-fix.spec.ts",
       "column": 0,
       "line": 0,
-      "specs": [],
-      "suites": [
+      "specs": [
         {
-          "title": "DCF Spreadsheet Integration",
-          "file": "dcf-spreadsheet.spec.ts",
-          "line": 83,
-          "column": 6,
-          "specs": [
+          "title": "Fast Agent - No duplicate responses",
+          "ok": false,
+          "tags": [],
+          "tests": [
             {
-              "title": "should create DCF model and open interactive spreadsheet",
-              "ok": false,
-              "tags": [],
-              "tests": [
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
                 {
-                  "timeout": 180000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 24544,
+                  "error": {
+                    "message": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').or(locator('button:has-text(\"Send\")').first()).or(locator('button[aria-label*=\"Send\"]').first()) to be visible\u001b[22m\n",
+                    "stack": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').or(locator('button:has-text(\"Send\")').first()).or(locator('button[aria-label*=\"Send\"]').first()) to be visible\u001b[22m\n\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts:52:20",
+                    "location": {
+                      "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
+                      "column": 20,
+                      "line": 52
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 50 |\u001b[39m   )\u001b[33m;\u001b[39m\n \u001b[90m 51 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 52 |\u001b[39m   \u001b[36mawait\u001b[39m sendButton\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 53 |\u001b[39m\n \u001b[90m 54 |\u001b[39m   \u001b[90m// Clear previous logs to isolate this send operation\u001b[39m\n \u001b[90m 55 |\u001b[39m   consoleLogs\u001b[33m.\u001b[39mlength \u001b[33m=\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 129856,
-                      "error": {
-                        "message": "Error: Timeout: No spreadsheet ID found after 120s",
-                        "stack": "Error: Timeout: No spreadsheet ID found after 120s\n    at d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\dcf-spreadsheet.spec.ts:365:13",
-                        "location": {
-                          "file": "d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\dcf-spreadsheet.spec.ts",
-                          "column": 13,
-                          "line": 365
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 363 |\u001b[39m       console\u001b[33m.\u001b[39mlog(finalContent\u001b[33m.\u001b[39msubstring(\u001b[35m0\u001b[39m\u001b[33m,\u001b[39m \u001b[35m2000\u001b[39m))\u001b[33m;\u001b[39m\n \u001b[90m 364 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 365 |\u001b[39m       \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m'Timeout: No spreadsheet ID found after 120s'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 366 |\u001b[39m     }\n \u001b[90m 367 |\u001b[39m\n \u001b[90m 368 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mscreenshot({ path\u001b[33m:\u001b[39m \u001b[32m'e2e-screenshots/03-agent-response.png'\u001b[39m\u001b[33m,\u001b[39m fullPage\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      "location": {
+                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
+                        "column": 20,
+                        "line": 52
                       },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\dcf-spreadsheet.spec.ts",
-                            "column": 13,
-                            "line": 365
-                          },
-                          "message": "Error: Timeout: No spreadsheet ID found after 120s\n\n  363 |       console.log(finalContent.substring(0, 2000));\n  364 |\n> 365 |       throw new Error('Timeout: No spreadsheet ID found after 120s');\n      |             ^\n  366 |     }\n  367 |\n  368 |     await page.screenshot({ path: 'e2e-screenshots/03-agent-response.png', fullPage: true });\n    at d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\dcf-spreadsheet.spec.ts:365:13"
-                        }
-                      ],
-                      "stdout": [
-                        {
-                          "text": "✅ Page loaded (domcontentloaded)\n"
-                        },
-                        {
-                          "text": "✅ App content visible\n"
-                        },
-                        {
-                          "text": "📍 Step 0: Loading home page first\n"
-                        },
-                        {
-                          "text": "⚠️  Home page may not be fully loaded\n"
-                        },
-                        {
-                          "text": "📍 Step 1: Opening Fast Agent Panel\n"
-                        },
-                        {
-                          "text": "✅ Found \"Open Fast Agent\" button\n"
-                        },
-                        {
-                          "text": "✅ Clicked \"Open Fast Agent\" button\n"
-                        },
-                        {
-                          "text": "📍 Step 1.5: Waiting for panel to render\n"
-                        },
-                        {
-                          "text": "✅ Found panel indicator: [class*=\"agent-panel\"]\n"
-                        },
-                        {
-                          "text": "📍 Step 2: Finding input field\n"
-                        },
-                        {
-                          "text": "  Strategy 1: Looking for any visible input/textarea\n"
-                        },
-                        {
-                          "text": "  Found 2 textarea elements\n"
-                        },
-                        {
-                          "text": "  Textarea 0: visible=true, enabled=true, placeholder=\"Message...\"\n"
-                        },
-                        {
-                          "text": "✅ Found usable textarea at index 0\n"
-                        },
-                        {
-                          "text": "✅ Sent: \"Build a DCF model for NVIDIA\"\n"
-                        },
-                        {
-                          "text": "📍 Step 3: Waiting for agent response (up to 120s)...\n"
-                        },
-                        {
-                          "text": "  ⏱️  12s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  21s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  30s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  42s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  52s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  61s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  73s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  82s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  91s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  100s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  112s elapsed...\n"
-                        },
-                        {
-                          "text": "  ⏱️  121s elapsed...\n"
-                        },
-                        {
-                          "text": "Final page content (first 2000 chars):\n"
-                        },
-                        {
-                          "text": "<!DOCTYPE html><html lang=\"en\" data-density=\"comfortable\" style=\"--accent-color: #3B82F6; --accent-color-hover: #2563EB; --accent-color-light: #DBEAFE;\"><head>\n    <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\";\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () => {};\nwindow.$RefreshSig$ = () => (type) => type;</script>\n\n    <script type=\"module\" src=\"/@vite/client\"></script>\n\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\n    <!-- Resource hints for better performance -->\n    <link rel=\"dns-prefetch\" href=\"https://fonts.googleapis.com\">\n    <link rel=\"dns-prefetch\" href=\"https://fonts.gstatic.com\">\n    <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n    <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"\">\n\n    <link rel=\"stylesheet\" href=\"/src/index.css\">\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\">\n    <link rel=\"icon\" type=\"image/x-icon\" href=\"/favicon.ico\">\n\n    <title>NodeBench AI</title>\n\n    <meta property=\"og:image\" content=\"/og-preview.png\">\n  <style type=\"text/css\" data-vite-dev-id=\"D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/src/index.css\">\r\n@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap');\n/* Fonts with font-display: swap for faster FCP */\n*, ::before, ::after{\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-widt\n"
-                        }
-                      ],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-23T07:45:25.072Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\dcf-spreadsheet-DCF-Spread-e8231-pen-interactive-spreadsheet-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\dcf-spreadsheet-DCF-Spread-e8231-pen-interactive-spreadsheet-chromium\\video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\dcf-spreadsheet-DCF-Spread-e8231-pen-interactive-spreadsheet-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "d:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\dcf-spreadsheet.spec.ts",
-                        "column": 13,
-                        "line": 365
-                      }
+                      "message": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').or(locator('button:has-text(\"Send\")').first()).or(locator('button[aria-label*=\"Send\"]').first()) to be visible\u001b[22m\n\n\n  50 |   );\n  51 |\n> 52 |   await sendButton.waitFor({ state: 'visible', timeout: 5000 });\n     |                    ^\n  53 |\n  54 |   // Clear previous logs to isolate this send operation\n  55 |   consoleLogs.length = 0;\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts:52:20"
                     }
                   ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "da7968eb67217616794d-56daf6703107e95a9caa",
-              "file": "dcf-spreadsheet.spec.ts",
-              "line": 88,
-              "column": 3
-            },
-            {
-              "title": "should handle invalid ticker gracefully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 45000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "stdout": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3796,
-                      "errors": [],
-                      "stdout": [
-                        {
-                          "text": "✅ Page loaded (domcontentloaded)\n"
-                        },
-                        {
-                          "text": "✅ App content visible\n"
-                        },
-                        {
-                          "text": "⚠️  Agent input not found\n"
-                        }
-                      ],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-23T07:47:36.709Z",
-                      "annotations": [],
-                      "attachments": []
+                      "text": "[BROWSER] [vite] connecting...\n"
+                    },
+                    {
+                      "text": "[BROWSER] [vite] connected.\n"
+                    },
+                    {
+                      "text": "[BROWSER] [vite] connecting...\n"
+                    },
+                    {
+                      "text": "[BROWSER] [vite] connected.\n"
+                    },
+                    {
+                      "text": "[BROWSER] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold\n"
+                    },
+                    {
+                      "text": "[TEST] ✅ App loaded\n"
+                    },
+                    {
+                      "text": "[TEST] ✅ Clicked Fast Agent button\n"
+                    },
+                    {
+                      "text": "[TEST] ✅ Found input field\n"
+                    },
+                    {
+                      "text": "[TEST] ✅ Typed test message\n"
                     }
                   ],
-                  "status": "expected"
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-23T21:55:17.818Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---No-duplicate-responses-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---No-duplicate-responses-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---No-duplicate-responses-chromium\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
+                    "column": 20,
+                    "line": 52
+                  }
                 }
               ],
-              "id": "da7968eb67217616794d-b5d1b2451ea3163a2cfc",
-              "file": "dcf-spreadsheet.spec.ts",
-              "line": 456,
-              "column": 3
+              "status": "unexpected"
             }
-          ]
+          ],
+          "id": "4a65931f060b15a4d90b-62b693bca3da98148936",
+          "file": "test-duplicate-fix.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "Fast Agent - Rapid click protection",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8678,
+                  "error": {
+                    "message": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').first() to be visible\u001b[22m\n",
+                    "stack": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').first() to be visible\u001b[22m\n\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts:135:20",
+                    "location": {
+                      "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
+                      "column": 20,
+                      "line": 135
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 133 |\u001b[39m\n \u001b[90m 134 |\u001b[39m   \u001b[36mconst\u001b[39m sendButton \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 135 |\u001b[39m   \u001b[36mawait\u001b[39m sendButton\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 136 |\u001b[39m\n \u001b[90m 137 |\u001b[39m   consoleLogs\u001b[33m.\u001b[39mlength \u001b[33m=\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 138 |\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
+                        "column": 20,
+                        "line": 135
+                      },
+                      "message": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').first() to be visible\u001b[22m\n\n\n  133 |\n  134 |   const sendButton = page.locator('button[type=\"submit\"]').first();\n> 135 |   await sendButton.waitFor({ state: 'visible', timeout: 5000 });\n      |                    ^\n  136 |\n  137 |   consoleLogs.length = 0;\n  138 |\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts:135:20"
+                    }
+                  ],
+                  "stdout": [
+                    {
+                      "text": "[BROWSER] [vite] connecting...\n"
+                    },
+                    {
+                      "text": "[BROWSER] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold\n"
+                    },
+                    {
+                      "text": "[BROWSER] [vite] connected.\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-01-23T21:55:45.445Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---Rapid-click-protection-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---Rapid-click-protection-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---Rapid-click-protection-chromium\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
+                    "column": 20,
+                    "line": 135
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4a65931f060b15a4d90b-bd67a6ba1430c189ba85",
+          "file": "test-duplicate-fix.spec.ts",
+          "line": 110,
+          "column": 1
         }
       ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-23T07:45:24.220Z",
-    "duration": 137468.422,
-    "expected": 1,
+    "startTime": "2026-01-23T21:55:16.039Z",
+    "duration": 40300.626,
+    "expected": 0,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 2,
     "flaky": 0
   }
 }

@@ -24,7 +24,7 @@ import { Doc } from "../../_generated/dataModel";
 // ═══════════════════════════════════════════════════════════════════════════
 
 export type CandidateSource = "in_network" | "out_of_network" | "trending";
-export type ItemType = "document" | "agent" | "repository" | "update";
+export type ItemType = "document" | "agent" | "repository" | "update" | "feed_item";
 
 export interface FeedCandidate {
   itemId: string;
@@ -149,7 +149,7 @@ export const getOutOfNetworkCandidates = internalQuery({
       .query("industryUpdates")
       .withIndex("by_scanned_at")
       .order("desc")
-      .take(limit);
+      .take(Math.floor(limit / 2));
 
     for (const update of updates) {
       candidates.push({
@@ -167,6 +167,29 @@ export const getOutOfNetworkCandidates = internalQuery({
       });
     }
 
+    // ALSO get feed items from external sources
+    const feedItems = await ctx.db
+      .query("feedItems")
+      .withIndex("by_creation_time")
+      .order("desc")
+      .take(Math.floor(limit / 2));
+
+    for (const item of feedItems) {
+      candidates.push({
+        itemId: item._id,
+        itemType: "feed_item",
+        source: "out_of_network",
+        title: item.title || "Untitled",
+        snippet: item.summary?.substring(0, 200) || "",
+        metadata: {
+          source: item.source,
+          url: item.url,
+          score: item.score,
+        },
+        timestamp: item.createdAt || item._creationTime,
+      });
+    }
+
     return candidates;
   },
 });
@@ -181,13 +204,13 @@ export const getTrendingCandidates = internalQuery({
   handler: async (ctx, { limit }): Promise<FeedCandidate[]> => {
     const candidates: FeedCandidate[] = [];
 
-    // Get high-relevance industry updates as trending proxy
+    // Get high-relevance industry updates
     const trending = await ctx.db
       .query("industryUpdates")
       .withIndex("by_relevance")
       .order("desc")
       .filter((q) => q.gte(q.field("relevance"), 80))
-      .take(limit);
+      .take(Math.floor(limit / 2));
 
     for (const item of trending) {
       candidates.push({
@@ -202,6 +225,29 @@ export const getTrendingCandidates = internalQuery({
           url: item.url,
         },
         timestamp: item.scannedAt,
+      });
+    }
+
+    // ALSO get recent high-scoring feed items (TechCrunch, etc.)
+    const feedItems = await ctx.db
+      .query("feedItems")
+      .withIndex("by_creation_time")
+      .order("desc")
+      .take(Math.floor(limit / 2));
+
+    for (const item of feedItems) {
+      candidates.push({
+        itemId: item._id,
+        itemType: "feed_item",
+        source: "trending",
+        title: item.title || "Untitled",
+        snippet: item.summary?.substring(0, 200) || "",
+        metadata: {
+          source: item.source,
+          url: item.url,
+          score: item.score,
+        },
+        timestamp: item.createdAt || item._creationTime,
       });
     }
 
@@ -610,5 +656,38 @@ export const recordEngagement = internalMutation({
       action,
       timestamp: Date.now(),
     });
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST QUERIES (for debugging without auth)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Test query to verify candidate sourcing works (no auth required)
+ */
+export const testCandidateSourcing = query({
+  args: {},
+  handler: async (ctx) => {
+    const trending = await ctx.runQuery(internal.domains.research.forYouFeed.getTrendingCandidates, {
+      limit: 10,
+    });
+
+    // Get a sample user to test out-of-network
+    const sampleUser = await ctx.db.query("users").first();
+    let outOfNetwork: FeedCandidate[] = [];
+    if (sampleUser) {
+      outOfNetwork = await ctx.runQuery(internal.domains.research.forYouFeed.getOutOfNetworkCandidates, {
+        userId: sampleUser._id,
+        limit: 10,
+      });
+    }
+
+    return {
+      trendingCount: trending.length,
+      trendingSample: trending[0],
+      outOfNetworkCount: outOfNetwork.length,
+      outOfNetworkSample: outOfNetwork[0],
+    };
   },
 });

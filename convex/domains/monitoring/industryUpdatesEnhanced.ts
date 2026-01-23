@@ -205,31 +205,32 @@ export const enhancedIndustryScan = internalAction({
       { topics: trendingTopics.slice(0, 3) }
     );
 
-    // Also run standard industry scan
-    await ctx.runAction(internal.domains.monitoring.industryUpdates.scanIndustryUpdates, {});
+    // NOTE: Skipping standard industry scan for now - can be enabled once that module is fixed
+    // await ctx.runAction(internal.domains.monitoring.industryUpdates.scanIndustryUpdates, {});
 
     console.log(
       `[industryUpdatesEnhanced] Found ${xResults.length} X trends and ${webResults.length} web news`
     );
 
+    // NOTE: Skipping PR generation for now - can be enabled once industry scan is fixed
     // Get high-priority updates for PR suggestions
-    const highPriorityUpdates = await ctx.runQuery(
-      internal.domains.monitoring.industryUpdates.getHighPriorityUpdates,
-      {}
-    );
+    // const highPriorityUpdates = await ctx.runQuery(
+    //   internal.domains.monitoring.industryUpdates.getHighPriorityUpdates,
+    //   {}
+    // );
 
     // Generate PR suggestions for top 3 updates
-    for (const update of highPriorityUpdates.slice(0, 3)) {
-      await ctx.runAction(
-        internal.domains.monitoring.industryUpdatesEnhanced.generatePRSuggestions,
-        { updateId: update._id }
-      );
-    }
+    // for (const update of highPriorityUpdates.slice(0, 3)) {
+    //   await ctx.runAction(
+    //     internal.domains.monitoring.industryUpdatesEnhanced.generatePRSuggestions,
+    //     { updateId: update._id }
+    //   );
+    // }
 
     return {
       xTrends: xResults.length,
       webNews: webResults.length,
-      prSuggestions: Math.min(highPriorityUpdates.length, 3),
+      prSuggestions: 0, // Disabled for now
     };
   },
 });

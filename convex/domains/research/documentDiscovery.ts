@@ -108,6 +108,8 @@ export const getCandidatesBySemanticSimilarity = internalQuery({
     limit: v.number(),
   },
   handler: async (ctx, { userId, limit }): Promise<DocumentCandidate[]> => {
+    const candidates: DocumentCandidate[] = [];
+
     // Get recent documents as candidates
     // TODO: Replace with vector search when embeddings are implemented
     const recentDocs = await ctx.db
@@ -115,15 +117,40 @@ export const getCandidatesBySemanticSimilarity = internalQuery({
       .withIndex("by_creation_time")
       .order("desc")
       .filter((q) => q.neq(q.field("createdBy"), userId)) // Exclude user's own docs
-      .take(limit);
+      .take(Math.floor(limit / 2));
 
-    return recentDocs.map((doc) => ({
-      documentId: doc._id,
-      title: doc.title || "Untitled",
-      summary: doc.summary || "",
-      authorId: doc.createdBy,
-      createdAt: doc._creationTime,
-    }));
+    for (const doc of recentDocs) {
+      candidates.push({
+        documentId: doc._id,
+        title: doc.title || "Untitled",
+        summary: doc.summary || "",
+        snippet: doc.content?.substring(0, 200),
+        authorId: doc.createdBy,
+        createdAt: doc._creationTime,
+        source: "semantic",
+      });
+    }
+
+    // Also get feed items (external articles) for discovery
+    const feedItems = await ctx.db
+      .query("feedItems")
+      .withIndex("by_creation_time")
+      .order("desc")
+      .take(Math.floor(limit / 2));
+
+    for (const item of feedItems) {
+      candidates.push({
+        documentId: item._id,
+        title: item.title || "Untitled",
+        summary: item.summary || "Article from external source",
+        snippet: item.summary?.substring(0, 200),
+        authorId: "external" as any,
+        createdAt: item.createdAt || item._creationTime,
+        source: "semantic",
+      });
+    }
+
+    return candidates;
   },
 });
 
@@ -135,7 +162,9 @@ export const getTrendingDocuments = internalQuery({
     limit: v.number(),
   },
   handler: async (ctx, { limit }): Promise<DocumentCandidate[]> => {
-    // Get documents with recent engagement
+    const candidates: DocumentCandidate[] = [];
+
+    // APPROACH 1: Get documents with recent engagement
     const recentEngagements = await ctx.db
       .query("feedEngagements")
       .withIndex("by_action", (q) => q.eq("action", "save"))
@@ -152,11 +181,10 @@ export const getTrendingDocuments = internalQuery({
     // Sort by engagement count
     const topDocIds = Array.from(engagementCounts.entries())
       .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
+      .slice(0, Math.floor(limit / 3))
       .map(([docId]) => docId);
 
     // Fetch document details
-    const candidates: DocumentCandidate[] = [];
     for (const docId of topDocIds) {
       try {
         const doc = await ctx.db.get(docId as any);
@@ -167,12 +195,52 @@ export const getTrendingDocuments = internalQuery({
             summary: doc.summary || "",
             authorId: doc.createdBy,
             createdAt: doc._creationTime,
+            source: "trending",
           });
         }
       } catch {
         // Skip invalid IDs
         continue;
       }
+    }
+
+    // APPROACH 2: Get recent documents from documents table
+    const recentDocs = await ctx.db
+      .query("documents")
+      .order("desc")
+      .filter((q) => q.eq(q.field("isArchived"), false))
+      .take(Math.floor(limit / 3));
+
+    for (const doc of recentDocs) {
+      candidates.push({
+        documentId: doc._id,
+        title: doc.title || "Untitled",
+        summary: doc.content?.substring(0, 200) || "No summary available",
+        snippet: doc.content?.substring(0, 200),
+        authorId: doc.createdBy,
+        createdAt: doc._creationTime,
+        source: "trending",
+      });
+    }
+
+    // APPROACH 3: Get high-scoring feed items (external articles)
+    const feedItems = await ctx.db
+      .query("feedItems")
+      .withIndex("by_creation_time")
+      .order("desc")
+      .filter((q) => q.gte(q.field("score"), 50))
+      .take(Math.floor(limit / 3));
+
+    for (const item of feedItems) {
+      candidates.push({
+        documentId: item._id,
+        title: item.title || "Untitled",
+        summary: item.summary || "Article from external source",
+        snippet: item.summary?.substring(0, 200),
+        authorId: "external" as any, // External content
+        createdAt: item.createdAt || item._creationTime,
+        source: "trending",
+      });
     }
 
     return candidates;
@@ -611,5 +679,39 @@ export const saveRecommendations = internalMutation({
         generatedAt: Date.now(),
       });
     }
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST QUERIES (for debugging without auth)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Test query to verify candidate sourcing works (no auth required)
+ */
+export const testDocumentCandidates = query({
+  args: {},
+  handler: async (ctx) => {
+    const trending = await ctx.runQuery(
+      internal.domains.research.documentDiscovery.getTrendingDocuments,
+      { limit: 10 }
+    );
+
+    // Get a sample user for semantic search
+    const sampleUser = await ctx.db.query("users").first();
+    let semantic: DocumentCandidate[] = [];
+    if (sampleUser) {
+      semantic = await ctx.runQuery(
+        internal.domains.research.documentDiscovery.getCandidatesBySemanticSimilarity,
+        { userId: sampleUser._id, limit: 10 }
+      );
+    }
+
+    return {
+      trendingCount: trending.length,
+      trendingSample: trending[0],
+      semanticCount: semantic.length,
+      semanticSample: semantic[0],
+    };
   },
 });
