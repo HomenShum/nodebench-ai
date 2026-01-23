@@ -43,3 +43,28 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </ConvexAuthProvider>,
 );
+
+// Register service worker for caching and offline support
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  import('virtual:pwa-register').then(({ registerSW }) => {
+    registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        console.log('[PWA] New content available, will update on next visit');
+      },
+      onOfflineReady() {
+        console.log('[PWA] App ready to work offline');
+      },
+      onRegistered(registration) {
+        console.log('[PWA] Service Worker registered');
+        // Check for updates every hour
+        setInterval(() => {
+          registration?.update();
+        }, 60 * 60 * 1000);
+      },
+      onRegisterError(error) {
+        console.error('[PWA] Service Worker registration failed:', error);
+      },
+    });
+  });
+}

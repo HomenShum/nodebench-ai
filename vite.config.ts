@@ -1,13 +1,144 @@
-import { defineConfig, splitVendorChunkPlugin } from "vite";
+import { defineConfig, splitVendorChunkPlugin, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { visualizer } from "rollup-plugin-visualizer";
+import { imagetools } from "vite-imagetools";
+import { VitePWA } from "vite-plugin-pwa";
+import Critters from "critters";
 /// <reference types="vitest" />
+
+// Critical CSS plugin using Critters
+function criticalCSSPlugin(): Plugin {
+  const critters = new Critters({
+    path: 'dist',
+    publicPath: '/',
+    preload: 'swap',
+    noscriptFallback: true,
+    inlineFonts: true,
+    preloadFonts: true,
+    compress: true,
+    pruneSource: false,
+  });
+
+  return {
+    name: 'vite-plugin-critical-css',
+    apply: 'build',
+    enforce: 'post',
+    async transformIndexHtml(html) {
+      try {
+        const result = await critters.process(html);
+        return result;
+      } catch (error) {
+        console.warn('[Critical CSS] Failed to process:', error);
+        return html;
+      }
+    },
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     splitVendorChunkPlugin(),
+    // Service Worker + PWA for aggressive caching
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'NodeBench AI',
+        short_name: 'NodeBench',
+        description: 'AI-powered research and analytics platform',
+        theme_color: '#ffffff',
+        icons: [
+          {
+            src: '/favicon.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Cache Google Fonts
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          // Cache JS/CSS with stale-while-revalidate
+          {
+            urlPattern: /\.(?:js|css)$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'static-resources',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+          // Cache images
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+        ],
+      },
+    }),
+    // Image optimization - converts PNG/JPG to WebP with quality 80
+    imagetools({
+      defaultDirectives: (url) => {
+        // Only optimize images in public/assets
+        if (url.searchParams.has('url') && url.searchParams.get('url')?.includes('/assets/')) {
+          return new URLSearchParams({
+            format: 'webp',
+            quality: '80',
+          });
+        }
+        return new URLSearchParams();
+      },
+    }),
+    // Critical CSS inlining for faster FCP
+    mode === 'production' ? criticalCSSPlugin() : null,
+    // Bundle analyzer - run with: ANALYZE=true npm run build
+    process.env.ANALYZE === 'true' ? visualizer({
+      filename: './dist/stats.html',
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+    }) : null,
     // The code below enables dev tools like taking screenshots of your site
     // while it is being developed on chef.convex.dev.
     // Feel free to remove this code if you're no longer developing your app with Chef.
@@ -58,15 +189,42 @@ window.addEventListener('message', async (message) => {
     // The heaviest routes/editors are lazy-loaded; keep this warning slightly higher
     // so it flags meaningful regressions without noise.
     chunkSizeWarningLimit: 1800,
-    minify: "esbuild",
+    minify: "terser", // Switch to terser for better compression (~20-30% better than esbuild)
     target: "es2020",
     cssMinify: true,
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.logs in production
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug'], // Remove specific console methods
+        passes: 2, // Multiple compression passes for better results
+      },
+      mangle: {
+        safari10: true, // Safari 10 compatibility
+      },
+      format: {
+        comments: false, // Remove all comments
+      },
+    },
     rollupOptions: {
       output: {
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
+        // Manual chunk splitting for better caching
+        manualChunks: {
+          // React ecosystem
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // Convex
+          'convex-vendor': ['convex/react'],
+          // Chart library (lazy loaded but still chunked separately)
+          'charts': ['recharts'],
+          // UI utilities
+          'ui-vendor': ['clsx', 'class-variance-authority'],
+        },
       },
     },
+    // Enable source maps for production debugging (can disable for smaller bundles)
+    sourcemap: false, // Disable source maps to reduce bundle size
   },
 }));
