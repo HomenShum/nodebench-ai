@@ -2,6 +2,7 @@
 // Main container component for the new ChatGPT-like AI chat sidebar
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
@@ -125,6 +126,7 @@ export function FastAgentPanel({
   // ========== AUTH ==========
   const { isAuthenticated } = useConvexAuth();
   const convex = useConvex();
+  const navigate = useNavigate();
 
   // ========== ANONYMOUS SESSION (5 free messages/day for unauthenticated users) ==========
   const anonymousSession = useAnonymousSession();
@@ -1410,7 +1412,7 @@ export function FastAgentPanel({
                     {/* Signals */}
                     <button
                       type="button"
-                      onClick={() => { window.location.hash = '#signals'; setShowOverflowMenu(false); }}
+                      onClick={() => { navigate('/signals'); setShowOverflowMenu(false); }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-secondary)] text-left"
                     >
                       <Radio className="w-3.5 h-3.5" />

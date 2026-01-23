@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useId } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -227,6 +228,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
   useMediumPreview = false,
   className = "",
 }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const tooltipId = useId();
@@ -275,10 +277,10 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
 
   const handleExplore = (data: EntityHoverData) => {
     if (data.dossierId) {
-      window.location.href = `/documents/${data.dossierId}`;
+      navigate(`/documents/${data.dossierId}`);
     } else {
-      // Navigate to entity profile page using hash-based routing
-      window.location.hash = `entity/${encodeURIComponent(data.name)}`;
+      // Navigate to entity profile page
+      navigate(`/entity/${encodeURIComponent(data.name)}`);
     }
   };
 

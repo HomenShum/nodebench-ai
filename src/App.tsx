@@ -1,5 +1,6 @@
 import { Authenticated, Unauthenticated, useQuery, useMutation } from "convex/react";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 // SignInForm intentionally not used on the landing anymore.
 import { api } from "../convex/_generated/api";
 import { MainLayout } from "./components/MainLayout";
@@ -52,13 +53,8 @@ function GlobalFastAgentPanel() {
 }
 
 function App() {
+  const location = useLocation();
   const [showTutorial, setShowTutorial] = useState(false);
-  // Check if URL hash indicates a specific workspace view
-  const initialHash = typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '';
-  const hashIndicatesWorkspace = initialHash.startsWith('#agents') ||
-    initialHash.startsWith('#calendar') ||
-    initialHash.startsWith('#documents') ||
-    initialHash.startsWith('#roadmap');
   const [selectedDocumentId, setSelectedDocumentId] = useState<Id<"documents"> | null>(null);
 
   const user = useQuery(api.domains.auth.auth.loggedInUser);
@@ -66,28 +62,24 @@ function App() {
   const ensureSeedOnLogin = useMutation(api.domains.auth.onboarding.ensureSeedOnLogin);
   const didEnsureRef = useRef(false);
 
-  // Listen for hash changes to switch between ResearchHub and MainLayout
+  // Listen for location changes to switch between tutorial and main app
   useEffect(() => {
-    const handleHashChange = () => {
-      const h = window.location.hash.toLowerCase();
-      if (h.startsWith("#onboarding")) {
-        setShowTutorial(true);
-      } else if (
-        h.startsWith("#agents") ||
-        h.startsWith("#calendar") ||
-        h.startsWith("#documents") ||
-        h.startsWith("#roadmap")
-      ) {
-        setShowTutorial(false);
-      }
-    };
-    // Initialize if hash is already present on mount
-    if (window.location.hash.toLowerCase().startsWith("#onboarding")) {
+    const pathname = location.pathname.toLowerCase();
+    if (pathname.startsWith("/onboarding")) {
       setShowTutorial(true);
+    } else if (
+      pathname.startsWith("/agents") ||
+      pathname.startsWith("/calendar") ||
+      pathname.startsWith("/documents") ||
+      pathname.startsWith("/roadmap") ||
+      pathname.startsWith("/analytics") ||
+      pathname.startsWith("/research") ||
+      pathname.startsWith("/spreadsheets") ||
+      pathname === "/"
+    ) {
+      setShowTutorial(false);
     }
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
+  }, [location.pathname]);
 
 
   // Note: We no longer auto-show tutorial for new users

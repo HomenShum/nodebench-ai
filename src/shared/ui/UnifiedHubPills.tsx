@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 type Hub = "documents" | "calendar" | "agents" | "roadmap";
 
@@ -13,6 +14,8 @@ export function UnifiedHubPills({
   roadmapDisabled?: boolean;
   className?: string;
 }) {
+  const navigate = useNavigate();
+
   const container = [
     "inline-flex items-center gap-0.5 p-1 rounded-xl bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-color)]/50 shadow-sm",
     className ?? "",
@@ -33,7 +36,7 @@ export function UnifiedHubPills({
 
   const goDocs = () => {
     try {
-      window.location.hash = "#documents";
+      navigate("/documents");
       window.dispatchEvent(new CustomEvent("navigate:documents"));
     } catch {
       // Navigation failed
@@ -41,7 +44,7 @@ export function UnifiedHubPills({
   };
   const goCalendar = () => {
     try {
-      window.location.hash = "#calendar";
+      navigate("/calendar");
       window.dispatchEvent(new CustomEvent("navigate:calendar"));
     } catch {
       // Navigation failed
@@ -49,13 +52,13 @@ export function UnifiedHubPills({
   };
   const goAgents = () => {
     try {
-      window.location.hash = "#agents";
+      navigate("/agents");
       window.dispatchEvent(new CustomEvent("navigate:agents"));
     } catch {}
   };
   const goRoadmap = () => {
     try {
-      window.location.hash = "#roadmap";
+      navigate("/roadmap");
       window.dispatchEvent(new CustomEvent("navigate:roadmap"));
     } catch {}
   };

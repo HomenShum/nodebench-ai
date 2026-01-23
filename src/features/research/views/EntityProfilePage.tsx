@@ -13,6 +13,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import {
@@ -215,6 +216,8 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
   entityName,
   onBack,
 }) => {
+  const navigate = useNavigate();
+
   // Fetch adaptive profile (LLM-enriched with timeline, relationships, etc.)
   const adaptiveProfile = useQuery(
     api.domains.knowledge.adaptiveEntityQueries.getAdaptiveProfile,
@@ -265,12 +268,12 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
     if (onBack) {
       onBack();
     } else {
-      window.location.hash = "";
+      navigate("/");
     }
   };
 
   const handleViewDossier = (dossierId: string) => {
-    window.location.href = `/documents/${dossierId}`;
+    navigate(`/documents/${dossierId}`);
   };
 
   const isLoading =

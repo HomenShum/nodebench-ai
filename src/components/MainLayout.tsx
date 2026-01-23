@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, startTransition, Suspense, lazy } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useConvexAuth, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { toast } from "sonner";
@@ -122,6 +123,31 @@ const IndustryUpdatesPanel = lazy(() =>
     default: mod.IndustryUpdatesPanel,
   })),
 );
+const ForYouFeed = lazy(() =>
+  import("@/features/research/components/ForYouFeed").then((mod) => ({
+    default: mod.ForYouFeed,
+  })),
+);
+const DocumentRecommendations = lazy(() =>
+  import("@/features/documents/components/DocumentRecommendations").then((mod) => ({
+    default: mod.DocumentRecommendations,
+  })),
+);
+const AgentMarketplace = lazy(() =>
+  import("@/features/agents/components/AgentMarketplace").then((mod) => ({
+    default: mod.AgentMarketplace,
+  })),
+);
+const GitHubExplorer = lazy(() =>
+  import("@/features/research/components/GitHubExplorer").then((mod) => ({
+    default: mod.GitHubExplorer,
+  })),
+);
+const PRSuggestions = lazy(() =>
+  import("@/features/monitoring/components/PRSuggestions").then((mod) => ({
+    default: mod.PRSuggestions,
+  })),
+);
 
 const viewFallback = (
   <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
@@ -161,48 +187,58 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     | 'analytics-components'
     | 'analytics-recommendations'
     | 'cost-dashboard'
-    | 'industry-updates';
+    | 'industry-updates'
+    | 'for-you-feed'
+    | 'document-recommendations'
+    | 'agent-marketplace'
+    | 'github-explorer'
+    | 'pr-suggestions';
 
-  function parseHashRoute(rawHash: string): {
+  function parsePathname(rawPathname: string): {
     view: MainView;
     entityName: string | null;
     spreadsheetId: string | null;
     showResearchDossier: boolean;
     researchTab: "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
   } {
-    const hash = (rawHash || '').toLowerCase();
-    if (hash.startsWith('#agents')) return { view: 'agents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#calendar')) return { view: 'calendar', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#roadmap')) return { view: 'roadmap', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#timeline')) return { view: 'timeline', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#signals')) return { view: 'signals', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#spreadsheets')) {
-      const match = (rawHash || '').match(/^#spreadsheets[\/](.+)$/i);
+    const pathname = (rawPathname || '/').toLowerCase();
+    if (pathname.startsWith('/agents')) return { view: 'agents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/calendar')) return { view: 'calendar', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/roadmap')) return { view: 'roadmap', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/timeline')) return { view: 'timeline', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/signals')) return { view: 'signals', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/spreadsheets')) {
+      const match = (rawPathname || '').match(/^\/spreadsheets[\/](.+)$/i);
       const id = match ? decodeURIComponent(match[1]) : null;
       return { view: 'spreadsheets', entityName: null, spreadsheetId: id, showResearchDossier: false, researchTab: "overview" };
     }
-    if (hash.startsWith('#documents') || hash.startsWith('#docs')) return { view: 'documents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#showcase') || hash.startsWith('#demo')) return { view: 'showcase', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#footnotes') || hash.startsWith('#sources')) return { view: 'footnotes', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#benchmarks') || hash.startsWith('#eval')) return { view: 'benchmarks', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#funding') || hash.startsWith('#funding-brief')) return { view: 'funding', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith("#onboarding")) return { view: "research", entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#activity') || hash.startsWith('#public-activity')) return { view: 'activity', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#analytics/hitl')) return { view: 'analytics-hitl', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#analytics/components')) return { view: 'analytics-components', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#analytics/recommendations')) return { view: 'analytics-recommendations', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#cost') || hash.startsWith('#dashboard/cost')) return { view: 'cost-dashboard', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-    if (hash.startsWith('#industry') || hash.startsWith('#dashboard/industry')) return { view: 'industry-updates', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/documents') || pathname.startsWith('/docs')) return { view: 'documents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/showcase') || pathname.startsWith('/demo')) return { view: 'showcase', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/footnotes') || pathname.startsWith('/sources')) return { view: 'footnotes', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/benchmarks') || pathname.startsWith('/eval')) return { view: 'benchmarks', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/funding') || pathname.startsWith('/funding-brief')) return { view: 'funding', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith("/onboarding")) return { view: "research", entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/activity') || pathname.startsWith('/public-activity')) return { view: 'activity', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/analytics/hitl')) return { view: 'analytics-hitl', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/analytics/components')) return { view: 'analytics-components', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/analytics/recommendations')) return { view: 'analytics-recommendations', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/cost') || pathname.startsWith('/dashboard/cost')) return { view: 'cost-dashboard', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/industry') || pathname.startsWith('/dashboard/industry')) return { view: 'industry-updates', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/for-you') || pathname.startsWith('/feed')) return { view: 'for-you-feed', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/recommendations') || pathname.startsWith('/discover')) return { view: 'document-recommendations', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/marketplace') || pathname.startsWith('/agent-marketplace')) return { view: 'agent-marketplace', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/github') || pathname.startsWith('/github-explorer')) return { view: 'github-explorer', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    if (pathname.startsWith('/pr-suggestions') || pathname.startsWith('/prs')) return { view: 'pr-suggestions', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
 
-    if (hash.startsWith('#entity/') || hash.startsWith('#entity%2f')) {
-      const match = (rawHash || '').match(/^#entity[\/](.+)$/i);
+    if (pathname.startsWith('/entity/') || pathname.startsWith('/entity%2f')) {
+      const match = (rawPathname || '').match(/^\/entity[\/](.+)$/i);
       const name = match ? decodeURIComponent(match[1]) : null;
       return { view: 'entity', entityName: name, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
     }
 
-    if (hash.startsWith('#research') || hash.startsWith('#hub')) {
-      // Optional: `#research/briefing` deep link into a specific hub tab.
-      const tabMatch = hash.match(/^#(?:research|hub)\/(overview|signals|briefing|deals|changes|changelog)/);
+    if (pathname.startsWith('/research') || pathname.startsWith('/hub')) {
+      // Optional: `/research/briefing` deep link into a specific hub tab.
+      const tabMatch = pathname.match(/^\/(?:research|hub)\/(overview|signals|briefing|deals|changes|changelog)/);
       const tab = (tabMatch?.[1] as any) ?? "overview";
       return { view: 'research', entityName: null, spreadsheetId: null, showResearchDossier: true, researchTab: tab };
     }
@@ -210,11 +246,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     return { view: 'research', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
   }
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const initialRoute = (() => {
     if (typeof window === 'undefined') {
       return { view: 'research' as const, entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" as const };
     }
-    return parseHashRoute(window.location.hash || '');
+    return parsePathname(location.pathname || '/');
   })();
 
   const [currentView, setCurrentView] = useState<MainView>(initialRoute.view);
@@ -699,25 +738,19 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     };
   }, []);
 
-  // Sync main view with URL hash for primary hubs
+  // Sync main view with URL pathname for primary hubs
   useEffect(() => {
-    const applyFromHash = () => {
-      try {
-        const next = parseHashRoute(window.location.hash || '');
-        setEntityName(next.entityName);
-        setSelectedSpreadsheetId(next.spreadsheetId ? (next.spreadsheetId as any) : null);
-        setResearchHubInitialTab(next.researchTab);
-        setShowResearchDossier(next.showResearchDossier);
-        setCurrentView(next.view);
-      } catch {
-        // ignore
-      }
-    };
-    // initialize on mount
-    applyFromHash();
-    window.addEventListener('hashchange', applyFromHash);
-    return () => window.removeEventListener('hashchange', applyFromHash);
-  }, []);
+    try {
+      const next = parsePathname(location.pathname || '/');
+      setEntityName(next.entityName);
+      setSelectedSpreadsheetId(next.spreadsheetId ? (next.spreadsheetId as any) : null);
+      setResearchHubInitialTab(next.researchTab);
+      setShowResearchDossier(next.showResearchDossier);
+      setCurrentView(next.view);
+    } catch {
+      // ignore
+    }
+  }, [location.pathname]);
 
 
   return (
@@ -804,6 +837,16 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     ? 'Public Documents'
                     : currentView === 'spreadsheets'
                       ? 'Spreadsheets'
+                      : currentView === 'for-you-feed'
+                        ? 'For You'
+                        : currentView === 'document-recommendations'
+                          ? 'Document Recommendations'
+                          : currentView === 'agent-marketplace'
+                            ? 'Agent Marketplace'
+                            : currentView === 'github-explorer'
+                              ? 'GitHub Explorer'
+                              : currentView === 'pr-suggestions'
+                                ? 'PR Suggestions'
                     : currentView === 'calendar'
                       ? 'Calendar'
                       : currentView === 'roadmap'
@@ -989,14 +1032,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                       sheetId={selectedSpreadsheetId}
                       onBack={() => {
                         setSelectedSpreadsheetId(null);
-                        window.location.hash = "#spreadsheets";
+                        navigate("/spreadsheets");
                       }}
                     />
                   ) : (
                     <SpreadsheetsHub
                       onOpenSheet={(id: Id<"spreadsheets">) => {
                         setSelectedSpreadsheetId(id);
-                        window.location.hash = `#spreadsheets/${String(id)}`;
+                        navigate(`/spreadsheets/${String(id)}`);
                       }}
                     />
                   )}
@@ -1058,13 +1101,43 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     <IndustryUpdatesPanel />
                   </Suspense>
                 </div>
+              ) : currentView === 'for-you-feed' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <Suspense fallback={viewFallback}>
+                    <ForYouFeed />
+                  </Suspense>
+                </div>
+              ) : currentView === 'document-recommendations' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <Suspense fallback={viewFallback}>
+                    <DocumentRecommendations />
+                  </Suspense>
+                </div>
+              ) : currentView === 'agent-marketplace' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <Suspense fallback={viewFallback}>
+                    <AgentMarketplace />
+                  </Suspense>
+                </div>
+              ) : currentView === 'github-explorer' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <Suspense fallback={viewFallback}>
+                    <GitHubExplorer />
+                  </Suspense>
+                </div>
+              ) : currentView === 'pr-suggestions' ? (
+                <div className="h-full overflow-auto bg-slate-50">
+                  <Suspense fallback={viewFallback}>
+                    <PRSuggestions />
+                  </Suspense>
+                </div>
               ) : currentView === 'entity' && entityName ? (
                 <EntityProfilePage
                   entityName={entityName}
                   onBack={() => {
                     setEntityName(null);
                     setCurrentView('research');
-                    window.location.hash = '';
+                    navigate('/');
                   }}
                 />
               ) : (

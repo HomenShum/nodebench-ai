@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useAction } from "convex/react";
 
 /*
@@ -216,6 +217,7 @@ export function DocumentsHomeHub({
 
   onClearTaskSelection,
 }: DocumentsHomeHubProps) {
+  const navigate = useNavigate();
   const documents = useQuery(api.domains.documents.documents.getSidebarWithPreviews);
 
   const loggedInUser = useQuery(api.domains.auth.auth.loggedInUser);
@@ -6943,7 +6945,7 @@ export function DocumentsHomeHub({
                         type="button"
                         className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                         onClick={() => {
-                          window.location.hash = "#spreadsheets";
+                          navigate("/spreadsheets");
                         }}
                       >
                         View all
@@ -6956,7 +6958,7 @@ export function DocumentsHomeHub({
                           type="button"
                           className="text-left rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] p-3 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                           onClick={() => {
-                            window.location.hash = `#spreadsheets/${String(s._id)}`;
+                            navigate(`/spreadsheets/${String(s._id)}`);
                           }}
                         >
                           <div className="text-sm font-medium text-[var(--text-primary)] truncate">
