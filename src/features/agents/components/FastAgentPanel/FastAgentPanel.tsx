@@ -21,6 +21,7 @@ import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
 import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
+import { MessageHandlersProvider } from './MessageHandlersContext';
 import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
 import { DisclosureTrace, type DisclosureEvent } from './FastAgentPanel.DisclosureTrace';
 import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
@@ -1140,6 +1141,17 @@ export function FastAgentPanel({
     }
   }, []);
 
+  // Memoized message handlers for context provider (prevents callback prop drilling)
+  const messageHandlers = useMemo(() => ({
+    onCompanySelect: handleCompanySelect,
+    onPersonSelect: handlePersonSelect,
+    onEventSelect: handleEventSelect,
+    onNewsSelect: handleNewsSelect,
+    onDocumentSelect: handleDocumentSelect,
+    onRegenerateMessage: handleRegenerateMessage,
+    onDeleteMessage: handleDeleteMessage,
+  }), [handleCompanySelect, handlePersonSelect, handleEventSelect, handleNewsSelect, handleDocumentSelect, handleRegenerateMessage, handleDeleteMessage]);
+
   // ========== MEMOIZED VALUES (must be before early return) ==========
 
   // Prepare messages for rendering - moved before early return to satisfy hooks rules
@@ -1774,19 +1786,16 @@ export function FastAgentPanel({
                     </div>
                   )}
 
-                  {messagesToRender?.map((message: any) => (
-                    <FastAgentUIMessageBubble
-                      key={message._id || message.id}
-                      message={message}
-                      onRegenerateMessage={() => handleRegenerateMessage(message.key)}
-                      onDeleteMessage={() => handleDeleteMessage(message._id)}
-                      onCompanySelect={handleCompanySelect}
-                      onPersonSelect={handlePersonSelect}
-                      onEventSelect={handleEventSelect}
-                      onNewsSelect={handleNewsSelect}
-                      onDocumentSelect={handleDocumentSelect}
-                    />
-                  ))}
+                  <MessageHandlersProvider handlers={messageHandlers}>
+                    {messagesToRender?.map((message: any) => (
+                      <FastAgentUIMessageBubble
+                        key={message._id || message.id}
+                        message={message}
+                        onRegenerateMessage={() => handleRegenerateMessage(message.key)}
+                        onDeleteMessage={() => handleDeleteMessage(message._id)}
+                      />
+                    ))}
+                  </MessageHandlersProvider>
 
                   {/* Queued Indicator */}
                   {(streamingThread as any)?.runStatus === 'queued' && (

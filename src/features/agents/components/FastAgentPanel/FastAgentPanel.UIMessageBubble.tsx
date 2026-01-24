@@ -49,10 +49,12 @@ import type { CitationType } from '@/features/research/types/citationSchema';
 import type { EntityType } from '@/features/research/types/entitySchema';
 import { makeWebSourceCitationId } from '../../../../../shared/citations/webSourceCitations';
 import { formatBriefDateTime } from '@/lib/briefDate';
+import { useMessageHandlers } from './MessageHandlersContext';
 
 interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
   onMermaidRetry?: (error: string, code: string) => void;
+  // Legacy prop-based callbacks (optional - context preferred)
   onRegenerateMessage?: () => void;
   onDeleteMessage?: () => void;
   onCompanySelect?: (company: CompanyOption) => void;
@@ -1107,23 +1109,44 @@ export function FastAgentUIMessageBubble({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Get handlers from context (stable references) with prop fallback
+  const contextHandlers = useMessageHandlers();
+  const effectiveOnCompanySelect = onCompanySelect ?? contextHandlers.onCompanySelect;
+  const effectiveOnPersonSelect = onPersonSelect ?? contextHandlers.onPersonSelect;
+  const effectiveOnEventSelect = onEventSelect ?? contextHandlers.onEventSelect;
+  const effectiveOnNewsSelect = onNewsSelect ?? contextHandlers.onNewsSelect;
+  const effectiveOnDocumentSelect = onDocumentSelect ?? contextHandlers.onDocumentSelect;
+
   // Get agent role configuration
   const roleConfig = agentRole ? agentRoleConfig[agentRole] : null;
 
+  // Extract message identifiers for context-based handlers
+  const messageKey = (message as any).key || (message as any)._id;
+  const messageId = (message as any)._id || (message as any).id;
+
   const handleRegenerate = () => {
-    if (onRegenerateMessage && !isRegenerating) {
-      setIsRegenerating(true);
+    if (isRegenerating) return;
+    setIsRegenerating(true);
+
+    // Try prop callback first, then context
+    if (onRegenerateMessage) {
       onRegenerateMessage();
-      // Reset after a delay
-      setTimeout(() => setIsRegenerating(false), 2000);
+    } else if (messageKey && contextHandlers.onRegenerateMessage) {
+      contextHandlers.onRegenerateMessage(messageKey);
     }
+
+    // Reset after a delay
+    setTimeout(() => setIsRegenerating(false), 2000);
   };
 
   const handleDelete = () => {
+    // Try prop callback first, then context
     if (onDeleteMessage) {
       onDeleteMessage();
-      setShowDeleteConfirm(false);
+    } else if (messageId && contextHandlers.onDeleteMessage) {
+      contextHandlers.onDeleteMessage(messageId);
     }
+    setShowDeleteConfirm(false);
   };
 
   const handleCopy = async () => {
@@ -1808,10 +1831,10 @@ export function FastAgentUIMessageBubble({
                   key={idx}
                   part={part}
                   stepNumber={idx + 1}
-                  onCompanySelect={onCompanySelect}
-                  onPersonSelect={onPersonSelect}
-                  onEventSelect={onEventSelect}
-                  onNewsSelect={onNewsSelect}
+                  onCompanySelect={effectiveOnCompanySelect}
+                  onPersonSelect={effectiveOnPersonSelect}
+                  onEventSelect={effectiveOnEventSelect}
+                  onNewsSelect={effectiveOnNewsSelect}
                 />
               );
             })}
@@ -1833,7 +1856,7 @@ export function FastAgentUIMessageBubble({
           <DocumentActionGrid
             documents={extractedDocuments}
             title="Documents"
-            onDocumentSelect={onDocumentSelect}
+            onDocumentSelect={effectiveOnDocumentSelect}
           />
         )}
 
