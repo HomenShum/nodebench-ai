@@ -22,6 +22,7 @@ import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import { MessageHandlersProvider } from './MessageHandlersContext';
+import { VirtualizedMessageList, useMessageVirtualization } from './VirtualizedMessageList';
 import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
 import { DisclosureTrace, type DisclosureEvent } from './FastAgentPanel.DisclosureTrace';
 import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
@@ -280,6 +281,7 @@ export function FastAgentPanel({
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Track auto-created documents to avoid duplicates (by agentThreadId) and processed message IDs
   const autoDocCreatedThreadIdsRef = useRef<Set<string>>(new Set());
@@ -1170,6 +1172,9 @@ export function FastAgentPanel({
     }));
   }, [chatMode, streamingMessages, agentMessages]);
 
+  // Enable virtualization for long conversations (50+ messages)
+  const { shouldVirtualize } = useMessageVirtualization(messagesToRender?.length ?? 0, 50);
+
   // Artifact extraction helpers
   const assistantTexts = useMemo(() => {
     if (!messagesToRender) return [] as string[];
@@ -1648,7 +1653,7 @@ export function FastAgentPanel({
                 )}
 
                 {/* Main scrollable chat area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
                   {/* Parallel Agent Lanes (Live Activity) */}
                   {chatMode === 'agent-streaming' && streamingThread?.agentThreadId && (
                     <div className="mb-4">
@@ -1787,14 +1792,21 @@ export function FastAgentPanel({
                   )}
 
                   <MessageHandlersProvider handlers={messageHandlers}>
-                    {messagesToRender?.map((message: any) => (
-                      <FastAgentUIMessageBubble
-                        key={message._id || message.id}
-                        message={message}
-                        onRegenerateMessage={() => handleRegenerateMessage(message.key)}
-                        onDeleteMessage={() => handleDeleteMessage(message._id)}
-                      />
-                    ))}
+                    <VirtualizedMessageList
+                      messages={messagesToRender ?? []}
+                      getMessageKey={(msg: any) => msg._id || msg.id || `msg-${msg.key}`}
+                      renderMessage={(message: any) => (
+                        <FastAgentUIMessageBubble
+                          message={message}
+                          onRegenerateMessage={() => handleRegenerateMessage(message.key)}
+                          onDeleteMessage={() => handleDeleteMessage(message._id)}
+                        />
+                      )}
+                      containerRef={scrollContainerRef}
+                      enabled={shouldVirtualize}
+                      bufferSize={5}
+                      estimatedItemHeight={150}
+                    />
                   </MessageHandlersProvider>
 
                   {/* Queued Indicator */}
