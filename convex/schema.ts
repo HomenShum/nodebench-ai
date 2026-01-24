@@ -10684,6 +10684,11 @@ export default defineSchema({
   forYouFeedSnapshots: defineTable({
     userId: v.id("users"),
     items: v.array(v.any()),                       // Ranked feed items
+    dateGroups: v.optional(v.array(v.object({     // Items grouped by date for UI
+      dateString: v.string(),                      // YYYY-MM-DD
+      displayLabel: v.string(),                    // "Today", "Yesterday", "Jan 20"
+      items: v.array(v.any()),                     // Items for this date
+    }))),
     mixRatio: v.object({
       inNetwork: v.number(),                       // 50% from people you follow
       outOfNetwork: v.number(),                    // 40% discovery

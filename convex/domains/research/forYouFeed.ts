@@ -35,6 +35,7 @@ export interface FeedCandidate {
   snippet: string;
   metadata: Record<string, any>;
   timestamp: number;
+  dateString?: string; // YYYY-MM-DD for grouping
 }
 
 export interface RankedCandidate extends FeedCandidate {
@@ -48,8 +49,15 @@ export interface RankedCandidate extends FeedCandidate {
   };
 }
 
+export interface DateGroup {
+  dateString: string;
+  displayLabel: string; // "Today", "Yesterday", "Jan 20", etc.
+  items: RankedCandidate[];
+}
+
 export interface ForYouFeedResult {
   items: RankedCandidate[];
+  dateGroups: DateGroup[]; // Items grouped by date for UI
   totalCandidates: number;
   mixRatio: {
     inNetwork: number;
@@ -57,6 +65,52 @@ export interface ForYouFeedResult {
     trending: number;
   };
   generatedAt: number;
+}
+
+/**
+ * Helper to format date for display
+ */
+function formatDateLabel(dateString: string): string {
+  const date = new Date(dateString + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const dateOnly = new Date(date);
+  dateOnly.setHours(0, 0, 0, 0);
+
+  if (dateOnly.getTime() === today.getTime()) {
+    return "Today";
+  } else if (dateOnly.getTime() === yesterday.getTime()) {
+    return "Yesterday";
+  } else {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+}
+
+/**
+ * Group items by date
+ */
+function groupByDate(items: RankedCandidate[]): DateGroup[] {
+  const groups = new Map<string, RankedCandidate[]>();
+
+  for (const item of items) {
+    const dateStr = item.dateString || getDateString(item.timestamp);
+    if (!groups.has(dateStr)) {
+      groups.set(dateStr, []);
+    }
+    groups.get(dateStr)!.push(item);
+  }
+
+  // Sort dates descending (most recent first)
+  const sortedDates = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
+
+  return sortedDates.map(dateStr => ({
+    dateString: dateStr,
+    displayLabel: formatDateLabel(dateStr),
+    items: groups.get(dateStr)!,
+  }));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -127,12 +181,20 @@ export const getInNetworkCandidates = internalQuery({
           createdAt: doc._creationTime,
         },
         timestamp: doc._creationTime,
+        dateString: getDateString(doc._creationTime),
       });
     }
 
     return candidates;
   },
 });
+
+/**
+ * Helper to get date string from timestamp
+ */
+function getDateString(timestamp: number): string {
+  return new Date(timestamp).toISOString().split("T")[0];
+}
 
 /**
  * Get out-of-network candidates (discovery from the wider platform)
@@ -143,14 +205,14 @@ export const getOutOfNetworkCandidates = internalQuery({
     limit: v.number(),
   },
   handler: async (ctx, { userId, limit }): Promise<FeedCandidate[]> => {
-    const candidates: FeedCandidate[]= [];
+    const candidates: FeedCandidate[] = [];
 
     // Get recent industry updates
     const updates = await ctx.db
       .query("industryUpdates")
       .withIndex("by_scanned_at")
       .order("desc")
-      .take(Math.floor(limit / 2));
+      .take(Math.floor(limit / 4));
 
     for (const update of updates) {
       candidates.push({
@@ -165,17 +227,19 @@ export const getOutOfNetworkCandidates = internalQuery({
           url: update.url,
         },
         timestamp: update.scannedAt,
+        dateString: getDateString(update.scannedAt),
       });
     }
 
-    // ALSO get feed items from external sources
+    // Get feed items from external sources
     const feedItems = await ctx.db
       .query("feedItems")
       .withIndex("by_creation_time")
       .order("desc")
-      .take(Math.floor(limit / 3));
+      .take(Math.floor(limit / 4));
 
     for (const item of feedItems) {
+      const ts = item.createdAt || item._creationTime;
       candidates.push({
         itemId: item._id,
         itemType: "feed_item",
@@ -187,23 +251,17 @@ export const getOutOfNetworkCandidates = internalQuery({
           url: item.url,
           score: item.score,
         },
-        timestamp: item.createdAt || item._creationTime,
+        timestamp: ts,
+        dateString: getDateString(ts),
       });
     }
 
-    // NEW: Include landing page signals (daily brief published content)
-    const today = new Date().toISOString().split("T")[0];
+    // Include landing page signals (daily brief published content)
     const landingSignals = await ctx.db
       .query("landingPageLog")
       .withIndex("by_createdAt")
       .order("desc")
-      .filter((q) =>
-        q.or(
-          q.eq(q.field("kind"), "signal"),
-          q.eq(q.field("kind"), "brief")
-        )
-      )
-      .take(Math.floor(limit / 3));
+      .take(Math.floor(limit / 4));
 
     for (const signal of landingSignals) {
       candidates.push({
@@ -217,8 +275,38 @@ export const getOutOfNetworkCandidates = internalQuery({
           source: signal.source || "Daily Brief",
           url: signal.url,
           tags: signal.tags,
+          day: signal.day,
         },
         timestamp: signal.createdAt,
+        dateString: signal.day || getDateString(signal.createdAt),
+      });
+    }
+
+    // NEW: Include LinkedIn funding posts
+    const linkedinPosts = await ctx.db
+      .query("linkedinFundingPosts")
+      .withIndex("by_postedAt")
+      .order("desc")
+      .take(Math.floor(limit / 4));
+
+    for (const post of linkedinPosts) {
+      candidates.push({
+        itemId: post._id,
+        itemType: "update",
+        source: "out_of_network",
+        title: `${post.companyName} raised ${post.amountRaw} (${post.roundType})`,
+        snippet: post.contentSummary?.substring(0, 200) || `Funding announcement: ${post.companyName}`,
+        metadata: {
+          kind: "linkedin_funding",
+          source: "LinkedIn",
+          url: post.postUrl,
+          sector: post.sector,
+          roundType: post.roundType,
+          amount: post.amountRaw,
+          companyName: post.companyName,
+        },
+        timestamp: post.postedAt,
+        dateString: getDateString(post.postedAt),
       });
     }
 
@@ -242,7 +330,7 @@ export const getTrendingCandidates = internalQuery({
       .withIndex("by_relevance")
       .order("desc")
       .filter((q) => q.gte(q.field("relevance"), 80))
-      .take(Math.floor(limit / 2));
+      .take(Math.floor(limit / 4));
 
     for (const item of trending) {
       candidates.push({
@@ -257,17 +345,19 @@ export const getTrendingCandidates = internalQuery({
           url: item.url,
         },
         timestamp: item.scannedAt,
+        dateString: getDateString(item.scannedAt),
       });
     }
 
-    // ALSO get recent high-scoring feed items (TechCrunch, etc.)
+    // Get recent high-scoring feed items (TechCrunch, etc.)
     const feedItems = await ctx.db
       .query("feedItems")
       .withIndex("by_creation_time")
       .order("desc")
-      .take(Math.floor(limit / 3));
+      .take(Math.floor(limit / 4));
 
     for (const item of feedItems) {
+      const ts = item.createdAt || item._creationTime;
       candidates.push({
         itemId: item._id,
         itemType: "feed_item",
@@ -279,40 +369,70 @@ export const getTrendingCandidates = internalQuery({
           url: item.url,
           score: item.score,
         },
-        timestamp: item.createdAt || item._creationTime,
+        timestamp: ts,
+        dateString: getDateString(ts),
       });
     }
 
-    // NEW: Include daily brief memory features (curated AI-synthesized content)
-    const latestMemory = await ctx.db
+    // Include daily brief memories (last 7 days for historical context)
+    const dailyBriefMemories = await ctx.db
       .query("dailyBriefMemories")
       .order("desc")
-      .first();
+      .take(7);
 
-    if (latestMemory && latestMemory.features) {
-      for (const feature of latestMemory.features.slice(0, Math.floor(limit / 4))) {
-        // Only include passing or high-priority features
-        if (feature.status === "passing" || (feature.priority && feature.priority >= 7)) {
-          candidates.push({
-            itemId: `brief-${latestMemory._id}-${feature.id}`,
-            itemType: "update",
-            source: "trending",
-            title: feature.name,
-            snippet: feature.testCriteria?.substring(0, 200) || feature.notes || "",
-            metadata: {
-              kind: "daily_brief",
-              type: feature.type,
-              status: feature.status,
-              priority: feature.priority,
-              dateString: latestMemory.dateString,
-            },
-            timestamp: feature.updatedAt || latestMemory.generatedAt,
-          });
+    for (const memory of dailyBriefMemories) {
+      if (memory.features) {
+        for (const feature of memory.features.slice(0, 3)) {
+          // Only include passing or high-priority features
+          if (feature.status === "passing" || (feature.priority && feature.priority >= 7)) {
+            candidates.push({
+              itemId: `brief-${memory._id}-${feature.id}`,
+              itemType: "update",
+              source: "trending",
+              title: feature.name,
+              snippet: feature.testCriteria?.substring(0, 200) || feature.notes || "",
+              metadata: {
+                kind: "daily_brief",
+                type: feature.type,
+                status: feature.status,
+                priority: feature.priority,
+                goal: memory.goal,
+              },
+              timestamp: feature.updatedAt || memory.generatedAt,
+              dateString: memory.dateString,
+            });
+          }
         }
       }
     }
 
-    // NEW: Boost items with high engagement (feedback loop)
+    // Include daily brief snapshots (dashboard summaries)
+    const snapshots = await ctx.db
+      .query("dailyBriefSnapshots")
+      .withIndex("by_generated_at")
+      .order("desc")
+      .take(7);
+
+    for (const snapshot of snapshots) {
+      if (snapshot.sourceSummary?.topTrending) {
+        candidates.push({
+          itemId: `snapshot-${snapshot._id}`,
+          itemType: "update",
+          source: "trending",
+          title: `Daily Brief: ${snapshot.dateString}`,
+          snippet: `Top trends: ${snapshot.sourceSummary.topTrending.slice(0, 3).join(", ")}`,
+          metadata: {
+            kind: "daily_snapshot",
+            totalItems: snapshot.sourceSummary.totalItems,
+            bySource: snapshot.sourceSummary.bySource,
+          },
+          timestamp: snapshot.generatedAt,
+          dateString: snapshot.dateString,
+        });
+      }
+    }
+
+    // Boost items with high engagement (feedback loop)
     const recentEngagements = await ctx.db
       .query("feedEngagements")
       .order("desc")
@@ -613,15 +733,20 @@ export const generateForYouFeed = internalAction({
       trending: sourceCount.trending / total,
     };
 
+    // Group items by date
+    const dateGroups = groupByDate(mixed);
+
     // Store feed for caching
     await ctx.runMutation(internal.domains.research.forYouFeed.saveFeedSnapshot, {
       userId,
       items: mixed,
+      dateGroups,
       mixRatio,
     });
 
     return {
       items: mixed,
+      dateGroups,
       totalCandidates: candidates.length,
       mixRatio,
       generatedAt: Date.now(),
@@ -645,6 +770,7 @@ export const getForYouFeed = query({
     if (!identity) {
       return {
         items: [],
+        dateGroups: [],
         totalCandidates: 0,
         mixRatio: { inNetwork: 0, outOfNetwork: 0, trending: 0 },
         generatedAt: Date.now(),
@@ -661,6 +787,7 @@ export const getForYouFeed = query({
     if (!user) {
       return {
         items: [],
+        dateGroups: [],
         totalCandidates: 0,
         mixRatio: { inNetwork: 0, outOfNetwork: 0, trending: 0 },
         generatedAt: Date.now(),
@@ -687,8 +814,13 @@ export const getForYouFeed = query({
     }
 
     // Return cached feed (or empty if no cache yet)
+    // If no dateGroups cached, compute them from items
+    const items = cached?.items || [];
+    const dateGroups = cached?.dateGroups || groupByDate(items as RankedCandidate[]);
+
     return {
-      items: cached?.items || [],
+      items,
+      dateGroups,
       totalCandidates: cached?.totalCandidates || 0,
       mixRatio: cached?.mixRatio || { inNetwork: 0, outOfNetwork: 0, trending: 0 },
       generatedAt: cached?.generatedAt || now,
@@ -704,7 +836,7 @@ export const getPublicForYouFeed = query({
   args: {
     limit: v.optional(v.number()),
   },
-  handler: async (ctx, { limit = 20 }) => {
+  handler: async (ctx, { limit = 50 }) => {
     // Get trending candidates directly (no user context needed)
     const trending = await ctx.runQuery(
       internal.domains.research.forYouFeed.getTrendingCandidates,
@@ -739,6 +871,17 @@ export const getPublicForYouFeed = query({
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, limit);
 
+    // Add default ranking properties for UI compatibility
+    const withDefaults = sorted.map(item => ({
+      ...item,
+      phoenixScore: 50,
+      relevanceReason: "Public feed item",
+      engagementPrediction: { view: 0.5, click: 0.3, save: 0.1, share: 0.05 },
+    })) as RankedCandidate[];
+
+    // Group by date
+    const dateGroups = groupByDate(withDefaults);
+
     // Calculate mix ratio
     const sourceCount = {
       in_network: 0,
@@ -754,7 +897,8 @@ export const getPublicForYouFeed = query({
     };
 
     return {
-      items: sorted,
+      items: withDefaults,
+      dateGroups,
       totalCandidates: combined.length,
       mixRatio,
       generatedAt: Date.now(),
@@ -774,16 +918,18 @@ export const saveFeedSnapshot = internalMutation({
   args: {
     userId: v.id("users"),
     items: v.array(v.any()),
+    dateGroups: v.array(v.any()),
     mixRatio: v.object({
       inNetwork: v.number(),
       outOfNetwork: v.number(),
       trending: v.number(),
     }),
   },
-  handler: async (ctx, { userId, items, mixRatio }) => {
+  handler: async (ctx, { userId, items, dateGroups, mixRatio }) => {
     await ctx.db.insert("forYouFeedSnapshots", {
       userId,
       items,
+      dateGroups,
       mixRatio,
       totalCandidates: items.length,
       generatedAt: Date.now(),

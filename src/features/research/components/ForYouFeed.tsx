@@ -1,9 +1,9 @@
 /**
  * For You Feed Component
- * Pinterest-style masonry board design
+ * Pinterest-style masonry board with date grouping for performance
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import {
@@ -12,21 +12,56 @@ import {
   ExternalLink,
   Globe,
   Heart,
-  MoreHorizontal,
   Sparkles,
   Zap,
   Clock,
-  ArrowUpRight,
   TrendingUp,
+  Linkedin,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
+// Virtualization: Only render items in viewport + buffer
+const ITEMS_PER_PAGE = 20;
+const SCROLL_BUFFER = 5;
+
 export function ForYouFeed() {
-  const authFeed = useQuery(api.domains.research.forYouFeed.getForYouFeed, { limit: 20 });
-  const publicFeed = useQuery(api.domains.research.forYouFeed.getPublicForYouFeed, { limit: 20 });
+  const authFeed = useQuery(api.domains.research.forYouFeed.getForYouFeed, { limit: 50 });
+  const publicFeed = useQuery(api.domains.research.forYouFeed.getPublicForYouFeed, { limit: 50 });
   const recordEngagement = useMutation(api.domains.research.forYouFeed.recordEngagement);
+
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const isPublicMode = !authFeed?.items?.length && publicFeed?.items?.length;
   const displayFeed = authFeed?.items?.length ? authFeed : publicFeed;
+
+  // Use dateGroups from feed, or create from items if not available
+  const dateGroups = useMemo(() => {
+    if (displayFeed?.dateGroups?.length) {
+      return displayFeed.dateGroups;
+    }
+    // Fallback: group items by date
+    if (!displayFeed?.items?.length) return [];
+
+    const groups = new Map<string, any[]>();
+    for (const item of displayFeed.items) {
+      const dateStr = item.dateString || new Date(item.timestamp).toISOString().split("T")[0];
+      if (!groups.has(dateStr)) {
+        groups.set(dateStr, []);
+      }
+      groups.get(dateStr)!.push(item);
+    }
+
+    const sortedDates = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
+    return sortedDates.map(dateStr => ({
+      dateString: dateStr,
+      displayLabel: formatDateLabel(dateStr),
+      items: groups.get(dateStr)!,
+    }));
+  }, [displayFeed]);
 
   const handleEngagement = async (itemId: string, action: "view" | "click" | "save" | "share") => {
     try {
@@ -34,6 +69,34 @@ export function ForYouFeed() {
     } catch (error) {
       console.debug("Engagement tracking requires authentication");
     }
+  };
+
+  // Infinite scroll handler
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    if (scrollHeight - scrollTop - clientHeight < 500) {
+      setVisibleCount(prev => Math.min(prev + ITEMS_PER_PAGE, displayFeed?.items?.length || 0));
+    }
+  }, [displayFeed?.items?.length]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  const toggleDateCollapse = (dateString: string) => {
+    setCollapsedDates(prev => {
+      const next = new Set(prev);
+      if (next.has(dateString)) {
+        next.delete(dateString);
+      } else {
+        next.add(dateString);
+      }
+      return next;
+    });
   };
 
   if (!displayFeed) {
@@ -62,7 +125,7 @@ export function ForYouFeed() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div ref={containerRef} className="min-h-screen bg-gray-50 overflow-auto">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -81,41 +144,122 @@ export function ForYouFeed() {
                 </h1>
                 <p className="text-xs text-gray-500">
                   {isPublicMode
-                    ? "Trending ideas • Sign in to save"
+                    ? `${dateGroups.length} days of content • Sign in to personalize`
                     : `${Math.round(displayFeed.mixRatio.outOfNetwork * 100)}% new discoveries`}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <Clock className="w-3.5 h-3.5" />
-              <span>{new Date(displayFeed.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>{dateGroups.length} days</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{new Date(displayFeed.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Pinterest-style Masonry Grid */}
+      {/* Feed with Date Sections */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
-          {displayFeed.items.map((item: any) => (
-            <PinCard
-              key={item.itemId}
-              item={item}
-              onEngagement={handleEngagement}
-            />
-          ))}
-        </div>
+        {dateGroups.map((group) => {
+          const isCollapsed = collapsedDates.has(group.dateString);
+
+          return (
+            <div key={group.dateString} className="mb-8">
+              {/* Date Header */}
+              <button
+                type="button"
+                onClick={() => toggleDateCollapse(group.dateString)}
+                className="w-full flex items-center justify-between px-4 py-3 mb-4 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors shadow-sm group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-orange-100 rounded-full flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div className="text-left">
+                    <h2 className="text-base font-bold text-gray-900">{group.displayLabel}</h2>
+                    <p className="text-xs text-gray-500">{group.items.length} items • {group.dateString}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Quick stats */}
+                  <div className="hidden sm:flex items-center gap-3 mr-4">
+                    {countByKind(group.items, 'linkedin_funding') > 0 && (
+                      <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                        <Linkedin className="w-3 h-3" />
+                        {countByKind(group.items, 'linkedin_funding')}
+                      </span>
+                    )}
+                    {countByKind(group.items, 'daily_brief') > 0 && (
+                      <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                        <Sparkles className="w-3 h-3" />
+                        {countByKind(group.items, 'daily_brief')}
+                      </span>
+                    )}
+                  </div>
+                  {isCollapsed ? (
+                    <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
+                  ) : (
+                    <ChevronUp className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
+                  )}
+                </div>
+              </button>
+
+              {/* Cards Grid */}
+              {!isCollapsed && (
+                <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
+                  {group.items.map((item: any) => (
+                    <PinCard
+                      key={item.itemId}
+                      item={item}
+                      onEngagement={handleEngagement}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* End of Feed */}
-        <div className="py-10 text-center mt-8">
-          <p className="text-gray-400 text-sm">You've seen all the pins!</p>
+        <div className="py-10 text-center">
+          <p className="text-gray-400 text-sm">You've explored all {dateGroups.length} days!</p>
           <p className="text-gray-300 text-xs mt-1">
-            Curated from {displayFeed.totalCandidates} ideas
+            Curated from {displayFeed.totalCandidates} sources
           </p>
         </div>
       </div>
     </div>
   );
+}
+
+// Helper to count items by kind
+function countByKind(items: any[], kind: string): number {
+  return items.filter(item => item.metadata?.kind === kind).length;
+}
+
+// Format date label
+function formatDateLabel(dateString: string): string {
+  const date = new Date(dateString + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const dateOnly = new Date(date);
+  dateOnly.setHours(0, 0, 0, 0);
+
+  if (dateOnly.getTime() === today.getTime()) {
+    return "Today";
+  } else if (dateOnly.getTime() === yesterday.getTime()) {
+    return "Yesterday";
+  } else {
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
 }
 
 interface PinCardProps {
@@ -127,22 +271,35 @@ function PinCard({ item, onEngagement }: PinCardProps) {
   const [saved, setSaved] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Source-based accent colors (Pinterest-inspired)
-  const sourceStyles = {
-    in_network: { accent: "bg-blue-500", label: "Following", icon: Heart },
-    out_of_network: { accent: "bg-purple-500", label: "Discover", icon: Sparkles },
-    trending: { accent: "bg-red-500", label: "Trending", icon: Zap },
+  // Source-based styling
+  const getCardStyle = () => {
+    const kind = item.metadata?.kind;
+    if (kind === 'linkedin_funding') {
+      return { gradient: "from-blue-100 via-blue-50 to-indigo-100", icon: Linkedin, iconColor: "text-blue-600", label: "LinkedIn" };
+    }
+    if (kind === 'daily_brief' || kind === 'daily_snapshot') {
+      return { gradient: "from-amber-100 via-yellow-50 to-orange-100", icon: Sparkles, iconColor: "text-amber-600", label: "AI Brief" };
+    }
+
+    const source = item.source;
+    if (source === 'in_network') {
+      return { gradient: "from-green-100 via-emerald-50 to-teal-100", icon: Heart, iconColor: "text-green-600", label: "Following" };
+    }
+    if (source === 'trending') {
+      return { gradient: "from-red-100 via-rose-50 to-pink-100", icon: Zap, iconColor: "text-red-600", label: "Trending" };
+    }
+    return { gradient: "from-purple-100 via-pink-50 to-rose-100", icon: TrendingUp, iconColor: "text-purple-600", label: "Discover" };
   };
 
-  const style = sourceStyles[item.source as keyof typeof sourceStyles] || sourceStyles.trending;
-  const SourceIcon = style.icon;
+  const style = getCardStyle();
+  const CardIcon = style.icon;
 
-  // Random-ish image height for masonry effect (based on content length)
+  // Card height based on content
   const getCardHeight = () => {
     const snippetLength = item.snippet?.length || 0;
-    if (snippetLength > 200) return "h-72";
-    if (snippetLength > 100) return "h-56";
-    return "h-44";
+    if (snippetLength > 200) return "h-64";
+    if (snippetLength > 100) return "h-52";
+    return "h-40";
   };
 
   // Extract domain
@@ -188,18 +345,27 @@ function PinCard({ item, onEngagement }: PinCardProps) {
         onClick={handleOpen}
         className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-gray-200"
       >
-        {/* Image/Gradient Header */}
-        <div className={`relative ${getCardHeight()} bg-gradient-to-br ${getGradient(item.source, item.metadata?.source)}`}>
+        {/* Header with gradient */}
+        <div className={`relative ${getCardHeight()} bg-gradient-to-br ${style.gradient}`}>
           {/* Source Badge */}
           <div className="absolute top-3 left-3">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm shadow-sm`}>
-              <SourceIcon className={`w-3.5 h-3.5 ${getIconColor(item.source)}`} />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm shadow-sm">
+              <CardIcon className={`w-3.5 h-3.5 ${style.iconColor}`} />
               <span className="text-xs font-medium text-gray-700">{style.label}</span>
             </div>
           </div>
 
+          {/* LinkedIn Amount Badge */}
+          {item.metadata?.kind === 'linkedin_funding' && item.metadata?.amount && (
+            <div className="absolute top-3 right-3">
+              <div className="px-2.5 py-1 rounded-full bg-green-500/90 backdrop-blur-sm shadow-sm">
+                <span className="text-xs font-bold text-white">{item.metadata.amount}</span>
+              </div>
+            </div>
+          )}
+
           {/* AI Badge */}
-          {item.metadata?.kind === "daily_brief" && (
+          {(item.metadata?.kind === 'daily_brief' || item.metadata?.kind === 'daily_snapshot') && (
             <div className="absolute top-3 right-3">
               <div className="px-2 py-1 rounded-full bg-amber-400/90 backdrop-blur-sm shadow-sm">
                 <span className="text-[10px] font-bold text-white">AI</span>
@@ -207,7 +373,7 @@ function PinCard({ item, onEngagement }: PinCardProps) {
             </div>
           )}
 
-          {/* Hover Actions Overlay */}
+          {/* Hover Actions */}
           <div className={`absolute inset-0 bg-black/40 flex items-center justify-center gap-3 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
             <button
               type="button"
@@ -215,9 +381,7 @@ function PinCard({ item, onEngagement }: PinCardProps) {
               aria-label={saved ? "Unsave" : "Save"}
               onClick={handleSave}
               className={`p-3 rounded-full transition-all ${
-                saved
-                  ? 'bg-red-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-red-500 hover:text-white'
+                saved ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-red-500 hover:text-white'
               }`}
             >
               <Bookmark className={`w-5 h-5 ${saved ? 'fill-current' : ''}`} />
@@ -233,20 +397,18 @@ function PinCard({ item, onEngagement }: PinCardProps) {
             </button>
           </div>
 
-          {/* Source Icon Watermark */}
+          {/* Watermark emoji */}
           <div className="absolute bottom-4 right-4 opacity-20">
-            <span className="text-6xl">{getSourceEmoji(item.metadata?.source)}</span>
+            <span className="text-5xl">{getSourceEmoji(item.metadata?.kind, item.metadata?.source)}</span>
           </div>
         </div>
 
         {/* Content */}
         <div className="p-4">
-          {/* Title */}
           <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-2 line-clamp-2 group-hover:text-red-600 transition-colors">
             {item.title}
           </h3>
 
-          {/* Snippet */}
           {item.snippet && (
             <p className="text-gray-500 text-xs leading-relaxed line-clamp-3 mb-3">
               {cleanSnippet(item.snippet)}
@@ -255,7 +417,6 @@ function PinCard({ item, onEngagement }: PinCardProps) {
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-            {/* Source/Domain */}
             <div className="flex items-center gap-1.5 text-gray-400">
               {domain ? (
                 <>
@@ -269,15 +430,22 @@ function PinCard({ item, onEngagement }: PinCardProps) {
                 </>
               )}
             </div>
-
-            {/* Time */}
             <span className="text-[11px] text-gray-400">
               {formatTimeAgo(item.timestamp)}
             </span>
           </div>
 
+          {/* Sector tag for LinkedIn */}
+          {item.metadata?.sector && (
+            <div className="mt-2">
+              <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                {item.metadata.sector}
+              </span>
+            </div>
+          )}
+
           {/* Phoenix Score */}
-          {item.phoenixScore && (
+          {item.phoenixScore && item.phoenixScore > 60 && (
             <div className="mt-3 flex items-center gap-1.5">
               <div className="w-full bg-gray-100 rounded-full h-1">
                 <div
@@ -289,23 +457,6 @@ function PinCard({ item, onEngagement }: PinCardProps) {
             </div>
           )}
         </div>
-
-        {/* Quick Save Button (Mobile/Always visible) */}
-        <div className="absolute bottom-4 right-4 sm:hidden">
-          <button
-            type="button"
-            title={saved ? "Unsave" : "Save"}
-            aria-label={saved ? "Unsave" : "Save"}
-            onClick={handleSave}
-            className={`p-2 rounded-full shadow-md ${
-              saved
-                ? 'bg-red-500 text-white'
-                : 'bg-white text-gray-600'
-            }`}
-          >
-            <Bookmark className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
-          </button>
-        </div>
       </article>
     </div>
   );
@@ -314,12 +465,10 @@ function PinCard({ item, onEngagement }: PinCardProps) {
 // Helper functions
 function formatTimeAgo(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
-
   if (seconds < 60) return 'now';
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
   if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
-
   return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -330,51 +479,18 @@ function cleanSnippet(snippet: string): string {
   return snippet;
 }
 
-function getGradient(source: string, metaSource?: string): string {
-  // Pinterest-style soft gradients
-  const gradients: Record<string, string> = {
-    in_network: "from-blue-100 via-blue-50 to-indigo-100",
-    out_of_network: "from-purple-100 via-pink-50 to-rose-100",
-    trending: "from-orange-100 via-amber-50 to-yellow-100",
-  };
+function getSourceEmoji(kind?: string, source?: string): string {
+  if (kind === 'linkedin_funding') return '💼';
+  if (kind === 'daily_brief' || kind === 'daily_snapshot') return '🌅';
 
-  // Special source-specific gradients
-  const sourceGradients: Record<string, string> = {
-    'YCombinator': "from-orange-200 via-orange-100 to-amber-50",
-    'TechCrunch': "from-green-100 via-emerald-50 to-teal-100",
-    'Hugging Face': "from-yellow-100 via-amber-50 to-orange-100",
-    'ArXiv': "from-red-100 via-rose-50 to-pink-100",
-    'GitHub': "from-gray-200 via-slate-100 to-gray-50",
-    'Reddit': "from-orange-200 via-red-100 to-orange-50",
-    'Daily Brief': "from-amber-100 via-yellow-50 to-orange-100",
-  };
-
-  if (metaSource && sourceGradients[metaSource]) {
-    return sourceGradients[metaSource];
-  }
-
-  return gradients[source] || gradients.trending;
-}
-
-function getIconColor(source: string): string {
-  const colors: Record<string, string> = {
-    in_network: "text-blue-500",
-    out_of_network: "text-purple-500",
-    trending: "text-red-500",
-  };
-  return colors[source] || colors.trending;
-}
-
-function getSourceEmoji(source?: string): string {
   const emojiMap: Record<string, string> = {
     'YCombinator': '🚀',
     'TechCrunch': '📰',
     'Hugging Face': '🤗',
     'ArXiv': '📄',
     'GitHub': '⚡',
-    'Daily Brief': '☀️',
-    'daily_brief_cron': '🌅',
     'Reddit': '🔥',
+    'LinkedIn': '💼',
   };
   return emojiMap[source || ''] || '✨';
 }
