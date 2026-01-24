@@ -5,7 +5,7 @@
  * Shows actionable insights and implementation suggestions.
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
@@ -43,9 +43,12 @@ export function IndustryUpdatesPanel() {
     xai: "xAI",
   };
 
-  const filteredSuggestions = selectedProvider
-    ? suggestions.topSuggestions.filter((s: any) => s.provider === providerLabels[selectedProvider])
-    : suggestions.topSuggestions;
+  const filteredSuggestions = useMemo(() =>
+    selectedProvider
+      ? suggestions.topSuggestions.filter((s: any) => s.provider === providerLabels[selectedProvider])
+      : suggestions.topSuggestions,
+    [selectedProvider, suggestions.topSuggestions]
+  );
 
   return (
     <div className="p-6 space-y-6">

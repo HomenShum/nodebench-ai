@@ -1,7 +1,7 @@
 // src/components/FastAgentPanel/FastAgentPanel.UIMessageBubble.tsx
 // Message bubble component optimized for UIMessage format from Agent component
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
@@ -10,9 +10,13 @@ import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw,
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
-import { YouTubeGallery, type YouTubeVideo, type SECDocument } from './MediaGallery';
-import { MermaidDiagram } from './MermaidDiagram';
-import { FileViewer, type FileViewerFile } from './FileViewer';
+// Type imports (static)
+import { type YouTubeVideo, type SECDocument } from './MediaGallery';
+import { type FileViewerFile } from './FileViewer';
+// Lazy-loaded heavy components
+const YouTubeGallery = lazy(() => import('./MediaGallery').then(m => ({ default: m.YouTubeGallery })));
+const MermaidDiagram = lazy(() => import('./MermaidDiagram').then(m => ({ default: m.MermaidDiagram })));
+const FileViewer = lazy(() => import('./FileViewer').then(m => ({ default: m.FileViewer })));
 import { CompanySelectionCard, type CompanyOption } from './CompanySelectionCard';
 import { PeopleSelectionCard, type PersonOption } from './PeopleSelectionCard';
 import { EventSelectionCard, type EventOption } from './EventSelectionCard';
@@ -412,11 +416,19 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
         />
       )}
 
-      {/* Render YouTube gallery */}
-      {youtubeVideos.length > 0 && <YouTubeGallery videos={youtubeVideos} />}
+      {/* Render YouTube gallery (lazy-loaded) */}
+      {youtubeVideos.length > 0 && (
+        <Suspense fallback={<div className="animate-pulse h-32 bg-[var(--bg-secondary)] rounded-lg" />}>
+          <YouTubeGallery videos={youtubeVideos} />
+        </Suspense>
+      )}
 
-      {/* Render FileViewer for SEC documents (replaces SECDocumentGallery) */}
-      {fileViewerFiles.length > 0 && <FileViewer files={fileViewerFiles} />}
+      {/* Render FileViewer for SEC documents (lazy-loaded) */}
+      {fileViewerFiles.length > 0 && (
+        <Suspense fallback={<div className="animate-pulse h-24 bg-[var(--bg-secondary)] rounded-lg" />}>
+          <FileViewer files={fileViewerFiles} />
+        </Suspense>
+      )}
 
       {/* Render content before images */}
       {beforeImages && (
@@ -2083,11 +2095,13 @@ export function FastAgentUIMessageBubble({
                       const mermaidCode = String(children).replace(/\n$/, '');
                       const isStreaming = message.status === 'streaming';
                       return (
-                        <MermaidDiagram
-                          code={mermaidCode}
-                          onRetryRequest={onMermaidRetry}
-                          isStreaming={isStreaming}
-                        />
+                        <Suspense fallback={<div className="animate-pulse h-40 bg-[var(--bg-secondary)] rounded-lg flex items-center justify-center text-sm text-[var(--text-muted)]">Loading diagram...</div>}>
+                          <MermaidDiagram
+                            code={mermaidCode}
+                            onRetryRequest={onMermaidRetry}
+                            isStreaming={isStreaming}
+                          />
+                        </Suspense>
                       );
                     }
 
