@@ -178,6 +178,36 @@ function isStructuredToolOutput(output: unknown): output is {
 }
 
 /**
+ * Try to parse output as structured JSON
+ * Returns parsed object if valid structured output, null otherwise
+ */
+function tryParseStructuredOutput(output: unknown): {
+  kind: string;
+  version: number;
+  summary: string;
+  data: Record<string, unknown>;
+} | null {
+  // Already an object
+  if (isStructuredToolOutput(output)) {
+    return output;
+  }
+
+  // Try parsing JSON string
+  if (typeof output === 'string') {
+    try {
+      const parsed = JSON.parse(output);
+      if (isStructuredToolOutput(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // Not valid JSON, will fall back to regex parsing
+    }
+  }
+
+  return null;
+}
+
+/**
  * Parse structured tool output directly (fast path)
  */
 function parseStructuredOutput(output: { kind: string; data: Record<string, unknown> }) {
@@ -224,9 +254,10 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
 }) {
   // Memoize the expensive parsing operations
   const parsedData = useMemo(() => {
-    // FAST PATH: Structured tool output (no regex needed)
-    if (isStructuredToolOutput(output)) {
-      const structured = parseStructuredOutput(output);
+    // FAST PATH: Try to parse as structured tool output (no regex needed)
+    const structuredOutput = tryParseStructuredOutput(output);
+    if (structuredOutput) {
+      const structured = parseStructuredOutput(structuredOutput);
       const secDocuments = structured.secDocuments || [];
 
       // Convert SEC documents to FileViewer format
@@ -251,7 +282,7 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
         newsSelectionData: structured.newsSelectionData || null,
         hasMultipleImages: false,
         imageUrls: [],
-        beforeImages: output.summary || '',
+        beforeImages: structuredOutput.summary || '',
         restOfContent: '',
       };
     }

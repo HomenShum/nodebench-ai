@@ -114,9 +114,6 @@ export const youtubeSearch = createTool({
         return "No videos found for your search query. Try different keywords.";
       }
 
-      // Format the response with embedded YouTube videos
-      let result = `Found ${data.items.length} videos:\n\n`;
-
       // Prepare structured data for gallery rendering
       const videos = data.items.map((item) => ({
         title: item.snippet.title,
@@ -127,39 +124,26 @@ export const youtubeSearch = createTool({
         thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
       }));
 
-      // Add structured data marker for frontend gallery rendering
-      result += `<!-- YOUTUBE_GALLERY_DATA\n${JSON.stringify(videos, null, 2)}\n-->\n\n`;
+      // Create human-readable summary for LLM (concise)
+      const videoSummaries = videos.slice(0, 3).map((v, i) =>
+        `${i + 1}. "${v.title}" by ${v.channel}`
+      ).join('\n');
+      const summary = `Found ${videos.length} YouTube videos for "${args.query}":\n${videoSummaries}${videos.length > 3 ? `\n...and ${videos.length - 3} more` : ''}`;
 
-      result += "## Videos\n\n";
-
-      // Add each video as an embedded iframe
-      data.items.forEach((item, idx) => {
-        const videoId = item.id.videoId;
-        const title = item.snippet.title;
-        const channel = item.snippet.channelTitle;
-        const description = item.snippet.description;
-
-        // Add video embed using iframe (HTML5)
-        result += `### ${idx + 1}. ${title}\n\n`;
-        result += `**Channel:** ${channel}\n\n`;
-
-        // Embed the video
-        result += `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>\n\n`;
-
-        // Add description
-        if (description) {
-          const shortDesc = description.substring(0, 150);
-          result += `${shortDesc}${description.length > 150 ? '...' : ''}\n\n`;
-        }
-
-        // Add direct link
-        result += `[Watch on YouTube](https://www.youtube.com/watch?v=${videoId}) 🔗\n\n`;
-
-        result += "---\n\n";
-      });
+      // Return structured output (frontend parses this directly, no regex needed)
+      const structuredOutput = {
+        kind: 'youtube_search_results',
+        version: 1,
+        summary,
+        data: {
+          videos,
+          query: args.query,
+          totalResults: videos.length,
+        },
+      };
 
       success = true;
-      
+
       // Track successful search
       const responseTime = Date.now() - startTime;
       _ctx.scheduler.runAfter(0, "domains/billing/apiUsageTracking:trackApiUsage" as any, {
@@ -167,8 +151,8 @@ export const youtubeSearch = createTool({
         operation: "search",
         unitsUsed: 100, // YouTube charges 100 units per search
         estimatedCost: 0, // Free within quota (10,000 units/day)
-        requestMetadata: { 
-          query: args.query, 
+        requestMetadata: {
+          query: args.query,
           videoCount,
           maxResults: args.maxResults,
           order: args.order,
@@ -177,7 +161,8 @@ export const youtubeSearch = createTool({
         responseTime,
       });
 
-      return result;
+      // Return stringified structured output
+      return JSON.stringify(structuredOutput);
     } catch (error) {
       errorMsg = error instanceof Error ? error.message : String(error);
       console.error("[youtubeSearch] Error:", error);
