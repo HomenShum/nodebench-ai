@@ -77,10 +77,10 @@ export function ForYouFeed() {
 
   if (!displayFeed) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 text-sm font-light">Loading...</p>
+          <div className="w-8 h-8 border-2 border-stone-300 border-t-stone-700 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-stone-500 text-sm font-light">Loading...</p>
         </div>
       </div>
     );
@@ -88,31 +88,31 @@ export function ForYouFeed() {
 
   if (!displayFeed.items?.length) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-6">
-          <h2 className="text-xl font-light text-gray-900 mb-2">Nothing to show yet</h2>
-          <p className="text-gray-500 text-sm font-light">Check back soon for the latest updates.</p>
+          <h2 className="text-xl font-light text-stone-900 mb-2">Nothing to show yet</h2>
+          <p className="text-stone-500 text-sm font-light">Check back soon for the latest updates.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-white">
+    <div ref={containerRef} className="min-h-screen bg-[#faf9f6]">
       {/* Masthead */}
-      <header className="border-b border-gray-200">
+      <header className="border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="flex items-baseline justify-between">
             <div>
-              <h1 className="text-3xl font-serif font-bold text-gray-900 tracking-tight">
+              <h1 className="text-3xl font-serif font-bold text-stone-900 tracking-tight">
                 {isPublicMode ? "The Daily Brief" : "For You"}
               </h1>
-              <p className="text-sm text-gray-500 mt-1 font-light">
+              <p className="text-sm text-stone-500 mt-1 font-light">
                 {formatMastheadDate()} · {displayFeed.items.length} stories
               </p>
             </div>
             <div className="text-right">
-              <span className="text-xs uppercase tracking-widest text-gray-400">
+              <span className="text-xs uppercase tracking-widest text-stone-400">
                 {isPublicMode ? "Public Edition" : "Personalized"}
               </span>
             </div>
@@ -136,18 +136,18 @@ export function ForYouFeed() {
                 className="w-full group"
               >
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+                  <div className="flex items-center gap-2 text-stone-400 hover:text-stone-600 transition-colors">
                     {isCollapsed ? (
                       <Plus className="w-4 h-4" />
                     ) : (
                       <Minus className="w-4 h-4" />
                     )}
                   </div>
-                  <h2 className="text-sm font-medium uppercase tracking-widest text-gray-500">
+                  <h2 className="text-sm font-medium uppercase tracking-widest text-stone-500">
                     {group.displayLabel}
                   </h2>
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span className="text-xs text-gray-400 font-light">
+                  <div className="flex-1 h-px bg-stone-200" />
+                  <span className="text-xs text-stone-400 font-light">
                     {group.items.length} {group.items.length === 1 ? 'story' : 'stories'}
                   </span>
                 </div>
@@ -162,7 +162,7 @@ export function ForYouFeed() {
 
                   {/* Secondary Stories */}
                   {restItems.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-stone-100">
                       {restItems.map((item: any) => (
                         <StoryCard key={item.itemId} item={item} onEngagement={handleEngagement} />
                       ))}
@@ -175,8 +175,8 @@ export function ForYouFeed() {
         })}
 
         {/* Footer */}
-        <footer className="mt-16 pt-8 border-t border-gray-200 text-center">
-          <p className="text-sm text-gray-400 font-light">
+        <footer className="mt-16 pt-8 border-t border-stone-200 text-center">
+          <p className="text-sm text-stone-400 font-light">
             End of feed · {displayFeed.totalCandidates} sources analyzed
           </p>
         </footer>
@@ -221,7 +221,7 @@ interface CardProps {
 }
 
 // Hero story card - large, prominent display
-function HeroCard({ item, onEngagement }: CardProps) {
+const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps) {
   const [saved, setSaved] = useState(false);
 
   const handleSave = (e: React.MouseEvent) => {
@@ -250,25 +250,25 @@ function HeroCard({ item, onEngagement }: CardProps) {
         <div className="flex-1 space-y-3">
           {/* Category Tag */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium uppercase tracking-wider text-red-600">
+            <span className="text-xs font-medium uppercase tracking-wider text-emerald-700">
               {sourceLabel}
             </span>
             {item.metadata?.sector && (
               <>
-                <span className="text-gray-300">·</span>
-                <span className="text-xs text-gray-500">{item.metadata.sector}</span>
+                <span className="text-stone-300">·</span>
+                <span className="text-xs text-stone-500">{item.metadata.sector}</span>
               </>
             )}
           </div>
 
           {/* Headline */}
-          <h3 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 leading-tight group-hover:text-red-700 transition-colors">
+          <h3 className="text-2xl md:text-3xl font-serif font-bold text-stone-900 leading-tight group-hover:text-emerald-800 transition-colors">
             {item.title}
           </h3>
 
           {/* Excerpt */}
           {item.snippet && (
-            <p className="text-gray-600 leading-relaxed text-lg font-light line-clamp-3">
+            <p className="text-stone-600 leading-relaxed text-lg font-light line-clamp-3">
               {cleanSnippet(item.snippet)}
             </p>
           )}
@@ -276,19 +276,19 @@ function HeroCard({ item, onEngagement }: CardProps) {
           {/* Meta */}
           <div className="flex items-center gap-4 pt-2">
             {domain && (
-              <span className="text-sm text-gray-500 flex items-center gap-1">
+              <span className="text-sm text-stone-500 flex items-center gap-1">
                 <ExternalLink className="w-3 h-3" />
                 {domain}
               </span>
             )}
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-stone-400">
               {formatTimeAgo(item.timestamp)}
             </span>
             <button
               type="button"
               onClick={handleSave}
               className={`ml-auto p-2 rounded-full transition-colors ${
-                saved ? 'text-red-600 bg-red-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                saved ? 'text-emerald-700 bg-emerald-50' : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
               }`}
               title={saved ? "Saved" : "Save for later"}
               aria-label={saved ? "Saved" : "Save for later"}
@@ -305,10 +305,10 @@ function HeroCard({ item, onEngagement }: CardProps) {
       </div>
     </article>
   );
-}
+}, (prevProps, nextProps) => prevProps.item.itemId === nextProps.item.itemId);
 
 // Secondary story card - compact display
-function StoryCard({ item, onEngagement }: CardProps) {
+const StoryCard = React.memo(function StoryCard({ item, onEngagement }: CardProps) {
   const handleOpen = () => {
     onEngagement(item.itemId, "view");
     if (item.metadata?.url) {
@@ -326,24 +326,24 @@ function StoryCard({ item, onEngagement }: CardProps) {
     >
       <div className="space-y-2">
         {/* Category */}
-        <span className="text-xs font-medium uppercase tracking-wider text-gray-500">
+        <span className="text-xs font-medium uppercase tracking-wider text-stone-500">
           {sourceLabel}
         </span>
 
         {/* Headline */}
-        <h4 className="text-lg font-serif font-semibold text-gray-900 leading-snug group-hover:text-red-700 transition-colors line-clamp-2">
+        <h4 className="text-lg font-serif font-semibold text-stone-900 leading-snug group-hover:text-emerald-800 transition-colors line-clamp-2">
           {item.title}
         </h4>
 
         {/* Excerpt */}
         {item.snippet && (
-          <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 font-light">
+          <p className="text-sm text-stone-500 leading-relaxed line-clamp-2 font-light">
             {cleanSnippet(item.snippet)}
           </p>
         )}
 
         {/* Meta */}
-        <div className="flex items-center gap-3 text-xs text-gray-400 pt-1">
+        <div className="flex items-center gap-3 text-xs text-stone-400 pt-1">
           {domain && <span>{domain}</span>}
           <span>{formatTimeAgo(item.timestamp)}</span>
           <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -351,7 +351,7 @@ function StoryCard({ item, onEngagement }: CardProps) {
       </div>
     </article>
   );
-}
+}, (prevProps, nextProps) => prevProps.item.itemId === nextProps.item.itemId);
 
 // Helper functions
 function formatTimeAgo(timestamp: number): string {

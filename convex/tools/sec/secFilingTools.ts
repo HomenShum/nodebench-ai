@@ -86,18 +86,25 @@ export const searchSecFilings = createTool({
               // Multiple companies passed validation, prompt user for selection
               console.log(`[searchSecFilings] Multiple companies passed validation, prompting user`);
 
-              const companySelectionData = {
-                prompt: `I found multiple companies matching '${args.companyName}'. Which one did you mean?`,
-                companies: passedCompanies.map((c: any) => ({
-                  cik: c.cik,
-                  name: c.name,
-                  ticker: c.ticker,
-                  description: `CIK: ${c.cik}${c.ticker ? ` | Ticker: ${c.ticker}` : ''}`,
-                  validationResult: c.validationResult,
-                })),
+              const companyOptions = passedCompanies.map((c: any) => ({
+                id: c.cik,
+                name: c.name,
+                ticker: c.ticker,
+                description: `CIK: ${c.cik}${c.ticker ? ` | Ticker: ${c.ticker}` : ''}`,
+              }));
+
+              // Return structured output for company selection
+              const structuredOutput = {
+                kind: 'company_selection' as const,
+                version: 1,
+                summary: `I found multiple companies matching "${args.companyName}". Please select the company you're looking for.`,
+                data: {
+                  prompt: `I found multiple companies matching '${args.companyName}'. Which one did you mean?`,
+                  companies: companyOptions,
+                },
               };
 
-              return `<!-- COMPANY_SELECTION_DATA\n${JSON.stringify(companySelectionData, null, 2)}\n-->\n\nI found multiple companies matching "${args.companyName}". Please select the company you're looking for from the options above.`;
+              return JSON.stringify(structuredOutput);
             }
           } else {
             // Only one company found, use it
@@ -220,25 +227,29 @@ export const searchSecFilings = createTool({
         accessionNumber: filing.accessionNumber,
         documentUrl: filing.documentUrl,
         viewerUrl: filing.url,
-        company: companyName,
+        ticker: args.ticker?.toUpperCase(),
+        companyName,
       }));
 
-      // Format results
-      let result = `SEC Filings for ${companyName} (CIK: ${paddedCik})${args.ticker ? ` [${args.ticker.toUpperCase()}]` : ""}\n\n`;
-      result += `Found ${filings.length} recent filing${filings.length > 1 ? 's' : ''}:\n\n`;
+      // Create human-readable summary for LLM (concise)
+      const filingSummaries = filings.slice(0, 3).map((f, i) =>
+        `${i + 1}. ${f.formType} - Filed: ${f.filingDate}`
+      ).join('\n');
+      const summary = `Found ${filings.length} SEC filings for ${companyName} (CIK: ${paddedCik})${args.ticker ? ` [${args.ticker.toUpperCase()}]` : ''}:\n${filingSummaries}${filings.length > 3 ? `\n...and ${filings.length - 3} more` : ''}`;
 
-      // Add structured data marker for frontend gallery rendering
-      result += `<!-- SEC_GALLERY_DATA\n${JSON.stringify(secDocuments, null, 2)}\n-->\n\n`;
+      // Return structured output (frontend parses this directly, no regex needed)
+      const structuredOutput = {
+        kind: 'sec_filing_results' as const,
+        version: 1,
+        summary,
+        data: {
+          documents: secDocuments,
+          query: args.companyName || args.ticker || paddedCik,
+          totalResults: filings.length,
+        },
+      };
 
-      filings.forEach((filing, idx) => {
-        result += `${idx + 1}. ${filing.formType} - Filed: ${filing.filingDate}\n`;
-        result += `   Accession: ${filing.accessionNumber}\n`;
-        result += `   Document: ${filing.documentUrl}\n\n`;
-      });
-
-      result += `\nTo download a specific filing, use the downloadSecFiling tool with the document URL.`;
-
-      return result;
+      return JSON.stringify(structuredOutput);
 
     } catch (error) {
       console.error("[searchSecFilings] Error:", error);

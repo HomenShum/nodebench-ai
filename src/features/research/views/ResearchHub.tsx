@@ -7,26 +7,33 @@ import { EvidenceProvider, useEvidence } from "@/features/research/contexts/Evid
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import type { FeedItem } from "@/features/research/components/FeedCard";
 import type { Evidence } from "@/features/research/types";
-import {
-  BriefingSection,
-  DashboardSection,
-  DealListSection,
-  DigestSection,
-  FeedSection,
-} from "@/features/research/sections";
-import { ActAwareDashboard } from "@/features/research/components/ActAwareDashboard";
-import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
-import { PersonalPulse } from "@/features/research/components/PersonalPulse";
-import { IntelPulseMonitor } from "@/features/research/components/IntelPulseMonitor";
-import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/features/research/components/TimelineStrip";
-import { NotificationActivityPanel } from "@/components/NotificationActivityPanel";
-import { FeedReaderModal, type ReaderItem } from "@/features/research/components/FeedReaderModal";
-import { EntityContextDrawer } from "@/features/research/components/EntityContextDrawer";
-import { DealRadar } from "@/features/research/components/DealRadar";
-import { cn } from "@/lib/utils";
-
+// Lazy-load all section components to reduce initial bundle size
+const BriefingSection = React.lazy(() => import("@/features/research/sections/BriefingSection").then(m => ({ default: m.BriefingSection })));
+const DashboardSection = React.lazy(() => import("@/features/research/sections/DashboardSection").then(m => ({ default: m.DashboardSection })));
+const DigestSection = React.lazy(() => import("@/features/research/sections/DigestSection").then(m => ({ default: m.DigestSection })));
+const FeedSection = React.lazy(() => import("@/features/research/sections/FeedSection").then(m => ({ default: m.FeedSection })));
+const ActAwareDashboard = React.lazy(() => import("@/features/research/components/ActAwareDashboard").then(m => ({ default: m.ActAwareDashboard })));
+const PersonalPulse = React.lazy(() => import("@/features/research/components/PersonalPulse").then(m => ({ default: m.PersonalPulse })));
+const IntelPulseMonitor = React.lazy(() => import("@/features/research/components/IntelPulseMonitor").then(m => ({ default: m.IntelPulseMonitor })));
+const FeedReaderModal = React.lazy(() => import("@/features/research/components/FeedReaderModal").then(m => ({ default: m.FeedReaderModal })));
+const EntityContextDrawer = React.lazy(() => import("@/features/research/components/EntityContextDrawer").then(m => ({ default: m.EntityContextDrawer })));
+const DealRadar = React.lazy(() => import("@/features/research/components/DealRadar").then(m => ({ default: m.DealRadar })));
+const NotificationActivityPanel = React.lazy(() => import("@/components/NotificationActivityPanel").then(m => ({ default: m.NotificationActivityPanel })));
 const WhatChangedPanelLazy = React.lazy(() => import("@/features/research/components/WhatChangedPanel"));
 const ProductChangelogPanelLazy = React.lazy(() => import("@/features/research/components/ProductChangelogPanel"));
+
+import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
+import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/features/research/components/TimelineStrip";
+import type { ReaderItem } from "@/features/research/components/FeedReaderModal";
+import { cn } from "@/lib/utils";
+
+// Loading fallback for lazy-loaded sections
+const SectionLoading = () => (
+  <div className="flex items-center justify-center py-10 text-sm text-stone-400">
+    <div className="w-5 h-5 border-2 border-stone-200 border-t-emerald-600 rounded-full animate-spin mr-3" />
+    Loading...
+  </div>
+);
 
 // Tab definitions for the main content sections
 type ContentTab = 'overview' | 'signals' | 'briefing' | 'deals' | 'changes' | 'changelog';
@@ -612,20 +619,24 @@ function ResearchHubContent(props: ResearchHubProps) {
                       </div>
                       <div className={cn('w-1.5 h-1.5 rounded-full animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-emerald-600')} />
                     </div>
-                    <DigestSection
-                      onItemClick={handleDigestItemClick}
-                      onEntityClick={handleEntityOpen}
-                    />
+                    <React.Suspense fallback={<SectionLoading />}>
+                      <DigestSection
+                        onItemClick={handleDigestItemClick}
+                        onEntityClick={handleEntityOpen}
+                      />
+                    </React.Suspense>
                   </section>
 
                   {/* Personal Pulse */}
                   <section className="pt-2">
-                    <PersonalPulse
-                      personalizedContext={personalizedContext}
-                      tasksToday={tasksToday || []}
-                      recentDocs={recentDocs || []}
-                      onDocumentSelect={props.onDocumentSelect}
-                    />
+                    <React.Suspense fallback={<SectionLoading />}>
+                      <PersonalPulse
+                        personalizedContext={personalizedContext}
+                        tasksToday={tasksToday || []}
+                        recentDocs={recentDocs || []}
+                        onDocumentSelect={props.onDocumentSelect}
+                      />
+                    </React.Suspense>
                   </section>
                 </div>
               )}
@@ -641,10 +652,12 @@ function ResearchHubContent(props: ResearchHubProps) {
                     <div className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-bold uppercase tracking-wider rounded">Real-time</div>
                   </div>
                   <div className="bg-stone-50/50 p-4 border border-stone-200/60 rounded-lg">
-                    <FeedSection
-                      onItemClick={handleFeedItemClick}
-                      onOpenWithAgent={handleFeedOpenWithAgent}
-                    />
+                    <React.Suspense fallback={<SectionLoading />}>
+                      <FeedSection
+                        onItemClick={handleFeedItemClick}
+                        onOpenWithAgent={handleFeedOpenWithAgent}
+                      />
+                    </React.Suspense>
                   </div>
                 </section>
               )}
@@ -659,14 +672,16 @@ function ResearchHubContent(props: ResearchHubProps) {
                     </div>
                     <span className="text-[10px] font-medium italic text-stone-400">Deep Analysis</span>
                   </div>
-                  <BriefingSection
-                    onActChange={(act) => {
-                      setActiveAct(act as any);
-                      updateFocus({ briefId: (briefMemory as any)?._id || "morning_brief_latest", currentAct: act as any });
-                    }}
-                    onAskAI={handleAskAI}
-                    onOpenReader={handleOpenReader}
-                  />
+                  <React.Suspense fallback={<SectionLoading />}>
+                    <BriefingSection
+                      onActChange={(act) => {
+                        setActiveAct(act as any);
+                        updateFocus({ briefId: (briefMemory as any)?._id || "morning_brief_latest", currentAct: act as any });
+                      }}
+                      onAskAI={handleAskAI}
+                      onOpenReader={handleOpenReader}
+                    />
+                  </React.Suspense>
                 </section>
               )}
 
@@ -680,11 +695,13 @@ function ResearchHubContent(props: ResearchHubProps) {
                     </div>
                     <div className="px-1.5 py-0.5 bg-gray-900 text-white text-[9px] font-bold uppercase tracking-wider rounded">JPM</div>
                   </div>
-                  <DealRadar
-                    onDealClick={(dealId, companyName) => {
-                      setActiveEntity({ name: companyName, type: "company" });
-                    }}
-                  />
+                  <React.Suspense fallback={<SectionLoading />}>
+                    <DealRadar
+                      onDealClick={(dealId, companyName) => {
+                        setActiveEntity({ name: companyName, type: "company" });
+                      }}
+                    />
+                  </React.Suspense>
                 </section>
               )}
 
@@ -744,50 +761,60 @@ function ResearchHubContent(props: ResearchHubProps) {
             <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-stone-200/0 via-stone-200 to-stone-200/0" />
 
             <div className="space-y-4 pl-4">
-              {phasedDashboardMetrics ? (
-                <ActAwareDashboard
-                  activeAct={activeAct}
-                  dashboardData={phasedDashboardMetrics}
-                  executiveBrief={executiveBrief}
-                  sourceSummary={sourceSummary}
-                  evidence={evidence || []}
-                  workflowSteps={workflowSteps}
-                  deltas={deltas}
-                  onDataPointClick={handleDashboardPointClick}
-                  onEvidenceClick={handleEvidenceOpen}
+              <React.Suspense fallback={<SectionLoading />}>
+                {phasedDashboardMetrics ? (
+                  <ActAwareDashboard
+                    activeAct={activeAct}
+                    dashboardData={phasedDashboardMetrics}
+                    executiveBrief={executiveBrief}
+                    sourceSummary={sourceSummary}
+                    evidence={evidence || []}
+                    workflowSteps={workflowSteps}
+                    deltas={deltas}
+                    onDataPointClick={handleDashboardPointClick}
+                    onEvidenceClick={handleEvidenceOpen}
+                  />
+                ) : (
+                  <DashboardSection activeAct={activeAct} />
+                )}
+              </React.Suspense>
+              <React.Suspense fallback={<SectionLoading />}>
+                <NotificationActivityPanel
+                  mode="topic"
+                  variant="hub"
+                  title="Activity Log"
+                  subtitle="nodebench"
+                  limit={4}
                 />
-              ) : (
-                <DashboardSection activeAct={activeAct} />
-              )}
-              <NotificationActivityPanel
-                mode="topic"
-                variant="hub"
-                title="Activity Log"
-                subtitle="nodebench"
-                limit={4}
-              />
+              </React.Suspense>
             </div>
           </aside>
         </div>
       </main>
 
       {/* LIVE INTEL FLOW MONITOR */}
-      <IntelPulseMonitor taskResults={taskResults || []} />
+      <React.Suspense fallback={null}>
+        <IntelPulseMonitor taskResults={taskResults || []} />
+      </React.Suspense>
 
-      <FeedReaderModal
-        item={readerItem}
-        techStack={techStack}
-        onClose={() => setReaderItem(null)}
-      />
-      <EntityContextDrawer
-        isOpen={Boolean(activeEntity)}
-        entityName={activeEntity?.name ?? null}
-        entityType={activeEntity?.type}
-        trackedHashtags={trackedHashtags}
-        techStack={techStack}
-        onClose={handleEntityClose}
-        onOpenReader={handleOpenReader}
-      />
+      <React.Suspense fallback={null}>
+        <FeedReaderModal
+          item={readerItem}
+          techStack={techStack}
+          onClose={() => setReaderItem(null)}
+        />
+      </React.Suspense>
+      <React.Suspense fallback={null}>
+        <EntityContextDrawer
+          isOpen={Boolean(activeEntity)}
+          entityName={activeEntity?.name ?? null}
+          entityType={activeEntity?.type}
+          trackedHashtags={trackedHashtags}
+          techStack={techStack}
+          onClose={handleEntityClose}
+          onOpenReader={handleOpenReader}
+        />
+      </React.Suspense>
     </div>
   );
 }

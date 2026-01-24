@@ -5,7 +5,18 @@
  * Generates JPMorgan-style professional reports from template data.
  */
 
-import { generate } from "@pdfme/generator";
+// Dynamic import of @pdfme/generator for code splitting
+// This reduces initial bundle size by ~1MB
+let generateFn: typeof import("@pdfme/generator").generate | null = null;
+
+async function getGenerator() {
+  if (!generateFn) {
+    const mod = await import("@pdfme/generator");
+    generateFn = mod.generate;
+  }
+  return generateFn;
+}
+
 import type { Template } from "@pdfme/common";
 
 import type {
@@ -49,6 +60,7 @@ export async function generateQuarterlySummaryPDF(
   const inputs = transformQuarterlyDataToInputs(data);
   const template = quarterlyFundingBaseTemplate;
 
+  const generate = await getGenerator();
   const pdfBuffer = await generate({
     template,
     inputs: [inputs],
@@ -79,6 +91,7 @@ export async function generateCompanyDossierPDF(
   const inputs = transformDossierDataToInputs(data);
   const template = companyDossierBaseTemplate;
 
+  const generate = await getGenerator();
   const pdfBuffer = await generate({
     template,
     inputs: [inputs],
@@ -109,6 +122,7 @@ export async function generateWeeklyDigestPDF(
   const inputs = transformDigestDataToInputs(data);
   const template = weeklyDigestBaseTemplate;
 
+  const generate = await getGenerator();
   const pdfBuffer = await generate({
     template,
     inputs: [inputs],

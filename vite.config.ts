@@ -251,8 +251,20 @@ window.addEventListener('message', async (message) => {
           if (id.includes('/features/agents/')) {
             return 'route-agents';
           }
-          if (id.includes('/features/research/')) {
-            return 'route-research';
+          // Research feature: Split into core hub vs lazy-loaded sections
+          // This allows React.lazy() components to become separate chunks
+          if (id.includes('/features/research/views/ResearchHub')) {
+            return 'route-research-hub';
+          }
+          if (id.includes('/features/research/views/CinematicHome')) {
+            return 'route-research-home';
+          }
+          if (id.includes('/features/research/sections/')) {
+            return 'route-research-sections';
+          }
+          if (id.includes('/features/research/components/')) {
+            // Let components chunk naturally via lazy loading
+            return undefined;
           }
           if (id.includes('/features/spreadsheets/')) {
             return 'route-spreadsheets';
